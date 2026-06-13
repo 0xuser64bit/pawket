@@ -8,11 +8,30 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum PetSpecies {
+  luna_cat
+  moss_pup
+  cloud_bun
+}
+
+enum PetPersonality {
+  curious
+  cozy
+  brave
+  mischief
+}
+
 enum CareActionType {
   feed
   play
   groom
   rest
+}
+
+enum PassportEventType {
+  adopted
+  care_action
+  level_up
 }
 
 enum PaymentStatus {
@@ -42,24 +61,27 @@ model User {
 }
 
 model Pet {
-  id             String             @id @default(cuid())
-  ownerId        String
-  owner          User               @relation(fields: [ownerId], references: [id])
-  name           String
-  species        String
-  personality    String
-  level          Int                @default(1)
-  xp             Int                @default(0)
-  hunger         Int                @default(70)
-  happiness      Int                @default(70)
-  energy         Int                @default(70)
-  hygiene        Int                @default(70)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  careActions    PetCareAction[]
-  passportEvents PetPassportEvent[]
+  id                 String             @id @default(cuid())
+  ownerId            String
+  owner              User               @relation(fields: [ownerId], references: [id])
+  name               String
+  species            PetSpecies
+  personality        PetPersonality
+  level              Int                @default(1)
+  xp                 Int                @default(0)
+  hunger             Int                @default(72)
+  happiness          Int                @default(72)
+  energy             Int                @default(72)
+  hygiene            Int                @default(72)
+  active             Boolean            @default(true)
+  lastCaredAt        DateTime?
+  lastCareActionType CareActionType?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  careActions        PetCareAction[]
+  passportEvents     PetPassportEvent[]
 
-  @@index([ownerId])
+  @@index([ownerId, active])
 }
 
 model PetCareAction {
@@ -67,19 +89,21 @@ model PetCareAction {
   petId     String
   pet       Pet            @relation(fields: [petId], references: [id])
   action    CareActionType
+  xpGained  Int
   createdAt DateTime       @default(now())
 
-  @@index([petId, createdAt])
+  @@index([petId, action, createdAt])
 }
 
 model PetPassportEvent {
-  id        String   @id @default(cuid())
-  petId     String
-  pet       Pet      @relation(fields: [petId], references: [id])
-  type      String
-  title     String
-  metadata  Json?
-  createdAt DateTime @default(now())
+  id          String            @id @default(cuid())
+  petId       String
+  pet         Pet               @relation(fields: [petId], references: [id])
+  type        PassportEventType
+  title       String
+  description String?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
 
   @@index([petId, createdAt])
 }

@@ -72,7 +72,9 @@ anchor test
 
 ## Current status
 
-This repository is a production-grade foundation, not a production launch. The starter app is runnable with deterministic local demo state. API routes are wired to service boundaries and intentionally require database/payment implementation before real production use. Solana, Jupiter, Mercuryo, and Solana Mobile Wallet Adapter integrations have honest typed interfaces/stubs rather than fake success paths.
+Pawket now has a playable local/dev vertical slice for the core pet loop. The mobile app can connect a clearly labeled dev wallet, adopt a pet through the API, reload the active pet from the database-backed API, perform care actions, update stats/XP/level/mood, and view a Pet Passport timeline.
+
+The core loop is real for the API/Postgres path. Solana Mobile Wallet Adapter, Anchor transaction construction, payments, Jupiter, Mercuryo, store, friends, marketplace, cosmetics, and seasonal events remain honest typed stubs/interfaces until implemented.
 
 ## Known local setup requirements
 

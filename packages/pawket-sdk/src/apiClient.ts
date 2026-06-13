@@ -1,40 +1,96 @@
 import {
-  adoptPetSchema,
-  careActionSchema,
+  adoptPetRequestSchema,
+  carePetRequestSchema,
   paymentIntentSchema,
+  walletAddressSchema,
   type AdoptPetInput,
-  type CareActionInput,
+  type AdoptPetResponse,
+  type ApiErrorResponse,
+  type CarePetInput,
+  type CarePetResponse,
+  type PassportResponse,
   type PaymentIntentInput,
+  type PetResponse,
 } from '@pawket/shared';
+
+export class PawketApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    message: string,
+    readonly details?: unknown,
+  ) {
+    super(message);
+    this.name = 'PawketApiError';
+  }
+}
 
 export class PawketApiClient {
   constructor(private readonly baseUrl: string) {}
+
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
       ...init,
     });
-    if (!response.ok) throw new Error(`Pawket API ${response.status}: ${await response.text()}`);
+
+    if (!response.ok) {
+      const text = await response.text();
+      let parsed: ApiErrorResponse | null = null;
+      try {
+        parsed = JSON.parse(text) as ApiErrorResponse;
+      } catch {
+        parsed = null;
+      }
+      const error = parsed?.error;
+      throw new PawketApiError(
+        response.status,
+        error?.code ?? 'API_ERROR',
+        error?.message ?? `Pawket API ${response.status}`,
+        error?.details,
+      );
+    }
+
     return response.json() as Promise<T>;
   }
+
   getHealth() {
-    return this.request<{ ok: true }>('/health');
+    return this.request<{ ok: true; service: string }>('/health');
   }
-  getPets(walletAddress: string) {
-    return this.request(`/pets/${walletAddress}`);
+
+  getPetByWallet(walletAddress: string): Promise<PetResponse> {
+    const parsedWallet = walletAddressSchema.parse(walletAddress);
+    return this.request(`/pets/${encodeURIComponent(parsedWallet)}`);
   }
-  adoptPet(input: AdoptPetInput) {
+
+  adoptPet(input: AdoptPetInput): Promise<AdoptPetResponse> {
     return this.request('/pets/adopt', {
       method: 'POST',
-      body: JSON.stringify(adoptPetSchema.parse(input)),
+      body: JSON.stringify(adoptPetRequestSchema.parse(input)),
     });
   }
-  careForPet(petId: string, input: CareActionInput) {
-    return this.request(`/pets/${petId}/care`, {
+
+  careForPet(input: CarePetInput & { petId: string }): Promise<CarePetResponse> {
+    return this.request(`/pets/${encodeURIComponent(input.petId)}/care`, {
       method: 'POST',
-      body: JSON.stringify(careActionSchema.parse(input)),
+      body: JSON.stringify(
+        carePetRequestSchema.parse({
+          walletAddress: input.walletAddress,
+          actionType: input.actionType,
+        }),
+      ),
     });
   }
+
+  getPetPassport(petId: string): Promise<PassportResponse> {
+    return this.request(`/pets/${encodeURIComponent(petId)}/passport`);
+  }
+
+  // Backwards-compatible names from the foundation scaffold.
+  getPets(walletAddress: string) {
+    return this.getPetByWallet(walletAddress);
+  }
+
   createPaymentIntent(input: PaymentIntentInput) {
     return this.request('/payments/create-intent', {
       method: 'POST',

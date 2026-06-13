@@ -1,19 +1,97 @@
 import { z } from 'zod';
-import { CareActionType, ItemType, PaymentStatus, PetPersonality, PetSpecies } from './enums';
+import {
+  CareActionType,
+  ItemType,
+  PassportEventType,
+  PaymentStatus,
+  PetMood,
+  PetPersonality,
+  PetSpecies,
+} from './enums';
 
-export const walletAddressSchema = z.string().min(32).max(44);
+export const walletAddressSchema = z.string().trim().min(32).max(64);
 export const petNameSchema = z.string().trim().min(2).max(24);
+export const isoDateStringSchema = z.string().datetime();
 
-export const adoptPetSchema = z.object({
+export const petStatsSchema = z.object({
+  hunger: z.number().int().min(0).max(100),
+  happiness: z.number().int().min(0).max(100),
+  energy: z.number().int().min(0).max(100),
+  hygiene: z.number().int().min(0).max(100),
+});
+
+export const adoptPetRequestSchema = z.object({
   walletAddress: walletAddressSchema,
   name: petNameSchema,
   species: z.nativeEnum(PetSpecies),
   personality: z.nativeEnum(PetPersonality),
 });
 
-export const careActionSchema = z.object({
+export const carePetRequestSchema = z.object({
   walletAddress: walletAddressSchema,
-  action: z.nativeEnum(CareActionType),
+  actionType: z.nativeEnum(CareActionType),
+});
+
+export const petSchema = z.object({
+  id: z.string(),
+  ownerWalletAddress: walletAddressSchema,
+  name: petNameSchema,
+  species: z.nativeEnum(PetSpecies),
+  personality: z.nativeEnum(PetPersonality),
+  stats: petStatsSchema,
+  xp: z.number().int().min(0),
+  level: z.number().int().min(1),
+  mood: z.nativeEnum(PetMood),
+  createdAt: isoDateStringSchema,
+  updatedAt: isoDateStringSchema,
+  lastCaredAt: isoDateStringSchema.nullable(),
+  lastCareActionType: z.nativeEnum(CareActionType).nullable(),
+});
+
+export const petResponseSchema = z.object({
+  pet: petSchema.nullable(),
+});
+
+export const adoptPetResponseSchema = z.object({
+  pet: petSchema,
+});
+
+export const carePetResponseSchema = z.object({
+  pet: petSchema,
+  passportEvent: z
+    .object({
+      id: z.string(),
+      petId: z.string(),
+      type: z.nativeEnum(PassportEventType),
+      title: z.string(),
+      description: z.string().nullable(),
+      metadata: z.record(z.unknown()).nullable(),
+      createdAt: isoDateStringSchema,
+    })
+    .optional(),
+});
+
+export const petPassportEventSchema = z.object({
+  id: z.string(),
+  petId: z.string(),
+  type: z.nativeEnum(PassportEventType),
+  title: z.string(),
+  description: z.string().nullable(),
+  metadata: z.record(z.unknown()).nullable(),
+  createdAt: isoDateStringSchema,
+});
+
+export const passportResponseSchema = z.object({
+  petId: z.string(),
+  events: z.array(petPassportEventSchema),
+});
+
+export const apiErrorResponseSchema = z.object({
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+    details: z.unknown().optional(),
+  }),
 });
 
 export const paymentIntentSchema = z.object({
@@ -30,7 +108,22 @@ export const itemSchema = z.object({
   type: z.nativeEnum(ItemType),
   price: z.string().optional(),
 });
+
 export const paymentStatusSchema = z.nativeEnum(PaymentStatus);
-export type AdoptPetInput = z.infer<typeof adoptPetSchema>;
-export type CareActionInput = z.infer<typeof careActionSchema>;
+
+export type PetStats = z.infer<typeof petStatsSchema>;
+export type Pet = z.infer<typeof petSchema>;
+export type PetPassportEvent = z.infer<typeof petPassportEventSchema>;
+export type AdoptPetInput = z.infer<typeof adoptPetRequestSchema>;
+export type CarePetInput = z.infer<typeof carePetRequestSchema>;
+export type AdoptPetResponse = z.infer<typeof adoptPetResponseSchema>;
+export type PetResponse = z.infer<typeof petResponseSchema>;
+export type CarePetResponse = z.infer<typeof carePetResponseSchema>;
+export type PassportResponse = z.infer<typeof passportResponseSchema>;
+export type ApiErrorResponse = z.infer<typeof apiErrorResponseSchema>;
 export type PaymentIntentInput = z.infer<typeof paymentIntentSchema>;
+
+// Backwards-compatible names from the foundation scaffold.
+export const adoptPetSchema = adoptPetRequestSchema;
+export const careActionSchema = carePetRequestSchema;
+export type CareActionInput = CarePetInput;

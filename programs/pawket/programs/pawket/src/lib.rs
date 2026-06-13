@@ -4,6 +4,8 @@ declare_id!("FQwe9LUPMTrhYyr32mHPpX87tcpjr98Eamz9wJQDaSef");
 
 const CARE_COOLDOWN_SECONDS: i64 = 30 * 60;
 const MAX_NAME_LEN: usize = 24;
+const INITIAL_STAT_VALUE: u8 = 72;
+const XP_PER_CARE_ACTION: u32 = 10;
 
 #[program]
 pub mod pawket {
@@ -43,10 +45,10 @@ pub mod pawket {
         pet.birth_timestamp = now;
         pet.level = 1;
         pet.xp = 0;
-        pet.hunger = 70;
-        pet.happiness = 70;
-        pet.energy = 70;
-        pet.hygiene = 70;
+        pet.hunger = INITIAL_STAT_VALUE;
+        pet.happiness = INITIAL_STAT_VALUE;
+        pet.energy = INITIAL_STAT_VALUE;
+        pet.hygiene = INITIAL_STAT_VALUE;
         pet.last_feed_at = 0;
         pet.last_play_at = 0;
         pet.last_groom_at = 0;
@@ -83,7 +85,8 @@ pub mod pawket {
                     now - pet.last_feed_at >= CARE_COOLDOWN_SECONDS,
                     PawketError::CareCooldownActive
                 );
-                pet.hunger = pet.hunger.saturating_add(18).min(100);
+                pet.hunger = pet.hunger.saturating_add(23).min(100);
+                pet.happiness = pet.happiness.saturating_add(2).min(100);
                 pet.last_feed_at = now;
             }
             CareActionType::Play => {
@@ -91,8 +94,9 @@ pub mod pawket {
                     now - pet.last_play_at >= CARE_COOLDOWN_SECONDS,
                     PawketError::CareCooldownActive
                 );
-                pet.happiness = pet.happiness.saturating_add(18).min(100);
-                pet.energy = pet.energy.saturating_sub(8);
+                pet.hunger = pet.hunger.saturating_sub(6);
+                pet.happiness = pet.happiness.saturating_add(23).min(100);
+                pet.energy = pet.energy.saturating_sub(12);
                 pet.last_play_at = now;
             }
             CareActionType::Groom => {
@@ -100,7 +104,8 @@ pub mod pawket {
                     now - pet.last_groom_at >= CARE_COOLDOWN_SECONDS,
                     PawketError::CareCooldownActive
                 );
-                pet.hygiene = pet.hygiene.saturating_add(20).min(100);
+                pet.happiness = pet.happiness.saturating_add(3).min(100);
+                pet.hygiene = pet.hygiene.saturating_add(25).min(100);
                 pet.last_groom_at = now;
             }
             CareActionType::Rest => {
@@ -108,11 +113,11 @@ pub mod pawket {
                     now - pet.last_rest_at >= CARE_COOLDOWN_SECONDS,
                     PawketError::CareCooldownActive
                 );
-                pet.energy = pet.energy.saturating_add(22).min(100);
+                pet.energy = pet.energy.saturating_add(28).min(100);
                 pet.last_rest_at = now;
             }
         }
-        pet.xp = pet.xp.saturating_add(10);
+        pet.xp = pet.xp.saturating_add(XP_PER_CARE_ACTION);
         pet.level = calculate_level(pet.xp);
         ctx.accounts.passport.event_count = ctx.accounts.passport.event_count.saturating_add(1);
         emit!(CarePerformed {

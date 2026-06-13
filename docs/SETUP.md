@@ -25,7 +25,7 @@ The current MVP loop is real on the API/database path:
 8. Claim the once-per-UTC-day `+25 XP` daily reward through `POST /pets/:petId/daily-goals/claim` only after feed, play, groom, and rest are all complete for the current UTC day.
 9. Open Pet Passport to fetch `GET /pets/:petId/passport` and view the timeline.
 
-This does not claim on-chain adoption/care yet. Solana Mobile Wallet Adapter and Anchor transaction builders remain honest stubs until the devnet path is wired.
+This does not claim on-chain adoption/care yet. The SDK can build unsigned Anchor-compatible initialize/adopt/care transactions offline, but Solana Mobile Wallet Adapter signing, devnet deployment, transaction sending, confirmation, and on-chain reads are not wired.
 
 ## Required environment variables
 
@@ -106,7 +106,7 @@ The mobile app currently uses the SDK client instead of raw fetch calls for pet 
 
 ## Anchor
 
-Install Rust, Solana CLI, and Anchor CLI. The placeholder program ID in `Anchor.toml` and `lib.rs` must be replaced by a generated keypair before deployment:
+Install Rust, Solana CLI, and Anchor CLI. The checked-in program ID is synced across `programs/pawket/programs/pawket/src/lib.rs`, `programs/pawket/target/idl/pawket.json`, and the SDK. If the program keypair changes, sync it before deployment:
 
 ```sh
 cd programs/pawket
@@ -120,18 +120,19 @@ Anchor alignment today:
 - `adopt_pet` matches API initial stats, XP, level, species, and personality concepts.
 - `perform_care_action` matches shared care effects, XP rewards, per-action cooldowns, and owner checks.
 - Passport on-chain state is currently an event count, while the rich timeline is API/database-backed.
+- The SDK derives the program PDAs and builds unsigned Anchor-compatible instructions for game config initialization, adoption, and care actions.
 
 ## What is real now
 
 - Shared package is the source of truth for pet enums, stats, schemas, mood, XP, level, care effects, cooldown validation, initial state, daily goals, UTC streaks, and daily reward values.
 - API routes are service-backed and persist core lifecycle plus daily reward claim state through Prisma/Postgres.
-- SDK exposes typed methods for the pet lifecycle and daily goals.
-- Mobile uses a clearly labeled dev wallet plus the SDK/API path for adoption, care, pet reload, daily goals, reward claims, and passport timeline.
+- SDK exposes typed methods for the pet lifecycle and daily goals, plus Solana PDA helpers and unsigned transaction builders.
+- Mobile uses a clearly labeled dev wallet plus the SDK/API path for adoption, care, pet reload, daily goals, reward claims, and passport timeline. The wallet screen also shows the configured program ID, cluster, and RPC while stating that mobile signing is not connected yet.
 
 ## Still stubbed / intentionally not faked
 
 - Solana Mobile Wallet Adapter device signing.
-- Anchor transaction construction from mobile/SDK.
+- Sending/signing the SDK-built Anchor transactions from mobile.
 - Devnet deployment and on-chain pet reads.
 - Payments, Jupiter swaps, Mercuryo on-ramp, store, friends, marketplace, cosmetics, and seasonal events.
 

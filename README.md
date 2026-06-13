@@ -20,7 +20,7 @@ Tagline: **A living on-chain companion game for Solana Mobile.**
 apps/mobile          Expo mobile app foundation
 apps/api             Hono API, Prisma schema, services, routes
 packages/shared      Shared types, Zod schemas, constants, game math
-packages/pawket-sdk  API client, Solana client skeleton, payments helpers
+packages/pawket-sdk  API client, Solana PDA/transaction builders, payments helpers
 programs/pawket      Anchor program foundation and tests
 docs                 Product, architecture, setup, roadmap, security
 scripts              Utility scripts
@@ -74,7 +74,7 @@ anchor test
 
 Pawket now has a playable local/dev vertical slice for the core pet loop and first retention loop. The mobile app can connect a clearly labeled dev wallet, adopt a pet through the API, reload the active pet from the database-backed API, perform care actions, update stats/XP/level/mood, view daily goals and care streaks, claim a once-per-UTC-day bonus XP reward after all four goals are complete, and view a Pet Passport timeline.
 
-The core loop is real for the API/Postgres path. Solana Mobile Wallet Adapter, Anchor transaction construction, payments, Jupiter, Mercuryo, store, friends, marketplace, cosmetics, and seasonal events remain honest typed stubs/interfaces until implemented.
+The core loop is real for the API/Postgres path. The SDK now includes offline Anchor-compatible PDA helpers and unsigned transaction builders for game config initialization, adoption, and care actions. Solana Mobile Wallet Adapter signing, devnet deployment, on-chain reads, payments, Jupiter, Mercuryo, store, friends, marketplace, cosmetics, and seasonal events remain honest typed stubs/interfaces until implemented.
 
 ## Known local setup requirements
 
@@ -87,6 +87,6 @@ The core loop is real for the API/Postgres path. Solana Mobile Wallet Adapter, A
 
 1. Install dependencies and run all checks.
 2. Configure Postgres and run Prisma migrations.
-3. Generate/sync the Anchor program ID and deploy to devnet.
-4. Wire real Solana Mobile signing and transaction builders.
+3. Deploy the synced Anchor program ID to devnet and verify on-chain reads.
+4. Wire real Solana Mobile signing/sending to the SDK transaction builders.
 5. Implement verified payment confirmation for SOL/USDC before enabling purchases.

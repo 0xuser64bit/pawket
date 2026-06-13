@@ -6,12 +6,12 @@
 - `apps/api`: Hono API and Prisma data layer.
 - `programs/pawket`: Anchor program for pet identity, care state, passport, and item ownership foundations.
 - `packages/shared`: Game enums, schemas, constants, utility math.
-- `packages/pawket-sdk`: Typed client for API, program skeleton, payment helpers.
+- `packages/pawket-sdk`: Typed API client, Solana PDA helpers, unsigned Anchor-compatible transaction builders, and payment helpers.
 - `docs`, `scripts`: documentation and utilities.
 
 ## Mobile architecture
 
-The mobile app is split into navigation, UI components, theme tokens, hooks, API client, wallet abstraction, Solana config, and payment client. Demo state lives in `src/dev/demoPet.ts` so it can be removed cleanly when API/program reads are wired.
+The mobile app is split into navigation, UI components, theme tokens, hooks, API client, wallet abstraction, Solana config, and payment client. Demo state lives in `src/dev/demoPet.ts` so it can be removed cleanly when API/program reads are wired. The wallet screen surfaces the configured program ID, cluster, and RPC while making clear that SDK transaction builders are ready but mobile wallet signing is not connected yet.
 
 ## Backend architecture
 
@@ -20,6 +20,8 @@ Hono exposes small resource routes. Zod validates all inputs. Services own busin
 ## Solana program architecture
 
 Anchor owns the canonical, low-cost state for player profile, pet, passport counters, item definitions, and item ownership. Instructions validate signer ownership, PDA seeds, cooldowns, input length, and stat bounds. Events are emitted for indexers/API consumers.
+
+The SDK mirrors the checked-in Anchor IDL discriminators for game config initialization, pet adoption, and care actions. It derives the same PDAs and builds unsigned web3.js `Transaction` objects without fetching blockhashes, signing, sending, or claiming devnet deployment.
 
 ## Data model
 
@@ -48,4 +50,4 @@ Mercuryo will offer fiat on-ramp into SOL/USDC. The webhook route is a placehold
 
 ## Security considerations
 
-No custody, explicit signing copy, PDA validation, signer ownership checks, payment finality verification, webhook signature verification, API rate limits, bot prevention, and minimal on-chain state.
+No custody, explicit signing copy, PDA validation, signer ownership checks, payment finality verification, webhook signature verification, API rate limits, bot prevention, and minimal on-chain state. Unsigned SDK transaction construction is separate from future Solana Mobile Wallet Adapter signing and confirmation flows.

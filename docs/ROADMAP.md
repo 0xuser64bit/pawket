@@ -15,11 +15,12 @@ Completed local/dev slices:
 - API-backed adoption, care actions, stat/XP/level progression, and passport timeline.
 - Daily goals, UTC care streaks, and once-per-day bonus XP reward claims.
 - Mobile SDK path for pet lifecycle, daily goals, reward claims, and passport loading.
+- SDK PDA helpers and unsigned Anchor-compatible transaction builders for game config initialization, adoption, and care actions.
 
 Still upcoming:
 
 - Real wallet connect on Android/Solana Mobile.
-- Adopt/care transactions on devnet.
+- Devnet deployment, on-chain reads, and mobile signing/sending/confirmation for adopt/care transactions.
 - One polished pet species and progression loop expansion.
 
 ## Phase 2: social/items/events

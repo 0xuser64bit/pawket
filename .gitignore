@@ -1,0 +1,16 @@
+node_modules
+.turbo
+dist
+build
+coverage
+.env
+.env.*
+!.env.example
+.DS_Store
+.expo
+.expo-shared
+apps/mobile/.expo
+programs/pawket/target
+programs/pawket/.anchor
+programs/pawket/test-ledger
+programs/pawket/Cargo.lock

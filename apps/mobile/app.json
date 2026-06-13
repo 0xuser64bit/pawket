@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Pawket",
+    "slug": "pawket",
+    "scheme": "pawket",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": false },
+    "android": { "package": "com.pawket.app", "edgeToEdgeEnabled": true }
+  }
+}

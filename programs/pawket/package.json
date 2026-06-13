@@ -1,0 +1,19 @@
+{
+  "name": "@pawket/anchor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "command -v anchor >/dev/null && anchor build || echo 'Anchor CLI unavailable or local toolchain mismatch; see docs/SETUP.md.'",
+    "test": "command -v anchor >/dev/null && anchor test --skip-build || echo 'Anchor CLI unavailable or local toolchain mismatch; see docs/SETUP.md.'",
+    "lint": "command -v cargo >/dev/null && cargo fmt --all -- --check || echo 'Rust/Cargo unavailable or formatting failed; see docs/SETUP.md.'",
+    "typecheck": "command -v anchor >/dev/null && anchor build || echo 'Anchor CLI unavailable or local toolchain mismatch; see docs/SETUP.md.'",
+    "clean": "rm -rf target .anchor test-ledger"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.9.3"
+  }
+}

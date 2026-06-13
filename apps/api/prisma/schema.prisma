@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum CareActionType {
+  feed
+  play
+  groom
+  rest
+}
+
+enum PaymentStatus {
+  pending
+  confirmed
+  failed
+  expired
+}
+
+enum ItemType {
+  cosmetic
+  food
+  toy
+  event_pass
+  egg
+  bundle
+}
+
+model User {
+  id             String          @id @default(cuid())
+  walletAddress  String          @unique
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  pets           Pet[]
+  inventory      InventoryItem[]
+  paymentIntents PaymentIntent[]
+}
+
+model Pet {
+  id             String             @id @default(cuid())
+  ownerId        String
+  owner          User               @relation(fields: [ownerId], references: [id])
+  name           String
+  species        String
+  personality    String
+  level          Int                @default(1)
+  xp             Int                @default(0)
+  hunger         Int                @default(70)
+  happiness      Int                @default(70)
+  energy         Int                @default(70)
+  hygiene        Int                @default(70)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  careActions    PetCareAction[]
+  passportEvents PetPassportEvent[]
+
+  @@index([ownerId])
+}
+
+model PetCareAction {
+  id        String         @id @default(cuid())
+  petId     String
+  pet       Pet            @relation(fields: [petId], references: [id])
+  action    CareActionType
+  createdAt DateTime       @default(now())
+
+  @@index([petId, createdAt])
+}
+
+model PetPassportEvent {
+  id        String   @id @default(cuid())
+  petId     String
+  pet       Pet      @relation(fields: [petId], references: [id])
+  type      String
+  title     String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([petId, createdAt])
+}
+
+model Item {
+  id          String          @id @default(cuid())
+  sku         String          @unique
+  name        String
+  type        ItemType
+  description String?
+  priceToken  String?
+  priceAmount Decimal?
+  active      Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  inventory   InventoryItem[]
+}
+
+model InventoryItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id])
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, itemId])
+}
+
+model SeasonalEvent {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  metadata  Json?
+  active    Boolean  @default(false)
+}
+
+model PaymentIntent {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  sku       String
+  token     String
+  amount    Decimal
+  status    PaymentStatus @default(pending)
+  signature String?
+  expiresAt DateTime
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId, status])
+}

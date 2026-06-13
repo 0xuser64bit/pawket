@@ -32,6 +32,7 @@ export enum PassportEventType {
   Adopted = 'adopted',
   CareAction = 'care_action',
   LevelUp = 'level_up',
+  DailyReward = 'daily_reward',
 }
 
 export enum ItemType {

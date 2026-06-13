@@ -4,9 +4,35 @@ import { createApp } from './app';
 import { InMemoryPetRepository, PetService } from './services/pet.service';
 
 const walletAddress = 'DevnetDemoWallet1111111111111111111111111111';
+const otherWalletAddress = 'OtherDevnetDemoWallet111111111111111111111111';
 
 function testApp() {
   return createApp({ petService: new PetService(new InMemoryPetRepository()) });
+}
+
+async function adoptTestPet(app: ReturnType<typeof testApp>) {
+  const adopt = await app.request('/pets/adopt', {
+    method: 'POST',
+    body: JSON.stringify({
+      walletAddress,
+      name: 'Nova',
+      species: PetSpecies.LunaCat,
+      personality: PetPersonality.Curious,
+    }),
+    headers: { 'content-type': 'application/json' },
+  });
+  expect(adopt.status).toBe(201);
+  return (await adopt.json()) as { pet: { id: string; xp: number } };
+}
+
+async function care(app: ReturnType<typeof testApp>, petId: string, actionType: CareActionType) {
+  const response = await app.request(`/pets/${petId}/care`, {
+    method: 'POST',
+    body: JSON.stringify({ walletAddress, actionType }),
+    headers: { 'content-type': 'application/json' },
+  });
+  expect(response.status).toBe(200);
+  return response;
 }
 
 describe('api', () => {
@@ -97,7 +123,7 @@ describe('api', () => {
     const forbidden = await app.request(`/pets/${pet.id}/care`, {
       method: 'POST',
       body: JSON.stringify({
-        walletAddress: 'OtherDevnetDemoWallet111111111111111111111111',
+        walletAddress: otherWalletAddress,
         actionType: CareActionType.Feed,
       }),
       headers: { 'content-type': 'application/json' },
@@ -120,5 +146,119 @@ describe('api', () => {
     expect(await second.json()).toMatchObject({
       error: { code: 'CARE_COOLDOWN_ACTIVE' },
     });
+  });
+
+  it('reports daily goals and rejects incomplete reward claims', async () => {
+    const app = testApp();
+    const { pet } = await adoptTestPet(app);
+
+    const goals = await app.request(
+      `/pets/${pet.id}/daily-goals?walletAddress=${encodeURIComponent(walletAddress)}`,
+    );
+    expect(goals.status).toBe(200);
+    expect(await goals.json()).toMatchObject({
+      walletAddress,
+      petId: pet.id,
+      completedGoals: 0,
+      totalGoals: 4,
+      allGoalsCompleted: false,
+      currentStreakDays: 0,
+    });
+
+    const claim = await app.request(`/pets/${pet.id}/daily-goals/claim`, {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(claim.status).toBe(409);
+    expect(await claim.json()).toMatchObject({
+      error: { code: 'DAILY_GOALS_INCOMPLETE' },
+    });
+  });
+
+  it('authorizes daily goals by pet owner and handles missing pets', async () => {
+    const app = testApp();
+    const { pet } = await adoptTestPet(app);
+
+    const forbiddenGoals = await app.request(
+      `/pets/${pet.id}/daily-goals?walletAddress=${encodeURIComponent(otherWalletAddress)}`,
+    );
+    expect(forbiddenGoals.status).toBe(403);
+
+    const forbiddenClaim = await app.request(`/pets/${pet.id}/daily-goals/claim`, {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress: otherWalletAddress }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(forbiddenClaim.status).toBe(403);
+
+    const missingClaim = await app.request('/pets/missing_pet/daily-goals/claim', {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(missingClaim.status).toBe(404);
+  });
+
+  it('claims a completed daily reward once and writes a passport event', async () => {
+    const app = testApp();
+    const { pet } = await adoptTestPet(app);
+
+    await care(app, pet.id, CareActionType.Feed);
+    await care(app, pet.id, CareActionType.Play);
+    await care(app, pet.id, CareActionType.Groom);
+    await care(app, pet.id, CareActionType.Rest);
+
+    const ready = await app.request(
+      `/pets/${pet.id}/daily-goals?walletAddress=${encodeURIComponent(walletAddress)}`,
+    );
+    expect(ready.status).toBe(200);
+    const readyGoals = await ready.json();
+    expect(readyGoals).toMatchObject({
+      completedGoals: 4,
+      totalGoals: 4,
+      allGoalsCompleted: true,
+      currentStreakDays: 1,
+      reward: { type: 'bonus_xp', xp: 25, claimed: false, claimedAt: null },
+    });
+
+    const claim = await app.request(`/pets/${pet.id}/daily-goals/claim`, {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(claim.status).toBe(200);
+    const claimed = await claim.json();
+    expect(claimed.pet.xp).toBe(65);
+    expect(claimed.dailyGoals).toMatchObject({
+      completedGoals: 4,
+      allGoalsCompleted: true,
+      reward: { type: 'bonus_xp', xp: 25, claimed: true },
+    });
+    expect(claimed.passportEvent).toMatchObject({
+      type: 'daily_reward',
+      metadata: { bonusXp: 25, completedGoals: 4, totalGoals: 4 },
+    });
+
+    const duplicate = await app.request(`/pets/${pet.id}/daily-goals/claim`, {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(duplicate.status).toBe(409);
+    expect(await duplicate.json()).toMatchObject({
+      error: { code: 'DAILY_REWARD_ALREADY_CLAIMED' },
+    });
+
+    const passport = await app.request(`/pets/${pet.id}/passport`);
+    const timeline = await passport.json();
+    expect(timeline.events.map((event: { type: string }) => event.type)).toEqual([
+      'daily_reward',
+      'care_action',
+      'care_action',
+      'care_action',
+      'care_action',
+      'adopted',
+    ]);
   });
 });

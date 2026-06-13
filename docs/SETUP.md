@@ -11,7 +11,7 @@ pnpm --filter @pawket/api dev
 pnpm --filter @pawket/mobile dev
 ```
 
-## Core pet lifecycle vertical slice
+## Core pet lifecycle and retention vertical slice
 
 The current MVP loop is real on the API/database path:
 
@@ -21,7 +21,9 @@ The current MVP loop is real on the API/database path:
 4. Perform care actions through `POST /pets/:petId/care`.
 5. Stats, XP, level, mood, last-care info, care-action history, and passport events are written to Postgres.
 6. Reloading the app/session fetches the active pet from the API again.
-7. Open Pet Passport to fetch `GET /pets/:petId/passport` and view the timeline.
+7. View deterministic daily goals through `GET /pets/:petId/daily-goals?walletAddress=...`.
+8. Claim the once-per-UTC-day `+25 XP` daily reward through `POST /pets/:petId/daily-goals/claim` only after feed, play, groom, and rest are all complete for the current UTC day.
+9. Open Pet Passport to fetch `GET /pets/:petId/passport` and view the timeline.
 
 This does not claim on-chain adoption/care yet. Solana Mobile Wallet Adapter and Anchor transaction builders remain honest stubs until the devnet path is wired.
 
@@ -62,6 +64,7 @@ The first migration creates:
 - active pets owned by users
 - pet stats, XP, level, species, personality, and last-care fields
 - care action history
+- daily reward claims keyed by pet and UTC date
 - passport events
 - existing starter inventory/payment/event tables
 
@@ -84,6 +87,10 @@ curl -X POST http://localhost:8787/pets/adopt \
 curl -X POST http://localhost:8787/pets/<petId>/care \
   -H 'content-type: application/json' \
   -d '{"walletAddress":"DevnetDemoWallet1111111111111111111111111111","actionType":"feed"}'
+curl 'http://localhost:8787/pets/<petId>/daily-goals?walletAddress=DevnetDemoWallet1111111111111111111111111111'
+curl -X POST http://localhost:8787/pets/<petId>/daily-goals/claim \
+  -H 'content-type: application/json' \
+  -d '{"walletAddress":"DevnetDemoWallet1111111111111111111111111111"}'
 curl http://localhost:8787/pets/<petId>/passport
 ```
 
@@ -95,7 +102,7 @@ pnpm --filter @pawket/mobile typecheck
 pnpm --filter @pawket/mobile build
 ```
 
-The mobile app currently uses the SDK client instead of raw fetch calls for pet reads, adoption, care actions, and passport loading.
+The mobile app currently uses the SDK client instead of raw fetch calls for pet reads, adoption, care actions, daily goals, daily reward claims, and passport loading.
 
 ## Anchor
 
@@ -116,10 +123,10 @@ Anchor alignment today:
 
 ## What is real now
 
-- Shared package is the source of truth for pet enums, stats, schemas, mood, XP, level, care effects, cooldown validation, and initial state.
-- API routes are service-backed and persist core lifecycle state through Prisma/Postgres.
-- SDK exposes typed methods for the pet lifecycle.
-- Mobile uses a clearly labeled dev wallet plus the SDK/API path for adoption, care, pet reload, and passport timeline.
+- Shared package is the source of truth for pet enums, stats, schemas, mood, XP, level, care effects, cooldown validation, initial state, daily goals, UTC streaks, and daily reward values.
+- API routes are service-backed and persist core lifecycle plus daily reward claim state through Prisma/Postgres.
+- SDK exposes typed methods for the pet lifecycle and daily goals.
+- Mobile uses a clearly labeled dev wallet plus the SDK/API path for adoption, care, pet reload, daily goals, reward claims, and passport timeline.
 
 ## Still stubbed / intentionally not faked
 

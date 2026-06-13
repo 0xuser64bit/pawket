@@ -4,6 +4,8 @@ import { HTTPException } from 'hono/http-exception';
 import {
   adoptPetRequestSchema,
   carePetRequestSchema,
+  claimDailyRewardRequestSchema,
+  dailyGoalsQuerySchema,
   paymentIntentSchema,
   walletAddressSchema,
 } from '@pawket/shared';
@@ -75,6 +77,22 @@ export function createApp(services: AppServices = {}) {
     '/pets/:petId/care',
     zValidator('json', carePetRequestSchema, validationHook),
     async (c) => c.json(await petService.careForPet(c.req.param('petId'), c.req.valid('json'))),
+  );
+
+  app.get(
+    '/pets/:petId/daily-goals',
+    zValidator('query', dailyGoalsQuerySchema, validationHook),
+    async (c) =>
+      c.json(
+        await petService.getDailyGoals(c.req.param('petId'), c.req.valid('query').walletAddress),
+      ),
+  );
+
+  app.post(
+    '/pets/:petId/daily-goals/claim',
+    zValidator('json', claimDailyRewardRequestSchema, validationHook),
+    async (c) =>
+      c.json(await petService.claimDailyReward(c.req.param('petId'), c.req.valid('json'))),
   );
 
   app.get('/pets/:petId/passport', async (c) =>

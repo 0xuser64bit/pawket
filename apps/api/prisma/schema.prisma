@@ -32,6 +32,7 @@ enum PassportEventType {
   adopted
   care_action
   level_up
+  daily_reward
 }
 
 enum PaymentStatus {
@@ -80,6 +81,7 @@ model Pet {
   updatedAt          DateTime           @updatedAt
   careActions        PetCareAction[]
   passportEvents     PetPassportEvent[]
+  dailyRewards       PetDailyReward[]
 
   @@index([ownerId, active])
 }
@@ -106,6 +108,19 @@ model PetPassportEvent {
   createdAt   DateTime          @default(now())
 
   @@index([petId, createdAt])
+}
+
+model PetDailyReward {
+  id        String   @id @default(cuid())
+  petId     String
+  pet       Pet      @relation(fields: [petId], references: [id])
+  date      String
+  bonusXp   Int
+  claimedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@unique([petId, date])
+  @@index([petId, date])
 }
 
 model Item {

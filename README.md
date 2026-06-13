@@ -72,7 +72,7 @@ anchor test
 
 ## Current status
 
-Pawket now has a playable local/dev vertical slice for the core pet loop. The mobile app can connect a clearly labeled dev wallet, adopt a pet through the API, reload the active pet from the database-backed API, perform care actions, update stats/XP/level/mood, and view a Pet Passport timeline.
+Pawket now has a playable local/dev vertical slice for the core pet loop and first retention loop. The mobile app can connect a clearly labeled dev wallet, adopt a pet through the API, reload the active pet from the database-backed API, perform care actions, update stats/XP/level/mood, view daily goals and care streaks, claim a once-per-UTC-day bonus XP reward after all four goals are complete, and view a Pet Passport timeline.
 
 The core loop is real for the API/Postgres path. Solana Mobile Wallet Adapter, Anchor transaction construction, payments, Jupiter, Mercuryo, store, friends, marketplace, cosmetics, and seasonal events remain honest typed stubs/interfaces until implemented.
 
@@ -87,6 +87,6 @@ The core loop is real for the API/Postgres path. Solana Mobile Wallet Adapter, A
 
 1. Install dependencies and run all checks.
 2. Configure Postgres and run Prisma migrations.
-3. Replace demo mobile state with API + program reads.
-4. Generate/sync the Anchor program ID and deploy to devnet.
+3. Generate/sync the Anchor program ID and deploy to devnet.
+4. Wire real Solana Mobile signing and transaction builders.
 5. Implement verified payment confirmation for SOL/USDC before enabling purchases.

@@ -6,4 +6,5 @@ export const MIN_STAT = 0;
 export const INITIAL_STAT_VALUE = 72;
 export const CARE_COOLDOWN_SECONDS = 60 * 30;
 export const XP_PER_CARE_ACTION = 10;
+export const DAILY_GOAL_REWARD_XP = 25;
 export const BASE_XP_PER_LEVEL = 100;

@@ -9,7 +9,17 @@ import {
   generateInitialPetState,
   validateCareCooldown,
 } from './game';
-import { adoptPetRequestSchema, carePetRequestSchema, petResponseSchema } from './schemas';
+import {
+  buildDailyGoalsResponse,
+  calculateCurrentDailyGoalStreak,
+  getUtcDayBounds,
+} from './dailyGoals';
+import {
+  adoptPetRequestSchema,
+  carePetRequestSchema,
+  dailyGoalsResponseSchema,
+  petResponseSchema,
+} from './schemas';
 
 describe('core pet lifecycle domain', () => {
   it('generates a deterministic initial pet state from adoption input', () => {
@@ -133,5 +143,85 @@ describe('core pet lifecycle domain', () => {
       },
     });
     expect(response.pet?.name).toBe('Nova');
+  });
+
+  it('builds deterministic UTC daily goals from care actions', () => {
+    const response = buildDailyGoalsResponse({
+      walletAddress: 'DevnetDemoWallet1111111111111111111111111111',
+      petId: 'pet_1',
+      now: new Date('2026-06-14T23:30:00.000Z'),
+      careActions: [
+        { actionType: CareActionType.Feed, createdAt: '2026-06-13T23:59:59.000Z' },
+        { actionType: CareActionType.Feed, createdAt: '2026-06-14T00:00:00.000Z' },
+        { actionType: CareActionType.Play, createdAt: '2026-06-14T09:00:00.000Z' },
+      ],
+    });
+
+    expect(response.today).toBe('2026-06-14');
+    expect(response.goals.map((goal) => goal.actionType)).toEqual([
+      CareActionType.Feed,
+      CareActionType.Play,
+      CareActionType.Groom,
+      CareActionType.Rest,
+    ]);
+    expect(response.completedGoals).toBe(2);
+    expect(response.totalGoals).toBe(4);
+    expect(response.allGoalsCompleted).toBe(false);
+    expect(response.reward).toBeUndefined();
+    expect(dailyGoalsResponseSchema.parse(response)).toEqual(response);
+  });
+
+  it('exposes a claimable reward once all daily goals are complete', () => {
+    const response = buildDailyGoalsResponse({
+      walletAddress: 'DevnetDemoWallet1111111111111111111111111111',
+      petId: 'pet_1',
+      now: new Date('2026-06-14T12:00:00.000Z'),
+      careActions: [
+        { actionType: CareActionType.Feed, createdAt: '2026-06-14T01:00:00.000Z' },
+        { actionType: CareActionType.Play, createdAt: '2026-06-14T02:00:00.000Z' },
+        { actionType: CareActionType.Groom, createdAt: '2026-06-14T03:00:00.000Z' },
+        { actionType: CareActionType.Rest, createdAt: '2026-06-14T04:00:00.000Z' },
+      ],
+    });
+
+    expect(response.completedGoals).toBe(4);
+    expect(response.allGoalsCompleted).toBe(true);
+    expect(response.currentStreakDays).toBe(1);
+    expect(response.reward).toEqual({
+      type: 'bonus_xp',
+      xp: 25,
+      claimed: false,
+      claimedAt: null,
+    });
+  });
+
+  it('counts the current streak from today or yesterday in UTC', () => {
+    const fullDay = (date: string) =>
+      [CareActionType.Feed, CareActionType.Play, CareActionType.Groom, CareActionType.Rest].map(
+        (actionType, index) => ({
+          actionType,
+          createdAt: `${date}T0${index}:00:00.000Z`,
+        }),
+      );
+
+    expect(
+      calculateCurrentDailyGoalStreak(
+        [...fullDay('2026-06-12'), ...fullDay('2026-06-13')],
+        new Date('2026-06-14T12:00:00.000Z'),
+      ),
+    ).toBe(2);
+    expect(
+      calculateCurrentDailyGoalStreak(
+        [...fullDay('2026-06-12'), ...fullDay('2026-06-13'), ...fullDay('2026-06-14').slice(0, 3)],
+        new Date('2026-06-14T12:00:00.000Z'),
+      ),
+    ).toBe(2);
+    expect(
+      calculateCurrentDailyGoalStreak(
+        [...fullDay('2026-06-13'), ...fullDay('2026-06-14')],
+        new Date('2026-06-14T12:00:00.000Z'),
+      ),
+    ).toBe(2);
+    expect(getUtcDayBounds(new Date('2026-06-14T23:59:00.000Z')).today).toBe('2026-06-14');
   });
 });

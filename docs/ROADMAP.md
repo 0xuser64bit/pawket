@@ -10,10 +10,17 @@
 
 ## Phase 1: playable MVP
 
+Completed local/dev slices:
+
+- API-backed adoption, care actions, stat/XP/level progression, and passport timeline.
+- Daily goals, UTC care streaks, and once-per-day bonus XP reward claims.
+- Mobile SDK path for pet lifecycle, daily goals, reward claims, and passport loading.
+
+Still upcoming:
+
 - Real wallet connect on Android/Solana Mobile.
 - Adopt/care transactions on devnet.
-- API persistence and passport timeline.
-- One polished pet species and progression loop.
+- One polished pet species and progression loop expansion.
 
 ## Phase 2: social/items/events
 

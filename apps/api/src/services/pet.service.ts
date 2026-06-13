@@ -1,13 +1,21 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import {
+  DAILY_GOAL_REWARD_XP,
   applyCareAction,
+  buildDailyGoalsResponse,
   calculateLevelFromXp,
   calculatePetMood,
   generateInitialPetState,
+  getUtcDateKey,
   validateCareCooldown,
   type AdoptPetInput,
   type CarePetInput,
   type CarePetResponse,
+  type ClaimDailyRewardInput,
+  type ClaimDailyRewardResponse,
+  type DailyGoalCareAction,
+  type DailyGoalsResponse,
+  type DailyRewardClaimState,
   type PassportResponse,
   type Pet,
   type PetPassportEvent,
@@ -66,6 +74,16 @@ type UpdateCareRecord = {
   passportEvent: Omit<PetPassportEvent, 'id' | 'createdAt'>;
 };
 
+type ClaimDailyRewardRecord = {
+  date: string;
+  bonusXp: number;
+  xp: number;
+  level: number;
+  passportEvent: Omit<PetPassportEvent, 'id' | 'createdAt'>;
+};
+
+type DailyRewardClaimRecord = DailyRewardClaimState;
+
 export interface PetRepository {
   findActivePetByWallet(walletAddress: string): Promise<DbPet | null>;
   findPetById(petId: string): Promise<DbPet | null>;
@@ -79,6 +97,16 @@ export interface PetRepository {
   }>;
   listPassportEvents(petId: string): Promise<PetPassportEvent[]>;
   findLastCareActionAt(petId: string, actionType: CarePetInput['actionType']): Promise<Date | null>;
+  listCareActionsForPet(petId: string): Promise<DailyGoalCareAction[]>;
+  findDailyRewardClaim(petId: string, date: string): Promise<DailyRewardClaimRecord | null>;
+  claimDailyReward(
+    petId: string,
+    input: ClaimDailyRewardRecord,
+  ): Promise<{
+    pet: DbPet;
+    passportEvent: PetPassportEvent;
+    rewardClaim: DailyRewardClaimRecord;
+  }>;
 }
 
 function iso(date: Date) {
@@ -124,8 +152,41 @@ function careEventTitle(actionType: CarePetInput['actionType']) {
   return `${labels[actionType]} your Pawket`;
 }
 
+function dailyRewardEventTitle(date: string) {
+  return `Claimed daily goals reward for ${date}`;
+}
+
 export class PetService {
   constructor(private readonly repository: PetRepository = new PrismaPetRepository()) {}
+
+  private async findOwnedPet(petId: string, walletAddress: string) {
+    const pet = await this.repository.findPetById(petId);
+    if (!pet) throw new ApiError(404, 'PET_NOT_FOUND', 'Pet not found.');
+    if (pet.ownerWalletAddress !== walletAddress) {
+      throw new ApiError(403, 'NOT_PET_OWNER', 'That wallet does not own this pet.');
+    }
+    return pet;
+  }
+
+  private async buildDailyGoalsForPet(
+    pet: DbPet,
+    walletAddress: string,
+    now: Date,
+  ): Promise<DailyGoalsResponse> {
+    const today = getUtcDateKey(now);
+    const [careActions, rewardClaim] = await Promise.all([
+      this.repository.listCareActionsForPet(pet.id),
+      this.repository.findDailyRewardClaim(pet.id, today),
+    ]);
+
+    return buildDailyGoalsResponse({
+      walletAddress,
+      petId: pet.id,
+      careActions,
+      rewardClaims: rewardClaim ? [rewardClaim] : [],
+      now,
+    });
+  }
 
   async getPetByWallet(walletAddress: string): Promise<PetResponse> {
     const pet = await this.repository.findActivePetByWallet(walletAddress);
@@ -197,6 +258,69 @@ export class PetService {
     });
 
     return { pet: toPet(updated.pet), passportEvent: updated.passportEvent };
+  }
+
+  async getDailyGoals(petId: string, walletAddress: string): Promise<DailyGoalsResponse> {
+    const now = new Date();
+    const pet = await this.findOwnedPet(petId, walletAddress);
+    return this.buildDailyGoalsForPet(pet, walletAddress, now);
+  }
+
+  async claimDailyReward(
+    petId: string,
+    input: ClaimDailyRewardInput,
+  ): Promise<ClaimDailyRewardResponse> {
+    const now = new Date();
+    const pet = await this.findOwnedPet(petId, input.walletAddress);
+    const dailyGoals = await this.buildDailyGoalsForPet(pet, input.walletAddress, now);
+
+    if (!dailyGoals.allGoalsCompleted) {
+      throw new ApiError(
+        409,
+        'DAILY_GOALS_INCOMPLETE',
+        'Complete all daily goals before claiming.',
+      );
+    }
+    if (dailyGoals.reward?.claimed) {
+      throw new ApiError(409, 'DAILY_REWARD_ALREADY_CLAIMED', 'Daily reward already claimed.');
+    }
+
+    const xp = pet.xp + DAILY_GOAL_REWARD_XP;
+    const level = calculateLevelFromXp(xp);
+    const passportEvent = {
+      petId,
+      type: PassportEventType.DailyReward,
+      title: dailyRewardEventTitle(dailyGoals.today),
+      description: `+${DAILY_GOAL_REWARD_XP} bonus XP for completing every daily care goal.`,
+      metadata: {
+        date: dailyGoals.today,
+        bonusXp: DAILY_GOAL_REWARD_XP,
+        completedGoals: dailyGoals.completedGoals,
+        totalGoals: dailyGoals.totalGoals,
+        currentStreakDays: dailyGoals.currentStreakDays,
+        level,
+      },
+    };
+
+    const updated = await this.repository.claimDailyReward(petId, {
+      date: dailyGoals.today,
+      bonusXp: DAILY_GOAL_REWARD_XP,
+      xp,
+      level,
+      passportEvent,
+    });
+
+    return {
+      pet: toPet(updated.pet),
+      passportEvent: updated.passportEvent,
+      dailyGoals: buildDailyGoalsResponse({
+        walletAddress: input.walletAddress,
+        petId,
+        careActions: await this.repository.listCareActionsForPet(petId),
+        rewardClaims: [updated.rewardClaim],
+        now,
+      }),
+    };
   }
 
   async getPassport(petId: string): Promise<PassportResponse> {
@@ -351,6 +475,68 @@ export class PrismaPetRepository implements PetRepository {
     return row?.createdAt ?? null;
   }
 
+  async listCareActionsForPet(petId: string) {
+    const rows = await this.client.petCareAction.findMany({
+      where: { petId },
+      select: { action: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map((row) => ({
+      actionType: row.action as CarePetInput['actionType'],
+      createdAt: row.createdAt,
+    }));
+  }
+
+  async findDailyRewardClaim(petId: string, date: string) {
+    const row = await this.client.petDailyReward.findUnique({
+      where: { petId_date: { petId, date } },
+    });
+    return row ? this.mapDailyRewardClaim(row) : null;
+  }
+
+  async claimDailyReward(petId: string, input: ClaimDailyRewardRecord) {
+    try {
+      return await this.client.$transaction(async (tx) => {
+        const rewardClaim = await tx.petDailyReward.create({
+          data: {
+            petId,
+            date: input.date,
+            bonusXp: input.bonusXp,
+          },
+        });
+        const event = await tx.petPassportEvent.create({
+          data: {
+            petId,
+            type: input.passportEvent.type,
+            title: input.passportEvent.title,
+            description: input.passportEvent.description,
+            ...(input.passportEvent.metadata
+              ? { metadata: input.passportEvent.metadata as Prisma.InputJsonObject }
+              : {}),
+          },
+        });
+        const pet = await tx.pet.update({
+          where: { id: petId },
+          data: {
+            xp: input.xp,
+            level: input.level,
+          },
+          include: { owner: true },
+        });
+        return {
+          pet: this.mapPet(pet),
+          passportEvent: this.mapPassportEvent(event),
+          rewardClaim: this.mapDailyRewardClaim(rewardClaim),
+        };
+      });
+    } catch (caught) {
+      if (caught instanceof Prisma.PrismaClientKnownRequestError && caught.code === 'P2002') {
+        throw new ApiError(409, 'DAILY_REWARD_ALREADY_CLAIMED', 'Daily reward already claimed.');
+      }
+      throw caught;
+    }
+  }
+
   private mapPassportEvent(row: {
     id: string;
     petId: string;
@@ -373,12 +559,28 @@ export class PrismaPetRepository implements PetRepository {
       createdAt: iso(row.createdAt),
     };
   }
+
+  private mapDailyRewardClaim(row: {
+    date: string;
+    bonusXp: number;
+    claimedAt: Date;
+  }): DailyRewardClaimRecord {
+    return {
+      date: row.date,
+      bonusXp: row.bonusXp,
+      claimedAt: row.claimedAt,
+    };
+  }
 }
 
 let idCounter = 0;
 function nextId(prefix: string) {
   idCounter += 1;
   return `${prefix}_${idCounter}`;
+}
+
+function idSequence(id: string) {
+  return Number(id.split('_').pop() ?? 0);
 }
 
 export class InMemoryPetRepository implements PetRepository {
@@ -388,6 +590,7 @@ export class InMemoryPetRepository implements PetRepository {
     action: CarePetInput['actionType'];
     createdAt: Date;
   }[] = [];
+  private readonly dailyRewards: (DailyRewardClaimRecord & { petId: string })[] = [];
   private readonly events: PetPassportEvent[] = [];
 
   async findActivePetByWallet(walletAddress: string) {
@@ -460,7 +663,10 @@ export class InMemoryPetRepository implements PetRepository {
   async listPassportEvents(petId: string) {
     return this.events
       .filter((event) => event.petId === petId)
-      .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+      .sort((left, right) => {
+        const byDate = Date.parse(right.createdAt) - Date.parse(left.createdAt);
+        return byDate || idSequence(right.id) - idSequence(left.id);
+      });
   }
 
   async findLastCareActionAt(petId: string, actionType: CarePetInput['actionType']) {
@@ -470,5 +676,61 @@ export class InMemoryPetRepository implements PetRepository {
         .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())[0]
         ?.createdAt ?? null
     );
+  }
+
+  async listCareActionsForPet(petId: string) {
+    return this.careActions
+      .filter((action) => action.petId === petId)
+      .map((action) => ({ actionType: action.action, createdAt: action.createdAt }));
+  }
+
+  async findDailyRewardClaim(petId: string, date: string) {
+    const claim = this.dailyRewards.find(
+      (reward) => reward.petId === petId && reward.date === date,
+    );
+    return claim ? { date: claim.date, bonusXp: claim.bonusXp, claimedAt: claim.claimedAt } : null;
+  }
+
+  async claimDailyReward(petId: string, input: ClaimDailyRewardRecord) {
+    const pet = this.pets.get(petId);
+    if (!pet) throw new ApiError(404, 'PET_NOT_FOUND', 'Pet not found.');
+    const existing = await this.findDailyRewardClaim(petId, input.date);
+    if (existing) {
+      throw new ApiError(409, 'DAILY_REWARD_ALREADY_CLAIMED', 'Daily reward already claimed.');
+    }
+
+    const now = new Date();
+    const rewardClaim = {
+      petId,
+      date: input.date,
+      bonusXp: input.bonusXp,
+      claimedAt: now,
+    };
+    this.dailyRewards.push(rewardClaim);
+
+    const event: PetPassportEvent = {
+      ...input.passportEvent,
+      id: nextId('evt'),
+      createdAt: iso(now),
+    };
+    this.events.push(event);
+
+    const updated: DbPet = {
+      ...pet,
+      xp: input.xp,
+      level: input.level,
+      updatedAt: now,
+    };
+    this.pets.set(petId, updated);
+
+    return {
+      pet: updated,
+      passportEvent: event,
+      rewardClaim: {
+        date: rewardClaim.date,
+        bonusXp: rewardClaim.bonusXp,
+        claimedAt: rewardClaim.claimedAt,
+      },
+    };
   }
 }

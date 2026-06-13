@@ -1,4 +1,4 @@
-import { calculateXpForNextLevel, CareActionType } from '@pawket/shared';
+import { calculateXpForNextLevel, CareActionType, type DailyGoalsResponse } from '@pawket/shared';
 import { Link } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { MessageBanner } from '../components/MessageBanner';
@@ -16,8 +16,108 @@ function label(value: string) {
     .join(' ');
 }
 
+function DailyGoalsPanel({
+  dailyGoals,
+  status,
+  onClaim,
+  onRetry,
+}: {
+  dailyGoals: DailyGoalsResponse | null;
+  status: string;
+  onClaim: () => void;
+  onRetry: () => void;
+}) {
+  const loading = status === 'loading_daily_goals';
+  const claiming = status === 'claiming_daily_reward';
+
+  if (loading && !dailyGoals) {
+    return (
+      <View style={styles.dailyPanel}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.section}>Daily Goals</Text>
+          <ActivityIndicator color={colors.mint} />
+        </View>
+        <Text style={styles.goalHint}>Loading today's care goals.</Text>
+      </View>
+    );
+  }
+
+  if (!dailyGoals) {
+    return (
+      <View style={styles.dailyPanel}>
+        <Text style={styles.section}>Daily Goals</Text>
+        <Text style={styles.goalHint}>Daily goals are unavailable right now.</Text>
+        <PrimaryButton label="Retry goals" onPress={onRetry} tone="mint" />
+      </View>
+    );
+  }
+
+  const reward = dailyGoals.reward;
+  const canClaim = Boolean(dailyGoals.allGoalsCompleted && reward && !reward.claimed);
+
+  return (
+    <View style={styles.dailyPanel}>
+      <View style={styles.rowBetween}>
+        <View>
+          <Text style={styles.section}>Daily Goals</Text>
+          <Text style={styles.goalHint}>{dailyGoals.today} UTC</Text>
+        </View>
+        {loading ? <ActivityIndicator color={colors.mint} /> : null}
+      </View>
+      <View style={styles.goalSummary}>
+        <View style={styles.summaryBlock}>
+          <Text style={styles.summaryValue}>
+            {dailyGoals.completedGoals}/{dailyGoals.totalGoals}
+          </Text>
+          <Text style={styles.summaryLabel}>Complete</Text>
+        </View>
+        <View style={styles.summaryBlock}>
+          <Text style={styles.summaryValue}>{dailyGoals.currentStreakDays}</Text>
+          <Text style={styles.summaryLabel}>Day streak</Text>
+        </View>
+      </View>
+      <View style={styles.goalList}>
+        {dailyGoals.goals.map((goal) => (
+          <View key={goal.actionType} style={styles.goalRow}>
+            <View style={[styles.goalDot, goal.completed ? styles.goalDotDone : null]} />
+            <Text style={styles.goalTitle}>{goal.title}</Text>
+            <Text style={[styles.goalStatus, goal.completed ? styles.goalStatusDone : null]}>
+              {goal.completed ? 'Done' : 'Open'}
+            </Text>
+          </View>
+        ))}
+      </View>
+      {canClaim ? (
+        <PrimaryButton
+          label={claiming ? 'Claiming reward...' : `Claim +${reward?.xp ?? 25} XP`}
+          onPress={onClaim}
+          tone="mint"
+          disabled={claiming}
+        />
+      ) : (
+        <Text style={styles.goalHint}>
+          {reward?.claimed
+            ? `Reward claimed today. Current streak: ${dailyGoals.currentStreakDays} day${
+                dailyGoals.currentStreakDays === 1 ? '' : 's'
+              }.`
+            : 'Complete all four care actions today to unlock +25 bonus XP.'}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 export function PetHomeScreen() {
-  const { careForPet, error, notice, pet, status } = usePawketSession();
+  const {
+    careForPet,
+    claimDailyReward,
+    dailyGoals,
+    error,
+    notice,
+    pet,
+    refreshDailyGoals,
+    status,
+  } = usePawketSession();
   if (!pet) {
     return (
       <Screen>
@@ -31,7 +131,7 @@ export function PetHomeScreen() {
   const currentLevelXp = calculateXpForNextLevel(pet.level - 1);
   const progress = Math.max(0, pet.xp - currentLevelXp);
   const needed = Math.max(1, nextLevelXp - currentLevelXp);
-  const careDisabled = status === 'caring';
+  const careDisabled = status === 'caring' || status === 'claiming_daily_reward';
 
   return (
     <Screen>
@@ -61,6 +161,12 @@ export function PetHomeScreen() {
             : 'No care actions yet. Start with a feed, play, groom, or rest.'}
         </Text>
       </View>
+      <DailyGoalsPanel
+        dailyGoals={dailyGoals}
+        status={status}
+        onClaim={claimDailyReward}
+        onRetry={refreshDailyGoals}
+      />
       <View style={styles.grid}>
         <StatCard label="Hunger" value={pet.stats.hunger} />
         <StatCard label="Happiness" value={pet.stats.happiness} />
@@ -129,4 +235,44 @@ const styles = StyleSheet.create({
   progressTrack: { backgroundColor: '#2d2645', borderRadius: 999, height: 10, overflow: 'hidden' },
   progressFill: { backgroundColor: colors.mint, borderRadius: 999, height: 10 },
   lastCare: { color: colors.muted, lineHeight: 20 },
+  dailyPanel: {
+    backgroundColor: colors.card,
+    borderColor: '#2d2645',
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 14,
+    padding: 16,
+  },
+  goalHint: { color: colors.muted, lineHeight: 20 },
+  goalSummary: { flexDirection: 'row', gap: 10 },
+  summaryBlock: {
+    flex: 1,
+    paddingVertical: 2,
+  },
+  summaryValue: { color: colors.amber, fontSize: 22, fontWeight: '900' },
+  summaryLabel: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  goalList: { gap: 8 },
+  goalRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 34,
+  },
+  goalDot: {
+    backgroundColor: '#2d2645',
+    borderColor: colors.muted,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 14,
+    width: 14,
+  },
+  goalDotDone: { backgroundColor: colors.mint, borderColor: colors.mint },
+  goalTitle: { color: colors.text, flex: 1, fontWeight: '800' },
+  goalStatus: { color: colors.amber, fontSize: 12, fontWeight: '900', textTransform: 'uppercase' },
+  goalStatusDone: { color: colors.mint },
 });

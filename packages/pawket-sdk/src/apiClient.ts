@@ -1,6 +1,8 @@
 import {
   adoptPetRequestSchema,
   carePetRequestSchema,
+  claimDailyRewardRequestSchema,
+  dailyGoalsQuerySchema,
   paymentIntentSchema,
   walletAddressSchema,
   type AdoptPetInput,
@@ -8,6 +10,9 @@ import {
   type ApiErrorResponse,
   type CarePetInput,
   type CarePetResponse,
+  type ClaimDailyRewardInput,
+  type ClaimDailyRewardResponse,
+  type DailyGoalsResponse,
   type PassportResponse,
   type PaymentIntentInput,
   type PetResponse,
@@ -84,6 +89,25 @@ export class PawketApiClient {
 
   getPetPassport(petId: string): Promise<PassportResponse> {
     return this.request(`/pets/${encodeURIComponent(petId)}/passport`);
+  }
+
+  getDailyGoals(input: { petId: string; walletAddress: string }): Promise<DailyGoalsResponse> {
+    const query = dailyGoalsQuerySchema.parse({ walletAddress: input.walletAddress });
+    const search = new URLSearchParams({ walletAddress: query.walletAddress });
+    return this.request(
+      `/pets/${encodeURIComponent(input.petId)}/daily-goals?${search.toString()}`,
+    );
+  }
+
+  claimDailyReward(
+    input: ClaimDailyRewardInput & { petId: string },
+  ): Promise<ClaimDailyRewardResponse> {
+    return this.request(`/pets/${encodeURIComponent(input.petId)}/daily-goals/claim`, {
+      method: 'POST',
+      body: JSON.stringify(
+        claimDailyRewardRequestSchema.parse({ walletAddress: input.walletAddress }),
+      ),
+    });
   }
 
   // Backwards-compatible names from the foundation scaffold.

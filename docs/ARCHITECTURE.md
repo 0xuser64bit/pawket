@@ -15,7 +15,7 @@ The mobile app is split into navigation, UI components, theme tokens, hooks, API
 
 ## Backend architecture
 
-Hono exposes small resource routes. Zod validates all inputs. Services own business logic and persistence boundaries. Prisma models users, pets, care actions, passport events, items, inventory, seasonal events, and payment intents.
+Hono exposes small resource routes. Zod validates all inputs. Services own business logic and persistence boundaries. Prisma models users, pets, care actions, daily reward claims, passport events, items, inventory, seasonal events, and payment intents.
 
 ## Solana program architecture
 
@@ -29,7 +29,7 @@ On-chain stores canonical ownership and compact state. Off-chain Postgres stores
 
 On-chain: pet identity, owner, core stats, level/XP, cooldown timestamps, item ownership, verified purchase records.
 
-Off-chain: feed views, full passport timeline, descriptions, friend graph, event metadata, rate limits, webhook processing, analytics.
+Off-chain: feed views, daily goal/streak reads, full passport timeline, descriptions, friend graph, event metadata, rate limits, webhook processing, analytics.
 
 ## Payment flow
 

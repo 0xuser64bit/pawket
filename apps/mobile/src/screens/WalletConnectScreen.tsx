@@ -51,6 +51,15 @@ export function WalletConnectScreen({
         </Text>
       </GlassPanel>
 
+      <MessageBanner tone="error" message={error} />
+      <Button
+        icon="wallet-outline"
+        label={loading ? 'Opening dev wallet…' : 'Continue with dev wallet'}
+        onPress={onConnected}
+        tone="green"
+        disabled={loading}
+      />
+
       <GlassPanel style={styles.readinessPanel}>
         <SectionHeader eyebrow="network" title="Devnet readiness" />
         <ReadinessRow label="Program" value={solanaConfig.programId} />
@@ -61,14 +70,6 @@ export function WalletConnectScreen({
           explicit dev/demo infrastructure.
         </Text>
       </GlassPanel>
-      <MessageBanner tone="error" message={error} />
-      <Button
-        icon="wallet-outline"
-        label={loading ? 'Opening dev wallet…' : 'Continue with dev wallet'}
-        onPress={onConnected}
-        tone="green"
-        disabled={loading}
-      />
     </Screen>
   );
 }

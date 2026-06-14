@@ -2,8 +2,30 @@ import { PlaceholderScreen } from '../src/screens/PlaceholderScreen';
 export default function EventsScreen() {
   return (
     <PlaceholderScreen
-      title="Season One"
-      copy="Seasonal community events will add quests, badges, and limited memories."
+      eyebrow="Season One"
+      title="The first season is forming."
+      icon="flash-outline"
+      copy="Seasonal events will add daily challenges, community goals, limited memories, and progression loops that make Pawket worth opening every day."
+      previews={[
+        {
+          title: 'Daily challenges',
+          copy: 'Small rituals tuned for fast mobile sessions.',
+          icon: 'calendar-outline',
+          tone: 'green',
+        },
+        {
+          title: 'Community goals',
+          copy: 'Shared milestones that unlock global habitat energy.',
+          icon: 'radio-outline',
+          tone: 'cyan',
+        },
+        {
+          title: 'Limited memories',
+          copy: 'Season-specific Passport entries and collectible moments.',
+          icon: 'bookmarks-outline',
+          tone: 'amber',
+        },
+      ]}
     />
   );
 }

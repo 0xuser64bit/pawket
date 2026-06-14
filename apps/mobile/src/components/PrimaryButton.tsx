@@ -1,31 +1,27 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
-import { colors } from '../theme/tokens';
+import { Button } from './DesignSystem';
 
 export function PrimaryButton({
   label,
   onPress,
-  tone = 'pink',
+  tone = 'primary',
   disabled = false,
 }: {
   label: string;
   onPress: () => void;
-  tone?: 'pink' | 'mint' | 'violet';
+  tone?:
+    | 'primary'
+    | 'pink'
+    | 'mint'
+    | 'violet'
+    | 'green'
+    | 'purple'
+    | 'magenta'
+    | 'amber'
+    | 'ghost'
+    | 'danger';
   disabled?: boolean;
 }) {
-  const backgroundColor =
-    tone === 'pink' ? colors.pink : tone === 'mint' ? colors.mint : colors.violet;
-  return (
-    <Pressable
-      disabled={disabled}
-      onPress={onPress}
-      style={[styles.button, { backgroundColor }, disabled && styles.disabled]}
-    >
-      <Text style={styles.text}>{label}</Text>
-    </Pressable>
-  );
+  const mappedTone =
+    tone === 'pink' ? 'magenta' : tone === 'mint' ? 'green' : tone === 'violet' ? 'purple' : tone;
+  return <Button disabled={disabled} label={label} onPress={onPress} tone={mappedTone} />;
 }
-const styles = StyleSheet.create({
-  button: { borderRadius: 999, paddingVertical: 15, paddingHorizontal: 22, alignItems: 'center' },
-  disabled: { opacity: 0.55 },
-  text: { color: '#120b18', fontWeight: '800', fontSize: 16 },
-});

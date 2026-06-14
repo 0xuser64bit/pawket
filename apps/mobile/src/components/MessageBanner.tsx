@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme/tokens';
+import { colors, radius, spacing } from '../theme/tokens';
 
 export function MessageBanner({
   message,
@@ -9,16 +10,27 @@ export function MessageBanner({
   tone: 'error' | 'success';
 }) {
   if (!message) return null;
+  const color = tone === 'error' ? colors.danger : colors.solanaGreen;
   return (
-    <View style={[styles.banner, tone === 'error' ? styles.error : styles.success]}>
+    <View style={[styles.banner, { borderColor: `${color}66`, backgroundColor: `${color}12` }]}>
+      <Ionicons
+        color={color}
+        name={tone === 'error' ? 'warning-outline' : 'checkmark-circle-outline'}
+        size={18}
+      />
       <Text style={styles.text}>{message}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  banner: { borderRadius: 18, padding: 14, borderWidth: 1 },
-  error: { backgroundColor: '#2a121b', borderColor: colors.danger },
-  success: { backgroundColor: '#10251f', borderColor: colors.mint },
-  text: { color: colors.text, fontWeight: '700', lineHeight: 20 },
+  banner: {
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  text: { color: colors.textSoft, flex: 1, fontWeight: '700', lineHeight: 20 },
 });

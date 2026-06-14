@@ -1,18 +1,69 @@
+import { Ionicons } from '@expo/vector-icons';
 import { PetPersonality, PetSpecies, type Pet } from '@pawket/shared';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Button, GlassPanel, Pill, SectionHeader } from '../components/DesignSystem';
 import { MessageBanner } from '../components/MessageBanner';
 import { PetAvatar } from '../components/PetAvatar';
-import { PrimaryButton } from '../components/PrimaryButton';
 import { Screen } from '../components/Screen';
-import { colors } from '../theme/tokens';
+import { colors, radius, spacing, typography } from '../theme/tokens';
 
-const speciesOptions = [PetSpecies.LunaCat, PetSpecies.MossPup, PetSpecies.CloudBun];
-const personalityOptions = [
-  PetPersonality.Curious,
-  PetPersonality.Cozy,
-  PetPersonality.Brave,
-  PetPersonality.Mischief,
+const speciesOptions: {
+  value: Pet['species'];
+  title: string;
+  copy: string;
+  tone: 'purple' | 'green' | 'cyan';
+}[] = [
+  {
+    value: PetSpecies.LunaCat,
+    title: 'Luna Cat',
+    copy: 'Moonlit, precise, curious by default.',
+    tone: 'purple',
+  },
+  {
+    value: PetSpecies.MossPup,
+    title: 'Moss Pup',
+    copy: 'Loyal, kinetic, tuned for outdoor quests.',
+    tone: 'green',
+  },
+  {
+    value: PetSpecies.CloudBun,
+    title: 'Cloud Bun',
+    copy: 'Soft, fast, carries stormlight memories.',
+    tone: 'cyan',
+  },
+];
+
+const personalityOptions: {
+  value: Pet['personality'];
+  title: string;
+  copy: string;
+  icon: 'search-outline' | 'bonfire-outline' | 'shield-outline' | 'flash-outline';
+}[] = [
+  {
+    value: PetPersonality.Curious,
+    title: 'Curious',
+    copy: 'Finds hidden memories.',
+    icon: 'search-outline',
+  },
+  {
+    value: PetPersonality.Cozy,
+    title: 'Cozy',
+    copy: 'Bonds through care streaks.',
+    icon: 'bonfire-outline',
+  },
+  {
+    value: PetPersonality.Brave,
+    title: 'Brave',
+    copy: 'Built for seasonal quests.',
+    icon: 'shield-outline',
+  },
+  {
+    value: PetPersonality.Mischief,
+    title: 'Mischief',
+    copy: 'Chaotic, playful, rare energy.',
+    icon: 'flash-outline',
+  },
 ];
 
 function label(value: string) {
@@ -41,82 +92,114 @@ export function AdoptPetScreen({
 
   return (
     <Screen>
-      <Text style={styles.kicker}>Adoption</Text>
-      <Text style={styles.title}>Choose your first Pawket</Text>
-      <PetAvatar mood={label(personality)} species={species} />
+      <Pill tone="purple">Adoption chamber</Pill>
+      <Text style={styles.title}>Choose your first companion.</Text>
       <Text style={styles.copy}>
-        Adoption is currently API/database-backed in dev mode. No on-chain success is claimed until
-        Solana Mobile signing and Anchor transactions are wired.
+        This creates a dev/API-backed Pawket record and starts its Passport timeline. On-chain
+        claims stay honest until signing is wired.
       </Text>
 
-      <Text style={styles.label}>Name</Text>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder="Pet name"
-        placeholderTextColor={colors.muted}
-        style={styles.input}
-        maxLength={24}
-      />
+      <PetAvatar compact mood={label(personality)} species={species} />
 
-      <Text style={styles.label}>Species</Text>
+      <GlassPanel style={styles.namingPanel}>
+        <SectionHeader eyebrow="identity" title="Name signal" />
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder="Companion name"
+          placeholderTextColor={colors.faint}
+          style={styles.input}
+          maxLength={24}
+        />
+      </GlassPanel>
+
+      <SectionHeader eyebrow="species" title="Pick a companion body" />
       <View style={styles.options}>
         {speciesOptions.map((option) => (
           <Pressable
-            key={option}
-            onPress={() => setSpecies(option)}
-            style={[styles.option, species === option && styles.selected]}
+            key={option.value}
+            onPress={() => setSpecies(option.value)}
+            style={({ pressed }) => [
+              styles.speciesCard,
+              species === option.value && styles.selectedCard,
+              pressed && styles.pressed,
+            ]}
           >
-            <Text style={styles.optionText}>{label(option)}</Text>
+            <Pill tone={option.tone}>{option.title}</Pill>
+            <Text style={styles.optionCopy}>{option.copy}</Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.label}>Personality</Text>
-      <View style={styles.options}>
+      <SectionHeader eyebrow="personality" title="Tune the first spark" />
+      <View style={styles.personalityGrid}>
         {personalityOptions.map((option) => (
           <Pressable
-            key={option}
-            onPress={() => setPersonality(option)}
-            style={[styles.option, personality === option && styles.selected]}
+            key={option.value}
+            onPress={() => setPersonality(option.value)}
+            style={({ pressed }) => [
+              styles.personalityCard,
+              personality === option.value && styles.selectedCard,
+              pressed && styles.pressed,
+            ]}
           >
-            <Text style={styles.optionText}>{label(option)}</Text>
+            <Ionicons
+              color={personality === option.value ? colors.solanaGreen : colors.muted}
+              name={option.icon}
+              size={22}
+            />
+            <Text style={styles.optionTitle}>{option.title}</Text>
+            <Text style={styles.optionCopy}>{option.copy}</Text>
           </Pressable>
         ))}
       </View>
 
       <MessageBanner tone="error" message={error} />
-      <PrimaryButton
-        label={loading ? 'Adopting…' : `Adopt ${name || 'pet'}`}
-        onPress={() => onAdopted({ name, species, personality })}
+      <Button
+        icon="sparkles-outline"
+        label={loading ? 'Opening chamber…' : `Adopt ${name.trim() || 'companion'}`}
+        onPress={() => onAdopted({ name: name.trim(), species, personality })}
         disabled={loading || name.trim().length < 2}
       />
     </Screen>
   );
 }
 const styles = StyleSheet.create({
-  kicker: { color: colors.mint, fontWeight: '900', letterSpacing: 1.5, textTransform: 'uppercase' },
-  title: { color: colors.text, fontSize: 38, fontWeight: '900' },
-  copy: { color: colors.muted, fontSize: 16, lineHeight: 24 },
-  label: { color: colors.text, fontWeight: '900', marginTop: 6 },
+  title: { ...typography.title, color: colors.text },
+  copy: { ...typography.body, color: colors.textSoft },
+  namingPanel: { gap: spacing.md },
   input: {
-    backgroundColor: colors.card,
-    borderColor: '#2d2645',
-    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: colors.borderStrong,
+    borderRadius: radius.lg,
     borderWidth: 1,
     color: colors.text,
-    fontSize: 18,
-    padding: 16,
+    fontSize: 22,
+    fontWeight: '900',
+    padding: spacing.md,
   },
-  options: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  option: {
-    backgroundColor: colors.card,
-    borderColor: '#2d2645',
-    borderRadius: 999,
+  options: { gap: spacing.sm },
+  speciesCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    gap: spacing.sm,
+    padding: spacing.lg,
   },
-  selected: { borderColor: colors.mint, backgroundColor: '#18342d' },
-  optionText: { color: colors.text, fontWeight: '800' },
+  personalityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  personalityCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    flex: 1,
+    gap: spacing.xs,
+    minWidth: '45%',
+    padding: spacing.md,
+  },
+  selectedCard: { backgroundColor: 'rgba(20,241,149,0.09)', borderColor: 'rgba(20,241,149,0.55)' },
+  pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
+  optionTitle: { color: colors.text, fontSize: 16, fontWeight: '900' },
+  optionCopy: { color: colors.muted, lineHeight: 20 },
 });

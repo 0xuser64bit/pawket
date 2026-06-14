@@ -34,8 +34,8 @@ export function LandingScreen({ onStart }: { onStart: () => void }) {
             Raise a companion that remembers.
           </Text>
           <Text variant="bodyLg" tone="soft">
-            Adopt a living pet, show up for it through small daily rituals, and watch its Pet
-            Passport fill with every memory you make together.
+            Adopt a living pet, care for it through small daily rituals, and fill its Pet Passport
+            with memories.
           </Text>
         </View>
       </FadeInUp>

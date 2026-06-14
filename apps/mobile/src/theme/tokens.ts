@@ -230,5 +230,25 @@ export const layout = {
   navHeight: 66,
 } as const;
 
+/**
+ * Responsive scaling. The type scale and pet chamber are tuned for the capped
+ * ~520px web/tablet column; on a full-bleed phone (~390pt) the same sizes are
+ * oversized and push primary actions below the fold. These helpers shrink the
+ * largest display type and the chamber on narrow viewports while leaving the
+ * web/tablet experience untouched.
+ */
+export const TYPE_FULL_WIDTH = 480;
+
+/** Down-scales large display type on narrow phones; 1.0 on web/tablet. */
+export function headingScale(width: number) {
+  if (width >= TYPE_FULL_WIDTH) return 1;
+  return Math.max(0.8, Math.min(1, width / 430));
+}
+
+/** True for phone-width viewports, where the chamber should be more compact. */
+export function isCompactWidth(width: number) {
+  return width < 420;
+}
+
 export type GradientName = keyof typeof gradients;
 export type SpeciesKey = keyof typeof speciesGradient;

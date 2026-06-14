@@ -1,5 +1,10 @@
-import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
-import { colors, typography } from '../theme/tokens';
+import {
+  Text as RNText,
+  useWindowDimensions,
+  type TextProps as RNTextProps,
+  type TextStyle,
+} from 'react-native';
+import { colors, headingScale, typography } from '../theme/tokens';
 
 type Variant = keyof typeof typography;
 
@@ -49,14 +54,23 @@ export type TextProps = RNTextProps & {
  * semantic `tone` instead of hand-rolling font sizes/weights per screen.
  */
 export function Text({ variant = 'body', tone = 'soft', align, style, ...rest }: TextProps) {
+  const { width } = useWindowDimensions();
+  const base = typography[variant];
+  // Only the large display variants are shrunk on phones; body/labels/captions
+  // keep their tuned size so they stay legible.
+  const scale = base.fontSize >= 20 ? headingScale(width) : 1;
+  const sized =
+    scale === 1
+      ? base
+      : {
+          ...base,
+          fontSize: Math.round(base.fontSize * scale),
+          lineHeight: Math.round(base.lineHeight * scale),
+        };
+
   return (
     <RNText
-      style={[
-        typography[variant],
-        { color: toneColor[tone] },
-        align ? { textAlign: align } : null,
-        style,
-      ]}
+      style={[sized, { color: toneColor[tone] }, align ? { textAlign: align } : null, style]}
       {...rest}
     />
   );

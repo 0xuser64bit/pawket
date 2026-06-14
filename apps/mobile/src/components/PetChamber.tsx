@@ -1,9 +1,17 @@
 import type { PetSpecies } from '@pawket/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useReducedMotion } from '../hooks/useReducedMotion';
-import { colors, gradients, motion, radius, speciesAccent, spacing } from '../theme/tokens';
+import {
+  colors,
+  gradients,
+  isCompactWidth,
+  motion,
+  radius,
+  speciesAccent,
+  spacing,
+} from '../theme/tokens';
 import { Breathing, Floating } from './Motion';
 import { PetCreature } from './PetCreature';
 import { CARE_REACTIONS, FloatingXP, ParticleBurst, type CareReaction } from './PetReaction';
@@ -70,9 +78,11 @@ export function PetChamber({
   reaction?: ChamberReaction | null;
 }) {
   const reduced = useReducedMotion();
+  const { width } = useWindowDimensions();
+  const small = isCompactWidth(width);
   const accent = resolveAccent(species);
-  const minHeight = compact ? 208 : 296;
-  const creatureSize = size ?? (compact ? 156 : 212);
+  const minHeight = compact ? (small ? 184 : 208) : small ? 244 : 296;
+  const creatureSize = size ?? (compact ? (small ? 132 : 156) : small ? 176 : 212);
   const ringSize = creatureSize * 0.92;
 
   // A care ritual briefly overrides the resting mood + bursts particles, so the

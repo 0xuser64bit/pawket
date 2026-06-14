@@ -12,6 +12,7 @@ import { FadeInUp } from '../components/Motion';
 import { MessageBanner } from '../components/MessageBanner';
 import { Screen } from '../components/Screen';
 import { Text } from '../components/Text';
+import { tapMedium } from '../feedback/haptics';
 import { solanaConfig } from '../solana/config';
 import { colors, spacing } from '../theme/tokens';
 
@@ -88,7 +89,10 @@ export function WalletConnectScreen({
         <Button
           icon="wallet"
           label={loading ? 'Opening dev wallet…' : 'Continue with dev wallet'}
-          onPress={onConnected}
+          onPress={() => {
+            tapMedium();
+            onConnected();
+          }}
           tone="green"
           loading={loading}
         />

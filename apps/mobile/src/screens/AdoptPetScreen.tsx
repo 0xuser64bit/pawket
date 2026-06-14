@@ -9,6 +9,7 @@ import { PetChamber } from '../components/PetChamber';
 import { PetCreature } from '../components/PetCreature';
 import { Screen } from '../components/Screen';
 import { Text } from '../components/Text';
+import { selection, tapMedium } from '../feedback/haptics';
 import { colors, radius, spacing } from '../theme/tokens';
 
 const speciesOptions: { value: Pet['species']; title: string; copy: string }[] = [
@@ -121,7 +122,10 @@ export function AdoptPetScreen({
           return (
             <FadeInUp key={option.value} delay={180 + i * 40} style={styles.flex}>
               <PressableScale
-                onPress={() => setSpecies(option.value)}
+                onPress={() => {
+                  selection();
+                  setSpecies(option.value);
+                }}
                 accessibilityLabel={`Choose ${option.title}`}
                 style={[styles.speciesCard, selected && styles.selected]}
               >
@@ -152,7 +156,10 @@ export function AdoptPetScreen({
           return (
             <FadeInUp key={option.value} delay={320 + i * 40} style={styles.half}>
               <PressableScale
-                onPress={() => setPersonality(option.value)}
+                onPress={() => {
+                  selection();
+                  setPersonality(option.value);
+                }}
                 accessibilityLabel={`Choose ${option.title}`}
                 style={[styles.personalityCard, selected && styles.selected]}
               >
@@ -179,7 +186,10 @@ export function AdoptPetScreen({
         <Button
           icon="sparkles"
           label={loading ? 'Opening chamber…' : `Adopt ${trimmed || 'companion'}`}
-          onPress={() => onAdopted({ name: trimmed, species, personality })}
+          onPress={() => {
+            tapMedium();
+            onAdopted({ name: trimmed, species, personality });
+          }}
           disabled={!canAdopt}
           loading={loading}
         />

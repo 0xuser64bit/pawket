@@ -62,6 +62,26 @@ Motion (`src/components/Motion.tsx`, all reduced-motion aware):
   Landing, Adopt, Home and Passport.
 - `PetAvatar` remains as a thin backward-compatible alias for `PetChamber`.
 
+## Care feedback & life system
+
+The companion must visibly *respond* to care, not just update a dashboard. A resolved
+care result drives a coordinated burst of feedback:
+
+- **Reactive pet** — `PetChamber` accepts a one-shot `reaction` (`{ type, nonce, xp }`).
+  On a new `nonce` the creature does a squash-and-stretch bounce, briefly overrides its
+  mood (`PetReaction.CARE_REACTIONS`), emits a `ParticleBurst` (food/hearts/sparkles/Zzz/
+  stars per ritual) and floats a `FloatingXP` chip.
+- **Haptics** — `src/feedback/haptics.ts` wraps `expo-haptics` with named intents
+  (`tapLight`/`tapMedium`/`celebrate`/`notifyWarning`/`selection`). Native-only and
+  failure-silent. Wired into care actions, nav, adoption choices, wallet connect and CTAs.
+- **Celebration** — `Celebration` is a full-bleed confetti + badge moment surfaced through
+  the new `Screen` `overlay` slot, reserved for big beats (level up, sealed streak, reward).
+- **Animated meters** — `AnimatedCount` tweens stat/level numbers so change is felt; the
+  `StatCard` and the "Care rituals" section highlight the single vital that needs attention,
+  and ritual cards reflect today's daily-goal completion.
+
+All of the above degrade to a static, legible layout under `prefers-reduced-motion`.
+
 ## Screen composition
 
 - **Landing** — wordmark, hero headline, companion chamber, Adopt/Care/Evolve features, CTA.

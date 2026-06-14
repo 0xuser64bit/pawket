@@ -7,6 +7,7 @@ import { FadeInUp } from '../components/Motion';
 import { PetChamber } from '../components/PetChamber';
 import { Screen } from '../components/Screen';
 import { Text } from '../components/Text';
+import { tapMedium } from '../feedback/haptics';
 import { colors, spacing } from '../theme/tokens';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -27,20 +28,20 @@ export function LandingScreen({ onStart }: { onStart: () => void }) {
       <FadeInUp delay={60}>
         <View style={styles.hero}>
           <Text variant="eyebrow" tone="green">
-            Living companion protocol
+            A living companion · on Solana
           </Text>
           <Text variant="display" tone="text" style={styles.title}>
-            A living on-chain companion.
+            Raise a companion that remembers.
           </Text>
           <Text variant="bodyLg" tone="soft">
-            Adopt a digital pet, build its Pet Passport, and turn every care ritual into part of its
-            story.
+            Adopt a living pet, show up for it through small daily rituals, and watch its Pet
+            Passport fill with every memory you make together.
           </Text>
         </View>
       </FadeInUp>
 
       <FadeInUp delay={120}>
-        <PetChamber mood="Waking up" />
+        <PetChamber mood="Radiant" />
       </FadeInUp>
 
       <FadeInUp delay={180}>
@@ -65,8 +66,11 @@ export function LandingScreen({ onStart }: { onStart: () => void }) {
         <View style={styles.cta}>
           <Button
             icon="sparkles"
-            label="Wake your companion"
-            onPress={onStart}
+            label="Meet your companion"
+            onPress={() => {
+              tapMedium();
+              onStart();
+            }}
             trailingIcon="arrow-forward"
           />
           <Text variant="caption" tone="faint" align="center" style={styles.footer}>

@@ -1,7 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { calculateXpForNextLevel, CareActionType, type DailyGoalsResponse } from '@pawket/shared';
+import {
+  calculateXpForNextLevel,
+  CareActionType,
+  type DailyGoalsResponse,
+  type Pet,
+} from '@pawket/shared';
 import { router } from 'expo-router';
-import { type ComponentProps, useState } from 'react';
+import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import {
   Button,
@@ -13,12 +18,16 @@ import {
   SectionHeader,
   StateBlock,
 } from '../components/DesignSystem';
-import { FadeInUp, PressableScale } from '../components/Motion';
+import { AnimatedCount } from '../components/AnimatedCount';
+import { Celebration, type CelebrationPayload } from '../components/Celebration';
+import { FadeInUp, PressableScale, Skeleton } from '../components/Motion';
 import { MessageBanner } from '../components/MessageBanner';
-import { PetChamber } from '../components/PetChamber';
+import { PetChamber, type ChamberReaction } from '../components/PetChamber';
+import type { CareReaction } from '../components/PetReaction';
 import { Screen } from '../components/Screen';
 import { StatCard } from '../components/StatCard';
 import { Text } from '../components/Text';
+import { celebrate, notifyWarning, tapMedium } from '../feedback/haptics';
 import { usePawketSession } from '../state/PawketSessionContext';
 import { colors, radius, spacing } from '../theme/tokens';
 
@@ -31,6 +40,7 @@ function label(value: string) {
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 type ActionTone = 'amber' | 'magenta' | 'green' | 'cyan';
+type StatKey = keyof Pet['stats'];
 
 const actionConfig: Record<
   CareActionType,
@@ -62,6 +72,14 @@ const actionConfig: Record<
   },
 };
 
+/** Which ritual best addresses each vital. */
+const STAT_TO_ACTION: Record<StatKey, CareActionType> = {
+  hunger: CareActionType.Feed,
+  happiness: CareActionType.Play,
+  energy: CareActionType.Rest,
+  hygiene: CareActionType.Groom,
+};
+
 function toneColor(tone: ActionTone) {
   if (tone === 'amber') return colors.amber;
   if (tone === 'magenta') return colors.magenta;
@@ -71,6 +89,13 @@ function toneColor(tone: ActionTone) {
 
 function statLabel(stat: string) {
   return stat.charAt(0).toUpperCase() + stat.slice(1);
+}
+
+/** Returns the vital most in need of care, or null if the pet is thriving. */
+function findCareFocus(stats: Pet['stats']): { stat: StatKey; value: number } | null {
+  const entries = Object.entries(stats) as [StatKey, number][];
+  const lowest = entries.reduce((a, b) => (b[1] < a[1] ? b : a));
+  return lowest[1] < 70 ? { stat: lowest[0], value: lowest[1] } : null;
 }
 
 function CareFeedbackPanel({
@@ -200,7 +225,7 @@ function DailyGoalsPanel({
   const canClaim = Boolean(dailyGoals.allGoalsCompleted && reward && !reward.claimed);
 
   return (
-    <GlassPanel style={styles.dailyPanel}>
+    <GlassPanel glow={canClaim ? 'amber' : false} style={styles.dailyPanel}>
       <SectionHeader
         eyebrow="daily ritual"
         title="Season streak"
@@ -219,7 +244,7 @@ function DailyGoalsPanel({
             {dailyGoals.completedGoals}/{dailyGoals.totalGoals}
           </Text>
           <Text variant="micro" tone="muted">
-            Rituals complete
+            Rituals today
           </Text>
         </View>
         <View style={styles.summaryBlock}>
@@ -235,24 +260,6 @@ function DailyGoalsPanel({
         </View>
       </View>
       <ProgressBar max={dailyGoals.totalGoals} value={dailyGoals.completedGoals} tone="amber" />
-      <View style={styles.goalList}>
-        {dailyGoals.goals.map((goal) => (
-          <View key={goal.actionType} style={styles.goalRow}>
-            <View style={[styles.goalDot, goal.completed && styles.goalDotDone]}>
-              {goal.completed ? <Ionicons color={colors.black} name="checkmark" size={11} /> : null}
-            </View>
-            <Text variant="label" tone="soft" style={styles.flex}>
-              {goal.title}
-            </Text>
-            <Text
-              variant="micro"
-              style={{ color: goal.completed ? colors.solanaGreen : colors.faint }}
-            >
-              {goal.completed ? 'Logged' : 'Open'}
-            </Text>
-          </View>
-        ))}
-      </View>
       {canClaim ? (
         <Button
           icon="gift"
@@ -265,7 +272,7 @@ function DailyGoalsPanel({
         <Text variant="caption" tone="muted">
           {reward?.claimed
             ? `Reward memory unlocked. Current streak: ${dailyGoals.currentStreakDays} day${dailyGoals.currentStreakDays === 1 ? '' : 's'}.`
-            : 'Complete all four care actions to unlock the daily XP memory.'}
+            : 'Complete all four care rituals to unlock the daily XP memory.'}
         </Text>
       )}
     </GlassPanel>
@@ -276,11 +283,15 @@ function CareActionCard({
   action,
   disabled,
   busy,
+  focus,
+  done,
   onPress,
 }: {
   action: CareActionType;
   disabled: boolean;
   busy: boolean;
+  focus: boolean;
+  done: boolean;
   onPress: () => void;
 }) {
   const config = actionConfig[action];
@@ -294,9 +305,21 @@ function CareActionCard({
       style={[
         styles.actionCard,
         { borderColor: `${color}40`, backgroundColor: `${color}12` },
+        focus && { borderColor: `${color}aa`, backgroundColor: `${color}1f` },
         disabled && styles.actionDim,
       ]}
     >
+      {focus ? (
+        <View style={[styles.suggestTag, { backgroundColor: color }]}>
+          <Text variant="micro" tone="black" style={styles.suggestText}>
+            Suggested
+          </Text>
+        </View>
+      ) : done ? (
+        <View style={styles.doneTag}>
+          <Ionicons color={colors.solanaGreen} name="checkmark-circle" size={18} />
+        </View>
+      ) : null}
       <View
         style={[styles.actionIcon, { backgroundColor: `${color}1f`, borderColor: `${color}66` }]}
       >
@@ -316,6 +339,25 @@ function CareActionCard({
   );
 }
 
+function HomeSkeleton() {
+  return (
+    <Screen nav>
+      <View style={styles.skeletonHead}>
+        <Skeleton width={140} height={14} />
+        <Skeleton width={180} height={30} />
+      </View>
+      <Skeleton width="100%" height={296} rounded={radius.xxl} />
+      <Skeleton width="100%" height={132} rounded={radius.xl} />
+      <View style={styles.grid}>
+        <Skeleton width="47%" height={108} rounded={radius.lg} />
+        <Skeleton width="47%" height={108} rounded={radius.lg} />
+        <Skeleton width="47%" height={108} rounded={radius.lg} />
+        <Skeleton width="47%" height={108} rounded={radius.lg} />
+      </View>
+    </Screen>
+  );
+}
+
 export function PetHomeScreen() {
   const {
     careFeedback,
@@ -324,24 +366,53 @@ export function PetHomeScreen() {
     dailyGoals,
     dismissCareFeedback,
     error,
-    notice,
     pet,
     refreshDailyGoals,
     status,
   } = usePawketSession();
   const [activeCareAction, setActiveCareAction] = useState<CareActionType | null>(null);
+  const [reaction, setReaction] = useState<ChamberReaction | null>(null);
+  const [celebration, setCelebration] = useState<CelebrationPayload | null>(null);
+  const nonceRef = useRef(0);
+
+  // Translate a resolved care result into the pet's visible reaction, haptics,
+  // and — for the big beats — a celebration moment.
+  useEffect(() => {
+    if (!careFeedback || !pet) return;
+    nonceRef.current += 1;
+    const nonce = nonceRef.current;
+    const isReward = careFeedback.actionType === 'daily_reward';
+    const leveled = careFeedback.levelDelta > 0;
+    const type: CareReaction =
+      leveled || isReward ? 'celebrate' : (careFeedback.actionType as CareReaction);
+    setReaction({ type, nonce, xp: careFeedback.xpGained });
+
+    if (leveled) {
+      celebrate();
+      setCelebration({
+        key: nonce,
+        title: `Level ${pet.level}`,
+        subtitle: `${pet.name}'s bond grew stronger.`,
+        icon: 'trending-up',
+      });
+    } else if (isReward) {
+      celebrate();
+      setCelebration({
+        key: nonce,
+        title: 'Streak sealed',
+        subtitle: careFeedback.copy,
+        icon: 'flame',
+      });
+    }
+    // Keyed on the feedback object so each resolved care result fires once.
+  }, [careFeedback]);
+
+  useEffect(() => {
+    if (error) notifyWarning();
+  }, [error]);
 
   if (!pet) {
-    return (
-      <Screen nav>
-        <StateBlock
-          loading
-          title="Your companion is waking up"
-          copy="Loading the current Pawket state from the dev/API path."
-          tone="green"
-        />
-      </Screen>
-    );
+    return <HomeSkeleton />;
   }
 
   const nextLevelXp = calculateXpForNextLevel(pet.level);
@@ -350,7 +421,17 @@ export function PetHomeScreen() {
   const needed = Math.max(1, nextLevelXp - currentLevelXp);
   const careDisabled = status === 'caring' || status === 'claiming_daily_reward';
 
+  const focus = findCareFocus(pet.stats);
+  const focusAction = focus ? STAT_TO_ACTION[focus.stat] : null;
+  const focusCopy = focus
+    ? `${pet.name}'s ${focus.stat} is ${focus.value < 35 ? 'critical' : 'running low'} — a ${actionConfig[STAT_TO_ACTION[focus.stat]].title.toLowerCase()} would help.`
+    : `${pet.name} is thriving. Keep the daily streak alive.`;
+
+  const doneToday = new Map<CareActionType, boolean>();
+  dailyGoals?.goals.forEach((goal) => doneToday.set(goal.actionType, goal.completed));
+
   const handleCareAction = async (action: CareActionType) => {
+    tapMedium();
     setActiveCareAction(action);
     try {
       await careForPet(action);
@@ -364,12 +445,12 @@ export function PetHomeScreen() {
     : 'No care memory yet';
 
   return (
-    <Screen nav>
+    <Screen nav overlay={<Celebration payload={celebration} onDone={() => setCelebration(null)} />}>
       <FadeInUp>
         <View style={styles.topBar}>
           <View style={styles.flex}>
             <Text variant="eyebrow" tone="green">
-              Companion chamber
+              Feeling {label(pet.mood)}
             </Text>
             <Text variant="title" tone="text" numberOfLines={1}>
               {pet.name}
@@ -388,7 +469,7 @@ export function PetHomeScreen() {
       </FadeInUp>
 
       <FadeInUp delay={60}>
-        <PetChamber species={pet.species} mood={label(pet.mood)} />
+        <PetChamber species={pet.species} mood={label(pet.mood)} reaction={reaction} />
       </FadeInUp>
 
       <FadeInUp delay={110}>
@@ -398,9 +479,7 @@ export function PetHomeScreen() {
               <Text variant="micro" tone="purple">
                 Bond level
               </Text>
-              <Text variant="display" tone="text">
-                {pet.level}
-              </Text>
+              <AnimatedCount value={pet.level} variant="display" tone="text" />
             </View>
             <View style={styles.bondTags}>
               <Pill tone="purple">{label(pet.species)}</Pill>
@@ -426,7 +505,6 @@ export function PetHomeScreen() {
         </GlassPanel>
       </FadeInUp>
 
-      <MessageBanner tone="success" message={notice} />
       <MessageBanner tone="error" message={error} />
       <CareFeedbackPanel feedback={careFeedback} onDismiss={dismissCareFeedback} />
 
@@ -434,14 +512,30 @@ export function PetHomeScreen() {
         <SectionHeader eyebrow="vitals" title="Care dashboard" tone="cyan" />
       </FadeInUp>
       <View style={styles.grid}>
-        <StatCard label="Hunger" value={pet.stats.hunger} />
-        <StatCard label="Happiness" value={pet.stats.happiness} />
-        <StatCard label="Energy" value={pet.stats.energy} />
-        <StatCard label="Hygiene" value={pet.stats.hygiene} />
+        <StatCard label="Hunger" value={pet.stats.hunger} focus={focus?.stat === 'hunger'} />
+        <StatCard
+          label="Happiness"
+          value={pet.stats.happiness}
+          focus={focus?.stat === 'happiness'}
+        />
+        <StatCard label="Energy" value={pet.stats.energy} focus={focus?.stat === 'energy'} />
+        <StatCard label="Hygiene" value={pet.stats.hygiene} focus={focus?.stat === 'hygiene'} />
       </View>
 
       <FadeInUp delay={160}>
-        <SectionHeader eyebrow="touch actions" title="Care rituals" tone="magenta" />
+        <View style={styles.ritualHead}>
+          <SectionHeader eyebrow="touch actions" title="Care rituals" tone="magenta" />
+          <View style={[styles.focusHint, focus ? styles.focusHintActive : styles.focusHintCalm]}>
+            <Ionicons
+              color={focus ? colors.amber : colors.solanaGreen}
+              name={focus ? 'alert-circle' : 'checkmark-circle'}
+              size={15}
+            />
+            <Text variant="caption" tone={focus ? 'amber' : 'green'} style={styles.flex}>
+              {focusCopy}
+            </Text>
+          </View>
+        </View>
       </FadeInUp>
       <View style={styles.grid}>
         {Object.values(CareActionType).map((action) => (
@@ -450,6 +544,8 @@ export function PetHomeScreen() {
             action={action}
             busy={status === 'caring' && activeCareAction === action}
             disabled={careDisabled}
+            focus={focusAction === action && !doneToday.get(action)}
+            done={Boolean(doneToday.get(action))}
             onPress={() => void handleCareAction(action)}
           />
         ))}
@@ -458,7 +554,10 @@ export function PetHomeScreen() {
       <DailyGoalsPanel
         dailyGoals={dailyGoals}
         status={status}
-        onClaim={claimDailyReward}
+        onClaim={() => {
+          tapMedium();
+          void claimDailyReward();
+        }}
         onRetry={refreshDailyGoals}
       />
 
@@ -531,6 +630,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
   },
+  ritualHead: { gap: spacing.sm },
+  focusHint: {
+    alignItems: 'center',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  focusHintActive: {
+    backgroundColor: 'rgba(255,176,77,0.10)',
+    borderColor: 'rgba(255,176,77,0.4)',
+  },
+  focusHintCalm: {
+    backgroundColor: 'rgba(23,229,137,0.08)',
+    borderColor: 'rgba(23,229,137,0.34)',
+  },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   actionCard: {
     borderRadius: radius.lg,
@@ -539,6 +656,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     gap: 5,
     minHeight: 128,
+    overflow: 'hidden',
     padding: spacing.md,
   },
   actionDim: { opacity: 0.5 },
@@ -551,6 +669,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     width: 44,
   },
+  suggestTag: {
+    borderBottomLeftRadius: radius.md,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  suggestText: { fontSize: 9 },
+  doneTag: { position: 'absolute', right: 10, top: 10 },
   dailyPanel: { gap: spacing.md },
   summaryRow: { flexDirection: 'row', gap: spacing.sm },
   summaryBlock: {
@@ -563,17 +691,6 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   streakValue: { alignItems: 'center', flexDirection: 'row', gap: 6 },
-  goalList: { gap: spacing.xs },
-  goalRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, minHeight: 36 },
-  goalDot: {
-    alignItems: 'center',
-    borderColor: colors.borderStrong,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    height: 20,
-    justifyContent: 'center',
-    width: 20,
-  },
-  goalDotDone: { backgroundColor: colors.solanaGreen, borderColor: colors.solanaGreen },
   passportCard: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
+  skeletonHead: { gap: spacing.sm, marginBottom: spacing.xs },
 });

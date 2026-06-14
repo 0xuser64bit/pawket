@@ -9,10 +9,13 @@ export function Screen({
   children,
   nav = false,
   contentStyle,
+  overlay,
 }: {
   children: ReactNode;
   nav?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
+  /** Rendered above the scroll view + nav, covering the full viewport. */
+  overlay?: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
   return (
@@ -36,6 +39,7 @@ export function Screen({
       </ScrollView>
 
       {nav ? <BottomNav /> : null}
+      {overlay}
     </LinearGradient>
   );
 }

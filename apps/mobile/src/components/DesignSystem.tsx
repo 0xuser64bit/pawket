@@ -14,6 +14,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { tapLight } from '../feedback/haptics';
 import { colors, gradients, motion, radius, shadows, spacing } from '../theme/tokens';
 import { Halo, PressableScale } from './Motion';
 import { Text } from './Text';
@@ -395,6 +396,9 @@ function NavItem({ item, active }: { item: (typeof navItems)[number]; active: bo
         accessibilityRole="button"
         accessibilityLabel={item.label}
         accessibilityState={{ selected: active }}
+        onPress={() => {
+          if (!active) tapLight();
+        }}
         style={styles.navItem}
       >
         <View style={[styles.navPill, active && styles.navPillActive]}>
@@ -404,9 +408,10 @@ function NavItem({ item, active }: { item: (typeof navItems)[number]; active: bo
             size={21}
           />
         </View>
-        <Text variant="micro" style={{ color: active ? colors.text : colors.faint, fontSize: 9 }}>
+        <Text variant="micro" style={{ color: active ? colors.text : colors.faint, fontSize: 9.5 }}>
           {item.label}
         </Text>
+        <View style={[styles.navIndicator, active && styles.navIndicatorActive]} />
       </Pressable>
     </Link>
   );
@@ -537,4 +542,12 @@ const styles = StyleSheet.create({
     width: 52,
   },
   navPillActive: { backgroundColor: 'rgba(23,229,137,0.13)' },
+  navIndicator: {
+    backgroundColor: 'transparent',
+    borderRadius: 999,
+    height: 3,
+    marginTop: 1,
+    width: 14,
+  },
+  navIndicatorActive: { backgroundColor: colors.solanaGreen },
 });

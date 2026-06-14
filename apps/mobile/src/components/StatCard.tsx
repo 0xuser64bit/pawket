@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { colors, radius, spacing } from '../theme/tokens';
+import { AnimatedCount } from './AnimatedCount';
 import { GlassPanel, ProgressBar } from './DesignSystem';
 import { Text } from './Text';
-import { colors, radius, spacing } from '../theme/tokens';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 type BarTone = 'green' | 'purple' | 'cyan' | 'amber' | 'magenta';
@@ -18,21 +19,34 @@ const config = (label: string): { color: string; tone: BarTone; icon: IconName }
   return { color: colors.solanaGreen, tone: 'green', icon: 'water-outline' };
 };
 
-/** A single pet vital with icon, live value, meter and low-state warning. */
-export function StatCard({ label, value }: { label: string; value: number }) {
+/** A single pet vital with icon, live (animated) value, meter and low-state warning. */
+export function StatCard({
+  label,
+  value,
+  focus = false,
+}: {
+  label: string;
+  value: number;
+  /** Marks this vital as the one most needing attention. */
+  focus?: boolean;
+}) {
   const c = config(label);
   const low = value < 30;
   return (
-    <GlassPanel padded={false} style={styles.card}>
+    <GlassPanel
+      padded={false}
+      style={[
+        styles.card,
+        focus && { borderColor: `${c.color}80`, backgroundColor: `${c.color}12` },
+      ]}
+    >
       <View style={styles.row}>
         <View
           style={[styles.icon, { borderColor: `${c.color}55`, backgroundColor: `${c.color}18` }]}
         >
           <Ionicons color={c.color} name={c.icon} size={17} />
         </View>
-        <Text variant="stat" tone={low ? 'amber' : 'text'}>
-          {value}
-        </Text>
+        <AnimatedCount value={value} variant="stat" tone={low ? 'amber' : 'text'} />
       </View>
       <Text variant="micro" tone="muted">
         {label}

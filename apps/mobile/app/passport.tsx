@@ -12,7 +12,7 @@ import {
   SectionHeader,
   StateBlock,
 } from '../src/components/DesignSystem';
-import { FadeInUp } from '../src/components/Motion';
+import { FadeInUp, Skeleton } from '../src/components/Motion';
 import { MessageBanner } from '../src/components/MessageBanner';
 import { PetChamber } from '../src/components/PetChamber';
 import { Screen } from '../src/components/Screen';
@@ -152,7 +152,23 @@ export default function PassportScreen() {
         />
       </FadeInUp>
 
-      {passportEvents.length === 0 && status !== 'loading_passport' ? (
+      {status === 'loading_passport' && passportEvents.length === 0 ? (
+        <View style={styles.skeletonTimeline}>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={styles.timelineRow}>
+              <View style={styles.rail}>
+                <Skeleton width={26} height={26} rounded={radius.pill} />
+                {i < 2 ? <View style={styles.railLine} /> : null}
+              </View>
+              <View style={styles.skeletonCard}>
+                <Skeleton width={90} height={20} rounded={radius.pill} />
+                <Skeleton width="70%" height={18} />
+                <Skeleton width="100%" height={14} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : passportEvents.length === 0 ? (
         <StateBlock
           title="No memories unlocked yet"
           copy="Care for your Pawket to write the first Passport memory."
@@ -244,4 +260,15 @@ const styles = StyleSheet.create({
   railLine: { backgroundColor: colors.borderStrong, flex: 1, marginVertical: 6, width: 1.5 },
   eventCard: { flex: 1, gap: 6, marginBottom: spacing.sm },
   eventDivider: { marginTop: 4 },
+  skeletonTimeline: { gap: 0 },
+  skeletonCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    flex: 1,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    padding: spacing.lg,
+  },
 });

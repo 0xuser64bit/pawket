@@ -1,14 +1,18 @@
 import type { PetSpecies } from '@pawket/shared';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { colors, gradients, motion, radius, speciesAccent, spacing } from '../theme/tokens';
 import { Breathing, Floating } from './Motion';
 import { PetCreature } from './PetCreature';
+import { CARE_REACTIONS, FloatingXP, ParticleBurst, type CareReaction } from './PetReaction';
 import { Text } from './Text';
 
 const NATIVE = Platform.OS !== 'web';
+
+/** A one-shot care reaction the chamber should play. `nonce` re-fires it. */
+export type ChamberReaction = { type: CareReaction; nonce: number; xp?: number };
 
 function resolveAccent(species?: PetSpecies | string): string {
   if (species === 'moss_pup') return speciesAccent.moss_pup;
@@ -57,17 +61,59 @@ export function PetChamber({
   mood = 'Radiant',
   compact = false,
   size,
+  reaction = null,
 }: {
   species?: PetSpecies | string;
   mood?: string;
   compact?: boolean;
   size?: number;
+  reaction?: ChamberReaction | null;
 }) {
   const reduced = useReducedMotion();
   const accent = resolveAccent(species);
   const minHeight = compact ? 208 : 296;
   const creatureSize = size ?? (compact ? 156 : 212);
   const ringSize = creatureSize * 0.92;
+
+  // A care ritual briefly overrides the resting mood + bursts particles, so the
+  // creature visibly *responds* to being cared for.
+  const [moodOverride, setMoodOverride] = useState<string | null>(null);
+  const bounce = useRef(new Animated.Value(0)).current;
+  const config = reaction ? CARE_REACTIONS[reaction.type] : null;
+
+  useEffect(() => {
+    if (!reaction || !config) return;
+    setMoodOverride(config.mood);
+    const moodTimer = setTimeout(() => setMoodOverride(null), 1400);
+
+    if (reduced) return () => clearTimeout(moodTimer);
+
+    bounce.setValue(0);
+    const anim = Animated.sequence([
+      Animated.timing(bounce, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: NATIVE,
+      }),
+      Animated.spring(bounce, {
+        toValue: 0,
+        damping: 6,
+        stiffness: 150,
+        mass: 0.7,
+        useNativeDriver: NATIVE,
+      }),
+    ]);
+    anim.start();
+    return () => {
+      clearTimeout(moodTimer);
+      anim.stop();
+    };
+    // Intentionally keyed on nonce so the same reaction type can re-fire.
+  }, [reaction?.nonce]);
+
+  const bounceScale = bounce.interpolate({ inputRange: [0, 1], outputRange: [1, 1.16] });
+  const activeMood = moodOverride ?? mood;
 
   return (
     <LinearGradient
@@ -124,17 +170,30 @@ export function PetChamber({
 
       {/* The companion */}
       <Floating>
-        <Breathing amount={0.035}>
-          <PetCreature mood={mood} species={species} size={creatureSize} />
-        </Breathing>
+        <Animated.View style={{ transform: [{ scale: bounceScale }] }}>
+          <Breathing amount={0.035}>
+            <PetCreature mood={activeMood} species={species} size={creatureSize} />
+          </Breathing>
+        </Animated.View>
       </Floating>
+
+      {/* Care reaction overlays, centered on the creature */}
+      {config ? (
+        <ParticleBurst
+          nonce={reaction!.nonce}
+          icon={config.icon}
+          color={config.color}
+          count={config.count}
+        />
+      ) : null}
+      {reaction?.xp ? <FloatingXP nonce={reaction.nonce} amount={reaction.xp} /> : null}
 
       {/* Mood readout */}
       <View pointerEvents="none" style={styles.moodLayer}>
         <View style={styles.moodPill}>
           <View style={[styles.statusDot, { backgroundColor: accent }]} />
           <Text variant="micro" tone="text">
-            {mood}
+            {activeMood}
           </Text>
         </View>
       </View>

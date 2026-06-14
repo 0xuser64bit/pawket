@@ -45,12 +45,17 @@ export function Screen({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  scroll: { paddingHorizontal: layout.screenPadding },
+  // Clip the ambient orbs to the viewport so they can't expand content width
+  // (which made large headings wrap to the wrong width / clip on web).
+  root: { flex: 1, overflow: 'hidden' },
+  scroll: {},
+  // Horizontal padding lives on the content view (not the scroll container) so
+  // `width: 100%` can't compute wider than the viewport and clip headings on web.
   content: {
     alignSelf: 'center',
     gap: spacing.md,
     maxWidth: layout.maxContent,
+    paddingHorizontal: layout.screenPadding,
     width: '100%',
   },
   orbPurple: {

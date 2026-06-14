@@ -589,6 +589,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surfaceStrong,
     borderColor: colors.border,
+    borderCurve: 'continuous',
     borderRadius: radius.md,
     borderWidth: 1,
     height: 42,
@@ -633,6 +634,7 @@ const styles = StyleSheet.create({
   ritualHead: { gap: spacing.sm },
   focusHint: {
     alignItems: 'center',
+    borderCurve: 'continuous',
     borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
@@ -650,6 +652,7 @@ const styles = StyleSheet.create({
   },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   actionCard: {
+    borderCurve: 'continuous',
     borderRadius: radius.lg,
     borderWidth: 1,
     flexBasis: '47%',
@@ -684,6 +687,7 @@ const styles = StyleSheet.create({
   summaryBlock: {
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderColor: colors.border,
+    borderCurve: 'continuous',
     borderRadius: radius.md,
     borderWidth: 1,
     flex: 1,

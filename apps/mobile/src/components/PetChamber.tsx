@@ -215,6 +215,7 @@ const styles = StyleSheet.create({
   chamber: {
     alignItems: 'center',
     borderColor: colors.borderStrong,
+    borderCurve: 'continuous',
     borderRadius: radius.xxl,
     borderWidth: 1,
     justifyContent: 'center',

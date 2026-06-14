@@ -209,6 +209,7 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderColor: colors.borderStrong,
+    borderCurve: 'continuous',
     borderRadius: radius.lg,
     borderWidth: 1,
     color: colors.text,
@@ -222,6 +223,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderColor: colors.border,
+    borderCurve: 'continuous',
     borderRadius: radius.lg,
     borderWidth: 1,
     gap: 4,
@@ -232,6 +234,7 @@ const styles = StyleSheet.create({
   personalityCard: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
+    borderCurve: 'continuous',
     borderRadius: radius.lg,
     borderWidth: 1,
     gap: 5,

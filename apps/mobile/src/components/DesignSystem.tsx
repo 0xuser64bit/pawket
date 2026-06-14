@@ -316,7 +316,11 @@ export function ProgressBar({
       onLayout={(e: LayoutChangeEvent) => setTrackWidth(e.nativeEvent.layout.width)}
     >
       <Animated.View
-        style={[styles.progressFill, { width, height }, glow && { shadowColor: color }]}
+        style={[
+          styles.progressFill,
+          { width, height },
+          glow && { boxShadow: `0px 0px 8px ${color}` },
+        ]}
       >
         <LinearGradient
           colors={gradients[toneToGradient[tone]]}
@@ -435,6 +439,7 @@ const styles = StyleSheet.create({
   panel: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
+    borderCurve: 'continuous',
     borderRadius: radius.xl,
     borderWidth: 1,
     overflow: 'hidden',
@@ -450,6 +455,7 @@ const styles = StyleSheet.create({
   },
   iconTile: {
     alignItems: 'center',
+    borderCurve: 'continuous',
     borderWidth: 1,
     justifyContent: 'center',
     overflow: 'visible',
@@ -496,9 +502,6 @@ const styles = StyleSheet.create({
   progressFill: {
     borderRadius: radius.pill,
     overflow: 'hidden',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
   },
   stateBlock: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl },
   stateIcon: {
@@ -522,6 +525,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: 'rgba(8,10,20,0.94)',
     borderColor: colors.borderStrong,
+    borderCurve: 'continuous',
     borderRadius: radius.xl,
     borderWidth: 1,
     flexDirection: 'row',

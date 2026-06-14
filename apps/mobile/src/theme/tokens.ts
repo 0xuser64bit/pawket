@@ -152,65 +152,22 @@ export const typography = {
   },
 } as const;
 
+/**
+ * Shadows use the CSS `boxShadow` style prop (New Architecture), not legacy
+ * `shadowColor`/`elevation` — those render muddy or not at all on device and
+ * flatten a glow-dependent aesthetic. Each value is a single `boxShadow` style.
+ */
 export const shadows = {
   // Neutral elevation scale.
-  e1: {
-    shadowColor: '#000',
-    shadowOpacity: 0.22,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-  },
-  e2: {
-    shadowColor: '#000',
-    shadowOpacity: 0.32,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 7,
-  },
-  e3: {
-    shadowColor: '#000',
-    shadowOpacity: 0.45,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 20 },
-    elevation: 14,
-  },
-  panel: {
-    shadowColor: '#000',
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 7,
-  },
-  // Colored glows.
-  glowGreen: {
-    shadowColor: colors.solanaGreen,
-    shadowOpacity: 0.45,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 8,
-  },
-  glowPurple: {
-    shadowColor: colors.solanaPurple,
-    shadowOpacity: 0.5,
-    shadowRadius: 26,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 10,
-  },
-  glowCyan: {
-    shadowColor: colors.cyan,
-    shadowOpacity: 0.45,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 8,
-  },
-  glowAmber: {
-    shadowColor: colors.amber,
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 8,
-  },
+  e1: { boxShadow: '0px 6px 10px rgba(0,0,0,0.22)' },
+  e2: { boxShadow: '0px 12px 22px rgba(0,0,0,0.34)' },
+  e3: { boxShadow: '0px 20px 36px rgba(0,0,0,0.48)' },
+  panel: { boxShadow: '0px 12px 22px rgba(0,0,0,0.36)' },
+  // Colored glows (symmetric, no offset).
+  glowGreen: { boxShadow: '0px 0px 26px rgba(23,229,137,0.50)' },
+  glowPurple: { boxShadow: '0px 0px 30px rgba(155,107,255,0.55)' },
+  glowCyan: { boxShadow: '0px 0px 26px rgba(43,212,245,0.50)' },
+  glowAmber: { boxShadow: '0px 0px 24px rgba(255,176,77,0.48)' },
 } as const;
 
 /** Animation timing (ms) + spring config, shared so motion feels unified. */

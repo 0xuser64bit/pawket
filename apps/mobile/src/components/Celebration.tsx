@@ -179,6 +179,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardSoft,
     borderColor: colors.borderStrong,
+    borderCurve: 'continuous',
     borderRadius: radius.xxl,
     borderWidth: 1,
     gap: spacing.xs,

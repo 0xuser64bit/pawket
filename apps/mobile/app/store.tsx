@@ -5,6 +5,7 @@ export default function StoreScreen() {
       eyebrow="Pawket market"
       title="Store drops are charging."
       icon="diamond-outline"
+      tone="purple"
       copy="Cosmetics, premium eggs, seasonal passes, and item bundles will unlock after verified SOL/USDC payment intents are production-ready."
       previews={[
         {

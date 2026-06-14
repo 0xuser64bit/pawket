@@ -1,11 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
-import { GlassPanel, Pill, SectionHeader } from '../src/components/DesignSystem';
+import { router } from 'expo-router';
+import type { ComponentProps } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Divider, GlassPanel, IconTile, Pill, SectionHeader } from '../src/components/DesignSystem';
+import { FadeInUp } from '../src/components/Motion';
 import { Screen } from '../src/components/Screen';
+import { Text } from '../src/components/Text';
 import { pawketApiBaseUrl } from '../src/api/client';
 import { solanaConfig } from '../src/solana/config';
 import { usePawketSession } from '../src/state/PawketSessionContext';
-import { colors, radius, spacing, typography } from '../src/theme/tokens';
+import { colors, radius, spacing } from '../src/theme/tokens';
+
+type IconName = ComponentProps<typeof Ionicons>['name'];
+type Tone = 'green' | 'purple' | 'cyan' | 'amber';
 
 function shorten(value?: string) {
   if (!value) return 'Not connected';
@@ -13,23 +20,27 @@ function shorten(value?: string) {
   return `${value.slice(0, 10)}…${value.slice(-8)}`;
 }
 
-function SettingsRow({
+function Row({
   label,
   value,
   icon,
+  tone = 'cyan',
+  mono = false,
 }: {
   label: string;
   value: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
+  tone?: Tone;
+  mono?: boolean;
 }) {
   return (
     <View style={styles.row}>
-      <View style={styles.rowIcon}>
-        <Ionicons color={colors.cyan} name={icon} size={18} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        <Text selectable style={styles.rowValue}>
+      <IconTile icon={icon} tone={tone} size={40} />
+      <View style={styles.flex}>
+        <Text variant="micro" tone="faint">
+          {label}
+        </Text>
+        <Text variant={mono ? 'mono' : 'label'} tone="text" selectable style={styles.value}>
           {value}
         </Text>
       </View>
@@ -39,71 +50,114 @@ function SettingsRow({
 
 export default function SettingsScreen() {
   const { wallet, pet, status } = usePawketSession();
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/home'));
+
   return (
-    <Screen nav>
-      <Pill tone="green">Devnet controls</Pill>
-      <Text style={styles.title}>Settings without the debug dump.</Text>
-      <Text style={styles.copy}>
-        A clean view of the current demo stack, wallet mode, and cluster. No secrets are stored in
-        the mobile client.
-      </Text>
-
-      <GlassPanel style={styles.panel}>
-        <SectionHeader eyebrow="session" title="Companion session" />
-        <SettingsRow icon="wallet-outline" label="Wallet" value={shorten(wallet?.address)} />
-        <SettingsRow
-          icon="paw-outline"
-          label="Active pet"
-          value={pet ? `${pet.name} · level ${pet.level}` : 'No companion adopted'}
-        />
-        <SettingsRow icon="pulse-outline" label="Runtime status" value={status} />
-      </GlassPanel>
-
-      <GlassPanel style={styles.panel}>
-        <SectionHeader eyebrow="network" title="Solana/dev mode" />
-        <SettingsRow icon="git-network-outline" label="Cluster" value={solanaConfig.cluster} />
-        <SettingsRow icon="cube-outline" label="Program" value={shorten(solanaConfig.programId)} />
-        <SettingsRow icon="radio-outline" label="RPC" value={shorten(solanaConfig.rpcUrl)} />
-      </GlassPanel>
-
-      <GlassPanel style={styles.panel}>
-        <SectionHeader eyebrow="api" title="Service path" />
-        <SettingsRow icon="server-outline" label="API base" value={pawketApiBaseUrl} />
-        <SettingsRow icon="phone-portrait-outline" label="App version" value="0.1.0 demo" />
-        <Text style={styles.disclaimer}>
-          Reset/dev tools are not exposed here because the current vertical slice does not provide a
-          safe mobile reset action.
+    <Screen>
+      <FadeInUp>
+        <View style={styles.header}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            hitSlop={8}
+            onPress={goBack}
+            style={styles.back}
+          >
+            <Ionicons color={colors.textSoft} name="chevron-back" size={20} />
+          </Pressable>
+          <Pill tone="green">Devnet controls</Pill>
+        </View>
+        <Text variant="title" tone="text" style={styles.title}>
+          Control room.
         </Text>
-      </GlassPanel>
+        <Text variant="body" tone="soft">
+          A clean view of the current demo stack, wallet mode and cluster. No secrets are stored on
+          the device.
+        </Text>
+      </FadeInUp>
+
+      <FadeInUp delay={70}>
+        <GlassPanel style={styles.panel}>
+          <SectionHeader eyebrow="session" title="Companion session" tone="green" />
+          <Row
+            icon="wallet-outline"
+            label="Wallet"
+            tone="green"
+            mono
+            value={shorten(wallet?.address)}
+          />
+          <Divider />
+          <Row
+            icon="paw-outline"
+            label="Active pet"
+            tone="purple"
+            value={pet ? `${pet.name} · level ${pet.level}` : 'No companion adopted'}
+          />
+          <Divider />
+          <Row icon="pulse-outline" label="Runtime status" tone="cyan" value={status} />
+        </GlassPanel>
+      </FadeInUp>
+
+      <FadeInUp delay={130}>
+        <GlassPanel style={styles.panel}>
+          <SectionHeader eyebrow="network" title="Solana / dev mode" tone="cyan" />
+          <Row
+            icon="git-network-outline"
+            label="Cluster"
+            tone="cyan"
+            value={solanaConfig.cluster}
+          />
+          <Divider />
+          <Row
+            icon="cube-outline"
+            label="Program"
+            tone="purple"
+            mono
+            value={shorten(solanaConfig.programId)}
+          />
+          <Divider />
+          <Row
+            icon="radio-outline"
+            label="RPC"
+            tone="green"
+            mono
+            value={shorten(solanaConfig.rpcUrl)}
+          />
+        </GlassPanel>
+      </FadeInUp>
+
+      <FadeInUp delay={190}>
+        <GlassPanel style={styles.panel}>
+          <SectionHeader eyebrow="service" title="App path" tone="amber" />
+          <Row icon="server-outline" label="API base" tone="amber" mono value={pawketApiBaseUrl} />
+          <Divider />
+          <Row icon="phone-portrait-outline" label="App version" tone="green" value="0.1.0 demo" />
+          <Text variant="caption" tone="muted" style={styles.note}>
+            Reset/dev tools aren't exposed here — the current vertical slice has no safe mobile
+            reset action.
+          </Text>
+        </GlassPanel>
+      </FadeInUp>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { ...typography.title, color: colors.text },
-  copy: { ...typography.body, color: colors.textSoft },
-  panel: { gap: spacing.md },
-  row: {
+  flex: { flex: 1 },
+  header: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+  back: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.surfaceStrong,
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  rowIcon: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(34,211,238,0.12)',
-    borderColor: 'rgba(34,211,238,0.32)',
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    height: 38,
+    height: 40,
     justifyContent: 'center',
-    width: 38,
+    width: 40,
   },
-  rowLabel: { ...typography.micro, color: colors.faint, textTransform: 'uppercase' },
-  rowValue: { color: colors.text, fontSize: 15, fontWeight: '900', marginTop: 3 },
-  disclaimer: { color: colors.muted, lineHeight: 20 },
+  title: { marginTop: spacing.md, marginBottom: 6 },
+  panel: { gap: spacing.sm },
+  row: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, paddingVertical: 4 },
+  value: { marginTop: 3 },
+  note: { marginTop: spacing.xs },
 });

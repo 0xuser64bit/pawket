@@ -5,6 +5,7 @@ export default function EventsScreen() {
       eyebrow="Season One"
       title="The first season is forming."
       icon="flash-outline"
+      tone="amber"
       copy="Seasonal events will add daily challenges, community goals, limited memories, and progression loops that make Pawket worth opening every day."
       previews={[
         {

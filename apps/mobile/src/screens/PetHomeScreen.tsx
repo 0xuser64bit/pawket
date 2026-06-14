@@ -1,22 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
 import { calculateXpForNextLevel, CareActionType, type DailyGoalsResponse } from '@pawket/shared';
-import { Link } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { type ComponentProps, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import {
   Button,
+  Divider,
   GlassPanel,
+  IconTile,
   Pill,
   ProgressBar,
   SectionHeader,
   StateBlock,
 } from '../components/DesignSystem';
+import { FadeInUp, PressableScale } from '../components/Motion';
 import { MessageBanner } from '../components/MessageBanner';
-import { PetAvatar } from '../components/PetAvatar';
+import { PetChamber } from '../components/PetChamber';
 import { Screen } from '../components/Screen';
 import { StatCard } from '../components/StatCard';
+import { Text } from '../components/Text';
 import { usePawketSession } from '../state/PawketSessionContext';
-import { colors, radius, spacing, typography } from '../theme/tokens';
+import { colors, radius, spacing } from '../theme/tokens';
 
 function label(value: string) {
   return value
@@ -25,34 +29,40 @@ function label(value: string) {
     .join(' ');
 }
 
-const actionConfig = {
+type IconName = ComponentProps<typeof Ionicons>['name'];
+type ActionTone = 'amber' | 'magenta' | 'green' | 'cyan';
+
+const actionConfig: Record<
+  CareActionType,
+  { title: string; copy: string; icon: IconName; tone: ActionTone }
+> = {
   [CareActionType.Feed]: {
     title: 'Feed',
     copy: '+Hunger · +Bond XP',
-    icon: 'nutrition-outline' as const,
-    tone: 'amber' as const,
+    icon: 'nutrition-outline',
+    tone: 'amber',
   },
   [CareActionType.Play]: {
     title: 'Play',
     copy: '+Happiness · uses energy',
-    icon: 'game-controller-outline' as const,
-    tone: 'magenta' as const,
+    icon: 'game-controller-outline',
+    tone: 'magenta',
   },
   [CareActionType.Groom]: {
     title: 'Groom',
     copy: '+Hygiene · memory chance',
-    icon: 'sparkles-outline' as const,
-    tone: 'green' as const,
+    icon: 'sparkles-outline',
+    tone: 'green',
   },
   [CareActionType.Rest]: {
     title: 'Rest',
     copy: '+Energy · calm aura',
-    icon: 'moon-outline' as const,
-    tone: 'cyan' as const,
+    icon: 'moon-outline',
+    tone: 'cyan',
   },
 };
 
-function toneColor(tone: 'amber' | 'magenta' | 'green' | 'cyan') {
+function toneColor(tone: ActionTone) {
   if (tone === 'amber') return colors.amber;
   if (tone === 'magenta') return colors.magenta;
   if (tone === 'cyan') return colors.cyan;
@@ -71,56 +81,73 @@ function CareFeedbackPanel({
   onDismiss: () => void;
 }) {
   if (!feedback) return null;
-
   const deltas = Object.entries(feedback.statDeltas).filter(([, value]) => Boolean(value));
   const isDailyReward = feedback.actionType === 'daily_reward';
-  const actionVisual = isDailyReward ? null : actionConfig[feedback.actionType as CareActionType];
-  const color = actionVisual ? toneColor(actionVisual.tone) : colors.solanaGreen;
+  const visual = isDailyReward ? null : actionConfig[feedback.actionType as CareActionType];
+  const color = visual ? toneColor(visual.tone) : colors.solanaGreen;
 
   return (
-    <GlassPanel glow style={[styles.feedbackPanel, { borderColor: `${color}55` }]}>
-      <View style={styles.feedbackHeader}>
-        <View
-          style={[
-            styles.feedbackIcon,
-            { backgroundColor: `${color}16`, borderColor: `${color}66` },
-          ]}
-        >
-          <Ionicons color={color} name={actionVisual?.icon ?? 'gift-outline'} size={22} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.feedbackEyebrow}>
-            {feedback.passportEventTitle ?? 'Passport memory'}
-          </Text>
-          <Text style={styles.feedbackTitle}>{feedback.title}</Text>
-        </View>
-        <Pressable accessibilityRole="button" onPress={onDismiss} style={styles.dismissButton}>
-          <Ionicons color={colors.faint} name="close" size={18} />
-        </Pressable>
-      </View>
-      <Text style={styles.feedbackCopy}>{feedback.copy}</Text>
-      <View style={styles.feedbackRewards}>
-        <View style={styles.rewardChip}>
-          <Ionicons color={colors.solanaGreen} name="flash-outline" size={15} />
-          <Text style={styles.rewardText}>+{feedback.xpGained} XP</Text>
-        </View>
-        {feedback.levelDelta > 0 ? (
-          <View style={styles.rewardChip}>
-            <Ionicons color={colors.cyan} name="trending-up-outline" size={15} />
-            <Text style={styles.rewardText}>+{feedback.levelDelta} bond level</Text>
+    <FadeInUp distance={10}>
+      <GlassPanel glow="green" style={[styles.feedbackPanel, { borderColor: `${color}66` }]}>
+        <View style={styles.feedbackHeader}>
+          <View
+            style={[
+              styles.feedbackIcon,
+              { backgroundColor: `${color}1f`, borderColor: `${color}66` },
+            ]}
+          >
+            <Ionicons color={color} name={visual?.icon ?? 'gift-outline'} size={20} />
           </View>
-        ) : null}
-        {deltas.map(([stat, value]) => (
-          <View key={stat} style={styles.rewardChip}>
-            <Text style={[styles.deltaSign, Number(value) > 0 ? styles.deltaUp : styles.deltaDown]}>
-              {Number(value) > 0 ? '+' : ''}
-              {Number(value)}
+          <View style={styles.flex}>
+            <Text variant="micro" style={{ color }}>
+              {feedback.passportEventTitle ?? 'Passport memory'}
             </Text>
-            <Text style={styles.rewardText}>{statLabel(stat)}</Text>
+            <Text variant="h3" tone="text">
+              {feedback.title}
+            </Text>
           </View>
-        ))}
-      </View>
-    </GlassPanel>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss"
+            hitSlop={8}
+            onPress={onDismiss}
+            style={styles.dismiss}
+          >
+            <Ionicons color={colors.faint} name="close" size={16} />
+          </Pressable>
+        </View>
+        <Text variant="body" tone="soft">
+          {feedback.copy}
+        </Text>
+        <View style={styles.rewards}>
+          <View style={styles.rewardChip}>
+            <Ionicons color={colors.solanaGreen} name="flash" size={13} />
+            <Text variant="caption" tone="text">
+              +{feedback.xpGained} XP
+            </Text>
+          </View>
+          {feedback.levelDelta > 0 ? (
+            <View style={styles.rewardChip}>
+              <Ionicons color={colors.cyan} name="trending-up" size={13} />
+              <Text variant="caption" tone="text">
+                +{feedback.levelDelta} bond level
+              </Text>
+            </View>
+          ) : null}
+          {deltas.map(([stat, value]) => (
+            <View key={stat} style={styles.rewardChip}>
+              <Text
+                variant="caption"
+                style={{ color: Number(value) > 0 ? colors.solanaGreen : colors.amber }}
+              >
+                {Number(value) > 0 ? '+' : ''}
+                {Number(value)} {statLabel(stat)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </GlassPanel>
+    </FadeInUp>
   );
 }
 
@@ -153,10 +180,18 @@ function DailyGoalsPanel({
     return (
       <StateBlock
         title="Daily signal unavailable"
-        copy="The ritual board did not respond. Your pet is safe; try syncing again."
+        copy="The ritual board did not respond. Your pet is safe — try syncing again."
         icon="cloud-offline-outline"
         tone="danger"
-        action={<Button label="Retry ritual board" onPress={onRetry} tone="ghost" />}
+        action={
+          <Button
+            label="Retry ritual board"
+            onPress={onRetry}
+            tone="ghost"
+            size="md"
+            full={false}
+          />
+        }
       />
     );
   }
@@ -169,6 +204,7 @@ function DailyGoalsPanel({
       <SectionHeader
         eyebrow="daily ritual"
         title="Season streak"
+        tone="amber"
         action={
           loading ? (
             <ActivityIndicator color={colors.solanaGreen} />
@@ -177,46 +213,58 @@ function DailyGoalsPanel({
           )
         }
       />
-      <View style={styles.goalSummary}>
+      <View style={styles.summaryRow}>
         <View style={styles.summaryBlock}>
-          <Text style={styles.summaryValue}>
+          <Text variant="stat" tone="text">
             {dailyGoals.completedGoals}/{dailyGoals.totalGoals}
           </Text>
-          <Text style={styles.summaryLabel}>Rituals complete</Text>
+          <Text variant="micro" tone="muted">
+            Rituals complete
+          </Text>
         </View>
         <View style={styles.summaryBlock}>
-          <Text style={styles.summaryValue}>{dailyGoals.currentStreakDays}</Text>
-          <Text style={styles.summaryLabel}>Day streak</Text>
+          <View style={styles.streakValue}>
+            <Ionicons color={colors.amber} name="flame" size={20} />
+            <Text variant="stat" tone="text">
+              {dailyGoals.currentStreakDays}
+            </Text>
+          </View>
+          <Text variant="micro" tone="muted">
+            Day streak
+          </Text>
         </View>
       </View>
-      <ProgressBar max={dailyGoals.totalGoals} value={dailyGoals.completedGoals} />
+      <ProgressBar max={dailyGoals.totalGoals} value={dailyGoals.completedGoals} tone="amber" />
       <View style={styles.goalList}>
         {dailyGoals.goals.map((goal) => (
           <View key={goal.actionType} style={styles.goalRow}>
             <View style={[styles.goalDot, goal.completed && styles.goalDotDone]}>
               {goal.completed ? <Ionicons color={colors.black} name="checkmark" size={11} /> : null}
             </View>
-            <Text style={styles.goalTitle}>{goal.title}</Text>
-            <Text style={[styles.goalStatus, goal.completed && styles.goalStatusDone]}>
-              {goal.completed ? 'Memory logged' : 'Open'}
+            <Text variant="label" tone="soft" style={styles.flex}>
+              {goal.title}
+            </Text>
+            <Text
+              variant="micro"
+              style={{ color: goal.completed ? colors.solanaGreen : colors.faint }}
+            >
+              {goal.completed ? 'Logged' : 'Open'}
             </Text>
           </View>
         ))}
       </View>
       {canClaim ? (
         <Button
-          icon="gift-outline"
+          icon="gift"
           label={claiming ? 'Claiming memory…' : `Claim +${reward?.xp ?? 25} XP`}
           onPress={onClaim}
-          tone="green"
-          disabled={claiming}
+          tone="amber"
+          loading={claiming}
         />
       ) : (
-        <Text style={styles.goalHint}>
+        <Text variant="caption" tone="muted">
           {reward?.claimed
-            ? `Reward memory unlocked. Current streak: ${dailyGoals.currentStreakDays} day${
-                dailyGoals.currentStreakDays === 1 ? '' : 's'
-              }.`
+            ? `Reward memory unlocked. Current streak: ${dailyGoals.currentStreakDays} day${dailyGoals.currentStreakDays === 1 ? '' : 's'}.`
             : 'Complete all four care actions to unlock the daily XP memory.'}
         </Text>
       )}
@@ -238,18 +286,19 @@ function CareActionCard({
   const config = actionConfig[action];
   const color = toneColor(config.tone);
   return (
-    <Pressable
-      disabled={disabled}
+    <PressableScale
       onPress={onPress}
-      style={({ pressed }) => [
+      disabled={disabled}
+      accessibilityLabel={config.title}
+      accessibilityHint={config.copy}
+      style={[
         styles.actionCard,
-        { borderColor: `${color}44`, backgroundColor: `${color}10` },
-        disabled && styles.actionDisabled,
-        pressed && !disabled && styles.actionPressed,
+        { borderColor: `${color}40`, backgroundColor: `${color}12` },
+        disabled && styles.actionDim,
       ]}
     >
       <View
-        style={[styles.actionIcon, { backgroundColor: `${color}18`, borderColor: `${color}55` }]}
+        style={[styles.actionIcon, { backgroundColor: `${color}1f`, borderColor: `${color}66` }]}
       >
         {busy ? (
           <ActivityIndicator color={color} />
@@ -257,11 +306,13 @@ function CareActionCard({
           <Ionicons color={color} name={config.icon} size={22} />
         )}
       </View>
-      <Text style={styles.actionTitle}>{busy ? 'Working…' : config.title}</Text>
-      <Text style={styles.actionCopy}>
-        {disabled && !busy ? 'Cooldown mechanic active' : config.copy}
+      <Text variant="h3" tone="text">
+        {busy ? 'Working…' : config.title}
       </Text>
-    </Pressable>
+      <Text variant="caption" tone="muted">
+        {config.copy}
+      </Text>
+    </PressableScale>
   );
 }
 
@@ -279,6 +330,7 @@ export function PetHomeScreen() {
     status,
   } = usePawketSession();
   const [activeCareAction, setActiveCareAction] = useState<CareActionType | null>(null);
+
   if (!pet) {
     return (
       <Screen nav>
@@ -297,6 +349,7 @@ export function PetHomeScreen() {
   const progress = Math.max(0, pet.xp - currentLevelXp);
   const needed = Math.max(1, nextLevelXp - currentLevelXp);
   const careDisabled = status === 'caring' || status === 'claiming_daily_reward';
+
   const handleCareAction = async (action: CareActionType) => {
     setActiveCareAction(action);
     try {
@@ -305,52 +358,81 @@ export function PetHomeScreen() {
       setActiveCareAction(null);
     }
   };
+
   const lastCare = pet.lastCaredAt
-    ? `${label(pet.lastCareActionType ?? 'care')} · ${new Date(pet.lastCaredAt).toLocaleTimeString(
-        [],
-        {
-          hour: '2-digit',
-          minute: '2-digit',
-        },
-      )}`
+    ? `${label(pet.lastCareActionType ?? 'care')} · ${new Date(pet.lastCaredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
     : 'No care memory yet';
 
   return (
     <Screen nav>
-      <View style={styles.topBar}>
-        <View>
-          <Text style={styles.kicker}>Companion chamber</Text>
-          <Text style={styles.title}>{pet.name}</Text>
-        </View>
-        <Pill tone="green">Level {pet.level}</Pill>
-      </View>
-
-      <PetAvatar mood={label(pet.mood)} species={pet.species} />
-
-      <GlassPanel style={styles.identityCard}>
-        <View style={styles.rowBetween}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.identityTitle}>Bond level {pet.level}</Text>
-            <Text style={styles.identitySub}>
-              {label(pet.species)} · {label(pet.personality)} · {lastCare}
+      <FadeInUp>
+        <View style={styles.topBar}>
+          <View style={styles.flex}>
+            <Text variant="eyebrow" tone="green">
+              Companion chamber
+            </Text>
+            <Text variant="title" tone="text" numberOfLines={1}>
+              {pet.name}
             </Text>
           </View>
-          <Ionicons color={colors.solanaGreen} name="pulse-outline" size={24} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+            hitSlop={8}
+            onPress={() => router.push('/settings')}
+            style={styles.gear}
+          >
+            <Ionicons color={colors.textSoft} name="settings-outline" size={20} />
+          </Pressable>
         </View>
-        <View style={styles.rowBetween}>
-          <Text style={styles.xpLabel}>XP to next evolution</Text>
-          <Text style={styles.xpValue}>
-            {progress}/{needed}
-          </Text>
-        </View>
-        <ProgressBar max={needed} value={progress} />
-      </GlassPanel>
+      </FadeInUp>
+
+      <FadeInUp delay={60}>
+        <PetChamber species={pet.species} mood={label(pet.mood)} />
+      </FadeInUp>
+
+      <FadeInUp delay={110}>
+        <GlassPanel glow style={styles.bondCard}>
+          <View style={styles.bondTop}>
+            <View>
+              <Text variant="micro" tone="purple">
+                Bond level
+              </Text>
+              <Text variant="display" tone="text">
+                {pet.level}
+              </Text>
+            </View>
+            <View style={styles.bondTags}>
+              <Pill tone="purple">{label(pet.species)}</Pill>
+              <Pill tone="cyan">{label(pet.personality)}</Pill>
+            </View>
+          </View>
+          <Divider />
+          <View style={styles.xpRow}>
+            <Text variant="label" tone="soft">
+              XP to next evolution
+            </Text>
+            <Text variant="label" tone="green">
+              {progress}/{needed}
+            </Text>
+          </View>
+          <ProgressBar max={needed} value={progress} glow />
+          <View style={styles.lastCare}>
+            <Ionicons color={colors.faint} name="time-outline" size={14} />
+            <Text variant="caption" tone="muted">
+              Last ritual · {lastCare}
+            </Text>
+          </View>
+        </GlassPanel>
+      </FadeInUp>
 
       <MessageBanner tone="success" message={notice} />
       <MessageBanner tone="error" message={error} />
       <CareFeedbackPanel feedback={careFeedback} onDismiss={dismissCareFeedback} />
 
-      <SectionHeader eyebrow="vitals" title="Care dashboard" />
+      <FadeInUp delay={140}>
+        <SectionHeader eyebrow="vitals" title="Care dashboard" tone="cyan" />
+      </FadeInUp>
       <View style={styles.grid}>
         <StatCard label="Hunger" value={pet.stats.hunger} />
         <StatCard label="Happiness" value={pet.stats.happiness} />
@@ -358,8 +440,10 @@ export function PetHomeScreen() {
         <StatCard label="Hygiene" value={pet.stats.hygiene} />
       </View>
 
-      <SectionHeader eyebrow="touch actions" title="Care rituals" />
-      <View style={styles.actionGrid}>
+      <FadeInUp delay={160}>
+        <SectionHeader eyebrow="touch actions" title="Care rituals" tone="magenta" />
+      </FadeInUp>
+      <View style={styles.grid}>
         {Object.values(CareActionType).map((action) => (
           <CareActionCard
             key={action}
@@ -378,129 +462,109 @@ export function PetHomeScreen() {
         onRetry={refreshDailyGoals}
       />
 
-      <GlassPanel style={styles.passportPreview}>
-        <View style={styles.rowBetween}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.identityTitle}>Pet Passport</Text>
-            <Text style={styles.identitySub}>Every action becomes part of its story.</Text>
+      <PressableScale
+        onPress={() => router.push('/passport')}
+        accessibilityLabel="Open Pet Passport"
+      >
+        <GlassPanel style={styles.passportCard}>
+          <IconTile icon="finger-print-outline" tone="cyan" />
+          <View style={styles.flex}>
+            <Text variant="h3" tone="text">
+              Pet Passport
+            </Text>
+            <Text variant="caption" tone="muted">
+              Every action becomes part of its story.
+            </Text>
           </View>
-          <Link href="/passport" asChild>
-            <Pressable style={styles.passportButton}>
-              <Text style={styles.passportButtonText}>Open</Text>
-              <Ionicons color={colors.black} name="arrow-forward" size={15} />
-            </Pressable>
-          </Link>
-        </View>
-      </GlassPanel>
+          <Ionicons color={colors.faint} name="arrow-forward" size={18} />
+        </GlassPanel>
+      </PressableScale>
     </Screen>
   );
 }
+
 const styles = StyleSheet.create({
-  topBar: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'space-between',
-  },
-  kicker: { ...typography.micro, color: colors.solanaGreen, textTransform: 'uppercase' },
-  title: { ...typography.title, color: colors.text },
-  identityCard: { gap: spacing.md },
-  rowBetween: {
+  flex: { flex: 1 },
+  topBar: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+  gear: {
     alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md,
+    backgroundColor: colors.surfaceStrong,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: 'center',
+    width: 42,
   },
-  identityTitle: { color: colors.text, fontSize: 19, fontWeight: '900' },
-  identitySub: { color: colors.muted, lineHeight: 20, marginTop: 4 },
-  xpLabel: { color: colors.textSoft, fontWeight: '800' },
-  xpValue: { color: colors.solanaGreen, fontWeight: '900' },
-  feedbackPanel: { gap: spacing.md },
+  bondCard: { gap: spacing.sm },
+  bondTop: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  bondTags: { alignItems: 'flex-end', gap: 6 },
+  xpRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  lastCare: { alignItems: 'center', flexDirection: 'row', gap: 6, marginTop: 2 },
+  feedbackPanel: { gap: spacing.sm },
   feedbackHeader: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
   feedbackIcon: {
     alignItems: 'center',
-    borderRadius: radius.pill,
+    borderRadius: radius.md,
     borderWidth: 1,
-    height: 46,
+    height: 44,
     justifyContent: 'center',
-    width: 46,
+    width: 44,
   },
-  feedbackEyebrow: {
-    ...typography.micro,
-    color: colors.solanaGreen,
-    textTransform: 'uppercase',
+  dismiss: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: radius.pill,
+    height: 30,
+    justifyContent: 'center',
+    width: 30,
   },
-  feedbackTitle: { color: colors.text, fontSize: 20, fontWeight: '900', marginTop: 2 },
-  feedbackCopy: { color: colors.textSoft, lineHeight: 21 },
-  feedbackRewards: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  rewards: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   rewardChip: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.055)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderColor: colors.border,
     borderRadius: radius.pill,
     borderWidth: 1,
     flexDirection: 'row',
     gap: 5,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 7,
-  },
-  rewardText: { color: colors.text, fontSize: 12, fontWeight: '900' },
-  deltaSign: { fontSize: 12, fontWeight: '900' },
-  deltaUp: { color: colors.solanaGreen },
-  deltaDown: { color: colors.amber },
-  dismissButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    height: 34,
-    justifyContent: 'center',
-    width: 34,
+    paddingVertical: 6,
   },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   actionCard: {
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    flex: 1,
-    gap: spacing.xs,
-    minHeight: 132,
-    minWidth: '45%',
+    flexBasis: '47%',
+    flexGrow: 1,
+    gap: 5,
+    minHeight: 128,
     padding: spacing.md,
   },
-  actionDisabled: { opacity: 0.58 },
-  actionPressed: { opacity: 0.82, transform: [{ scale: 0.985 }] },
+  actionDim: { opacity: 0.5 },
   actionIcon: {
     alignItems: 'center',
-    borderRadius: radius.pill,
+    borderRadius: radius.md,
     borderWidth: 1,
     height: 44,
     justifyContent: 'center',
+    marginBottom: 4,
     width: 44,
   },
-  actionTitle: { color: colors.text, fontSize: 18, fontWeight: '900', marginTop: spacing.xs },
-  actionCopy: { color: colors.muted, lineHeight: 19 },
   dailyPanel: { gap: spacing.md },
-  goalSummary: { flexDirection: 'row', gap: spacing.sm },
+  summaryRow: { flexDirection: 'row', gap: spacing.sm },
   summaryBlock: {
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
     flex: 1,
+    gap: 2,
     padding: spacing.md,
   },
-  summaryValue: { color: colors.text, fontSize: 26, fontWeight: '900' },
-  summaryLabel: {
-    color: colors.muted,
-    fontSize: 11,
-    fontWeight: '900',
-    marginTop: 2,
-    textTransform: 'uppercase',
-  },
+  streakValue: { alignItems: 'center', flexDirection: 'row', gap: 6 },
   goalList: { gap: spacing.xs },
-  goalRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, minHeight: 38 },
+  goalRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, minHeight: 36 },
   goalDot: {
     alignItems: 'center',
     borderColor: colors.borderStrong,
@@ -511,19 +575,5 @@ const styles = StyleSheet.create({
     width: 20,
   },
   goalDotDone: { backgroundColor: colors.solanaGreen, borderColor: colors.solanaGreen },
-  goalTitle: { color: colors.text, flex: 1, fontWeight: '800' },
-  goalStatus: { color: colors.amber, fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
-  goalStatusDone: { color: colors.solanaGreen },
-  goalHint: { color: colors.muted, lineHeight: 20 },
-  passportPreview: { gap: spacing.sm },
-  passportButton: {
-    alignItems: 'center',
-    backgroundColor: colors.solanaGreen,
-    borderRadius: radius.pill,
-    flexDirection: 'row',
-    gap: 4,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  passportButtonText: { color: colors.black, fontWeight: '900' },
+  passportCard: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
 });

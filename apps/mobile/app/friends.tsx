@@ -5,6 +5,7 @@ export default function FriendsScreen() {
       eyebrow="Social layer"
       title="Visit companions soon."
       icon="people-outline"
+      tone="cyan"
       copy="Friends will let players visit habitats, gift care items, and complete social quests with visible companion identity."
       previews={[
         {

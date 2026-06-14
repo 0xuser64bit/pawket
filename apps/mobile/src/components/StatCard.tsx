@@ -1,45 +1,55 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { GlassPanel, ProgressBar } from './DesignSystem';
+import { Text } from './Text';
 import { colors, radius, spacing } from '../theme/tokens';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
+type BarTone = 'green' | 'purple' | 'cyan' | 'amber' | 'magenta';
 
-const toneForLabel = (label: string) => {
-  if (label.toLowerCase().includes('hunger'))
-    return { color: colors.amber, tone: 'amber' as const, icon: 'nutrition-outline' as IconName };
-  if (label.toLowerCase().includes('happiness'))
-    return {
-      color: colors.magenta,
-      tone: 'magenta' as const,
-      icon: 'sparkles-outline' as IconName,
-    };
-  if (label.toLowerCase().includes('energy'))
-    return { color: colors.cyan, tone: 'cyan' as const, icon: 'flash-outline' as IconName };
-  return { color: colors.solanaGreen, tone: 'green' as const, icon: 'water-outline' as IconName };
+const config = (label: string): { color: string; tone: BarTone; icon: IconName } => {
+  const key = label.toLowerCase();
+  if (key.includes('hunger'))
+    return { color: colors.amber, tone: 'amber', icon: 'nutrition-outline' };
+  if (key.includes('happiness'))
+    return { color: colors.magenta, tone: 'magenta', icon: 'heart-outline' };
+  if (key.includes('energy')) return { color: colors.cyan, tone: 'cyan', icon: 'flash-outline' };
+  return { color: colors.solanaGreen, tone: 'green', icon: 'water-outline' };
 };
 
+/** A single pet vital with icon, live value, meter and low-state warning. */
 export function StatCard({ label, value }: { label: string; value: number }) {
-  const tone = toneForLabel(label);
+  const c = config(label);
+  const low = value < 30;
   return (
-    <GlassPanel style={styles.card}>
+    <GlassPanel padded={false} style={styles.card}>
       <View style={styles.row}>
         <View
-          style={[
-            styles.icon,
-            { borderColor: `${tone.color}55`, backgroundColor: `${tone.color}12` },
-          ]}
+          style={[styles.icon, { borderColor: `${c.color}55`, backgroundColor: `${c.color}18` }]}
         >
-          <Ionicons color={tone.color} name={tone.icon} size={18} />
+          <Ionicons color={c.color} name={c.icon} size={17} />
         </View>
-        <Text style={styles.value}>{value}</Text>
+        <Text variant="stat" tone={low ? 'amber' : 'text'}>
+          {value}
+        </Text>
       </View>
-      <Text style={styles.label}>{label}</Text>
-      <ProgressBar height={7} max={100} tone={tone.tone} value={value} />
+      <Text variant="micro" tone="muted">
+        {label}
+      </Text>
+      <ProgressBar height={7} max={100} tone={low ? 'amber' : c.tone} value={value} />
+      {low ? (
+        <View style={styles.lowRow}>
+          <View style={styles.lowDot} />
+          <Text variant="caption" tone="amber">
+            Needs care
+          </Text>
+        </View>
+      ) : null}
     </GlassPanel>
   );
 }
+
 const styles = StyleSheet.create({
   card: {
     flex: 1,
@@ -50,18 +60,12 @@ const styles = StyleSheet.create({
   row: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   icon: {
     alignItems: 'center',
-    borderRadius: radius.pill,
+    borderRadius: radius.md,
     borderWidth: 1,
     height: 34,
     justifyContent: 'center',
     width: 34,
   },
-  value: { color: colors.text, fontSize: 27, fontWeight: '900', letterSpacing: -0.5 },
-  label: {
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-  },
+  lowRow: { alignItems: 'center', flexDirection: 'row', gap: 6, marginTop: 2 },
+  lowDot: { backgroundColor: colors.amber, borderRadius: 999, height: 6, width: 6 },
 });

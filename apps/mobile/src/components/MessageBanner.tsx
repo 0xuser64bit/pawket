@@ -1,7 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { FadeInUp } from './Motion';
+import { Text } from './Text';
 import { colors, radius, spacing } from '../theme/tokens';
 
+const config = {
+  error: { color: colors.danger, icon: 'alert-circle-outline' as const, label: 'Heads up' },
+  success: { color: colors.solanaGreen, icon: 'checkmark-circle-outline' as const, label: 'Done' },
+} as const;
+
+/** Inline feedback banner used for transient notices and recoverable errors. */
 export function MessageBanner({
   message,
   tone,
@@ -10,16 +18,21 @@ export function MessageBanner({
   tone: 'error' | 'success';
 }) {
   if (!message) return null;
-  const color = tone === 'error' ? colors.danger : colors.solanaGreen;
+  const c = config[tone];
   return (
-    <View style={[styles.banner, { borderColor: `${color}66`, backgroundColor: `${color}12` }]}>
-      <Ionicons
-        color={color}
-        name={tone === 'error' ? 'warning-outline' : 'checkmark-circle-outline'}
-        size={18}
-      />
-      <Text style={styles.text}>{message}</Text>
-    </View>
+    <FadeInUp distance={8}>
+      <View
+        accessibilityRole="alert"
+        style={[styles.banner, { borderColor: `${c.color}55`, backgroundColor: `${c.color}14` }]}
+      >
+        <View style={[styles.icon, { backgroundColor: `${c.color}24` }]}>
+          <Ionicons color={c.color} name={c.icon} size={16} />
+        </View>
+        <Text variant="label" tone="soft" style={styles.text}>
+          {message}
+        </Text>
+      </View>
+    </FadeInUp>
   );
 }
 
@@ -30,7 +43,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.sm,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  text: { color: colors.textSoft, flex: 1, fontWeight: '700', lineHeight: 20 },
+  icon: {
+    alignItems: 'center',
+    borderRadius: radius.pill,
+    height: 30,
+    justifyContent: 'center',
+    width: 30,
+  },
+  text: { flex: 1 },
 });

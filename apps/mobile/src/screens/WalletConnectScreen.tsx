@@ -1,21 +1,38 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
-import { Button, GlassPanel, Pill, SectionHeader } from '../components/DesignSystem';
+import { StyleSheet, View } from 'react-native';
+import {
+  Button,
+  Divider,
+  GlassPanel,
+  IconTile,
+  Pill,
+  SectionHeader,
+} from '../components/DesignSystem';
+import { FadeInUp } from '../components/Motion';
 import { MessageBanner } from '../components/MessageBanner';
 import { Screen } from '../components/Screen';
+import { Text } from '../components/Text';
 import { solanaConfig } from '../solana/config';
-import { colors, spacing, typography } from '../theme/tokens';
+import { colors, spacing } from '../theme/tokens';
 
 function shorten(value: string) {
   if (value.length <= 26) return value;
   return `${value.slice(0, 12)}…${value.slice(-8)}`;
 }
 
+const trust = [
+  'Pawket never asks for a seed phrase.',
+  'You own your companion and its passport.',
+  'Dev mode is isolated from mainnet — no production claims.',
+];
+
 function ReadinessRow({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.readinessRow}>
-      <Text style={styles.readinessLabel}>{label}</Text>
-      <Text selectable style={styles.readinessValue}>
+    <View style={styles.readRow}>
+      <Text variant="micro" tone="cyan">
+        {label}
+      </Text>
+      <Text variant="mono" tone="text" selectable>
         {shorten(value)}
       </Text>
     </View>
@@ -33,72 +50,75 @@ export function WalletConnectScreen({
 }) {
   return (
     <Screen>
-      <Pill tone="green">Secure dev path</Pill>
-      <Text style={styles.title}>Connect your keeper key.</Text>
-      <Text style={styles.copy}>
-        Use the clearly named dev wallet for this demo. Real device builds will connect through
-        Solana Mobile Wallet Adapter.
-      </Text>
-
-      <GlassPanel glow style={styles.securityCard}>
-        <View style={styles.securityIcon}>
-          <Ionicons color={colors.solanaGreen} name="shield-checkmark-outline" size={30} />
-        </View>
-        <Text style={styles.cardTitle}>Your dev wallet anchors this companion session.</Text>
-        <Text style={styles.cardCopy}>
-          Pawket never asks for a seed phrase. Dev mode stores local/API pet state and does not
-          claim production mainnet ownership.
+      <FadeInUp>
+        <Pill tone="green" icon="shield-checkmark">
+          Secure dev path
+        </Pill>
+        <Text variant="title" tone="text" style={styles.title}>
+          Connect your keeper key.
         </Text>
-      </GlassPanel>
+        <Text variant="bodyLg" tone="soft">
+          Use the clearly named dev wallet for this build. Device releases will sign through the
+          Solana Mobile Wallet Adapter.
+        </Text>
+      </FadeInUp>
+
+      <FadeInUp delay={80}>
+        <GlassPanel glow="green" style={styles.hero}>
+          <IconTile icon="shield-checkmark-outline" tone="green" size={64} glow />
+          <Text variant="h2" tone="text" align="center">
+            Your dev wallet anchors this session.
+          </Text>
+          <View style={styles.trustList}>
+            {trust.map((line) => (
+              <View key={line} style={styles.trustRow}>
+                <Ionicons color={colors.solanaGreen} name="checkmark-circle" size={18} />
+                <Text variant="body" tone="soft" style={styles.flex}>
+                  {line}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </GlassPanel>
+      </FadeInUp>
 
       <MessageBanner tone="error" message={error} />
-      <Button
-        icon="wallet-outline"
-        label={loading ? 'Opening dev wallet…' : 'Continue with dev wallet'}
-        onPress={onConnected}
-        tone="green"
-        disabled={loading}
-      />
 
-      <GlassPanel style={styles.readinessPanel}>
-        <SectionHeader eyebrow="network" title="Devnet readiness" />
-        <ReadinessRow label="Program" value={solanaConfig.programId} />
-        <ReadinessRow label="Cluster" value={solanaConfig.cluster} />
-        <ReadinessRow label="RPC" value={solanaConfig.rpcUrl} />
-        <Text style={styles.readinessCopy}>
-          SDK builders are available for unsigned Anchor-compatible instructions. Signing is still
-          explicit dev/demo infrastructure.
-        </Text>
-      </GlassPanel>
+      <FadeInUp delay={140}>
+        <Button
+          icon="wallet"
+          label={loading ? 'Opening dev wallet…' : 'Continue with dev wallet'}
+          onPress={onConnected}
+          tone="green"
+          loading={loading}
+        />
+      </FadeInUp>
+
+      <FadeInUp delay={200}>
+        <GlassPanel style={styles.readiness}>
+          <SectionHeader eyebrow="network" title="Devnet readiness" tone="cyan" />
+          <ReadinessRow label="Program" value={solanaConfig.programId} />
+          <Divider />
+          <ReadinessRow label="Cluster" value={solanaConfig.cluster} />
+          <Divider />
+          <ReadinessRow label="RPC" value={solanaConfig.rpcUrl} />
+          <Text variant="caption" tone="muted" style={styles.note}>
+            SDK builders emit unsigned, Anchor-compatible instructions. Signing remains explicit
+            dev/demo infrastructure.
+          </Text>
+        </GlassPanel>
+      </FadeInUp>
     </Screen>
   );
 }
+
 const styles = StyleSheet.create({
-  title: { ...typography.title, color: colors.text },
-  copy: { ...typography.body, color: colors.textSoft, fontSize: 17 },
-  securityCard: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl },
-  securityIcon: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(20,241,149,0.12)',
-    borderColor: 'rgba(20,241,149,0.35)',
-    borderRadius: 28,
-    borderWidth: 1,
-    height: 64,
-    justifyContent: 'center',
-    width: 64,
-  },
-  cardTitle: { ...typography.h2, color: colors.text, textAlign: 'center' },
-  cardCopy: { ...typography.body, color: colors.muted, textAlign: 'center' },
-  readinessPanel: { gap: spacing.md },
-  readinessRow: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderColor: colors.border,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 5,
-    padding: spacing.md,
-  },
-  readinessLabel: { ...typography.micro, color: colors.cyan, textTransform: 'uppercase' },
-  readinessValue: { color: colors.text, fontSize: 13, fontWeight: '800', lineHeight: 18 },
-  readinessCopy: { color: colors.muted, lineHeight: 21 },
+  title: { marginTop: spacing.md, marginBottom: 6 },
+  hero: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xl },
+  trustList: { alignSelf: 'stretch', gap: spacing.sm },
+  trustRow: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.sm },
+  flex: { flex: 1 },
+  readiness: { gap: spacing.sm },
+  readRow: { gap: 5, paddingVertical: spacing.xs },
+  note: { marginTop: spacing.xs },
 });

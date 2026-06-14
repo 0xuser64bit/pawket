@@ -1,18 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import type { ComponentProps } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { GlassPanel, Pill, SectionHeader } from '../components/DesignSystem';
+import { StyleSheet, View } from 'react-native';
+import { Button, GlassPanel, IconTile, Pill, SectionHeader } from '../components/DesignSystem';
+import { FadeInUp } from '../components/Motion';
 import { Screen } from '../components/Screen';
-import { colors, radius, spacing, typography } from '../theme/tokens';
+import { Text } from '../components/Text';
+import { spacing } from '../theme/tokens';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
+type ToneKey = 'green' | 'purple' | 'cyan' | 'amber';
 
 type Preview = {
   title: string;
   copy: string;
   icon: IconName;
-  tone: 'green' | 'purple' | 'cyan' | 'amber';
+  tone: ToneKey;
 };
 
 export function PlaceholderScreen({
@@ -20,104 +23,78 @@ export function PlaceholderScreen({
   eyebrow,
   copy,
   icon,
+  tone = 'purple',
   previews,
 }: {
   title: string;
   eyebrow: string;
   copy: string;
   icon: IconName;
+  tone?: ToneKey;
   previews: Preview[];
 }) {
   return (
     <Screen nav>
-      <Pill tone="purple">Coming soon</Pill>
-      <View style={styles.hero}>
-        <View style={styles.heroIcon}>
-          <Ionicons color={colors.solanaGreen} name={icon} size={34} />
+      <FadeInUp>
+        <Pill tone={tone} icon="time-outline">
+          Coming soon
+        </Pill>
+        <View style={styles.hero}>
+          <IconTile icon={icon} tone={tone} size={84} glow />
+          <Text variant="eyebrow" tone={tone} align="center" style={styles.eyebrow}>
+            {eyebrow}
+          </Text>
+          <Text variant="title" tone="text" align="center">
+            {title}
+          </Text>
+          <Text variant="bodyLg" tone="soft" align="center">
+            {copy}
+          </Text>
         </View>
-        <Text style={styles.kicker}>{eyebrow}</Text>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.copy}>{copy}</Text>
-      </View>
+      </FadeInUp>
 
-      <SectionHeader eyebrow="preview" title="What unlocks next" />
+      <FadeInUp delay={80}>
+        <SectionHeader eyebrow="preview" title="What unlocks next" tone={tone} />
+      </FadeInUp>
+
       <View style={styles.grid}>
-        {previews.map((preview) => {
-          const color =
-            preview.tone === 'green'
-              ? colors.solanaGreen
-              : preview.tone === 'cyan'
-                ? colors.cyan
-                : preview.tone === 'amber'
-                  ? colors.amber
-                  : colors.solanaPurple;
-          return (
-            <GlassPanel key={preview.title} style={styles.card}>
-              <View
-                style={[
-                  styles.cardIcon,
-                  { borderColor: `${color}55`, backgroundColor: `${color}12` },
-                ]}
-              >
-                <Ionicons color={color} name={preview.icon} size={22} />
+        {previews.map((preview, i) => (
+          <FadeInUp key={preview.title} delay={120 + i * 60}>
+            <GlassPanel style={styles.card}>
+              <IconTile icon={preview.icon} tone={preview.tone} />
+              <View style={styles.cardBody}>
+                <Text variant="h3" tone="text">
+                  {preview.title}
+                </Text>
+                <Text variant="body" tone="muted">
+                  {preview.copy}
+                </Text>
               </View>
-              <Text style={styles.cardTitle}>{preview.title}</Text>
-              <Text style={styles.cardCopy}>{preview.copy}</Text>
             </GlassPanel>
-          );
-        })}
+          </FadeInUp>
+        ))}
       </View>
 
-      <Link href="/home" asChild>
-        <Pressable style={styles.homeButton}>
-          <Text style={styles.homeButtonText}>Return to companion</Text>
-          <Ionicons color={colors.black} name="arrow-forward" size={15} />
-        </Pressable>
-      </Link>
+      <FadeInUp delay={320}>
+        <Button
+          label="Return to companion"
+          onPress={() => router.push('/home')}
+          tone="ghost"
+          trailingIcon="arrow-forward"
+        />
+        <Text variant="caption" tone="faint" align="center" style={styles.footer}>
+          PAWKET · SEASON ONE
+        </Text>
+      </FadeInUp>
     </Screen>
   );
 }
+
 const styles = StyleSheet.create({
-  hero: { alignItems: 'center', gap: spacing.sm, paddingTop: spacing.lg },
-  heroIcon: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(20,241,149,0.12)',
-    borderColor: 'rgba(20,241,149,0.35)',
-    borderRadius: 38,
-    borderWidth: 1,
-    height: 82,
-    justifyContent: 'center',
-    width: 82,
-  },
-  kicker: {
-    ...typography.micro,
-    color: colors.solanaGreen,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-  },
-  title: { ...typography.title, color: colors.text, textAlign: 'center' },
-  copy: { ...typography.body, color: colors.textSoft, textAlign: 'center' },
+  hero: { alignItems: 'center', gap: spacing.sm, paddingTop: spacing.sm },
+  eyebrow: { marginTop: spacing.xs },
   grid: { gap: spacing.sm },
-  card: { gap: spacing.sm },
-  cardIcon: {
-    alignItems: 'center',
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  cardTitle: { color: colors.text, fontSize: 18, fontWeight: '900' },
-  cardCopy: { color: colors.muted, lineHeight: 20 },
-  homeButton: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    backgroundColor: colors.solanaGreen,
-    borderRadius: radius.pill,
-    flexDirection: 'row',
-    gap: spacing.xs,
-    justifyContent: 'center',
-    padding: spacing.md,
-  },
-  homeButtonText: { color: colors.black, fontSize: 16, fontWeight: '900' },
+  card: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
+  cardBody: { flex: 1, gap: 3 },
+  footer: { letterSpacing: 2, marginTop: spacing.sm },
 });

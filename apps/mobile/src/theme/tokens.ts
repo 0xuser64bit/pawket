@@ -1,41 +1,91 @@
+/**
+ * Pawket design tokens.
+ *
+ * One source of truth for color, type, spacing, radius, elevation and motion.
+ * Screens and components must consume these tokens instead of raw values so the
+ * product stays coherent as it grows.
+ */
+
 export const colors = {
-  ink: '#03040a',
-  bg: '#05060d',
-  bgElevated: '#090b15',
-  surface: 'rgba(255,255,255,0.045)',
-  surfaceStrong: 'rgba(255,255,255,0.075)',
-  surfaceMuted: 'rgba(255,255,255,0.026)',
-  glass: 'rgba(13,17,32,0.82)',
-  card: '#0d1020',
-  cardSoft: '#13172a',
-  border: 'rgba(255,255,255,0.09)',
+  // Structural — deep, near-black with a cool undertone.
+  void: '#04050B',
+  bg: '#06070F',
+  bgElevated: '#0A0C18',
+  base: '#06070F',
+  raised: '#0C0F1E',
+  card: '#0C0F1E',
+  cardSoft: '#11142A',
+
+  // Glass surfaces (translucent fills layered over the dark base).
+  surface: 'rgba(255,255,255,0.040)',
+  surfaceStrong: 'rgba(255,255,255,0.072)',
+  surfaceMuted: 'rgba(255,255,255,0.022)',
+  glass: 'rgba(255,255,255,0.05)',
+  glassHi: 'rgba(255,255,255,0.14)', // top-edge highlight that sells the glass
+  glassLo: 'rgba(6,7,15,0.66)',
+  scrim: 'rgba(3,4,9,0.72)',
+
+  // Hairlines.
+  border: 'rgba(255,255,255,0.085)',
   borderStrong: 'rgba(255,255,255,0.16)',
-  text: '#f7f8ff',
-  textSoft: '#d7dcf0',
-  muted: '#8d95b3',
-  faint: '#59617d',
-  solanaPurple: '#8b5cf6',
-  solanaGreen: '#14f195',
-  cyan: '#22d3ee',
-  magenta: '#ff4fd8',
-  amber: '#fbbf24',
-  danger: '#ff5f7a',
-  success: '#2af6a5',
-  warning: '#ffd166',
-  black: '#02030a',
-  white: '#ffffff',
+  line: 'rgba(255,255,255,0.07)',
+
+  // Text.
+  text: '#F5F7FF',
+  textSoft: '#CED4EE',
+  muted: '#9097B6',
+  faint: '#5A6182',
+
+  // Accents — Solana energy, used as light not as flood.
+  solanaPurple: '#9B6BFF',
+  solanaPurpleDeep: '#6E4BFF',
+  solanaGreen: '#17E589',
+  mint: '#41F0C7',
+  cyan: '#2BD4F5',
+  blue: '#5C8BFF',
+  magenta: '#FF66D4',
+  pink: '#FF66D4',
+  amber: '#FFB04D',
+  gold: '#FFD36E',
+
+  // Semantic.
+  danger: '#FF6480',
+  success: '#22E59A',
+  warning: '#FFC24B',
+
+  black: '#04050B',
+  white: '#FFFFFF',
 } as const;
 
 export const gradients = {
-  app: ['#03040a', '#070817', '#100a24', '#03040a'] as const,
-  chamber: ['rgba(34,211,238,0.18)', 'rgba(139,92,246,0.18)', 'rgba(20,241,149,0.08)'] as const,
-  primary: ['#14f195', '#22d3ee', '#8b5cf6'] as const,
-  purple: ['#a855f7', '#6366f1'] as const,
-  green: ['#14f195', '#22d3ee'] as const,
-  magenta: ['#ff4fd8', '#8b5cf6'] as const,
-  amber: ['#fbbf24', '#ff7a59'] as const,
-  glass: ['rgba(255,255,255,0.09)', 'rgba(255,255,255,0.035)'] as const,
-  danger: ['#ff5f7a', '#fb7185'] as const,
+  // Cinematic app backdrop.
+  app: ['#04050B', '#070A18', '#0C0822', '#04050B'] as const,
+  chamber: ['rgba(43,212,245,0.16)', 'rgba(155,107,255,0.18)', 'rgba(23,229,137,0.06)'] as const,
+  // CTA + accent gradients.
+  primary: ['#17E589', '#2BD4F5', '#9B6BFF'] as const,
+  green: ['#17E589', '#2BD4F5'] as const,
+  purple: ['#A98BFF', '#6E4BFF'] as const,
+  violet: ['#A98BFF', '#6E4BFF'] as const,
+  magenta: ['#FF7ADC', '#9B6BFF'] as const,
+  cyan: ['#5FE3FF', '#3AA9FF'] as const,
+  amber: ['#FFD36E', '#FF8A4C'] as const,
+  danger: ['#FF6480', '#FF8FA3'] as const,
+  // Glass fills (top→bottom).
+  glass: ['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.028)'] as const,
+  glassRaised: ['rgba(255,255,255,0.13)', 'rgba(255,255,255,0.04)'] as const,
+} as const;
+
+/** Per-species creature/aura gradients (kept here so the pet stays on-brand). */
+export const speciesGradient = {
+  luna_cat: ['#BD9BFF', '#7E5BFF'] as const,
+  moss_pup: ['#52F2A8', '#13C77E'] as const,
+  cloud_bun: ['#6FE6FF', '#3AA9FF'] as const,
+} as const;
+
+export const speciesAccent = {
+  luna_cat: colors.solanaPurple,
+  moss_pup: colors.solanaGreen,
+  cloud_bun: colors.cyan,
 } as const;
 
 export const spacing = {
@@ -50,38 +100,80 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 10,
-  md: 14,
-  lg: 20,
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 22,
   xl: 28,
   xxl: 36,
   pill: 999,
 } as const;
 
+/**
+ * Font family names exported by @expo-google-fonts. The family name carries the
+ * weight on native, so components pick a family rather than setting fontWeight.
+ */
+export const fonts = {
+  display: 'SpaceGrotesk_700Bold',
+  displaySemibold: 'SpaceGrotesk_600SemiBold',
+  displayMedium: 'SpaceGrotesk_500Medium',
+  body: 'Inter_400Regular',
+  bodyMedium: 'Inter_500Medium',
+  bodySemibold: 'Inter_600SemiBold',
+  bodyBold: 'Inter_700Bold',
+} as const;
+
 export const typography = {
-  title: { fontSize: 38, lineHeight: 42, fontWeight: '900' as const, letterSpacing: -0.8 },
-  h1: { fontSize: 32, lineHeight: 36, fontWeight: '900' as const, letterSpacing: -0.6 },
-  h2: { fontSize: 24, lineHeight: 29, fontWeight: '900' as const, letterSpacing: -0.25 },
-  h3: { fontSize: 18, lineHeight: 23, fontWeight: '800' as const },
-  body: { fontSize: 16, lineHeight: 24, fontWeight: '500' as const },
-  caption: { fontSize: 13, lineHeight: 18, fontWeight: '700' as const },
-  micro: { fontSize: 11, lineHeight: 14, fontWeight: '900' as const, letterSpacing: 1.3 },
+  display: { fontFamily: fonts.display, fontSize: 40, lineHeight: 44, letterSpacing: -1.4 },
+  title: { fontFamily: fonts.display, fontSize: 33, lineHeight: 36, letterSpacing: -1.1 },
+  h1: { fontFamily: fonts.display, fontSize: 27, lineHeight: 31, letterSpacing: -0.7 },
+  h2: { fontFamily: fonts.display, fontSize: 21, lineHeight: 26, letterSpacing: -0.4 },
+  h3: { fontFamily: fonts.displaySemibold, fontSize: 17, lineHeight: 22, letterSpacing: -0.2 },
+  stat: { fontFamily: fonts.display, fontSize: 26, lineHeight: 28, letterSpacing: -0.6 },
+  bodyLg: { fontFamily: fonts.body, fontSize: 17, lineHeight: 26 },
+  body: { fontFamily: fonts.body, fontSize: 15, lineHeight: 23 },
+  label: { fontFamily: fonts.bodySemibold, fontSize: 13, lineHeight: 18, letterSpacing: 0 },
+  caption: { fontFamily: fonts.bodyMedium, fontSize: 12, lineHeight: 16 },
+  mono: { fontFamily: fonts.bodyMedium, fontSize: 13, lineHeight: 18, letterSpacing: 0.2 },
+  eyebrow: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    lineHeight: 13,
+    letterSpacing: 1.7,
+    textTransform: 'uppercase' as const,
+  },
+  // Backwards-compatible alias used by older code paths.
+  micro: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    lineHeight: 13,
+    letterSpacing: 1.7,
+    textTransform: 'uppercase' as const,
+  },
 } as const;
 
 export const shadows = {
-  glowGreen: {
-    shadowColor: colors.solanaGreen,
-    shadowOpacity: 0.25,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
+  // Neutral elevation scale.
+  e1: {
+    shadowColor: '#000',
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
-  glowPurple: {
-    shadowColor: colors.solanaPurple,
+  e2: {
+    shadowColor: '#000',
     shadowOpacity: 0.32,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 8,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 7,
+  },
+  e3: {
+    shadowColor: '#000',
+    shadowOpacity: 0.45,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 20 },
+    elevation: 14,
   },
   panel: {
     shadowColor: '#000',
@@ -90,4 +182,53 @@ export const shadows = {
     shadowOffset: { width: 0, height: 12 },
     elevation: 7,
   },
+  // Colored glows.
+  glowGreen: {
+    shadowColor: colors.solanaGreen,
+    shadowOpacity: 0.45,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
+  },
+  glowPurple: {
+    shadowColor: colors.solanaPurple,
+    shadowOpacity: 0.5,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 10,
+  },
+  glowCyan: {
+    shadowColor: colors.cyan,
+    shadowOpacity: 0.45,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
+  },
+  glowAmber: {
+    shadowColor: colors.amber,
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
+  },
 } as const;
+
+/** Animation timing (ms) + spring config, shared so motion feels unified. */
+export const motion = {
+  fast: 140,
+  base: 220,
+  slow: 360,
+  breathe: 3400,
+  pulse: 2600,
+  float: 4200,
+  spring: { damping: 14, stiffness: 160, mass: 0.9 },
+} as const;
+
+export const layout = {
+  screenPadding: 20,
+  maxContent: 520, // keep content readable on web/tablet
+  navHeight: 66,
+} as const;
+
+export type GradientName = keyof typeof gradients;
+export type SpeciesKey = keyof typeof speciesGradient;

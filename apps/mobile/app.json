@@ -7,7 +7,13 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": false },
-    "android": { "package": "com.pawket.app", "edgeToEdgeEnabled": true }
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.pawket.app",
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": ["expo-font"]
   }
 }

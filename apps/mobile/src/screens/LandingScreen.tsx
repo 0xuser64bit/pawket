@@ -1,74 +1,101 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
-import { Button, GlassPanel, Pill } from '../components/DesignSystem';
-import { PetAvatar } from '../components/PetAvatar';
+import type { ComponentProps } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Button, GlassPanel } from '../components/DesignSystem';
+import { BrandMark } from '../components/BrandMark';
+import { FadeInUp } from '../components/Motion';
+import { PetChamber } from '../components/PetChamber';
 import { Screen } from '../components/Screen';
-import { colors, spacing, typography } from '../theme/tokens';
+import { Text } from '../components/Text';
+import { colors, spacing } from '../theme/tokens';
+
+type IconName = ComponentProps<typeof Ionicons>['name'];
+
+const features: { icon: IconName; title: string; copy: string; color: string }[] = [
+  { icon: 'sparkles', title: 'Adopt', copy: 'Claim a companion', color: colors.solanaPurple },
+  { icon: 'heart', title: 'Care', copy: 'Daily rituals', color: colors.magenta },
+  { icon: 'trending-up', title: 'Evolve', copy: 'Build its story', color: colors.solanaGreen },
+];
 
 export function LandingScreen({ onStart }: { onStart: () => void }) {
   return (
     <Screen>
-      <View style={styles.brandRow}>
-        <View style={styles.mark}>
-          <Ionicons color={colors.solanaGreen} name="paw" size={22} />
+      <FadeInUp>
+        <BrandMark pill="Devnet" />
+      </FadeInUp>
+
+      <FadeInUp delay={60}>
+        <View style={styles.hero}>
+          <Text variant="eyebrow" tone="green">
+            Living companion protocol
+          </Text>
+          <Text variant="display" tone="text" style={styles.title}>
+            A living on-chain companion.
+          </Text>
+          <Text variant="bodyLg" tone="soft">
+            Adopt a digital pet, build its Pet Passport, and turn every care ritual into part of its
+            story.
+          </Text>
         </View>
-        <Text style={styles.brand}>Pawket</Text>
-        <Pill tone="purple">Solana devnet</Pill>
-      </View>
+      </FadeInUp>
 
-      <View style={styles.hero}>
-        <Text style={styles.kicker}>Living companion protocol</Text>
-        <Text style={styles.title}>A living Solana companion.</Text>
-        <Text style={styles.copy}>
-          Adopt a digital pet, build its Pet Passport, and turn every care ritual into part of its
-          story.
-        </Text>
-      </View>
+      <FadeInUp delay={120}>
+        <PetChamber mood="Waking up" />
+      </FadeInUp>
 
-      <PetAvatar compact mood="Waking up" />
-
-      <GlassPanel style={styles.promise}>
-        <View style={styles.promiseRow}>
-          <Ionicons color={colors.cyan} name="pulse-outline" size={20} />
-          <Text style={styles.promiseTitle}>Care today. Evolve forever.</Text>
+      <FadeInUp delay={180}>
+        <View style={styles.featureRow}>
+          {features.map((f) => (
+            <GlassPanel key={f.title} padded={false} style={styles.featureCard}>
+              <View style={[styles.featureIcon, { backgroundColor: `${f.color}1c` }]}>
+                <Ionicons color={f.color} name={f.icon} size={18} />
+              </View>
+              <Text variant="label" tone="text">
+                {f.title}
+              </Text>
+              <Text variant="caption" tone="muted">
+                {f.copy}
+              </Text>
+            </GlassPanel>
+          ))}
         </View>
-        <Text style={styles.promiseCopy}>
-          Pawket starts in a transparent dev wallet flow while the Solana Mobile signing path is
-          wired.
-        </Text>
-      </GlassPanel>
+      </FadeInUp>
 
-      <Button icon="sparkles-outline" label="Wake your companion" onPress={onStart} />
-      <Text style={styles.footer}>Pet Passport · Season One · Companion economy</Text>
+      <FadeInUp delay={240}>
+        <View style={styles.cta}>
+          <Button
+            icon="sparkles"
+            label="Wake your companion"
+            onPress={onStart}
+            trailingIcon="arrow-forward"
+          />
+          <Text variant="caption" tone="faint" align="center" style={styles.footer}>
+            CARE TODAY · EVOLVE FOREVER
+          </Text>
+        </View>
+      </FadeInUp>
     </Screen>
   );
 }
+
 const styles = StyleSheet.create({
-  brandRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
-  mark: {
+  hero: { gap: spacing.sm, paddingTop: spacing.sm },
+  title: { marginTop: 2 },
+  featureRow: { flexDirection: 'row', gap: spacing.sm },
+  featureCard: {
+    alignItems: 'flex-start',
+    flex: 1,
+    gap: 6,
+    padding: spacing.md,
+  },
+  featureIcon: {
     alignItems: 'center',
-    backgroundColor: 'rgba(20,241,149,0.12)',
-    borderColor: 'rgba(20,241,149,0.35)',
-    borderRadius: 16,
-    borderWidth: 1,
-    height: 42,
+    borderRadius: 12,
+    height: 36,
     justifyContent: 'center',
-    width: 42,
+    marginBottom: 2,
+    width: 36,
   },
-  brand: { color: colors.text, flex: 1, fontSize: 21, fontWeight: '900', letterSpacing: -0.3 },
-  hero: { gap: spacing.sm, paddingTop: spacing.xl },
-  kicker: { ...typography.micro, color: colors.solanaGreen, textTransform: 'uppercase' },
-  title: { ...typography.title, color: colors.text, fontSize: 44, lineHeight: 47 },
-  copy: { ...typography.body, color: colors.textSoft, fontSize: 17 },
-  promise: { gap: spacing.sm },
-  promiseRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
-  promiseTitle: { color: colors.text, flex: 1, fontSize: 18, fontWeight: '900' },
-  promiseCopy: { ...typography.body, color: colors.muted },
-  footer: {
-    color: colors.faint,
-    fontSize: 12,
-    fontWeight: '800',
-    textAlign: 'center',
-    textTransform: 'uppercase',
-  },
+  cta: { gap: spacing.sm },
+  footer: { letterSpacing: 2, marginTop: 2 },
 });

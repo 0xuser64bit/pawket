@@ -1,45 +1,96 @@
 # Pawket mobile UI direction
 
-Pawket's mobile UI is designed as a dark, futuristic companion product for Solana users: cinematic black surfaces, restrained Solana green/purple/cyan accents, glass panels, glowing pet chambers, and concise crypto-native copy.
+Pawket's mobile UI is a dark, cinematic companion product for Solana users: near-black
+surfaces, restrained Solana green/purple/cyan energy, real glass panels, a glowing pet
+chamber, premium typography and subtle, reduced-motion-aware animation.
 
 ## Design principles
 
-- Dark-native, not a light app with dark colors.
-- Cute companion energy without childish cartoon chrome.
-- Trustworthy devnet language: no production or on-chain claim unless the path is actually wired.
-- Mobile-first hierarchy: companion chamber first, then vitals, rituals, Passport, and seasonal loops.
-- Consistent reusable primitives instead of one-off screen styling.
+- **Dark-native**, not a light app with dark colors. Deep `#06070F` base with cool undertone.
+- **The pet is the hero.** It is a live, code-drawn SVG creature with mood and species variants,
+  not a placeholder. Everything else frames it.
+- **Cute, but sharp.** Companion warmth for the pet, crypto precision for the chrome.
+- **Honest devnet language.** No "on-chain" / production claims unless the path is actually wired.
+- **Motion conveys life, not decoration.** Breathing pet, pulsing aura, animated meters, pressed
+  feedback — all respect `prefers-reduced-motion`.
+- **Token-driven.** Screens consume tokens and primitives; no per-screen hardcoded colors/sizes.
+
+## Foundations (`src/theme/tokens.ts`)
+
+- `colors` — structural surfaces, glass fills, hairlines, text scale, Solana accents, semantics.
+- `gradients` — app backdrop, chamber, CTA/accent gradients, glass fills. `speciesGradient` /
+  `speciesAccent` keep the pet on-brand per species.
+- `spacing` (4/8 rhythm), `radius`, `shadows` (`e1/e2/e3` elevation + colored `glow*`).
+- `typography` — type scale baked onto **Space Grotesk** (display) + **Inter** (body/UI). The
+  family carries the weight, so components pick a variant rather than setting `fontWeight`.
+- `motion` — shared durations/spring so all animation shares one rhythm. `layout` — screen
+  padding, max content width (web/tablet), nav height.
+
+Fonts load in `app/_layout.tsx` via `expo-font` with a branded boot gate.
 
 ## Core primitives
 
-The practical design system lives in `apps/mobile/src/theme/tokens.ts` and `apps/mobile/src/components/DesignSystem.tsx`.
+Typography — **always use the `Text` primitive** (`src/components/Text.tsx`):
 
-Use these for new mobile screens:
+```tsx
+<Text variant="title" tone="text">Claim your companion.</Text>
+<Text variant="body" tone="muted">Care today. Evolve forever.</Text>
+```
 
-- `Screen`: cinematic gradient background, safe-area spacing, optional bottom navigation.
-- `GlassPanel`: translucent premium card surface.
-- `Button`: gradient/ghost CTA with pressed and disabled states.
-- `Pill`: small status/category badge.
-- `SectionHeader`: consistent eyebrow + title hierarchy.
-- `ProgressBar`: XP, vitals, ritual progress.
-- `StateBlock`: polished loading, empty, and error states.
-- `PetAvatar`: code-generated pet chamber placeholder until final art exists.
-- `StatCard`: pet vitals with meter and icon.
+Layout / surfaces / controls (`src/components/DesignSystem.tsx`):
+
+- `Screen` — cinematic gradient + ambient orbs, safe areas, centered max-width, optional `nav`.
+- `GlassPanel` — real glass surface (gradient fill + top highlight edge + border + elevation);
+  `glow` accepts `true | 'green' | 'cyan' | 'amber' | 'purple'`.
+- `Button` — gradient/ghost CTA with `tone`, `size`, `loading`, leading/trailing icons, spring press.
+- `Pill`, `IconTile`, `Divider`, `SectionHeader`, `ProgressBar` (animated gradient fill),
+  `StateBlock` (loading / empty / error), `BottomNav` (5 top-level tabs, animated active state).
+- `StatCard` — a pet vital meter with icon, live value and low-state warning.
+- `MessageBanner` — inline notice / recoverable error with `aria`/role and entrance.
+
+Motion (`src/components/Motion.tsx`, all reduced-motion aware):
+`Breathing`, `Floating`, `Halo` (aura pulse), `FadeInUp` (entrance / stagger),
+`PressableScale`, `Skeleton`.
+
+## Pet visual system
+
+- `PetCreature` (`src/components/PetCreature.tsx`) — pure SVG creature. Species silhouettes
+  (Luna Cat / Moss Pup / Cloud Bun) via ears + gradient; mood drives eye openness, mouth, blush
+  and sparkle; idle blink. Crisp at any size.
+- `PetChamber` (`src/components/PetChamber.tsx`) — the habitat: tinted depth, static + animated
+  aura rings, floor glow, breathing/floating creature and a mood readout. This is the anchor on
+  Landing, Adopt, Home and Passport.
+- `PetAvatar` remains as a thin backward-compatible alias for `PetChamber`.
 
 ## Screen composition
 
-- Landing: premium first impression, hero copy, pet chamber, devnet honesty.
-- Wallet: secure dev wallet path, cluster/program/RPC context, no seed phrase language.
-- Adopt: companion selection chamber, species cards, personality tuning, name signal.
-- Home: living companion chamber, bond progression, care dashboard, tactile rituals, daily streak, Passport preview, and care feedback moments.
-- Passport: futuristic identity card plus dev/API memory timeline.
-- Store/Friends/Events: productized coming-soon surfaces, not TODO screens.
-- Settings: clean cluster/API/session information without raw debug dumps.
+- **Landing** — wordmark, hero headline, companion chamber, Adopt/Care/Evolve features, CTA.
+- **Wallet** — trustworthy dev-wallet path: shield hero, trust list, devnet readiness (program /
+  cluster / RPC), honest signing language.
+- **Adopt** — "claim your companion": a live preview chamber that reacts to species + personality,
+  name signal, species cards (each shows its creature), personality tuning, summary + adopt.
+- **Home** — companion chamber, bond/XP card, vitals dashboard, tactile care rituals, daily streak,
+  care-feedback "memory" moments, Passport preview. Settings via header gear.
+- **Passport** — futuristic identity card (avatar, owner, level, adopted, memories, vitality) plus
+  a dev/API memory timeline rail.
+- **Store / Friends / Events** — productized coming-soon surfaces (`PlaceholderScreen`), tonally
+  distinct, with "what unlocks next" previews.
+- **Settings** — clean control room (session / network / service) as a back-navigable sub-screen.
 
-## Daily loop feedback
+## Navigation
 
-Care actions create a lightweight local feedback object in mobile session state. The home screen renders it as a premium “Memory unlocked” / “Bond level increased” panel with XP, level, and stat deltas. This keeps the API path honest while making the core care loop feel like a game moment instead of a form submission.
+Five top-level tabs in the floating glass `BottomNav` (Home, Passport, Store, Friends, Events) to
+respect the ≤5 bottom-nav guideline. Settings is a pushed sub-screen reached from the Home header.
+
+## Accessibility & motion
+
+- All animation checks `useReducedMotion()` and degrades to a static, fully-legible layout.
+- Touch targets ≥44pt; icon-only controls carry `accessibilityLabel`; banners use `role="alert"`.
+- Dark-mode contrast tuned in tokens (primary text ≥4.5:1, secondary ≥3:1).
 
 ## What still needs real art
 
-The current pet visual system is intentionally code-generated: glowing rings, aura colors, and tasteful ASCII-like silhouettes. Final production should replace this with species-specific 2D/3D art, animated idle states, and collectible cosmetics while preserving the same chamber composition and token system.
+The SVG creatures are a strong, production-usable placeholder language. Final production can swap in
+species-specific 2D/3D art, richer idle/care animations and collectible cosmetics while preserving
+the same `PetChamber` composition, mood system and tokens. Real wallet signing (Solana Mobile
+Wallet Adapter) and live Store/Friends/Events data are the next functional layers.

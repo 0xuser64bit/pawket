@@ -14,6 +14,21 @@
       "package": "com.pawket.app",
       "edgeToEdgeEnabled": true
     },
-    "plugins": ["expo-font"]
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#06070F",
+          "image": "./assets/brand/pawket-logo.png",
+          "dark": {
+            "image": "./assets/brand/pawket-logo.png",
+            "backgroundColor": "#06070F"
+          },
+          "imageWidth": 220,
+          "resizeMode": "contain"
+        }
+      ]
+    ]
   }
 }

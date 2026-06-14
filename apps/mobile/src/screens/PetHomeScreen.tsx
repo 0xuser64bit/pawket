@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { calculateXpForNextLevel, CareActionType, type DailyGoalsResponse } from '@pawket/shared';
 import { Link } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   Button,
@@ -56,6 +57,71 @@ function toneColor(tone: 'amber' | 'magenta' | 'green' | 'cyan') {
   if (tone === 'magenta') return colors.magenta;
   if (tone === 'cyan') return colors.cyan;
   return colors.solanaGreen;
+}
+
+function statLabel(stat: string) {
+  return stat.charAt(0).toUpperCase() + stat.slice(1);
+}
+
+function CareFeedbackPanel({
+  feedback,
+  onDismiss,
+}: {
+  feedback: ReturnType<typeof usePawketSession>['careFeedback'];
+  onDismiss: () => void;
+}) {
+  if (!feedback) return null;
+
+  const deltas = Object.entries(feedback.statDeltas).filter(([, value]) => Boolean(value));
+  const isDailyReward = feedback.actionType === 'daily_reward';
+  const actionVisual = isDailyReward ? null : actionConfig[feedback.actionType as CareActionType];
+  const color = actionVisual ? toneColor(actionVisual.tone) : colors.solanaGreen;
+
+  return (
+    <GlassPanel glow style={[styles.feedbackPanel, { borderColor: `${color}55` }]}>
+      <View style={styles.feedbackHeader}>
+        <View
+          style={[
+            styles.feedbackIcon,
+            { backgroundColor: `${color}16`, borderColor: `${color}66` },
+          ]}
+        >
+          <Ionicons color={color} name={actionVisual?.icon ?? 'gift-outline'} size={22} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.feedbackEyebrow}>
+            {feedback.passportEventTitle ?? 'Passport memory'}
+          </Text>
+          <Text style={styles.feedbackTitle}>{feedback.title}</Text>
+        </View>
+        <Pressable accessibilityRole="button" onPress={onDismiss} style={styles.dismissButton}>
+          <Ionicons color={colors.faint} name="close" size={18} />
+        </Pressable>
+      </View>
+      <Text style={styles.feedbackCopy}>{feedback.copy}</Text>
+      <View style={styles.feedbackRewards}>
+        <View style={styles.rewardChip}>
+          <Ionicons color={colors.solanaGreen} name="flash-outline" size={15} />
+          <Text style={styles.rewardText}>+{feedback.xpGained} XP</Text>
+        </View>
+        {feedback.levelDelta > 0 ? (
+          <View style={styles.rewardChip}>
+            <Ionicons color={colors.cyan} name="trending-up-outline" size={15} />
+            <Text style={styles.rewardText}>+{feedback.levelDelta} bond level</Text>
+          </View>
+        ) : null}
+        {deltas.map(([stat, value]) => (
+          <View key={stat} style={styles.rewardChip}>
+            <Text style={[styles.deltaSign, Number(value) > 0 ? styles.deltaUp : styles.deltaDown]}>
+              {Number(value) > 0 ? '+' : ''}
+              {Number(value)}
+            </Text>
+            <Text style={styles.rewardText}>{statLabel(stat)}</Text>
+          </View>
+        ))}
+      </View>
+    </GlassPanel>
+  );
 }
 
 function DailyGoalsPanel({
@@ -201,15 +267,18 @@ function CareActionCard({
 
 export function PetHomeScreen() {
   const {
+    careFeedback,
     careForPet,
     claimDailyReward,
     dailyGoals,
+    dismissCareFeedback,
     error,
     notice,
     pet,
     refreshDailyGoals,
     status,
   } = usePawketSession();
+  const [activeCareAction, setActiveCareAction] = useState<CareActionType | null>(null);
   if (!pet) {
     return (
       <Screen nav>
@@ -228,6 +297,14 @@ export function PetHomeScreen() {
   const progress = Math.max(0, pet.xp - currentLevelXp);
   const needed = Math.max(1, nextLevelXp - currentLevelXp);
   const careDisabled = status === 'caring' || status === 'claiming_daily_reward';
+  const handleCareAction = async (action: CareActionType) => {
+    setActiveCareAction(action);
+    try {
+      await careForPet(action);
+    } finally {
+      setActiveCareAction(null);
+    }
+  };
   const lastCare = pet.lastCaredAt
     ? `${label(pet.lastCareActionType ?? 'care')} · ${new Date(pet.lastCaredAt).toLocaleTimeString(
         [],
@@ -271,6 +348,7 @@ export function PetHomeScreen() {
 
       <MessageBanner tone="success" message={notice} />
       <MessageBanner tone="error" message={error} />
+      <CareFeedbackPanel feedback={careFeedback} onDismiss={dismissCareFeedback} />
 
       <SectionHeader eyebrow="vitals" title="Care dashboard" />
       <View style={styles.grid}>
@@ -286,9 +364,9 @@ export function PetHomeScreen() {
           <CareActionCard
             key={action}
             action={action}
-            busy={status === 'caring'}
+            busy={status === 'caring' && activeCareAction === action}
             disabled={careDisabled}
-            onPress={() => careForPet(action)}
+            onPress={() => void handleCareAction(action)}
           />
         ))}
       </View>
@@ -337,6 +415,49 @@ const styles = StyleSheet.create({
   identitySub: { color: colors.muted, lineHeight: 20, marginTop: 4 },
   xpLabel: { color: colors.textSoft, fontWeight: '800' },
   xpValue: { color: colors.solanaGreen, fontWeight: '900' },
+  feedbackPanel: { gap: spacing.md },
+  feedbackHeader: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+  feedbackIcon: {
+    alignItems: 'center',
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    height: 46,
+    justifyContent: 'center',
+    width: 46,
+  },
+  feedbackEyebrow: {
+    ...typography.micro,
+    color: colors.solanaGreen,
+    textTransform: 'uppercase',
+  },
+  feedbackTitle: { color: colors.text, fontSize: 20, fontWeight: '900', marginTop: 2 },
+  feedbackCopy: { color: colors.textSoft, lineHeight: 21 },
+  feedbackRewards: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  rewardChip: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.055)',
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 5,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 7,
+  },
+  rewardText: { color: colors.text, fontSize: 12, fontWeight: '900' },
+  deltaSign: { fontSize: 12, fontWeight: '900' },
+  deltaUp: { color: colors.solanaGreen },
+  deltaDown: { color: colors.amber },
+  dismissButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    height: 34,
+    justifyContent: 'center',
+    width: 34,
+  },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   actionCard: {

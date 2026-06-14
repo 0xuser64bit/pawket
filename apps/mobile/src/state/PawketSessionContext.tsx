@@ -20,6 +20,16 @@ type SessionStatus =
   | 'claiming_daily_reward'
   | 'loading_passport';
 
+type CareFeedback = {
+  actionType: CareActionType | 'daily_reward';
+  title: string;
+  copy: string;
+  xpGained: number;
+  levelDelta: number;
+  statDeltas: Partial<Record<keyof Pet['stats'], number>>;
+  passportEventTitle?: string;
+};
+
 type PawketSession = {
   wallet: WalletSession | null;
   pet: Pet | null;
@@ -28,6 +38,7 @@ type PawketSession = {
   status: SessionStatus;
   error: string | null;
   notice: string | null;
+  careFeedback: CareFeedback | null;
   connectDevWallet: () => Promise<void>;
   refreshPet: () => Promise<void>;
   adoptPet: (input: {
@@ -40,6 +51,7 @@ type PawketSession = {
   claimDailyReward: () => Promise<void>;
   loadPassport: () => Promise<void>;
   clearMessages: () => void;
+  dismissCareFeedback: () => void;
 };
 
 const PawketSessionContext = createContext<PawketSession | null>(null);
@@ -50,6 +62,20 @@ function messageFromError(error: unknown) {
   return 'Something went wrong. Please try again.';
 }
 
+function statDeltas(before: Pet['stats'], after: Pet['stats']): CareFeedback['statDeltas'] {
+  return {
+    hunger: after.hunger - before.hunger,
+    happiness: after.happiness - before.happiness,
+    energy: after.energy - before.energy,
+    hygiene: after.hygiene - before.hygiene,
+  };
+}
+
+function careActionLabel(actionType: CareActionType | 'daily_reward') {
+  if (actionType === 'daily_reward') return 'Daily reward';
+  return actionType.charAt(0).toUpperCase() + actionType.slice(1);
+}
+
 export function PawketSessionProvider({ children }: { children: ReactNode }) {
   const [wallet, setWallet] = useState<WalletSession | null>(null);
   const [pet, setPet] = useState<Pet | null>(null);
@@ -58,10 +84,15 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SessionStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [careFeedback, setCareFeedback] = useState<CareFeedback | null>(null);
 
   const clearMessages = useCallback(() => {
     setError(null);
     setNotice(null);
+  }, []);
+
+  const dismissCareFeedback = useCallback(() => {
+    setCareFeedback(null);
   }, []);
 
   const refreshPetForWallet = useCallback(async (session: WalletSession) => {
@@ -163,6 +194,7 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
       clearMessages();
       setStatus('caring');
       try {
+        const previousPet = pet;
         const response = await api.careForPet({
           petId: pet.id,
           walletAddress: wallet.address,
@@ -171,7 +203,20 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
         setPet(response.pet);
         prependPassportEvent(response.passportEvent);
         await refreshDailyGoalsForPet(response.pet, wallet);
-        setNotice(`${response.pet.name} gained care XP.`);
+        const xpGained = Math.max(0, response.pet.xp - previousPet.xp);
+        const levelDelta = Math.max(0, response.pet.level - previousPet.level);
+        setCareFeedback({
+          actionType,
+          title: levelDelta > 0 ? 'Bond level increased' : 'Memory unlocked',
+          copy:
+            response.passportEvent?.description ??
+            `${careActionLabel(actionType)} was recorded in ${response.pet.name}'s passport timeline.`,
+          xpGained,
+          levelDelta,
+          statDeltas: statDeltas(previousPet.stats, response.pet.stats),
+          passportEventTitle: response.passportEvent?.title,
+        });
+        setNotice(`${response.pet.name} gained ${xpGained} XP.`);
       } catch (caught) {
         setError(messageFromError(caught));
       } finally {
@@ -213,6 +258,17 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
       setPet(response.pet);
       setDailyGoals(response.dailyGoals);
       prependPassportEvent(response.passportEvent);
+      setCareFeedback({
+        actionType: 'daily_reward',
+        title: 'Season streak sealed',
+        copy:
+          response.passportEvent.description ??
+          'The daily ritual reward was added to the passport timeline.',
+        xpGained: response.dailyGoals.reward?.xp ?? Math.max(0, response.pet.xp - pet.xp),
+        levelDelta: Math.max(0, response.pet.level - pet.level),
+        statDeltas: {},
+        passportEventTitle: response.passportEvent.title,
+      });
       setNotice(`Claimed +${response.dailyGoals.reward?.xp ?? 25} XP daily reward.`);
     } catch (caught) {
       setError(messageFromError(caught));
@@ -244,6 +300,7 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
       status,
       error,
       notice,
+      careFeedback,
       connectDevWallet,
       refreshPet,
       adoptPet,
@@ -252,6 +309,7 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
       claimDailyReward,
       loadPassport,
       clearMessages,
+      dismissCareFeedback,
     }),
     [
       wallet,
@@ -261,6 +319,7 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
       status,
       error,
       notice,
+      careFeedback,
       connectDevWallet,
       refreshPet,
       adoptPet,
@@ -269,6 +328,7 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
       claimDailyReward,
       loadPassport,
       clearMessages,
+      dismissCareFeedback,
     ],
   );
 

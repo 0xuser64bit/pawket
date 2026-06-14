@@ -31,10 +31,14 @@ Use these for new mobile screens:
 - Landing: premium first impression, hero copy, pet chamber, devnet honesty.
 - Wallet: secure dev wallet path, cluster/program/RPC context, no seed phrase language.
 - Adopt: companion selection chamber, species cards, personality tuning, name signal.
-- Home: living companion chamber, bond progression, care dashboard, tactile rituals, daily streak, Passport preview.
+- Home: living companion chamber, bond progression, care dashboard, tactile rituals, daily streak, Passport preview, and care feedback moments.
 - Passport: futuristic identity card plus dev/API memory timeline.
 - Store/Friends/Events: productized coming-soon surfaces, not TODO screens.
 - Settings: clean cluster/API/session information without raw debug dumps.
+
+## Daily loop feedback
+
+Care actions create a lightweight local feedback object in mobile session state. The home screen renders it as a premium “Memory unlocked” / “Bond level increased” panel with XP, level, and stat deltas. This keeps the API path honest while making the core care loop feel like a game moment instead of a form submission.
 
 ## What still needs real art
 

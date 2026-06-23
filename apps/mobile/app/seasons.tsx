@@ -121,7 +121,12 @@ export default function SeasonsScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  head: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xs },
+  head: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
   banner: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   grid: { gap: spacing.sm },
   card: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.md },

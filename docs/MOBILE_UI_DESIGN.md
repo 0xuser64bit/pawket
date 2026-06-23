@@ -44,7 +44,7 @@ Layout / surfaces / controls (`src/components/DesignSystem.tsx`):
   `glow` accepts `true | 'green' | 'cyan' | 'amber' | 'purple'`.
 - `Button` — gradient/ghost CTA with `tone`, `size`, `loading`, leading/trailing icons, spring press.
 - `Pill`, `IconTile`, `Divider`, `SectionHeader`, `ProgressBar` (animated gradient fill),
-  `StateBlock` (loading / empty / error), `BottomNav` (5 top-level tabs, animated active state).
+  `StateBlock` (loading / empty / error), `BottomNav` (3 top-level tabs, animated active state).
 - `StatCard` — a pet vital meter with icon, live value and low-state warning.
 - `MessageBanner` — inline notice / recoverable error with `aria`/role and entrance.
 
@@ -60,11 +60,10 @@ Motion (`src/components/Motion.tsx`, all reduced-motion aware):
 - `PetChamber` (`src/components/PetChamber.tsx`) — the habitat: tinted depth, static + animated
   aura rings, floor glow, breathing/floating creature and a mood readout. This is the anchor on
   Landing, Adopt, Home and Passport.
-- `PetAvatar` remains as a thin backward-compatible alias for `PetChamber`.
 
 ## Care feedback & life system
 
-The companion must visibly *respond* to care, not just update a dashboard. A resolved
+The companion must visibly _respond_ to care, not just update a dashboard. A resolved
 care result drives a coordinated burst of feedback:
 
 - **Reactive pet** — `PetChamber` accepts a one-shot `reaction` (`{ type, nonce, xp }`).
@@ -85,22 +84,25 @@ All of the above degrade to a static, legible layout under `prefers-reduced-moti
 ## Screen composition
 
 - **Landing** — wordmark, hero headline, companion chamber, Adopt/Care/Evolve features, CTA.
-- **Wallet** — trustworthy dev-wallet path: shield hero, trust list, devnet readiness (program /
-  cluster / RPC), honest signing language.
+- **Wallet** — trustworthy on-device key path: shield hero, trust list, devnet network info
+  (program / cluster / RPC), one-tap "create your companion key" with confident copy.
 - **Adopt** — "claim your companion": a live preview chamber that reacts to species + personality,
   name signal, species cards (each shows its creature), personality tuning, summary + adopt.
-- **Home** — companion chamber, bond/XP card, vitals dashboard, tactile care rituals, daily streak,
-  care-feedback "memory" moments, Passport preview. Settings via header gear.
+- **Home** — companion chamber, bond/XP card, vitals dashboard (now driven by real-time decay),
+  tactile care rituals, daily streak, care-feedback "memory" moments, Passport preview. Settings
+  via header gear.
 - **Passport** — futuristic identity card (avatar, owner, level, adopted, memories, vitality) plus
-  a dev/API memory timeline rail.
-- **Store / Friends / Events** — productized coming-soon surfaces (`PlaceholderScreen`), tonally
-  distinct, with "what unlocks next" previews.
-- **Settings** — clean control room (session / network / service) as a back-navigable sub-screen.
+  a memory timeline rail.
+- **Seasons** — one designed forward surface that previews Season One quests, cosmetics/eggs, and
+  visits/gifting as honest "what's coming" cards (replaces the old Store/Friends/Events stubs).
+- **Settings** — session / network / app plus real companion-key actions (disconnect, start over),
+  as a back-navigable sub-screen.
 
 ## Navigation
 
-Five top-level tabs in the floating glass `BottomNav` (Home, Passport, Store, Friends, Events) to
-respect the ≤5 bottom-nav guideline. Settings is a pushed sub-screen reached from the Home header.
+Three top-level tabs in the floating glass `BottomNav` (Home, Passport, Seasons) — every tab is a
+real, intentional destination rather than a coming-soon placeholder. Settings is a pushed sub-screen
+reached from the Home header.
 
 ## Accessibility & motion
 
@@ -112,5 +114,6 @@ respect the ≤5 bottom-nav guideline. Settings is a pushed sub-screen reached f
 
 The SVG creatures are a strong, production-usable placeholder language. Final production can swap in
 species-specific 2D/3D art, richer idle/care animations and collectible cosmetics while preserving
-the same `PetChamber` composition, mood system and tokens. Real wallet signing (Solana Mobile
-Wallet Adapter) and live Store/Friends/Events data are the next functional layers.
+the same `PetChamber` composition, mood system and tokens. On-device transaction signing through the
+Solana Mobile Wallet Adapter, and turning the Seasons surface into live quests/store/friends data,
+are the next functional layers.

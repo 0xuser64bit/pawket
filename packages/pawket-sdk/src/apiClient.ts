@@ -110,11 +110,6 @@ export class PawketApiClient {
     });
   }
 
-  // Backwards-compatible names from the foundation scaffold.
-  getPets(walletAddress: string) {
-    return this.getPetByWallet(walletAddress);
-  }
-
   createPaymentIntent(input: PaymentIntentInput) {
     return this.request('/payments/create-intent', {
       method: 'POST',

@@ -15,7 +15,7 @@ pnpm --filter @pawket/mobile dev
 
 The current MVP loop is real on the API/database path:
 
-1. Connect with the clearly labeled local/dev wallet in the mobile app.
+1. Create or restore the on-device companion key (a real, persisted Ed25519 keypair) in the mobile app.
 2. Adopt a pet through `POST /pets/adopt`.
 3. View the persisted active pet through `GET /pets/:walletAddress`.
 4. Perform care actions through `POST /pets/:petId/care`.
@@ -127,7 +127,7 @@ Anchor alignment today:
 - Shared package is the source of truth for pet enums, stats, schemas, mood, XP, level, care effects, cooldown validation, initial state, daily goals, UTC streaks, and daily reward values.
 - API routes are service-backed and persist core lifecycle plus daily reward claim state through Prisma/Postgres.
 - SDK exposes typed methods for the pet lifecycle and daily goals, plus Solana PDA helpers and unsigned transaction builders.
-- Mobile uses a clearly labeled dev wallet plus the SDK/API path for adoption, care, pet reload, daily goals, reward claims, and passport timeline. The wallet screen also shows the configured program ID, cluster, and RPC while stating that mobile signing is not connected yet.
+- Mobile mints a real per-device companion key (unique wallet per install, persisted, signable) and drives adoption, care, pet reload, daily goals, reward claims, and the passport timeline through the SDK/API. Vitals decay in real time. The wallet screen shows the configured program ID, cluster, and RPC; on-device transaction signing through the Solana Mobile Wallet Adapter is the next layer.
 
 ## Still stubbed / intentionally not faked
 

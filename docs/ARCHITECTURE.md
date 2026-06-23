@@ -11,7 +11,7 @@
 
 ## Mobile architecture
 
-The mobile app is split into navigation, UI components, theme tokens, hooks, API client, wallet abstraction, Solana config, and payment client. Demo state lives in `src/dev/demoPet.ts` so it can be removed cleanly when API/program reads are wired. The wallet screen surfaces the configured program ID, cluster, and RPC while making clear that SDK transaction builders are ready but mobile wallet signing is not connected yet.
+The mobile app is split into navigation, UI components, theme tokens, hooks, API client, wallet abstraction, Solana config, and payment client. Identity is a real per-device Ed25519 "companion key" (`src/wallet/companionKey.ts` + `DeviceWalletAdapter`): generated with a platform CSPRNG, base58-encoded to a Solana-compatible address, persisted via async storage, and capable of real detached signing. The session context restores it silently on launch so a returning player resumes their pet. All pet/daily-goal/passport state is read live from the API; there is no mock/demo pet. The Solana config still surfaces program ID, cluster, and RPC; device transaction signing through the Solana Mobile Wallet Adapter is the next layer.
 
 ## Backend architecture
 

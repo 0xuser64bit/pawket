@@ -44,7 +44,6 @@ export const colors = {
   cyan: '#2BD4F5',
   blue: '#5C8BFF',
   magenta: '#FF66D4',
-  pink: '#FF66D4',
   amber: '#FFB04D',
   gold: '#FFD36E',
 
@@ -65,7 +64,6 @@ export const gradients = {
   primary: ['#17E589', '#2BD4F5', '#9B6BFF'] as const,
   green: ['#17E589', '#2BD4F5'] as const,
   purple: ['#A98BFF', '#6E4BFF'] as const,
-  violet: ['#A98BFF', '#6E4BFF'] as const,
   magenta: ['#FF7ADC', '#9B6BFF'] as const,
   cyan: ['#5FE3FF', '#3AA9FF'] as const,
   amber: ['#FFD36E', '#FF8A4C'] as const,

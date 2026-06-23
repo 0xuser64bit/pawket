@@ -5,3 +5,4 @@ build
 coverage
 programs/pawket/target
 programs/pawket/.anchor
+pnpm-lock.yaml

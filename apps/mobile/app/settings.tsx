@@ -167,7 +167,8 @@ export default function SettingsScreen() {
             }}
           />
           <Text variant="caption" tone="muted">
-            Ends this session but keeps your key — reconnect to return to {pet ? pet.name : 'your pet'}.
+            Ends this session but keeps your key — reconnect to return to{' '}
+            {pet ? pet.name : 'your pet'}.
           </Text>
           <Divider />
           <Button
@@ -178,8 +179,9 @@ export default function SettingsScreen() {
             onPress={handleStartOver}
           />
           <Text variant="caption" tone={confirmReset ? 'danger' : 'muted'}>
-            Erases the key on this device and mints a fresh identity. {pet ? `${pet.name} and its` : 'Your'}{' '}
-            Passport can’t be recovered without the original key.
+            Erases the key on this device and mints a fresh identity.{' '}
+            {pet ? `${pet.name} and its` : 'Your'} Passport can’t be recovered without the original
+            key.
           </Text>
         </GlassPanel>
       </FadeInUp>

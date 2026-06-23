@@ -348,11 +348,6 @@ export class PetService {
     if (!pet) throw new ApiError(404, 'PET_NOT_FOUND', 'Pet not found.');
     return { petId, events: await this.repository.listPassportEvents(petId) };
   }
-
-  // Backwards-compatible name from the foundation scaffold.
-  async getPets(walletAddress: string) {
-    return this.getPetByWallet(walletAddress);
-  }
 }
 
 export class PrismaPetRepository implements PetRepository {

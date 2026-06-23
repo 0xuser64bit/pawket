@@ -3,7 +3,10 @@ export const envSchema = z.object({
   API_HOST: z.string().default('0.0.0.0'),
   API_PORT: z.coerce.number().default(8787),
   API_VERSION: z.string().default('0.1.0'),
+  // Prisma's datasource reads both: DATABASE_URL (pooled) and DIRECT_URL
+  // (migrations). Keep them in sync; DIRECT_URL falls back to DATABASE_URL.
   DATABASE_URL: z.string().optional(),
+  DIRECT_URL: z.string().optional(),
   SOLANA_RPC_URL: z.string().default('https://api.devnet.solana.com'),
   SOLANA_CLUSTER: z.enum(['devnet', 'testnet', 'mainnet-beta', 'localnet']).default('devnet'),
   TREASURY_WALLET: z.string().default(''),

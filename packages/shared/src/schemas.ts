@@ -172,8 +172,3 @@ export type CarePetResponse = z.infer<typeof carePetResponseSchema>;
 export type PassportResponse = z.infer<typeof passportResponseSchema>;
 export type ApiErrorResponse = z.infer<typeof apiErrorResponseSchema>;
 export type PaymentIntentInput = z.infer<typeof paymentIntentSchema>;
-
-// Backwards-compatible names from the foundation scaffold.
-export const adoptPetSchema = adoptPetRequestSchema;
-export const careActionSchema = carePetRequestSchema;
-export type CareActionInput = CarePetInput;

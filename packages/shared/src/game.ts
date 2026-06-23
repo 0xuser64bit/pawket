@@ -51,9 +51,6 @@ export function calculateXpForNextLevel(level: number) {
   return Math.max(1, Math.floor(level)) * BASE_XP_PER_LEVEL;
 }
 
-// Backwards-compatible alias from the foundation scaffold.
-export const calculateLevel = calculateLevelFromXp;
-
 export function calculatePetMood(stats: PetStats): PetMood {
   if (stats.hunger < 25) return PetMood.Hungry;
   if (stats.energy < 25) return PetMood.Tired;
@@ -65,9 +62,6 @@ export function calculatePetMood(stats: PetStats): PetMood {
   if (average >= 68) return PetMood.Happy;
   return PetMood.Okay;
 }
-
-// Backwards-compatible alias from the foundation scaffold.
-export const calculateMood = calculatePetMood;
 
 export function applyCareAction(
   currentStats: PetStats,

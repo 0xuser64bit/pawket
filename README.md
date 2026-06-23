@@ -72,9 +72,14 @@ anchor test
 
 ## Current status
 
-Pawket now has a playable local/dev vertical slice for the core pet loop and first retention loop. The mobile app can connect a clearly labeled dev wallet, adopt a pet through the API, reload the active pet from the database-backed API, perform care actions, update stats/XP/level/mood, view daily goals and care streaks, claim a once-per-UTC-day bonus XP reward after all four goals are complete, and view a Pet Passport timeline.
+Pawket is a playable, multi-user vertical slice of the core pet + retention loop on Solana devnet.
 
-The core loop is real for the API/Postgres path. The SDK now includes offline Anchor-compatible PDA helpers and unsigned transaction builders for game config initialization, adoption, and care actions. Solana Mobile Wallet Adapter signing, devnet deployment, on-chain reads, payments, Jupiter, Mercuryo, store, friends, marketplace, cosmetics, and seasonal events remain honest typed stubs/interfaces until implemented.
+- **Real per-device identity.** On first run each device mints and persists a real Ed25519 "companion key" (Solana-compatible base58 address, on-device signing). Every install is a distinct wallet that owns its own pet and Passport — no shared demo wallet — and returning players resume their companion automatically.
+- **A pet that actually needs you.** Vitals (hunger / happiness / energy / hygiene) drain over real time; care lands on the current decayed values. Mood, the "needs care" focus, and daily streaks all react to neglect, so the daily loop has real stakes.
+- **The loop, end to end.** Adopt → care (feed/play/groom/rest with cooldowns + XP) → level up → daily goals → once-per-UTC-day streak reward → Pet Passport timeline, all persisted through the Hono + Postgres API.
+- **Focused product surface.** Three confident tabs — Home, Passport, Seasons (the Season One roadmap) — plus a back-navigable Settings with real disconnect / start-over.
+
+The SDK ships offline Anchor-compatible PDA helpers and unsigned transaction builders for game-config init, adoption, and care. Still ahead: Solana Mobile Wallet Adapter device signing of those transactions, devnet deployment + on-chain reads, and the monetization/social layers (payments, Jupiter, Mercuryo, store, friends, seasonal events) — kept as honest typed interfaces, not faked.
 
 ## Known local setup requirements
 
@@ -86,7 +91,7 @@ The core loop is real for the API/Postgres path. The SDK now includes offline An
 ## Next steps
 
 1. Install dependencies and run all checks.
-2. Configure Postgres and run Prisma migrations.
+2. Configure Postgres and run Prisma migrations (now includes `Pet.statsUpdatedAt` for decay).
 3. Deploy the synced Anchor program ID to devnet and verify on-chain reads.
-4. Wire real Solana Mobile signing/sending to the SDK transaction builders.
-5. Implement verified payment confirmation for SOL/USDC before enabling purchases.
+4. Wire Solana Mobile Wallet Adapter signing on device and have the companion key sign/send the SDK-built adopt/care transactions.
+5. Implement verified payment confirmation for SOL/USDC before enabling Seasons purchases.

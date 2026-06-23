@@ -6,9 +6,19 @@ import {
   type PetPassportEvent,
 } from '@pawket/sdk';
 import { router } from 'expo-router';
-import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { api } from '../api/client';
-import { DevWalletAdapter, type WalletSession } from '../wallet/walletAdapter';
+import { hasCompanionKey } from '../wallet/companionKey';
+import { DeviceWalletAdapter, type WalletSession } from '../wallet/walletAdapter';
 
 type SessionStatus =
   | 'idle'
@@ -36,10 +46,14 @@ type PawketSession = {
   dailyGoals: DailyGoalsResponse | null;
   passportEvents: PetPassportEvent[];
   status: SessionStatus;
+  /** False until the first launch-time session restore completes. */
+  hydrated: boolean;
   error: string | null;
   notice: string | null;
   careFeedback: CareFeedback | null;
-  connectDevWallet: () => Promise<void>;
+  connect: () => Promise<void>;
+  disconnect: () => Promise<void>;
+  startOver: () => Promise<void>;
   refreshPet: () => Promise<void>;
   adoptPet: (input: {
     name: string;
@@ -77,11 +91,13 @@ function careActionLabel(actionType: CareActionType | 'daily_reward') {
 }
 
 export function PawketSessionProvider({ children }: { children: ReactNode }) {
+  const adapterRef = useRef(new DeviceWalletAdapter());
   const [wallet, setWallet] = useState<WalletSession | null>(null);
   const [pet, setPet] = useState<Pet | null>(null);
   const [dailyGoals, setDailyGoals] = useState<DailyGoalsResponse | null>(null);
   const [passportEvents, setPassportEvents] = useState<PetPassportEvent[]>([]);
   const [status, setStatus] = useState<SessionStatus>('idle');
+  const [hydrated, setHydrated] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [careFeedback, setCareFeedback] = useState<CareFeedback | null>(null);
@@ -119,11 +135,8 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
     ]);
   }, []);
 
-  const connectDevWallet = useCallback(async () => {
-    clearMessages();
-    setStatus('connecting');
-    try {
-      const session = await new DevWalletAdapter().connect();
+  const openSession = useCallback(
+    async (session: WalletSession) => {
       setWallet(session);
       setStatus('loading_pet');
       const activePet = await refreshPetForWallet(session);
@@ -132,12 +145,70 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
         await refreshDailyGoalsForPet(activePet, session);
       }
       setStatus('idle');
+      return activePet;
+    },
+    [refreshDailyGoalsForPet, refreshPetForWallet],
+  );
+
+  const connect = useCallback(async () => {
+    clearMessages();
+    setStatus('connecting');
+    try {
+      const session = await adapterRef.current.connect();
+      const activePet = await openSession(session);
       router.replace(activePet ? '/home' : '/adopt');
     } catch (caught) {
       setStatus('idle');
       setError(messageFromError(caught));
     }
-  }, [clearMessages, refreshDailyGoalsForPet, refreshPetForWallet]);
+  }, [clearMessages, openSession]);
+
+  const disconnect = useCallback(async () => {
+    await adapterRef.current.disconnect();
+    setWallet(null);
+    setPet(null);
+    setDailyGoals(null);
+    setPassportEvents([]);
+    setCareFeedback(null);
+    clearMessages();
+    setStatus('idle');
+    router.replace('/');
+  }, [clearMessages]);
+
+  const startOver = useCallback(async () => {
+    await adapterRef.current.reset();
+    setWallet(null);
+    setPet(null);
+    setDailyGoals(null);
+    setPassportEvents([]);
+    setCareFeedback(null);
+    clearMessages();
+    setStatus('idle');
+    router.replace('/');
+  }, [clearMessages]);
+
+  // Silently resume a returning player's session on launch so the same device
+  // lands back on its own pet without re-tapping "connect".
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        if (await hasCompanionKey()) {
+          const session = await adapterRef.current.connect();
+          if (!active) return;
+          const activePet = await openSession(session);
+          if (active) router.replace(activePet ? '/home' : '/adopt');
+        }
+      } catch {
+        // First launch or restore failure → fall back to the landing flow.
+      } finally {
+        if (active) setHydrated(true);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [openSession]);
 
   const refreshPet = useCallback(async () => {
     if (!wallet) return;
@@ -298,10 +369,13 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
       dailyGoals,
       passportEvents,
       status,
+      hydrated,
       error,
       notice,
       careFeedback,
-      connectDevWallet,
+      connect,
+      disconnect,
+      startOver,
       refreshPet,
       adoptPet,
       careForPet,
@@ -317,10 +391,13 @@ export function PawketSessionProvider({ children }: { children: ReactNode }) {
       dailyGoals,
       passportEvents,
       status,
+      hydrated,
       error,
       notice,
       careFeedback,
-      connectDevWallet,
+      connect,
+      disconnect,
+      startOver,
       refreshPet,
       adoptPet,
       careForPet,

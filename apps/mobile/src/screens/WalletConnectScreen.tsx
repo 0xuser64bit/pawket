@@ -22,9 +22,9 @@ function shorten(value: string) {
 }
 
 const trust = [
-  'Pawket never asks for a seed phrase.',
-  'You own your companion and its passport.',
-  'Dev mode is isolated from mainnet — no production claims.',
+  'A real key is generated and stored on this device.',
+  'No seed phrase, no sign-up, no email — just your companion.',
+  'This device is your identity: your pet and Passport are yours.',
 ];
 
 function ReadinessRow({ label, value }: { label: string; value: string }) {
@@ -53,14 +53,14 @@ export function WalletConnectScreen({
     <Screen>
       <FadeInUp>
         <Pill tone="green" icon="shield-checkmark">
-          Secure dev path
+          On-device key
         </Pill>
         <Text variant="title" tone="text" style={styles.title}>
-          Connect your keeper key.
+          Create your companion key.
         </Text>
         <Text variant="bodyLg" tone="soft">
-          Use the clearly named dev wallet for this build. Device releases will sign through the
-          Solana Mobile Wallet Adapter.
+          Pawket mints a private key on this device — that's your wallet and your identity. One tap,
+          no accounts.
         </Text>
       </FadeInUp>
 
@@ -68,7 +68,7 @@ export function WalletConnectScreen({
         <GlassPanel glow="green" style={styles.hero}>
           <IconTile icon="shield-checkmark-outline" tone="green" size={64} glow />
           <Text variant="h2" tone="text" align="center">
-            Your dev wallet anchors this session.
+            Your key, your companion.
           </Text>
           <View style={styles.trustList}>
             {trust.map((line) => (
@@ -87,8 +87,8 @@ export function WalletConnectScreen({
 
       <FadeInUp delay={140}>
         <Button
-          icon="wallet"
-          label={loading ? 'Opening dev wallet…' : 'Continue with dev wallet'}
+          icon="sparkles"
+          label={loading ? 'Creating your key…' : 'Create my companion key'}
           onPress={() => {
             tapMedium();
             onConnected();
@@ -100,15 +100,14 @@ export function WalletConnectScreen({
 
       <FadeInUp delay={200}>
         <GlassPanel style={styles.readiness}>
-          <SectionHeader eyebrow="network" title="Devnet readiness" tone="cyan" />
+          <SectionHeader eyebrow="network" title="Running on devnet" tone="cyan" />
           <ReadinessRow label="Program" value={solanaConfig.programId} />
           <Divider />
           <ReadinessRow label="Cluster" value={solanaConfig.cluster} />
           <Divider />
           <ReadinessRow label="RPC" value={solanaConfig.rpcUrl} />
           <Text variant="caption" tone="muted" style={styles.note}>
-            SDK builders emit unsigned, Anchor-compatible instructions. Signing remains explicit
-            dev/demo infrastructure.
+            Pawket runs on Solana devnet — your companion is free to raise while the game grows.
           </Text>
         </GlassPanel>
       </FadeInUp>

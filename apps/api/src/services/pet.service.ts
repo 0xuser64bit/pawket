@@ -2,9 +2,11 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import {
   DAILY_GOAL_REWARD_XP,
   applyCareAction,
+  applyStatDecay,
   buildDailyGoalsResponse,
   calculateLevelFromXp,
   calculatePetMood,
+  elapsedSecondsBetween,
   generateInitialPetState,
   getUtcDateKey,
   validateCareCooldown,
@@ -51,6 +53,7 @@ type DbPet = {
   level: number;
   createdAt: Date;
   updatedAt: Date;
+  statsUpdatedAt: Date;
   lastCaredAt: Date | null;
   lastCareActionType: Pet['lastCareActionType'];
 };
@@ -113,13 +116,25 @@ function iso(date: Date) {
   return date.toISOString();
 }
 
-function toPet(record: DbPet): Pet {
-  const stats = {
+function storedStats(record: DbPet): PetStats {
+  return {
     hunger: record.hunger,
     happiness: record.happiness,
     energy: record.energy,
     hygiene: record.hygiene,
   };
+}
+
+/**
+ * Projects a stored pet to its live state: vitals drain from `statsUpdatedAt`
+ * forward to `now`, and mood follows the projected vitals. Reads stay
+ * side-effect-free — decay is only persisted when the player acts (care).
+ */
+function presentPet(record: DbPet, now: Date): Pet {
+  const stats = applyStatDecay(
+    storedStats(record),
+    elapsedSecondsBetween(record.statsUpdatedAt, now),
+  );
 
   return {
     id: record.id,
@@ -133,6 +148,7 @@ function toPet(record: DbPet): Pet {
     mood: calculatePetMood(stats),
     createdAt: iso(record.createdAt),
     updatedAt: iso(record.updatedAt),
+    statsUpdatedAt: iso(record.statsUpdatedAt),
     lastCaredAt: record.lastCaredAt ? iso(record.lastCaredAt) : null,
     lastCareActionType: record.lastCareActionType,
   };
@@ -157,7 +173,10 @@ function dailyRewardEventTitle(date: string) {
 }
 
 export class PetService {
-  constructor(private readonly repository: PetRepository = new PrismaPetRepository()) {}
+  constructor(
+    private readonly repository: PetRepository = new PrismaPetRepository(),
+    private readonly clock: () => Date = () => new Date(),
+  ) {}
 
   private async findOwnedPet(petId: string, walletAddress: string) {
     const pet = await this.repository.findPetById(petId);
@@ -190,7 +209,7 @@ export class PetService {
 
   async getPetByWallet(walletAddress: string): Promise<PetResponse> {
     const pet = await this.repository.findActivePetByWallet(walletAddress);
-    return { pet: pet ? toPet(pet) : null };
+    return { pet: pet ? presentPet(pet, this.clock()) : null };
   }
 
   async adoptPet(input: AdoptPetInput): Promise<{ pet: Pet }> {
@@ -210,10 +229,11 @@ export class PetService {
       level: initial.level,
     });
 
-    return { pet: toPet(created) };
+    return { pet: presentPet(created, this.clock()) };
   }
 
   async careForPet(petId: string, input: CarePetInput): Promise<CarePetResponse> {
+    const now = this.clock();
     const pet = await this.repository.findPetById(petId);
     if (!pet) throw new ApiError(404, 'PET_NOT_FOUND', 'Pet not found.');
     if (pet.ownerWalletAddress !== input.walletAddress) {
@@ -221,19 +241,19 @@ export class PetService {
     }
 
     const lastActionAt = await this.repository.findLastCareActionAt(petId, input.actionType);
-    const cooldown = validateCareCooldown(lastActionAt, input.actionType);
+    const cooldown = validateCareCooldown(lastActionAt, input.actionType, now);
     if (!cooldown.allowed) {
       throw new ApiError(409, 'CARE_COOLDOWN_ACTIVE', cooldown.message, {
         remainingSeconds: cooldown.remainingSeconds,
       });
     }
 
-    const currentStats = {
-      hunger: pet.hunger,
-      happiness: pet.happiness,
-      energy: pet.energy,
-      hygiene: pet.hygiene,
-    };
+    // Care lands on the pet's *current* (decayed) vitals, then resets the decay
+    // clock — this is the only path that persists drained stats.
+    const currentStats = applyStatDecay(
+      storedStats(pet),
+      elapsedSecondsBetween(pet.statsUpdatedAt, now),
+    );
     const { stats, xpGained } = applyCareAction(currentStats, input.actionType);
     const xp = pet.xp + xpGained;
     const level = calculateLevelFromXp(xp);
@@ -257,11 +277,11 @@ export class PetService {
       passportEvent,
     });
 
-    return { pet: toPet(updated.pet), passportEvent: updated.passportEvent };
+    return { pet: presentPet(updated.pet, now), passportEvent: updated.passportEvent };
   }
 
   async getDailyGoals(petId: string, walletAddress: string): Promise<DailyGoalsResponse> {
-    const now = new Date();
+    const now = this.clock();
     const pet = await this.findOwnedPet(petId, walletAddress);
     return this.buildDailyGoalsForPet(pet, walletAddress, now);
   }
@@ -270,7 +290,7 @@ export class PetService {
     petId: string,
     input: ClaimDailyRewardInput,
   ): Promise<ClaimDailyRewardResponse> {
-    const now = new Date();
+    const now = this.clock();
     const pet = await this.findOwnedPet(petId, input.walletAddress);
     const dailyGoals = await this.buildDailyGoalsForPet(pet, input.walletAddress, now);
 
@@ -311,7 +331,7 @@ export class PetService {
     });
 
     return {
-      pet: toPet(updated.pet),
+      pet: presentPet(updated.pet, now),
       passportEvent: updated.passportEvent,
       dailyGoals: buildDailyGoalsResponse({
         walletAddress: input.walletAddress,
@@ -351,6 +371,7 @@ export class PrismaPetRepository implements PetRepository {
     level: number;
     createdAt: Date;
     updatedAt: Date;
+    statsUpdatedAt: Date;
     lastCaredAt: Date | null;
     lastCareActionType: string | null;
     owner: { walletAddress: string };
@@ -369,6 +390,7 @@ export class PrismaPetRepository implements PetRepository {
       level: row.level,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      statsUpdatedAt: row.statsUpdatedAt,
       lastCaredAt: row.lastCaredAt,
       lastCareActionType: row.lastCareActionType as Pet['lastCareActionType'],
     };
@@ -450,6 +472,7 @@ export class PrismaPetRepository implements PetRepository {
           hygiene: input.stats.hygiene,
           xp: input.xp,
           level: input.level,
+          statsUpdatedAt: event.createdAt,
           lastCaredAt: event.createdAt,
           lastCareActionType: input.actionType,
         },
@@ -584,6 +607,8 @@ function idSequence(id: string) {
 }
 
 export class InMemoryPetRepository implements PetRepository {
+  constructor(private readonly now: () => Date = () => new Date()) {}
+
   private readonly pets = new Map<string, DbPet>();
   private readonly careActions: {
     petId: string;
@@ -602,7 +627,7 @@ export class InMemoryPetRepository implements PetRepository {
   }
 
   async createPetWithAdoptionEvent(input: CreatePetRecord) {
-    const now = new Date();
+    const now = this.now();
     const pet: DbPet = {
       id: nextId('pet'),
       ownerWalletAddress: input.ownerWalletAddress,
@@ -617,6 +642,7 @@ export class InMemoryPetRepository implements PetRepository {
       level: input.level,
       createdAt: now,
       updatedAt: now,
+      statsUpdatedAt: now,
       lastCaredAt: null,
       lastCareActionType: null,
     };
@@ -636,7 +662,7 @@ export class InMemoryPetRepository implements PetRepository {
   async updatePetAfterCare(petId: string, input: UpdateCareRecord) {
     const pet = this.pets.get(petId);
     if (!pet) throw new ApiError(404, 'PET_NOT_FOUND', 'Pet not found.');
-    const now = new Date();
+    const now = this.now();
     this.careActions.push({ petId, action: input.actionType, createdAt: now });
     const event: PetPassportEvent = {
       ...input.passportEvent,
@@ -653,6 +679,7 @@ export class InMemoryPetRepository implements PetRepository {
       xp: input.xp,
       level: input.level,
       updatedAt: now,
+      statsUpdatedAt: now,
       lastCaredAt: now,
       lastCareActionType: input.actionType,
     };
@@ -699,7 +726,7 @@ export class InMemoryPetRepository implements PetRepository {
       throw new ApiError(409, 'DAILY_REWARD_ALREADY_CLAIMED', 'Daily reward already claimed.');
     }
 
-    const now = new Date();
+    const now = this.now();
     const rewardClaim = {
       petId,
       date: input.date,

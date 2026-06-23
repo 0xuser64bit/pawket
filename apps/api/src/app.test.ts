@@ -10,6 +10,10 @@ function testApp() {
   return createApp({ petService: new PetService(new InMemoryPetRepository()) });
 }
 
+function clockedApp(now: () => Date) {
+  return createApp({ petService: new PetService(new InMemoryPetRepository(now), now) });
+}
+
 async function adoptTestPet(app: ReturnType<typeof testApp>) {
   const adopt = await app.request('/pets/adopt', {
     method: 'POST',
@@ -104,6 +108,41 @@ describe('api', () => {
       'care_action',
       'adopted',
     ]);
+  });
+
+  it('drains vitals while a pet is left alone and care lands on current stats', async () => {
+    let current = new Date('2026-06-14T00:00:00.000Z');
+    const app = clockedApp(() => current);
+
+    const adopt = await app.request('/pets/adopt', {
+      method: 'POST',
+      body: JSON.stringify({
+        walletAddress,
+        name: 'Nova',
+        species: PetSpecies.LunaCat,
+        personality: PetPersonality.Curious,
+      }),
+      headers: { 'content-type': 'application/json' },
+    });
+    const { pet } = await adopt.json();
+    expect(pet.stats.hunger).toBe(72);
+
+    // Twelve hours later the same pet has visibly drained (read is lazy/no-write).
+    current = new Date('2026-06-14T12:00:00.000Z');
+    const reread = await app.request(`/pets/${walletAddress}`);
+    const drained = (await reread.json()).pet;
+    expect(drained.stats.hunger).toBe(42); // 72 - 2.5*12
+    expect(drained.stats.energy).toBe(54); // 72 - 1.5*12
+
+    // Feeding lands on the decayed value (42 -> 65), not the original 72.
+    const fed = await app.request(`/pets/${pet.id}/care`, {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress, actionType: CareActionType.Feed }),
+      headers: { 'content-type': 'application/json' },
+    });
+    const afterFeed = (await fed.json()).pet;
+    expect(afterFeed.stats.hunger).toBe(65); // 42 + 23
+    expect(afterFeed.statsUpdatedAt).toBe('2026-06-14T12:00:00.000Z');
   });
 
   it('rejects care from non-owner wallets and reports cooldowns clearly', async () => {

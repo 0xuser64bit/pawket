@@ -3,9 +3,11 @@ import { CARE_COOLDOWN_SECONDS, XP_PER_CARE_ACTION } from './constants';
 import { CareActionType, PetMood, PetPersonality, PetSpecies } from './enums';
 import {
   applyCareAction,
+  applyStatDecay,
   calculateLevelFromXp,
   calculatePetMood,
   calculateXpForNextLevel,
+  elapsedSecondsBetween,
   generateInitialPetState,
   validateCareCooldown,
 } from './game';
@@ -92,6 +94,33 @@ describe('core pet lifecycle domain', () => {
     });
   });
 
+  it('drains vitals over time and floors them at zero', () => {
+    const fresh = { hunger: 72, happiness: 72, energy: 72, hygiene: 72 };
+
+    // No elapsed time leaves stats untouched.
+    expect(applyStatDecay(fresh, 0)).toEqual(fresh);
+    expect(applyStatDecay(fresh, -500)).toEqual(fresh);
+
+    // After a day a well-cared pet clearly needs attention (hunger leads).
+    const afterDay = applyStatDecay(fresh, 24 * 3600);
+    expect(afterDay.hunger).toBe(12); // 72 - 2.5*24
+    expect(afterDay.happiness).toBe(29); // 72 - 1.8*24
+    expect(afterDay.energy).toBe(36); // 72 - 1.5*24
+    expect(afterDay.hygiene).toBe(43); // 72 - 1.2*24
+    expect(calculatePetMood(afterDay)).toBe(PetMood.Hungry);
+
+    // Long neglect floors at zero rather than going negative.
+    const afterWeek = applyStatDecay(fresh, 7 * 24 * 3600);
+    expect(afterWeek).toEqual({ hunger: 0, happiness: 0, energy: 0, hygiene: 0 });
+  });
+
+  it('measures elapsed seconds without going negative', () => {
+    const now = new Date('2026-06-14T12:00:00.000Z');
+    expect(elapsedSecondsBetween('2026-06-14T11:30:00.000Z', now)).toBe(1800);
+    expect(elapsedSecondsBetween(now, now)).toBe(0);
+    expect(elapsedSecondsBetween('2026-06-14T12:30:00.000Z', now)).toBe(0);
+  });
+
   it('validates per-action cooldowns with remaining seconds', () => {
     const now = new Date('2026-06-14T12:00:00.000Z');
     expect(validateCareCooldown(null, CareActionType.Feed, now)).toEqual({ allowed: true });
@@ -138,6 +167,7 @@ describe('core pet lifecycle domain', () => {
         mood: PetMood.Happy,
         createdAt: '2026-06-14T12:00:00.000Z',
         updatedAt: '2026-06-14T12:00:00.000Z',
+        statsUpdatedAt: '2026-06-14T12:00:00.000Z',
         lastCaredAt: null,
         lastCareActionType: null,
       },

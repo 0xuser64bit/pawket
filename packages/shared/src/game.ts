@@ -4,6 +4,7 @@ import {
   INITIAL_STAT_VALUE,
   MAX_STAT,
   MIN_STAT,
+  STAT_DECAY_PER_HOUR,
   XP_PER_CARE_ACTION,
 } from './constants';
 import { CareActionType, PetMood } from './enums';
@@ -15,6 +16,30 @@ export type CareCooldownResult =
 
 export function clampStat(value: number) {
   return Math.max(MIN_STAT, Math.min(MAX_STAT, Math.round(value)));
+}
+
+/**
+ * Drains a companion's vitals for the time it spent unattended. Pure and
+ * deterministic so the API can apply it lazily on read (the stored stats are the
+ * value at `statsUpdatedAt`; the live value is this projection forward to `now`).
+ */
+export function applyStatDecay(stats: PetStats, elapsedSeconds: number): PetStats {
+  if (!Number.isFinite(elapsedSeconds) || elapsedSeconds <= 0) {
+    return { ...stats };
+  }
+  const hours = elapsedSeconds / 3600;
+  return {
+    hunger: clampStat(stats.hunger - STAT_DECAY_PER_HOUR.hunger * hours),
+    happiness: clampStat(stats.happiness - STAT_DECAY_PER_HOUR.happiness * hours),
+    energy: clampStat(stats.energy - STAT_DECAY_PER_HOUR.energy * hours),
+    hygiene: clampStat(stats.hygiene - STAT_DECAY_PER_HOUR.hygiene * hours),
+  };
+}
+
+/** Whole seconds between two instants, never negative. */
+export function elapsedSecondsBetween(from: Date | string, to: Date = new Date()): number {
+  const start = from instanceof Date ? from : new Date(from);
+  return Math.max(0, Math.floor((to.getTime() - start.getTime()) / 1000));
 }
 
 export function calculateLevelFromXp(xp: number) {
@@ -96,7 +121,10 @@ export function validateCareCooldown(
 
 export function generateInitialPetState(
   input: AdoptPetInput,
-): Omit<Pet, 'id' | 'createdAt' | 'updatedAt' | 'lastCaredAt' | 'lastCareActionType'> {
+): Omit<
+  Pet,
+  'id' | 'createdAt' | 'updatedAt' | 'statsUpdatedAt' | 'lastCaredAt' | 'lastCareActionType'
+> {
   const stats: PetStats = {
     hunger: INITIAL_STAT_VALUE,
     happiness: INITIAL_STAT_VALUE,

@@ -45,6 +45,9 @@ export const petSchema = z.object({
   mood: z.nativeEnum(PetMood),
   createdAt: isoDateStringSchema,
   updatedAt: isoDateStringSchema,
+  // Instant the stored stats were last written. Clients can show "as of" / decay
+  // context; the API uses it to project current vitals forward from rest.
+  statsUpdatedAt: isoDateStringSchema,
   lastCaredAt: isoDateStringSchema.nullable(),
   lastCareActionType: z.nativeEnum(CareActionType).nullable(),
 });

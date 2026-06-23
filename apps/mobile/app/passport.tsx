@@ -82,11 +82,11 @@ export default function PassportScreen() {
               {pet ? `${pet.name}'s identity` : 'Passport timeline'}
             </Text>
           </View>
-          <Pill tone="cyan">dev/API</Pill>
+          <Pill tone="cyan">Devnet</Pill>
         </View>
         <Text variant="body" tone="soft">
-          A living identity card for care, progression and milestones. On-chain language stays
-          reserved until passport syncing is wired.
+          A living identity card — every ritual, level and milestone your companion earns with you,
+          in one timeline.
         </Text>
       </FadeInUp>
 

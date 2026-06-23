@@ -388,9 +388,7 @@ const navItems: { href: string; label: string; icon: IconName; activeIcon: IconN
     icon: 'finger-print-outline',
     activeIcon: 'finger-print',
   },
-  { href: '/store', label: 'Store', icon: 'diamond-outline', activeIcon: 'diamond' },
-  { href: '/friends', label: 'Friends', icon: 'people-outline', activeIcon: 'people' },
-  { href: '/events', label: 'Events', icon: 'flash-outline', activeIcon: 'flash' },
+  { href: '/seasons', label: 'Seasons', icon: 'flash-outline', activeIcon: 'flash' },
 ];
 
 function NavItem({ item, active }: { item: (typeof navItems)[number]; active: boolean }) {

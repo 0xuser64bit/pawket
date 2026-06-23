@@ -86,8 +86,8 @@ export function AdoptPetScreen({
           Claim your companion.
         </Text>
         <Text variant="body" tone="soft">
-          This opens a dev/API-backed Pawket and starts its Passport timeline. On-chain claims stay
-          honest until signing is wired.
+          Choose a body and a spark. Your companion is born the moment you adopt — and starts its
+          Passport with you.
         </Text>
       </FadeInUp>
 

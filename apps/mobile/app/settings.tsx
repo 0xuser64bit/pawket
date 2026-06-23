@@ -1,11 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import type { ComponentProps } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Divider, GlassPanel, IconTile, Pill, SectionHeader } from '../src/components/DesignSystem';
+import {
+  Button,
+  Divider,
+  GlassPanel,
+  IconTile,
+  Pill,
+  SectionHeader,
+} from '../src/components/DesignSystem';
 import { FadeInUp } from '../src/components/Motion';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
+import { notifyWarning, tapMedium } from '../src/feedback/haptics';
 import { pawketApiBaseUrl } from '../src/api/client';
 import { solanaConfig } from '../src/solana/config';
 import { usePawketSession } from '../src/state/PawketSessionContext';
@@ -49,8 +57,18 @@ function Row({
 }
 
 export default function SettingsScreen() {
-  const { wallet, pet, status } = usePawketSession();
+  const { wallet, pet, status, disconnect, startOver } = usePawketSession();
+  const [confirmReset, setConfirmReset] = useState(false);
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/home'));
+
+  const handleStartOver = () => {
+    if (!confirmReset) {
+      notifyWarning();
+      setConfirmReset(true);
+      return;
+    }
+    void startOver();
+  };
 
   return (
     <Screen>
@@ -65,14 +83,14 @@ export default function SettingsScreen() {
           >
             <Ionicons color={colors.textSoft} name="chevron-back" size={20} />
           </Pressable>
-          <Pill tone="green">Devnet controls</Pill>
+          <Pill tone="green">Devnet</Pill>
         </View>
         <Text variant="title" tone="text" style={styles.title}>
-          Control room.
+          Settings.
         </Text>
         <Text variant="body" tone="soft">
-          A clean view of the current demo stack, wallet mode and cluster. No secrets are stored on
-          the device.
+          Your companion key lives on this device. Your pet and Passport belong to it — no account,
+          no seed phrase.
         </Text>
       </FadeInUp>
 
@@ -80,8 +98,8 @@ export default function SettingsScreen() {
         <GlassPanel style={styles.panel}>
           <SectionHeader eyebrow="session" title="Companion session" tone="green" />
           <Row
-            icon="wallet-outline"
-            label="Wallet"
+            icon="key-outline"
+            label="Companion key"
             tone="green"
             mono
             value={shorten(wallet?.address)}
@@ -131,10 +149,37 @@ export default function SettingsScreen() {
           <SectionHeader eyebrow="service" title="App path" tone="amber" />
           <Row icon="server-outline" label="API base" tone="amber" mono value={pawketApiBaseUrl} />
           <Divider />
-          <Row icon="phone-portrait-outline" label="App version" tone="green" value="0.1.0 demo" />
-          <Text variant="caption" tone="muted" style={styles.note}>
-            Reset/dev tools aren't exposed here — the current vertical slice has no safe mobile
-            reset action.
+          <Row icon="phone-portrait-outline" label="App version" tone="green" value="0.1.0" />
+        </GlassPanel>
+      </FadeInUp>
+
+      <FadeInUp delay={250}>
+        <GlassPanel style={styles.panel}>
+          <SectionHeader eyebrow="this device" title="Companion key" tone="purple" />
+          <Button
+            icon="log-out-outline"
+            label="Disconnect"
+            tone="ghost"
+            size="md"
+            onPress={() => {
+              tapMedium();
+              void disconnect();
+            }}
+          />
+          <Text variant="caption" tone="muted">
+            Ends this session but keeps your key — reconnect to return to {pet ? pet.name : 'your pet'}.
+          </Text>
+          <Divider />
+          <Button
+            icon={confirmReset ? 'warning-outline' : 'refresh-outline'}
+            label={confirmReset ? 'Tap again to erase this key' : 'Start over'}
+            tone={confirmReset ? 'danger' : 'ghost'}
+            size="md"
+            onPress={handleStartOver}
+          />
+          <Text variant="caption" tone={confirmReset ? 'danger' : 'muted'}>
+            Erases the key on this device and mints a fresh identity. {pet ? `${pet.name} and its` : 'Your'}{' '}
+            Passport can’t be recovered without the original key.
           </Text>
         </GlassPanel>
       </FadeInUp>

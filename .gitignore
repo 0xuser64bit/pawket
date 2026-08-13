@@ -1,20 +1,31 @@
-node_modules
-.turbo
-dist
-build
-coverage
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native
+ios/
+android/
+
+# Env
 .env
 .env.*
-!.env.example
-.DS_Store
-.expo
-.expo-shared
-apps/mobile/.expo
-programs/pawket/target
-programs/pawket/.anchor
-programs/pawket/test-ledger
-# Cargo.lock is committed so program builds are reproducible.
 
 # IDE
 .idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
 .DS_Store
+*.pem
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+coverage/

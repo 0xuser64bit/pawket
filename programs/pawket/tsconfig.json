@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "types": ["mocha", "node"],
-    "module": "CommonJS",
-    "moduleResolution": "Node"
-  },
-  "include": ["tests/**/*.ts"]
-}

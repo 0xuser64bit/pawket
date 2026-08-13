@@ -2,10 +2,14 @@ use anchor_lang::prelude::*;
 
 declare_id!("FQwe9LUPMTrhYyr32mHPpX87tcpjr98Eamz9wJQDaSef");
 
+// Keep these in lockstep with packages/shared/src/constants.ts.
+// `pnpm invariants` fails the build if they drift.
 const CARE_COOLDOWN_SECONDS: i64 = 30 * 60;
 const MAX_NAME_LEN: usize = 24;
 const INITIAL_STAT_VALUE: u8 = 72;
 const XP_PER_CARE_ACTION: u32 = 10;
+// Solana PDA seeds are capped at 32 bytes. SKU is a seed (`[b"item", sku]`).
+const MAX_SKU_LEN: usize = 32;
 
 #[program]
 pub mod pawket {
@@ -136,7 +140,10 @@ pub mod pawket {
         item_type: ItemType,
         price_lamports: u64,
     ) -> Result<()> {
-        require!(sku.len() >= 2 && sku.len() <= 64, PawketError::InvalidSku);
+        require!(
+            sku.len() >= 2 && sku.len() <= MAX_SKU_LEN,
+            PawketError::InvalidSku
+        );
         let item = &mut ctx.accounts.item;
         item.authority = ctx.accounts.authority.key();
         item.sku = sku;
@@ -261,7 +268,7 @@ pub struct PetPassport {
 #[derive(InitSpace)]
 pub struct ItemDefinition {
     pub authority: Pubkey,
-    #[max_len(64)]
+    #[max_len(32)]
     pub sku: String,
     pub item_type: ItemType,
     pub price_lamports: u64,

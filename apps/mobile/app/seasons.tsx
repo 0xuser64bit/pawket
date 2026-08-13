@@ -37,8 +37,8 @@ const drops: { title: string; copy: string; icon: IconName; tone: ToneKey; tag: 
 ];
 
 export default function SeasonsScreen() {
-  const { pet } = usePawketSession();
-  const streak = 0; // surfaced from daily goals once Season One quests ship
+  const { pet, dailyGoals } = usePawketSession();
+  const streak = dailyGoals?.currentStreakDays ?? 0;
 
   return (
     <Screen nav>

@@ -94,6 +94,21 @@ curl -X POST http://localhost:8787/pets/<petId>/daily-goals/claim \
 curl http://localhost:8787/pets/<petId>/passport
 ```
 
+## Workspace verification
+
+```sh
+pnpm invariants    # program id, committed IDL, shared↔Rust constants
+pnpm verify        # invariants + format + lint + typecheck + test
+```
+
+After changing the Anchor program:
+
+```sh
+cd programs/pawket && anchor build
+pnpm idl:sync      # copies target/idl → programs/pawket/idl/pawket.json
+pnpm invariants
+```
+
 ## Mobile commands
 
 ```sh
@@ -106,13 +121,14 @@ The mobile app currently uses the SDK client instead of raw fetch calls for pet 
 
 ## Anchor
 
-Install Rust, Solana CLI, and Anchor CLI. The checked-in program ID is synced across `programs/pawket/programs/pawket/src/lib.rs`, `programs/pawket/target/idl/pawket.json`, and the SDK. If the program keypair changes, sync it before deployment:
+Install Rust, Solana CLI, and Anchor CLI. The checked-in program ID is synced across `programs/pawket/programs/pawket/src/lib.rs`, `programs/pawket/target/idl/pawket.json`, and the SDK. If the program keypair changes, sync it before deployment and update every program-id home (`declare_id!`, `Anchor.toml`, SDK, committed IDL):
 
 ```sh
 cd programs/pawket
 anchor keys sync
 anchor build
-anchor test
+cd ../.. && pnpm idl:sync && pnpm invariants
+cd programs/pawket && anchor test
 ```
 
 Anchor alignment today:

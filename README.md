@@ -26,6 +26,8 @@ docs                 Product, architecture, setup, roadmap, security
 scripts              Utility scripts
 ```
 
+Agents (and humans implementing features) start at [AGENTS.md](./AGENTS.md). Engineering guides live under [docs/engineering/](./docs/engineering/). Project playbooks live under `.agents/skills/`.
+
 ## Prerequisites
 
 - Node.js 20+
@@ -57,10 +59,8 @@ pnpm --filter @pawket/mobile dev
 Run workspace checks:
 
 ```sh
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm test
+pnpm invariants    # program id / IDL / shared-vs-Rust constants
+pnpm verify        # invariants + format + lint + typecheck + test
 ```
 
 Run Anchor tests after installing Anchor/Solana/Rust:

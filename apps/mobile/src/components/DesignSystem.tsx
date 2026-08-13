@@ -377,7 +377,7 @@ export function StateBlock({
 }
 
 // ---------------------------------------------------------------------------
-// Bottom navigation (5 top-level tabs; Settings lives in screen headers)
+// Bottom navigation (3 tabs). Settings is a stack screen, not a tab.
 // ---------------------------------------------------------------------------
 
 const navItems: { href: string; label: string; icon: IconName; activeIcon: IconName }[] = [

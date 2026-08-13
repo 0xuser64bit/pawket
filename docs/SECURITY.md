@@ -35,3 +35,12 @@ Cooldown care actions, detect sybil patterns, cap rewards, review seasonal rewar
 ## No custody principle
 
 Pawket stores metadata and game state. It does not custody user funds, private keys, or recovery phrases.
+
+## Current trust model (read before adding features)
+
+- The companion key never leaves the device. `disconnect` keeps it; `startOver` destroys it. Do not log it.
+- It is a **devnet game identity**, stored in AsyncStorage. It is not a funds wallet.
+- The API does **not** authenticate. `walletAddress` is a client-supplied string. Anyone who knows a wallet + pet id can call care/claim.
+- Do not add purchases, inventory grants, or irreversible rewards until nonce sign-in exists.
+- `record_purchase` on-chain does not move tokens. `register_item` is not admin-gated. Do not expose either as a store.
+- Payment intents are in-memory stubs. Webhooks return 501. Never mark a payment confirmed from the client.

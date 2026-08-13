@@ -1,3 +1,8 @@
+/**
+ * Placeholder. This file does not exercise adopt/care.
+ * Adding an instruction is not done until a case here submits the ix.
+ * See docs/engineering/TESTING.md and .agents/skills/adding-solana-instruction.
+ */
 import * as anchor from '@coral-xyz/anchor';
 import { assert } from 'chai';
 

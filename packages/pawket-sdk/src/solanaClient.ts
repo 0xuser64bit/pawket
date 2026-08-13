@@ -8,10 +8,17 @@ import {
 import { CareActionType, PetPersonality, PetSpecies } from '@pawket/shared';
 import { PawketError } from './errors';
 
+/** Must match `declare_id!` in programs/pawket and programs/pawket/idl/pawket.json. */
 export const PAWKET_PROGRAM_ID = 'FQwe9LUPMTrhYyr32mHPpX87tcpjr98Eamz9wJQDaSef';
 export const PAWKET_DEFAULT_CLUSTER = 'devnet';
 export const PAWKET_DEVNET_RPC_URL = 'https://api.devnet.solana.com';
 
+/**
+ * Anchor 8-byte instruction discriminators.
+ * Source of truth after `anchor build`: programs/pawket/idl/pawket.json
+ * (`pnpm invariants` checks these against the committed IDL).
+ * There are no builders yet for `register_item` / `record_purchase`.
+ */
 export const PAWKET_INSTRUCTION_DISCRIMINATORS = {
   adoptPet: [76, 210, 131, 114, 75, 135, 64, 171],
   initializeGameConfig: [45, 61, 80, 55, 152, 63, 158, 47],

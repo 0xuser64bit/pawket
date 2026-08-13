@@ -9,6 +9,16 @@
 - `packages/pawket-sdk`: Typed API client, Solana PDA helpers, unsigned Anchor-compatible transaction builders, and payment helpers.
 - `docs`, `scripts`: documentation and utilities.
 
+Agent contract, sources of truth, and "where do I change X?": [../AGENTS.md](../AGENTS.md), [REPO_MAP.md](REPO_MAP.md).
+
+## Current vs intended data path
+
+**Intended:** on-chain owns identity, compact stats, and item ownership; the API is an indexer plus rich timeline / daily goals / social.
+
+**Current runtime:** Postgres is the live game. The program is compiled and the SDK can build unsigned adopt/care txs, but mobile never signs or sends them and never fetches program accounts.
+
+Until that changes, treat `PetService` as the live lifecycle and the program as a prepared, tested twin — not as the source of the numbers on screen. Dual-write rules: [engineering/TRANSACTIONS.md](engineering/TRANSACTIONS.md).
+
 ## Mobile architecture
 
 The mobile app is split into navigation, UI components, theme tokens, hooks, API client, wallet abstraction, Solana config, and payment client. Identity is a real per-device Ed25519 "companion key" (`src/wallet/companionKey.ts` + `DeviceWalletAdapter`): generated with a platform CSPRNG, base58-encoded to a Solana-compatible address, persisted via async storage, and capable of real detached signing. The session context restores it silently on launch so a returning player resumes their pet. All pet/daily-goal/passport state is read live from the API; there is no mock/demo pet. The Solana config still surfaces program ID, cluster, and RPC; device transaction signing through the Solana Mobile Wallet Adapter is the next layer.
@@ -21,7 +31,7 @@ Hono exposes small resource routes. Zod validates all inputs. Services own busin
 
 Anchor owns the canonical, low-cost state for player profile, pet, passport counters, item definitions, and item ownership. Instructions validate signer ownership, PDA seeds, cooldowns, input length, and stat bounds. Events are emitted for indexers/API consumers.
 
-The SDK mirrors the checked-in Anchor IDL discriminators for game config initialization, pet adoption, and care actions. It derives the same PDAs and builds unsigned web3.js `Transaction` objects without fetching blockhashes, signing, sending, or claiming devnet deployment.
+The SDK mirrors the committed IDL at `programs/pawket/idl/pawket.json` (refresh with `pnpm idl:sync` after `anchor build`) for game config initialization, pet adoption, and care actions. It derives the same PDAs and builds unsigned web3.js `Transaction` objects without fetching blockhashes, signing, sending, or claiming devnet deployment. `pnpm invariants` fails if the program id, discriminators, or shared/Rust constants drift.
 
 ## Data model
 

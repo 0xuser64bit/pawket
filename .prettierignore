@@ -6,3 +6,5 @@ coverage
 programs/pawket/target
 programs/pawket/.anchor
 pnpm-lock.yaml
+*.rs
+programs/pawket/idl

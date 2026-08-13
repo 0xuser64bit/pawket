@@ -13,7 +13,7 @@ apps/mobile/.expo
 programs/pawket/target
 programs/pawket/.anchor
 programs/pawket/test-ledger
-programs/pawket/Cargo.lock
+# Cargo.lock is committed so program builds are reproducible.
 
 # IDE
 .idea/

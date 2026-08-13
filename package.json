@@ -16,6 +16,9 @@
     "test": "turbo test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "invariants": "node scripts/check-invariants.mjs",
+    "idl:sync": "node scripts/sync-idl.mjs",
+    "verify": "node scripts/check-invariants.mjs && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "clean": "turbo clean && rimraf node_modules .turbo apps/*/node_modules packages/*/node_modules"
   },
   "devDependencies": {

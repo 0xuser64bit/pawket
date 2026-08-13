@@ -1,0 +1,877 @@
+{
+  "address": "FQwe9LUPMTrhYyr32mHPpX87tcpjr98Eamz9wJQDaSef",
+  "metadata": {
+    "name": "pawket",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
+  "instructions": [
+    {
+      "name": "adopt_pet",
+      "discriminator": [
+        76,
+        210,
+        131,
+        114,
+        75,
+        135,
+        64,
+        171
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "name"
+              }
+            ]
+          }
+        },
+        {
+          "name": "passport",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  115,
+                  115,
+                  112,
+                  111,
+                  114,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "species",
+          "type": {
+            "defined": {
+              "name": "PetSpecies"
+            }
+          }
+        },
+        {
+          "name": "personality",
+          "type": {
+            "defined": {
+              "name": "PetPersonality"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_game_config",
+      "discriminator": [
+        45,
+        61,
+        80,
+        55,
+        152,
+        63,
+        158,
+        47
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "game_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  109,
+                  101,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "treasury",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "perform_care_action",
+      "discriminator": [
+        74,
+        53,
+        41,
+        221,
+        110,
+        244,
+        231,
+        218
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "pet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "account",
+                "path": "pet.name",
+                "account": "Pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "passport",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  115,
+                  115,
+                  112,
+                  111,
+                  114,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "action",
+          "type": {
+            "defined": {
+              "name": "CareActionType"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "record_purchase",
+      "discriminator": [
+        107,
+        25,
+        137,
+        125,
+        231,
+        17,
+        11,
+        60
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "item"
+        },
+        {
+          "name": "ownership",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  119,
+                  110,
+                  101,
+                  114,
+                  115,
+                  104,
+                  105,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "account",
+                "path": "item"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "quantity",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "register_item",
+      "discriminator": [
+        88,
+        92,
+        1,
+        145,
+        20,
+        252,
+        237,
+        209
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "item",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  116,
+                  101,
+                  109
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "sku"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "sku",
+          "type": "string"
+        },
+        {
+          "name": "item_type",
+          "type": {
+            "defined": {
+              "name": "ItemType"
+            }
+          }
+        },
+        {
+          "name": "price_lamports",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "GameConfig",
+      "discriminator": [
+        45,
+        146,
+        146,
+        33,
+        170,
+        69,
+        96,
+        133
+      ]
+    },
+    {
+      "name": "ItemDefinition",
+      "discriminator": [
+        147,
+        123,
+        125,
+        32,
+        174,
+        152,
+        57,
+        26
+      ]
+    },
+    {
+      "name": "ItemOwnership",
+      "discriminator": [
+        119,
+        227,
+        201,
+        142,
+        43,
+        210,
+        126,
+        32
+      ]
+    },
+    {
+      "name": "Pet",
+      "discriminator": [
+        180,
+        195,
+        178,
+        241,
+        61,
+        123,
+        238,
+        32
+      ]
+    },
+    {
+      "name": "PetPassport",
+      "discriminator": [
+        197,
+        235,
+        164,
+        111,
+        43,
+        33,
+        153,
+        145
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "CarePerformed",
+      "discriminator": [
+        1,
+        240,
+        250,
+        150,
+        159,
+        33,
+        110,
+        74
+      ]
+    },
+    {
+      "name": "GameConfigInitialized",
+      "discriminator": [
+        215,
+        134,
+        22,
+        167,
+        128,
+        105,
+        21,
+        1
+      ]
+    },
+    {
+      "name": "PetAdopted",
+      "discriminator": [
+        171,
+        119,
+        209,
+        220,
+        201,
+        16,
+        139,
+        121
+      ]
+    },
+    {
+      "name": "PurchaseRecorded",
+      "discriminator": [
+        158,
+        183,
+        78,
+        209,
+        180,
+        30,
+        113,
+        231
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidPetName",
+      "msg": "Invalid pet name."
+    },
+    {
+      "code": 6001,
+      "name": "NotPetOwner",
+      "msg": "Signer does not own this pet."
+    },
+    {
+      "code": 6002,
+      "name": "CareCooldownActive",
+      "msg": "Care action cooldown is still active."
+    },
+    {
+      "code": 6003,
+      "name": "InvalidSku",
+      "msg": "Invalid SKU."
+    },
+    {
+      "code": 6004,
+      "name": "InactiveItem",
+      "msg": "Item is inactive."
+    },
+    {
+      "code": 6005,
+      "name": "InvalidQuantity",
+      "msg": "Invalid quantity."
+    }
+  ],
+  "types": [
+    {
+      "name": "CareActionType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Feed"
+          },
+          {
+            "name": "Play"
+          },
+          {
+            "name": "Groom"
+          },
+          {
+            "name": "Rest"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CarePerformed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "action",
+            "type": {
+              "defined": {
+                "name": "CareActionType"
+              }
+            }
+          },
+          {
+            "name": "xp",
+            "type": "u32"
+          },
+          {
+            "name": "level",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GameConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GameConfigInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ItemDefinition",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "sku",
+            "type": "string"
+          },
+          {
+            "name": "item_type",
+            "type": {
+              "defined": {
+                "name": "ItemType"
+              }
+            }
+          },
+          {
+            "name": "price_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ItemOwnership",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "item",
+            "type": "pubkey"
+          },
+          {
+            "name": "quantity",
+            "type": "u16"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ItemType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Cosmetic"
+          },
+          {
+            "name": "Food"
+          },
+          {
+            "name": "Toy"
+          },
+          {
+            "name": "EventPass"
+          },
+          {
+            "name": "Egg"
+          },
+          {
+            "name": "Bundle"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "species",
+            "type": {
+              "defined": {
+                "name": "PetSpecies"
+              }
+            }
+          },
+          {
+            "name": "personality",
+            "type": {
+              "defined": {
+                "name": "PetPersonality"
+              }
+            }
+          },
+          {
+            "name": "birth_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "level",
+            "type": "u16"
+          },
+          {
+            "name": "xp",
+            "type": "u32"
+          },
+          {
+            "name": "hunger",
+            "type": "u8"
+          },
+          {
+            "name": "happiness",
+            "type": "u8"
+          },
+          {
+            "name": "energy",
+            "type": "u8"
+          },
+          {
+            "name": "hygiene",
+            "type": "u8"
+          },
+          {
+            "name": "last_feed_at",
+            "type": "i64"
+          },
+          {
+            "name": "last_play_at",
+            "type": "i64"
+          },
+          {
+            "name": "last_groom_at",
+            "type": "i64"
+          },
+          {
+            "name": "last_rest_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PetAdopted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PetPassport",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "event_count",
+            "type": "u32"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PetPersonality",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Curious"
+          },
+          {
+            "name": "Cozy"
+          },
+          {
+            "name": "Brave"
+          },
+          {
+            "name": "Mischief"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PetSpecies",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "LunaCat"
+          },
+          {
+            "name": "MossPup"
+          },
+          {
+            "name": "CloudBun"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PurchaseRecorded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "item",
+            "type": "pubkey"
+          },
+          {
+            "name": "quantity",
+            "type": "u16"
+          }
+        ]
+      }
+    }
+  ]
+}

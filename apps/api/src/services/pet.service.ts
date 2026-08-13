@@ -409,7 +409,7 @@ export class PrismaPetRepository implements PetRepository {
   }
 
   async createPetWithAdoptionEvent(input: CreatePetRecord) {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       const user = await tx.user.upsert({
         where: { walletAddress: input.ownerWalletAddress },
         update: {},
@@ -443,7 +443,7 @@ export class PrismaPetRepository implements PetRepository {
   }
 
   async updatePetAfterCare(petId: string, input: UpdateCareRecord) {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.petCareAction.create({
         data: { petId, action: input.actionType, xpGained: input.xpGained },
       });
@@ -454,7 +454,7 @@ export class PrismaPetRepository implements PetRepository {
           title: input.passportEvent.title,
           description: input.passportEvent.description,
           ...(input.passportEvent.metadata
-            ? { metadata: input.passportEvent.metadata as Prisma.InputJsonObject }
+            ? { metadata: input.passportEvent.metadata as Prisma.InputJsonValue }
             : {}),
         },
       });
@@ -514,7 +514,7 @@ export class PrismaPetRepository implements PetRepository {
 
   async claimDailyReward(petId: string, input: ClaimDailyRewardRecord) {
     try {
-      return await this.client.$transaction(async (tx) => {
+      return await this.client.$transaction(async (tx: Prisma.TransactionClient) => {
         const rewardClaim = await tx.petDailyReward.create({
           data: {
             petId,
@@ -529,7 +529,7 @@ export class PrismaPetRepository implements PetRepository {
             title: input.passportEvent.title,
             description: input.passportEvent.description,
             ...(input.passportEvent.metadata
-              ? { metadata: input.passportEvent.metadata as Prisma.InputJsonObject }
+              ? { metadata: input.passportEvent.metadata as Prisma.InputJsonValue }
               : {}),
           },
         });
@@ -547,7 +547,7 @@ export class PrismaPetRepository implements PetRepository {
           rewardClaim: this.mapDailyRewardClaim(rewardClaim),
         };
       });
-    } catch (caught) {
+    } catch (caught: unknown) {
       if (caught instanceof Prisma.PrismaClientKnownRequestError && caught.code === 'P2002') {
         throw new ApiError(409, 'DAILY_REWARD_ALREADY_CLAIMED', 'Daily reward already claimed.');
       }

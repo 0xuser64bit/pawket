@@ -16,4 +16,5 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @pawket/api prisma:generate
       - run: pnpm verify

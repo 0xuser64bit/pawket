@@ -1,105 +1,49 @@
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, GlassPanel } from '../components/DesignSystem';
+import { Button } from '../components/DesignSystem';
 import { BrandMark } from '../components/BrandMark';
 import { FadeInUp } from '../components/Motion';
 import { PetChamber } from '../components/PetChamber';
 import { Screen } from '../components/Screen';
 import { Text } from '../components/Text';
 import { tapMedium } from '../feedback/haptics';
-import { colors, spacing } from '../theme/tokens';
-
-type IconName = ComponentProps<typeof Ionicons>['name'];
-
-const features: { icon: IconName; title: string; copy: string; color: string }[] = [
-  { icon: 'sparkles', title: 'Adopt', copy: 'Claim a companion', color: colors.solanaPurple },
-  { icon: 'heart', title: 'Care', copy: 'Daily rituals', color: colors.magenta },
-  { icon: 'trending-up', title: 'Evolve', copy: 'Build its story', color: colors.solanaGreen },
-];
+import { spacing } from '../theme/tokens';
 
 export function LandingScreen({ onStart }: { onStart: () => void }) {
   return (
     <Screen>
       <FadeInUp>
-        <BrandMark pill="Devnet" />
+        <BrandMark />
       </FadeInUp>
 
-      <FadeInUp delay={60}>
-        <View style={styles.hero}>
-          <Text variant="eyebrow" tone="green">
-            A living companion · on Solana
-          </Text>
-          <Text variant="display" tone="text" style={styles.title}>
-            Raise a companion that remembers.
-          </Text>
-          <Text variant="bodyLg" tone="soft">
-            Adopt a living pet, care for it through small daily rituals, and fill its Pet Passport
-            with memories.
-          </Text>
-        </View>
-      </FadeInUp>
-
-      <FadeInUp delay={120}>
+      <FadeInUp delay={50}>
         <PetChamber mood="Radiant" />
       </FadeInUp>
 
-      <FadeInUp delay={180}>
-        <View style={styles.featureRow}>
-          {features.map((f) => (
-            <GlassPanel key={f.title} padded={false} style={styles.featureCard}>
-              <View style={[styles.featureIcon, { backgroundColor: `${f.color}1c` }]}>
-                <Ionicons color={f.color} name={f.icon} size={18} />
-              </View>
-              <Text variant="label" tone="text">
-                {f.title}
-              </Text>
-              <Text variant="caption" tone="muted">
-                {f.copy}
-              </Text>
-            </GlassPanel>
-          ))}
+      <FadeInUp delay={110}>
+        <View style={styles.copy}>
+          <Text variant="display" tone="text">
+            A companion that remembers you.
+          </Text>
+          <Text variant="bodyLg" tone="muted">
+            Adopt one pet. Care for it in small daily rituals. Keep a passport of the days you spent together.
+          </Text>
         </View>
       </FadeInUp>
 
-      <FadeInUp delay={240}>
-        <View style={styles.cta}>
-          <Button
-            icon="sparkles"
-            label="Meet your companion"
-            onPress={() => {
-              tapMedium();
-              onStart();
-            }}
-            trailingIcon="arrow-forward"
-          />
-          <Text variant="caption" tone="faint" align="center" style={styles.footer}>
-            CARE TODAY · EVOLVE FOREVER
-          </Text>
-        </View>
+      <FadeInUp delay={170}>
+        <Button
+          icon="paw"
+          label="Meet your companion"
+          onPress={() => {
+            tapMedium();
+            onStart();
+          }}
+        />
       </FadeInUp>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { gap: spacing.sm, paddingTop: spacing.sm },
-  title: { marginTop: 2 },
-  featureRow: { flexDirection: 'row', gap: spacing.sm },
-  featureCard: {
-    alignItems: 'flex-start',
-    flex: 1,
-    gap: 6,
-    padding: spacing.md,
-  },
-  featureIcon: {
-    alignItems: 'center',
-    borderRadius: 12,
-    height: 36,
-    justifyContent: 'center',
-    marginBottom: 2,
-    width: 36,
-  },
-  cta: { gap: spacing.sm },
-  footer: { letterSpacing: 2, marginTop: 2 },
+  copy: { gap: spacing.sm },
 });

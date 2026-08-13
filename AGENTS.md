@@ -110,7 +110,7 @@ Project playbooks in `.agents/skills/`. Load the matching one before implementin
 - **No production RPC, treasury, or program ID changes** without an explicit human ask.
 - **API trusts `walletAddress`.** Do not add paid or irreversible actions on that trust model.
 - **Honest UI.** Seasons / payments / "on-chain" language must match reality.
-- **Tokens, not raw colors.** Use `Text`, `Screen`, `GlassPanel`, `Button` — see MOBILE.md.
+- **Tokens, not raw colors.** Use `Text`, `Screen`, `Surface`, `Button` — see MOBILE.md.
 
 ## Guardrails
 

@@ -51,7 +51,7 @@ Screen-local state is only for UI (name draft, confirm-reset, selected species).
 
 | Kind        | Where                                                                 | Rule                                            |
 | ----------- | --------------------------------------------------------------------- | ----------------------------------------------- |
-| Primitives  | `components/Text.tsx`, `DesignSystem.tsx`, `Screen.tsx`, `Motion.tsx` | Reuse. Do not restyle per screen.               |
+| Primitives  | `components/Text.tsx`, `DesignSystem.tsx` (`Surface`), `Screen.tsx`, `Motion.tsx` | Reuse. Do not restyle per screen. |
 | Pet visuals | `PetCreature`, `PetChamber`, `PetReaction`                            | SVG creature + habitat. Mood/species from data. |
 | Feedback    | `MessageBanner`, `Celebration`, `AnimatedCount`, `StatCard`           | Errors, level-up, meters.                       |
 
@@ -106,10 +106,10 @@ The only form is adopt (`name` + species + personality).
 `tokens.ts` is mandatory.
 
 - Spacing is a 4/8 scale (`xxs`–`xxxl`).
-- Type via `<Text variant="title" tone="muted">`. Do not set `fontWeight` — the family name carries weight.
+- Type via `<Text variant="title" tone="muted">`. Do not set `fontWeight` — the family name carries weight. Display is Bricolage Grotesque; body is Nunito Sans.
 - Color via tokens / `tone`. No hardcoded hex in screens.
-- Shadows use `boxShadow` tokens (`e1`/`e2`/`e3`, `glow*`), not `elevation`.
-- `Screen` handles safe areas, the cinematic gradient, max width 520, and nav inset.
+- Shadows use `boxShadow` tokens (`e1`/`e2`/`e3`, `lamp`), not `elevation`.
+- `Screen` handles safe areas, the night lamp, max width 520, and nav inset.
 - `headingScale` / `isCompactWidth` already shrink display type and the chamber on phones. Use them; don't invent a second breakpoint system.
 - Dark-only. `userInterfaceStyle: "dark"`. No light theme.
 - Portrait-only. `orientation: "portrait"`.

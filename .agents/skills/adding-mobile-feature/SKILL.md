@@ -12,7 +12,7 @@ Read `docs/engineering/MOBILE.md` and `docs/MOBILE_UI_DESIGN.md` first.
 - `apps/mobile/app/` — route + guards
 - `apps/mobile/src/screens/PetHomeScreen.tsx` or `AdoptPetScreen.tsx` — composition
 - `apps/mobile/src/state/PawketSessionContext.tsx` — mutations, status, errors
-- `apps/mobile/src/components/Screen.tsx` + `DesignSystem.tsx` + `Text.tsx`
+- `apps/mobile/src/components/Screen.tsx` + `DesignSystem.tsx` (`Surface`, `Button`) + `Text.tsx`
 - `apps/mobile/src/theme/tokens.ts`
 
 ## Pattern

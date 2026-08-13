@@ -3,22 +3,14 @@ import { PassportEventType } from '@pawket/shared';
 import { router } from 'expo-router';
 import { type ComponentProps, useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import {
-  Button,
-  Divider,
-  GlassPanel,
-  Pill,
-  ProgressBar,
-  SectionHeader,
-  StateBlock,
-} from '../src/components/DesignSystem';
+import { Button, SectionHeader, StateBlock, Surface } from '../src/components/DesignSystem';
 import { FadeInUp, Skeleton } from '../src/components/Motion';
 import { MessageBanner } from '../src/components/MessageBanner';
-import { PetChamber } from '../src/components/PetChamber';
+import { PetCreature } from '../src/components/PetCreature';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { usePawketSession } from '../src/state/PawketSessionContext';
-import { colors, radius, spacing } from '../src/theme/tokens';
+import { colors, spacing } from '../src/theme/tokens';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -30,29 +22,24 @@ function label(value: string) {
 }
 
 function shorten(value?: string) {
-  if (!value) return 'No wallet';
-  return `${value.slice(0, 6)}…${value.slice(-6)}`;
+  if (!value) return 'No key';
+  return `${value.slice(0, 6)}…${value.slice(-4)}`;
 }
 
-const eventVisual = (
-  type: PassportEventType,
-): { icon: IconName; tone: 'purple' | 'cyan' | 'green' | 'amber'; color: string } => {
-  if (type === PassportEventType.LevelUp)
-    return { icon: 'trending-up', tone: 'green', color: colors.solanaGreen };
-  if (type === PassportEventType.DailyReward)
-    return { icon: 'gift', tone: 'amber', color: colors.amber };
-  if (type === PassportEventType.Adopted)
-    return { icon: 'sparkles', tone: 'purple', color: colors.solanaPurple };
-  return { icon: 'paw', tone: 'cyan', color: colors.cyan };
+const eventVisual = (type: PassportEventType): { icon: IconName } => {
+  if (type === PassportEventType.LevelUp) return { icon: 'trending-up' };
+  if (type === PassportEventType.DailyReward) return { icon: 'gift' };
+  if (type === PassportEventType.Adopted) return { icon: 'paw' };
+  return { icon: 'leaf' };
 };
 
-function DetailCell({ label: l, value }: { label: string; value: string }) {
+function Fact({ label: l, value }: { label: string; value: string }) {
   return (
-    <View style={styles.detailCell}>
-      <Text variant="micro" tone="faint">
+    <View style={styles.fact}>
+      <Text variant="meta" tone="faint">
         {l}
       </Text>
-      <Text variant="label" tone="text" selectable style={styles.detailValue}>
+      <Text variant="label" tone="text" selectable>
         {value}
       </Text>
     </View>
@@ -66,119 +53,80 @@ export default function PassportScreen() {
     void loadPassport();
   }, [loadPassport]);
 
-  const vitality = pet
-    ? (pet.stats.hunger + pet.stats.happiness + pet.stats.energy + pet.stats.hygiene) / 4
-    : 0;
-
   return (
     <Screen nav>
       <FadeInUp>
-        <View style={styles.topRow}>
-          <View style={styles.flex}>
-            <Text variant="eyebrow" tone="cyan">
-              Pet Passport
-            </Text>
-            <Text variant="title" tone="text" numberOfLines={1}>
-              {pet ? `${pet.name}'s identity` : 'Passport timeline'}
-            </Text>
-          </View>
-          <Pill tone="cyan">Devnet</Pill>
-        </View>
-        <Text variant="body" tone="soft">
-          A living identity card — every ritual, level and milestone your companion earns with you,
-          in one timeline.
+        <Text variant="title" tone="text" numberOfLines={1}>
+          {pet ? `${pet.name}'s passport` : 'Passport'}
+        </Text>
+        <Text variant="body" tone="muted" style={styles.lead}>
+          A record of the days you spent together.
         </Text>
       </FadeInUp>
 
       <MessageBanner tone="error" message={error} />
 
       {pet ? (
-        <FadeInUp delay={70}>
-          <GlassPanel glow="cyan" padded={false} style={styles.idCard}>
-            <View style={styles.idHeader}>
-              <PetChamber compact species={pet.species} mood={label(pet.mood)} size={120} />
-            </View>
-            <View style={styles.idBody}>
-              <View>
+        <FadeInUp delay={50}>
+          <Surface style={styles.book}>
+            <View style={styles.bookHead}>
+              <PetCreature species={pet.species} mood={label(pet.mood)} size={72} />
+              <View style={styles.flex}>
                 <Text variant="h1" tone="text">
                   {pet.name}
                 </Text>
-                <Text variant="label" tone="muted">
+                <Text variant="caption" tone="muted">
                   {label(pet.species)} · {label(pet.personality)}
                 </Text>
               </View>
-              <View style={styles.detailGrid}>
-                <DetailCell
-                  label="Owner"
-                  value={shorten(wallet?.address ?? pet.ownerWalletAddress)}
-                />
-                <DetailCell label="Bond level" value={`${pet.level}`} />
-                <DetailCell label="Adopted" value={new Date(pet.createdAt).toLocaleDateString()} />
-                <DetailCell label="Memories" value={`${passportEvents.length}`} />
-              </View>
-              <View>
-                <View style={styles.vitalRow}>
-                  <Text variant="micro" tone="muted">
-                    Vitality
-                  </Text>
-                  <Text variant="micro" tone="cyan">
-                    {Math.round(vitality)}%
-                  </Text>
-                </View>
-                <ProgressBar max={100} value={vitality} tone="cyan" />
-              </View>
             </View>
-          </GlassPanel>
+            <View style={styles.facts}>
+              <Fact label="Level" value={`${pet.level}`} />
+              <Fact label="Adopted" value={new Date(pet.createdAt).toLocaleDateString()} />
+              <Fact label="Memories" value={`${passportEvents.length}`} />
+              <Fact label="Owner" value={shorten(wallet?.address ?? pet.ownerWalletAddress)} />
+            </View>
+          </Surface>
         </FadeInUp>
       ) : (
         <StateBlock
-          title="No identity loaded"
-          copy="Connect a wallet and adopt a companion to begin a Passport."
-          icon="finger-print-outline"
-          tone="purple"
+          title="No passport yet"
+          copy="Adopt a companion to begin a record."
+          icon="book-outline"
         />
       )}
 
-      <FadeInUp delay={120}>
-        <SectionHeader
-          eyebrow="memory stream"
-          title="Timeline"
-          tone="purple"
-          action={
-            status === 'loading_passport' ? (
-              <ActivityIndicator color={colors.solanaGreen} />
-            ) : undefined
-          }
-        />
-      </FadeInUp>
+      {pet ? (
+        <FadeInUp delay={90}>
+          <SectionHeader
+            title="Memories"
+            action={
+              status === 'loading_passport' ? <ActivityIndicator color={colors.accent} /> : undefined
+            }
+          />
+        </FadeInUp>
+      ) : null}
 
       {status === 'loading_passport' && passportEvents.length === 0 ? (
-        <View style={styles.skeletonTimeline}>
+        <View style={styles.timeline}>
           {[0, 1, 2].map((i) => (
-            <View key={i} style={styles.timelineRow}>
-              <View style={styles.rail}>
-                <Skeleton width={26} height={26} rounded={radius.pill} />
-                {i < 2 ? <View style={styles.railLine} /> : null}
-              </View>
-              <View style={styles.skeletonCard}>
-                <Skeleton width={90} height={20} rounded={radius.pill} />
-                <Skeleton width="70%" height={18} />
-                <Skeleton width="100%" height={14} />
-              </View>
+            <View key={i} style={styles.event}>
+              <Skeleton width={72} height={12} />
+              <Skeleton width="70%" height={18} />
+              <Skeleton width="100%" height={14} />
             </View>
           ))}
         </View>
-      ) : passportEvents.length === 0 ? (
+      ) : !pet ? null : passportEvents.length === 0 ? (
         <StateBlock
-          title="No memories unlocked yet"
-          copy="Care for your Pawket to write the first Passport memory."
+          title="No memories yet"
+          copy="Care for your companion to write the first page."
           icon="book-outline"
-          tone="cyan"
           action={
             <Button
-              label="Start a ritual"
+              label="Go care"
               onPress={() => router.push('/home')}
-              tone="cyan"
+              tone="ghost"
               size="md"
               full={false}
             />
@@ -188,31 +136,23 @@ export default function PassportScreen() {
         <View style={styles.timeline}>
           {passportEvents.map((event, index) => {
             const v = eventVisual(event.type);
-            const isLast = index === passportEvents.length - 1;
             return (
-              <FadeInUp key={event.id} delay={Math.min(index * 50, 300)}>
-                <View style={styles.timelineRow}>
-                  <View style={styles.rail}>
-                    <View style={[styles.railDot, { backgroundColor: v.color }]}>
-                      <Ionicons color={colors.black} name={v.icon} size={12} />
-                    </View>
-                    {!isLast ? <View style={styles.railLine} /> : null}
-                  </View>
-                  <GlassPanel style={styles.eventCard}>
-                    <Pill tone={v.tone}>{label(event.type)}</Pill>
-                    <Text variant="h3" tone="text">
-                      {event.title}
-                    </Text>
-                    {event.description ? (
-                      <Text variant="body" tone="muted">
-                        {event.description}
-                      </Text>
-                    ) : null}
-                    <Divider style={styles.eventDivider} />
-                    <Text variant="caption" tone="faint">
+              <FadeInUp key={event.id} delay={Math.min(index * 40, 240)}>
+                <View style={styles.event}>
+                  <View style={styles.eventMeta}>
+                    <Ionicons color={colors.accent} name={v.icon} size={14} />
+                    <Text variant="meta" tone="faint">
                       {new Date(event.createdAt).toLocaleString()}
                     </Text>
-                  </GlassPanel>
+                  </View>
+                  <Text variant="h3" tone="text">
+                    {event.title}
+                  </Text>
+                  {event.description ? (
+                    <Text variant="body" tone="muted">
+                      {event.description}
+                    </Text>
+                  ) : null}
                 </View>
               </FadeInUp>
             );
@@ -224,51 +164,18 @@ export default function PassportScreen() {
 }
 
 const styles = StyleSheet.create({
+  lead: { marginTop: spacing.xs },
   flex: { flex: 1 },
-  topRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  idCard: { overflow: 'hidden' },
-  idHeader: { padding: spacing.md, paddingBottom: 0 },
-  idBody: { gap: spacing.md, padding: spacing.lg },
-  detailGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  detailCell: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    flexBasis: '45%',
-    flexGrow: 1,
-    gap: 4,
-    padding: spacing.md,
-  },
-  detailValue: { marginTop: 2 },
-  vitalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  book: { gap: spacing.lg },
+  bookHead: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
+  facts: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  fact: { flexBasis: '45%', flexGrow: 1, gap: 4 },
   timeline: { gap: 0 },
-  timelineRow: { flexDirection: 'row', gap: spacing.sm },
-  rail: { alignItems: 'center', width: 26 },
-  railDot: {
-    alignItems: 'center',
-    borderRadius: radius.pill,
-    height: 26,
-    justifyContent: 'center',
-    width: 26,
-  },
-  railLine: { backgroundColor: colors.borderStrong, flex: 1, marginVertical: 6, width: 1.5 },
-  eventCard: { flex: 1, gap: 6, marginBottom: spacing.sm },
-  eventDivider: { marginTop: 4 },
-  skeletonTimeline: { gap: 0 },
-  skeletonCard: {
-    backgroundColor: colors.surface,
+  event: {
     borderColor: colors.border,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    flex: 1,
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-    padding: spacing.lg,
+    borderTopWidth: 1,
+    gap: 4,
+    paddingVertical: spacing.md,
   },
+  eventMeta: { alignItems: 'center', flexDirection: 'row', gap: 6 },
 });

@@ -1,8 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import { PetPersonality, PetSpecies, type Pet } from '@pawket/shared';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
-import { Button, GlassPanel, Pill, SectionHeader } from '../components/DesignSystem';
+import { Button, SectionHeader } from '../components/DesignSystem';
 import { FadeInUp, PressableScale } from '../components/Motion';
 import { MessageBanner } from '../components/MessageBanner';
 import { PetChamber } from '../components/PetChamber';
@@ -10,44 +9,23 @@ import { PetCreature } from '../components/PetCreature';
 import { Screen } from '../components/Screen';
 import { Text } from '../components/Text';
 import { selection, tapMedium } from '../feedback/haptics';
-import { colors, radius, spacing } from '../theme/tokens';
+import { colors, fonts, radius, spacing } from '../theme/tokens';
 
 const speciesOptions: { value: Pet['species']; title: string; copy: string }[] = [
-  { value: PetSpecies.LunaCat, title: 'Luna Cat', copy: 'Moonlit & precise' },
-  { value: PetSpecies.MossPup, title: 'Moss Pup', copy: 'Loyal & kinetic' },
-  { value: PetSpecies.CloudBun, title: 'Cloud Bun', copy: 'Soft & swift' },
+  { value: PetSpecies.LunaCat, title: 'Luna Cat', copy: 'Quiet and precise' },
+  { value: PetSpecies.MossPup, title: 'Moss Pup', copy: 'Loyal and restless' },
+  { value: PetSpecies.CloudBun, title: 'Cloud Bun', copy: 'Soft and quick' },
 ];
 
 const personalityOptions: {
   value: Pet['personality'];
   title: string;
   copy: string;
-  icon: 'search-outline' | 'bonfire-outline' | 'shield-outline' | 'flash-outline';
 }[] = [
-  {
-    value: PetPersonality.Curious,
-    title: 'Curious',
-    copy: 'Finds hidden memories.',
-    icon: 'search-outline',
-  },
-  {
-    value: PetPersonality.Cozy,
-    title: 'Cozy',
-    copy: 'Bonds through streaks.',
-    icon: 'bonfire-outline',
-  },
-  {
-    value: PetPersonality.Brave,
-    title: 'Brave',
-    copy: 'Built for quests.',
-    icon: 'shield-outline',
-  },
-  {
-    value: PetPersonality.Mischief,
-    title: 'Mischief',
-    copy: 'Chaotic, rare energy.',
-    icon: 'flash-outline',
-  },
+  { value: PetPersonality.Curious, title: 'Curious', copy: 'Finds hidden memories.' },
+  { value: PetPersonality.Cozy, title: 'Cozy', copy: 'Bonds through streaks.' },
+  { value: PetPersonality.Brave, title: 'Brave', copy: 'Ready for later quests.' },
+  { value: PetPersonality.Mischief, title: 'Mischief', copy: 'Unpredictable energy.' },
 ];
 
 function label(value: string) {
@@ -79,27 +57,22 @@ export function AdoptPetScreen({
   return (
     <Screen>
       <FadeInUp>
-        <Pill tone="purple" icon="sparkles">
-          Adoption chamber
-        </Pill>
-        <Text variant="title" tone="text" style={styles.title}>
-          Claim your companion.
+        <Text variant="title" tone="text">
+          Who’s coming home?
         </Text>
-        <Text variant="body" tone="soft">
-          Choose a body and a spark. Your companion is born the moment you adopt — and starts its
-          Passport with you.
+        <Text variant="body" tone="muted" style={styles.lead}>
+          Pick a body and a temperament. Adoption starts their passport.
         </Text>
       </FadeInUp>
 
-      {/* Live preview reacts to every choice */}
-      <FadeInUp delay={80}>
+      <FadeInUp delay={60}>
         <PetChamber species={species} mood={label(personality)} compact />
       </FadeInUp>
 
-      <FadeInUp delay={120}>
-        <GlassPanel style={styles.namePanel}>
-          <Text variant="micro" tone="purple">
-            Name signal
+      <FadeInUp delay={100}>
+        <View style={styles.field}>
+          <Text variant="label" tone="text" nativeID="pet-name-label">
+            Name
           </Text>
           <TextInput
             value={name}
@@ -109,83 +82,78 @@ export function AdoptPetScreen({
             style={styles.input}
             maxLength={24}
             returnKeyType="done"
+            accessibilityLabel="Companion name"
+            accessibilityLabelledBy="pet-name-label"
           />
-        </GlassPanel>
+          <Text variant="caption" tone="faint">
+            2 to 24 characters
+          </Text>
+        </View>
       </FadeInUp>
 
-      <FadeInUp delay={160}>
-        <SectionHeader eyebrow="species" title="Pick a body" tone="cyan" />
+      <FadeInUp delay={140}>
+        <SectionHeader title="Species" />
       </FadeInUp>
       <View style={styles.speciesRow}>
-        {speciesOptions.map((option, i) => {
+        {speciesOptions.map((option) => {
           const selected = species === option.value;
           return (
-            <FadeInUp key={option.value} delay={180 + i * 40} style={styles.flex}>
-              <PressableScale
-                onPress={() => {
-                  selection();
-                  setSpecies(option.value);
-                }}
-                accessibilityLabel={`Choose ${option.title}`}
-                style={[styles.speciesCard, selected && styles.selected]}
-              >
-                {selected ? (
-                  <View style={styles.check}>
-                    <Ionicons color={colors.black} name="checkmark" size={12} />
-                  </View>
-                ) : null}
-                <PetCreature species={option.value} size={58} mood="happy" />
-                <Text variant="label" tone="text">
-                  {option.title}
-                </Text>
-                <Text variant="caption" tone="muted" align="center">
-                  {option.copy}
-                </Text>
-              </PressableScale>
-            </FadeInUp>
+            <PressableScale
+              key={option.value}
+              onPress={() => {
+                selection();
+                setSpecies(option.value);
+              }}
+              accessibilityLabel={`Choose ${option.title}`}
+              accessibilityState={{ selected }}
+              style={[styles.speciesCard, selected && styles.selected]}
+            >
+              <PetCreature species={option.value} size={56} mood="happy" />
+              <Text variant="label" tone="text">
+                {option.title}
+              </Text>
+              <Text variant="caption" tone="muted" align="center">
+                {option.copy}
+              </Text>
+            </PressableScale>
           );
         })}
       </View>
 
-      <FadeInUp delay={300}>
-        <SectionHeader eyebrow="personality" title="Tune the spark" tone="magenta" />
+      <FadeInUp delay={180}>
+        <SectionHeader title="Temperament" />
       </FadeInUp>
       <View style={styles.personalityGrid}>
-        {personalityOptions.map((option, i) => {
+        {personalityOptions.map((option) => {
           const selected = personality === option.value;
           return (
-            <FadeInUp key={option.value} delay={320 + i * 40} style={styles.half}>
-              <PressableScale
-                onPress={() => {
-                  selection();
-                  setPersonality(option.value);
-                }}
-                accessibilityLabel={`Choose ${option.title}`}
-                style={[styles.personalityCard, selected && styles.selected]}
-              >
-                <Ionicons
-                  color={selected ? colors.solanaGreen : colors.muted}
-                  name={option.icon}
-                  size={22}
-                />
-                <Text variant="label" tone="text">
-                  {option.title}
-                </Text>
-                <Text variant="caption" tone="muted">
-                  {option.copy}
-                </Text>
-              </PressableScale>
-            </FadeInUp>
+            <PressableScale
+              key={option.value}
+              onPress={() => {
+                selection();
+                setPersonality(option.value);
+              }}
+              accessibilityLabel={`Choose ${option.title}`}
+              accessibilityState={{ selected }}
+              style={[styles.personalityCard, selected && styles.selected]}
+            >
+              <Text variant="label" tone="text">
+                {option.title}
+              </Text>
+              <Text variant="caption" tone="muted">
+                {option.copy}
+              </Text>
+            </PressableScale>
           );
         })}
       </View>
 
       <MessageBanner tone="error" message={error} />
 
-      <FadeInUp delay={480}>
+      <FadeInUp delay={220}>
         <Button
-          icon="sparkles"
-          label={loading ? 'Opening chamber…' : `Adopt ${trimmed || 'companion'}`}
+          icon="paw"
+          label={loading ? 'Adopting…' : `Adopt ${trimmed || 'companion'}`}
           onPress={() => {
             tapMedium();
             onAdopted({ name: trimmed, species, personality });
@@ -194,7 +162,7 @@ export function AdoptPetScreen({
           loading={loading}
         />
         <Text variant="caption" tone="faint" align="center" style={styles.note}>
-          Creates {label(species)} · {label(personality)} · level 1 · fresh passport
+          {label(species)} · {label(personality)} · level 1
         </Text>
       </FadeInUp>
     </Screen>
@@ -202,21 +170,20 @@ export function AdoptPetScreen({
 }
 
 const styles = StyleSheet.create({
-  title: { marginTop: spacing.md, marginBottom: 6 },
-  flex: { flex: 1 },
-  half: { minWidth: '45%', flexGrow: 1, flexBasis: '45%' },
-  namePanel: { gap: spacing.sm },
+  lead: { marginTop: spacing.sm },
+  field: { gap: spacing.xs },
   input: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.surface,
     borderColor: colors.borderStrong,
     borderCurve: 'continuous',
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.display,
     fontSize: 22,
+    minHeight: 54,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
   speciesRow: { flexDirection: 'row', gap: spacing.sm },
   speciesCard: {
@@ -224,9 +191,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderCurve: 'continuous',
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
+    flex: 1,
     gap: 4,
+    minHeight: 132,
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.md,
   },
@@ -235,27 +204,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderCurve: 'continuous',
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
-    gap: 5,
-    minHeight: 104,
+    flexBasis: '47%',
+    flexGrow: 1,
+    gap: 4,
+    minHeight: 88,
     padding: spacing.md,
   },
   selected: {
-    backgroundColor: 'rgba(23,229,137,0.10)',
-    borderColor: 'rgba(23,229,137,0.6)',
-  },
-  check: {
-    alignItems: 'center',
-    backgroundColor: colors.solanaGreen,
-    borderRadius: 999,
-    height: 20,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 8,
-    top: 8,
-    width: 20,
-    zIndex: 2,
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.borderAccent,
   },
   note: { marginTop: spacing.sm },
 });

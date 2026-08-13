@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Link, usePathname } from 'expo-router';
 import { type ComponentProps, type ReactNode, useEffect, useRef, useState } from 'react';
 import {
@@ -13,88 +12,51 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { tapLight } from '../feedback/haptics';
-import { colors, gradients, motion, radius, shadows, spacing } from '../theme/tokens';
-import { Halo, PressableScale } from './Motion';
+import { colors, motion, radius, shadows, spacing } from '../theme/tokens';
+import { PressableScale } from './Motion';
 import { Text } from './Text';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
-type GradientName = keyof typeof gradients;
-type Tone = 'green' | 'purple' | 'cyan' | 'magenta' | 'amber' | 'danger' | 'neutral';
+type SemanticTone = 'accent' | 'success' | 'warning' | 'danger' | 'neutral';
 
-const toneToColor: Record<Tone, string> = {
-  green: colors.solanaGreen,
-  purple: colors.solanaPurple,
-  cyan: colors.cyan,
-  magenta: colors.magenta,
-  amber: colors.amber,
+const toneToColor: Record<SemanticTone, string> = {
+  accent: colors.accent,
+  success: colors.success,
+  warning: colors.warning,
   danger: colors.danger,
   neutral: colors.muted,
-};
-
-const toneToGradient: Record<Exclude<Tone, 'neutral'>, GradientName> = {
-  green: 'green',
-  purple: 'purple',
-  cyan: 'cyan',
-  magenta: 'magenta',
-  amber: 'amber',
-  danger: 'danger',
 };
 
 // ---------------------------------------------------------------------------
 // Surfaces
 // ---------------------------------------------------------------------------
 
-export function GlassPanel({
+export function Surface({
   children,
   style,
-  glow = false,
   padded = true,
 }: {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
-  glow?: boolean | Tone;
   padded?: boolean;
 }) {
-  const glowStyle =
-    glow === true
-      ? shadows.glowPurple
-      : glow === 'green'
-        ? shadows.glowGreen
-        : glow === 'cyan'
-          ? shadows.glowCyan
-          : glow === 'amber'
-            ? shadows.glowAmber
-            : glow
-              ? shadows.glowPurple
-              : shadows.e2;
-
-  return (
-    <View style={[styles.panel, padded && styles.panelPad, glowStyle, style]}>
-      <LinearGradient
-        colors={gradients.glass}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        pointerEvents="none"
-        style={StyleSheet.absoluteFill}
-      />
-      <View pointerEvents="none" style={styles.panelEdge} />
-      {children}
-    </View>
-  );
+  return <View style={[styles.panel, padded && styles.panelPad, style]}>{children}</View>;
 }
+
+/** @deprecated Use Surface. Kept so older call sites keep compiling during the rework. */
+export const GlassPanel = Surface;
 
 export function IconTile({
   icon,
-  tone = 'green',
-  size = 46,
-  glow = false,
+  tone = 'accent',
+  size = 44,
 }: {
   icon: IconName;
-  tone?: Tone;
+  tone?: SemanticTone;
   size?: number;
-  glow?: boolean;
 }) {
   const color = toneToColor[tone];
   return (
@@ -104,14 +66,12 @@ export function IconTile({
         {
           width: size,
           height: size,
-          borderRadius: size / 2.6,
-          backgroundColor: `${color}1c`,
-          borderColor: `${color}55`,
+          borderRadius: size / 3.2,
+          backgroundColor: colors.surfaceRaised,
         },
       ]}
     >
-      {glow ? <Halo color={color} size={size * 0.9} /> : null}
-      <Ionicons color={color} name={icon} size={size * 0.46} />
+      <Ionicons color={color} name={icon} size={size * 0.44} />
     </View>
   );
 }
@@ -124,29 +84,12 @@ export function Divider({ style }: { style?: StyleProp<ViewStyle> }) {
 // Typographic structure
 // ---------------------------------------------------------------------------
 
-export function SectionHeader({
-  eyebrow,
-  title,
-  action,
-  tone = 'green',
-}: {
-  eyebrow?: string;
-  title: string;
-  action?: ReactNode;
-  tone?: Tone;
-}) {
+export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <View style={styles.sectionHeader}>
-      <View style={{ flex: 1 }}>
-        {eyebrow ? (
-          <Text variant="eyebrow" style={{ color: toneToColor[tone], marginBottom: 5 }}>
-            {eyebrow}
-          </Text>
-        ) : null}
-        <Text variant="h2" tone="text">
-          {title}
-        </Text>
-      </View>
+      <Text variant="h2" tone="text" style={styles.sectionTitle}>
+        {title}
+      </Text>
       {action}
     </View>
   );
@@ -162,14 +105,14 @@ export function Pill({
   icon,
 }: {
   children: ReactNode;
-  tone?: Tone;
+  tone?: SemanticTone;
   icon?: IconName;
 }) {
   const color = toneToColor[tone];
   return (
-    <View style={[styles.pill, { borderColor: `${color}55`, backgroundColor: `${color}16` }]}>
+    <View style={[styles.pill, { borderColor: colors.border, backgroundColor: colors.surfaceRaised }]}>
       {icon ? <Ionicons color={color} name={icon} size={12} /> : null}
-      <Text variant="micro" style={{ color }}>
+      <Text variant="meta" style={{ color }}>
         {children}
       </Text>
     </View>
@@ -197,55 +140,17 @@ export function Button({
   loading?: boolean;
   icon?: IconName;
   trailingIcon?: IconName;
-  tone?: 'primary' | 'green' | 'purple' | 'magenta' | 'amber' | 'cyan' | 'ghost' | 'danger';
+  tone?: 'primary' | 'ghost' | 'danger';
   size?: 'lg' | 'md' | 'sm';
   full?: boolean;
 }) {
   const isGhost = tone === 'ghost';
-  const gradient: GradientName =
-    tone === 'green'
-      ? 'green'
-      : tone === 'purple'
-        ? 'purple'
-        : tone === 'magenta'
-          ? 'magenta'
-          : tone === 'amber'
-            ? 'amber'
-            : tone === 'cyan'
-              ? 'cyan'
-              : tone === 'danger'
-                ? 'danger'
-                : 'primary';
-
-  const height = size === 'lg' ? 56 : size === 'md' ? 48 : 40;
+  const isDanger = tone === 'danger';
+  const height = size === 'lg' ? 54 : size === 'md' ? 48 : 40;
   const padH = size === 'sm' ? spacing.md : spacing.xl;
   const isDisabled = disabled || loading;
-
-  const inner = (
-    <View style={[styles.btnContent, { minHeight: height, paddingHorizontal: padH }]}>
-      {loading ? (
-        <ActivityIndicator color={isGhost ? colors.text : colors.black} />
-      ) : (
-        <>
-          {icon ? (
-            <Ionicons color={isGhost ? colors.text : colors.black} name={icon} size={18} />
-          ) : null}
-          <Text
-            variant="label"
-            style={{
-              color: isGhost ? colors.text : colors.black,
-              fontSize: size === 'sm' ? 14 : 16,
-            }}
-          >
-            {label}
-          </Text>
-          {trailingIcon ? (
-            <Ionicons color={isGhost ? colors.text : colors.black} name={trailingIcon} size={18} />
-          ) : null}
-        </>
-      )}
-    </View>
-  );
+  const ink = isGhost ? colors.text : isDanger ? colors.text : colors.accentInk;
+  const fill = isGhost ? colors.surfaceRaised : isDanger ? colors.danger : colors.accent;
 
   return (
     <PressableScale
@@ -254,18 +159,36 @@ export function Button({
       accessibilityLabel={label}
       style={[full ? styles.btnFull : styles.btnAuto, isDisabled && styles.disabled]}
     >
-      {isGhost ? (
-        <View style={[styles.ghostBtn, { borderRadius: radius.pill }]}>{inner}</View>
-      ) : (
-        <LinearGradient
-          colors={gradients[gradient]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.gradientBtn, !isDisabled && shadows.e1]}
-        >
-          {inner}
-        </LinearGradient>
-      )}
+      <View
+        style={[
+          styles.btnShell,
+          {
+            backgroundColor: fill,
+            borderColor: isGhost ? colors.borderStrong : fill,
+            minHeight: height,
+            paddingHorizontal: padH,
+          },
+          !isGhost && !isDisabled ? shadows.e1 : null,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={ink} />
+        ) : (
+          <>
+            {icon ? <Ionicons color={ink} name={icon} size={18} /> : null}
+            <Text
+              variant="label"
+              style={{
+                color: ink,
+                fontSize: size === 'sm' ? 14 : 16,
+              }}
+            >
+              {label}
+            </Text>
+            {trailingIcon ? <Ionicons color={ink} name={trailingIcon} size={18} /> : null}
+          </>
+        )}
+      </View>
     </PressableScale>
   );
 }
@@ -277,13 +200,12 @@ export function Button({
 export function ProgressBar({
   value,
   max = 100,
-  tone = 'green',
-  height = 9,
-  glow = false,
+  tone = 'accent',
+  height = 8,
 }: {
   value: number;
   max?: number;
-  tone?: Exclude<Tone, 'neutral'>;
+  tone?: Exclude<SemanticTone, 'neutral'>;
   height?: number;
   glow?: boolean;
 }) {
@@ -315,20 +237,7 @@ export function ProgressBar({
       style={[styles.progressTrack, { height }]}
       onLayout={(e: LayoutChangeEvent) => setTrackWidth(e.nativeEvent.layout.width)}
     >
-      <Animated.View
-        style={[
-          styles.progressFill,
-          { width, height },
-          glow && { boxShadow: `0px 0px 8px ${color}` },
-        ]}
-      >
-        <LinearGradient
-          colors={gradients[toneToGradient[tone]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{ width: trackWidth, height }}
-        />
-      </Animated.View>
+      <Animated.View style={[styles.progressFill, { width, height, backgroundColor: color }]} />
     </View>
   );
 }
@@ -340,29 +249,24 @@ export function ProgressBar({
 export function StateBlock({
   title,
   copy,
-  icon = 'sparkles-outline',
+  icon = 'paw-outline',
   loading = false,
-  tone = 'cyan',
   action,
 }: {
   title: string;
   copy: string;
   icon?: IconName;
   loading?: boolean;
-  tone?: Tone;
+  tone?: SemanticTone;
   action?: ReactNode;
 }) {
-  const color = toneToColor[tone];
   return (
-    <GlassPanel style={styles.stateBlock}>
-      <View
-        style={[styles.stateIcon, { borderColor: `${color}55`, backgroundColor: `${color}16` }]}
-      >
-        {loading ? <Halo color={color} size={58} /> : null}
+    <Surface style={styles.stateBlock}>
+      <View style={styles.stateIcon}>
         {loading ? (
-          <ActivityIndicator color={color} />
+          <ActivityIndicator color={colors.accent} />
         ) : (
-          <Ionicons color={color} name={icon} size={26} />
+          <Ionicons color={colors.accent} name={icon} size={24} />
         )}
       </View>
       <Text variant="h2" tone="text" align="center">
@@ -372,63 +276,55 @@ export function StateBlock({
         {copy}
       </Text>
       {action}
-    </GlassPanel>
+    </Surface>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Bottom navigation (3 tabs). Settings is a stack screen, not a tab.
+// Bottom navigation
 // ---------------------------------------------------------------------------
 
 const navItems: { href: string; label: string; icon: IconName; activeIcon: IconName }[] = [
-  { href: '/home', label: 'Home', icon: 'planet-outline', activeIcon: 'planet' },
-  {
-    href: '/passport',
-    label: 'Passport',
-    icon: 'finger-print-outline',
-    activeIcon: 'finger-print',
-  },
-  { href: '/seasons', label: 'Seasons', icon: 'flash-outline', activeIcon: 'flash' },
+  { href: '/home', label: 'Home', icon: 'home-outline', activeIcon: 'home' },
+  { href: '/passport', label: 'Passport', icon: 'book-outline', activeIcon: 'book' },
+  { href: '/seasons', label: 'Seasons', icon: 'flower-outline', activeIcon: 'flower' },
 ];
 
 function NavItem({ item, active }: { item: (typeof navItems)[number]; active: boolean }) {
   return (
-    <Link key={item.href} href={item.href} asChild>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={item.label}
-        accessibilityState={{ selected: active }}
-        onPress={() => {
-          if (!active) tapLight();
-        }}
-        style={styles.navItem}
-      >
-        <View style={[styles.navPill, active && styles.navPillActive]}>
+    <View style={styles.navSlot}>
+      <Link href={item.href} asChild>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={item.label}
+          accessibilityState={{ selected: active }}
+          onPress={() => {
+            if (!active) tapLight();
+          }}
+          style={styles.navItem}
+        >
           <Ionicons
-            color={active ? colors.solanaGreen : colors.faint}
+            color={active ? colors.accent : colors.faint}
             name={active ? item.activeIcon : item.icon}
-            size={21}
+            size={22}
           />
-        </View>
-        <Text variant="micro" style={{ color: active ? colors.text : colors.faint, fontSize: 9.5 }}>
-          {item.label}
-        </Text>
-        <View style={[styles.navIndicator, active && styles.navIndicatorActive]} />
-      </Pressable>
-    </Link>
+          <Text variant="meta" style={{ color: active ? colors.text : colors.faint }}>
+            {item.label}
+          </Text>
+        </Pressable>
+      </Link>
+    </View>
   );
 }
 
 export function BottomNav() {
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.navShell} pointerEvents="box-none">
-      <View style={styles.navBar}>
-        <View pointerEvents="none" style={styles.panelEdge} />
-        {navItems.map((item) => (
-          <NavItem key={item.href} item={item} active={pathname === item.href} />
-        ))}
-      </View>
+    <View style={[styles.navBar, { paddingBottom: Math.max(10, insets.bottom) }]}>
+      {navItems.map((item) => (
+        <NavItem key={item.href} item={item} active={pathname === item.href} />
+      ))}
     </View>
   );
 }
@@ -438,25 +334,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderCurve: 'continuous',
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     borderWidth: 1,
     overflow: 'hidden',
   },
   panelPad: { padding: spacing.lg },
-  panelEdge: {
-    backgroundColor: colors.glassHi,
-    height: 1,
-    left: spacing.lg,
-    position: 'absolute',
-    right: spacing.lg,
-    top: 0,
-  },
   iconTile: {
     alignItems: 'center',
     borderCurve: 'continuous',
-    borderWidth: 1,
     justifyContent: 'center',
-    overflow: 'visible',
   },
   divider: { backgroundColor: colors.border, height: 1 },
   sectionHeader: {
@@ -465,91 +351,66 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     justifyContent: 'space-between',
   },
+  sectionTitle: { flex: 1 },
   pill: {
     alignItems: 'center',
     alignSelf: 'flex-start',
     borderRadius: radius.pill,
     borderWidth: 1,
     flexDirection: 'row',
-    gap: 5,
+    gap: 6,
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
   },
-  btnFull: { alignSelf: 'stretch', borderRadius: radius.pill },
-  btnAuto: { alignSelf: 'flex-start', borderRadius: radius.pill },
-  btnContent: {
+  btnFull: { alignSelf: 'stretch' },
+  btnAuto: { alignSelf: 'flex-start' },
+  btnShell: {
     alignItems: 'center',
+    borderCurve: 'continuous',
+    borderRadius: radius.md,
+    borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.xs,
     justifyContent: 'center',
   },
-  gradientBtn: { borderRadius: radius.pill, overflow: 'hidden' },
-  ghostBtn: {
-    backgroundColor: colors.surfaceStrong,
-    borderColor: colors.borderStrong,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
   disabled: { opacity: 0.45 },
   progressTrack: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: colors.surfaceRaised,
     borderRadius: radius.pill,
     overflow: 'hidden',
     width: '100%',
   },
   progressFill: {
     borderRadius: radius.pill,
-    overflow: 'hidden',
   },
   stateBlock: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl },
   stateIcon: {
     alignItems: 'center',
+    backgroundColor: colors.surfaceRaised,
     borderRadius: radius.pill,
-    borderWidth: 1,
-    height: 58,
+    height: 52,
     justifyContent: 'center',
     marginBottom: spacing.xs,
-    width: 58,
+    width: 52,
   },
-  navShell: {
+  navBar: {
+    backgroundColor: colors.bgElevated,
+    borderColor: colors.border,
+    borderTopWidth: 1,
     bottom: 0,
+    flexDirection: 'row',
     left: 0,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
+    paddingTop: 8,
     position: 'absolute',
     right: 0,
   },
-  navBar: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(8,10,20,0.94)',
-    borderColor: colors.borderStrong,
-    borderCurve: 'continuous',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    maxWidth: 480,
-    overflow: 'hidden',
-    paddingHorizontal: 8,
-    paddingVertical: 9,
-    width: '100%',
-    ...shadows.e3,
-  },
-  navItem: { alignItems: 'center', flex: 1, gap: 4 },
-  navPill: {
+  navSlot: { flex: 1, minWidth: 0 },
+  navItem: {
     alignItems: 'center',
-    borderRadius: radius.md,
-    height: 38,
-    justifyContent: 'center',
-    width: 52,
+    gap: 4,
+    minHeight: 44,
+    paddingVertical: 4,
+    width: '100%',
   },
-  navPillActive: { backgroundColor: 'rgba(23,229,137,0.13)' },
-  navIndicator: {
-    backgroundColor: 'transparent',
-    borderRadius: 999,
-    height: 3,
-    marginTop: 1,
-    width: 14,
-  },
-  navIndicatorActive: { backgroundColor: colors.solanaGreen },
 });

@@ -1,14 +1,14 @@
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from '@expo-google-fonts/inter';
+  BricolageGrotesque_500Medium,
+  BricolageGrotesque_600SemiBold,
+  BricolageGrotesque_700Bold,
+} from '@expo-google-fonts/bricolage-grotesque';
 import {
-  SpaceGrotesk_500Medium,
-  SpaceGrotesk_600SemiBold,
-  SpaceGrotesk_700Bold,
-} from '@expo-google-fonts/space-grotesk';
+  NunitoSans_400Regular,
+  NunitoSans_500Medium,
+  NunitoSans_600SemiBold,
+  NunitoSans_700Bold,
+} from '@expo-google-fonts/nunito-sans';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -17,30 +17,51 @@ import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { PawketSessionProvider } from '../src/state/PawketSessionContext';
 import { colors } from '../src/theme/tokens';
 
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  const id = 'pawket-root-lock';
+  if (!document.getElementById(id)) {
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent =
+      'html,body,#root{width:100%!important;max-width:100%!important;overflow-x:hidden;}';
+    document.head.appendChild(style);
+  }
+}
+
 export default function Layout() {
   const [fontsLoaded] = useFonts({
-    SpaceGrotesk_500Medium,
-    SpaceGrotesk_600SemiBold,
-    SpaceGrotesk_700Bold,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
+    BricolageGrotesque_500Medium,
+    BricolageGrotesque_600SemiBold,
+    BricolageGrotesque_700Bold,
+    NunitoSans_400Regular,
+    NunitoSans_500Medium,
+    NunitoSans_600SemiBold,
+    NunitoSans_700Bold,
   });
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     document.documentElement.style.backgroundColor = colors.bg;
     document.documentElement.style.minHeight = '100vh';
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.width = '100%';
     document.body.style.backgroundColor = colors.bg;
     document.body.style.minHeight = '100vh';
+    document.body.style.margin = '0';
+    document.body.style.overflow = 'hidden';
+    document.body.style.width = '100%';
+    const root = document.getElementById('root');
+    if (root) {
+      root.style.width = '100%';
+      root.style.maxWidth = '100%';
+      root.style.overflow = 'hidden';
+    }
   }, []);
 
   if (!fontsLoaded) {
     return (
       <View style={styles.boot}>
-        <View style={styles.bootGlow} />
-        <ActivityIndicator color={colors.solanaGreen} />
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }
@@ -65,12 +86,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     flex: 1,
     justifyContent: 'center',
-  },
-  bootGlow: {
-    backgroundColor: 'rgba(23,229,137,0.16)',
-    borderRadius: 120,
-    height: 240,
-    position: 'absolute',
-    width: 240,
   },
 });

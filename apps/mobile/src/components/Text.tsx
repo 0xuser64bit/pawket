@@ -8,39 +8,18 @@ import { colors, headingScale, typography } from '../theme/tokens';
 
 type Variant = keyof typeof typography;
 
-type Tone =
-  | 'text'
-  | 'soft'
-  | 'muted'
-  | 'faint'
-  | 'green'
-  | 'purple'
-  | 'cyan'
-  | 'amber'
-  | 'magenta'
-  | 'mint'
-  | 'blue'
-  | 'gold'
-  | 'danger'
-  | 'white'
-  | 'black';
+type Tone = 'text' | 'soft' | 'muted' | 'faint' | 'accent' | 'success' | 'warning' | 'danger' | 'inverse';
 
 const toneColor: Record<Tone, string> = {
   text: colors.text,
   soft: colors.textSoft,
   muted: colors.muted,
   faint: colors.faint,
-  green: colors.solanaGreen,
-  purple: colors.solanaPurple,
-  cyan: colors.cyan,
-  amber: colors.amber,
-  magenta: colors.magenta,
-  mint: colors.mint,
-  blue: colors.blue,
-  gold: colors.gold,
+  accent: colors.accent,
+  success: colors.success,
+  warning: colors.warning,
   danger: colors.danger,
-  white: colors.white,
-  black: colors.black,
+  inverse: colors.inverse,
 };
 
 export type TextProps = RNTextProps & {
@@ -56,8 +35,6 @@ export type TextProps = RNTextProps & {
 export function Text({ variant = 'body', tone = 'soft', align, style, ...rest }: TextProps) {
   const { width } = useWindowDimensions();
   const base = typography[variant];
-  // Only the large display variants are shrunk on phones; body/labels/captions
-  // keep their tuned size so they stay legible.
   const scale = base.fontSize >= 20 ? headingScale(width) : 1;
   const sized =
     scale === 1

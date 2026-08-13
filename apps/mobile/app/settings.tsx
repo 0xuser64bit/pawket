@@ -1,15 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { type ComponentProps, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import {
-  Button,
-  Divider,
-  GlassPanel,
-  IconTile,
-  Pill,
-  SectionHeader,
-} from '../src/components/DesignSystem';
+import { Button, Divider, SectionHeader, Surface } from '../src/components/DesignSystem';
 import { FadeInUp } from '../src/components/Motion';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
@@ -19,45 +12,27 @@ import { solanaConfig } from '../src/solana/config';
 import { usePawketSession } from '../src/state/PawketSessionContext';
 import { colors, radius, spacing } from '../src/theme/tokens';
 
-type IconName = ComponentProps<typeof Ionicons>['name'];
-type Tone = 'green' | 'purple' | 'cyan' | 'amber';
-
 function shorten(value?: string) {
   if (!value) return 'Not connected';
   if (value.length <= 24) return value;
   return `${value.slice(0, 10)}…${value.slice(-8)}`;
 }
 
-function Row({
-  label,
-  value,
-  icon,
-  tone = 'cyan',
-  mono = false,
-}: {
-  label: string;
-  value: string;
-  icon: IconName;
-  tone?: Tone;
-  mono?: boolean;
-}) {
+function Row({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
     <View style={styles.row}>
-      <IconTile icon={icon} tone={tone} size={40} />
-      <View style={styles.flex}>
-        <Text variant="micro" tone="faint">
-          {label}
-        </Text>
-        <Text variant={mono ? 'mono' : 'label'} tone="text" selectable style={styles.value}>
-          {value}
-        </Text>
-      </View>
+      <Text variant="meta" tone="faint">
+        {label}
+      </Text>
+      <Text variant={mono ? 'mono' : 'label'} tone="text" selectable style={styles.value}>
+        {value}
+      </Text>
     </View>
   );
 }
 
 export default function SettingsScreen() {
-  const { wallet, pet, status, disconnect, startOver } = usePawketSession();
+  const { wallet, pet, disconnect, startOver } = usePawketSession();
   const [confirmReset, setConfirmReset] = useState(false);
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/home'));
 
@@ -83,79 +58,43 @@ export default function SettingsScreen() {
           >
             <Ionicons color={colors.textSoft} name="chevron-back" size={20} />
           </Pressable>
-          <Pill tone="green">Devnet</Pill>
+          <Text variant="title" tone="text" style={styles.title}>
+            Settings
+          </Text>
         </View>
-        <Text variant="title" tone="text" style={styles.title}>
-          Settings.
-        </Text>
-        <Text variant="body" tone="soft">
-          Your companion key lives on this device. Your pet and Passport belong to it — no account,
-          no seed phrase.
+        <Text variant="body" tone="muted">
+          Your companion key lives on this device. No account. No seed phrase.
         </Text>
       </FadeInUp>
 
-      <FadeInUp delay={70}>
-        <GlassPanel style={styles.panel}>
-          <SectionHeader eyebrow="session" title="Companion session" tone="green" />
-          <Row
-            icon="key-outline"
-            label="Companion key"
-            tone="green"
-            mono
-            value={shorten(wallet?.address)}
-          />
+      <FadeInUp delay={50}>
+        <Surface style={styles.panel}>
+          <SectionHeader title="This device" />
+          <Row label="Companion key" mono value={shorten(wallet?.address)} />
           <Divider />
           <Row
-            icon="paw-outline"
             label="Active pet"
-            tone="purple"
             value={pet ? `${pet.name} · level ${pet.level}` : 'No companion adopted'}
           />
-          <Divider />
-          <Row icon="pulse-outline" label="Runtime status" tone="cyan" value={status} />
-        </GlassPanel>
+        </Surface>
       </FadeInUp>
 
-      <FadeInUp delay={130}>
-        <GlassPanel style={styles.panel}>
-          <SectionHeader eyebrow="network" title="Solana / dev mode" tone="cyan" />
-          <Row
-            icon="git-network-outline"
-            label="Cluster"
-            tone="cyan"
-            value={solanaConfig.cluster}
-          />
+      <FadeInUp delay={100}>
+        <Surface style={styles.panel}>
+          <SectionHeader title="Network" />
+          <Row label="Cluster" value={solanaConfig.cluster} />
           <Divider />
-          <Row
-            icon="cube-outline"
-            label="Program"
-            tone="purple"
-            mono
-            value={shorten(solanaConfig.programId)}
-          />
+          <Row label="Program" mono value={shorten(solanaConfig.programId)} />
           <Divider />
-          <Row
-            icon="radio-outline"
-            label="RPC"
-            tone="green"
-            mono
-            value={shorten(solanaConfig.rpcUrl)}
-          />
-        </GlassPanel>
+          <Row label="RPC" mono value={shorten(solanaConfig.rpcUrl)} />
+          <Divider />
+          <Row label="API" mono value={pawketApiBaseUrl} />
+        </Surface>
       </FadeInUp>
 
-      <FadeInUp delay={190}>
-        <GlassPanel style={styles.panel}>
-          <SectionHeader eyebrow="service" title="App path" tone="amber" />
-          <Row icon="server-outline" label="API base" tone="amber" mono value={pawketApiBaseUrl} />
-          <Divider />
-          <Row icon="phone-portrait-outline" label="App version" tone="green" value="0.1.0" />
-        </GlassPanel>
-      </FadeInUp>
-
-      <FadeInUp delay={250}>
-        <GlassPanel style={styles.panel}>
-          <SectionHeader eyebrow="this device" title="Companion key" tone="purple" />
+      <FadeInUp delay={150}>
+        <Surface style={styles.panel}>
+          <SectionHeader title="Companion key" />
           <Button
             icon="log-out-outline"
             label="Disconnect"
@@ -167,7 +106,7 @@ export default function SettingsScreen() {
             }}
           />
           <Text variant="caption" tone="muted">
-            Ends this session but keeps your key — reconnect to return to{' '}
+            Ends this session but keeps the key. Reconnect to return to{' '}
             {pet ? pet.name : 'your pet'}.
           </Text>
           <Divider />
@@ -179,32 +118,30 @@ export default function SettingsScreen() {
             onPress={handleStartOver}
           />
           <Text variant="caption" tone={confirmReset ? 'danger' : 'muted'}>
-            Erases the key on this device and mints a fresh identity.{' '}
-            {pet ? `${pet.name} and its` : 'Your'} Passport can’t be recovered without the original
+            Erases the key on this device and makes a new identity.{' '}
+            {pet ? `${pet.name} and its` : 'Your'} passport cannot be recovered without the original
             key.
           </Text>
-        </GlassPanel>
+        </Surface>
       </FadeInUp>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   header: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
   back: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: colors.surface,
     borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    height: 40,
+    height: 44,
     justifyContent: 'center',
-    width: 40,
+    width: 44,
   },
-  title: { marginTop: spacing.md, marginBottom: 6 },
+  title: { flex: 1 },
   panel: { gap: spacing.sm },
-  row: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, paddingVertical: 4 },
-  value: { marginTop: 3 },
-  note: { marginTop: spacing.xs },
+  row: { gap: 4, paddingVertical: 6 },
+  value: { marginTop: 2 },
 });

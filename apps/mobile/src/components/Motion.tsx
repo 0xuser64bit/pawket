@@ -101,7 +101,7 @@ export function Floating({
 
 /** Expanding + fading ring used as an "aura pulse" behind glowing elements. */
 export function Halo({
-  color = colors.solanaGreen,
+  color = colors.accent,
   size,
   delay = 0,
   duration = motion.pulse,
@@ -160,8 +160,8 @@ export function Halo({
 export function FadeInUp({
   children,
   delay = 0,
-  distance = 14,
-  duration = motion.slow,
+  distance = 8,
+  duration = motion.base,
   style,
 }: {
   children: ReactNode;
@@ -208,6 +208,7 @@ export function PressableScale({
   accessibilityLabel,
   accessibilityHint,
   accessibilityRole = 'button',
+  accessibilityState,
 }: {
   children: ReactNode;
   onPress?: () => void;
@@ -218,6 +219,7 @@ export function PressableScale({
   accessibilityLabel?: string;
   accessibilityHint?: string;
   accessibilityRole?: 'button' | 'link' | 'none';
+  accessibilityState?: { disabled?: boolean; selected?: boolean };
 }) {
   const reduced = useReducedMotion();
   const v = useRef(new Animated.Value(1)).current;
@@ -235,7 +237,7 @@ export function PressableScale({
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, ...accessibilityState }}
     >
       <Animated.View style={[style, { transform: [{ scale: v }] }]}>{children}</Animated.View>
     </Pressable>
@@ -282,7 +284,7 @@ export function Skeleton({
       {!reduced && w > 0 ? (
         <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}>
           <LinearGradient
-            colors={['transparent', 'rgba(255,255,255,0.10)', 'transparent']}
+            colors={['transparent', 'rgba(244,233,216,0.10)', 'transparent']}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
             style={StyleSheet.absoluteFill}
@@ -295,7 +297,7 @@ export function Skeleton({
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.surfaceRaised,
     overflow: 'hidden',
   },
 });

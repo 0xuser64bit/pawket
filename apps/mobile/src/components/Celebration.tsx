@@ -8,14 +8,7 @@ import { Text } from './Text';
 const NATIVE = Platform.OS !== 'web';
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-const CONFETTI = [
-  colors.solanaGreen,
-  colors.cyan,
-  colors.solanaPurple,
-  colors.magenta,
-  colors.gold,
-  colors.amber,
-];
+const CONFETTI = [colors.accent, colors.accentHover, colors.success, colors.textSoft, colors.warning];
 
 export type CelebrationPayload = {
   key: number;
@@ -41,21 +34,21 @@ function ConfettiField({ runKey }: { runKey: number }) {
 
   useEffect(() => {
     if (reduced || !runKey) return;
-    const next: Piece[] = Array.from({ length: 28 }, (_, i) => ({
+    const next: Piece[] = Array.from({ length: 20 }, (_, i) => ({
       id: `${runKey}-${i}`,
       color: CONFETTI[i % CONFETTI.length]!,
-      x: (Math.random() - 0.5) * 320,
-      drop: 240 + Math.random() * 260,
-      size: 7 + Math.random() * 7,
-      delay: Math.random() * 180,
-      spin: (Math.random() - 0.5) * 8,
+      x: (Math.random() - 0.5) * 280,
+      drop: 220 + Math.random() * 220,
+      size: 6 + Math.random() * 6,
+      delay: Math.random() * 160,
+      spin: (Math.random() - 0.5) * 6,
       v: new Animated.Value(0),
     }));
     setPieces(next);
     const anims = next.map((p) =>
       Animated.timing(p.v, {
         toValue: 1,
-        duration: 1500 + Math.random() * 600,
+        duration: 1400 + Math.random() * 500,
         delay: p.delay,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: NATIVE,
@@ -70,7 +63,7 @@ function ConfettiField({ runKey }: { runKey: number }) {
   return (
     <View pointerEvents="none" style={styles.confetti}>
       {pieces.map((p) => {
-        const translateY = p.v.interpolate({ inputRange: [0, 1], outputRange: [-30, p.drop] });
+        const translateY = p.v.interpolate({ inputRange: [0, 1], outputRange: [-24, p.drop] });
         const translateX = p.v.interpolate({ inputRange: [0, 1], outputRange: [0, p.x] });
         const opacity = p.v.interpolate({
           inputRange: [0, 0.1, 0.75, 1],
@@ -87,7 +80,7 @@ function ConfettiField({ runKey }: { runKey: number }) {
               styles.piece,
               {
                 width: p.size,
-                height: p.size * 1.6,
+                height: p.size * 1.5,
                 backgroundColor: p.color,
                 opacity,
                 transform: [{ translateX }, { translateY }, { rotate }],
@@ -100,10 +93,6 @@ function ConfettiField({ runKey }: { runKey: number }) {
   );
 }
 
-/**
- * Full-bleed celebratory moment for the product's big payoff beats — level ups,
- * sealed streaks, claimed rewards. Auto-dismisses; tap to dismiss early.
- */
 export function Celebration({
   payload,
   onDone,
@@ -119,13 +108,13 @@ export function Celebration({
     pop.setValue(0);
     const anim = Animated.spring(pop, {
       toValue: 1,
-      damping: 11,
-      stiffness: 160,
+      damping: 14,
+      stiffness: 170,
       mass: 0.8,
       useNativeDriver: NATIVE,
     });
     anim.start();
-    const timer = setTimeout(onDone, reduced ? 1600 : 2400);
+    const timer = setTimeout(onDone, reduced ? 1500 : 2200);
     return () => {
       anim.stop();
       clearTimeout(timer);
@@ -134,7 +123,7 @@ export function Celebration({
 
   if (!payload) return null;
 
-  const scale = pop.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] });
+  const scale = pop.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] });
 
   return (
     <Pressable
@@ -147,7 +136,7 @@ export function Celebration({
       <ConfettiField runKey={payload.key} />
       <Animated.View style={[styles.card, { opacity: pop, transform: [{ scale }] }]}>
         <View style={styles.badge}>
-          <Ionicons name={payload.icon ?? 'sparkles'} size={32} color={colors.black} />
+          <Ionicons name={payload.icon ?? 'paw'} size={28} color={colors.inverse} />
         </View>
         <Text variant="h1" tone="text" align="center">
           {payload.title}
@@ -157,7 +146,7 @@ export function Celebration({
             {payload.subtitle}
           </Text>
         ) : null}
-        <Text variant="micro" tone="faint" align="center" style={styles.tap}>
+        <Text variant="meta" tone="faint" align="center" style={styles.tap}>
           Tap to continue
         </Text>
       </Animated.View>
@@ -177,26 +166,25 @@ const styles = StyleSheet.create({
   piece: { borderRadius: 2, position: 'absolute' },
   card: {
     alignItems: 'center',
-    backgroundColor: colors.cardSoft,
+    backgroundColor: colors.surfaceRaised,
     borderColor: colors.borderStrong,
     borderCurve: 'continuous',
-    borderRadius: radius.xxl,
+    borderRadius: radius.xl,
     borderWidth: 1,
     gap: spacing.xs,
-    maxWidth: 320,
+    maxWidth: 300,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xxl,
-    ...shadows.glowPurple,
+    ...shadows.e3,
   },
   badge: {
     alignItems: 'center',
-    backgroundColor: colors.gold,
+    backgroundColor: colors.accent,
     borderRadius: radius.pill,
-    height: 68,
+    height: 60,
     justifyContent: 'center',
     marginBottom: spacing.xs,
-    width: 68,
-    ...shadows.glowAmber,
+    width: 60,
   },
   tap: { marginTop: spacing.sm },
 });

@@ -43,7 +43,7 @@ function resolveExpression(mood?: string): Expression {
   return EXPRESSIONS[key] ?? EXPRESSIONS.happy!;
 }
 
-const EYE_DARK = '#0B0E1C';
+const EYE_DARK = '#1A1410';
 
 /** Species-specific ears, drawn behind the body so they connect cleanly. */
 function Ears({ species, fill }: { species: SpeciesKey; fill: string }) {
@@ -248,8 +248,8 @@ export function PetCreature({
       {/* Cheeks */}
       {expr.blush ? (
         <G>
-          <Ellipse cx={31} cy={60} rx={5} ry={3} fill="#FF8FD6" opacity={0.55} />
-          <Ellipse cx={69} cy={60} rx={5} ry={3} fill="#FF8FD6" opacity={0.55} />
+          <Ellipse cx={31} cy={60} rx={5} ry={3} fill="#E8A07A" opacity={0.55} />
+          <Ellipse cx={69} cy={60} rx={5} ry={3} fill="#E8A07A" opacity={0.55} />
         </G>
       ) : null}
 

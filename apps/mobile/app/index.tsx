@@ -19,7 +19,7 @@ export default function Index() {
   if (!hydrated) {
     return (
       <View style={styles.boot}>
-        <ActivityIndicator color={colors.solanaGreen} />
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }

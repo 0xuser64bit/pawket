@@ -16,11 +16,11 @@ export const CARE_REACTIONS: Record<
   CareReaction,
   { icon: IconName; color: string; mood: string; count: number }
 > = {
-  feed: { icon: 'nutrition', color: colors.amber, mood: 'happy', count: 7 },
-  play: { icon: 'heart', color: colors.magenta, mood: 'radiant', count: 8 },
-  groom: { icon: 'sparkles', color: colors.solanaGreen, mood: 'happy', count: 8 },
-  rest: { icon: 'moon', color: colors.cyan, mood: 'tired', count: 5 },
-  celebrate: { icon: 'star', color: colors.gold, mood: 'radiant', count: 12 },
+  feed: { icon: 'nutrition', color: colors.accent, mood: 'happy', count: 7 },
+  play: { icon: 'heart', color: colors.accent, mood: 'radiant', count: 8 },
+  groom: { icon: 'sparkles', color: colors.success, mood: 'happy', count: 8 },
+  rest: { icon: 'moon', color: colors.info, mood: 'tired', count: 5 },
+  celebrate: { icon: 'star', color: colors.accent, mood: 'radiant', count: 12 },
 };
 
 type Particle = {
@@ -143,8 +143,8 @@ export function FloatingXP({ nonce, amount }: { nonce: number; amount: number })
   return (
     <View pointerEvents="none" style={[styles.center, styles.xpAnchor]}>
       <Animated.View style={[styles.xpChip, { opacity, transform: [{ translateY }, { scale }] }]}>
-        <Ionicons name="flash" size={13} color={colors.black} />
-        <Text variant="label" tone="black" style={styles.xpText}>
+        <Ionicons name="flash" size={13} color={colors.inverse} />
+        <Text variant="label" tone="inverse" style={styles.xpText}>
           +{amount} XP
         </Text>
       </Animated.View>
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   xpAnchor: { justifyContent: 'center' },
   xpChip: {
     alignItems: 'center',
-    backgroundColor: colors.solanaGreen,
+    backgroundColor: colors.accent,
     borderRadius: radius.pill,
     flexDirection: 'row',
     gap: 5,

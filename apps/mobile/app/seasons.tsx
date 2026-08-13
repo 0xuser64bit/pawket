@@ -68,11 +68,7 @@ export default function SeasonsScreen() {
       </View>
 
       <FadeInUp delay={280}>
-        <Button
-          label="Back to your companion"
-          onPress={() => router.push('/home')}
-          tone="ghost"
-        />
+        <Button label="Back to your companion" onPress={() => router.push('/home')} tone="ghost" />
       </FadeInUp>
     </Screen>
   );

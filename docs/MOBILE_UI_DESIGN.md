@@ -41,7 +41,7 @@ Layout / surfaces / controls (`src/components/DesignSystem.tsx`):
 - `Surface` — matte ceramic panel. Use when grouping is needed. Do not card everything.
 - `Button` — solid honey / ghost / danger. No rainbow gradients. `loading`, icons, spring press.
 - `Pill`, `IconTile`, `Divider`, `SectionHeader`, `ProgressBar` (solid fill), `StateBlock`, `BottomNav`.
-- `StatCard` — a quiet vital *row* (label, number, meter). Not a card.
+- `StatCard` — a quiet vital _row_ (label, number, meter). Not a card.
 - `MessageBanner` — inline notice / recoverable error.
 
 Motion (`src/components/Motion.tsx`, all reduced-motion aware):

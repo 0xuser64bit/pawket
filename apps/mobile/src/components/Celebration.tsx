@@ -8,7 +8,13 @@ import { Text } from './Text';
 const NATIVE = Platform.OS !== 'web';
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-const CONFETTI = [colors.accent, colors.accentHover, colors.success, colors.textSoft, colors.warning];
+const CONFETTI = [
+  colors.accent,
+  colors.accentHover,
+  colors.success,
+  colors.textSoft,
+  colors.warning,
+];
 
 export type CelebrationPayload = {
   key: number;

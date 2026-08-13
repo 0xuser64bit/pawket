@@ -3,7 +3,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useReducedMotion } from '../hooks/useReducedMotion';
-import { colors, gradients, isCompactWidth, speciesAccent, shadows, spacing } from '../theme/tokens';
+import {
+  colors,
+  gradients,
+  isCompactWidth,
+  speciesAccent,
+  shadows,
+  spacing,
+} from '../theme/tokens';
 import { Breathing, Floating } from './Motion';
 import { PetCreature } from './PetCreature';
 import { CARE_REACTIONS, FloatingXP, ParticleBurst, type CareReaction } from './PetReaction';

@@ -101,7 +101,9 @@ export default function PassportScreen() {
           <SectionHeader
             title="Memories"
             action={
-              status === 'loading_passport' ? <ActivityIndicator color={colors.accent} /> : undefined
+              status === 'loading_passport' ? (
+                <ActivityIndicator color={colors.accent} />
+              ) : undefined
             }
           />
         </FadeInUp>

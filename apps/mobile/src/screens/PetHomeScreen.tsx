@@ -164,9 +164,7 @@ function DailyGoalsPanel({
         title="Daily goals unavailable"
         copy="The ritual board did not respond. Your pet is safe."
         icon="cloud-offline-outline"
-        action={
-          <Button label="Try again" onPress={onRetry} tone="ghost" size="md" full={false} />
-        }
+        action={<Button label="Try again" onPress={onRetry} tone="ghost" size="md" full={false} />}
       />
     );
   }

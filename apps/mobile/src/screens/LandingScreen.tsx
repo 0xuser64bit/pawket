@@ -25,7 +25,8 @@ export function LandingScreen({ onStart }: { onStart: () => void }) {
             A companion that remembers you.
           </Text>
           <Text variant="bodyLg" tone="muted">
-            Adopt one pet. Care for it in small daily rituals. Keep a passport of the days you spent together.
+            Adopt one pet. Care for it in small daily rituals. Keep a passport of the days you spent
+            together.
           </Text>
         </View>
       </FadeInUp>

@@ -49,11 +49,11 @@ Screen-local state is only for UI (name draft, confirm-reset, selected species).
 
 ## Components
 
-| Kind        | Where                                                                 | Rule                                            |
-| ----------- | --------------------------------------------------------------------- | ----------------------------------------------- |
-| Primitives  | `components/Text.tsx`, `DesignSystem.tsx` (`Surface`), `Screen.tsx`, `Motion.tsx` | Reuse. Do not restyle per screen. |
-| Pet visuals | `PetCreature`, `PetChamber`, `PetReaction`                            | SVG creature + habitat. Mood/species from data. |
-| Feedback    | `MessageBanner`, `Celebration`, `AnimatedCount`, `StatCard`           | Errors, level-up, meters.                       |
+| Kind        | Where                                                                             | Rule                                            |
+| ----------- | --------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Primitives  | `components/Text.tsx`, `DesignSystem.tsx` (`Surface`), `Screen.tsx`, `Motion.tsx` | Reuse. Do not restyle per screen.               |
+| Pet visuals | `PetCreature`, `PetChamber`, `PetReaction`                                        | SVG creature + habitat. Mood/species from data. |
+| Feedback    | `MessageBanner`, `Celebration`, `AnimatedCount`, `StatCard`                       | Errors, level-up, meters.                       |
 
 Presentational screens receive callbacks (`onAdopted`, `onConnected`). Container logic stays in the route or the session.
 

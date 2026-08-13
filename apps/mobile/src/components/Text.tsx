@@ -8,7 +8,16 @@ import { colors, headingScale, typography } from '../theme/tokens';
 
 type Variant = keyof typeof typography;
 
-type Tone = 'text' | 'soft' | 'muted' | 'faint' | 'accent' | 'success' | 'warning' | 'danger' | 'inverse';
+type Tone =
+  | 'text'
+  | 'soft'
+  | 'muted'
+  | 'faint'
+  | 'accent'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'inverse';
 
 const toneColor: Record<Tone, string> = {
   text: colors.text,

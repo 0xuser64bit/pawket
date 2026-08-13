@@ -110,7 +110,9 @@ export function Pill({
 }) {
   const color = toneToColor[tone];
   return (
-    <View style={[styles.pill, { borderColor: colors.border, backgroundColor: colors.surfaceRaised }]}>
+    <View
+      style={[styles.pill, { borderColor: colors.border, backgroundColor: colors.surfaceRaised }]}
+    >
       {icon ? <Ionicons color={color} name={icon} size={12} /> : null}
       <Text variant="meta" style={{ color }}>
         {children}

@@ -41,6 +41,7 @@ One home per fact. If two files disagree, the left column wins.
 | Browser client singleton          | `src/lib/solana/browser-client.ts`  |
 | Transaction lifecycle + UX copy   | `src/lib/solana/transactions.ts`    |
 | Env names and defaults            | `.env.example` + `src/config/env.ts`|
+| Server-only env (guarded)         | `src/config/server-env.ts`          |
 | Routes                            | `app/`                              |
 
 Do not introduce a second store of any of these.

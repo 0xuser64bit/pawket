@@ -24,9 +24,10 @@ there first with a safe default or a blank placeholder.
 ## Validation
 
 `src/config/env.ts` parses `process.env` through Zod with devnet-first
-defaults. `getPublicEnv()` is cached and safe in client code;
-`getServerEnv()` must only be called in server code. Invalid values fail fast
-at startup, not mid-transaction.
+defaults. `getPublicEnv()` is cached and safe in client code.
+`src/config/server-env.ts` holds `getServerEnv()` and imports
+`server-only`, so any client-side import fails the build instead of
+leaking. Invalid values fail fast at startup, not mid-transaction.
 
 ## Security rules
 

@@ -5,7 +5,7 @@ test("homepage renders the web-first shell", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: /living companion/i }),
   ).toBeVisible();
-  await expect(page.getByText(/devnet by default/i)).toBeVisible();
+  await expect(page.getByText(/cluster/i)).toBeVisible();
 });
 
 test("wallet section offers connection without a wallet installed", async ({

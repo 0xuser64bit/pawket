@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   },
   description:
     "Pawket is a web-first living companion on Solana. Adopt, care, and grow your on-chain companion.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

@@ -6,8 +6,8 @@ import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
  *
  * - `NEXT_PUBLIC_*` values are bundled into the browser. Only non-secret,
  *   client-safe configuration may use that prefix.
- * - Server-only secrets must never carry the `NEXT_PUBLIC_` prefix and must
- *   only be read in Server Components / Route Handlers via `getServerEnv()`.
+ * - Server-only secrets live in `src/config/server-env.ts` (guarded by
+ *   `server-only`) and must only be read in server code.
  * - Safe devnet-first defaults let a fresh clone run with no secrets.
  */
 
@@ -25,14 +25,6 @@ const publicEnvSchema = z.object({
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 
-const serverEnvSchema = z.object({
-  // Reserved for future server-only secrets (RPC API keys, indexer tokens).
-  // Keeping the schema means agents add secrets here instead of NEXT_PUBLIC_*.
-  solanaRpcApiKey: z.string().optional(),
-});
-
-export type ServerEnv = z.infer<typeof serverEnvSchema>;
-
 let cachedPublicEnv: PublicEnv | null = null;
 
 /** Client-safe config. Callable from Server and Client Components. */
@@ -46,13 +38,6 @@ export function getPublicEnv(): PublicEnv {
     pawketProgramId: process.env.NEXT_PUBLIC_PAWKET_PROGRAM_ID,
   });
   return cachedPublicEnv;
-}
-
-/** Server-only config. Never import from a Client Component. */
-export function getServerEnv(): ServerEnv {
-  return serverEnvSchema.parse({
-    solanaRpcApiKey: process.env.SOLANA_RPC_API_KEY,
-  });
 }
 
 /** Test-only escape hatch so Vitest can re-validate with fresh inputs. */

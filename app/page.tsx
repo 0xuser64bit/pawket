@@ -29,7 +29,7 @@ export default function HomePage() {
       <SolTransferCard />
 
       <footer className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
-        <p>Devnet by default. Nothing here spends without your signature.</p>
+        <p>Nothing here spends without your explicit signature.</p>
         <Link href="/api/health" className="font-medium text-sky-700 underline">
           /api/health
         </Link>

@@ -33,11 +33,6 @@ export type TransactionStage =
   | "confirmed"
   | "failed";
 
-export interface TransactionResult {
-  signature: string;
-  stage: "confirmed";
-}
-
 export function isUserRejection(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return /user rejected|rejected by user|declined/i.test(message);

@@ -1,22 +1,23 @@
 # dependencies
 node_modules/
+.pnp
+.pnp.*
 
-# Expo
-.expo/
-dist/
-web-build/
+# Next.js
+.next/
+out/
+build/
+next-env.d.ts
 
-# Native
-ios/
-android/
-
-# Env
+# Env — never commit secrets. Only .env.example is tracked.
 .env
 .env.*
+!.env.example
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 *.swp
 *.swo
 
@@ -29,3 +30,8 @@ android/
 
 # Testing
 coverage/
+playwright-report/
+test-results/
+
+# Vercel
+.vercel

@@ -1,33 +1,49 @@
 {
   "name": "pawket",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
-  "main": "expo-router/entry",
+  "description": "Pawket — web-first living companion on Solana (Next.js foundation)",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "dev": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },
   "dependencies": {
-    "@expo/metro-runtime": "^6.1.2",
-    "expo": "^54.0.13",
-    "expo-constants": "~18.0.8",
-    "expo-linking": "~8.0.12",
-    "expo-router": "^6.0.11",
-    "expo-splash-screen": "~31.0.13",
-    "expo-status-bar": "^3.0.8",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-native": "0.81.5",
-    "react-native-safe-area-context": "~5.6.0",
-    "react-native-screens": "~4.16.0",
-    "react-native-web": "^0.21.0"
+    "@solana-program/system": "0.14.1",
+    "@solana/kit": "8.3.0",
+    "@solana/kit-plugin-rpc": "0.19.0",
+    "@solana/kit-plugin-wallet": "0.20.0",
+    "@solana/react": "8.3.0",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1",
+    "zod": "4.6.5"
   },
   "devDependencies": {
-    "@types/react": "~19.1.10",
-    "typescript": "^5.9.3"
+    "@playwright/test": "1.63.0",
+    "@tailwindcss/postcss": "4.3.3",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "26.6.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.5",
+    "jsdom": "30.1.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
   }
 }

@@ -19,13 +19,20 @@ they are.
 
 | If you are…               | Read                                                        |
 | ------------------------- | ----------------------------------------------------------- |
-| New to the repo           | this file → `docs/ARCHITECTURE.md` → `docs/PRODUCT.md`      |
+| New to the repo           | this file → `docs/ARCHITECTURE.md` → `docs/VISION.md` → `docs/PRODUCT.md` |
+| Planning any feature      | `docs/ROADMAP.md` → `docs/EPICS.md` → `docs/TASKS.md` → `docs/OPEN-QUESTIONS.md` |
+| Implementing a task       | `docs/AGENT-GUIDE.md` + the one spec for your layer         |
 | Running the app           | `docs/DEVELOPMENT.md`                                       |
 | Changing env/config       | `docs/ENVIRONMENT.md`                                       |
 | Touching Solana / wallets | `docs/SOLANA.md`                                            |
+| Touching game math        | `docs/GAME-DESIGN.md` (`src/lib/game/` is lockstep)         |
+| Touching pets/NFTs        | `docs/NFT-CUSTOMIZATION.md` + `docs/DOMAIN-MODEL.md`        |
+| Touching marketplace      | `docs/MARKETPLACE.md` + `docs/API-CONTRACTS.md`             |
+| Touching guilds/launches  | `docs/GUILDS.md` + `docs/METEORA-INTEGRATION.md` + `docs/SAFETY-ECONOMY.md` |
+| Touching indexer/API      | `docs/INDEXER.md` + `docs/API-CONTRACTS.md` + `docs/ROUTES.md` |
 | Adding tests              | `docs/TESTING.md`                                           |
 | Declaring work done       | `docs/WORKFLOW.md` (Definition of Done)                     |
-| Questioning a decision    | `docs/DECISIONS.md`                                         |
+| Questioning a decision    | `docs/DECISIONS.md` (history) + `docs/OPEN-QUESTIONS.md` (pending) |
 
 ## Sources of truth
 
@@ -43,6 +50,13 @@ One home per fact. If two files disagree, the left column wins.
 | Env names and defaults            | `.env.example` + `src/config/env.ts`|
 | Server-only env (guarded)         | `src/config/server-env.ts`          |
 | Routes                            | `app/`                              |
+| Target architecture (M3–M6)       | `docs/ARCHITECTURE-TARGET.md`       |
+| Domain types, state machines      | `docs/DOMAIN-MODEL.md`              |
+| Route IA + Server/Client split    | `docs/ROUTES.md`                    |
+| API envelopes + error codes       | `docs/API-CONTRACTS.md`             |
+| Meteora presets + launch stages   | `docs/METEORA-INTEGRATION.md`       |
+| Eligibility (cosmetic/social)     | `docs/GUILDS.md` + `docs/INDEXER.md`|
+| Task sequence + blockers          | `docs/TASKS.md` + `docs/OPEN-QUESTIONS.md` |
 
 Do not introduce a second store of any of these.
 

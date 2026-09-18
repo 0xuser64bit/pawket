@@ -24,8 +24,8 @@ export interface PawketClientOptions {
 export function createPawketClient(options: PawketClientOptions) {
   const chain = CLUSTER_CHAINS[options.cluster];
   return createClient()
-    .use(walletSigner({ chain: chain as "solana:devnet" }))
-    .use(solanaRpc({ rpcUrl: options.rpcUrl as `https://${string}` }));
+    .use(walletSigner({ chain }))
+    .use(solanaRpc({ rpcUrl: options.rpcUrl }));
 }
 
 export type PawketClient = Awaited<ReturnType<typeof createPawketClient>>;

@@ -1,7 +1,7 @@
 import type { SolanaCluster } from "@/config/env";
 
-/** Wallet Standard chain identifiers. */
-export const CLUSTER_CHAINS: Record<SolanaCluster, string> = {
+/** Wallet Standard chain identifiers (one client = one chain). */
+export const CLUSTER_CHAINS: Record<SolanaCluster, `${string}:${string}`> = {
   devnet: "solana:devnet",
   testnet: "solana:testnet",
   "mainnet-beta": "solana:mainnet",

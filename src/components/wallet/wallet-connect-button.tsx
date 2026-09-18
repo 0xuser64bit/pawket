@@ -11,6 +11,7 @@ import { useClient } from "@solana/react";
 import { useState } from "react";
 import type { AppClient } from "@/lib/solana/browser-client";
 import { truncateAddress } from "@/lib/utils/format";
+import { useMounted } from "@/lib/utils/use-mounted";
 
 /**
  * Wallet Standard connect/disconnect control.
@@ -25,10 +26,11 @@ export function WalletConnectButton() {
   const connect = useConnect(client);
   const disconnect = useDisconnect(client);
   const [open, setOpen] = useState(false);
+  const mounted = useMounted();
 
-  // `pending` on first paint while auto-reconnect resolves — render a neutral
-  // placeholder instead of flashing connect/disconnect states.
-  if (status === "pending") {
+  // SSR renders the placeholder; the client hydrates it identically and only
+  // swaps in wallet state after mount. `pending` covers auto-reconnect.
+  if (!mounted || status === "pending") {
     return (
       <div
         aria-label="Checking wallet session"

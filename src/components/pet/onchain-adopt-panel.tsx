@@ -15,10 +15,7 @@ import { isProgramDeployed } from "@/lib/solana/accounts";
 import { explorerTxUrl } from "@/lib/solana/cluster";
 import { getAdoptPetInstruction } from "@/lib/solana/instructions";
 import { derivePassportPda, derivePetPda, normalizePetName } from "@/lib/solana/pda";
-import {
-  toUserFacingError,
-  type TransactionStage,
-} from "@/lib/solana/transactions";
+import { useSendTransaction } from "@/lib/solana/use-send-transaction";
 import { truncateAddress } from "@/lib/utils/format";
 
 /**
@@ -39,12 +36,9 @@ export function OnchainAdoptPanel() {
     PetPersonality.Curious,
   );
   const [petAddress, setPetAddress] = useState<string | null>(null);
-  const [stage, setStage] = useState<TransactionStage>("idle");
-  const [signature, setSignature] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { stage, signature, error, send, isSending } = useSendTransaction();
 
   const owner = connected ? String(connected.account.address) : null;
-  const isSending = stage === "simulating" || stage === "signing" || stage === "sending" || stage === "confirming";
 
   // PDA preview, derived on blur so typing never fires RPC/crypto work.
   // The send path always re-derives — preview is display-only.
@@ -62,50 +56,27 @@ export function OnchainAdoptPanel() {
   }
 
   async function adoptOnchain() {
-    setError(null);
-    setSignature(null);
-    if (!connected?.signer || !owner) {
-      setStage("failed");
-      setError("Connect a wallet first.");
-      return;
-    }
-    let cleanName: string;
-    try {
-      cleanName = normalizePetName(name);
-    } catch (err) {
-      setStage("failed");
-      setError(err instanceof Error ? err.message : "That name doesn't work.");
-      return;
-    }
-
-    setStage("simulating");
-    try {
+    if (!connected?.signer || !owner) return;
+    const signerAddress = owner;
+    const { outcome } = await send(async () => {
+      const cleanName = normalizePetName(name);
       if (!(await isProgramDeployed(client, env.pawketProgramId))) {
         throw new Error(
           `The Pawket program isn't deployed on ${env.solanaCluster} yet — your guest companion above is the way to play today.`,
         );
       }
-      const pet = await derivePetPda(owner, cleanName);
+      const pet = await derivePetPda(signerAddress, cleanName);
       const passport = await derivePassportPda(pet.address);
-      const instruction = getAdoptPetInstruction({
-        owner: address(owner),
+      return getAdoptPetInstruction({
+        owner: address(signerAddress),
         pet: pet.address,
         passport: passport.address,
         name: cleanName,
         species,
         personality,
       });
-      setStage("signing");
-      // The Kit executor simulates (preflight) before sending by default.
-      setStage("sending");
-      const result = await client.sendTransaction([instruction]);
-      setSignature(result.context.signature);
-      setStage("confirmed");
-      setName("");
-    } catch (err) {
-      setStage("failed");
-      setError(toUserFacingError(err));
-    }
+    });
+    if (outcome === "confirmed") setName("");
   }
 
   return (

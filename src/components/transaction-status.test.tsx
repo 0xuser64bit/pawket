@@ -35,4 +35,22 @@ describe("TransactionStatus", () => {
       "Waiting for wallet signature…",
     );
   });
+
+  it("explains the unknown state and warns against blind re-sends", () => {
+    render(
+      <TransactionStatus
+        stage="unknown"
+        signature="sig123"
+        explorerUrl="https://explorer.solana.com/tx/sig123?cluster=devnet"
+      />,
+    );
+    expect(screen.getByText(/confirmation timed out/i)).toBeVisible();
+    expect(screen.getByText(/never re-send blindly/i)).toBeVisible();
+    expect(screen.getByText("sig123")).toBeVisible();
+  });
+
+  it("guides when a failure carries no message", () => {
+    render(<TransactionStatus stage="failed" />);
+    expect(screen.getByText(/check your wallet activity/i)).toBeVisible();
+  });
 });

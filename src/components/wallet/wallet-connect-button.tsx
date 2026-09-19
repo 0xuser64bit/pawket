@@ -8,7 +8,7 @@ import {
   useWalletStatus,
 } from "@solana/kit-plugin-wallet/react";
 import { useClient } from "@solana/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AppClient } from "@/lib/solana/browser-client";
 import { truncateAddress } from "@/lib/utils/format";
 import { useMounted } from "@/lib/utils/use-mounted";
@@ -27,6 +27,25 @@ export function WalletConnectButton() {
   const disconnect = useDisconnect(client);
   const [open, setOpen] = useState(false);
   const mounted = useMounted();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
 
   // SSR renders the placeholder; the client hydrates it identically and only
   // swaps in wallet state after mount. `pending` covers auto-reconnect.
@@ -43,11 +62,12 @@ export function WalletConnectButton() {
   const error = connect.error ?? disconnect.error;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-haspopup="menu"
         className="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
       >
         {address ? (
@@ -57,13 +77,26 @@ export function WalletConnectButton() {
         ) : (
           <span>Connect wallet</span>
         )}
-        <span aria-hidden="true" className="text-xs text-slate-500">
-          {open ? "▲" : "▼"}
-        </span>
+        <svg
+          aria-hidden="true"
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          className={`text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}
+        >
+          <path
+            d="M2.5 4.5 6 8l3.5-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
 
       {open ? (
-        <div className="absolute z-10 mt-2 w-full min-w-60 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
+        <div role="menu" className="absolute z-10 mt-2 w-full min-w-60 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
           {connected ? (
             <div className="space-y-3">
               <div className="rounded border border-slate-100 bg-slate-50 px-3 py-2">

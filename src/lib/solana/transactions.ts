@@ -1,4 +1,5 @@
 import { PAWKET_ERROR_CODES } from "./program";
+import type { Signature } from "@solana/kit";
 
 /**
  * Transaction lifecycle standard (web).
@@ -26,12 +27,22 @@ export const CONFIRMATION_TIMEOUT_MS = 30_000;
 
 export type TransactionStage =
   | "idle"
-  | "simulating"
   | "signing"
   | "sending"
   | "confirming"
   | "confirmed"
+  | "unknown"
   | "failed";
+
+/**
+ * The `simulating` stage was removed: simulation happens inside the Kit
+ * executor (resource estimation + preflight, both on by default) and cannot
+ * be bracketed honestly from the outside. Stages here map 1:1 to things the
+ * UI actually observes.
+ */
+export function isActiveStage(stage: TransactionStage): boolean {
+  return stage === "signing" || stage === "sending" || stage === "confirming";
+}
 
 export function isUserRejection(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -97,3 +108,55 @@ export function toUserFacingError(error: unknown): string {
 }
 
 export { PAWKET_ERROR_CODES };
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface ConfirmationRpc {
+  rpc: {
+    getSignatureStatuses: (
+      signatures: readonly Signature[],
+    ) => { send: () => Promise<{ value: unknown }> };
+  };
+}
+
+export type ConfirmationOutcome = "confirmed" | "unknown";
+
+/**
+ * Real confirmation wait: `sendTransaction` resolves after send, not after
+ * finality. Polls signature status until confirmed/finalized, the 30s
+ * timeout (then `unknown` — never `failed`), or a recorded on-chain error
+ * (then throw, so the caller maps it like any send failure).
+ */
+// ponytail: naive 1s polling; switch to signature subscriptions if this path gets hot.
+export async function waitForConfirmation(
+  client: ConfirmationRpc,
+  signature: string,
+  timeoutMs: number = CONFIRMATION_TIMEOUT_MS,
+): Promise<ConfirmationOutcome> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const { value } = await client.rpc
+      .getSignatureStatuses([signature as Signature])
+      .send();
+    const status = (Array.isArray(value) ? value[0] : null) as {
+      confirmationStatus?: string;
+      err?: unknown;
+    } | null;
+    if (
+      status &&
+      (status.confirmationStatus === "confirmed" ||
+        status.confirmationStatus === "finalized")
+    ) {
+      if (status.err !== undefined && status.err !== null) {
+        throw new Error(
+          typeof status.err === "string" ? status.err : JSON.stringify(status.err),
+        );
+      }
+      return "confirmed";
+    }
+    if (Date.now() >= deadline) return "unknown";
+    await sleep(1000);
+  }
+}

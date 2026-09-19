@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   extractProgramErrorCode,
+  isActiveStage,
   isInsufficientFunds,
   isUserRejection,
   pawketErrorMessage,
   toUserFacingError,
+  waitForConfirmation,
 } from "./transactions";
 
 describe("transaction errors", () => {
@@ -43,5 +45,49 @@ describe("transaction errors", () => {
       true,
     );
     expect(isInsufficientFunds(new Error("transfer 0x1 tokens"))).toBe(false);
+  });
+
+  it("classifies active stages", () => {
+    expect(isActiveStage("signing")).toBe(true);
+    expect(isActiveStage("sending")).toBe(true);
+    expect(isActiveStage("confirming")).toBe(true);
+    expect(isActiveStage("idle")).toBe(false);
+    expect(isActiveStage("confirmed")).toBe(false);
+    expect(isActiveStage("unknown")).toBe(false);
+    expect(isActiveStage("failed")).toBe(false);
+  });
+});
+
+describe("waitForConfirmation", () => {
+  function stubRpc(statuses: Array<unknown>) {
+    let calls = 0;
+    return {
+      rpc: {
+        getSignatureStatuses: () => ({
+          send: async () => {
+            const value = statuses[Math.min(calls, statuses.length - 1)];
+            calls += 1;
+            return { value: [value] };
+          },
+        }),
+      },
+    };
+  }
+
+  it("confirms on finalized status", async () => {
+    const client = stubRpc([{ confirmationStatus: "finalized", err: null }]);
+    await expect(waitForConfirmation(client, "sig")).resolves.toBe("confirmed");
+  });
+
+  it("throws when the transaction recorded an on-chain error", async () => {
+    const client = stubRpc([
+      { confirmationStatus: "confirmed", err: { InstructionError: [0, "Custom"] } },
+    ]);
+    await expect(waitForConfirmation(client, "sig")).rejects.toThrow();
+  });
+
+  it("resolves unknown when the timeout elapses", async () => {
+    const client = stubRpc([null]);
+    await expect(waitForConfirmation(client, "sig", 10)).resolves.toBe("unknown");
   });
 });

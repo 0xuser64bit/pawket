@@ -20,6 +20,12 @@ export function formatSol(lamports: bigint): string {
 /** Largest encodable lamport amount (u64) — anything above fails on-chain. */
 const MAX_LAMPORTS = (1n << 64n) - 1n;
 
+/** Cooldown countdown: 90 → "1:30", 7 → "0:07". */
+export function formatCountdown(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
+}
+
 /** Parse a user-typed SOL amount to lamports. Returns null when invalid. */
 export function parseSolToLamports(input: string): bigint | null {
   const trimmed = input.trim();

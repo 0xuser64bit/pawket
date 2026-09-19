@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatCountdown,
   formatSol,
   parseSolToLamports,
   truncateAddress,
@@ -28,8 +29,16 @@ describe("formatSol", () => {
   });
 });
 
-describe("parseSolToLamports", () => {
-  it("parses valid amounts to BigInt lamports", () => {
+describe("formatCountdown", () => {
+  it("renders m:ss with zero-padded seconds", () => {
+    expect(formatCountdown(90)).toBe("1:30");
+    expect(formatCountdown(7)).toBe("0:07");
+    expect(formatCountdown(1800)).toBe("30:00");
+    expect(formatCountdown(-5)).toBe("0:00");
+  });
+});
+
+describe("parseSolToLamports", () => {  it("parses valid amounts to BigInt lamports", () => {
     expect(parseSolToLamports("0.001")).toBe(1_000_000n);
     expect(parseSolToLamports("2")).toBe(2_000_000_000n);
     expect(parseSolToLamports("  1.5  ")).toBe(1_500_000_000n);

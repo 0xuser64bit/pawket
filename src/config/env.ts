@@ -15,13 +15,66 @@ const clusterSchema = z.enum(["devnet", "testnet", "mainnet-beta", "localnet"]);
 
 export type SolanaCluster = z.infer<typeof clusterSchema>;
 
-const publicEnvSchema = z.object({
-  appUrl: z.string().default("http://localhost:3000"),
-  solanaCluster: clusterSchema.default("devnet"),
-  solanaRpcUrl: z.string().default("https://api.devnet.solana.com"),
-  solanaWsUrl: z.string().optional(),
-  pawketProgramId: z.string().default(PAWKET_PROGRAM_ID),
-});
+/** Empty / whitespace-only env values fall back to defaults (fail-safe). */
+function emptyToUndefined(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+const optionalString = z.preprocess(emptyToUndefined, z.string().optional());
+
+function isValidSolanaAddress(value: string): boolean {
+  // Base58, 32–44 chars — the shape of every Solana address. Full
+  // byte-level validation happens in `parseAddress` at the use site.
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value);
+}
+
+/** Well-known public RPC hosts per cluster — used only to catch misroutes. */
+const KNOWN_RPC_HOSTS: Array<{ cluster: SolanaCluster; host: string }> = [
+  { cluster: "devnet", host: "api.devnet.solana.com" },
+  { cluster: "testnet", host: "api.testnet.solana.com" },
+  { cluster: "mainnet-beta", host: "api.mainnet-beta.solana.com" },
+];
+
+const publicEnvSchema = z
+  .object({
+    appUrl: z.preprocess(emptyToUndefined, z.string().default("http://localhost:3000")),
+    solanaCluster: z.preprocess(
+      emptyToUndefined,
+      clusterSchema.default("devnet"),
+    ),
+    solanaRpcUrl: z.preprocess(
+      emptyToUndefined,
+      z.string().default("https://api.devnet.solana.com"),
+    ),
+    solanaWsUrl: optionalString,
+    pawketProgramId: z.preprocess(
+      emptyToUndefined,
+      z.string().default(PAWKET_PROGRAM_ID),
+    ),
+  })
+  .superRefine((env, ctx) => {
+    if (!isValidSolanaAddress(env.pawketProgramId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["pawketProgramId"],
+        message: "Not a valid Solana address.",
+      });
+    }
+    for (const known of KNOWN_RPC_HOSTS) {
+      if (
+        env.solanaCluster !== known.cluster &&
+        env.solanaRpcUrl.includes(known.host)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["solanaRpcUrl"],
+          message: `RPC URL points at ${known.cluster} but cluster is ${env.solanaCluster}.`,
+        });
+      }
+    }
+  });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 

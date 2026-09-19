@@ -117,6 +117,16 @@ describe("validateCareCooldown", () => {
       allowed: true,
     });
   });
+
+  it("caps a future timestamp at one full window (clock skew never extends cooldown)", () => {
+    const future = new Date(now.getTime() + 60 * 60 * 1000);
+    const result = validateCareCooldown(future, CareActionType.Feed, now);
+    expect(result.allowed).toBe(false);
+    if (!result.allowed) {
+      // Without the clamp this would be window + skew (5400s).
+      expect(result.remainingSeconds).toBe(CARE_COOLDOWN_SECONDS);
+    }
+  });
 });
 
 describe("elapsedSecondsBetween", () => {

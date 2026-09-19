@@ -111,7 +111,12 @@ export function validateCareCooldown(
   if (!lastActionAt) return { allowed: true };
 
   const last = lastActionAt instanceof Date ? lastActionAt : new Date(lastActionAt);
-  const elapsedSeconds = Math.floor((now.getTime() - last.getTime()) / 1000);
+  // Clamp: a future timestamp (clock skew, restored state) must not extend
+  // the cooldown past its full length.
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((now.getTime() - last.getTime()) / 1000),
+  );
   const remainingSeconds = CARE_COOLDOWN_SECONDS - elapsedSeconds;
 
   if (remainingSeconds <= 0) return { allowed: true };

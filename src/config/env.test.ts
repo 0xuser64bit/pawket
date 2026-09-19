@@ -36,4 +36,31 @@ describe("getPublicEnv", () => {
     __resetEnvCacheForTests();
     expect(() => getPublicEnv()).toThrow();
   });
+
+  it("treats empty-string values as unset so defaults apply", () => {
+    process.env.NEXT_PUBLIC_SOLANA_CLUSTER = "";
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL = "   ";
+    process.env.NEXT_PUBLIC_PAWKET_PROGRAM_ID = "";
+    __resetEnvCacheForTests();
+    const env = getPublicEnv();
+    expect(env.solanaCluster).toBe("devnet");
+    expect(env.solanaRpcUrl).toBe("https://api.devnet.solana.com");
+    expect(env.pawketProgramId).toBe(
+      "FQwe9LUPMTrhYyr32mHPpX87tcpjr98Eamz9wJQDaSef",
+    );
+  });
+
+  it("rejects a cluster/RPC mismatch instead of silently misrouting", () => {
+    process.env.NEXT_PUBLIC_SOLANA_CLUSTER = "devnet";
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL =
+      "https://api.mainnet-beta.solana.com";
+    __resetEnvCacheForTests();
+    expect(() => getPublicEnv()).toThrow(/mainnet-beta.*devnet|devnet.*mainnet-beta/);
+  });
+
+  it("rejects a malformed program ID at startup, not deep in PDA code", () => {
+    process.env.NEXT_PUBLIC_PAWKET_PROGRAM_ID = "not-an-address!!";
+    __resetEnvCacheForTests();
+    expect(() => getPublicEnv()).toThrow();
+  });
 });

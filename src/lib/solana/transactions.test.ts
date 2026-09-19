@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   extractProgramErrorCode,
+  isInsufficientFunds,
   isUserRejection,
   pawketErrorMessage,
   toUserFacingError,
@@ -27,5 +28,20 @@ describe("transaction errors", () => {
     expect(toUserFacingError(new Error("User rejected"))).toMatch(/declined/);
     expect(toUserFacingError(new Error("failed with 6001"))).toMatch(/owner/);
     expect(toUserFacingError("plain string")).toBe("plain string");
+  });
+
+  it("does not mistake slot numbers or hex fragments for program codes", () => {
+    expect(extractProgramErrorCode(new Error("Slot 60025 root confirmed"))).toBeNull();
+    expect(extractProgramErrorCode(new Error("signature 5x6002ab"))).toBeNull();
+  });
+
+  it("anchors insufficient-funds detection to real failure text", () => {
+    expect(
+      isInsufficientFunds(new Error("custom program error: 0x1")),
+    ).toBe(true);
+    expect(isInsufficientFunds(new Error("Insufficient funds for fee"))).toBe(
+      true,
+    );
+    expect(isInsufficientFunds(new Error("transfer 0x1 tokens"))).toBe(false);
   });
 });

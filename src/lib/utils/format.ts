@@ -8,21 +8,28 @@ export function truncateAddress(value: string, chars = 4): string {
 
 /** BigInt-safe lamports → SOL string with up to 9 decimals, trimmed. */
 export function formatSol(lamports: bigint): string {
-  const whole = lamports / LAMPORTS_PER_SOL;
-  const frac = lamports % LAMPORTS_PER_SOL;
-  if (frac === 0n) return whole.toString();
+  const sign = lamports < 0n ? "-" : "";
+  const magnitude = lamports < 0n ? -lamports : lamports;
+  const whole = magnitude / LAMPORTS_PER_SOL;
+  const frac = magnitude % LAMPORTS_PER_SOL;
+  if (frac === 0n) return `${sign}${whole}`;
   const fracStr = frac.toString().padStart(9, "0").replace(/0+$/, "");
-  return `${whole}.${fracStr}`;
+  return `${sign}${whole}.${fracStr}`;
 }
+
+/** Largest encodable lamport amount (u64) — anything above fails on-chain. */
+const MAX_LAMPORTS = (1n << 64n) - 1n;
 
 /** Parse a user-typed SOL amount to lamports. Returns null when invalid. */
 export function parseSolToLamports(input: string): bigint | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
-  if (!/^\d+(\.\d{1,9})?$/.test(trimmed)) return null;
-  const [whole, frac = ""] = trimmed.split(".");
+  if (!/^(?:\d+(?:\.\d{1,9})?|\.\d{1,9})$/.test(trimmed)) return null;
+  const dotted = trimmed.startsWith(".") ? `0${trimmed}` : trimmed;
+  const [whole, frac = ""] = dotted.split(".");
   const amount =
     BigInt(whole) * LAMPORTS_PER_SOL +
     BigInt((frac + "000000000").slice(0, 9));
-  return amount > 0n ? amount : null;
+  if (amount <= 0n || amount > MAX_LAMPORTS) return null;
+  return amount;
 }

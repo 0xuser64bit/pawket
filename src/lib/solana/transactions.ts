@@ -40,7 +40,9 @@ export function isUserRejection(error: unknown): boolean {
 
 export function isInsufficientFunds(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return /insufficient|not enough sol|0x1\b/i.test(message);
+  return /insufficient (funds|lamports|balance)|not enough sol|custom program error:\s*0x1\b/i.test(
+    message,
+  );
 }
 
 /** Map a program error code (6000–6005) to one-sentence UX copy. */
@@ -66,8 +68,19 @@ export function pawketErrorMessage(code: number): string {
 /** Extract a known Pawket program error code from logs/message, if present. */
 export function extractProgramErrorCode(error: unknown): number | null {
   const message = error instanceof Error ? error.message : String(error);
-  const match = /600[0-5]/.exec(message);
-  if (match) return Number(match[0]);
+  const contextual =
+    /custom program error[^\d]*(\d+)|Error Code:\s*(\d+)|failed[^\d]*\b(600[0-5])\b/i.exec(
+      message,
+    );
+  if (contextual) {
+    const code = Number(contextual[1] ?? contextual[2] ?? contextual[3]);
+    if (code >= 6000 && code <= 6005) return code;
+    return null;
+  }
+  // Fallback for bare codes — word-boundaried so slot numbers and
+  // signatures can't false-positive.
+  const bare = /\b(600[0-5])\b/.exec(message);
+  if (bare) return Number(bare[1]);
   return null;
 }
 

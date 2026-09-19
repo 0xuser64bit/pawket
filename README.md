@@ -9,7 +9,7 @@ client infrastructure, and verification loop.
 
 ## Quickstart
 
-Requires Node 20+ and pnpm 9+.
+Requires Node 20+ and pnpm 10+.
 
 ```sh
 cp .env.example .env.local

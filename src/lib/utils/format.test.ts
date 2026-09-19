@@ -21,6 +21,11 @@ describe("formatSol", () => {
     expect(formatSol(1n)).toBe("0.000000001");
     expect(formatSol(0n)).toBe("0");
   });
+
+  it("keeps the sign on negative values", () => {
+    expect(formatSol(-1_500_000_000n)).toBe("-1.5");
+    expect(formatSol(-1n)).toBe("-0.000000001");
+  });
 });
 
 describe("parseSolToLamports", () => {
@@ -28,6 +33,7 @@ describe("parseSolToLamports", () => {
     expect(parseSolToLamports("0.001")).toBe(1_000_000n);
     expect(parseSolToLamports("2")).toBe(2_000_000_000n);
     expect(parseSolToLamports("  1.5  ")).toBe(1_500_000_000n);
+    expect(parseSolToLamports(".5")).toBe(500_000_000n);
   });
 
   it("rejects zero, negative, excess precision, and garbage", () => {
@@ -36,5 +42,11 @@ describe("parseSolToLamports", () => {
     expect(parseSolToLamports("0.0000000001")).toBeNull();
     expect(parseSolToLamports("abc")).toBeNull();
     expect(parseSolToLamports("")).toBeNull();
+    expect(parseSolToLamports("5.")).toBeNull();
+    expect(parseSolToLamports("1e3")).toBeNull();
+  });
+
+  it("rejects amounts that cannot fit in u64 lamports", () => {
+    expect(parseSolToLamports("18446744074")).toBeNull();
   });
 });

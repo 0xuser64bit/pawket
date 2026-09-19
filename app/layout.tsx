@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
+import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/config/site";
 import "./globals.css";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
   title: {
-    default: "Pawket — a living companion on Solana",
-    template: "%s · Pawket",
+    default: `${APP_NAME} — ${APP_TAGLINE.charAt(0).toLowerCase()}${APP_TAGLINE.slice(1)}`,
+    template: `%s · ${APP_NAME}`,
   },
-  description:
-    "Pawket is a web-first living companion on Solana. Adopt, care, and grow your on-chain companion.",
+  description: APP_DESCRIPTION,
   icons: {
     icon: "/favicon.svg",
   },

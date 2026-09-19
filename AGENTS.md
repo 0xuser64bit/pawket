@@ -10,10 +10,11 @@ Pawket is a **web-first** living companion on Solana. A player connects a
 Wallet Standard wallet in the browser, adopts a companion, and cares for it
 (feed / play / groom / rest). Devnet by default.
 
-**Current truth:** the foundation proves the shell, wallet connection,
-Solana client infrastructure, and a representative SOL send flow. The full
-care loop, persistence, and product surfaces are not built yet — do not claim
-they are.
+**Current truth:** the M1 care loop is live — a wallet-free guest companion
+(persisted locally, locked game math) plus an honest on-chain adopt path
+(PDA preview → builder → simulate → sign → confirm → Explorer receipt,
+with an explicit undeployed-program state). No DB, indexer, marketplace,
+guilds, or launches — do not claim they exist.
 
 ## Read first
 

@@ -7,6 +7,8 @@ import type { SolanaCluster } from "@/config/env";
 export interface PawketClientOptions {
   cluster: SolanaCluster;
   rpcUrl: string;
+  /** Optional WS override (e.g. a dedicated subscriptions endpoint). */
+  rpcSubscriptionsUrl?: string;
 }
 
 /**
@@ -25,7 +27,12 @@ export function createPawketClient(options: PawketClientOptions) {
   const chain = CLUSTER_CHAINS[options.cluster];
   return createClient()
     .use(walletSigner({ chain }))
-    .use(solanaRpc({ rpcUrl: options.rpcUrl }));
+    .use(
+      solanaRpc({
+        rpcUrl: options.rpcUrl,
+        rpcSubscriptionsUrl: options.rpcSubscriptionsUrl,
+      }),
+    );
 }
 
 export type PawketClient = Awaited<ReturnType<typeof createPawketClient>>;

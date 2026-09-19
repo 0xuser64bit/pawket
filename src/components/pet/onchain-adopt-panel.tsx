@@ -17,6 +17,7 @@ import { getAdoptPetInstruction } from "@/lib/solana/instructions";
 import { derivePassportPda, derivePetPda, normalizePetName } from "@/lib/solana/pda";
 import { useSendTransaction } from "@/lib/solana/use-send-transaction";
 import { truncateAddress } from "@/lib/utils/format";
+import { useMounted } from "@/lib/utils/use-mounted";
 
 /**
  * On-chain adoption: derive the pet + passport PDAs, build the instruction
@@ -27,7 +28,11 @@ import { truncateAddress } from "@/lib/utils/format";
  */
 export function OnchainAdoptPanel() {
   const client = useClient<AppClient>();
-  const connected = useConnectedWallet(client);
+  const mounted = useMounted();
+  const connectedAccount = useConnectedWallet(client);
+  // Same hydration gate as every other wallet read: server and first client
+  // render agree (disconnected) before wallet state resolves.
+  const connected = mounted ? connectedAccount : null;
   const env = getPublicEnv();
 
   const [name, setName] = useState("");

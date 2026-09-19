@@ -1,11 +1,8 @@
 # Pawket (web-first)
 
-Pawket is becoming a **web-first living companion on Solana**: adopt, care for,
-and grow an on-chain companion from the browser. Devnet by default.
-
-This repository is the clean Next.js foundation. Product features build on top
-of it; the foundation itself only proves the shell, wallet plumbing, Solana
-client infrastructure, and verification loop.
+Pawket is a **web-first living companion on Solana**: adopt a guest companion
+in seconds with no wallet, care for it daily, or connect a Wallet Standard
+wallet and adopt on-chain. Devnet by default.
 
 ## Quickstart
 
@@ -34,12 +31,15 @@ pnpm dev        # http://localhost:3000
 
 - `app/` — App Router routes, layouts, and route handlers (server by default)
 - `src/components/` — UI; `"use client"` only at interactive leaves
+- `src/components/pet/` — companion chamber, adopt forms, deterministic avatar
 - `src/config/` — validated environment + site constants
 - `src/lib/game/` — pure companion math (stats, XP, cooldown, decay)
-- `src/lib/solana/` — cluster config, Kit client, PDAs, instructions, tx lifecycle
-- `src/lib/utils/` — formatting and error helpers
+- `src/lib/guest/` — wallet-free companion (logic, storage, hook)
+- `src/lib/solana/` — cluster config, Kit client, PDAs, instructions, account
+  reads, shared send hook, tx lifecycle
+- `src/lib/utils/` — formatting and hydration helpers
 - `docs/` — architecture, development, Solana, testing, workflow
-- `e2e/` — Playwright browser tests
+- `e2e/` — Playwright browser tests (shell + wallet-free care loop)
 
 Start with `AGENTS.md`, then `docs/ARCHITECTURE.md`.
 

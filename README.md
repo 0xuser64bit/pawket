@@ -1,8 +1,10 @@
 # Pawket (web-first)
 
-Pawket is a **web-first living companion on Solana**: adopt a guest companion
-in seconds with no wallet, care for it daily, or connect a Wallet Standard
-wallet and adopt on-chain. Devnet by default.
+Pawket is a **web-first living companion on Solana**. Devnet by default.
+
+Right now the shipped surface is a single landing page. The care loop,
+wallet flows, and transaction paths live in `src/lib/` (tested) but are not
+rendered — the landing claims nothing beyond what exists.
 
 ## Quickstart
 
@@ -31,15 +33,15 @@ pnpm dev        # http://localhost:3000
 
 - `app/` — App Router routes, layouts, and route handlers (server by default)
 - `src/components/` — UI; `"use client"` only at interactive leaves
-- `src/components/pet/` — companion chamber, adopt forms, deterministic avatar
+- `src/components/pet/` — deterministic companion avatar (landing art)
 - `src/config/` — validated environment + site constants
 - `src/lib/game/` — pure companion math (stats, XP, cooldown, decay)
-- `src/lib/guest/` — wallet-free companion (logic, storage, hook)
+- `src/lib/guest/` — wallet-free companion logic + storage (unrendered)
 - `src/lib/solana/` — cluster config, Kit client, PDAs, instructions, account
-  reads, shared send hook, tx lifecycle
+  reads, tx lifecycle (unrendered)
 - `src/lib/utils/` — formatting and hydration helpers
 - `docs/` — architecture, development, Solana, testing, workflow
-- `e2e/` — Playwright browser tests (shell + wallet-free care loop)
+- `e2e/` — Playwright browser tests
 
 Start with `AGENTS.md`, then `docs/ARCHITECTURE.md`.
 

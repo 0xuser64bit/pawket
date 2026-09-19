@@ -1,25 +1,25 @@
 import { expect, test } from "@playwright/test";
 
-test("homepage renders the web-first shell", async ({ page }) => {
+test("landing renders the hero", async ({ page }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: /living companion/i }),
+    page.getByRole("heading", { name: /a companion that lives on solana/i }),
   ).toBeVisible();
-  await expect(page.getByText(/cluster/i)).toBeVisible();
+  await expect(page.getByText(/no wallet needed/i)).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /see the daily ritual/i }),
+  ).toBeVisible();
 });
 
-test("wallet section offers connection without a wallet installed", async ({
-  page,
-}) => {
+test("landing shows real product art and the ritual", async ({ page }) => {
   await page.goto("/");
-  // No wallet extension in the test browser: discovery is empty, so the
-  // control invites installation instead of failing.
-  await expect(
-    page.getByRole("button", { name: /connect wallet/i }),
-  ).toBeVisible({ timeout: 15_000 });
-  await expect(
-    page.getByText(/keys never leave the wallet/i),
-  ).toBeVisible();
+  await expect(page.getByLabel("Three Pawket companions")).toBeVisible();
+  for (const act of ["Feed", "Play", "Groom", "Rest"]) {
+    await expect(
+      page.getByLabel("The daily ritual").getByText(act, { exact: true }),
+    ).toBeVisible();
+  }
+  await expect(page.getByText(/cluster/i)).toBeVisible();
 });
 
 test("health endpoint reports ok", async ({ request }) => {

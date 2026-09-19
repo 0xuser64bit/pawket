@@ -1,14 +1,12 @@
 import Link from "next/link";
-import { CompanionChamber } from "@/components/pet/companion-chamber";
-import { OnchainAdoptPanel } from "@/components/pet/onchain-adopt-panel";
 import { NetworkBadge } from "@/components/network-badge";
-import { SolTransferCard } from "@/components/wallet/sol-transfer-card";
-import { WalletSection } from "@/components/wallet/wallet-section";
+import { PetAvatar } from "@/components/pet/pet-avatar";
 import { APP_VERSION } from "@/config/site";
+import { PetMood, PetPersonality, PetSpecies } from "@/lib/game/enums";
 
 function PawMark() {
   return (
-    <svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26">
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 26 26">
       <ellipse cx="13" cy="16.5" rx="5.4" ry="4.4" fill="#fcd34d" />
       <circle cx="5.6" cy="10.5" r="2.3" fill="#fcd34d" opacity="0.85" />
       <circle cx="10.2" cy="6.8" r="2.3" fill="#fcd34d" opacity="0.85" />
@@ -18,86 +16,104 @@ function PawMark() {
   );
 }
 
-const STEPS = [
-  {
-    title: "Adopt free",
-    body: "Name a guest companion. No wallet, no signature — it lives in this browser.",
-  },
-  {
-    title: "Care daily",
-    body: "Feed, play, groom, rest. Vitals fade while you're away; cooldowns keep it honest.",
-  },
-  {
-    title: "Go on-chain",
-    body: "Connect a wallet to adopt on Solana. You sign exactly once, then watch it confirm.",
-  },
+const COMPANIONS = [
+  { name: "Nova", species: PetSpecies.LunaCat, personality: PetPersonality.Curious, mood: PetMood.Radiant },
+  { name: "Moss", species: PetSpecies.MossPup, personality: PetPersonality.Brave, mood: PetMood.Happy },
+  { name: "Cirrus", species: PetSpecies.CloudBun, personality: PetPersonality.Cozy, mood: PetMood.Okay },
+];
+
+const RITUAL = [
+  { title: "Feed", body: "A warm meal. Fullness restored." },
+  { title: "Play", body: "A good romp. Happiness up." },
+  { title: "Groom", body: "Brush and shine. Back to sleek." },
+  { title: "Rest", body: "A quiet nap. Energy returns." },
 ];
 
 /**
- * Server Component by default — no `"use client"` here. Interactive leaves
- * carry their own client boundary.
+ * Landing only. One headline, one action, real product art — nothing that
+ * doesn't exist yet. Server Component; no client boundary on this page.
  */
 export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-5 py-8 sm:py-12">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <p className="flex items-center gap-2 text-sm font-bold tracking-tight text-slate-100">
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-5xl flex-col px-5">
+      <header className="flex h-16 items-center justify-between gap-4 sm:h-[72px]">
+        <p className="flex items-center gap-2 text-[15px] font-bold tracking-tight text-slate-100">
           <PawMark />
           Pawket
         </p>
         <NetworkBadge />
       </header>
 
-      <section className="max-w-2xl space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight text-slate-50 sm:text-5xl">
-          A living companion on Solana
+      <section className="flex flex-col items-center pt-14 text-center sm:pt-20">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-200/80">
+          A Solana companion
+        </p>
+        <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tighter text-slate-50 sm:text-6xl">
+          A companion that <em>lives</em> on Solana.
         </h1>
-        <p className="text-base leading-relaxed text-slate-400">
-          Adopt a guest companion in seconds and keep it thriving with daily
-          care — or connect a wallet and bring a companion on-chain. Every
-          send is simulated first, signed by you, and linked to the Explorer.
+        <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-400">
+          Adopt one in seconds. Feed it, play with it, keep it glowing. No
+          wallet needed.
+        </p>
+        <a
+          href="#ritual"
+          className="mt-7 inline-block rounded-full bg-amber-300 px-6 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-amber-200 active:scale-[0.98]"
+        >
+          See the daily ritual
+        </a>
+
+        <div
+          aria-label="Three Pawket companions"
+          className="mt-12 flex items-end justify-center gap-2 sm:gap-6"
+        >
+          {COMPANIONS.map((c, i) => (
+            <div
+              key={c.name}
+              className={
+                i === 1
+                  ? "animate-breathe rounded-[20px] border border-white/10 bg-white/5 px-4 pb-2 pt-4"
+                  : "rounded-[20px] border border-white/5 bg-white/[0.03] px-3 pb-1 pt-3 opacity-90"
+              }
+            >
+              <PetAvatar
+                species={c.species}
+                personality={c.personality}
+                mood={c.mood}
+                name={c.name}
+                size={i === 1 ? 168 : 128}
+              />
+              <p className="pb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                {c.name}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="ritual" aria-label="The daily ritual" className="py-20 sm:py-28">
+        <h2 className="text-center text-2xl font-semibold tracking-tight text-slate-100 sm:text-3xl">
+          Four small acts, every day.
+        </h2>
+        <div className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-[20px] border border-white/10 bg-white/10 lg:grid-cols-4">
+          {RITUAL.map((r) => (
+            <div key={r.title} className="bg-[#0e0b1c] p-6 sm:p-8">
+              <p className="text-base font-bold text-slate-100">{r.title}</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-400">{r.body}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mx-auto mt-8 max-w-md text-center text-sm leading-relaxed text-slate-500">
+          Vitals fade while you are away. There is no death, only a companion
+          that misses you.
         </p>
       </section>
 
-      <div className="grid items-start gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <CompanionChamber />
-        </div>
-        <div className="space-y-6 lg:col-span-2">
-          <OnchainAdoptPanel />
-        </div>
-      </div>
-
-      <section aria-label="How it works" className="grid gap-3 sm:grid-cols-3">
-        {STEPS.map((step, index) => (
-          <div
-            key={step.title}
-            className="rounded-2xl border border-white/10 bg-white/5 p-5"
-          >
-            <p className="font-mono text-xs font-bold text-amber-300/80">
-              {String(index + 1).padStart(2, "0")}
-            </p>
-            <h2 className="mt-1 text-base font-bold text-slate-100">
-              {step.title}
-            </h2>
-            <p className="mt-1 text-sm leading-relaxed text-slate-400">
-              {step.body}
-            </p>
-          </div>
-        ))}
-      </section>
-
-      <div className="grid items-start gap-6 lg:grid-cols-2">
-        <WalletSection />
-        <SolTransferCard />
-      </div>
-
-      <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-5 text-sm text-slate-500">
-        <p>Nothing here spends without your explicit signature.</p>
+      <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-white/10 py-6 text-sm text-slate-500">
+        <p>Today it lives in your browser. Tomorrow, on-chain.</p>
         <p className="flex items-center gap-3">
           <span className="font-mono text-xs">v{APP_VERSION}</span>
-          <Link href="/api/health" className="font-medium text-amber-200/90 underline">
-            /api/health
+          <Link href="/api/health" className="font-medium text-amber-200/80 underline">
+            status
           </Link>
         </p>
       </footer>

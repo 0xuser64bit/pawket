@@ -103,7 +103,7 @@ export function CompanionChamber() {
       className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur"
     >
       <div className="flex flex-col items-center gap-2 px-6 pt-8 text-center">
-        <div className="rounded-full bg-amber-300/10 p-4 shadow-[0_0_60px_-10px_rgba(252,211,77,0.5)]">
+        <div className="animate-breathe rounded-full bg-amber-300/10 p-4 shadow-[0_0_60px_-10px_rgba(252,211,77,0.5)]">
           <PetAvatar
             species={pet.species}
             personality={pet.personality}

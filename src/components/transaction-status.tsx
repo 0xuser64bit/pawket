@@ -55,12 +55,12 @@ export function TransactionStatus({
       aria-live="polite"
       className={
         stage === "failed"
-          ? "rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900"
+          ? "rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200"
           : stage === "confirmed"
-            ? "rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900"
+            ? "rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-200"
             : stage === "unknown"
-              ? "rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
-              : "rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+              ? "rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm text-amber-200"
+              : "rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300"
       }
     >
       <p className="font-semibold">
@@ -85,13 +85,13 @@ export function TransactionStatus({
           <button
             type="button"
             onClick={() => void copySignature()}
-            className="font-medium text-sky-700 underline"
+            className="font-medium text-amber-200/90 underline"
           >
             {copied ? "Copied" : "Copy signature"}
           </button>
           {explorerUrl ? (
             <a
-              className="font-medium text-sky-700 underline"
+              className="font-medium text-amber-200/90 underline"
               href={explorerUrl}
               target="_blank"
               rel="noreferrer"
@@ -103,7 +103,7 @@ export function TransactionStatus({
       ) : (
         explorerUrl && (
           <a
-            className="font-medium text-sky-700 underline"
+            className="font-medium text-amber-200/90 underline"
             href={explorerUrl}
             target="_blank"
             rel="noreferrer"

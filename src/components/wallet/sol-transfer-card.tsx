@@ -72,16 +72,16 @@ export function SolTransferCard() {
   return (
     <section
       aria-label="SOL transfer verification"
-      className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+      className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur sm:p-6"
     >
       <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <p className="text-xs font-semibold uppercase tracking-widest text-amber-300/90">
           Foundation check · {env.solanaCluster}
         </p>
-        <h2 className="text-xl font-semibold text-slate-900">
+        <h2 className="text-xl font-bold text-slate-100">
           Send SOL with the connected wallet
         </h2>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-400">
           {connected
             ? "Uses the connected signer as fee payer. Simulated before send."
             : "Connect a wallet above to enable sending."}
@@ -97,7 +97,7 @@ export function SolTransferCard() {
       >
         <div className="space-y-2">
           <label
-            className="text-sm font-semibold text-slate-800"
+            className="text-sm font-semibold text-slate-200"
             htmlFor="sol-destination"
           >
             Destination address
@@ -111,17 +111,17 @@ export function SolTransferCard() {
             spellCheck={false}
             disabled={isSending}
             aria-invalid={destinationError ? true : undefined}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 disabled:opacity-50"
+            className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 font-mono text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-300/60 focus:outline-none focus:ring-1 focus:ring-amber-300/60 disabled:opacity-50"
           />
           {destinationError ? (
-            <p role="alert" className="text-sm font-medium text-red-600">
+            <p role="alert" className="text-sm font-medium text-rose-300">
               {destinationError}
             </p>
           ) : null}
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-800" htmlFor="sol-amount">
+          <label className="text-sm font-semibold text-slate-200" htmlFor="sol-amount">
             Amount (SOL)
           </label>
           <input
@@ -134,10 +134,10 @@ export function SolTransferCard() {
             autoComplete="off"
             disabled={isSending}
             aria-invalid={!amountValid || undefined}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 disabled:opacity-50"
+            className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-300/60 focus:outline-none focus:ring-1 focus:ring-amber-300/60 disabled:opacity-50"
           />
           {!amountValid ? (
-            <p role="alert" className="text-sm font-medium text-red-600">
+            <p role="alert" className="text-sm font-medium text-rose-300">
               Enter an amount greater than 0 (up to 9 decimals).
             </p>
           ) : null}
@@ -147,7 +147,7 @@ export function SolTransferCard() {
           <button
             type="submit"
             disabled={!connected?.signer || isSending || !amountValid || Boolean(destinationError) || !destination.trim()}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSending ? "Sending…" : "Send SOL"}
           </button>

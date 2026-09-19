@@ -50,9 +50,9 @@ export function BalanceDisplay() {
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-      <p className="text-slate-600">
+      <p className="text-slate-400">
         Balance:{" "}
-        <span className="font-semibold text-slate-900">
+        <span className="font-semibold text-slate-100">
           {balance !== undefined
             ? `${formatSol(balance)} SOL`
             : isLoading
@@ -64,7 +64,7 @@ export function BalanceDisplay() {
         type="button"
         onClick={() => refresh()}
         disabled={isLoading}
-        className="font-medium text-sky-700 underline disabled:opacity-50"
+        className="font-medium text-amber-200/90 underline disabled:opacity-50"
       >
         {isLoading ? "Refreshing…" : "Refresh"}
       </button>
@@ -72,12 +72,12 @@ export function BalanceDisplay() {
         href={explorerAddressUrl(accountAddress, env.solanaCluster)}
         target="_blank"
         rel="noreferrer"
-        className="font-medium text-sky-700 underline"
+        className="font-medium text-amber-200/90 underline"
       >
         View in Explorer →
       </a>
       {error ? (
-        <p role="alert" className="w-full text-sm font-medium text-red-600">
+        <p role="alert" className="w-full text-sm font-medium text-rose-300">
           Couldn’t reach the network
           {error instanceof Error && error.message ? `: ${error.message}` : "."}{" "}
           Try Refresh.

@@ -1,10 +1,54 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #0b0916;
+  background-image:
+    radial-gradient(52rem 30rem at 50% -8rem, rgba(139, 124, 246, 0.22), transparent 65%),
+    radial-gradient(40rem 26rem at 85% 110%, rgba(252, 211, 77, 0.1), transparent 60%),
+    radial-gradient(36rem 24rem at 8% 100%, rgba(90, 169, 230, 0.1), transparent 60%);
+  background-attachment: fixed;
+  color: #f1f5f9;
+  font-feature-settings: "ss01", "cv11";
+}
+
+::selection {
+  background: rgba(252, 211, 77, 0.85);
+  color: #0b0916;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(252, 211, 77, 0.9);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Signature moment: the chamber glows like a nightlight. */
+@keyframes den-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 18px rgba(252, 211, 77, 0.25));
+  }
+  50% {
+    transform: scale(1.03);
+    filter: drop-shadow(0 0 30px rgba(252, 211, 77, 0.4));
+  }
+}
+
+.animate-breathe {
+  animation: den-breathe 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

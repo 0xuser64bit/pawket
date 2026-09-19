@@ -8,14 +8,14 @@ export function WalletSection() {
   return (
     <section
       aria-label="Wallet"
-      className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+      className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur sm:p-6"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-widest text-amber-300/90">
             Wallet
           </p>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-400">
             Wallet Standard discovery. Keys never leave the wallet.
           </p>
         </div>

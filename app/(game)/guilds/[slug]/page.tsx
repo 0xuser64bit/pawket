@@ -66,7 +66,7 @@ export default async function GuildPage({
           <div className="pk-fill">
             <h1 className="display-m">{guild.name}</h1>
             <Row gap={3} wrap style={{ marginTop: "var(--space-1)" }}>
-              <OfficialMark official={guild.official} label={guild.official ? undefined : "Not yet approved"} />
+              <OfficialMark official={guild.official} label={guild.markLabel} />
               <span className="caption pk-faint">{guild.members} members</span>
             </Row>
           </div>
@@ -103,7 +103,9 @@ function About({ guild }: { guild: DemoGuild }) {
         icon="guild"
       />
       <p className="caption pk-faint" style={{ textAlign: "center" }}>
-        Free. No token needed to join, post, or come to events.
+        {guild.joined
+          ? "You are a member. Leaving is free, and nothing you own changes."
+          : "Free. No token needed to join, post, or come to events."}
       </p>
 
       {guild.utility ? (

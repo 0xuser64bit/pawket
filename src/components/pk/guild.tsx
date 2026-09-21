@@ -70,6 +70,7 @@ export function GuildRow({
   stage,
   blurb,
   official = true,
+  markLabel,
   action,
 }: {
   name: string;
@@ -81,6 +82,8 @@ export function GuildRow({
   stage?: string;
   blurb: string;
   official?: boolean;
+  /** A more precise sentence than the default when unverified. */
+  markLabel?: string;
   action?: ReactNode;
 }) {
   return (
@@ -91,7 +94,7 @@ export function GuildRow({
           <Link href={href} className="title" style={{ color: "var(--ink)", textDecoration: "none" }}>
             {name}
           </Link>
-          <OfficialMark official={official} />
+          <OfficialMark official={official} label={markLabel} />
         </div>
         <p className="body-sm pk-muted">{blurb}</p>
         <div className="pk-row" style={{ gap: "var(--space-3)", marginTop: "var(--space-2)", flexWrap: "wrap" }}>

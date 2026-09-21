@@ -14,6 +14,8 @@ export interface DemoGuild {
   blurb: string;
   summary: string;
   official: boolean;
+  /** The precise unverified sentence, when "not checked" is not precise enough. */
+  markLabel?: string;
   joined: boolean;
   /** What the token does, and where it stops. Published and reviewed. */
   utility?: string;
@@ -137,6 +139,7 @@ export const DEMO_GUILDS: DemoGuild[] = [
     summary:
       "For people who play after midnight. Lantern cosmetics, slow games, and a late-night lobby.",
     official: false,
+    markLabel: "Not yet approved",
     joined: false,
     utility:
       "The NGHT token unlocks a lantern cosmetic set and entry to late lobbies. It does nothing else, in Pawket or anywhere Pawket controls.",

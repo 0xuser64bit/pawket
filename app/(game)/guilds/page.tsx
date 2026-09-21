@@ -69,6 +69,7 @@ export default async function GuildsPage({
               stage={guild.stageLabel}
               blurb={guild.blurb}
               official={guild.official}
+              markLabel={guild.markLabel}
               action={
                 <ButtonLink
                   label={guild.joined ? "Joined" : "Open"}

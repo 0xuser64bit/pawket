@@ -153,6 +153,73 @@ export function PetArt({
   );
 }
 
+/**
+ * A species' paw print, on a 64px grid with the same 3px outline the pets
+ * take. A paw is a fragment, which is why it can stand in for a pet while
+ * something loads without spending the pet itself.
+ *
+ * The four read apart by silhouette alone: a round cluster, the same cluster
+ * with claws, a three-toed fan, and a long hind foot.
+ */
+export function PawArt({
+  form,
+  coat,
+  className,
+}: {
+  form: PetForm;
+  coat?: string;
+  className?: string;
+}) {
+  const base = COATS[form];
+  const fill = coat ?? base.coat;
+  const ink = "var(--edge)";
+
+  return (
+    <svg viewBox="0 0 64 64" fill="none" preserveAspectRatio="xMidYMid meet" aria-hidden="true" className={className}>
+      <g stroke={ink} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
+        {form === "cat" ? (
+          <>
+            <ellipse cx="32" cy="43" rx="15" ry="11.5" fill={fill} />
+            <circle cx="14.5" cy="27" r="5.6" fill={fill} />
+            <circle cx="25" cy="20.5" r="6.2" fill={fill} />
+            <circle cx="39" cy="20.5" r="6.2" fill={fill} />
+            <circle cx="49.5" cy="27" r="5.6" fill={fill} />
+          </>
+        ) : null}
+
+        {form === "dog" ? (
+          <>
+            <ellipse cx="32" cy="44" rx="16" ry="12" fill={fill} />
+            <ellipse cx="13.5" cy="28" rx="5.2" ry="7" fill={fill} transform="rotate(-20 13.5 28)" />
+            <ellipse cx="25" cy="20" rx="5.2" ry="7" fill={fill} transform="rotate(-8 25 20)" />
+            <ellipse cx="39" cy="20" rx="5.2" ry="7" fill={fill} transform="rotate(8 39 20)" />
+            <ellipse cx="50.5" cy="28" rx="5.2" ry="7" fill={fill} transform="rotate(20 50.5 28)" />
+            <path d="M11.6 20.6 10 16.4M24 12.4 23.5 8M40 12.4 40.5 8M52.4 20.6 54 16.4" strokeWidth="2.4" />
+          </>
+        ) : null}
+
+        {form === "bird" ? (
+          <>
+            {/* Drawn twice: the wide pass is the outline, the narrow pass the coat. */}
+            <path d="M32 46 15 19M32 46 32 13M32 46 49 19" stroke={ink} strokeWidth="12.5" />
+            <path d="M32 46 15 19M32 46 32 13M32 46 49 19" stroke={fill} strokeWidth="6.5" />
+          </>
+        ) : null}
+
+        {form === "bun" ? (
+          <>
+            <ellipse cx="32" cy="37" rx="12" ry="19" fill={fill} />
+            <circle cx="22" cy="17" r="4.2" fill={fill} />
+            <circle cx="29" cy="12" r="4.2" fill={fill} />
+            <circle cx="35" cy="12" r="4.2" fill={fill} />
+            <circle cx="42" cy="17" r="4.2" fill={fill} />
+          </>
+        ) : null}
+      </g>
+    </svg>
+  );
+}
+
 const HATS = {
   cap: (color: string) => (
     <>
@@ -217,8 +284,13 @@ export function PlayerArt({
 }
 
 /**
- * The mark: a pocket with four pads arched above its opening, because a paw
- * print and a pocket are the same shape. It never rotates, never takes a
+ * The mark: a pocket with four pads arched above it, because a paw print and
+ * a pocket are the same shape. In the place a paw keeps its centre pad, the
+ * pocket holds a heart — what you keep in a pocket is care.
+ *
+ * Two inks and three shapes, so it survives a 16px favicon. A collar and a
+ * hanging tag were tried here and did not: at glyph sizes they merged with
+ * the heart into one unreadable mass. It never rotates, never takes a
  * gradient, and never appears without the pocket.
  */
 export function Mark({
@@ -240,8 +312,14 @@ export function Mark({
 }) {
   const glyph = (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      {/* the pocket */}
       <rect x="2.5" y="12.5" width="27" height="17" rx="6" fill={fill} stroke={ink} strokeWidth="2.4" />
-      <path d="M9 16.5a7 7 0 0 0 14 0" stroke={ink} strokeWidth="2.4" strokeLinecap="round" />
+      {/* what the pocket holds, in the place a paw keeps its centre pad */}
+      <path
+        d="M16 25.7c-3.7-2.7-5.6-4.5-5.6-6.4a2.93 2.93 0 0 1 5.6-1 2.93 2.93 0 0 1 5.6 1c0 1.9-1.9 3.7-5.6 6.4z"
+        fill={ink}
+      />
+      {/* four pads */}
       <circle cx="6.6" cy="7.4" r="2.9" fill={ink} />
       <circle cx="13.6" cy="3.9" r="3.2" fill={ink} />
       <circle cx="21" cy="4.4" r="3.2" fill={ink} />

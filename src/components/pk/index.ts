@@ -7,7 +7,7 @@
  */
 
 export { Icon, ICON_NAMES, type IconName } from "./icon";
-export { Mark, PetArt, PlayerArt, type HatName, type PetForm } from "./art";
+export { Mark, PawArt, PetArt, PlayerArt, type HatName, type PetForm } from "./art";
 export {
   Button,
   ButtonLink,
@@ -49,5 +49,6 @@ export {
   type Stage,
 } from "./guild";
 export { BackLink, Grid, Row, Screen, ScreenBar, SectionLabel, Stack } from "./layout";
+export { PawLoader } from "./paw-loader";
 export { Dock } from "./dock";
 export { ThemeToggle } from "./theme-toggle";

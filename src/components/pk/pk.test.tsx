@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Button, Chip, Meter, PetFrame, Receipt } from "./index";
+import { Button, Chip, Mark, Meter, PawArt, PetFrame, Receipt } from "./index";
 
 describe("Button", () => {
   it("wears its tone and size, and sun needs no modifier", () => {
@@ -73,5 +73,32 @@ describe("Chip", () => {
     expect(renderToStaticMarkup(<Chip label="Migration pending" tone="alarm" icon="alert" />)).toContain(
       "Migration pending",
     );
+  });
+});
+
+describe("Mark", () => {
+  it("never appears without the pocket", () => {
+    const html = renderToStaticMarkup(<Mark />);
+    expect(html).toContain('rx="6"');
+    expect(html.match(/<circle/g)).toHaveLength(4);
+  });
+
+  it("holds a heart where a paw keeps its centre pad", () => {
+    expect(renderToStaticMarkup(<Mark />)).toContain("M16 25.7c-3.7-2.7");
+  });
+
+  it("stays two inks, so it survives a 16px favicon", () => {
+    const html = renderToStaticMarkup(<Mark glyphOnly />);
+    const tokens = new Set(html.match(/var\(--[a-z-]+\)/g));
+    expect(tokens).toEqual(new Set(["var(--sun)", "var(--on-sun)"]));
+  });
+});
+
+describe("PawArt", () => {
+  it("draws a different silhouette per species", () => {
+    const drawn = (["cat", "dog", "bird", "bun"] as const).map((form) =>
+      renderToStaticMarkup(<PawArt form={form} />),
+    );
+    expect(new Set(drawn).size).toBe(4);
   });
 });

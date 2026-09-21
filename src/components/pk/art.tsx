@@ -285,13 +285,19 @@ export function PlayerArt({
 
 /**
  * The mark: a pocket with four pads arched above it, because a paw print and
- * a pocket are the same shape. In the place a paw keeps its centre pad, the
- * pocket holds a heart — what you keep in a pocket is care.
+ * a pocket are the same shape. The opening is worn as a collar, and the tag
+ * hanging from it is a heart — the thing a pocket keeps, and the thing a paw
+ * keeps at its centre, drawn once.
  *
- * Two inks and three shapes, so it survives a 16px favicon. A collar and a
- * hanging tag were tried here and did not: at glyph sizes they merged with
- * the heart into one unreadable mass. It never rotates, never takes a
- * gradient, and never appears without the pocket.
+ * The pocket is deeper than a pocket needs to be. That is what buys the two
+ * units of clear space between the collar and the tag: below that the two
+ * merge into one mass at 16px, which is where the first attempt at this died.
+ * The ring between them is deliberately thinner than either, so it fades out
+ * before it can blot.
+ *
+ * Two inks, so it survives a favicon. It never rotates, never takes a
+ * gradient, never sits inside another shape, and never appears without the
+ * pocket.
  */
 export function Mark({
   size = 28,
@@ -312,18 +318,22 @@ export function Mark({
 }) {
   const glyph = (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      {/* the pocket */}
-      <rect x="2.5" y="12.5" width="27" height="17" rx="6" fill={fill} stroke={ink} strokeWidth="2.4" />
-      {/* what the pocket holds, in the place a paw keeps its centre pad */}
+      {/* the pocket, deepened to make room for what hangs in it */}
+      <rect x="2.5" y="10.8" width="27" height="19.2" rx="6.5" fill={fill} stroke={ink} strokeWidth="2.4" />
+      {/* its opening, worn as a collar */}
+      <path d="M5.6 14.4q10.4 2.6 20.8 0" stroke={ink} strokeWidth="3" strokeLinecap="round" />
+      {/* the ring, thin enough to drop away before the shapes it joins do */}
+      <path d="M16 17v2.6" stroke={ink} strokeWidth="1.4" strokeLinecap="round" />
+      {/* the tag, hanging where a paw keeps its centre pad */}
       <path
-        d="M16 25.7c-3.7-2.7-5.6-4.5-5.6-6.4a2.93 2.93 0 0 1 5.6-1 2.93 2.93 0 0 1 5.6 1c0 1.9-1.9 3.7-5.6 6.4z"
+        d="M16 27.4c-3.3-2.4-5-4-5-5.7a2.6 2.6 0 0 1 5-.9 2.6 2.6 0 0 1 5 .9c0 1.7-1.7 3.3-5 5.7z"
         fill={ink}
       />
       {/* four pads */}
-      <circle cx="6.6" cy="7.4" r="2.9" fill={ink} />
-      <circle cx="13.6" cy="3.9" r="3.2" fill={ink} />
-      <circle cx="21" cy="4.4" r="3.2" fill={ink} />
-      <circle cx="27.4" cy="8.6" r="2.7" fill={ink} />
+      <circle cx="6.7" cy="6.1" r="2.55" fill={ink} />
+      <circle cx="13.6" cy="3.1" r="2.8" fill={ink} />
+      <circle cx="20.9" cy="3.5" r="2.8" fill={ink} />
+      <circle cx="27.3" cy="7" r="2.4" fill={ink} />
     </svg>
   );
 

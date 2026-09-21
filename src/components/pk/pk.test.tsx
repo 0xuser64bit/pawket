@@ -79,12 +79,15 @@ describe("Chip", () => {
 describe("Mark", () => {
   it("never appears without the pocket", () => {
     const html = renderToStaticMarkup(<Mark />);
-    expect(html).toContain('rx="6"');
+    // The pocket is the filled, rounded body; the pads alone are not the mark.
+    expect(html).toMatch(/<rect[^>]+rx="[\d.]+"[^>]+fill="var\(--sun\)"/);
     expect(html.match(/<circle/g)).toHaveLength(4);
   });
 
-  it("holds a heart where a paw keeps its centre pad", () => {
-    expect(renderToStaticMarkup(<Mark />)).toContain("M16 25.7c-3.7-2.7");
+  it("hangs a heart tag from the collar, where a paw keeps its centre pad", () => {
+    const html = renderToStaticMarkup(<Mark />);
+    expect(html).toContain("M16 27.4c-3.3-2.4");
+    expect(html).toContain("M5.6 14.4q10.4 2.6 20.8 0");
   });
 
   it("stays two inks, so it survives a 16px favicon", () => {

@@ -69,13 +69,18 @@ are a separate `ink-faint` suffix.
 ## The mark
 
 A pocket with four pads arched above it, because a paw print and a pocket are
-the same shape. In the place a paw keeps its centre pad, the pocket holds a
-heart — what you keep in a pocket is care.
+the same shape. The opening is worn as a collar, and the tag hanging from it is
+a heart — the thing a pocket keeps and the thing a paw keeps at its centre,
+drawn once.
 
-Two inks and three shapes, so it survives a 16px favicon. A collar with a
-hanging tag was tried and cut: at glyph sizes it merged with the heart into one
-unreadable mass. It never rotates, never takes a gradient, never sits inside
-another shape, and never appears without the pocket.
+The pocket is deeper than a pocket needs to be. That depth is what buys the two
+units of clear space between the collar and the tag; below that the two merge
+into a single mass at 16px, which is where the first attempt at this died. The
+ring joining them is deliberately thinner than either, so it fades out before
+it can blot. Check the mark at 16, 20 and 24px before changing any of it.
+
+Two inks. It never rotates, never takes a gradient, never sits inside another
+shape, and never appears without the pocket — the pads alone are not the mark.
 
 ## Motion
 

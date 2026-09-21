@@ -19,7 +19,7 @@ export function PreviewNote({ what }: { what: string }) {
 /** The same fact, small enough to sit in a screen bar. */
 export function PreviewFlag() {
   return (
-    <span className="pk-chip pk-chip--paper" title="Every figure on these screens is demo data">
+    <span className="pk-chip pk-chip--paper" title="Most product screens render demo data. A guest pet you adopt is real and lives in this browser.">
       Preview data
     </span>
   );

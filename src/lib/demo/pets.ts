@@ -126,7 +126,7 @@ export const ACTIVE_PET = DEMO_PETS[0];
 /** The player, as a peg doll: one colour, dot eyes, a hat. */
 export const PLAYER = {
   name: "Wren",
-  placeName: "Wren’s place",
+  placeName: "Your place",
   color: "var(--pool)",
   hat: "beanie" as const,
   balance: "2.41",

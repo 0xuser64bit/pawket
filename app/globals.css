@@ -1807,3 +1807,43 @@ summary:focus-visible,
 .pk-assets td:not(:first-child) {
   padding-left: var(--space-6);
 }
+
+/* At phone width four tabs share the trough rather than scrolling off it. */
+@media (max-width: 479px) {
+  .pk-tabs {
+    display: flex;
+    width: 100%;
+  }
+  .pk-tabs__t {
+    flex: 1 1 auto;
+    padding: 7px var(--space-2);
+    text-align: center;
+  }
+  .pk-tabs__t--on {
+    padding: 5px calc(var(--space-2) - 2px);
+  }
+}
+
+/* A choice among drawings: the option itself is the control, so selection
+   is an outline in the act hue rather than a second widget. */
+.pk-pick {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--radius-lg);
+  opacity: 0.68;
+}
+.pk-pick[aria-pressed="true"] {
+  opacity: 1;
+  outline: var(--stroke-line) solid var(--sun-text);
+  outline-offset: 4px;
+}
+.pk-pick--flat {
+  opacity: 1;
+  border-radius: var(--radius-md);
+}
+.pk-pick--flat[aria-pressed="true"] {
+  outline: 0;
+}

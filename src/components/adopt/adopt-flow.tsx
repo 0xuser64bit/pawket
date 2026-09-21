@@ -55,8 +55,10 @@ export function AdoptFlow() {
       saveGuestPet(createGuestPet({ name, species, personality }));
       setError(undefined);
       setStep(3);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "That name did not work. Try another.");
+    } catch {
+      // The rule comes from the on-chain name seed (2–24 UTF-8 bytes); the
+      // sentence a player reads should not.
+      setError("A name needs at least two characters, and no more than 24.");
     }
   }
 
@@ -74,7 +76,7 @@ export function AdoptFlow() {
             </p>
           </div>
 
-          <div className="pk-pair">
+          <div className="pk-shelf">
             {SPECIES.map((option) => {
               const chosen = option === species;
               return (
@@ -83,14 +85,7 @@ export function AdoptFlow() {
                   type="button"
                   onClick={() => setSpecies(option)}
                   aria-pressed={chosen}
-                  style={{
-                    background: "none",
-                    border: 0,
-                    padding: 0,
-                    cursor: "pointer",
-                    textAlign: "left",
-                    opacity: chosen ? 1 : 0.72,
-                  }}
+                  className="pk-pick"
                 >
                   <PetFrame
                     form={SPECIES_ART[option]}
@@ -157,7 +152,7 @@ export function AdoptFlow() {
                   key={suggestion}
                   type="button"
                   onClick={() => setName(suggestion)}
-                  style={{ background: "none", border: 0, padding: 0, cursor: "pointer" }}
+                  className="pk-pick pk-pick--flat"
                 >
                   <Chip label={suggestion} />
                 </button>
@@ -176,7 +171,7 @@ export function AdoptFlow() {
                   type="button"
                   onClick={() => setPersonality(option.value)}
                   aria-pressed={option.value === personality}
-                  style={{ background: "none", border: 0, padding: 0, cursor: "pointer" }}
+                  className="pk-pick pk-pick--flat"
                 >
                   <Chip
                     label={option.label}

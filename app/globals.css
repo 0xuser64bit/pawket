@@ -1670,3 +1670,140 @@ summary:focus-visible,
   gap: var(--space-3);
   padding: 5px 0;
 }
+
+/* ------------------------------------------------------- the landing page
+
+   The order is the argument: hero, the loop as six pills, four pillars, an
+   ink band for the Playground, a full bloom-soft band for guilds, then a
+   Paper block stating the asset model, then the footer. */
+
+.pk-hero {
+  display: grid;
+  gap: var(--space-7);
+  align-items: center;
+}
+@media (min-width: 960px) {
+  .pk-hero {
+    grid-template-columns: 1.05fr 1fr;
+    gap: 56px;
+  }
+}
+
+.pk-stage {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border-radius: var(--radius-room);
+  border: var(--stroke-line) solid var(--edge);
+  background: var(--sun-soft);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-stage > :nth-child(2) {
+  margin-top: var(--space-7);
+}
+.pk-stage > :nth-child(3) {
+  margin-bottom: var(--space-6);
+}
+
+/* The loop, as six pills joined by hairlines. */
+.pk-chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.pk-chain__link {
+  flex: 1 1 18px;
+  min-width: 18px;
+  height: 0;
+  border-top: var(--stroke-hair) dashed var(--ink-faint);
+}
+.pk-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-2) var(--space-4);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pk-split {
+  display: grid;
+  gap: var(--space-7);
+  align-items: center;
+}
+@media (min-width: 960px) {
+  .pk-split {
+    grid-template-columns: 1fr auto;
+    gap: 56px;
+  }
+  .pk-split--wide-right {
+    grid-template-columns: 1fr 1.1fr;
+    align-items: start;
+  }
+  .pk-split--wide-left {
+    grid-template-columns: 1fr 1.5fr;
+    align-items: start;
+  }
+}
+
+.pk-pillars {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.pk-guildband {
+  border-radius: var(--radius-room);
+  border: var(--stroke-line) solid var(--edge);
+  background: var(--bloom-soft);
+  box-shadow: var(--shadow-sticker);
+  padding: var(--space-7);
+}
+@media (min-width: 960px) {
+  .pk-guildband {
+    padding: 56px;
+  }
+}
+
+/* The asset model, in the same table Pawket uses internally. */
+.pk-assets {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.pk-assets th {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0 0 10px;
+  font-weight: 400;
+}
+.pk-assets td {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 19px;
+  padding: 9px 0;
+  border-top: var(--stroke-hair) dashed var(--rule);
+  vertical-align: top;
+  color: var(--ink-faint);
+}
+.pk-assets td:first-child {
+  color: var(--ink);
+  white-space: nowrap;
+}
+.pk-assets th:not(:first-child),
+.pk-assets td:not(:first-child) {
+  padding-left: var(--space-6);
+}

@@ -66,13 +66,48 @@ you read, `mono` (DM Mono) is anything verifiable. `display-hero` is used once,
 on the landing page. A figure in a sentence still takes `amount-sm`, and units
 are a separate `ink-faint` suffix.
 
+## The mark
+
+A pocket with four pads arched above it, because a paw print and a pocket are
+the same shape. In the place a paw keeps its centre pad, the pocket holds a
+heart — what you keep in a pocket is care.
+
+Two inks and three shapes, so it survives a 16px favicon. A collar with a
+hanging tag was tried and cut: at glyph sizes it merged with the heart into one
+unreadable mass. It never rotates, never takes a gradient, never sits inside
+another shape, and never appears without the pocket.
+
 ## Motion
 
 A pressable control moves on `cubic-bezier(.2,.9,.3,1)` at 90ms; the shelf is
-what makes it read as an object. A pet breathes on a 3.6s loop and is the only
-looping animation in the product. A sheet rises over 220ms. Nothing animates on
+what makes it read as an object. A sheet rises over 220ms. Nothing animates on
 a Paper surface: a quote does not count up and a launch meter does not fill on
 load. All of it stops under `prefers-reduced-motion`.
+
+**Two loops exist, and no more.**
+
+1. **The breath.** A pet scales `1 → 1.035 × 0.975 → 1` over 3.6s from a
+   `50% 100%` origin, so it settles on its feet.
+2. **The paw loader** (`PawLoader`). A paw inside a pocket — the mark
+   assembling itself — with the four species taking the frame in turn. Each is
+   held 900ms and hands over in 220ms, the duration of a rising sheet, on the
+   press curve. A paw leaves before the next arrives, so it is a replacement,
+   not a dissolve. Under `prefers-reduced-motion` one paw sits still.
+
+The loader is an amendment to the system's original "nothing else loops" rule,
+made deliberately and fenced just as deliberately:
+
+- **Playroom only, for a wait with no known end.** Cold boot, matchmaking.
+- **Never on Paper.** Nothing animates there, and a playful cycle while money
+  moves is exactly the wrong feeling. A pending transaction keeps its Paper
+  treatment — a neutral `wait` banner and a countable `Meter`.
+- **Never as a route-change skeleton.** `app/loading.tsx` is the root fallback
+  and carries the loader; `app/(game)/loading.tsx` holds still, because a loop
+  flashing on every navigation is the shimmering-skeleton problem in a nicer
+  costume.
+- **A paw, not a pet.** A pet in a pocket is the product's hero image, and a
+  loader is not the place to spend it. A paw is a fragment, so it reads as
+  waiting.
 
 ## Layout
 

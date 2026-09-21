@@ -1853,3 +1853,82 @@ summary:focus-visible,
 .pk-pick--flat[aria-pressed="true"] {
   outline: 0;
 }
+
+/* ------------------------------------------------------ the paw loader
+
+   The one place a second loop is allowed. A paw inside a pocket is the mark
+   itself, assembling: the four species take the frame in turn, each held
+   long enough to be read. A paw rather than a pet, because a pet in a pocket
+   is the product's hero image and a loader is not the place to spend it.
+
+   Playroom only, for a wait with no known end. Never on Paper — nothing
+   animates there, and a playful cycle while money moves is the wrong
+   feeling. Never as a route-change skeleton either.
+
+   Timings come from the system: the 220ms of a rising sheet for the
+   hand-off, on the press curve. Each paw leaves before the next arrives, so
+   this is a replacement, not a dissolve. */
+
+.pk-paw-loader__stack {
+  position: absolute;
+  inset: 0;
+}
+/* Sized so the 3px outline renders at the same weight the pets carry, and
+   placed so the paw lands on the rim rather than floating over it. */
+.pk-paw-loader__paw {
+  position: absolute;
+  left: 23%;
+  right: 23%;
+  top: 18%;
+  bottom: 13%;
+  opacity: 0;
+  animation: pk-paw-cycle 4.48s cubic-bezier(0.2, 0.9, 0.3, 1) infinite both;
+}
+.pk-paw-loader__paw svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pk-paw-loader__rim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes pk-paw-cycle {
+  0% {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  2.5% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  22.5% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  25% {
+    opacity: 0;
+    transform: translateY(-9px);
+  }
+  25.01%,
+  100% {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+}
+
+/* Under reduced motion one paw simply sits in the pocket. This has to come
+   after the global rule, which would otherwise snap every paw to hidden. */
+@media (prefers-reduced-motion: reduce) {
+  .pk-paw-loader__paw {
+    animation: none !important;
+    opacity: 0;
+    transform: none;
+  }
+  .pk-paw-loader__paw--first {
+    opacity: 1;
+  }
+}

@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Button, Chip, Mark, Meter, PawArt, PetFrame, Receipt } from "./index";
+import { Button, Chip, Mark, Meter, PawArt, PawLoader, PetFrame, Receipt } from "./index";
 
 describe("Button", () => {
   it("wears its tone and size, and sun needs no modifier", () => {
@@ -100,5 +100,23 @@ describe("PawArt", () => {
       renderToStaticMarkup(<PawArt form={form} />),
     );
     expect(new Set(drawn).size).toBe(4);
+  });
+});
+
+describe("PawLoader", () => {
+  it("cycles all four species, one step apart", () => {
+    const html = renderToStaticMarkup(<PawLoader />);
+    expect(html.match(/pk-paw-loader__paw/g)).toHaveLength(5); // 4 paws, one also first
+    for (const delay of ["0.00s", "1.12s", "2.24s", "3.36s"]) {
+      expect(html).toContain(`animation-delay:${delay}`);
+    }
+  });
+
+  it("marks one paw to stand still under reduced motion", () => {
+    expect(renderToStaticMarkup(<PawLoader />)).toContain("pk-paw-loader__paw--first");
+  });
+
+  it("names the wait for anything that cannot see it", () => {
+    expect(renderToStaticMarkup(<PawLoader label="Finding a lobby" />)).toContain("Finding a lobby");
   });
 });

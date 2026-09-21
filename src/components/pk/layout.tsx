@@ -7,20 +7,8 @@ import { ButtonLink } from "./controls";
  * on every game screen is the same: the thing itself, then what you can do
  * to it, then anything that explains it.
  */
-export function Screen({
-  wide = false,
-  className,
-  children,
-}: {
-  wide?: boolean;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <main className={["pk-screen", wide && "pk-screen--wide", className].filter(Boolean).join(" ")}>
-      {children}
-    </main>
-  );
+export function Screen({ className, children }: { className?: string; children: ReactNode }) {
+  return <main className={["pk-screen", className].filter(Boolean).join(" ")}>{children}</main>;
 }
 
 export function ScreenBar({ children }: { children: ReactNode }) {

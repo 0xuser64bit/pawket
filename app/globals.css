@@ -1411,9 +1411,6 @@ summary:focus-visible,
   /* 96px of clearance so the last card never sits under the dock */
   padding-bottom: var(--space-10);
 }
-.pk-screen--wide {
-  max-width: 720px;
-}
 .pk-screen__bar {
   display: flex;
   align-items: center;
@@ -1502,4 +1499,120 @@ summary:focus-visible,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* -------------------------------------------------- the room, on Home
+
+   The room is a place, not a dashboard. Pet and player share one scene
+   inside a radius-room panel, and nothing floats over the animal: chips and
+   cards live below it, so the top half of Home is always the pet. */
+
+.pk-room {
+  position: relative;
+  height: 236px;
+  border-radius: var(--radius-room);
+  border: var(--stroke-line) solid var(--edge);
+  box-shadow: var(--shadow-sticker);
+  overflow: hidden;
+}
+.pk-room__floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 64px;
+  background: var(--surface-sunk);
+  border-top: var(--stroke-line) solid var(--edge);
+}
+.pk-room__win {
+  position: absolute;
+  left: 24px;
+  top: 22px;
+  width: 86px;
+  height: 74px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--surface);
+}
+.pk-room__win::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--edge);
+}
+.pk-room__lamp {
+  position: absolute;
+  right: 26px;
+  top: 16px;
+  width: 42px;
+  height: 30px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: 0 0 22px 22px;
+  background: var(--sun);
+}
+.pk-room__who {
+  position: absolute;
+  bottom: 34px;
+  left: 8%;
+  width: 34%;
+  max-width: 118px;
+}
+.pk-room__pet {
+  position: absolute;
+  bottom: 26px;
+  left: 46%;
+  width: 40%;
+  max-width: 142px;
+}
+
+/* ------------------------------------------------- the playground field */
+
+.pk-field-of-play {
+  position: relative;
+  height: 280px;
+  border-radius: var(--radius-room);
+  border: var(--stroke-line) solid var(--edge);
+  background: var(--sprout-soft);
+  box-shadow: var(--shadow-sticker);
+  overflow: hidden;
+}
+.pk-field-of-play__ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 72px;
+  background: var(--surface-sunk);
+  border-top: var(--stroke-line) solid var(--edge);
+}
+.pk-field-of-play__racer {
+  position: absolute;
+  bottom: 40px;
+}
+
+/* A recessed square holding an icon, used as a card's leading mark. */
+.pk-glyph {
+  display: inline-flex;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-well);
+  color: var(--ink-soft);
+  flex: none;
+}
+
+/* Pet and item grids: two columns on a phone, four at 1200px. A collection
+   should look like a shelf, not a table. */
+.pk-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.pk-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
 }

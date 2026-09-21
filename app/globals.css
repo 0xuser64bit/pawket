@@ -1634,6 +1634,7 @@ summary:focus-visible,
 }
 
 .pk-ack {
+  position: relative;
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
@@ -1652,11 +1653,16 @@ summary:focus-visible,
   color: var(--ink);
   background: var(--paper);
 }
+/* The real control sits over the drawn box, so the hit target is the box. */
 .pk-ack input {
   position: absolute;
+  left: 0;
+  top: calc(var(--space-3) + 1px);
+  width: 18px;
+  height: 18px;
+  margin: 0;
   opacity: 0;
-  width: 0;
-  height: 0;
+  cursor: pointer;
 }
 .pk-ack input:focus-visible + .pk-ack__box {
   outline: var(--stroke-line) solid var(--focus);

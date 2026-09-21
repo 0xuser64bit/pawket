@@ -10,9 +10,14 @@ Pawket is a **web-first** living companion on Solana. A player connects a
 Wallet Standard wallet in the browser, adopts a companion, and cares for it
 (feed / play / groom / rest). Devnet by default.
 
-**Current truth:** the landing page is the whole UI. The care loop, wallet
-flows, and send paths live in `src/lib/` (tested, working) but no product
-surfaces are rendered — do not claim the app exists beyond the landing.
+**Current truth:** the product surfaces exist and are built from the Pawket
+design system (`docs/DESIGN.md`), but only one flow is real. `/adopt` writes a
+wallet-free guest pet through `src/lib/guest/` + `src/lib/game/`, and Home runs
+that pet's care loop for real. Every other screen — market, playground,
+inventory, guilds, treasury, quotes — renders fixtures from `src/lib/demo/` and
+says so on the screen. Wallet flows and send paths still live in `src/lib/`
+only. Do not claim anything beyond that, and never describe a fixture as
+on-chain, owned or confirmed.
 
 ## Read first
 
@@ -49,6 +54,8 @@ One home per fact. If two files disagree, the left column wins.
 | Env names and defaults            | `.env.example` + `src/config/env.ts`|
 | Server-only env (guarded)         | `src/config/server-env.ts`          |
 | Routes                            | `app/`                              |
+| Design system (tokens, components)| `app/globals.css` + `src/components/pk/` |
+| Demo fixtures (not real data)     | `src/lib/demo/`                     |
 | Target architecture (M3–M6)       | `docs/ARCHITECTURE-TARGET.md`       |
 | Domain types, state machines      | `docs/DOMAIN-MODEL.md`              |
 | Route IA + Server/Client split    | `docs/ROUTES.md`                    |

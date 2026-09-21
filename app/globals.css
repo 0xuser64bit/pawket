@@ -1616,3 +1616,57 @@ summary:focus-visible,
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
 }
+
+/* ------------------------------------- the boundary lists and the ack box
+
+   Can and cannot, checks in pool and crosses in alarm, each line short
+   enough to remember. This is the screen support points at. */
+
+.pk-bounds li {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+}
+.pk-bounds__mark {
+  flex: none;
+  width: 16px;
+  font-weight: 700;
+}
+
+.pk-ack {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) 0;
+  cursor: pointer;
+}
+.pk-ack__box {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: var(--stroke-line) solid var(--ink);
+  border-radius: 2px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  background: var(--paper);
+}
+.pk-ack input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.pk-ack input:focus-visible + .pk-ack__box {
+  outline: var(--stroke-line) solid var(--focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 calc(var(--stroke-line) * 2 + 2px) var(--focus-contrast);
+}
+
+/* A numbered disclosure line: the figure is mono, the sentence is not. */
+.pk-numbered li {
+  display: flex;
+  gap: var(--space-3);
+  padding: 5px 0;
+}

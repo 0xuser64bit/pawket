@@ -1,48 +1,1499 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   Pawket design system.
+
+   Tokens first, then the two registers. Playroom is the game; Paper is
+   anything that costs money or states a fact. A call to action never wears
+   Paper, and a number that costs money never wears Playroom.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------- tokens */
+
 :root {
+  color-scheme: light;
+
+  /* grounds and surfaces — Daylight */
+  --ground: #f6efe2;
+  --surface: #fffbf3;
+  --surface-sunk: #ece2d1;
+  --surface-ink: #2a1e14;
+  --paper: #f7f7f4;
+  --paper-sunk: #ecece7;
+  --rule: #85816f;
+
+  /* ink */
+  --ink: #2a1e14;
+  --ink-soft: #61513f;
+  --ink-faint: #6f5f4a;
+  --ink-inverse: #fff8ec;
+  --edge: #2a1e14;
+  --edge-soft: #ded1bb;
+
+  /* sun — act */
+  --sun: #ff8a3d;
+  --sun-edge: #b8500f;
+  --sun-text: #9e4409;
+  --sun-soft: #ffe4cd;
+
+  /* sprout — grow */
+  --sprout: #63b655;
+  --sprout-edge: #3a7a31;
+  --sprout-text: #2c6a25;
+  --sprout-soft: #dcefd3;
+
+  /* pool — people and settled things */
+  --pool: #7ba4ec;
+  --pool-edge: #3a63ad;
+  --pool-text: #2a5599;
+  --pool-soft: #dfe8fb;
+
+  /* bloom — the guild layer and nothing else */
+  --bloom: #b8407a;
+  --bloom-edge: #7c2650;
+  --bloom-text: #96305f;
+  --bloom-soft: #f9dde9;
+
+  /* alarm — risk, failure, stop */
+  --alarm: #d13a1f;
+  --alarm-edge: #8f2412;
+  --alarm-text: #a32a14;
+  --alarm-soft: #fbdcd4;
+
+  /* type and outlines on a filled control */
+  --on-sun: #2a1e14;
+  --on-sprout: #2a1e14;
+  --on-pool: #2a1e14;
+  --on-bloom: #fff8ec;
+  --on-alarm: #fff8ec;
+
+  /* focus is two bands, always drawn together */
+  --focus: #12306e;
+  --focus-contrast: #fff8ec;
+
+  /* rarity is a material, never a glow */
+  --trim-cloth: #8c7a60;
+  --trim-copper: #a45f2a;
+  --trim-glass: #2d8296;
+  --trim-foil: #95761a;
+
+  /* depth is offset and outline, never blur — except a sheet */
+  --shadow-sticker: 3px 3px 0 #2a1e14;
+  --shadow-sticker-sm: 2px 2px 0 #2a1e14;
+  --shadow-lift: 0 20px 44px -16px rgba(42, 30, 20, 0.35);
+  --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
+
+  /* 4px-based spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --space-9: 64px;
+  --space-10: 96px;
+
+  /* radius carries the register, so it is never chosen for looks */
+  --radius-paper: 4px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-pocket: 28px;
+  --radius-room: 40px;
+  --radius-pill: 999px;
+
+  /* three stroke weights and no others */
+  --stroke-hair: 1px;
+  --stroke-line: 2px;
+  --stroke-shelf: 3px;
+  --stroke-trim: 4px;
+
+  --opacity-disabled: 0.45;
+  --opacity-scrim: 0.72;
+  --opacity-press: 0.9;
+}
+
+/* Lamplight is the same room after dark, not a re-skin: warm near-black
+   ground, light edge outlines, every hue lightened so it takes dark on- ink. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --ground: #17120e;
+    --surface: #241d16;
+    --surface-sunk: #0f0b08;
+    --surface-ink: #efe2cf;
+    --paper: #1a1a19;
+    --paper-sunk: #121211;
+    --rule: #78746a;
+
+    --ink: #f6ebda;
+    --ink-soft: #c6b5a1;
+    --ink-faint: #a08f7c;
+    --ink-inverse: #1a130d;
+    --edge: #efe2cf;
+    --edge-soft: #3d3127;
+
+    --sun: #ff9a52;
+    --sun-edge: #a8460b;
+    --sun-text: #ffb079;
+    --sun-soft: #3a2317;
+
+    --sprout: #79c96b;
+    --sprout-edge: #2f6427;
+    --sprout-text: #96d98a;
+    --sprout-soft: #22331d;
+
+    --pool: #93b6f5;
+    --pool-edge: #2f538f;
+    --pool-text: #a9c6ff;
+    --pool-soft: #1d2738;
+
+    --bloom: #e56ba4;
+    --bloom-edge: #8a2d5a;
+    --bloom-text: #f08bb8;
+    --bloom-soft: #331c27;
+
+    --alarm: #f4644a;
+    --alarm-edge: #932412;
+    --alarm-text: #ff8a70;
+    --alarm-soft: #3a1a13;
+
+    --on-sun: #1a130d;
+    --on-sprout: #1a130d;
+    --on-pool: #1a130d;
+    --on-bloom: #1a130d;
+    --on-alarm: #1a130d;
+
+    --focus: #a7c6ff;
+    --focus-contrast: #17120e;
+
+    --trim-cloth: #c0ab8b;
+    --trim-copper: #d08a4e;
+    --trim-glass: #63c0d4;
+    --trim-foil: #d8b43e;
+
+    --shadow-sticker: 3px 3px 0 #0b0806;
+    --shadow-sticker-sm: 2px 2px 0 #0b0806;
+    --shadow-lift: 0 20px 44px -16px rgba(0, 0, 0, 0.72);
+    --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
+  }
+}
+
+:root[data-theme="dark"] {
   color-scheme: dark;
+
+  --ground: #17120e;
+  --surface: #241d16;
+  --surface-sunk: #0f0b08;
+  --surface-ink: #efe2cf;
+  --paper: #1a1a19;
+  --paper-sunk: #121211;
+  --rule: #78746a;
+
+  --ink: #f6ebda;
+  --ink-soft: #c6b5a1;
+  --ink-faint: #a08f7c;
+  --ink-inverse: #1a130d;
+  --edge: #efe2cf;
+  --edge-soft: #3d3127;
+
+  --sun: #ff9a52;
+  --sun-edge: #a8460b;
+  --sun-text: #ffb079;
+  --sun-soft: #3a2317;
+
+  --sprout: #79c96b;
+  --sprout-edge: #2f6427;
+  --sprout-text: #96d98a;
+  --sprout-soft: #22331d;
+
+  --pool: #93b6f5;
+  --pool-edge: #2f538f;
+  --pool-text: #a9c6ff;
+  --pool-soft: #1d2738;
+
+  --bloom: #e56ba4;
+  --bloom-edge: #8a2d5a;
+  --bloom-text: #f08bb8;
+  --bloom-soft: #331c27;
+
+  --alarm: #f4644a;
+  --alarm-edge: #932412;
+  --alarm-text: #ff8a70;
+  --alarm-soft: #3a1a13;
+
+  --on-sun: #1a130d;
+  --on-sprout: #1a130d;
+  --on-pool: #1a130d;
+  --on-bloom: #1a130d;
+  --on-alarm: #1a130d;
+
+  --focus: #a7c6ff;
+  --focus-contrast: #17120e;
+
+  --trim-cloth: #c0ab8b;
+  --trim-copper: #d08a4e;
+  --trim-glass: #63c0d4;
+  --trim-foil: #d8b43e;
+
+  --shadow-sticker: 3px 3px 0 #0b0806;
+  --shadow-sticker-sm: 2px 2px 0 #0b0806;
+  --shadow-lift: 0 20px 44px -16px rgba(0, 0, 0, 0.72);
+  --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Tailwind reads the same tokens, so a utility can never drift from a token. */
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-sunk: var(--surface-sunk);
+  --color-surface-ink: var(--surface-ink);
+  --color-paper: var(--paper);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-rule: var(--rule);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-inverse: var(--ink-inverse);
+  --color-edge: var(--edge);
+  --color-edge-soft: var(--edge-soft);
+  --color-sun: var(--sun);
+  --color-sun-soft: var(--sun-soft);
+  --color-sun-text: var(--sun-text);
+  --color-sprout: var(--sprout);
+  --color-sprout-soft: var(--sprout-soft);
+  --color-sprout-text: var(--sprout-text);
+  --color-pool: var(--pool);
+  --color-pool-soft: var(--pool-soft);
+  --color-pool-text: var(--pool-text);
+  --color-bloom: var(--bloom);
+  --color-bloom-soft: var(--bloom-soft);
+  --color-bloom-text: var(--bloom-text);
+  --color-alarm: var(--alarm);
+  --color-alarm-soft: var(--alarm-soft);
+  --color-alarm-text: var(--alarm-text);
+  --font-display: var(--font-display);
+  --font-text: var(--font-text);
+  --font-mono: var(--font-mono);
+  --radius-paper: var(--radius-paper);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-pocket: var(--radius-pocket);
+  --radius-room: var(--radius-room);
+}
+
+/* ------------------------------------------------------------------ base */
+
+html {
+  background: var(--ground);
 }
 
 body {
-  background-color: #0b0916;
-  background-image:
-    radial-gradient(52rem 30rem at 50% -8rem, rgba(139, 124, 246, 0.22), transparent 65%),
-    radial-gradient(40rem 26rem at 85% 110%, rgba(252, 211, 77, 0.1), transparent 60%),
-    radial-gradient(36rem 24rem at 8% 100%, rgba(90, 169, 230, 0.1), transparent 60%);
-  background-attachment: fixed;
-  color: #f1f5f9;
-  font-feature-settings: "ss01", "cv11";
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 23px;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: inherit;
+  font-size: inherit;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 ::selection {
-  background: rgba(252, 211, 77, 0.85);
-  color: #0b0916;
+  background: var(--sun);
+  color: var(--on-sun);
 }
 
-:focus-visible {
-  outline: 2px solid rgba(252, 211, 77, 0.9);
+/* ------------------------------------------------------------------ type */
+
+/* Fraunces carries a SOFT and a WONK axis. Display text takes both; the
+   token classes set only size and weight. */
+.display-hero,
+.display-l,
+.display-m,
+.display-s,
+.pk-display {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 64, "WONK" 1;
+}
+.title-l,
+.title,
+.body-lg,
+.body,
+.body-sm,
+.label,
+.caption {
+  font-family: var(--font-text);
+}
+.amount-xl,
+.amount,
+.amount-sm,
+.receipt,
+.receipt-label,
+.addr {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.label,
+.receipt-label {
+  text-transform: uppercase;
+}
+
+.display-hero {
+  font-size: 44px;
+  line-height: 42px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+@media (min-width: 860px) {
+  .display-hero {
+    font-size: 64px;
+    line-height: 58px;
+  }
+}
+.display-l {
+  font-size: 44px;
+  line-height: 42px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.display-m {
+  font-size: 32px;
+  line-height: 34px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.display-s {
+  font-size: 22px;
+  line-height: 26px;
+  font-weight: 600;
+}
+.title-l {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.title {
+  font-size: 19px;
+  line-height: 25px;
+  font-weight: 650;
+}
+.body-lg {
+  font-size: 17px;
+  line-height: 27px;
+  font-weight: 400;
+}
+.body {
+  font-size: 15px;
+  line-height: 23px;
+  font-weight: 400;
+}
+.body-sm {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.label {
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.caption {
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 400;
+}
+.amount-xl {
+  font-size: 30px;
+  line-height: 32px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.amount {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 500;
+}
+.amount-sm {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.receipt {
+  font-size: 12px;
+  line-height: 19px;
+  font-weight: 400;
+}
+.receipt-label {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+.addr {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.pk-muted {
+  color: var(--ink-soft);
+}
+.pk-faint {
+  color: var(--ink-faint);
+}
+
+/* -------------------------------------------------------- layout helpers */
+
+.pk-stack {
+  display: flex;
+  flex-direction: column;
+}
+.pk-row {
+  display: flex;
+  align-items: center;
+}
+.pk-grid {
+  display: grid;
+}
+.pk-spread {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.pk-fill {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pk-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pk-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* -------------------------------------------------------- the two registers */
+
+.pk-paper {
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--stroke-hair) solid var(--rule);
+  border-radius: var(--radius-paper);
+}
+.pk-paper__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--stroke-hair) dashed var(--rule);
+  color: var(--ink-faint);
+}
+.pk-paper__body {
+  padding: var(--space-4);
+}
+.pk-paper__foot {
+  padding: var(--space-3) var(--space-4);
+  border-top: var(--stroke-hair) solid var(--rule);
+  background: var(--paper-sunk);
+}
+/* the torn bottom edge of a disclosure */
+.pk-tear {
+  height: 8px;
+  background:
+    linear-gradient(135deg, var(--paper) 50%, transparent 50%) 0 0 / 12px 8px repeat-x,
+    linear-gradient(-135deg, var(--paper) 50%, transparent 50%) 6px 0 / 12px 8px repeat-x;
+  filter: drop-shadow(0 1px 0 var(--rule));
+}
+
+/* ------------------------------------------------------ card (Playroom) */
+
+.pk-card {
+  background: var(--surface);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sticker);
+  padding: var(--space-5);
+}
+.pk-card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+.pk-card--room {
+  border-radius: var(--radius-room);
+  padding: var(--space-6);
+}
+.pk-card--ink {
+  background: var(--surface-ink);
+  color: var(--ink-inverse);
+  border-color: var(--edge);
+}
+.pk-card--ink .pk-muted {
+  color: var(--ink-inverse);
+  opacity: 0.72;
+}
+.pk-card--quiet {
+  box-shadow: none;
+}
+.pk-well {
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-well);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+/* ------------------------------------------------ button: face and shelf */
+
+.pk-btn {
+  --pk-face: var(--sun);
+  --pk-shelf: var(--sun-edge);
+  --pk-on: var(--on-sun);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 11px var(--space-5);
+  border: var(--stroke-line) solid var(--pk-on);
+  border-bottom-width: calc(var(--stroke-line) + var(--stroke-shelf));
+  border-bottom-color: var(--pk-shelf);
+  border-radius: var(--radius-md);
+  background: var(--pk-face);
+  color: var(--pk-on);
+  font-family: var(--font-text);
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    transform 90ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    border-bottom-width 90ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.pk-btn:hover {
+  transform: translateY(-1px);
+  border-bottom-width: calc(var(--stroke-line) + var(--stroke-shelf) + 1px);
+}
+.pk-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: var(--stroke-line);
+}
+.pk-btn--lg {
+  padding: 15px var(--space-6);
+  font-size: 13px;
+}
+.pk-btn--sm {
+  padding: 7px var(--space-3);
+  font-size: 11px;
+}
+.pk-btn--full {
+  display: flex;
+  width: 100%;
+}
+.pk-btn--sprout {
+  --pk-face: var(--sprout);
+  --pk-shelf: var(--sprout-edge);
+  --pk-on: var(--on-sprout);
+}
+.pk-btn--pool {
+  --pk-face: var(--pool);
+  --pk-shelf: var(--pool-edge);
+  --pk-on: var(--on-pool);
+}
+.pk-btn--bloom {
+  --pk-face: var(--bloom);
+  --pk-shelf: var(--bloom-edge);
+  --pk-on: var(--on-bloom);
+}
+.pk-btn--alarm {
+  --pk-face: var(--alarm);
+  --pk-shelf: var(--alarm-edge);
+  --pk-on: var(--on-alarm);
+}
+/* quiet: the Playroom's secondary — outline and shelf, no hue */
+.pk-btn--quiet {
+  --pk-face: var(--surface);
+  --pk-shelf: var(--edge-soft);
+  --pk-on: var(--ink);
+  border-color: var(--edge);
+}
+/* ghost: no box at all; only for tertiary actions inside a card */
+.pk-btn--ghost {
+  background: transparent;
+  border: 0;
+  padding: 7px var(--space-2);
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pk-btn--ghost:hover,
+.pk-btn--ghost:active {
+  transform: none;
+}
+/* paper: the only button allowed on a Paper surface. Square, no shelf, and
+   deliberately unsatisfying to press. */
+.pk-btn--paper {
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--stroke-hair) solid var(--rule);
+  border-radius: var(--radius-paper);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  font-size: 12px;
+  padding: 10px var(--space-4);
+  text-transform: none;
+}
+.pk-btn--paper:hover {
+  transform: none;
+  background: var(--paper-sunk);
+  border-bottom-width: var(--stroke-hair);
+}
+.pk-btn--paper:active {
+  transform: none;
+  border-bottom-width: var(--stroke-hair);
+}
+.pk-btn[disabled],
+.pk-btn[aria-disabled="true"],
+.pk-btn--off {
+  opacity: var(--opacity-disabled);
+  pointer-events: none;
+}
+
+/* ------------------------------- focus: two bands, so the ring survives
+   both a cream ground and surface-ink */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: var(--stroke-line) solid var(--focus);
   outline-offset: 2px;
-  border-radius: 4px;
+  box-shadow: 0 0 0 calc(var(--stroke-line) * 2 + 2px) var(--focus-contrast);
 }
 
-/* Signature moment: the chamber glows like a nightlight. */
-@keyframes den-breathe {
+/* ------------------------------------------------------------------ chip */
+
+.pk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 5px var(--space-3) 5px var(--space-2);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pk-chip--sun {
+  background: var(--sun-soft);
+  border-color: var(--sun-text);
+  color: var(--sun-text);
+}
+.pk-chip--sprout {
+  background: var(--sprout-soft);
+  border-color: var(--sprout-text);
+  color: var(--sprout-text);
+}
+.pk-chip--pool {
+  background: var(--pool-soft);
+  border-color: var(--pool-text);
+  color: var(--pool-text);
+}
+.pk-chip--bloom {
+  background: var(--bloom-soft);
+  border-color: var(--bloom-text);
+  color: var(--bloom-text);
+}
+.pk-chip--alarm {
+  background: var(--alarm-soft);
+  border-color: var(--alarm-text);
+  color: var(--alarm-text);
+}
+.pk-chip--plain {
+  background: transparent;
+  border-color: var(--edge-soft);
+  color: var(--ink-soft);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-size: 13px;
+}
+.pk-chip--paper {
+  background: var(--paper);
+  border: var(--stroke-hair) solid var(--rule);
+  border-radius: var(--radius-paper);
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+/* a chip that is really a filter control */
+.pk-chip--press {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* ------------------------------------------------ pet frame: the pocket */
+
+.pk-pet {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.pk-pet__frame {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pocket);
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-sticker);
+  overflow: hidden;
+}
+.pk-pet--sm .pk-pet__frame {
+  width: 104px;
+  height: 104px;
+  border-radius: var(--radius-lg);
+}
+.pk-pet--lg .pk-pet__frame {
+  width: 240px;
+  height: 240px;
+  border-radius: var(--radius-room);
+}
+.pk-pet--fluid,
+.pk-pet--fluid .pk-pet__frame {
+  width: 100%;
+}
+.pk-pet--fluid .pk-pet__frame {
+  height: auto;
+  aspect-ratio: 1;
+}
+.pk-pet__sky {
+  position: absolute;
+  inset: 0;
+}
+.pk-pet__art {
+  position: absolute;
+  inset: 0;
+}
+.pk-pet__art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pk-pet__trim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: var(--stroke-trim);
+  background: var(--trim-cloth);
+}
+.pk-pet--copper .pk-pet__trim {
+  background: var(--trim-copper);
+}
+.pk-pet--glass .pk-pet__trim {
+  background: var(--trim-glass);
+}
+.pk-pet--foil .pk-pet__trim {
+  background: var(--trim-foil);
+}
+.pk-pet__level {
+  position: absolute;
+  right: var(--space-2);
+  top: var(--space-3);
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border: var(--stroke-line) solid var(--on-sprout);
+  border-radius: var(--radius-pill);
+  background: var(--sprout);
+  color: var(--on-sprout);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+.pk-pet__mood {
+  position: absolute;
+  left: var(--space-2);
+  top: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: var(--stroke-line) solid var(--edge);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pk-pet__name {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 64, "WONK" 1;
+  font-size: 22px;
+  line-height: 26px;
+  font-weight: 600;
+}
+.pk-breathe {
+  animation: pk-breathe 3.6s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+@keyframes pk-breathe {
   0%,
   100% {
     transform: scale(1);
-    filter: drop-shadow(0 0 18px rgba(252, 211, 77, 0.25));
   }
   50% {
-    transform: scale(1.03);
-    filter: drop-shadow(0 0 30px rgba(252, 211, 77, 0.4));
+    transform: scale(1.035, 0.975);
   }
 }
 
-.animate-breathe {
-  animation: den-breathe 5s ease-in-out infinite;
+/* ------------------------------ meter: countable, never a smooth bar */
+
+.pk-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pk-meter__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.pk-meter__name {
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.pk-meter__count {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.pk-meter__track {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-well);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-sm);
+}
+.pk-meter__seg {
+  height: 12px;
+  flex: 1 1 0;
+  border-radius: 2px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--edge-soft);
+}
+.pk-meter__seg--on {
+  background: var(--sprout);
+  box-shadow: inset 0 0 0 1px var(--sprout-edge);
+}
+.pk-meter--sun .pk-meter__seg--on {
+  background: var(--sun);
+  box-shadow: inset 0 0 0 1px var(--sun-edge);
+}
+.pk-meter--pool .pk-meter__seg--on {
+  background: var(--pool);
+  box-shadow: inset 0 0 0 1px var(--pool-edge);
+}
+.pk-meter--bloom .pk-meter__seg--on {
+  background: var(--bloom);
+  box-shadow: inset 0 0 0 1px var(--bloom-edge);
+}
+.pk-meter--neutral .pk-meter__seg--on {
+  background: var(--ink-faint);
+  box-shadow: inset 0 0 0 1px var(--ink-soft);
+}
+.pk-meter--slim .pk-meter__seg {
+  height: 8px;
 }
 
+/* ------------------------------------------------------------- nav dock */
+
+.pk-dock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--surface);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-dock__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 9px var(--space-4);
+  border-radius: var(--radius-pill);
+  color: var(--ink-soft);
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: var(--stroke-line) solid transparent;
+}
+.pk-dock__item:hover {
+  color: var(--ink);
+  background: var(--surface-sunk);
+}
+.pk-dock__item--on {
+  background: var(--sun-soft);
+  color: var(--sun-text);
+  border-color: var(--sun-text);
+}
+/* Guilds is the one slot that changes hue when active: the colour under a
+   player's thumb says which layer they are standing in. */
+.pk-dock__item--guild.pk-dock__item--on {
+  background: var(--bloom-soft);
+  color: var(--bloom-text);
+  border-color: var(--bloom-text);
+}
+.pk-dock__label--hide {
+  display: none;
+}
+@media (min-width: 560px) {
+  .pk-dock__label--hide {
+    display: inline;
+  }
+}
+
+/* ------------------------------------------------------------------ tabs */
+
+.pk-tabs {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: 4px;
+  background: var(--surface-sunk);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pk-tabs::-webkit-scrollbar {
+  display: none;
+}
+.pk-tabs__t {
+  padding: 7px var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  border: var(--stroke-line) solid transparent;
+}
+.pk-tabs__t--on {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sticker-sm);
+  border-color: var(--edge);
+  padding: 5px calc(var(--space-4) - 2px);
+}
+
+/* ----------------------------------------------------------------- field */
+
+.pk-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-4);
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-well);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  color: var(--ink-faint);
+}
+.pk-field:focus-within {
+  outline: var(--stroke-line) solid var(--focus);
+  outline-offset: 2px;
+  box-shadow:
+    var(--shadow-well),
+    0 0 0 calc(var(--stroke-line) * 2 + 2px) var(--focus-contrast);
+}
+.pk-field__input {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 23px;
+}
+.pk-field__input::placeholder {
+  color: var(--ink-faint);
+}
+.pk-field__input--amount {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.pk-field--error {
+  border-color: var(--alarm-text);
+}
+
+/* ------------------------------------------------------------- item tile */
+
+.pk-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  width: 132px;
+  background: var(--surface);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-tile__art {
+  height: 84px;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-well);
+  color: var(--ink-soft);
+}
+.pk-tile__art svg {
+  width: 56%;
+  height: auto;
+}
+.pk-tile__trim {
+  height: var(--stroke-trim);
+  border-radius: var(--radius-pill);
+  background: var(--trim-cloth);
+}
+.pk-tile--copper .pk-tile__trim {
+  background: var(--trim-copper);
+}
+.pk-tile--glass .pk-tile__trim {
+  background: var(--trim-glass);
+}
+.pk-tile--foil .pk-tile__trim {
+  background: var(--trim-foil);
+}
+.pk-tile__name {
+  font-size: 13px;
+  line-height: 17px;
+  font-weight: 650;
+}
+.pk-tile__on {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+}
+
+/* --------------------------------------------------------------- receipt */
+
+.pk-receipt {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 19px;
+}
+.pk-receipt__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 3px 0;
+}
+.pk-receipt__k {
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+}
+.pk-receipt__v {
+  color: var(--ink);
+  text-align: right;
+}
+.pk-receipt__rule {
+  border-top: var(--stroke-hair) dashed var(--rule);
+  margin: var(--space-3) 0;
+}
+.pk-receipt__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+}
+.pk-receipt__total .pk-receipt__v {
+  font-size: 18px;
+  font-weight: 500;
+}
+.pk-receipt__warn {
+  color: var(--alarm-text);
+}
+.pk-receipt__ok {
+  color: var(--pool-text);
+}
+
+/* --------------------------------------------------------------- banners */
+
+.pk-banner {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+  border: var(--stroke-hair) solid var(--rule);
+  border-radius: var(--radius-paper);
+  background: var(--paper);
+}
+.pk-banner__icon {
+  flex: none;
+  margin-top: 1px;
+}
+.pk-banner__title {
+  font-family: var(--font-text);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 700;
+}
+.pk-banner__body {
+  font-family: var(--font-text);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-soft);
+}
+.pk-banner--risk {
+  background: var(--alarm-soft);
+  border-color: var(--alarm-text);
+  border-left-width: var(--stroke-shelf);
+}
+.pk-banner--risk .pk-banner__title {
+  color: var(--alarm-text);
+}
+/* Waiting has no hue: informed, not reassured and not alarmed. */
+.pk-banner--wait {
+  background: var(--paper-sunk);
+  border-color: var(--rule);
+}
+.pk-banner--done {
+  background: var(--pool-soft);
+  border-color: var(--pool-text);
+}
+.pk-banner--done .pk-banner__title {
+  color: var(--pool-text);
+}
+.pk-banner--guild {
+  background: var(--bloom-soft);
+  border-color: var(--bloom-text);
+}
+
+/* ---------------------------------------------------------------- guild */
+
+.pk-guild {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-crest {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: var(--stroke-line) solid var(--on-bloom);
+  border-radius: var(--radius-sm) var(--radius-sm) 44% 44%;
+  background: var(--bloom);
+  color: var(--on-bloom);
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 64, "WONK" 1;
+  font-size: 22px;
+  font-weight: 600;
+}
+.pk-crest--sm {
+  width: 34px;
+  height: 34px;
+  font-size: 15px;
+  border-radius: 6px 6px 44% 44%;
+}
+.pk-official {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--pool-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pk-unofficial {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ------------------------ launch readout: Paper, never a price chart */
+
+.pk-launch {
+  font-family: var(--font-mono);
+}
+.pk-launch__stage {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.pk-launch__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--ink-faint);
+  flex: none;
+}
+.pk-launch__dot--live {
+  background: var(--bloom);
+}
+.pk-launch__dot--wait {
+  background: var(--ink-faint);
+}
+.pk-launch__dot--active {
+  background: var(--pool);
+}
+.pk-launch__dot--stop {
+  background: var(--alarm);
+}
+
+/* -------------------------------------------------------------- presence */
+
+.pk-presence {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.pk-presence__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--pool);
+  box-shadow: 0 0 0 2px var(--pool-edge);
+  flex: none;
+}
+.pk-presence__dot--away {
+  background: var(--surface-sunk);
+  box-shadow: 0 0 0 2px var(--ink-faint);
+}
+
+/* ---------------------------------------------------------- empty state */
+
+.pk-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+}
+.pk-empty__art {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border: var(--stroke-line) dashed var(--edge-soft);
+  border-radius: var(--radius-pocket);
+  color: var(--ink-faint);
+}
+
+/* ---------------------------------------------------------------- mark */
+
+.pk-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink);
+  text-decoration: none;
+}
+.pk-mark__name {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 64, "WONK" 1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* --------------------------------------------------------- app scaffolding */
+
+/* Pawket is a phone product — the name is the brief. Screens are designed
+   at 390px with space-5 gutters; wider viewports centre the same column. */
+.pk-screen {
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+  /* 96px of clearance so the last card never sits under the dock */
+  padding-bottom: var(--space-10);
+}
+.pk-screen--wide {
+  max-width: 720px;
+}
+.pk-screen__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0 var(--space-2);
+}
+.pk-sky {
+  background: var(--pool-soft);
+}
+.pk-sky--warm {
+  background: var(--sun-soft);
+}
+.pk-sky--plain {
+  background: var(--surface-sunk);
+}
+
+.pk-dockbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 20;
+}
+.pk-dockbar > * {
+  pointer-events: auto;
+  max-width: calc(100vw - var(--space-6));
+}
+
+/* A sheet is the only thing in Pawket allowed to float, and shadow-lift is
+   the only blurred shadow. The dock sits behind the scrim, not above it. */
+.pk-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: color-mix(in srgb, var(--ground) 72%, transparent);
+  animation: pk-fade 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.pk-sheet {
+  width: 100%;
+  max-width: 460px;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--stroke-hair) solid var(--rule);
+  border-bottom: 0;
+  border-radius: var(--radius-paper) var(--radius-paper) 0 0;
+  box-shadow: var(--shadow-lift);
+  animation: pk-rise 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+@keyframes pk-rise {
+  from {
+    transform: translateY(24px);
+  }
+}
+@keyframes pk-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The landing page: 1200px, bands at space-9, gutters at 72px. */
+.pk-band {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+}
+@media (min-width: 900px) {
+  .pk-band {
+    padding: 0 72px;
+  }
+}
+
+/* Motion is decorative everywhere it appears. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

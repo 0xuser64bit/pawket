@@ -11,7 +11,8 @@ import { truncateAddress } from "@/lib/utils/format";
 export function NetworkBadge() {
   const env = getPublicEnv();
   return (
-    <p className="pk-chip pk-chip--paper" style={{ gap: "var(--space-2)" }}>
+    // The one chip long enough to need a second line on a small phone.
+    <p className="pk-chip pk-chip--paper" style={{ gap: "var(--space-2)", flexWrap: "wrap", whiteSpace: "normal" }}>
       <span
         aria-hidden="true"
         style={{

@@ -666,8 +666,13 @@ li {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  /* a label never breaks, and a ticking countdown never changes its width */
-  white-space: nowrap;
+  /* A button is never squeezed by the words beside it, and only breaks its
+     label when the label is longer than the whole column; a ticking
+     countdown never changes its width. */
+  flex-shrink: 0;
+  max-width: 100%;
+  text-align: center;
+  text-wrap: balance;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   text-decoration: none;
@@ -2488,7 +2493,8 @@ li {
   gap: var(--space-3) var(--space-5);
 }
 
-/* At phone width four tabs share the trough rather than scrolling off it. */
+/* At phone width four tabs share the trough rather than scrolling off it,
+   and on the smallest phones they sit two by two. */
 @media (max-width: 479px) {
   .pk-tabs {
     display: flex;
@@ -2496,8 +2502,15 @@ li {
   }
   .pk-tabs__t {
     flex: 1 1 auto;
-    padding: 7px var(--space-2);
+    padding: 7px 6px;
     text-align: center;
+    letter-spacing: 0.05em;
+  }
+}
+@media (max-width: 359px) {
+  .pk-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

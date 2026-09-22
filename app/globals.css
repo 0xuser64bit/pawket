@@ -113,6 +113,14 @@
   --opacity-disabled: 0.45;
   --opacity-scrim: 0.72;
   --opacity-press: 0.9;
+
+  /* a pressable control moves on this curve; a sheet rises over 220ms */
+  --ease-press: cubic-bezier(0.2, 0.9, 0.3, 1);
+  --dur-press: 90ms;
+  --dur-sheet: 220ms;
+
+  /* the focus ring: 2px focus at 2px offset, focus-contrast outside it */
+  --focus-ring: calc(var(--stroke-line) * 2 + 2px);
 }
 
 /* Lamplight is the same room after dark, not a re-skin: warm near-black
@@ -286,14 +294,16 @@
   --radius-room: var(--radius-room);
 }
 
-/* ------------------------------------------------------------------ base */
+/* ------------------------------------------------------------------ base
+
+   Tailwind's preflight already zeroes margins, sets border-box and strips
+   list and heading styles; only what it does not do lives here. */
 
 html {
   background: var(--ground);
 }
 
 body {
-  margin: 0;
   background: var(--ground);
   color: var(--ink);
   font-family: var(--font-text);
@@ -304,30 +314,16 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-p {
-  margin: 0;
-}
-
+/* A headline never leaves one word on its last line, and a paragraph
+   avoids a lone word where it can. */
 h1,
 h2,
-h3,
-h4 {
-  margin: 0;
-  font-weight: inherit;
-  font-size: inherit;
+h3 {
+  text-wrap: balance;
 }
-
-ul,
-ol {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+p,
+li {
+  text-wrap: pretty;
 }
 
 ::selection {
@@ -573,7 +569,10 @@ ol {
   color: var(--ink-inverse);
   border-color: var(--edge);
 }
-.pk-card--ink .pk-muted {
+/* On surface-ink only ink-inverse reads, so secondary copy dims it rather
+   than reaching for ink-soft or ink-faint, which vanish there. */
+.pk-card--ink .pk-muted,
+.pk-card--ink .pk-faint {
   color: var(--ink-inverse);
   opacity: 0.72;
 }
@@ -611,19 +610,30 @@ ol {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  /* a label never breaks, and a ticking countdown never changes its width */
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
   text-decoration: none;
   transition:
-    transform 90ms cubic-bezier(0.2, 0.9, 0.3, 1),
-    border-bottom-width 90ms cubic-bezier(0.2, 0.9, 0.3, 1);
+    transform var(--dur-press) var(--ease-press),
+    border-bottom-width var(--dur-press) var(--ease-press),
+    margin-bottom var(--dur-press) var(--ease-press);
 }
-.pk-btn:hover {
-  transform: translateY(-1px);
-  border-bottom-width: calc(var(--stroke-line) + var(--stroke-shelf) + 1px);
+/* The shelf is what makes a control read as an object. Pressing it moves
+   the face, never the page: whatever the shelf gains or loses, the bottom
+   margin gives back, so nothing below the button shifts. */
+@media (hover: hover) {
+  .pk-btn:not(.pk-btn--paper, .pk-btn--ghost):hover {
+    transform: translateY(-1px);
+    border-bottom-width: calc(var(--stroke-line) + var(--stroke-shelf) + 1px);
+    margin-bottom: -1px;
+  }
 }
-.pk-btn:active {
-  transform: translateY(2px);
+.pk-btn:not(.pk-btn--paper, .pk-btn--ghost):active {
+  transform: translateY(var(--stroke-shelf));
   border-bottom-width: var(--stroke-line);
+  margin-bottom: var(--stroke-shelf);
 }
 .pk-btn--lg {
   padding: 15px var(--space-6);
@@ -673,9 +683,10 @@ ol {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.pk-btn--ghost:hover,
-.pk-btn--ghost:active {
-  transform: none;
+@media (hover: hover) {
+  .pk-btn--ghost:hover {
+    text-decoration-thickness: 2px;
+  }
 }
 /* paper: the only button allowed on a Paper surface. Square, no shelf, and
    deliberately unsatisfying to press. */
@@ -691,35 +702,29 @@ ol {
   padding: 10px var(--space-4);
   text-transform: none;
 }
-.pk-btn--paper:hover {
-  transform: none;
-  background: var(--paper-sunk);
-  border-bottom-width: var(--stroke-hair);
+@media (hover: hover) {
+  .pk-btn--paper:hover {
+    background: var(--paper-sunk);
+  }
 }
-.pk-btn--paper:active {
-  transform: none;
-  border-bottom-width: var(--stroke-hair);
+/* The drawn size stays the design's; a finger gets a 44px target. */
+@media (pointer: coarse) {
+  .pk-btn--sm::after,
+  .pk-btn--ghost::after,
+  .pk-btn--paper::after {
+    content: "";
+    position: absolute;
+    inset: -6px 0;
+  }
+  .pk-btn--ghost::after {
+    inset: -8px 0;
+  }
 }
 .pk-btn[disabled],
 .pk-btn[aria-disabled="true"],
 .pk-btn--off {
   opacity: var(--opacity-disabled);
   pointer-events: none;
-}
-
-/* ------------------------------- focus: two bands, so the ring survives
-   both a cream ground and surface-ink */
-
-a:focus-visible,
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-summary:focus-visible,
-[tabindex]:focus-visible {
-  outline: var(--stroke-line) solid var(--focus);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 calc(var(--stroke-line) * 2 + 2px) var(--focus-contrast);
 }
 
 /* ------------------------------------------------------------------ chip */
@@ -738,6 +743,7 @@ summary:focus-visible,
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .pk-chip--sun {
   background: var(--sun-soft);
@@ -784,8 +790,21 @@ summary:focus-visible,
 }
 /* a chip that is really a filter control */
 .pk-chip--press {
+  position: relative;
   cursor: pointer;
   text-decoration: none;
+}
+@media (hover: hover) {
+  .pk-chip--press:not([aria-current]):hover {
+    background: var(--surface-sunk);
+  }
+}
+@media (pointer: coarse) {
+  .pk-chip--press::after {
+    content: "";
+    position: absolute;
+    inset: -7px 0;
+  }
 }
 
 /* ------------------------------------------------ pet frame: the pocket */
@@ -1055,12 +1074,19 @@ summary:focus-visible,
   white-space: nowrap;
   border: var(--stroke-line) solid transparent;
 }
+@media (hover: hover) {
+  .pk-tabs__t:not(.pk-tabs__t--on):hover {
+    color: var(--ink);
+  }
+}
+/* Every tab carries a 2px border already, transparent until it is on, so
+   switching tabs changes elevation and never size. */
 .pk-tabs__t--on {
+  --pk-keep: var(--shadow-sticker-sm);
   background: var(--surface);
   color: var(--ink);
   box-shadow: var(--shadow-sticker-sm);
   border-color: var(--edge);
-  padding: 5px calc(var(--space-4) - 2px);
 }
 
 /* ----------------------------------------------------------------- field */
@@ -1081,7 +1107,7 @@ summary:focus-visible,
   outline-offset: 2px;
   box-shadow:
     var(--shadow-well),
-    0 0 0 calc(var(--stroke-line) * 2 + 2px) var(--focus-contrast);
+    0 0 0 var(--focus-ring) var(--focus-contrast);
 }
 .pk-field__input {
   flex: 1;
@@ -1453,7 +1479,7 @@ summary:focus-visible,
   align-items: flex-end;
   justify-content: center;
   background: color-mix(in srgb, var(--ground) 72%, transparent);
-  animation: pk-fade 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  animation: pk-fade var(--dur-sheet) var(--ease-press);
 }
 .pk-sheet {
   width: 100%;
@@ -1464,7 +1490,7 @@ summary:focus-visible,
   border-bottom: 0;
   border-radius: var(--radius-paper) var(--radius-paper) 0 0;
   box-shadow: var(--shadow-lift);
-  animation: pk-rise 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  animation: pk-rise var(--dur-sheet) var(--ease-press);
 }
 @keyframes pk-rise {
   from {
@@ -1667,7 +1693,7 @@ summary:focus-visible,
 .pk-ack input:focus-visible + .pk-ack__box {
   outline: var(--stroke-line) solid var(--focus);
   outline-offset: 2px;
-  box-shadow: 0 0 0 calc(var(--stroke-line) * 2 + 2px) var(--focus-contrast);
+  box-shadow: 0 0 0 var(--focus-ring) var(--focus-contrast);
 }
 
 /* A numbered disclosure line: the figure is mono, the sentence is not. */
@@ -1825,13 +1851,11 @@ summary:focus-visible,
     padding: 7px var(--space-2);
     text-align: center;
   }
-  .pk-tabs__t--on {
-    padding: 5px calc(var(--space-2) - 2px);
-  }
 }
 
 /* A choice among drawings: the option itself is the control, so selection
-   is an outline in the act hue rather than a second widget. */
+   is a ring in the act hue rather than a second widget. The ring is a
+   shadow, not an outline, so a focused choice shows both at once. */
 .pk-pick {
   background: none;
   border: 0;
@@ -1840,18 +1864,25 @@ summary:focus-visible,
   text-align: left;
   border-radius: var(--radius-lg);
   opacity: 0.68;
+  transition: opacity var(--dur-press) var(--ease-press);
+}
+@media (hover: hover) {
+  .pk-pick:hover {
+    opacity: 1;
+  }
 }
 .pk-pick[aria-pressed="true"] {
+  --pk-keep: 0 0 0 4px var(--ground), 0 0 0 calc(4px + var(--stroke-line)) var(--sun-text);
   opacity: 1;
-  outline: var(--stroke-line) solid var(--sun-text);
-  outline-offset: 4px;
+  box-shadow: var(--pk-keep);
 }
 .pk-pick--flat {
   opacity: 1;
   border-radius: var(--radius-md);
 }
 .pk-pick--flat[aria-pressed="true"] {
-  outline: 0;
+  --pk-keep: 0 0 transparent;
+  box-shadow: none;
 }
 
 /* ------------------------------------------------------ the paw loader
@@ -1882,7 +1913,7 @@ summary:focus-visible,
   top: 18%;
   bottom: 13%;
   opacity: 0;
-  animation: pk-paw-cycle 4.48s cubic-bezier(0.2, 0.9, 0.3, 1) infinite both;
+  animation: pk-paw-cycle 4.48s var(--ease-press) infinite both;
 }
 .pk-paw-loader__paw svg {
   width: 100%;
@@ -1931,4 +1962,24 @@ summary:focus-visible,
   .pk-paw-loader__paw--first {
     opacity: 1;
   }
+}
+
+/* ---------------------------------------------- focus: two bands, drawn last
+
+   2px of focus at a 2px offset with focus-contrast outside it, so the ring
+   survives both a cream ground and surface-ink. It comes last so it wins
+   over any resting box-shadow; a control that must keep its own shadow
+   under the ring hands it over as --pk-keep. A control that draws its ring
+   on a wrapper (a field) opts out below. */
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--stroke-line) solid var(--focus);
+  outline-offset: 2px;
+  box-shadow:
+    var(--pk-keep, 0 0 transparent),
+    0 0 0 var(--focus-ring) var(--focus-contrast);
+}
+.pk-field__input:focus-visible {
+  outline: 0;
+  box-shadow: none;
 }

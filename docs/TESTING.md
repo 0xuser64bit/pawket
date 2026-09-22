@@ -9,6 +9,7 @@
 | Env / cluster / format / errors| colocated `*.test.ts`                   | Vitest   |
 | Presentational components      | `src/components/*.test.tsx`             | Vitest + Testing Library |
 | Shell + health (no wallet)     | `e2e/smoke.spec.ts`                     | Playwright |
+| Layout: no sideways scroll at 320/375/768, dock placement, sheet as a modal, fixture search | `e2e/layout.spec.ts` | Playwright |
 
 ```sh
 pnpm test       # Vitest, single run
@@ -22,6 +23,8 @@ pnpm verify     # typecheck + lint + test + build
 - Touch PDA/instruction code → lock seeds, account metas (order, role),
   discriminator bytes, and arg encoding in the colocated test.
 - Touch a component → extend its test, or exercise manually and say so.
+- Touch layout → add the screen to `SCREENS` in `e2e/layout.spec.ts` if it
+  is new; the spec fails on any page wider than a 320px phone.
 - Wallet signing flows are verified in the browser (devnet), never in unit
   tests. E2E asserts shell presence, not signatures.
 

@@ -306,6 +306,8 @@ html {
   background: var(--ground);
   /* a page that scrolls and one that does not keep the same width */
   scrollbar-gutter: stable;
+  /* focus and anchors land below the sticky shell bar, not under it */
+  scroll-padding-top: calc(var(--shell-height) + var(--space-3));
 }
 
 body {
@@ -1277,6 +1279,11 @@ li {
 .pk-field__input::placeholder {
   color: var(--ink-faint);
 }
+/* the browser's own search decorations are not Pawket's */
+.pk-field__input::-webkit-search-decoration,
+.pk-field__input::-webkit-search-cancel-button {
+  appearance: none;
+}
 .pk-field__input--amount {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -1751,6 +1758,14 @@ li {
     position: sticky;
     top: calc(var(--shell-height) + var(--space-6));
   }
+}
+
+/* The shape of a scene still on its way: the room's proportions, held
+   still. */
+.pk-loading__scene {
+  aspect-ratio: 335 / 236;
+  max-height: 440px;
+  border-radius: var(--radius-room);
 }
 
 /* A pocket portrait sits centred in whatever column it is given. */

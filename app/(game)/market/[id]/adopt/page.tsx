@@ -38,7 +38,7 @@ export default async function AdoptSheetPage({ params }: { params: Promise<{ id:
     <>
       {/* The listing the player came from, dimmed under the sheet. */}
       <Screen>
-        <BackLink label="Market" href={`/market/${listing.id}`} />
+        <BackLink label="Market" href="/market" />
         <Columns
           split="portrait"
           first={

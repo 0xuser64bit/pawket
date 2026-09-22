@@ -2572,6 +2572,20 @@ li {
   --pk-keep: 0 0 transparent;
   box-shadow: none;
 }
+/* A chip-sized choice and the mark in a bar are drawn small; a finger gets
+   a 44px target all the same. */
+@media (pointer: coarse) {
+  .pk-pick--flat,
+  a.pk-mark {
+    position: relative;
+  }
+  .pk-pick--flat::after,
+  a.pk-mark::after {
+    content: "";
+    position: absolute;
+    inset: -8px -2px;
+  }
+}
 
 /* ------------------------------------------------------ the paw loader
 

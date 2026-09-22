@@ -6,6 +6,7 @@ import {
   ButtonLink,
   Card,
   Chip,
+  Columns,
   Meter,
   Row,
   Stack,
@@ -71,68 +72,79 @@ export function GuestRoom({ fallback }: { fallback: React.ReactNode }) {
   ];
 
   return (
-    <Stack gap={4}>
-      <Room form={form} description={`You and ${pet.name} in the room, window open.`} />
+    <Columns
+      pin
+      first={
+        <>
+          <Room form={form} description={`You and ${pet.name} in the room, window open.`} />
+          <Row gap={2} wrap>
+            <Chip label={MOOD_LABEL[projected.mood]} tone="sun" icon="paw" />
+            <Chip label={SPECIES_LABEL[pet.species]} />
+            <Chip label={`Level ${projected.level}`} tone="sprout" icon="spark" />
+          </Row>
+        </>
+      }
+      second={
+        <>
+          <Card>
+            <div className="pk-spread" style={{ marginBottom: "var(--space-4)" }}>
+              <h2 className="title">Today with {pet.name}</h2>
+              <span className="amount-sm pk-faint">
+                {projected.xpIntoLevel} / {projected.xpForNext} XP
+              </span>
+            </div>
+            <Stack gap={3}>
+              <Vital label="Fullness" value={projected.stats.hunger} />
+              <Vital label="Happiness" value={projected.stats.happiness} />
+              <Vital label="Energy" value={projected.stats.energy} />
+              <Vital label="Coat" value={projected.stats.hygiene} />
+            </Stack>
+            <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
+              An estimate. Vitals drift while you are away, and there is no death — only a pet
+              that misses you.
+            </p>
 
-      <Row gap={2} wrap>
-        <Chip label={MOOD_LABEL[projected.mood]} tone="sun" icon="paw" />
-        <Chip label={SPECIES_LABEL[pet.species]} />
-        <Chip label={`Level ${projected.level}`} tone="sprout" icon="spark" />
-      </Row>
+            <Row gap={2} wrap style={{ marginTop: "var(--space-4)" }}>
+              {actions.map(({ action, label, icon, tone }) => {
+                const left = cooldowns[action];
+                return (
+                  <Button
+                    key={action}
+                    label={label}
+                    meta={left > 0 ? formatCountdown(left) : undefined}
+                    icon={icon}
+                    size="sm"
+                    tone={tone}
+                    disabled={left > 0}
+                    onClick={() => care(action)}
+                  />
+                );
+              })}
+            </Row>
+            {/* Announced, because the buttons above it do not say why they
+                stopped. */}
+            <p
+              role="status"
+              className="body-sm"
+              style={{ color: "var(--alarm-text)", marginTop: notice ? "var(--space-3)" : 0 }}
+            >
+              {notice}
+            </p>
+          </Card>
 
-      <Card>
-        <div className="pk-spread" style={{ marginBottom: "var(--space-4)" }}>
-          <span className="title">Today with {pet.name}</span>
-          <span className="amount-sm pk-faint">
-            {projected.xpIntoLevel} / {projected.xpForNext} XP
-          </span>
-        </div>
-        <Stack gap={3}>
-          <Vital label="Fullness" value={projected.stats.hunger} />
-          <Vital label="Happiness" value={projected.stats.happiness} />
-          <Vital label="Energy" value={projected.stats.energy} />
-          <Vital label="Coat" value={projected.stats.hygiene} />
-        </Stack>
-        <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
-          An estimate. Vitals drift while you are away, and there is no death — only a pet that
-          misses you.
-        </p>
-
-        <Row gap={2} wrap style={{ marginTop: "var(--space-4)" }}>
-          {actions.map(({ action, label, icon, tone }) => {
-            const left = cooldowns[action];
-            return (
-              <Button
-                key={action}
-                label={label}
-                meta={left > 0 ? formatCountdown(left) : undefined}
-                icon={icon}
-                size="sm"
-                tone={tone}
-                disabled={left > 0}
-                onClick={() => care(action)}
-              />
-            );
-          })}
-        </Row>
-        {notice ? (
-          <p className="body-sm" style={{ color: "var(--alarm-text)", marginTop: "var(--space-3)" }}>
-            {notice}
-          </p>
-        ) : null}
-      </Card>
-
-      <Card variant="quiet">
-        <div className="pk-spread">
-          <span className="title">{pet.name} is a guest pet</span>
-          <ButtonLink label="Adopt another" href="/adopt" tone="ghost" size="sm" after="right" />
-        </div>
-        <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-          Saved in this browser, and nowhere else. Nothing about {pet.name} is recorded on-chain,
-          and nothing needs to be.
-        </p>
-      </Card>
-    </Stack>
+          <Card variant="quiet">
+            <div className="pk-spread">
+              <h2 className="title">{pet.name} is a guest pet</h2>
+              <ButtonLink label="Adopt another" href="/adopt" tone="ghost" size="sm" after="right" />
+            </div>
+            <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
+              Saved in this browser, and nowhere else. Nothing about {pet.name} is recorded
+              on-chain, and nothing needs to be.
+            </p>
+          </Card>
+        </>
+      }
+    />
   );
 }
 

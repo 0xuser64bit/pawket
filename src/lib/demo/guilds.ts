@@ -1,4 +1,5 @@
 import type { ReceiptRow, Stage } from "@/components/pk";
+import { matchesQuery } from "./market";
 
 /** Demo fixtures — see the note in `./pets.ts`. */
 
@@ -185,6 +186,22 @@ export const DEMO_GUILDS: DemoGuild[] = [
 
 export function findDemoGuild(slug: string): DemoGuild | undefined {
   return DEMO_GUILDS.find((guild) => guild.slug === slug);
+}
+
+/** The guild list's filter chips, in the order they are offered. */
+export const GUILD_FILTERS = [
+  { key: "all", label: "All" },
+  { key: "no-token", label: "No token" },
+  { key: "events", label: "Events" },
+] as const;
+
+/** The guild search and filter chips, answered from the fixtures. */
+export function findGuilds({ filter = "all", q }: { filter?: string; q?: string }): DemoGuild[] {
+  return DEMO_GUILDS.filter((guild) => {
+    if (filter === "no-token" && guild.stage !== "none") return false;
+    if (filter === "events" && !guild.events.some((event) => event.open)) return false;
+    return matchesQuery([guild.name, guild.blurb, guild.summary], q);
+  });
 }
 
 /** The boundary every approved guild has to stay inside. */

@@ -15,7 +15,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <Screen>
+    <Screen width="narrow">
       <Stack gap={5} style={{ paddingTop: "var(--space-8)" }}>
         <h1 className="display-m">It did not load</h1>
         <Banner

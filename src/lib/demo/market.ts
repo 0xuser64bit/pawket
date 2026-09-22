@@ -77,6 +77,37 @@ export function findDemoListing(id: string): DemoListing | undefined {
   return DEMO_LISTINGS.find((listing) => listing.id === id);
 }
 
+/** The market's filter chips, in the order they are offered. */
+export const LISTING_FILTERS = [
+  { key: "all", label: "All" },
+  { key: "cat", label: "Luna cat" },
+  { key: "cloth", label: "Cloth" },
+  { key: "cheap", label: "Under 1 SOL" },
+] as const;
+
+/** True when any of the words a thing is known by contains the query. */
+export function matchesQuery(words: string[], query = ""): boolean {
+  const q = query.trim().toLowerCase();
+  return !q || words.some((word) => word.toLowerCase().includes(q));
+}
+
+/**
+ * What the search box and the filter chips would ask an indexer, answered
+ * from the fixtures so both controls do what they say.
+ */
+export function findListings({ filter = "all", q }: { filter?: string; q?: string }): DemoListing[] {
+  return DEMO_LISTINGS.filter((listing) => {
+    if (filter === "cat" && listing.species !== PetSpecies.LunaCat) return false;
+    if (filter === "cloth" && listing.rarity !== "cloth") return false;
+    if (filter === "cheap" && Number(listing.price) >= 1) return false;
+    return matchesQuery([listing.name, listing.summary, ...listing.traits], q);
+  });
+}
+
+export function findItems(items: DemoItem[], q?: string): DemoItem[] {
+  return items.filter((item) => matchesQuery([item.name, item.kind], q));
+}
+
 export interface DemoItem {
   id: string;
   name: string;

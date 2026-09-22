@@ -42,16 +42,19 @@ export function ScreenBar({ children }: { children: ReactNode }) {
 export function Columns({
   first,
   second,
+  split = "room",
   pin = false,
   className,
 }: {
   first: ReactNode;
   second: ReactNode;
+  /** `room` gives a scene the wider column; `portrait` gives it to the words beside a pocket. */
+  split?: "room" | "portrait";
   pin?: boolean;
   className?: string;
 }) {
   return (
-    <div className={["pk-columns", className].filter(Boolean).join(" ")}>
+    <div className={["pk-columns", split === "portrait" && "pk-columns--portrait", className].filter(Boolean).join(" ")}>
       <div className={["pk-columns__first", pin && "pk-columns__first--pin"].filter(Boolean).join(" ")}>
         {first}
       </div>

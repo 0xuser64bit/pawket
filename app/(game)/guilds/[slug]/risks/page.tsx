@@ -25,7 +25,7 @@ export default async function RisksPage({ params }: { params: Promise<{ slug: st
   if (!guild?.token) notFound();
 
   return (
-    <Screen>
+    <Screen width="narrow">
       <BackLink label={guild.name} href={`/guilds/${guild.slug}`} />
 
       <Stack gap={4}>
@@ -37,14 +37,14 @@ export default async function RisksPage({ params }: { params: Promise<{ slug: st
         </div>
 
         <Paper title="Plain-language risk" meta="Required" torn>
-          <ul className="pk-numbered body-sm" style={{ color: "var(--ink)" }}>
+          <ol className="pk-numbered body-sm" style={{ color: "var(--ink)" }}>
             {RISK_LINES.map((line, index) => (
               <li key={line}>
                 <span className="amount-sm pk-faint">{index + 1}</span>
                 <span>{line}</span>
               </li>
             ))}
-          </ul>
+          </ol>
         </Paper>
 
         <RiskAcknowledge

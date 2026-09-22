@@ -2,7 +2,7 @@ import { ButtonLink, EmptyState, Screen } from "@/components/pk";
 
 export default function NotFound() {
   return (
-    <Screen>
+    <Screen width="narrow">
       <div style={{ paddingTop: "var(--space-7)" }}>
         <EmptyState
           icon="search"

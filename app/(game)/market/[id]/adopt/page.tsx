@@ -3,12 +3,12 @@ import { notFound } from "next/navigation";
 import {
   BackLink,
   ButtonLink,
+  Columns,
   PetFrame,
   Receipt,
   Row,
   Screen,
   Sheet,
-  Stack,
 } from "@/components/pk";
 import { findDemoListing } from "@/lib/demo";
 import { SPECIES_ART } from "@/lib/game/appearance";
@@ -36,20 +36,24 @@ export default async function AdoptSheetPage({ params }: { params: Promise<{ id:
 
   return (
     <>
+      {/* The listing the player came from, dimmed under the sheet. */}
       <Screen>
-        <BackLink label="Market" href="/market" />
-        <Stack gap={4}>
-          <div style={{ display: "grid", placeItems: "center" }}>
-            <PetFrame
-              form={SPECIES_ART[listing.species]}
-              rarity={listing.rarity}
-              sky={listing.sky}
-              size="lg"
-              still
-            />
-          </div>
-          <h1 className="display-l">{listing.name}</h1>
-        </Stack>
+        <BackLink label="Market" href={`/market/${listing.id}`} />
+        <Columns
+          split="portrait"
+          first={
+            <div className="pk-portrait">
+              <PetFrame
+                form={SPECIES_ART[listing.species]}
+                rarity={listing.rarity}
+                sky={listing.sky}
+                size="lg"
+                still
+              />
+            </div>
+          }
+          second={<h1 className="display-l">{listing.name}</h1>}
+        />
       </Screen>
 
       <Sheet

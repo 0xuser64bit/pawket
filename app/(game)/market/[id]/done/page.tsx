@@ -4,10 +4,10 @@ import {
   Banner,
   Button,
   ButtonLink,
+  Columns,
   PetFrame,
   Row,
   Screen,
-  Stack,
 } from "@/components/pk";
 import { PreviewNote } from "@/components/preview-note";
 import { findDemoListing } from "@/lib/demo";
@@ -34,41 +34,48 @@ export default async function AdoptDonePage({ params }: { params: Promise<{ id: 
 
   return (
     <Screen>
-      <Stack gap={4} style={{ paddingTop: "var(--space-6)" }}>
-        <div style={{ display: "grid", placeItems: "center" }}>
-          <PetFrame
-            form={SPECIES_ART[listing.species]}
-            rarity={listing.rarity}
-            sky={listing.sky}
-            size="lg"
-            name={listing.name}
-            level={1}
-            mood="New"
-          />
-        </div>
+      <Columns
+        split="portrait"
+        className="pk-arrival"
+        first={
+          <div className="pk-portrait">
+            <PetFrame
+              form={SPECIES_ART[listing.species]}
+              rarity={listing.rarity}
+              sky={listing.sky}
+              size="lg"
+              name={listing.name}
+              level={1}
+              mood="New"
+            />
+          </div>
+        }
+        second={
+          <>
+            <div>
+              <h1 className="display-m">{listing.name} is home.</h1>
+              <p className="body pk-muted" style={{ marginTop: "var(--space-2)" }}>
+                She is in your Inventory and can move into your room whenever you like.
+              </p>
+            </div>
 
-        <div>
-          <h1 className="display-m">{listing.name} is home.</h1>
-          <p className="body pk-muted" style={{ marginTop: "var(--space-2)" }}>
-            She is in your Inventory and can move into your room whenever you like.
-          </p>
-        </div>
+            {/* Qualified before the banner states an amount, never after. */}
+            <PreviewNote what="No payment was made and no transaction was sent." />
 
-        {/* Qualified before the banner states an amount, never after. */}
-        <PreviewNote what="No payment was made and no transaction was sent." />
+            <Banner
+              tone="done"
+              title={`Paid ${listing.total}`}
+              body="Signature 4xQe…T7mP · confirmed on-chain."
+              action={<Button label="Receipt" tone="paper" disabled />}
+            />
 
-        <Banner
-          tone="done"
-          title={`Paid ${listing.total}`}
-          body="Signature 4xQe…T7mP · confirmed on-chain."
-          action={<Button label="Receipt" tone="paper" disabled />}
-        />
-
-        <Row gap={3} wrap>
-          <ButtonLink label="Take her home" href="/home" icon="home" size="lg" />
-          <ButtonLink label="Dress her" href="/inventory?tab=cosmetics" tone="quiet" size="lg" />
-        </Row>
-      </Stack>
+            <Row gap={3} wrap>
+              <ButtonLink label="Take her home" href="/home" icon="home" size="lg" />
+              <ButtonLink label="Dress her" href="/inventory?tab=cosmetics" tone="quiet" size="lg" />
+            </Row>
+          </>
+        }
+      />
     </Screen>
   );
 }

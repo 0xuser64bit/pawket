@@ -55,7 +55,7 @@ export default async function SwapPage({
   const active = STATES.some((s) => s.key === state) ? state : "quote";
 
   return (
-    <Screen>
+    <Screen width="narrow">
       <BackLink label="Risks" href={`/guilds/${guild.slug}/risks`} />
 
       <Stack gap={4}>

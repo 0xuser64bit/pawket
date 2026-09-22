@@ -32,25 +32,29 @@ export default function GuildBoundaryPage() {
       <Stack gap={4}>
         <div>
           <h1 className="display-m">What a guild can and cannot do</h1>
-          <p className="body pk-muted" style={{ marginTop: "var(--space-2)" }}>
+          <p className="body pk-muted" style={{ marginTop: "var(--space-2)", maxWidth: "60ch" }}>
             Every approved guild publishes a utility statement. These two lists are the boundary it
             has to stay inside.
           </p>
         </div>
 
-        <Card>
-          <div className="title" style={{ marginBottom: "var(--space-3)", color: "var(--pool-text)" }}>
-            A guild token can
-          </div>
-          <Bounds items={GUILD_CAN} mark="✓" color="var(--pool-text)" />
-        </Card>
+        {/* Side by side where there is room, so the two lists read as the
+            two halves of one boundary. */}
+        <div className="pk-rows">
+          <Card>
+            <h2 className="title" style={{ marginBottom: "var(--space-3)", color: "var(--pool-text)" }}>
+              A guild token can
+            </h2>
+            <Bounds items={GUILD_CAN} mark="✓" color="var(--pool-text)" />
+          </Card>
 
-        <Card>
-          <div className="title" style={{ marginBottom: "var(--space-3)", color: "var(--alarm-text)" }}>
-            It can never
-          </div>
-          <Bounds items={GUILD_CANNOT} mark="✕" color="var(--alarm-text)" />
-        </Card>
+          <Card>
+            <h2 className="title" style={{ marginBottom: "var(--space-3)", color: "var(--alarm-text)" }}>
+              It can never
+            </h2>
+            <Bounds items={GUILD_CANNOT} mark="✕" color="var(--alarm-text)" />
+          </Card>
+        </div>
 
         <Banner
           tone="risk"

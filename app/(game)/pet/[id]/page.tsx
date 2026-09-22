@@ -5,6 +5,7 @@ import {
   ButtonLink,
   Card,
   Chip,
+  Columns,
   Meter,
   PetFrame,
   Row,
@@ -38,81 +39,92 @@ export default async function PetPage({ params }: { params: Promise<{ id: string
     <Screen>
       <BackLink label="Inventory" href="/inventory" />
 
-      <Stack gap={4}>
-        <div style={{ display: "grid", placeItems: "center", paddingTop: "var(--space-1)" }}>
-          <PetFrame
-            form={SPECIES_ART[pet.species]}
-            rarity={pet.rarity}
-            sky={pet.sky}
-            size="lg"
-            level={pet.level}
-            mood={pet.mood}
-          />
-        </div>
-
-        <div className="pk-spread">
-          <div>
-            <h1 className="display-l">{pet.name}</h1>
-            <p className="body-sm pk-muted">
-              {SPECIES_LABEL[pet.species]} · adopted {pet.adopted} · {RARITY_LABEL[pet.rarity]}
-            </p>
+      <Columns
+        split="portrait"
+        pin
+        first={
+          <div className="pk-portrait">
+            <PetFrame
+              form={SPECIES_ART[pet.species]}
+              rarity={pet.rarity}
+              sky={pet.sky}
+              size="lg"
+              level={pet.level}
+              mood={pet.mood}
+            />
           </div>
-          <ButtonLink label="Dress" href="/inventory?tab=cosmetics" icon="spark" size="sm" />
-        </div>
+        }
+        second={
+          <>
+            <div className="pk-spread">
+              <div>
+                <h1 className="display-l">{pet.name}</h1>
+                <p className="body-sm pk-muted">
+                  {SPECIES_LABEL[pet.species]} · adopted {pet.adopted} · {RARITY_LABEL[pet.rarity]}
+                </p>
+              </div>
+              <ButtonLink label="Dress" href="/inventory?tab=cosmetics" icon="spark" size="sm" />
+            </div>
 
-        <Row gap={2} wrap>
-          {pet.traits.map((trait) => (
-            <Chip key={trait} label={trait} />
-          ))}
-        </Row>
+            <Row gap={2} wrap>
+              {pet.traits.map((trait) => (
+                <Chip key={trait} label={trait} />
+              ))}
+            </Row>
 
-        {/* Progress you can count: three meters, three readouts. */}
-        <Card>
-          <Stack gap={3}>
-            <Meter
-              label={`Level ${pet.level}`}
-              value={pet.level}
-              max={10}
-              readout={`${pet.xpIntoLevel} / ${pet.xpForNext} XP`}
-            />
-            <Meter
-              label="Care streak"
-              value={pet.careStreakDays}
-              max={pet.streakGoal}
-              readout={`${pet.careStreakDays} days`}
-            />
-            <Meter
-              label="Games played"
-              value={pet.gamesThisWeek}
-              max={pet.gamesGoal}
-              tone="pool"
-              readout={`${pet.gamesTotal} total`}
-            />
-          </Stack>
-        </Card>
-
-        <Card variant="quiet">
-          <div className="pk-spread">
-            <span className="title">Wearing</span>
-            <span className="caption pk-faint">
-              {pet.wearing.length} of {pet.slots} slots
-            </span>
-          </div>
-          <Row gap={2} wrap style={{ marginTop: "var(--space-3)" }}>
-            {pet.wearing.length ? (
-              pet.wearing.map((worn) => <Chip key={worn.name} label={worn.name} tone={worn.tone} />)
-            ) : (
-              <p className="body-sm pk-muted">
-                Nothing yet. Anything you own can be worn by any pet you own.
+            {/* Progress you can count: each meter fills exactly as far as the
+                numbers printed beside it. */}
+            <Card>
+              <Stack gap={3}>
+                <Meter
+                  label={`Level ${pet.level}`}
+                  value={Math.floor((pet.xpIntoLevel / pet.xpForNext) * 10)}
+                  max={10}
+                  readout={`${pet.xpIntoLevel} / ${pet.xpForNext} XP`}
+                />
+                <Meter
+                  label="Care streak"
+                  value={pet.careStreakDays}
+                  max={pet.streakGoal}
+                  readout={`${pet.careStreakDays} / ${pet.streakGoal} days`}
+                />
+                <Meter
+                  label="Games this week"
+                  value={pet.gamesThisWeek}
+                  max={pet.gamesGoal}
+                  tone="pool"
+                  readout={`${pet.gamesThisWeek} / ${pet.gamesGoal}`}
+                />
+              </Stack>
+              <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
+                {pet.gamesTotal} games played in all.
               </p>
-            )}
-          </Row>
-        </Card>
+            </Card>
 
-        <ButtonLink label="Ownership" href={`/pet/${pet.id}/ownership`} tone="quiet" full after="right" />
+            <Card variant="quiet">
+              <div className="pk-spread">
+                <h2 className="title">Wearing</h2>
+                <span className="caption pk-faint">
+                  {pet.wearing.length} of {pet.slots} slots
+                </span>
+              </div>
+              <Row gap={2} wrap style={{ marginTop: "var(--space-3)" }}>
+                {pet.wearing.length ? (
+                  pet.wearing.map((worn) => <Chip key={worn.name} label={worn.name} tone={worn.tone} />)
+                ) : (
+                  <p className="body-sm pk-muted">
+                    Nothing yet. Anything you own can be worn by any pet you own.
+                  </p>
+                )}
+              </Row>
+            </Card>
 
-        <PreviewNote what={`${pet.name}, her levels and her streak are fixtures.`} />
-      </Stack>
+            <ButtonLink label="Ownership" href={`/pet/${pet.id}/ownership`} tone="quiet" full after="right" />
+
+            <PreviewNote what={`${pet.name}, her levels and her streak are fixtures.`} />
+          </>
+        }
+      />
     </Screen>
   );
 }

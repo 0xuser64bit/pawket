@@ -493,9 +493,10 @@ li {
 }
 .pk-spread {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
 }
 .pk-fill {
   flex: 1 1 auto;
@@ -1184,6 +1185,8 @@ li {
 
 .pk-tabs {
   display: inline-flex;
+  /* a trough the size of its tabs, even inside a stretching column */
+  align-self: flex-start;
   gap: var(--space-1);
   padding: 4px;
   background: var(--surface-sunk);
@@ -1727,9 +1730,71 @@ li {
     column-gap: var(--space-8);
     align-items: start;
   }
+  /* a pocket portrait takes the narrower column and the details the wider */
+  .pk-columns--portrait {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
   .pk-columns__first--pin {
     position: sticky;
     top: calc(var(--shell-height) + var(--space-6));
+  }
+}
+
+/* A pocket portrait sits centred in whatever column it is given. */
+.pk-portrait {
+  display: grid;
+  justify-items: center;
+}
+/* A screen with no way back — an arrival — starts lower, so the pet is not
+   pressed up under the bar. */
+.pk-arrival {
+  padding-top: var(--space-6);
+}
+
+/* A search and the tabs it searches: stacked on a phone, one row on a
+   desktop with the search holding a comfortable measure. */
+.pk-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+@media (min-width: 1024px) {
+  .pk-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-5);
+  }
+  .pk-toolbar > :first-child {
+    flex: 0 1 420px;
+  }
+  .pk-toolbar > .pk-tabs {
+    align-self: center;
+  }
+}
+
+/* Rows of the same kind — guilds, events, games — run in one column until
+   a desktop gives them two. */
+.pk-rows {
+  display: grid;
+  gap: var(--space-3);
+}
+@media (min-width: 1024px) {
+  .pk-rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+}
+
+/* Whatever explains a screen comes last, one note above the other on a
+   phone and side by side where there is room for them to be read so. */
+.pk-notes {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 1024px) {
+  .pk-notes {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
 }
 
@@ -1926,11 +1991,16 @@ li {
   width: 56.8cqh;
 }
 
-/* ------------------------------------------------- the playground field */
+/* ------------------------------------------------- the playground field
+
+   Like the room, one drawing at 390px proportions: racers are sized from
+   the field's height and placed along its width. */
 
 .pk-field-of-play {
   position: relative;
-  height: 280px;
+  container-type: size;
+  aspect-ratio: 335 / 280;
+  max-height: 400px;
   border-radius: var(--radius-room);
   border: var(--stroke-line) solid var(--edge);
   background: var(--sprout-soft);
@@ -1942,13 +2012,24 @@ li {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 72px;
+  height: 25.7cqh;
   background: var(--surface-sunk);
   border-top: var(--stroke-line) solid var(--edge);
 }
 .pk-field-of-play__racer {
   position: absolute;
-  bottom: 40px;
+  bottom: 14.3cqh;
+}
+
+/* the pet beside "ready", on the ink card */
+.pk-ready__pet {
+  flex: none;
+  width: 74px;
+}
+@media (min-width: 1024px) {
+  .pk-ready__pet {
+    width: 96px;
+  }
 }
 
 /* A recessed square holding an icon, used as a card's leading mark. */
@@ -1980,6 +2061,23 @@ li {
   .pk-cards {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-5);
+  }
+}
+/* An empty pocket on the shelf: dashed where a card would be outlined, and
+   never lifted. It takes the whole row on a phone, where half a row is too
+   narrow to read in. */
+.pk-slot {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: var(--stroke-line) dashed var(--edge-soft);
+  border-radius: var(--radius-lg);
+}
+@media (max-width: 719px) {
+  .pk-slot {
+    grid-column: 1 / -1;
   }
 }
 .pk-tiles {

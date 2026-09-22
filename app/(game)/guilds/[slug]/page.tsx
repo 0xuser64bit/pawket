@@ -7,6 +7,7 @@ import {
   ButtonLink,
   Card,
   Chip,
+  Columns,
   Crest,
   LaunchProgress,
   LaunchStage,
@@ -91,87 +92,98 @@ export default async function GuildPage({
 
 function About({ guild }: { guild: DemoGuild }) {
   return (
-    <Stack gap={4}>
-      <p className="body pk-muted">{guild.summary}</p>
+    <Columns
+      first={
+        <>
+          <p className="body-lg pk-muted">{guild.summary}</p>
 
-      <ButtonLink
-        label={guild.joined ? "Leave the guild" : "Join the guild"}
-        href={`/guilds/${guild.slug}?tab=about`}
-        tone={guild.joined ? "quiet" : "bloom"}
-        size="lg"
-        full
-        icon="guild"
-      />
-      <p className="caption pk-faint" style={{ textAlign: "center" }}>
-        {guild.joined
-          ? "You are a member. Leaving is free, and nothing you own changes."
-          : "Free. No token needed to join, post, or come to events."}
-      </p>
-
-      {guild.utility ? (
-        <Card>
-          <div className="title" style={{ marginBottom: "var(--space-2)" }}>
-            Utility statement
-          </div>
-          <p className="body-sm pk-muted">{guild.utility}</p>
-          <div style={{ marginTop: "var(--space-3)" }}>
-            <Chip
-              label={guild.reviewed ?? "Not reviewed"}
-              tone={guild.official ? "pool" : undefined}
-              icon={guild.official ? "shield" : "info"}
+          <div>
+            <ButtonLink
+              label={guild.joined ? "Leave the guild" : "Join the guild"}
+              href={`/guilds/${guild.slug}?tab=about`}
+              tone={guild.joined ? "quiet" : "bloom"}
+              size="lg"
+              full
+              icon="guild"
             />
+            <p className="caption pk-faint" style={{ textAlign: "center", marginTop: "var(--space-2)" }}>
+              {guild.joined
+                ? "You are a member. Leaving is free, and nothing you own changes."
+                : "Free. No token needed to join, post, or come to events."}
+            </p>
           </div>
-        </Card>
-      ) : null}
 
-      {guild.token ? (
-        <Paper title="Token" meta="Optional">
-          <LaunchStage stage={guild.stage} />
-          <div style={{ marginTop: "var(--space-3)" }}>
-            <LaunchProgress
-              value={guild.token.launch.value}
-              max={guild.token.launch.max}
-              readout={guild.token.launch.readout}
-            />
-          </div>
-          <div style={{ marginTop: "var(--space-4)" }}>
-            <ButtonLink label="Read the risks first" href={`/guilds/${guild.slug}/risks`} tone="paper" />
-          </div>
-        </Paper>
-      ) : (
-        <Paper title="Token" meta="None">
-          <p className="receipt">
-            This guild has no token and no launch. Everything it runs is free to members.
-          </p>
-        </Paper>
-      )}
+          {guild.utility ? (
+            <Card>
+              <h2 className="title" style={{ marginBottom: "var(--space-2)" }}>
+                Utility statement
+              </h2>
+              <p className="body-sm pk-muted">{guild.utility}</p>
+              <div style={{ marginTop: "var(--space-3)" }}>
+                <Chip
+                  label={guild.reviewed ?? "Not reviewed"}
+                  tone={guild.official ? "pool" : undefined}
+                  icon={guild.official ? "shield" : "info"}
+                />
+              </div>
+            </Card>
+          ) : null}
+        </>
+      }
+      second={
+        <>
+          {guild.token ? (
+            <Paper title="Token" meta="Optional">
+              <LaunchStage stage={guild.stage} />
+              <div style={{ marginTop: "var(--space-3)" }}>
+                <LaunchProgress
+                  value={guild.token.launch.value}
+                  max={guild.token.launch.max}
+                  readout={guild.token.launch.readout}
+                />
+              </div>
+              <div style={{ marginTop: "var(--space-4)" }}>
+                <ButtonLink label="Read the risks first" href={`/guilds/${guild.slug}/risks`} tone="paper" />
+              </div>
+            </Paper>
+          ) : (
+            <Paper title="Token" meta="None">
+              <p className="receipt">
+                This guild has no token and no launch. Everything it runs is free to members.
+              </p>
+            </Paper>
+          )}
 
-      <Banner
-        tone="info"
-        title="A guild token never touches your pet"
-        body="No stat increase, no faster care, no XP multiplier, no matchmaking priority, no queue skip. Ever."
-      />
-    </Stack>
+          <Banner
+            tone="info"
+            title="A guild token never touches your pet"
+            body="No stat increase, no faster care, no XP multiplier, no matchmaking priority, no queue skip. Ever."
+          />
+        </>
+      }
+    />
   );
 }
 
 function Events({ guild }: { guild: DemoGuild }) {
   return (
-    <Stack gap={3}>
-      {guild.events.map((event) => (
-        <Card key={event.name}>
-          <div className="pk-spread">
-            <div className="pk-fill">
-              <div className="title">{event.name}</div>
-              <p className="body-sm pk-muted">{event.when}</p>
-              <p className="caption pk-faint" style={{ marginTop: "var(--space-1)" }}>
-                {event.note}
-              </p>
+    <Stack gap={4}>
+      <div className="pk-rows">
+        {guild.events.map((event) => (
+          <Card key={event.name}>
+            <div className="pk-spread" style={{ alignItems: "flex-start" }}>
+              <div className="pk-fill">
+                <h2 className="title">{event.name}</h2>
+                <p className="body-sm pk-muted">{event.when}</p>
+                <p className="caption pk-faint" style={{ marginTop: "var(--space-1)" }}>
+                  {event.note}
+                </p>
+              </div>
+              <Chip label={event.open ? "Open" : "Ended"} tone={event.open ? "pool" : undefined} />
             </div>
-            <Chip label={event.open ? "Open" : "Ended"} tone={event.open ? "pool" : undefined} />
-          </div>
-        </Card>
-      ))}
+          </Card>
+        ))}
+      </div>
       <Banner
         tone="guild"
         title="Events are the point of a guild"
@@ -192,13 +204,15 @@ function Treasury({ guild }: { guild: DemoGuild }) {
     );
   }
   return (
-    <Stack gap={3}>
-      <Paper title="Allocation" meta="Published before launch">
-        <Receipt rows={guild.token.allocation} />
-      </Paper>
-      <Paper title="Treasury" meta={guild.token.treasury.indexed}>
-        <Receipt rows={guild.token.treasury.rows} note={guild.token.treasury.note} />
-      </Paper>
+    <Stack gap={4}>
+      <div className="pk-rows">
+        <Paper title="Allocation" meta="Published before launch">
+          <Receipt rows={guild.token.allocation} />
+        </Paper>
+        <Paper title="Treasury" meta={guild.token.treasury.indexed}>
+          <Receipt rows={guild.token.treasury.rows} note={guild.token.treasury.note} />
+        </Paper>
+      </div>
       <Banner
         tone="wait"
         title="What Pawket can and cannot do here"
@@ -210,26 +224,36 @@ function Treasury({ guild }: { guild: DemoGuild }) {
 
 function Policy({ guild }: { guild: DemoGuild }) {
   return (
-    <Stack gap={3}>
-      <Paper title="Policy" meta="Published">
-        <ul className="pk-numbered receipt">
-          {guild.policy.map((line, index) => (
-            <li key={line}>
-              <span className="amount-sm pk-faint">{index + 1}</span>
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
-      </Paper>
-      <ButtonLink label="What a guild can and cannot do" href="/guilds/boundary" tone="quiet" full after="right" />
-      {guild.official ? null : (
-        <Banner
-          tone="risk"
-          title="This guild is not approved by Pawket"
-          body="Anything it published is its own claim. Nothing you own has changed, and joining is still free."
-        />
-      )}
-      <Button label="Report this guild" tone="quiet" disabled />
-    </Stack>
+    <Columns
+      first={
+        <Paper title="Policy" meta="Published">
+          <ol className="pk-numbered receipt">
+            {guild.policy.map((line, index) => (
+              <li key={line}>
+                <span className="amount-sm pk-faint">{index + 1}</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ol>
+        </Paper>
+      }
+      second={
+        <>
+          {guild.official ? null : (
+            <Banner
+              tone="risk"
+              title="This guild is not approved by Pawket"
+              body="Anything it published is its own claim. Nothing you own has changed, and joining is still free."
+            />
+          )}
+          <div>
+            <ButtonLink label="What a guild can and cannot do" href="/guilds/boundary" tone="quiet" after="right" />
+          </div>
+          <div>
+            <Button label="Report this guild" tone="quiet" disabled />
+          </div>
+        </>
+      }
+    />
   );
 }

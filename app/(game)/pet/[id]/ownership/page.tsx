@@ -34,7 +34,7 @@ export default async function OwnershipPage({ params }: { params: Promise<{ id: 
   if (!pet) notFound();
 
   return (
-    <Screen>
+    <Screen width="narrow">
       <BackLink label={pet.name} href={`/pet/${pet.id}`} />
 
       <Stack gap={4}>

@@ -7,6 +7,7 @@ import {
   Card,
   Chip,
   ChipLink,
+  Columns,
   Meter,
   PawLoader,
   PetArt,
@@ -21,6 +22,13 @@ import { ACTIVE_PET, PRESENCE, findDemoGame } from "@/lib/demo";
 import { SPECIES_ART } from "@/lib/game/appearance";
 
 const CHEERS = ["Nice one", "Go go go", "Oops", "Wait for me"];
+
+/** Three racers along the hedgerow, sized from the field's height. */
+const RACERS = [
+  { form: SPECIES_ART[ACTIVE_PET.species], left: "6%", width: "33.5cqh" },
+  { form: "dog", left: "37%", width: "27.5cqh" },
+  { form: "bun", left: "64%", width: "26.3cqh" },
+] as const;
 
 export async function generateMetadata({
   params,
@@ -51,11 +59,10 @@ export default async function RoundPage({
   const pet = ACTIVE_PET;
   const finding = state === "finding";
 
-  return (
-    <Screen>
-      <BackLink label="Playground" href="/playground" />
-
-      {finding ? (
+  if (finding) {
+    return (
+      <Screen width="narrow">
+        <BackLink label="Playground" href="/playground" />
         <Stack gap={5}>
           <div style={{ display: "grid", placeItems: "center", paddingTop: "var(--space-6)" }}>
             {/* A wait with no known end, in the Playroom: the loader's one home. */}
@@ -77,52 +84,66 @@ export default async function RoundPage({
           <StateSwitch gameKey={game.key} finding={finding} />
           <PreviewNote what="No lobby is being searched for — this is the loader in its one Playroom home." />
         </Stack>
-      ) : (
+      </Screen>
+    );
+  }
 
-      <Stack gap={4}>
-        <div className="pk-spread">
-          <Chip label={game.name} tone="pool" icon="ball" />
-          <span className="amount">0:47</span>
-        </div>
+  return (
+    <Screen>
+      <BackLink label="Playground" href="/playground" />
 
-        <Meter label="Hedgerow" value={4} max={8} tone="pool" readout="4 of 8 gates" slim />
+      <Columns
+        first={
+          <>
+            <div className="pk-spread">
+              <h1>
+                <Chip label={game.name} tone="pool" icon="ball" />
+              </h1>
+              <span className="amount">0:47</span>
+            </div>
 
-        <div className="pk-field-of-play">
-          <div className="pk-field-of-play__ground" />
-          <div className="pk-field-of-play__racer" style={{ left: "6%", width: "28%" }}>
-            <PetArt form={SPECIES_ART[pet.species]} />
-          </div>
-          <div className="pk-field-of-play__racer" style={{ left: "37%", width: "23%", opacity: 0.9 }}>
-            <PetArt form="dog" />
-          </div>
-          <div className="pk-field-of-play__racer" style={{ left: "64%", width: "22%", opacity: 0.9 }}>
-            <PetArt form="bun" />
-          </div>
-          <div style={{ position: "absolute", left: "var(--space-4)", top: "var(--space-3)" }}>
-            <Chip label={`${pet.name} · 1st`} tone="sun" />
-          </div>
-          <span className="pk-sr">Three pets running the hedgerow. {pet.name} is first.</span>
-        </div>
+            <Meter label="Hedgerow" value={4} max={8} tone="pool" readout="4 of 8 gates" slim />
 
-        <Card variant="quiet">
-          <Row gap={2} wrap>
-            {CHEERS.map((cheer) => (
-              <Chip key={cheer} label={cheer} />
-            ))}
-          </Row>
-        </Card>
+            <div className="pk-field-of-play">
+              <div className="pk-field-of-play__ground" />
+              {RACERS.map((racer, index) => (
+                <div
+                  key={racer.left}
+                  className="pk-field-of-play__racer"
+                  style={{ left: racer.left, width: racer.width, opacity: index ? 0.9 : undefined }}
+                >
+                  <PetArt form={racer.form} />
+                </div>
+              ))}
+              <div style={{ position: "absolute", left: "var(--space-4)", top: "var(--space-3)" }}>
+                <Chip label={`${pet.name} · 1st`} tone="sun" />
+              </div>
+              <span className="pk-sr">Three pets running the hedgerow. {pet.name} is first.</span>
+            </div>
 
-        <Banner
-          tone="info"
-          title="Nothing here can be bought"
-          body="Speed, handling and scoring come from the game alone. No cosmetic, token or balance changes a single one."
-        />
+            <Card variant="quiet">
+              <Row gap={2} wrap>
+                {CHEERS.map((cheer) => (
+                  <Chip key={cheer} label={cheer} />
+                ))}
+              </Row>
+            </Card>
+          </>
+        }
+        second={
+          <>
+            <Banner
+              tone="info"
+              title="Nothing here can be bought"
+              body="Speed, handling and scoring come from the game alone. No cosmetic, token or balance changes a single one."
+            />
 
-        <StateSwitch gameKey={game.key} finding={finding} />
+            <StateSwitch gameKey={game.key} finding={finding} />
 
-        <PreviewNote what="This round is a fixture — the timer does not run and no score is kept." />
-      </Stack>
-      )}
+            <PreviewNote what="This round is a fixture — the timer does not run and no score is kept." />
+          </>
+        }
+      />
     </Screen>
   );
 }
@@ -130,7 +151,7 @@ export default async function RoundPage({
 /** Both halves of the wait, so each can be reviewed. */
 function StateSwitch({ gameKey, finding }: { gameKey: string; finding: boolean }) {
   return (
-    <div style={{ marginTop: "var(--space-4)" }}>
+    <div>
       <SectionLabel>Preview states</SectionLabel>
       <Row gap={2} wrap style={{ marginTop: "var(--space-3)" }}>
         <ChipLink label="Finding a lobby" href={`/playground/${gameKey}?state=finding`} selected={finding} />

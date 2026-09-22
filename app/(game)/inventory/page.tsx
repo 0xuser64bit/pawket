@@ -4,6 +4,7 @@ import {
   ButtonLink,
   Card,
   Chip,
+  Columns,
   EmptyState,
   ItemTile,
   PetFrame,
@@ -74,64 +75,73 @@ export default async function InventoryPage({
                     />
                   </div>
                   <div className="pk-card__body">
-                    <div className="title">{pet.name}</div>
+                    <h2 className="title">{pet.name}</h2>
                     <p className="caption pk-faint">
                       Level {pet.level} · {pet.where}
                     </p>
                   </div>
                 </Card>
               ))}
-            </div>
-            <Card variant="quiet">
-              <div className="pk-spread">
-                <span className="title">Room for one more</span>
-                <ButtonLink label="Market" href="/market" tone="quiet" size="sm" />
+              {/* The next pocket on the shelf, left empty and saying so. */}
+              <div className="pk-slot">
+                <h2 className="title">Room for one more</h2>
+                <p className="body-sm pk-muted">
+                  Pets never expire, never need feeding to survive, and never leave unless you sell them.
+                </p>
+                <div>
+                  <ButtonLink label="Market" href="/market" tone="quiet" size="sm" icon="market" />
+                </div>
               </div>
-              <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-                Pets never expire, never need feeding to survive, and never leave unless you sell them.
-              </p>
-            </Card>
+            </div>
           </Stack>
         ) : null}
 
         {active === "cosmetics" ? (
-          <Stack gap={4}>
-            <Stack gap={3}>
-              <SectionLabel>Yours outright</SectionLabel>
-              <div className="pk-tiles">
-                {OWNED_ITEMS.map((item) => (
-                  <ItemTile
-                    key={item.id}
-                    name={item.name}
-                    kind={item.kind}
-                    rarity={item.rarity}
-                    icon={item.icon}
-                    equipped={item.equipped}
-                  />
-                ))}
-              </div>
-            </Stack>
-            <Stack gap={3}>
-              <SectionLabel tone="bloom">From a guild</SectionLabel>
-              <div className="pk-tiles">
-                {GUILD_ITEMS.map((item) => (
-                  <ItemTile
-                    key={item.id}
-                    name={item.name}
-                    kind={item.kind}
-                    rarity={item.rarity}
-                    icon={item.icon}
-                    equipped={item.equipped}
-                  />
-                ))}
-              </div>
-            </Stack>
-            <Banner
-              tone="guild"
-              title="Guild items depend on membership"
-              body="Leave Clover Guild and these two stop being wearable. Everything above the line stays yours either way."
-            />
-          </Stack>
+          <Columns
+            first={
+              <Stack gap={3}>
+                <SectionLabel count={`${OWNED_ITEMS.length}`}>Yours outright</SectionLabel>
+                <div className="pk-tiles">
+                  {OWNED_ITEMS.map((item) => (
+                    <ItemTile
+                      key={item.id}
+                      name={item.name}
+                      kind={item.kind}
+                      rarity={item.rarity}
+                      icon={item.icon}
+                      equipped={item.equipped}
+                    />
+                  ))}
+                </div>
+              </Stack>
+            }
+            second={
+              <>
+                <Stack gap={3}>
+                  <SectionLabel tone="bloom" count={`${GUILD_ITEMS.length}`}>
+                    From a guild
+                  </SectionLabel>
+                  <div className="pk-tiles">
+                    {GUILD_ITEMS.map((item) => (
+                      <ItemTile
+                        key={item.id}
+                        name={item.name}
+                        kind={item.kind}
+                        rarity={item.rarity}
+                        icon={item.icon}
+                        equipped={item.equipped}
+                      />
+                    ))}
+                  </div>
+                </Stack>
+                <Banner
+                  tone="guild"
+                  title="Guild items depend on membership"
+                  body="Leave Clover Guild and these two stop being wearable. Everything you own outright stays yours either way."
+                />
+              </>
+            }
+          />
         ) : null}
 
         {active === "items" ? (
@@ -158,15 +168,19 @@ export default async function InventoryPage({
                 />
               ))}
             </div>
+          </Stack>
+        ) : null}
+
+        <div className="pk-notes">
+          {active === "badges" ? (
             <Banner
               tone="guild"
               title="A badge is guild flair and nothing else"
               body="It shows where you spend your evenings. It does not change your pet, your progress or a game."
             />
-          </Stack>
-        ) : null}
-
-        <PreviewNote what="These pets, cosmetics and badges are fixtures." />
+          ) : null}
+          <PreviewNote what="These pets, cosmetics and badges are fixtures." />
+        </div>
       </Stack>
     </Screen>
   );

@@ -596,6 +596,12 @@ li {
   color: var(--ink-inverse);
   opacity: 0.72;
 }
+/* edge is the ink card's own colour, so a pocket on it is outlined in the
+   ink that reads there, and its sticker shadow would be invisible anyway */
+.pk-card--ink .pk-pet__frame {
+  border-color: var(--ink-inverse);
+  box-shadow: none;
+}
 .pk-card--quiet {
   box-shadow: none;
 }
@@ -973,6 +979,11 @@ li {
 }
 @container (max-width: 139px) {
   .pk-pet__mood {
+    display: none;
+  }
+}
+@container (max-width: 99px) {
+  .pk-pet__level {
     display: none;
   }
 }
@@ -1369,11 +1380,13 @@ li {
 
 /* --------------------------------------------------------------- banners */
 
+/* The icon keeps its words beside it at any width; an action sits under the
+   words rather than squeezing them. */
 .pk-banner {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: var(--space-3);
-  align-items: flex-start;
+  align-items: start;
   padding: var(--space-4);
   border: var(--stroke-hair) solid var(--rule);
   border-radius: var(--radius-paper);
@@ -1383,13 +1396,8 @@ li {
   flex: none;
   margin-top: 1px;
 }
-.pk-banner > .pk-fill {
-  flex: 1 1 16rem;
-}
 .pk-banner__action {
-  flex: none;
-  align-self: center;
-  margin-left: auto;
+  grid-column: 2;
 }
 .pk-banner__title {
   font-family: var(--font-text);
@@ -2147,27 +2155,86 @@ li {
 
    The order is the argument: hero, the loop as six pills, four pillars, an
    ink band for the Playground, a full bloom-soft band for guilds, then a
-   Paper block stating the asset model, then the footer. */
+   Paper block stating the asset model, then the footer. Its widths are the
+   product's: one column below 1024px, two from there. */
+
+.pk-landing__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-block: var(--space-5);
+}
+.pk-landing__nav {
+  display: none;
+}
+.pk-landing__aside {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+/* The theme switch lives in the header where there is room for it, and in
+   the footer on a phone, where the header holds the mark and one action. */
+.pk-landing__theme--head {
+  display: none;
+}
+@media (min-width: 720px) {
+  .pk-landing__theme--head {
+    display: inline-flex;
+  }
+  .pk-landing__theme--foot {
+    display: none;
+  }
+}
+@media (min-width: 1024px) {
+  .pk-landing__nav {
+    display: flex;
+    flex: 1 1 auto;
+    justify-content: center;
+    gap: var(--space-6);
+  }
+}
+.pk-landing__link {
+  position: relative;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .pk-landing__link:hover {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+}
+@media (pointer: coarse) {
+  .pk-landing__link::after {
+    content: "";
+    position: absolute;
+    inset: -14px -6px;
+  }
+}
 
 .pk-hero {
   display: grid;
   gap: var(--space-7);
   align-items: center;
 }
-@media (min-width: 960px) {
+@media (min-width: 1024px) {
   .pk-hero {
-    grid-template-columns: 1.05fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
     gap: 56px;
   }
 }
 
+/* Three pockets in one row at any width, stepped so they read as three
+   pets and not a table of them. They are fluid, so on a phone they shed
+   their moods before those can cover a face. */
 .pk-stage {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-end;
-  gap: var(--space-4);
-  padding: var(--space-6);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-6) var(--space-5);
   border-radius: var(--radius-room);
   border: var(--stroke-line) solid var(--edge);
   background: var(--sun-soft);
@@ -2177,21 +2244,74 @@ li {
   margin-top: var(--space-7);
 }
 .pk-stage > :nth-child(3) {
-  margin-bottom: var(--space-6);
+  margin-top: var(--space-3);
+}
+.pk-stage__chips {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
-/* The loop, as six pills joined by hairlines. */
+/* The loop, as six pills joined by hairlines. On a phone the chain runs
+   down the page; on a tablet it runs across in rows of three, and no row
+   ends on a loose hairline; where all six fit, it is one row. */
 .pk-chain {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  flex-direction: column;
+  align-items: flex-start;
 }
-.pk-chain__link {
-  flex: 1 1 18px;
-  min-width: 18px;
-  height: 0;
-  border-top: var(--stroke-hair) dashed var(--ink-faint);
+.pk-chain__step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.pk-chain__step:not(:last-child)::after {
+  content: "";
+  height: var(--space-3);
+  margin-left: var(--space-6);
+  border-left: var(--stroke-hair) dashed var(--ink-faint);
+}
+@media (min-width: 720px) {
+  .pk-chain {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: var(--space-3);
+    align-items: center;
+  }
+  .pk-chain__step {
+    flex-direction: row;
+    align-items: center;
+  }
+  .pk-chain__step:not(:last-child)::after {
+    flex: 1 1 18px;
+    min-width: 18px;
+    height: 0;
+    margin: 0 var(--space-2);
+    border-left: 0;
+    border-top: var(--stroke-hair) dashed var(--ink-faint);
+  }
+  .pk-chain__step:nth-child(3n)::after {
+    content: none;
+  }
+}
+@media (min-width: 1200px) {
+  .pk-chain {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .pk-chain__step {
+    flex: 1 1 auto;
+  }
+  .pk-chain__step:last-child {
+    flex: none;
+  }
+  .pk-chain__step:nth-child(3n):not(:last-child)::after {
+    content: "";
+  }
 }
 .pk-pill {
   display: inline-flex;
@@ -2213,7 +2333,7 @@ li {
   gap: var(--space-7);
   align-items: center;
 }
-@media (min-width: 960px) {
+@media (min-width: 1024px) {
   .pk-split {
     grid-template-columns: 1fr auto;
     gap: 56px;
@@ -2228,10 +2348,28 @@ li {
   }
 }
 
+/* The Playground band: the ink card at landing scale. */
+.pk-inkband {
+  padding: var(--space-6) var(--space-5);
+}
+@media (min-width: 720px) {
+  .pk-inkband {
+    padding: var(--space-7);
+  }
+}
+
+/* two pockets side by side, never wider than their drawn size */
+.pk-duo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 168px));
+  justify-content: center;
+  gap: var(--space-4);
+}
+
 .pk-pillars {
   display: grid;
   gap: var(--space-5);
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
 }
 
 .pk-guildband {
@@ -2239,15 +2377,22 @@ li {
   border: var(--stroke-line) solid var(--edge);
   background: var(--bloom-soft);
   box-shadow: var(--shadow-sticker);
-  padding: var(--space-7);
+  padding: var(--space-6) var(--space-5);
 }
-@media (min-width: 960px) {
+@media (min-width: 720px) {
+  .pk-guildband {
+    padding: var(--space-7);
+  }
+}
+@media (min-width: 1024px) {
   .pk-guildband {
     padding: 56px;
   }
 }
 
-/* The asset model, in the same table Pawket uses internally. */
+/* The asset model, in the same table Pawket uses internally. On a phone
+   each row becomes a short record — the thing, then its three answers,
+   each under its own label — because four columns do not fit a hand. */
 .pk-assets {
   width: 100%;
   border-collapse: collapse;
@@ -2261,6 +2406,7 @@ li {
   color: var(--ink-faint);
   padding: 0 0 10px;
   font-weight: 400;
+  vertical-align: bottom;
 }
 .pk-assets td {
   font-family: var(--font-mono);
@@ -2278,6 +2424,68 @@ li {
 .pk-assets th:not(:first-child),
 .pk-assets td:not(:first-child) {
   padding-left: var(--space-6);
+}
+@media (max-width: 719px) {
+  .pk-assets thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .pk-assets tbody,
+  .pk-assets tr,
+  .pk-assets td {
+    display: block;
+  }
+  .pk-assets tr {
+    padding: var(--space-3) 0;
+    border-top: var(--stroke-hair) dashed var(--rule);
+  }
+  .pk-assets tr:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .pk-assets td,
+  .pk-assets td:not(:first-child) {
+    display: grid;
+    grid-template-columns: 9.5em minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: 2px 0;
+    border: 0;
+  }
+  .pk-assets td:first-child {
+    display: block;
+    padding-bottom: var(--space-1);
+    font-weight: 500;
+  }
+  .pk-assets td:not(:first-child)::before {
+    content: attr(data-label);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+.pk-landing__foot {
+  display: grid;
+  gap: var(--space-6);
+  padding-top: var(--space-8);
+  padding-bottom: calc(var(--space-9) + env(safe-area-inset-bottom));
+  border-top: var(--stroke-line) solid var(--edge-soft);
+}
+@media (min-width: 1024px) {
+  .pk-landing__foot {
+    grid-template-columns: auto minmax(0, 62ch);
+    justify-content: space-between;
+    align-items: start;
+  }
+}
+.pk-landing__footnav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
 }
 
 /* At phone width four tabs share the trough rather than scrolling off it. */

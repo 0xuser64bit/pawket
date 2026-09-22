@@ -1872,9 +1872,6 @@ li {
   box-shadow: var(--shadow-lift);
   animation: pk-rise var(--dur-sheet) var(--ease-press);
 }
-.pk-sheet:focus {
-  outline: 0;
-}
 .pk-sheet .pk-paper__body {
   overflow-y: auto;
 }
@@ -2434,7 +2431,8 @@ li {
     var(--pk-keep, 0 0 transparent),
     0 0 0 var(--focus-ring) var(--focus-contrast);
 }
-.pk-field__input:focus-visible {
+.pk-field__input:focus-visible,
+[tabindex="-1"]:focus-visible {
   outline: 0;
   box-shadow: none;
 }

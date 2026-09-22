@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Chip,
@@ -33,11 +33,15 @@ const SUGGESTIONS = ["Pepper", "Marmalade", "Tuesday", "Nib"];
 
 /**
  * Three taps to a pet, and the wallet question is never asked. Onboarding
- * does not mention a chain, a token or a connect step — the account is
- * enough, and ownership is offered later as something you choose.
+ * does not mention a chain, a token or a connect step — the pet is enough,
+ * and ownership is offered later as something you choose.
  *
  * This is the one product flow that is real: it writes a guest pet with the
  * same game math and the same name rule the on-chain adoption uses.
+ *
+ * Each step replaces the last in place, so focus and scroll move to the new
+ * step's heading — otherwise a keyboard or screen reader is left on a button
+ * that no longer exists.
  */
 export function AdoptFlow() {
   const router = useRouter();
@@ -46,9 +50,21 @@ export function AdoptFlow() {
   const [personality, setPersonality] = useState<PetPersonality>(PetPersonality.Curious);
   const [name, setName] = useState("");
   const [error, setError] = useState<string>();
+  const heading = useRef<HTMLHeadingElement>(null);
+  const nameInput = useRef<HTMLInputElement>(null);
+  const shown = useRef(step);
+
+  useEffect(() => {
+    // Only when the step changes: on arrival the page starts at the top.
+    if (shown.current === step) return;
+    shown.current = step;
+    window.scrollTo({ top: 0 });
+    heading.current?.focus();
+  }, [step]);
 
   const form = SPECIES_ART[species];
   const sky = SPECIES_SKY[species];
+  const personalityLabel = PERSONALITIES.find((option) => option.value === personality)?.label;
 
   function commit() {
     try {
@@ -59,18 +75,21 @@ export function AdoptFlow() {
       // The rule comes from the on-chain name seed (2–24 UTF-8 bytes); the
       // sentence a player reads should not.
       setError("A name needs at least two characters, and no more than 24.");
+      nameInput.current?.focus();
     }
   }
 
   if (step === 1) {
     return (
-      <Screen>
-        <div style={{ padding: "var(--space-3) 0" }}>
-          <Mark size={26} type={18} />
+      <Screen width="narrow">
+        <div className="pk-screen__bar">
+          <Mark href="/" size={26} type={18} />
         </div>
         <Stack gap={5}>
           <div>
-            <h1 className="display-l">Who is coming home with you?</h1>
+            <h1 ref={heading} tabIndex={-1} className="display-l">
+              Who is coming home with you?
+            </h1>
             <p className="body pk-muted" style={{ marginTop: "var(--space-3)" }}>
               You can change everything else later. Not this.
             </p>
@@ -118,95 +137,111 @@ export function AdoptFlow() {
 
   if (step === 2) {
     return (
-      <Screen>
-        <div style={{ padding: "var(--space-3) 0" }}>
+      <Screen width="narrow">
+        <div className="pk-screen__bar">
           <Button label="Back" tone="ghost" icon="left" onClick={() => setStep(1)} />
         </div>
-        <Stack gap={5}>
-          <div style={{ display: "grid", placeItems: "center" }}>
-            <PetFrame form={form} sky={sky} size="lg" mood="New" />
-          </div>
-
-          <div>
-            <h1 className="display-m">What do you want to call them?</h1>
-            <div style={{ marginTop: "var(--space-4)" }}>
-              <Field
-                label="Pet name"
-                name="pet-name"
-                icon="paw"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Pepper"
-                error={error}
-                helper="Names are yours alone and can be changed once a season."
-              />
+        {/* A form, so Enter in the name field does what the button does. */}
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            commit();
+          }}
+        >
+          <Stack gap={5}>
+            <div className="pk-portrait">
+              <PetFrame form={form} sky={sky} size="lg" mood="New" />
             </div>
-            <Row gap={2} wrap style={{ marginTop: "var(--space-3)" }}>
-              {SUGGESTIONS.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => setName(suggestion)}
-                  className="pk-pick pk-pick--flat"
-                >
-                  <Chip label={suggestion} />
-                </button>
-              ))}
-            </Row>
-          </div>
 
-          <div>
-            <p className="label pk-faint" style={{ marginBottom: "var(--space-3)" }}>
-              How would you describe them?
-            </p>
-            <Row gap={2} wrap>
-              {PERSONALITIES.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setPersonality(option.value)}
-                  aria-pressed={option.value === personality}
-                  className="pk-pick pk-pick--flat"
-                >
-                  <Chip
-                    label={option.label}
-                    tone={option.value === personality ? "sprout" : undefined}
-                  />
-                </button>
-              ))}
-            </Row>
-          </div>
+            <div>
+              <h1 ref={heading} tabIndex={-1} className="display-m">
+                What do you want to call them?
+              </h1>
+              <div style={{ marginTop: "var(--space-4)" }}>
+                <Field
+                  ref={nameInput}
+                  label="Pet name"
+                  name="pet-name"
+                  icon="paw"
+                  autoComplete="off"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Pepper"
+                  error={error}
+                  helper="Two to 24 characters. Yours alone."
+                />
+              </div>
+              <Row gap={2} wrap style={{ marginTop: "var(--space-3)" }}>
+                {SUGGESTIONS.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => setName(suggestion)}
+                    className="pk-pick pk-pick--flat"
+                  >
+                    <Chip label={suggestion} />
+                  </button>
+                ))}
+              </Row>
+            </div>
 
-          <Meter label="Step" value={2} max={3} tone="neutral" readout="2 of 3" />
+            <fieldset>
+              <legend className="label pk-faint" style={{ marginBottom: "var(--space-3)" }}>
+                How would you describe them?
+              </legend>
+              <Row gap={2} wrap>
+                {PERSONALITIES.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setPersonality(option.value)}
+                    aria-pressed={option.value === personality}
+                    className="pk-pick pk-pick--flat"
+                  >
+                    {/* Chosen is the act hue, as it is for the species. */}
+                    <Chip label={option.label} tone={option.value === personality ? "sun" : undefined} />
+                  </button>
+                ))}
+              </Row>
+            </fieldset>
 
-          <Button label="That’s the one" size="lg" full onClick={commit} />
-        </Stack>
+            <Meter label="Step" value={2} max={3} tone="neutral" readout="2 of 3" />
+
+            <Button type="submit" label="That’s the one" size="lg" full />
+          </Stack>
+        </form>
       </Screen>
     );
   }
 
   return (
-    <Screen>
+    <Screen width="narrow">
       <Stack gap={5} style={{ paddingTop: "var(--space-7)" }}>
-        <div style={{ display: "grid", placeItems: "center" }}>
-          <PetFrame form={form} sky={sky} size="lg" name={name.trim()} level={1} rarity="cloth" mood="Curious" />
+        <div className="pk-portrait">
+          <PetFrame
+            form={form}
+            sky={sky}
+            size="lg"
+            name={name.trim()}
+            level={1}
+            rarity="cloth"
+            mood={personalityLabel}
+          />
         </div>
 
         <div>
-          <h1 className="display-m">{name.trim()} is yours.</h1>
+          <h1 ref={heading} tabIndex={-1} className="display-m">
+            {name.trim()} is yours.
+          </h1>
           <p className="body pk-muted" style={{ marginTop: "var(--space-3)" }}>
-            They live in your account from now on. If you ever want them recorded on-chain, that is
-            one tap in Settings — and nothing about them changes when you do.
+            They live in this browser from now on. Recording them on-chain will always be your
+            choice — and nothing about them changes if you do.
           </p>
         </div>
 
         <WalletState mode="guest" body="No wallet needed. Everything in Pawket works from here." />
 
         <Button label="Take them home" size="lg" full icon="home" onClick={() => router.push("/home")} />
-
-        <p className="caption pk-faint" style={{ textAlign: "center" }}>
-          You can set up on-chain ownership any time. It is never required.
-        </p>
       </Stack>
     </Screen>
   );

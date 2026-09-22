@@ -24,6 +24,8 @@ export type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonShape {
   label: string;
+  /** A figure beside the label — a countdown — set in mono. */
+  meta?: string;
   tone?: ButtonTone;
   size?: ButtonSize;
   icon?: IconName;
@@ -44,12 +46,13 @@ function buttonClass({ tone = "sun", size = "md", full, className }: ButtonShape
     .join(" ");
 }
 
-function buttonFace({ label, size = "md", icon, after }: ButtonShape) {
+function buttonFace({ label, meta, size = "md", icon, after }: ButtonShape) {
   const glyph = size === "sm" ? 14 : 16;
   return (
     <>
       {icon ? <Icon name={icon} size={glyph} /> : null}
       <span>{label}</span>
+      {meta ? <span className="pk-btn__meta">{meta}</span> : null}
       {after ? <Icon name={after} size={14} /> : null}
     </>
   );
@@ -57,6 +60,7 @@ function buttonFace({ label, size = "md", icon, after }: ButtonShape) {
 
 export function Button({
   label,
+  meta,
   tone,
   size,
   icon,
@@ -67,7 +71,7 @@ export function Button({
 }: ButtonShape & Omit<ComponentProps<"button">, "className" | "children">) {
   return (
     <button type="button" className={buttonClass({ label, tone, size, full, className })} {...rest}>
-      {buttonFace({ label, size, icon, after })}
+      {buttonFace({ label, meta, size, icon, after })}
     </button>
   );
 }

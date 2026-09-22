@@ -80,6 +80,7 @@
   /* depth is offset and outline, never blur — except a sheet */
   --shadow-sticker: 3px 3px 0 #2a1e14;
   --shadow-sticker-sm: 2px 2px 0 #2a1e14;
+  --shadow-sticker-lift: 4px 4px 0 #2a1e14;
   --shadow-lift: 0 20px 44px -16px rgba(42, 30, 20, 0.35);
   --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
 
@@ -185,6 +186,7 @@
 
     --shadow-sticker: 3px 3px 0 #0b0806;
     --shadow-sticker-sm: 2px 2px 0 #0b0806;
+    --shadow-sticker-lift: 4px 4px 0 #0b0806;
     --shadow-lift: 0 20px 44px -16px rgba(0, 0, 0, 0.72);
     --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
   }
@@ -249,6 +251,7 @@
 
   --shadow-sticker: 3px 3px 0 #0b0806;
   --shadow-sticker-sm: 2px 2px 0 #0b0806;
+  --shadow-sticker-lift: 4px 4px 0 #0b0806;
   --shadow-lift: 0 20px 44px -16px rgba(0, 0, 0, 0.72);
   --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
 }
@@ -301,6 +304,8 @@
 
 html {
   background: var(--ground);
+  /* a page that scrolls and one that does not keep the same width */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -523,9 +528,10 @@ li {
 }
 .pk-paper__head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: 2px var(--space-4);
   padding: var(--space-3) var(--space-4);
   border-bottom: var(--stroke-hair) dashed var(--rule);
   color: var(--ink-faint);
@@ -538,13 +544,26 @@ li {
   border-top: var(--stroke-hair) solid var(--rule);
   background: var(--paper-sunk);
 }
-/* the torn bottom edge of a disclosure */
+.pk-paper__head > :last-child:not(:first-child) {
+  margin-left: auto;
+  text-align: right;
+}
+/* The torn bottom edge of a disclosure. The sheet loses its bottom rule and
+   the teeth hang below it in the colour of whatever the sheet ends in. */
+.pk-paper--torn {
+  border-bottom: 0;
+  border-radius: var(--radius-paper) var(--radius-paper) 0 0;
+}
 .pk-tear {
+  --tear: var(--paper);
   height: 8px;
   background:
-    linear-gradient(135deg, var(--paper) 50%, transparent 50%) 0 0 / 12px 8px repeat-x,
-    linear-gradient(-135deg, var(--paper) 50%, transparent 50%) 6px 0 / 12px 8px repeat-x;
+    linear-gradient(135deg, var(--tear) 50%, transparent 50%) 0 0 / 12px 8px repeat-x,
+    linear-gradient(-135deg, var(--tear) 50%, transparent 50%) 6px 0 / 12px 8px repeat-x;
   filter: drop-shadow(0 1px 0 var(--rule));
+}
+.pk-tear--sunk {
+  --tear: var(--paper-sunk);
 }
 
 /* ------------------------------------------------------ card (Playroom) */
@@ -578,6 +597,36 @@ li {
 }
 .pk-card--quiet {
   box-shadow: none;
+}
+/* A collection card: the pocket bleeds to a 12px margin, the words sit
+   below it. */
+.pk-card__art {
+  padding: var(--space-3) var(--space-3) 0;
+}
+.pk-card__body {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+/* A card that is a link lifts off the page under a pointer and presses
+   flat under a finger, like every other thing in the Playroom you can
+   press. */
+.pk-card--link {
+  --pk-keep: var(--shadow-sticker);
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform var(--dur-press) var(--ease-press),
+    box-shadow var(--dur-press) var(--ease-press);
+}
+@media (hover: hover) {
+  .pk-card--link:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-sticker-lift);
+  }
+}
+.pk-card--link:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-sticker-sm);
 }
 .pk-well {
   background: var(--surface-sunk);
@@ -634,6 +683,13 @@ li {
   transform: translateY(var(--stroke-shelf));
   border-bottom-width: var(--stroke-line);
   margin-bottom: var(--stroke-shelf);
+}
+/* a figure on a button — a countdown — is mono, like every figure */
+.pk-btn__meta {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .pk-btn--lg {
   padding: 15px var(--space-6);
@@ -814,10 +870,14 @@ li {
   flex-direction: column;
   gap: var(--space-2);
 }
+/* The frame is a size container, so the badges on it answer to the pocket
+   they sit in rather than to the window: a mood never covers a small pet's
+   face, and a level stays legible on a large one. */
 .pk-pet__frame {
   position: relative;
+  container-type: inline-size;
   width: 168px;
-  height: 168px;
+  aspect-ratio: 1;
   border: var(--stroke-line) solid var(--edge);
   border-radius: var(--radius-pocket);
   background: var(--surface-sunk);
@@ -826,21 +886,25 @@ li {
 }
 .pk-pet--sm .pk-pet__frame {
   width: 104px;
-  height: 104px;
   border-radius: var(--radius-lg);
 }
+/* The pet on its own screen: 240px on a phone, larger where the thing
+   itself has a column of its own. */
+.pk-pet--lg {
+  width: min(100%, 240px);
+}
 .pk-pet--lg .pk-pet__frame {
-  width: 240px;
-  height: 240px;
+  width: 100%;
   border-radius: var(--radius-room);
+}
+@media (min-width: 1024px) {
+  .pk-pet--lg {
+    width: min(100%, 320px);
+  }
 }
 .pk-pet--fluid,
 .pk-pet--fluid .pk-pet__frame {
   width: 100%;
-}
-.pk-pet--fluid .pk-pet__frame {
-  height: auto;
-  aspect-ratio: 1;
 }
 .pk-pet__sky {
   position: absolute;
@@ -876,8 +940,8 @@ li {
   position: absolute;
   right: var(--space-2);
   top: var(--space-3);
-  min-width: 30px;
-  height: 30px;
+  min-width: clamp(26px, 12.5cqi, 40px);
+  height: clamp(26px, 12.5cqi, 40px);
   padding: 0 6px;
   display: grid;
   place-items: center;
@@ -886,7 +950,7 @@ li {
   background: var(--sprout);
   color: var(--on-sprout);
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: clamp(12px, 5.4cqi, 16px);
   font-weight: 500;
 }
 .pk-pet__mood {
@@ -900,10 +964,16 @@ li {
   border-radius: var(--radius-pill);
   background: var(--surface);
   border: var(--stroke-line) solid var(--edge);
-  font-size: 11px;
+  font-size: clamp(11px, 4.6cqi, 13px);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+@container (max-width: 139px) {
+  .pk-pet__mood {
+    display: none;
+  }
 }
 .pk-pet__name {
   font-family: var(--font-display);
@@ -1204,14 +1274,14 @@ li {
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3);
-  width: 132px;
+  min-width: 0;
   background: var(--surface);
   border: var(--stroke-line) solid var(--edge);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sticker-sm);
 }
 .pk-tile__art {
-  height: 84px;
+  aspect-ratio: 5 / 4;
   border-radius: var(--radius-md);
   background: var(--surface-sunk);
   display: grid;
@@ -1220,7 +1290,7 @@ li {
   color: var(--ink-soft);
 }
 .pk-tile__art svg {
-  width: 56%;
+  width: 40%;
   height: auto;
 }
 .pk-tile__trim {
@@ -1298,6 +1368,7 @@ li {
 
 .pk-banner {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-3);
   align-items: flex-start;
   padding: var(--space-4);
@@ -1308,6 +1379,14 @@ li {
 .pk-banner__icon {
   flex: none;
   margin-top: 1px;
+}
+.pk-banner > .pk-fill {
+  flex: 1 1 16rem;
+}
+.pk-banner__action {
+  flex: none;
+  align-self: center;
+  margin-left: auto;
 }
 .pk-banner__title {
   font-family: var(--font-text);
@@ -1348,15 +1427,59 @@ li {
 
 /* ---------------------------------------------------------------- guild */
 
+/* The crest heads the row rather than floating beside it, and the count
+   and the action share a foot, so the words get the width on a phone. The
+   name is the row's link and stretches over the whole of it. */
 .pk-guild {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-4);
   padding: var(--space-4);
   background: var(--surface);
   border: var(--stroke-line) solid var(--edge);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sticker-sm);
+  transition:
+    transform var(--dur-press) var(--ease-press),
+    box-shadow var(--dur-press) var(--ease-press);
+}
+.pk-guild__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--space-3);
+}
+.pk-guild__name {
+  color: var(--ink);
+  text-decoration: none;
+}
+.pk-guild__name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.pk-guild__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+}
+.pk-guild__foot > :last-child:not(:first-child) {
+  position: relative;
+  margin-left: auto;
+}
+.pk-nowrap {
+  white-space: nowrap;
+}
+@media (hover: hover) {
+  .pk-guild:has(.pk-guild__name:hover) {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-sticker);
+  }
 }
 .pk-crest {
   flex: none;
@@ -1663,12 +1786,19 @@ li {
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  overscroll-behavior: contain;
   background: color-mix(in srgb, var(--ground) 72%, transparent);
   animation: pk-fade var(--dur-sheet) var(--ease-press);
 }
+/* Anchored to the foot of a phone, where a thumb is; a centred dialog where
+   there is a pointer and room. Either way it never outgrows the view: the
+   body scrolls and the foot with its two buttons stays put. */
 .pk-sheet {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  max-width: 460px;
+  max-width: 480px;
+  max-height: calc(100dvh - var(--space-8));
   background: var(--paper);
   color: var(--ink);
   border: var(--stroke-hair) solid var(--rule);
@@ -1676,6 +1806,28 @@ li {
   border-radius: var(--radius-paper) var(--radius-paper) 0 0;
   box-shadow: var(--shadow-lift);
   animation: pk-rise var(--dur-sheet) var(--ease-press);
+}
+.pk-sheet:focus {
+  outline: 0;
+}
+.pk-sheet .pk-paper__body {
+  overflow-y: auto;
+}
+.pk-sheet .pk-paper__foot {
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+}
+@media (min-width: 720px) {
+  .pk-scrim {
+    align-items: center;
+    padding: var(--space-6);
+  }
+  .pk-sheet {
+    border-bottom: var(--stroke-hair) solid var(--rule);
+    border-radius: var(--radius-paper);
+  }
+  .pk-sheet .pk-paper__foot {
+    padding-bottom: var(--space-3);
+  }
 }
 @keyframes pk-rise {
   from {
@@ -1722,27 +1874,32 @@ li {
 
 .pk-room {
   position: relative;
-  height: 236px;
+  container-type: size;
+  aspect-ratio: 335 / 236;
+  max-height: 440px;
   border-radius: var(--radius-room);
   border: var(--stroke-line) solid var(--edge);
   box-shadow: var(--shadow-sticker);
   overflow: hidden;
 }
+/* Everything in the room is sized from its height and placed along its
+   width, so a wider room gives the two of them more floor, not bigger
+   heads. The proportions are the 390px drawing's. */
 .pk-room__floor {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 64px;
+  height: 27cqh;
   background: var(--surface-sunk);
   border-top: var(--stroke-line) solid var(--edge);
 }
 .pk-room__win {
   position: absolute;
-  left: 24px;
-  top: 22px;
-  width: 86px;
-  height: 74px;
+  left: 7%;
+  top: 9.3cqh;
+  width: 36.4cqh;
+  height: 31.4cqh;
   border: var(--stroke-line) solid var(--edge);
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: var(--surface);
@@ -1753,32 +1910,20 @@ li {
   left: 50%;
   top: 0;
   bottom: 0;
-  width: 2px;
+  width: var(--stroke-line);
   background: var(--edge);
-}
-.pk-room__lamp {
-  position: absolute;
-  right: 26px;
-  top: 16px;
-  width: 42px;
-  height: 30px;
-  border: var(--stroke-line) solid var(--edge);
-  border-radius: 0 0 22px 22px;
-  background: var(--sun);
 }
 .pk-room__who {
   position: absolute;
-  bottom: 34px;
+  bottom: 14.4cqh;
   left: 8%;
-  width: 34%;
-  max-width: 118px;
+  width: 48.3cqh;
 }
 .pk-room__pet {
   position: absolute;
-  bottom: 26px;
+  bottom: 11cqh;
   left: 46%;
-  width: 40%;
-  max-width: 142px;
+  width: 56.8cqh;
 }
 
 /* ------------------------------------------------- the playground field */
@@ -1817,16 +1962,29 @@ li {
   flex: none;
 }
 
-/* Pet and item grids: two columns on a phone, four at 1200px. A collection
-   should look like a shelf, not a table. */
-.pk-shelf {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-.pk-pair {
+/* A collection should look like a shelf, not a table. Pet cards run two to
+   a phone row, three on a tablet and four on a desktop; item tiles are
+   smaller and simply fill the shelf at no less than 148px each. */
+.pk-cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+@media (min-width: 720px) {
+  .pk-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+}
+@media (min-width: 1024px) {
+  .pk-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+}
+.pk-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(148px, 100%), 1fr));
   gap: var(--space-3);
 }
 
@@ -2062,6 +2220,18 @@ li {
   --pk-keep: 0 0 0 4px var(--ground), 0 0 0 calc(4px + var(--stroke-line)) var(--sun-text);
   opacity: 1;
   box-shadow: var(--pk-keep);
+}
+/* Three species share one row at any width; the name sits under each
+   pocket, never over the face. */
+.pk-picks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.pk-pick__label {
+  display: block;
+  margin-top: var(--space-2);
+  text-align: center;
 }
 .pk-pick--flat {
   opacity: 1;

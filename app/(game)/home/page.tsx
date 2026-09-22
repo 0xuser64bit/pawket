@@ -5,14 +5,13 @@ import {
   Card,
   Chip,
   Meter,
-  PetArt,
-  PlayerArt,
   Row,
   Screen,
   ScreenBar,
   Stack,
 } from "@/components/pk";
 import { GuestRoom } from "@/components/home/guest-room";
+import { Room } from "@/components/home/room";
 import { PreviewNote } from "@/components/preview-note";
 import { ACTIVE_PET, PLAYER } from "@/lib/demo";
 import { SPECIES_ART } from "@/lib/game/appearance";
@@ -51,19 +50,10 @@ function FixtureRoom() {
 
   return (
     <Stack gap={4}>
-      <div className="pk-room pk-sky--warm">
-        <div className="pk-room__win" />
-        <div className="pk-room__floor" />
-        <div className="pk-room__who">
-          <PlayerArt color={PLAYER.color} hat={PLAYER.hat} />
-        </div>
-        <div className="pk-room__pet">
-          <PetArt form={SPECIES_ART[pet.species]} />
-        </div>
-        <span className="pk-sr">
-          {PLAYER.name} and {pet.name} in the room, window open.
-        </span>
-      </div>
+      <Room
+        form={SPECIES_ART[pet.species]}
+        description={`${PLAYER.name} and ${pet.name} in the room, window open.`}
+      />
 
       <Row gap={2} wrap>
         <Chip label="Porch tape" tone="sun" icon="music" />

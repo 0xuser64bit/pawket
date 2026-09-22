@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   Banner,
   ButtonLink,
@@ -62,27 +61,25 @@ export default async function InventoryPage({
         {active === "pets" ? (
           <Stack gap={3}>
             <SectionLabel count={`${DEMO_PETS.length}`}>Your pets</SectionLabel>
-            <div className="pk-pair">
+            <div className="pk-cards">
               {DEMO_PETS.map((pet) => (
-                <Link key={pet.id} href={`/pet/${pet.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                  <Card variant="flush">
-                    <div style={{ padding: "var(--space-3) var(--space-3) 0" }}>
-                      <PetFrame
-                        form={SPECIES_ART[pet.species]}
-                        rarity={pet.rarity}
-                        sky={pet.sky}
-                        size="sm"
-                        still
-                      />
-                    </div>
-                    <div style={{ padding: "10px var(--space-4) var(--space-4)" }}>
-                      <div className="title">{pet.name}</div>
-                      <p className="caption pk-faint">
-                        Level {pet.level} · {pet.where}
-                      </p>
-                    </div>
-                  </Card>
-                </Link>
+                <Card key={pet.id} href={`/pet/${pet.id}`} variant="flush">
+                  <div className="pk-card__art">
+                    <PetFrame
+                      form={SPECIES_ART[pet.species]}
+                      rarity={pet.rarity}
+                      sky={pet.sky}
+                      size="fluid"
+                      still
+                    />
+                  </div>
+                  <div className="pk-card__body">
+                    <div className="title">{pet.name}</div>
+                    <p className="caption pk-faint">
+                      Level {pet.level} · {pet.where}
+                    </p>
+                  </div>
+                </Card>
               ))}
             </div>
             <Card variant="quiet">
@@ -101,7 +98,7 @@ export default async function InventoryPage({
           <Stack gap={4}>
             <Stack gap={3}>
               <SectionLabel>Yours outright</SectionLabel>
-              <div className="pk-shelf">
+              <div className="pk-tiles">
                 {OWNED_ITEMS.map((item) => (
                   <ItemTile
                     key={item.id}
@@ -116,7 +113,7 @@ export default async function InventoryPage({
             </Stack>
             <Stack gap={3}>
               <SectionLabel tone="bloom">From a guild</SectionLabel>
-              <div className="pk-shelf">
+              <div className="pk-tiles">
                 {GUILD_ITEMS.map((item) => (
                   <ItemTile
                     key={item.id}
@@ -149,7 +146,7 @@ export default async function InventoryPage({
         {active === "badges" ? (
           <Stack gap={3}>
             <SectionLabel tone="bloom">From a guild</SectionLabel>
-            <div className="pk-shelf">
+            <div className="pk-tiles">
               {badges.map((item) => (
                 <ItemTile
                   key={item.id}

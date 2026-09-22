@@ -90,26 +90,29 @@ export function GuildRow({
     <div className="pk-guild">
       <Crest name={name} letter={letter} color={color} />
       <div className="pk-fill">
-        <div className="pk-row" style={{ gap: "var(--space-3)", flexWrap: "wrap" }}>
-          <Link href={href} className="title" style={{ color: "var(--ink)", textDecoration: "none" }}>
+        <div className="pk-guild__head">
+          <Link href={href} className="title pk-guild__name">
             {name}
           </Link>
           <OfficialMark official={official} label={markLabel} />
         </div>
-        <p className="body-sm pk-muted">{blurb}</p>
-        <div className="pk-row" style={{ gap: "var(--space-3)", marginTop: "var(--space-2)", flexWrap: "wrap" }}>
-          <span className="caption pk-faint">{members} members</span>
-          {stage ? (
-            <>
-              <span className="caption pk-faint" aria-hidden="true">
-                ·
-              </span>
-              <span className="caption pk-faint">{stage}</span>
-            </>
-          ) : null}
+        <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
+          {blurb}
+        </p>
+        <div className="pk-guild__foot">
+          {/* The stage travels with its dot, so a wrap never strands one. */}
+          <span className="caption pk-faint">
+            {members} members
+            {stage ? (
+              <>
+                {" "}
+                <span className="pk-nowrap">· {stage}</span>
+              </>
+            ) : null}
+          </span>
+          {action}
         </div>
       </div>
-      {action}
     </div>
   );
 }

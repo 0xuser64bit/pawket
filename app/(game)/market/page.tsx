@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   Banner,
   Card,
@@ -72,33 +71,27 @@ export default async function MarketPage({
               ))}
             </Row>
 
-            <div className="pk-pair">
+            <div className="pk-cards">
               {DEMO_LISTINGS.map((listing) => (
-                <Link
-                  key={listing.id}
-                  href={`/market/${listing.id}`}
-                  style={{ textDecoration: "none", color: "inherit" }}
-                >
-                  <Card variant="flush">
-                    <div style={{ padding: "var(--space-3) var(--space-3) 0" }}>
-                      <PetFrame
-                        form={SPECIES_ART[listing.species]}
-                        rarity={listing.rarity}
-                        sky={listing.sky}
-                        size="sm"
-                        still
-                      />
+                <Card key={listing.id} href={`/market/${listing.id}`} variant="flush">
+                  <div className="pk-card__art">
+                    <PetFrame
+                      form={SPECIES_ART[listing.species]}
+                      rarity={listing.rarity}
+                      sky={listing.sky}
+                      size="fluid"
+                      still
+                    />
+                  </div>
+                  <div className="pk-card__body">
+                    <div className="title">{listing.name}</div>
+                    <p className="caption pk-faint">{listing.traits.join(" · ")}</p>
+                    <div className="pk-spread" style={{ marginTop: "var(--space-2)" }}>
+                      <span className="amount">{listing.price}</span>
+                      <span className="caption pk-faint">SOL</span>
                     </div>
-                    <div style={{ padding: "10px var(--space-4) var(--space-4)" }}>
-                      <div className="title">{listing.name}</div>
-                      <p className="caption pk-faint">{listing.traits.join(" · ")}</p>
-                      <div className="pk-spread" style={{ marginTop: "var(--space-2)" }}>
-                        <span className="amount">{listing.price}</span>
-                        <span className="caption pk-faint">SOL</span>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
+                  </div>
+                </Card>
               ))}
             </div>
 
@@ -115,7 +108,7 @@ export default async function MarketPage({
             <SectionLabel count={`${SHOP_ITEMS.length}`}>
               {active === "backdrops" ? "Backdrops and sound" : "Cosmetics"}
             </SectionLabel>
-            <div className="pk-shelf">
+            <div className="pk-tiles">
               {SHOP_ITEMS.filter((item) =>
                 active === "backdrops" ? item.kind === "Backdrop" || item.kind === "Sound" : true,
               ).map((item) => (
@@ -140,7 +133,7 @@ export default async function MarketPage({
         {active === "guild" ? (
           <Stack gap={4}>
             <SectionLabel tone="bloom">From a guild</SectionLabel>
-            <div className="pk-shelf">
+            <div className="pk-tiles">
               {GUILD_ITEMS.map((item) => (
                 <ItemTile
                   key={item.id}

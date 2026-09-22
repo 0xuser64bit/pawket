@@ -7,11 +7,10 @@ import {
   Card,
   Chip,
   Meter,
-  PetArt,
-  PlayerArt,
   Row,
   Stack,
 } from "@/components/pk";
+import { Room } from "@/components/home/room";
 import { MOOD_LABEL, SPECIES_ART, SPECIES_LABEL } from "@/lib/game/appearance";
 import { CareActionType } from "@/lib/game/enums";
 import { applyGuestCare, cooldownsFor, projectGuestPet } from "@/lib/guest/pet";
@@ -22,7 +21,6 @@ import {
 } from "@/lib/guest/storage";
 import { formatCountdown } from "@/lib/utils/format";
 import { useMounted } from "@/lib/utils/use-mounted";
-import { PLAYER } from "@/lib/demo";
 
 /**
  * The one real loop in the product: a wallet-free pet, kept in this browser,
@@ -74,19 +72,7 @@ export function GuestRoom({ fallback }: { fallback: React.ReactNode }) {
 
   return (
     <Stack gap={4}>
-      <div className="pk-room pk-sky--warm">
-        <div className="pk-room__win" />
-        <div className="pk-room__floor" />
-        <div className="pk-room__who">
-          <PlayerArt color={PLAYER.color} hat={PLAYER.hat} />
-        </div>
-        <div className="pk-room__pet">
-          <PetArt form={form} />
-        </div>
-        <span className="pk-sr">
-          You and {pet.name} in the room, window open.
-        </span>
-      </div>
+      <Room form={form} description={`You and ${pet.name} in the room, window open.`} />
 
       <Row gap={2} wrap>
         <Chip label={MOOD_LABEL[projected.mood]} tone="sun" icon="paw" />
@@ -118,7 +104,8 @@ export function GuestRoom({ fallback }: { fallback: React.ReactNode }) {
             return (
               <Button
                 key={action}
-                label={left > 0 ? `${label} ${formatCountdown(left)}` : label}
+                label={label}
+                meta={left > 0 ? formatCountdown(left) : undefined}
                 icon={icon}
                 size="sm"
                 tone={tone}

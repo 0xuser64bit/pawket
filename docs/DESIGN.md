@@ -84,8 +84,13 @@ shape, and never appears without the pocket — the pads alone are not the mark.
 
 ## Motion
 
-A pressable control moves on `cubic-bezier(.2,.9,.3,1)` at 90ms; the shelf is
-what makes it read as an object. A sheet rises over 220ms. Nothing animates on
+A pressable control moves on `cubic-bezier(.2,.9,.3,1)` at 90ms (`--ease-press`,
+`--dur-press`); the shelf is what makes it read as an object, and pressing it
+moves the face, never the page. A card or guild row that is a link lifts 1px
+onto `shadow-sticker-lift` under a pointer and presses flat under a finger.
+Hover exists only where a pointer can hover. A sheet rises over 220ms
+(`--dur-sheet`); it is a modal in behaviour too — focus moves in, the page
+behind goes inert, and Escape or the dimmed room leave the way Cancel does. Nothing animates on
 a Paper surface: a quote does not count up and a launch meter does not fill on
 load. All of it stops under `prefers-reduced-motion`.
 

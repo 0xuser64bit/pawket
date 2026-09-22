@@ -76,7 +76,7 @@ export function AdoptFlow() {
             </p>
           </div>
 
-          <div className="pk-shelf">
+          <div className="pk-picks">
             {SPECIES.map((option) => {
               const chosen = option === species;
               return (
@@ -87,13 +87,8 @@ export function AdoptFlow() {
                   aria-pressed={chosen}
                   className="pk-pick"
                 >
-                  <PetFrame
-                    form={SPECIES_ART[option]}
-                    sky={SPECIES_SKY[option]}
-                    size="sm"
-                    mood={SPECIES_LABEL[option]}
-                    still={!chosen}
-                  />
+                  <PetFrame form={SPECIES_ART[option]} sky={SPECIES_SKY[option]} size="fluid" still={!chosen} />
+                  <span className="label pk-pick__label">{SPECIES_LABEL[option]}</span>
                 </button>
               );
             })}

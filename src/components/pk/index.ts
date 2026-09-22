@@ -24,12 +24,12 @@ export {
   Card,
   Paper,
   Receipt,
-  Sheet,
   WalletState,
   Well,
   type BannerTone,
   type ReceiptRow,
 } from "./surfaces";
+export { Sheet } from "./sheet";
 export {
   EmptyState,
   ItemTile,

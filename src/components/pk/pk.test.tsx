@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { activePlace } from "./dock";
-import { Button, Chip, Mark, Meter, PawArt, PawLoader, PetFrame, Receipt } from "./index";
+import { Button, Card, Chip, Mark, Meter, Paper, PawArt, PawLoader, PetFrame, Receipt } from "./index";
 
 describe("Button", () => {
   it("wears its tone and size, and sun needs no modifier", () => {
@@ -15,6 +15,32 @@ describe("Button", () => {
     const html = renderToStaticMarkup(<Button label="Confirm in wallet" tone="paper" />);
     expect(html).toContain("pk-btn--paper");
     expect(html).not.toContain("pk-btn--sun");
+  });
+});
+
+describe("Button meta", () => {
+  it("sets a figure beside the label apart, so it can be mono", () => {
+    const html = renderToStaticMarkup(<Button label="Feed" meta="4:59" />);
+    expect(html).toContain('<span>Feed</span><span class="pk-btn__meta">4:59</span>');
+  });
+});
+
+describe("Card", () => {
+  it("becomes one link when it has somewhere to go", () => {
+    const html = renderToStaticMarkup(<Card href="/pet/pepper">Pepper</Card>);
+    expect(html).toMatch(/^<a [^>]*class="pk-card pk-card--link"[^>]*href="\/pet\/pepper"|^<a [^>]*href="\/pet\/pepper"[^>]*class="pk-card pk-card--link"/);
+  });
+});
+
+describe("Paper", () => {
+  it("hangs a torn edge below the sheet, not inside its rule", () => {
+    const html = renderToStaticMarkup(
+      <Paper title="Risk" torn foot={<span>Continue</span>}>
+        Lines
+      </Paper>,
+    );
+    expect(html).toMatch(/<\/section><div class="pk-tear pk-tear--sunk"/);
+    expect(html).toContain("pk-paper pk-paper--torn");
   });
 });
 

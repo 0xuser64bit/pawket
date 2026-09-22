@@ -55,6 +55,7 @@ export default async function AdoptSheetPage({ params }: { params: Promise<{ id:
       <Sheet
         title={`Adopting ${listing.name}`}
         meta="Step 1 of 1"
+        dismissHref={`/market/${listing.id}`}
         foot={
           <Row gap={2}>
             <ButtonLink label="Cancel" href={`/market/${listing.id}`} tone="paper" />

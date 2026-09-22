@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { Icon, type IconName } from "./icon";
 
@@ -7,31 +8,37 @@ import { Icon, type IconName } from "./icon";
  * A Playroom surface: `surface` fill, a 2px `edge` outline, `shadow-sticker`
  * and `radius-lg`. A card looks die-cut, like a sticker resting on the page.
  * Cards do not scroll, clip or manage their own height.
+ *
+ * With `href` the whole card is the link — one target, one focus ring that
+ * follows its corners — and it lifts and presses like anything else in the
+ * Playroom a player can press.
  */
 export function Card({
-  title,
   variant,
+  href,
   className,
   style,
   children,
 }: {
-  title?: string;
   /** `room` is a whole area, `ink` is the inverted panel, `flush` lets art bleed. */
   variant?: "room" | "ink" | "flush" | "quiet";
+  href?: string;
   className?: string;
   style?: CSSProperties;
   children: ReactNode;
 }) {
+  const classes = ["pk-card", variant && `pk-card--${variant}`, href && "pk-card--link", className]
+    .filter(Boolean)
+    .join(" ");
+  if (href) {
+    return (
+      <Link href={href} className={classes} style={style}>
+        {children}
+      </Link>
+    );
+  }
   return (
-    <div
-      className={["pk-card", variant && `pk-card--${variant}`, className].filter(Boolean).join(" ")}
-      style={style}
-    >
-      {title ? (
-        <div className="display-s" style={{ marginBottom: "var(--space-4)" }}>
-          {title}
-        </div>
-      ) : null}
+    <div className={classes} style={style}>
       {children}
     </div>
   );
@@ -80,8 +87,11 @@ export function Paper({
   style?: CSSProperties;
   children: ReactNode;
 }) {
-  return (
-    <section className={["pk-paper", className].filter(Boolean).join(" ")} style={style}>
+  const sheet = (
+    <section
+      className={["pk-paper", torn && "pk-paper--torn", !torn && className].filter(Boolean).join(" ")}
+      style={torn ? undefined : style}
+    >
       {title ? (
         <header className="pk-paper__head">
           <span className="receipt-label">{title}</span>
@@ -90,8 +100,16 @@ export function Paper({
       ) : null}
       <div className="pk-paper__body">{children}</div>
       {foot ? <footer className="pk-paper__foot">{foot}</footer> : null}
-      {torn ? <div className="pk-tear" /> : null}
     </section>
+  );
+  if (!torn) return sheet;
+  // The tear hangs below the sheet, outside its rule, in the colour the
+  // sheet ends in.
+  return (
+    <div className={className} style={style}>
+      {sheet}
+      <div className={["pk-tear", foot && "pk-tear--sunk"].filter(Boolean).join(" ")} aria-hidden="true" />
+    </div>
   );
 }
 
@@ -206,7 +224,7 @@ export function Banner({
         {body ? <div className="pk-banner__body">{body}</div> : null}
         {children}
       </div>
-      {action}
+      {action ? <div className="pk-banner__action">{action}</div> : null}
     </div>
   );
 }
@@ -235,38 +253,5 @@ export function WalletState({
       body={body ?? (connected ? undefined : "No wallet needed. Everything below works as it is.")}
       action={action}
     />
-  );
-}
-
-/* ------------------------------------------------------------------- Sheet */
-
-/**
- * A decision that costs money arrives as a Paper sheet over a dimmed
- * Playroom, anchored to the bottom, with its controls in the `paper-sunk`
- * foot. The corner radius falling from 20px to 4px is the warning; the copy
- * only confirms it.
- */
-export function Sheet({
-  title,
-  meta,
-  foot,
-  children,
-}: {
-  title: string;
-  meta?: string;
-  foot?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div className="pk-scrim">
-      <section className="pk-sheet" role="dialog" aria-modal="true" aria-label={title}>
-        <header className="pk-paper__head">
-          <span className="receipt-label">{title}</span>
-          {meta ? <span className="receipt-label">{meta}</span> : null}
-        </header>
-        <div className="pk-paper__body">{children}</div>
-        {foot ? <footer className="pk-paper__foot">{foot}</footer> : null}
-      </section>
-    </div>
   );
 }

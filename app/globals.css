@@ -306,8 +306,8 @@ html {
   background: var(--ground);
   /* a page that scrolls and one that does not keep the same width */
   scrollbar-gutter: stable;
-  /* focus and anchors land below the sticky shell bar, not under it */
-  scroll-padding-top: calc(var(--shell-height) + var(--space-3));
+  /* focus and anchors land clear of the floating dock, not under it */
+  scroll-padding-bottom: var(--space-10);
 }
 
 body {
@@ -1084,15 +1084,14 @@ li {
 
 /* ------------------------------------------------------------- nav dock
 
-   The five places, and the only persistent navigation. One element, placed
-   three ways:
+   The five places, and the only persistent navigation. It floats 14px above
+   the foot of the view at every width: over the page while it scrolls, and
+   simply at the bottom when there is nothing to scroll.
 
-   - phone (< 720px): floats 14px above the bottom edge and spans the
-     column, so its width never changes as the lit slot changes. Only the lit
-     slot carries its label; below 360px not even that.
-   - tablet (720–1023px): still floating, every slot labelled.
-   - desktop (>= 1024px): sits in the shell bar at the top of the page,
-     where a pointer expects to find the way around. */
+   - phone (< 720px): spans the column, so its width never changes as the
+     lit slot changes. Only the lit slot carries its label; below 360px not
+     even that.
+   - tablet and desktop (>= 720px): centred, every slot labelled. */
 
 .pk-dock {
   position: fixed;
@@ -1184,18 +1183,6 @@ li {
   }
   .pk-dock__label {
     display: inline;
-  }
-}
-@media (min-width: 1024px) {
-  .pk-dock {
-    position: static;
-    margin: 0;
-    gap: 2px;
-    padding: 6px;
-    box-shadow: var(--shadow-sticker-sm);
-  }
-  .pk-dock__item {
-    padding-inline: var(--space-3);
   }
 }
 
@@ -1643,24 +1630,17 @@ li {
    - phone   < 720px   one column at the width of the phone, space-5 gutters
    - tablet  720–1023  one column, never wider than 680px, so a room or a
                        pocket stays in proportion
-   - desktop >= 1024   the shell bar carries the dock; a place spreads to
-                       1120px and composes in two columns, while a flow that
-                       asks for one decision (a quote, a disclosure, a
-                       record) keeps a 640px reading measure. */
+   - desktop >= 1024   a place spreads to 1120px and composes in two
+                       columns, while a flow that asks for one decision (a
+                       quote, a disclosure, a record) keeps a 640px reading
+                       measure. */
 
 :root {
   --gutter: var(--space-5);
-  --shell-height: 0px;
 }
 @media (min-width: 720px) {
   :root {
     --gutter: var(--space-7);
-  }
-}
-@media (min-width: 1024px) {
-  :root {
-    /* the sticky shell bar, so anything sticky below it clears it */
-    --shell-height: 80px;
   }
 }
 
@@ -1686,9 +1666,6 @@ li {
   .pk-screen--narrow {
     --measure: 640px;
   }
-  .pk-shell ~ .pk-screen {
-    padding-bottom: var(--space-9);
-  }
 }
 .pk-screen__bar {
   display: flex;
@@ -1699,10 +1676,9 @@ li {
   padding: var(--space-3) 0 var(--space-2);
 }
 
-/* The shell bar: the mark, the way around, and the two facts about this
-   session. Label-sized and hue-free, because nothing in the shell may
-   outrank the animal below it. It scrolls away on a phone and holds still
-   on a desktop, where the dock lives in it. */
+/* The shell bar: the mark and the two facts about this session. Label-sized
+   and hue-free, because nothing in the shell may outrank the animal below
+   it, and it scrolls away with the page; the dock is what stays. */
 .pk-shell__bar {
   display: flex;
   align-items: center;
@@ -1720,16 +1696,8 @@ li {
   gap: var(--space-2);
 }
 @media (min-width: 1024px) {
-  .pk-shell {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background: var(--ground);
-    border-bottom: var(--stroke-line) solid var(--edge-soft);
-  }
   .pk-shell__bar {
     max-width: calc(1120px + 2 * var(--gutter));
-    padding-block: var(--space-3);
   }
 }
 
@@ -1756,7 +1724,7 @@ li {
   }
   .pk-columns__first--pin {
     position: sticky;
-    top: calc(var(--shell-height) + var(--space-6));
+    top: var(--space-6);
   }
 }
 

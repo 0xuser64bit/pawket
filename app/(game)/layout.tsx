@@ -4,9 +4,9 @@ import { PreviewFlag } from "@/components/preview-note";
 
 /**
  * The app shell: the mark, the Dock, and the two facts about this session.
- * The Dock is the only persistent navigation — it floats at the foot of a
- * phone or tablet, and sits in this bar on a desktop, where the bar holds
- * still at the top. See the scaffolding notes in `app/globals.css`.
+ * The Dock is the only persistent navigation and floats at the foot of the
+ * view at every width; the bar scrolls away with the page. See the dock and
+ * scaffolding notes in `app/globals.css`.
  *
  * The bar is deliberately small — label-sized type, no hue — because
  * nothing in the shell may outrank the animal on the screen below it.

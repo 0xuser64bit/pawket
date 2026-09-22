@@ -6,10 +6,9 @@ import { Icon, type IconName } from "./icon";
 
 /**
  * The five places in Pawket, and the only persistent navigation. Order is
- * fixed in the product. On a phone it floats at the foot of the view and
- * only the lit slot shows its name; on a tablet every slot is named; on a
- * desktop it sits in the shell bar. Where it goes is the stylesheet's job —
- * this is one element either way, so there is one nav landmark.
+ * fixed in the product. It floats at the foot of the view at every width —
+ * over the page while it scrolls, simply at the bottom when it does not. On
+ * a phone only the lit slot shows its name; wider, every slot is named.
  */
 const PLACES: Array<{ key: string; label: string; icon: IconName; href: string }> = [
   { key: "home", label: "Home", icon: "home", href: "/home" },

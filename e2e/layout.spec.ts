@@ -62,13 +62,18 @@ test("the dock keeps every place on a small phone, whichever is lit", async ({ p
   }
 });
 
-test("on a desktop the dock sits at the top and stays there", async ({ page }) => {
+test("on a desktop the dock floats at the foot, centred, and stays there", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/market");
   const dock = page.getByRole("navigation", { name: "Pawket" });
-  expect((await dock.boundingBox())?.y).toBeLessThan(80);
+  const box = await dock.boundingBox();
+  expect(box && Math.abs(box.x + box.width / 2 - 640) <= 1).toBe(true);
+  expect(box && 720 - (box.y + box.height)).toBeGreaterThanOrEqual(14);
+  expect(box && 720 - (box.y + box.height)).toBeLessThan(24);
   await page.mouse.wheel(0, 2000);
   await expect(dock).toBeInViewport();
+  // Every place is named where there is room for the names.
+  await expect(dock.getByText("Playground")).toBeVisible();
 });
 
 test("the adopt sheet is a modal that Escape leaves by Cancel's door", async ({ page }) => {

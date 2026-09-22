@@ -3,27 +3,31 @@ import { Dock, Mark, ThemeToggle } from "@/components/pk";
 import { PreviewFlag } from "@/components/preview-note";
 
 /**
- * The app shell. The Dock is the only persistent navigation and floats 14px
- * from the bottom of the view; every screen leaves 96px of clearance at its
- * foot so the last card never sits under it.
+ * The app shell: the mark, the Dock, and the two facts about this session.
+ * The Dock is the only persistent navigation — it floats at the foot of a
+ * phone or tablet, and sits in this bar on a desktop, where the bar holds
+ * still at the top. See the scaffolding notes in `app/globals.css`.
  *
- * The bar above is deliberately small — label-sized type, no hue — because
+ * The bar is deliberately small — label-sized type, no hue — because
  * nothing in the shell may outrank the animal on the screen below it.
  */
 export default function GameLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <div className="pk-screen" style={{ paddingBottom: 0 }}>
-        <div className="pk-screen__bar">
+      <a href="#main" className="pk-btn pk-btn--quiet pk-btn--sm pk-skip">
+        Skip to content
+      </a>
+      <header className="pk-shell">
+        <div className="pk-shell__bar">
           <Mark href="/home" size={24} type={17} />
-          <div className="pk-row" style={{ gap: "var(--space-2)" }}>
+          <Dock />
+          <div className="pk-shell__aside">
             <PreviewFlag />
             <ThemeToggle />
           </div>
         </div>
-      </div>
+      </header>
       {children}
-      <Dock />
     </>
   );
 }

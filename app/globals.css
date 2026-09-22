@@ -993,38 +993,67 @@ li {
   height: 8px;
 }
 
-/* ------------------------------------------------------------- nav dock */
+/* ------------------------------------------------------------- nav dock
+
+   The five places, and the only persistent navigation. One element, placed
+   three ways:
+
+   - phone (< 720px): floats 14px above the bottom edge and spans the
+     column, so its width never changes as the lit slot changes. Only the lit
+     slot carries its label; below 360px not even that.
+   - tablet (720–1023px): still floating, every slot labelled.
+   - desktop (>= 1024px): sits in the shell bar at the top of the page,
+     where a pointer expects to find the way around. */
 
 .pk-dock {
-  display: inline-flex;
+  position: fixed;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  z-index: 20;
+  max-width: 440px;
+  margin-inline: auto;
+  display: flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2);
+  gap: 2px;
+  padding: 6px;
   background: var(--surface);
   border: var(--stroke-line) solid var(--edge);
   border-radius: var(--radius-pill);
   box-shadow: var(--shadow-sticker);
 }
 .pk-dock__item {
+  flex: 1 1 0;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  padding: 9px var(--space-4);
+  padding: 11px var(--space-2);
   border-radius: var(--radius-pill);
   color: var(--ink-soft);
   text-decoration: none;
   cursor: pointer;
   font-size: 12px;
+  line-height: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
   border: var(--stroke-line) solid transparent;
 }
-.pk-dock__item:hover {
-  color: var(--ink);
-  background: var(--surface-sunk);
+.pk-dock__item svg {
+  flex: none;
+}
+@media (hover: hover) {
+  .pk-dock__item:not(.pk-dock__item--on):hover {
+    color: var(--ink);
+    background: var(--surface-sunk);
+  }
 }
 .pk-dock__item--on {
+  flex: 0 0 auto;
+  padding-inline: var(--space-4);
   background: var(--sun-soft);
   color: var(--sun-text);
   border-color: var(--sun-text);
@@ -1036,12 +1065,48 @@ li {
   color: var(--bloom-text);
   border-color: var(--bloom-text);
 }
-.pk-dock__label--hide {
+.pk-dock__label {
   display: none;
 }
-@media (min-width: 560px) {
-  .pk-dock__label--hide {
+.pk-dock__item--on .pk-dock__label {
+  display: inline;
+}
+@media (max-width: 359px) {
+  .pk-dock__item--on {
+    flex: 1 1 0;
+    padding-inline: var(--space-2);
+  }
+  .pk-dock__item--on .pk-dock__label {
+    display: none;
+  }
+}
+@media (min-width: 720px) {
+  .pk-dock {
+    left: 0;
+    right: 0;
+    width: fit-content;
+    max-width: none;
+    gap: var(--space-1);
+    padding: var(--space-2);
+  }
+  .pk-dock__item {
+    flex: none;
+    padding: 9px var(--space-4);
+  }
+  .pk-dock__label {
     display: inline;
+  }
+}
+@media (min-width: 1024px) {
+  .pk-dock {
+    position: static;
+    margin: 0;
+    gap: 2px;
+    padding: 6px;
+    box-shadow: var(--shadow-sticker-sm);
+  }
+  .pk-dock__item {
+    padding-inline: var(--space-3);
   }
 }
 
@@ -1425,25 +1490,160 @@ li {
   letter-spacing: -0.02em;
 }
 
-/* --------------------------------------------------------- app scaffolding */
+/* --------------------------------------------------------- app scaffolding
 
-/* Pawket is a phone product — the name is the brief. Screens are designed
-   at 390px with space-5 gutters; wider viewports centre the same column. */
+   Three widths, and the same three everywhere:
+
+   - phone   < 720px   one column at the width of the phone, space-5 gutters
+   - tablet  720–1023  one column, never wider than 680px, so a room or a
+                       pocket stays in proportion
+   - desktop >= 1024   the shell bar carries the dock; a place spreads to
+                       1120px and composes in two columns, while a flow that
+                       asks for one decision (a quote, a disclosure, a
+                       record) keeps a 640px reading measure. */
+
+:root {
+  --gutter: var(--space-5);
+  --shell-height: 0px;
+}
+@media (min-width: 720px) {
+  :root {
+    --gutter: var(--space-7);
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    /* the sticky shell bar, so anything sticky below it clears it */
+    --shell-height: 80px;
+  }
+}
+
 .pk-screen {
+  --measure: 680px;
   width: 100%;
-  max-width: 460px;
-  margin: 0 auto;
-  padding: 0 var(--space-5);
-  /* 96px of clearance so the last card never sits under the dock */
-  padding-bottom: var(--space-10);
+  max-width: calc(var(--measure) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-top: var(--space-2);
+  padding-left: max(var(--gutter), env(safe-area-inset-left));
+  padding-right: max(var(--gutter), env(safe-area-inset-right));
+  padding-bottom: var(--space-9);
+}
+/* Under the shell, the last card never sits beneath the floating dock. */
+.pk-shell ~ .pk-screen {
+  padding-bottom: calc(var(--space-10) + env(safe-area-inset-bottom));
+}
+@media (min-width: 1024px) {
+  .pk-screen {
+    --measure: 1120px;
+    padding-top: var(--space-6);
+  }
+  .pk-screen--narrow {
+    --measure: 640px;
+  }
+  .pk-shell ~ .pk-screen {
+    padding-bottom: var(--space-9);
+  }
 }
 .pk-screen__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) 0 var(--space-2);
+}
+
+/* The shell bar: the mark, the way around, and the two facts about this
+   session. Label-sized and hue-free, because nothing in the shell may
+   outrank the animal below it. It scrolls away on a phone and holds still
+   on a desktop, where the dock lives in it. */
+.pk-shell__bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-3) 0 var(--space-2);
+  width: 100%;
+  max-width: calc(680px + 2 * var(--gutter));
+  margin-inline: auto;
+  padding: var(--space-3) max(var(--gutter), env(safe-area-inset-right)) var(--space-2)
+    max(var(--gutter), env(safe-area-inset-left));
 }
+.pk-shell__aside {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+@media (min-width: 1024px) {
+  .pk-shell {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--ground);
+    border-bottom: var(--stroke-line) solid var(--edge-soft);
+  }
+  .pk-shell__bar {
+    max-width: calc(1120px + 2 * var(--gutter));
+    padding-block: var(--space-3);
+  }
+}
+
+/* The thing and what you can do to it: stacked in that order until there is
+   room to set them side by side. */
+.pk-columns,
+.pk-columns__first,
+.pk-columns__second {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+@media (min-width: 1024px) {
+  .pk-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    column-gap: var(--space-8);
+    align-items: start;
+  }
+  .pk-columns__first--pin {
+    position: sticky;
+    top: calc(var(--shell-height) + var(--space-6));
+  }
+}
+
+/* A phone bar holds the mark, the preview flag and the theme switch in
+   320px: the flag drops a word first, then the mark keeps only its glyph
+   (the name stays for anything reading the link). */
+.pk-flag__more {
+  display: none;
+}
+@media (min-width: 480px) {
+  .pk-flag__more {
+    display: inline;
+  }
+}
+@media (max-width: 359px) {
+  .pk-shell__bar .pk-mark__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Visible only to the keyboard, and only until it is used. */
+.pk-skip {
+  position: absolute;
+  left: var(--space-3);
+  top: var(--space-3);
+  z-index: 40;
+  transform: translateY(-200%);
+}
+.pk-skip:focus-visible {
+  transform: none;
+}
+
 .pk-sky {
   background: var(--pool-soft);
 }
@@ -1452,21 +1652,6 @@ li {
 }
 .pk-sky--plain {
   background: var(--surface-sunk);
-}
-
-.pk-dockbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 14px;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 20;
-}
-.pk-dockbar > * {
-  pointer-events: auto;
-  max-width: calc(100vw - var(--space-6));
 }
 
 /* A sheet is the only thing in Pawket allowed to float, and shadow-lift is
@@ -1505,14 +1690,16 @@ li {
 
 /* The landing page: 1200px, bands at space-9, gutters at 72px. */
 .pk-band {
+  --band-gutter: var(--gutter);
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 var(--space-5);
+  padding-left: max(var(--band-gutter), env(safe-area-inset-left));
+  padding-right: max(var(--band-gutter), env(safe-area-inset-right));
 }
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .pk-band {
-    padding: 0 72px;
+    --band-gutter: 72px;
   }
 }
 

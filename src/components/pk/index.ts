@@ -48,7 +48,7 @@ export {
   OfficialMark,
   type Stage,
 } from "./guild";
-export { BackLink, Grid, Row, Screen, ScreenBar, SectionLabel, Stack } from "./layout";
+export { BackLink, Columns, Grid, Row, Screen, ScreenBar, SectionLabel, Stack } from "./layout";
 export { PawLoader } from "./paw-loader";
 export { Dock } from "./dock";
 export { ThemeToggle } from "./theme-toggle";

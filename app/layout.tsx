@@ -16,6 +16,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // Content may run under a notch or home indicator; the shell, the dock and
+  // every band pad themselves with the safe-area insets instead.
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f6efe2" },
     { media: "(prefers-color-scheme: dark)", color: "#17120e" },

@@ -2,17 +2,62 @@ import type { CSSProperties, ReactNode } from "react";
 import { ButtonLink } from "./controls";
 
 /**
- * Pawket is a phone product — the name is the brief. A screen has one
- * primary action, and it is the only `sun` fill in view. The vertical order
- * on every game screen is the same: the thing itself, then what you can do
- * to it, then anything that explains it.
+ * A screen has one primary action, and it is the only `sun` fill in view.
+ * The order on every game screen is the same: the thing itself, then what
+ * you can do to it, then anything that explains it — top to bottom on a
+ * phone, left to right on a desktop (`Columns`).
+ *
+ * `narrow` is for a flow that asks for one decision — a quote, a
+ * disclosure, a record — which keeps a reading measure on a desktop instead
+ * of spreading to the width of a place.
  */
-export function Screen({ className, children }: { className?: string; children: ReactNode }) {
-  return <main className={["pk-screen", className].filter(Boolean).join(" ")}>{children}</main>;
+export function Screen({
+  width = "wide",
+  className,
+  children,
+}: {
+  width?: "wide" | "narrow";
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <main
+      id="main"
+      className={["pk-screen", width === "narrow" && "pk-screen--narrow", className].filter(Boolean).join(" ")}
+    >
+      {children}
+    </main>
+  );
 }
 
 export function ScreenBar({ children }: { children: ReactNode }) {
   return <div className="pk-screen__bar">{children}</div>;
+}
+
+/**
+ * The thing and what you can do to it, side by side on a desktop and in that
+ * order, one above the other, anywhere narrower. `pin` keeps the thing in
+ * view while a longer second column scrolls past it.
+ */
+export function Columns({
+  first,
+  second,
+  pin = false,
+  className,
+}: {
+  first: ReactNode;
+  second: ReactNode;
+  pin?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={["pk-columns", className].filter(Boolean).join(" ")}>
+      <div className={["pk-columns__first", pin && "pk-columns__first--pin"].filter(Boolean).join(" ")}>
+        {first}
+      </div>
+      <div className="pk-columns__second">{second}</div>
+    </div>
+  );
 }
 
 /**

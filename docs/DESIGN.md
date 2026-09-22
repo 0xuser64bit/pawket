@@ -116,10 +116,21 @@ made deliberately and fenced just as deliberately:
 
 ## Layout
 
-Screens are designed at 390px with `space-5` gutters; wider viewports centre
-the same column (`.pk-screen`). The Dock floats 14px from the bottom, and every
-screen leaves 96px of clearance at its foot. The landing page is its own width
-(`.pk-band`, 1200px, 72px gutters, bands at `space-9`).
+Screens are designed at 390px with `space-5` gutters, and the same product is
+composed on purpose at three widths — the same three everywhere, set in the
+scaffolding block of `app/globals.css`:
+
+| Width | Shell | Screen |
+| --- | --- | --- |
+| phone, < 720px | Dock floats 14px above the foot and spans the column; only the lit slot is named (none below 360px) | one column, full width |
+| tablet, 720–1023px | Dock floats, every slot named | one column, at most 680px, so a room or a pocket keeps its proportions |
+| desktop, >= 1024px | the Dock sits in a shell bar that holds still at the top | a place spreads to 1120px and composes in `Columns`; a flow that asks for one decision uses `Screen width="narrow"` (640px) |
+
+`Columns` puts the thing and what you can do to it side by side on a desktop
+and one above the other anywhere narrower, in that order. Wherever the Dock
+floats, every screen leaves 96px of clearance at its foot plus the safe-area
+inset. The landing page is its own width (`.pk-band`, 1200px, 72px gutters
+on a desktop, bands at `space-9`).
 
 The vertical order on every game screen is the same: the thing itself, then
 what you can do to it, then anything that explains it.

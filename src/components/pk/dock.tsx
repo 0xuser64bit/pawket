@@ -6,8 +6,10 @@ import { Icon, type IconName } from "./icon";
 
 /**
  * The five places in Pawket, and the only persistent navigation. Order is
- * fixed in the product. In compact mode — which is how it ships on a phone —
- * inactive slots show only their icon, so five slots fit at 390px.
+ * fixed in the product. On a phone it floats at the foot of the view and
+ * only the lit slot shows its name; on a tablet every slot is named; on a
+ * desktop it sits in the shell bar. Where it goes is the stylesheet's job —
+ * this is one element either way, so there is one nav landmark.
  */
 const PLACES: Array<{ key: string; label: string; icon: IconName; href: string }> = [
   { key: "home", label: "Home", icon: "home", href: "/home" },
@@ -17,42 +19,43 @@ const PLACES: Array<{ key: string; label: string; icon: IconName; href: string }
   { key: "guilds", label: "Guilds", icon: "guild", href: "/guilds" },
 ];
 
-export function Dock() {
-  const pathname = usePathname();
-  // A detail screen still belongs to its place: /pet/* and /market/* keep
-  // the slot they were reached from lit.
-  const active =
+/** A detail screen still belongs to its place: a pet is reached from Inventory. */
+export function activePlace(pathname: string): string {
+  return (
     PLACES.find((p) => pathname === p.href || pathname.startsWith(`${p.href}/`))?.key ??
-    (pathname.startsWith("/pet") ? "inventory" : "home");
+    (pathname.startsWith("/pet") ? "inventory" : "home")
+  );
+}
+
+export function Dock() {
+  const active = activePlace(usePathname());
 
   return (
-    <div className="pk-dockbar">
-      <nav className="pk-dock" aria-label="Pawket">
-        {PLACES.map((place) => {
-          const on = place.key === active;
-          return (
-            <Link
-              key={place.key}
-              href={place.href}
-              aria-current={on ? "page" : undefined}
-              // The dock is the one place an icon may stand alone, so each
-              // slot carries its name whether or not the label is drawn.
-              aria-label={place.label}
-              className={[
-                "pk-dock__item",
-                // Guilds is the one slot that changes hue when active.
-                place.key === "guilds" && "pk-dock__item--guild",
-                on && "pk-dock__item--on",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <Icon name={place.icon} size={17} />
-              <span className={on ? undefined : "pk-dock__label--hide"}>{place.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    </div>
+    <nav className="pk-dock" aria-label="Pawket">
+      {PLACES.map((place) => {
+        const on = place.key === active;
+        return (
+          <Link
+            key={place.key}
+            href={place.href}
+            aria-current={on ? "page" : undefined}
+            // The dock is the one place an icon may stand alone, so each
+            // slot carries its name whether or not the label is drawn.
+            aria-label={place.label}
+            className={[
+              "pk-dock__item",
+              // Guilds is the one slot that changes hue when active.
+              place.key === "guilds" && "pk-dock__item--guild",
+              on && "pk-dock__item--on",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            <Icon name={place.icon} size={17} />
+            <span className="pk-dock__label">{place.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

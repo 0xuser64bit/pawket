@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { activePlace } from "./dock";
 import { Button, Chip, Mark, Meter, PawArt, PawLoader, PetFrame, Receipt } from "./index";
 
 describe("Button", () => {
@@ -121,5 +122,19 @@ describe("PawLoader", () => {
 
   it("names the wait for anything that cannot see it", () => {
     expect(renderToStaticMarkup(<PawLoader label="Finding a lobby" />)).toContain("Finding a lobby");
+  });
+});
+
+describe("Dock", () => {
+  it("keeps a detail screen lit under the place it belongs to", () => {
+    expect(activePlace("/market")).toBe("market");
+    expect(activePlace("/market/sesame/adopt")).toBe("market");
+    expect(activePlace("/guilds/clover/swap")).toBe("guilds");
+    expect(activePlace("/pet/pepper/ownership")).toBe("inventory");
+    expect(activePlace("/home")).toBe("home");
+  });
+
+  it("does not light a place whose name merely starts the path", () => {
+    expect(activePlace("/marketing")).toBe("home");
   });
 });

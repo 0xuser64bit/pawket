@@ -20,7 +20,7 @@ export function PreviewNote({ what }: { what: string }) {
 export function PreviewFlag() {
   return (
     <span className="pk-chip pk-chip--paper" title="Most product screens render demo data. A guest pet you adopt is real and lives in this browser.">
-      Preview data
+      Preview<span className="pk-flag__more"> data</span>
     </span>
   );
 }

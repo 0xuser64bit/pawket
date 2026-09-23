@@ -19,7 +19,7 @@ pnpm dev        # http://localhost:3000
 | `pnpm typecheck` | `tsc --noEmit`                             |
 | `pnpm test`      | Vitest unit/component tests                |
 | `pnpm test:watch`| Vitest in watch mode                       |
-| `pnpm e2e`       | Playwright smoke (starts `pnpm dev`)       |
+| `pnpm e2e`       | Playwright (starts `pnpm dev`; `PLAYWRIGHT_PORT` overrides 3000) |
 | `pnpm verify`    | typecheck + lint + test + build            |
 
 ## Editing rules

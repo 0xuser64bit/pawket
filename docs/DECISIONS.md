@@ -3,6 +3,23 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-09: The shipped game is one browser companion
+
+**Context:** The screens for a market, guild swaps, treasuries and multiplayer
+lobbies rendered fixtures and said so. That is not a product a player can
+trust, and it is not buildable without a program deploy, a database, an
+indexer and a legal review that are still open questions.
+**Decision:** The MVP is one companion in `localStorage`. Care uses the locked
+math. The wardrobe is a fixed free catalog with no effect on vitals. The
+playground is one solo memory round; the first finish of a UTC day grants
+`DAILY_GOAL_REWARD_XP` and does not touch stats. Guilds is the boundary copy,
+not a directory. The market routes redirect to inventory. Chain adopt stays
+in `src/lib/solana/` until a program deploy is real. This resolves Q7
+(local guest, no embedded wallet) and Q8 (one solo game, no netcode) for
+this version.
+**Consequence:** A player who clears site data loses the pet. There is no
+account, no sync, and no second pet. That is stated on the screen.
+
 ## 2026-09: Kit v8 over web3.js v1 / wallet-adapter
 
 **Context:** The ecosystem moved. Official Solana docs mark `@solana/web3.js`

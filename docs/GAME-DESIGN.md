@@ -35,6 +35,14 @@ Per hour: hunger **2.5**, happiness **1.8**, energy **1.5**, hygiene **1.2** (`S
 
 `PetPassport` PDA (`[passport, pet]`) accumulates: care history, XP/level, streaks, achievements, memories (M4+). Timeline UI (`passport-timeline.tsx`) reads chain → indexer cache; guest passports are local-only and labeled as such.
 
+## 4b. Guest record (this version)
+
+The browser companion stores a care log (latest 40), a UTC streak, one
+wearable id, and a play count. A finished playground round grants
+`DAILY_GOAL_REWARD_XP` once per UTC day and does not change vitals. The
+score does not scale the bonus. Chain care does not know about this bonus
+yet — it stays a guest-record fact until a program change says otherwise.
+
 ## 5. Daily loop (target, M4)
 
 1. Open Home → see mood + decay estimate.

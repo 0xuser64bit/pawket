@@ -9,33 +9,43 @@ client forces it.
 
 ```txt
 app/                        routes, layouts, route handlers (Server by default)
-  layout.tsx                metadata + <Providers>
-  providers.tsx             ClientProvider wiring only (no UI, no logic)
-  page.tsx                  composes server shell + client leaves
+  page.tsx                  landing
+  adopt/                    three-step adoption, no dock
+  (game)/                   shell: mark, dock, theme
+    home/                   the room and the care loop
+    inventory/              the pet and the wardrobe
+    playground/             one solo round
+    guilds/                 the boundary. no directory, no swap
+    pet/[id]/               the record for the pet in this browser
   api/health/route.ts       build version + active cluster
 src/components/             UI; "use client" only at interactive leaves
-  wallet/                   connection, balance, representative send flow
-  transaction-status.tsx    the one tx-status surface every flow uses
-  network-badge.tsx         server-rendered cluster/program readout
+  pk/                       design system
+  home/ adopt/ pet/ inventory/ play/
 src/config/                 validated env + site constants
 src/lib/game/               pure companion math (no React, no Solana)
+src/lib/guest/              companion record, migration, localStorage
+src/lib/closet/             wearable catalog
+src/lib/play/               gate pattern and score
+src/lib/guilds/             boundary copy
 src/lib/solana/             cluster, client, PDAs, instructions, tx lifecycle
-src/lib/utils/              formatting + error helpers
-e2e/                        Playwright browser smoke tests
+                            (library only — no screen sends)
+src/lib/utils/              formatting + hydration helpers
+e2e/                        Playwright browser tests
 docs/                       the docs you are reading
 ```
 
 ## Data flow
 
-- Server Components render shell + public config. They never hold wallets.
-- One browser client (`browser-client.ts`) owns RPC + wallet state, published
-  once via `ClientProvider`.
-- Leaves read it with `useClient<AppClient>()` and framework hooks
-  (`useWallets`, `useConnectedWallet`, `useRequest`).
-- Sends go through `client.sendTransaction([instruction])` with preflight on.
-  After confirmation, state reloads from the source of truth — no optimistic
-  patches.
-- No global store, no second API client, no giant utils file.
+- Server Components render the shell and public config. They never hold wallets.
+- The companion lives in `localStorage` (`pawket.guest-pet.v1`). The schema
+  version is inside the JSON. Leaves read it with `useSyncExternalStore`.
+  The server snapshot is always empty, so hydration matches, then the stored
+  pet replaces it.
+- Care, wardrobe and a finished round are pure functions in `src/lib/guest/`.
+  The screen saves the returned pet. A failed save is told to the player.
+- One browser Solana client (`browser-client.ts`) still exists for a later
+  send path. No screen calls it.
+- No global store, no second API client, no database, no giant utils file.
 
 ## Client/server rules
 
@@ -49,6 +59,7 @@ docs/                       the docs you are reading
 
 Expo / React Native / expo-router shell, `app.json`, Expo assets: existed
 only for the mobile-first direction. The Hono + Prisma backend and Anchor
-workspace from pre-reset history are intentionally not restored — the
-foundation has no persistence or program deploy yet (see `docs/DECISIONS.md`).
-Git history preserves all of it for reference.
+workspace from pre-reset history are intentionally not restored. The
+companion persists in the browser, not in a database. The simulated market
+and guild-swap screens were removed in the same pass — see `docs/DECISIONS.md`.
+Git history preserves the old surfaces for reference.

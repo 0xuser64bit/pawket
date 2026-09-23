@@ -10,14 +10,17 @@ Pawket is a **web-first** living companion on Solana. A player connects a
 Wallet Standard wallet in the browser, adopts a companion, and cares for it
 (feed / play / groom / rest). Devnet by default.
 
-**Current truth:** the product surfaces exist and are built from the Pawket
-design system (`docs/DESIGN.md`), but only one flow is real. `/adopt` writes a
-wallet-free guest pet through `src/lib/guest/` + `src/lib/game/`, and Home runs
-that pet's care loop for real. Every other screen — market, playground,
-inventory, guilds, treasury, quotes — renders fixtures from `src/lib/demo/` and
-says so on the screen. Wallet flows and send paths still live in `src/lib/`
-only. Do not claim anything beyond that, and never describe a fixture as
-on-chain, owned or confirmed.
+**Current truth:** one companion, saved in this browser. `/adopt` writes it
+through `src/lib/guest/` and `src/lib/game/`. Home runs care (feed, play,
+groom, rest) with decay, cooldowns, XP, a UTC streak and a care log.
+Inventory dresses that pet from `src/lib/closet/` — expression only, no
+effect on vitals. The playground is one solo round in `src/lib/play/`;
+finishing it once per UTC day grants `DAILY_GOAL_REWARD_XP` and changes
+nothing else. Guilds is the written boundary in `src/lib/guilds/boundary.ts`:
+nothing to join, buy or swap. There is no market. Instruction builders and
+the wallet client still live in `src/lib/solana/` and are not wired to a
+screen. Do not describe the pet as on-chain, and do not put a simulated
+price, treasury, member count or lobby back on a screen.
 
 ## Read first
 
@@ -55,7 +58,10 @@ One home per fact. If two files disagree, the left column wins.
 | Server-only env (guarded)         | `src/config/server-env.ts`          |
 | Routes                            | `app/`                              |
 | Design system (tokens, components)| `app/globals.css` + `src/components/pk/` |
-| Demo fixtures (not real data)     | `src/lib/demo/`                     |
+| Guest companion record            | `src/lib/guest/`                    |
+| Wearables (expression only)       | `src/lib/closet/catalog.ts`         |
+| Playground pattern                | `src/lib/play/gates.ts`             |
+| Guild boundary copy               | `src/lib/guilds/boundary.ts`        |
 | Target architecture (M3–M6)       | `docs/ARCHITECTURE-TARGET.md`       |
 | Domain types, state machines      | `docs/DOMAIN-MODEL.md`              |
 | Route IA + Server/Client split    | `docs/ROUTES.md`                    |

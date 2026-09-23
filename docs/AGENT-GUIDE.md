@@ -12,7 +12,7 @@
 ## 2. Task sizing (one turn = one task in TASKS.md)
 
 - Smallest coherent diff; one purpose per commit. No drive-by refactors, no new state library, no second client, no hand-rolled instruction bytes.
-- New UI = Server shell + client leaf + `TransactionStatus` reuse + Explorer link. No exceptions.
+- A screen that sends a transaction is a Server shell + client leaf + `TransactionStatus` + an Explorer link. The guest record, wardrobe and playground do not send, and they do not get a fake transaction status.
 - New API = Zod schema + handler + contract test. No unvalidated `req.json()`.
 
 ## 3. File ownership (who owns what — do not duplicate)
@@ -27,7 +27,11 @@
 | Browser client | `src/lib/solana/browser-client.ts` | never fork; server reads use read-only client |
 | Tx lifecycle + UX copy | `src/lib/solana/transactions.ts` | reuse `toUserFacingError`, stages, 30s timeout |
 | Meteora presets/stages | `src/lib/meteora/*` [FUTURE] | presets only; no raw curve math in components |
-| Eligibility (cosmetic/social) | `src/lib/guilds/*` [FUTURE] | never add power fields |
+| Guest companion record | `src/lib/guest/` | extend with a migration; do not add a second store |
+| Wearables | `src/lib/closet/catalog.ts` | add looks only; never a stat, XP, or cooldown field |
+| Playground pattern | `src/lib/play/gates.ts` | score is presentation; the daily bonus stays flat |
+| Guild boundary copy | `src/lib/guilds/boundary.ts` | the rule, not a fake guild |
+| Eligibility (cosmetic/social) | future, not this file | never add power fields |
 | Env | `.env.example` + `config/env.ts` + `server-env.ts` | example-first; secrets server-only |
 | Routes | `app/` | Server by default; nav order pets-before-guilds |
 

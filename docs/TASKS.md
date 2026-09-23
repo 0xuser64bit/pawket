@@ -1,6 +1,6 @@
 # Pawket — Tasks (sequenced, atomic, agent-ready)
 
-**Status:** PLAN. One row = one agent turn. Do in order within a milestone; `Blocker` must clear before starting. Report per `WORKFLOW.md` §8. Mark done only with `pnpm verify` green (or the listed layer cmd + typecheck for docs-only steps — state which).
+**Status:** PLAN for the chain, database and guild-token work. The guest care loop, wardrobe and solo playground are already in the app — do not re-implement them as fixtures, and do not start T10+ while its question is open. Report per `WORKFLOW.md` §8. Mark done only with `pnpm verify` green (or the listed layer cmd + typecheck for docs-only steps — state which).
 
 ## M1 — Care loop (E01–E02)
 

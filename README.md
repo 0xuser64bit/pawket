@@ -1,10 +1,13 @@
-# Pawket (web-first)
+# Pawket
 
-Pawket is a **web-first living companion on Solana**. Devnet by default.
+Pawket is a living companion you keep in the browser. Adopt one pet, care
+for it, dress it, and finish a short round in the playground. The pet is
+saved in `localStorage` on this device. Nothing on these pages is sent to a
+chain.
 
-Right now the shipped surface is a single landing page. The care loop,
-wallet flows, and transaction paths live in `src/lib/` (tested) but are not
-rendered — the landing claims nothing beyond what exists.
+Solana instruction builders, PDAs and the wallet client live in
+`src/lib/solana/` and are tested. They are not wired to a screen. Devnet
+stays the default for that later path.
 
 ## Quickstart
 
@@ -31,17 +34,19 @@ pnpm dev        # http://localhost:3000
 
 ## Structure
 
-- `app/` — App Router routes, layouts, and route handlers (server by default)
-- `src/components/` — UI; `"use client"` only at interactive leaves
-- `src/components/pet/` — deterministic companion avatar (landing art)
+- `app/` — App Router routes. `/adopt` is outside the dock; the game shell is `(game)/`
+- `src/components/` — UI. `"use client"` only at interactive leaves
+- `src/components/pk/` — the Pawket design system
 - `src/config/` — validated environment + site constants
 - `src/lib/game/` — pure companion math (stats, XP, cooldown, decay)
-- `src/lib/guest/` — wallet-free companion logic + storage (unrendered)
-- `src/lib/solana/` — cluster config, Kit client, PDAs, instructions, account
-  reads, tx lifecycle (unrendered)
+- `src/lib/guest/` — the companion record and its browser storage
+- `src/lib/closet/` — the wearable catalog (no effect on play)
+- `src/lib/play/` — the playground pattern and score
+- `src/lib/guilds/` — what a guild token may and may not do
+- `src/lib/solana/` — cluster, Kit client, PDAs, instructions, tx lifecycle (not on a screen)
 - `src/lib/utils/` — formatting and hydration helpers
 - `docs/` — architecture, development, Solana, testing, workflow
-- `e2e/` — Playwright browser tests
+- `e2e/` — Playwright. `PLAYWRIGHT_PORT` overrides 3000 when that port is taken
 
 Start with `AGENTS.md`, then `docs/ARCHITECTURE.md`.
 
@@ -52,9 +57,10 @@ server-only secrets must never carry that prefix. See `docs/ENVIRONMENT.md`.
 
 ## Solana
 
-Devnet by default. Wallets connect via Wallet Standard; the connected wallet
-signs. Always simulate before sending, confirm with a timeout, and link every
-signature to the Explorer for the active cluster. See `docs/SOLANA.md`.
+Devnet by default, for the unwired client in `src/lib/solana/`. The
+companion loop does not connect a wallet and does not send a transaction.
+If a send is ever put on a screen: the wallet signs, simulate first, confirm
+with a timeout, and link the signature to the Explorer. See `docs/SOLANA.md`.
 
 ## Deployment
 

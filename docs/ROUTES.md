@@ -1,32 +1,29 @@
 # Pawket — Routes & Information Architecture
 
-**Status:** PART BUILT. The routes below marked **built** render today from the Pawket design system; all of them except `/adopt` and `(game)/home` render fixtures from `src/lib/demo/` and mark themselves as a preview (see `docs/DESIGN.md`). The rest is still SPEC. Never ship a nav link to an unwired route, and never let a built screen describe a fixture as on-chain (honest-UI rule).
+**Status:** The routes under "Built today" are the product. The site map
+further down is still the later target. Never ship a nav link to an unwired
+route, and never describe the browser pet as on-chain.
 
 Built today:
 
 ```text
-/                                   landing
-/adopt                              wallet-free onboarding — REAL (guest pet)
-(game)/home                         REAL care loop when a guest pet exists, fixture otherwise
-(game)/market · /market/[id] · /market/[id]/adopt · /market/[id]/done
-(game)/pet/[id] · /pet/[id]/ownership
-(game)/playground · /playground/[game]
-(game)/inventory
-(game)/guilds · /guilds/boundary · /guilds/[slug] · /guilds/[slug]/risks
-(game)/guilds/[slug]/swap?state=quote|pending|failed|slow
+/                          landing
+/adopt                     one pet, three steps, saved in this browser
+(game)/home                that pet's room, or an empty room
+(game)/inventory           the pet and the wardrobe (?tab=wardrobe)
+(game)/playground          one solo round
+(game)/pet/[id]            the record, if the id is the pet in this browser
+(game)/guilds              the boundary. not a directory
 /api/health
 ```
 
-The `(game)` group owns the shell: the label-sized bar and the floating Dock.
+Redirects: `/market` and anything under it go to `/inventory`. `/guilds/*`
+(except the index) and `/playground/*` go back to their index. `/pet/:id/ownership`
+goes to `/pet/:id`.
 
-**Deviations from the target map below, adopted from the design system.** The
-design system fixes the five places and their order — Home, Market, Playground,
-Inventory, Guilds — so the route is `/market`, not `/marketplace`, and there is
-no separate Pets place: pets are reached from Inventory and from Home. Guild
-facets (events, treasury, policy) are `Tabs` on one screen via `?tab=`, not
-nested routes, because Tabs switch facets of one thing and the Dock moves
-between places. The swap's routing states are `?state=` on one screen so each
-can be reviewed; a real screen passes what the indexer confirmed.
+The `(game)` group owns the shell: the label-sized bar and the floating Dock.
+The dock is Home, Playground, Inventory, Guilds. A pet is reached from
+Inventory and from Home. There is no market slot.
 
 ## 1. Site map (target)
 

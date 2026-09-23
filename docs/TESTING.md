@@ -8,8 +8,9 @@
 | Solana PDAs / instruction bytes| `src/lib/solana/*.test.ts`              | Vitest   |
 | Env / cluster / format / errors| colocated `*.test.ts`                   | Vitest   |
 | Presentational components      | `src/components/*.test.tsx`             | Vitest + Testing Library |
-| Shell + health (no wallet)     | `e2e/smoke.spec.ts`                     | Playwright |
-| Layout: no sideways scroll at 320/375/768, dock placement, sheet as a modal, fixture search | `e2e/layout.spec.ts` | Playwright |
+| Guest record, wardrobe, gates  | `src/lib/guest`, `closet`, `play`       | Vitest   |
+| Shell, adopt, care, wardrobe, playground, guild boundary, health | `e2e/smoke.spec.ts` | Playwright |
+| Layout: no sideways scroll at 320/375/768, dock placement | `e2e/layout.spec.ts` | Playwright |
 
 ```sh
 pnpm test       # Vitest, single run

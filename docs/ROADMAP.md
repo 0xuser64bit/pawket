@@ -1,6 +1,6 @@
 # Pawket — Roadmap (phased, agent-sequenced)
 
-**Status:** SPEC. M0 is built; M1+ are planned. Each milestone has entry / exit criteria so agents never start work with missing prerequisites.
+**Status:** The browser companion is what ships (see `AGENTS.md`). M0's chain client is built and unwired. M1's care loop is real for the guest pet and not yet a chain send. M2's wardrobe is a local catalog, not an NFT. M3+ below stay spec until their open questions close. Do not rebuild the removed market and guild-swap screens as fixtures.
 **Order is normative.** Do not skip ahead to Guild Launches before the pet loop retains.
 
 ```text

@@ -13,8 +13,8 @@ disagree, fix one of them in the same change.
 | The three families, loaded locally | `src/config/fonts.ts` + `src/fonts/` |
 | Components, as React | `src/components/pk/` |
 | Species → artwork, sky and words | `src/lib/game/appearance.ts` |
-| Demo fixtures for the product surfaces | `src/lib/demo/` |
-| The honesty marker | `src/components/preview-note.tsx` |
+| Companion record | `src/lib/guest/` |
+| Wearables | `src/lib/closet/catalog.ts` |
 
 Everything visual is a token. There are no raw colours, radii or spacing
 values in components — if a value is missing, add a token, do not inline one.
@@ -143,20 +143,16 @@ on a desktop, bands at `space-9`).
 The vertical order on every game screen is the same: the thing itself, then
 what you can do to it, then anything that explains it.
 
-## What is real and what is a fixture
+## What is real
 
-The one real flow is the wallet-free loop: `/adopt` writes a guest pet through
-`src/lib/guest/` and `src/lib/game/`, and Home then shows that pet with live
-vitals, real cooldowns and real XP. Everything else — market listings, guilds,
-treasury lines, quotes, lobbies — renders `src/lib/demo/` fixtures.
+Adoption, the room, care, the wardrobe, the playground round and the guild
+boundary are the product. The pet is saved in this browser. A wearable is a
+name beside the pet, not a change to the drawing and not a change to a vital.
+Guilds are the two lists of what a token may and may not do. There is no
+market, no treasury, no swap and no lobby.
 
-Every screen that renders a fixture carries `PreviewNote`, in the neutral
-`wait` tone, and no fixture is described as on-chain, owned or confirmed. On
-the ownership and confirmation screens the note sits **above** the claim, not
-below it. Controls that would need a chain (explorer links, transfer, confirm
-in wallet) are disabled and say why rather than pretending.
-
-When a real source lands it replaces the fixture, not the screen.
+Do not describe the pet as on-chain. Do not put a simulated price back on a
+screen to fill a dock slot. The dock is Home, Playground, Inventory, Guilds.
 
 ## Voice
 

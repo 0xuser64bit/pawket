@@ -153,11 +153,11 @@ describe("PawLoader", () => {
 
 describe("Dock", () => {
   it("keeps a detail screen lit under the place it belongs to", () => {
-    expect(activePlace("/market")).toBe("market");
-    expect(activePlace("/market/sesame/adopt")).toBe("market");
-    expect(activePlace("/guilds/clover/swap")).toBe("guilds");
-    expect(activePlace("/pet/pepper/ownership")).toBe("inventory");
+    expect(activePlace("/playground")).toBe("playground");
+    expect(activePlace("/guilds")).toBe("guilds");
+    expect(activePlace("/pet/pepper")).toBe("inventory");
     expect(activePlace("/home")).toBe("home");
+    expect(activePlace("/market")).toBe("home");
   });
 
   it("does not light a place whose name merely starts the path", () => {

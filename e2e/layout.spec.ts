@@ -1,30 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/** Every screen, including the ones that only exist as a preview state. */
+/** Every screen a player can actually open. */
 const SCREENS = [
   "/",
   "/adopt",
   "/home",
-  "/market",
-  "/market?tab=cosmetics",
-  "/market/sesame",
-  "/market/sesame/adopt",
-  "/market/sesame/done",
-  "/pet/pepper",
-  "/pet/pepper/ownership",
   "/playground",
-  "/playground/meadow-dash",
-  "/playground/meadow-dash?state=finding",
   "/inventory",
-  "/inventory?tab=cosmetics",
+  "/inventory?tab=wardrobe",
   "/guilds",
-  "/guilds/boundary",
-  "/guilds/clover",
-  "/guilds/clover?tab=treasury",
-  "/guilds/clover?tab=policy",
-  "/guilds/clover/risks",
-  "/guilds/clover/swap",
-  "/guilds/clover/swap?state=failed",
+  "/pet/missing",
 ];
 
 /** Whatever sticks out past the right edge, named so a failure says where. */
@@ -51,12 +36,12 @@ for (const width of [320, 375, 768]) {
 
 test("the dock keeps every place on a small phone, whichever is lit", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
-  for (const path of ["/home", "/playground", "/inventory"]) {
+  for (const path of ["/home", "/playground", "/inventory", "/guilds"]) {
     await page.goto(path);
     const dock = page.getByRole("navigation", { name: "Pawket" });
     const box = await dock.boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= 320, path).toBe(true);
-    for (const place of ["Home", "Market", "Playground", "Inventory", "Guilds"]) {
+    for (const place of ["Home", "Playground", "Inventory", "Guilds"]) {
       await expect(dock.getByRole("link", { name: place })).toBeInViewport();
     }
   }
@@ -64,7 +49,7 @@ test("the dock keeps every place on a small phone, whichever is lit", async ({ p
 
 test("on a desktop the dock floats at the foot, centred, and stays there", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto("/market");
+  await page.goto("/home");
   const dock = page.getByRole("navigation", { name: "Pawket" });
   const box = await dock.boundingBox();
   expect(box && Math.abs(box.x + box.width / 2 - 640) <= 1).toBe(true);
@@ -72,29 +57,5 @@ test("on a desktop the dock floats at the foot, centred, and stays there", async
   expect(box && 720 - (box.y + box.height)).toBeLessThan(24);
   await page.mouse.wheel(0, 2000);
   await expect(dock).toBeInViewport();
-  // Every place is named where there is room for the names.
   await expect(dock.getByText("Playground")).toBeVisible();
-});
-
-test("the adopt sheet is a modal that Escape leaves by Cancel's door", async ({ page }) => {
-  await page.goto("/market/sesame/adopt");
-  const sheet = page.getByRole("dialog", { name: /adopting sesame/i });
-  await expect(sheet).toBeFocused();
-  // The page behind it cannot be reached while it is open.
-  await expect(page.locator("main")).toHaveAttribute("inert", "");
-  await page.keyboard.press("Escape");
-  await expect(page).toHaveURL(/\/market\/sesame$/);
-  await expect(page.getByRole("heading", { name: "Sesame" })).toBeVisible();
-});
-
-test("the market's search and filters narrow the fixtures they show", async ({ page }) => {
-  await page.goto("/market");
-  await page.getByRole("searchbox", { name: "Search the market" }).fill("floppy");
-  await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/q=floppy/);
-  await expect(page.getByRole("heading", { name: "Biscuit" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Sesame" })).toHaveCount(0);
-
-  await page.getByRole("link", { name: "Luna cat" }).click();
-  await expect(page.getByText("Nothing matches")).toBeVisible();
 });

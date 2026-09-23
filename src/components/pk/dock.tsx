@@ -5,14 +5,15 @@ import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "./icon";
 
 /**
- * The five places in Pawket, and the only persistent navigation. Order is
- * fixed in the product. It floats at the foot of the view at every width —
- * over the page while it scrolls, simply at the bottom when it does not. On
- * a phone only the lit slot shows its name; wider, every slot is named.
+ * The places in Pawket, and the only persistent navigation. Order is fixed.
+ * It floats at the foot of the view at every width — over the page while it
+ * scrolls, simply at the bottom when it does not. On a phone only the lit
+ * slot shows its name; wider, every slot is named.
+ *
+ * Market is not a place. Nothing is for sale.
  */
 const PLACES: Array<{ key: string; label: string; icon: IconName; href: string }> = [
   { key: "home", label: "Home", icon: "home", href: "/home" },
-  { key: "market", label: "Market", icon: "market", href: "/market" },
   { key: "playground", label: "Playground", icon: "ball", href: "/playground" },
   { key: "inventory", label: "Inventory", icon: "pocket", href: "/inventory" },
   { key: "guilds", label: "Guilds", icon: "guild", href: "/guilds" },

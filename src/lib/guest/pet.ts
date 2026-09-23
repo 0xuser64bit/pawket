@@ -22,7 +22,7 @@ import {
   PetSpecies,
   type PetStats,
 } from "@/lib/game/enums";
-import { normalizePetName } from "@/lib/solana/pda";
+import { normalizePetName } from "@/lib/solana/names";
 
 /**
  * Wallet-free companion kept in this browser. Same locked care math as the
@@ -116,6 +116,21 @@ export function nextStreak(
     return { count: streak.count + 1, lastDay: today };
   }
   return { count: 1, lastDay: today };
+}
+
+/**
+ * The streak a screen should print. A stored count from before yesterday is
+ * already over, even though the next action is what writes the reset.
+ */
+export function streakAsOf(
+  streak: GuestPet["streak"],
+  now: Date,
+): { count: number; activeToday: boolean } {
+  if (!streak.lastDay || streak.count === 0) return { count: 0, activeToday: false };
+  const today = utcDay(now);
+  if (streak.lastDay === today) return { count: streak.count, activeToday: true };
+  if (streak.lastDay === previousUtcDay(today)) return { count: streak.count, activeToday: false };
+  return { count: 0, activeToday: false };
 }
 
 function emptyLastAction(): GuestPet["lastActionAt"] {

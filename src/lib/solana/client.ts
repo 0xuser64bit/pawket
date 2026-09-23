@@ -19,7 +19,7 @@ export interface PawketClientOptions {
  * - `solanaRpc` adds `client.rpc` plus `client.sendTransaction`.
  * - Order matters: signer plugin first, RPC second.
  *
- * Create once at module scope in `app/providers.tsx` and publish via
+ * Create once at module scope when a screen needs it, and publish via
  * `ClientProvider`. Server Components needing reads should use a plain RPC
  * client instead (no wallet plugin).
  */

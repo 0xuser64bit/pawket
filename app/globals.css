@@ -2078,6 +2078,35 @@ li {
   grid-template-columns: repeat(auto-fill, minmax(min(148px, 100%), 1fr));
   gap: var(--space-3);
 }
+/* The tile is the control. The button itself has no second frame. */
+.pk-tile-hit {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+}
+.pk-log {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.pk-log li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  align-items: baseline;
+}
 
 /* ------------------------------------- the boundary lists and the ack box
 

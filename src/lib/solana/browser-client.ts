@@ -7,8 +7,8 @@ import { defaultWsUrl } from "./cluster";
 /**
  * One wallet-backed Solana client for the whole app, created once at module
  * scope. The connected Wallet Standard wallet becomes fee payer + identity.
- * Published via `ClientProvider` in `app/providers.tsx`; leaf components read
- * it with `useClient<AppClient>()`.
+ * Not mounted today. A future send screen publishes it from
+ * `app/providers.tsx` and leaves read it with `useClient<AppClient>()`.
  */
 const env = getPublicEnv();
 

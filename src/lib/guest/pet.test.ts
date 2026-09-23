@@ -15,6 +15,7 @@ import {
   projectGuestPet,
   recordPlay,
   setWearing,
+  streakAsOf,
 } from "./pet";
 import { clearGuestPet, loadGuestPet, saveGuestPet } from "./storage";
 
@@ -95,6 +96,21 @@ describe("applyGuestCare", () => {
     );
     if (!afterGap.ok) return;
     expect(afterGap.pet.streak).toEqual({ count: 1, lastDay: "2026-03-03" });
+  });
+
+  it("prints a streak that has already lapsed as zero", () => {
+    const pet = createGuestPet({ ...INPUT, now });
+    const cared = applyGuestCare(pet, CareActionType.Feed, now);
+    if (!cared.ok) return;
+    expect(streakAsOf(cared.pet.streak, now)).toEqual({ count: 1, activeToday: true });
+    expect(streakAsOf(cared.pet.streak, new Date("2026-09-20T12:00:00Z"))).toEqual({
+      count: 1,
+      activeToday: false,
+    });
+    expect(streakAsOf(cared.pet.streak, new Date("2026-09-21T12:00:00Z"))).toEqual({
+      count: 0,
+      activeToday: false,
+    });
   });
 
   it("keeps only the latest care entries", () => {

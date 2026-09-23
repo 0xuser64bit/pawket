@@ -2,7 +2,7 @@
   "name": "pawket",
   "version": "0.1.0",
   "private": true,
-  "description": "Pawket — web-first living companion on Solana (Next.js foundation)",
+  "description": "Pawket — a living companion kept in the browser",
   "packageManager": "pnpm@10.0.0",
   "engines": {
     "node": ">=20"

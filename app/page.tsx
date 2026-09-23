@@ -4,69 +4,59 @@ import {
   ButtonLink,
   Card,
   Chip,
-  GuildRow,
   Icon,
   Mark,
   Paper,
   PetFrame,
-  Presence,
   Row,
   Stack,
   ThemeToggle,
 } from "@/components/pk";
 import { NetworkBadge } from "@/components/network-badge";
-import { DEMO_GUILDS } from "@/lib/demo";
 
-const LOOP = [
-  "Adopt a pet",
-  "Make it yours",
-  "Care and play",
-  "Grow together",
-  "Meet others",
-  "Collect and trade",
-];
+const LOOP = ["Adopt a pet", "Name them", "Care for them", "Play a round", "Watch them grow"];
 
 const PILLARS = [
   {
     icon: "paw",
-    title: "Collect",
-    body: "Every pet is one of a kind: its own species, coat, traits and history. Cloth, Copper, Glass or Foil — written out, never a glow.",
+    title: "Adopt",
+    body: "A luna cat, a moss pup or a cloud bun, and a temperament you choose. Every pet is Cloth. Rarity is not a checkout.",
   },
   {
     icon: "spark",
-    title: "Customise",
-    body: "Scarves, crowns, window seats, porch lanterns. Anything you own can be worn by any pet you own.",
+    title: "Dress",
+    body: "A wool scarf, a paper crown, a rain cape. One look at a time, and none of it changes a vital.",
   },
   {
     icon: "heart",
     title: "Care",
-    body: "Feed, brush, play. Care fills in counts you can see — three of three — so progress is something you can point at.",
+    body: "Feed, brush, play, rest. Each one waits half an hour. The vitals you see are an estimate of time away, and there is no death.",
   },
   {
     icon: "ball",
-    title: "Play together",
-    body: "Short games your pet plays as you. Bring a friend, or drop into a lobby and meet one.",
+    title: "Play",
+    body: "Five gates in the playground. Finish a round and the day counts. The score never changes a vital.",
   },
 ] as const;
 
 const ASSET_COLUMNS = ["Thing", "What it is for", "Needed to play?", "Has a market price?"];
 
 const ASSETS = [
-  ["Your pet", "Identity, appearance, traits, progress", "No — guests play too", "No"],
-  ["Cosmetics", "Expression: what your pet wears and where it lives", "No", "Tradeable, not financialised"],
-  ["Guild token", "Optional community flair, votes and events", "No", "Yes — and it can go to zero"],
-  ["SOL", "Paying for things, when you choose to", "No", "Yes"],
+  ["Your pet", "Identity, appearance, care, progress", "No — one pet, in this browser", "No"],
+  ["Clothes", "Expression: the one look they are wearing", "No", "No — the wardrobe is free"],
+  ["Guild token", "A future community, if guilds ever open", "No", "Not in this version"],
+  ["SOL", "Not used by anything you can do here", "No", "Yes, elsewhere"],
 ];
 
 const NAV = [
   { label: "Home", href: "/home" },
-  { label: "Market", href: "/market" },
   { label: "Playground", href: "/playground" },
+  { label: "Inventory", href: "/inventory" },
   { label: "Guilds", href: "/guilds" },
 ];
 
 /**
- * The front door: the pet first, the ledger last. `display-hero` is used
+ * The front door: the pet first, the rules last. `display-hero` is used
  * once, here, and nowhere else in the product.
  */
 export default function LandingPage() {
@@ -93,7 +83,6 @@ export default function LandingPage() {
       </header>
 
       <main id="main">
-        {/* hero */}
         <section className="pk-band" style={{ paddingTop: "var(--space-6)", paddingBottom: "var(--space-9)" }}>
           <div className="pk-hero">
             <Stack gap={6}>
@@ -101,9 +90,8 @@ export default function LandingPage() {
                 A pet in your pocket.
               </h1>
               <p className="body-lg pk-muted" style={{ maxWidth: "46ch" }}>
-                Adopt a luna cat, a moss pup or a cloud bun. Feed it, dress it, and take it out to
-                play with other people’s pets. It grows because you show up — not because you
-                spent more.
+                Adopt a luna cat, a moss pup or a cloud bun. Feed it, dress it, and run a short
+                game together. It grows because you show up — not because you spent more.
               </p>
               <Row gap={3} wrap>
                 <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" size="lg" />
@@ -116,18 +104,17 @@ export default function LandingPage() {
             </Stack>
 
             <div className="pk-stage">
-              <PetFrame form="cat" level={7} rarity="foil" mood="Playful" sky="warm" size="fluid" />
-              <PetFrame form="bird" level={12} rarity="glass" mood="Singing" sky="cool" size="fluid" />
-              <PetFrame form="bun" level={5} rarity="copper" mood="Sleepy" sky="plain" size="fluid" />
+              <PetFrame form="cat" level={1} rarity="cloth" mood="Happy" sky="warm" size="fluid" />
+              <PetFrame form="dog" level={2} rarity="cloth" mood="Okay" sky="plain" size="fluid" />
+              <PetFrame form="bun" level={3} rarity="cloth" mood="Radiant" sky="cool" size="fluid" />
               <div className="pk-stage__chips">
-                <Chip label="Fed 3 / 3" tone="sprout" icon="bowl" />
-                <Chip label="Wool scarf" tone="sun" icon="spark" />
+                <Chip label="Level 1" tone="sprout" icon="spark" />
+                <Chip label="Wool scarf" tone="sun" icon="heart" />
               </div>
             </div>
           </div>
         </section>
 
-        {/* the loop, as six pills */}
         <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
           <h2 className="label pk-faint" style={{ marginBottom: "var(--space-5)" }}>
             How it goes
@@ -141,7 +128,6 @@ export default function LandingPage() {
           </ol>
         </section>
 
-        {/* four pillars */}
         <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
           <h2 className="pk-sr">What you do in Pawket</h2>
           <div className="pk-pillars">
@@ -159,82 +145,64 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* the playground, on an ink band */}
         <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
           <Card variant="ink" className="pk-inkband">
             <div className="pk-split">
               <div>
                 <h2 className="display-m" style={{ color: "var(--ink-inverse)", maxWidth: "14ch" }}>
-                  Your pet is how people know you.
+                  Your pet runs the gates.
                 </h2>
                 <p className="body-lg pk-muted" style={{ marginTop: "var(--space-4)", maxWidth: "48ch" }}>
-                  In the Playground your pet is your face. Same coat, same scarf, same name — in a
-                  race, in a lobby, in someone else’s room.
+                  In the playground there is one round: five gates, then you run them back. Same
+                  name, same species. Finish it and the day counts. The score stays yours.
                 </p>
                 <div style={{ marginTop: "var(--space-6)" }}>
-                  <ButtonLink label="See the games" href="/playground" tone="pool" icon="ball" />
+                  <ButtonLink label="See the game" href="/playground" tone="pool" icon="ball" />
                 </div>
-                <Row gap={5} wrap style={{ marginTop: "var(--space-5)" }}>
-                  <Presence name="Wren" />
-                  <Presence name="Tobi" />
-                  <Presence name="Juno" away note="away" />
-                </Row>
               </div>
               <div className="pk-duo">
-                <PetFrame form="dog" level={3} rarity="cloth" sky="cool" size="fluid" />
-                <PetFrame form="cat" level={7} rarity="foil" sky="warm" size="fluid" />
+                <PetFrame form="dog" level={2} rarity="cloth" sky="cool" size="fluid" />
+                <PetFrame form="cat" level={3} rarity="cloth" sky="warm" size="fluid" />
               </div>
             </div>
           </Card>
         </section>
 
-        {/* guilds: the band's size is the point */}
         <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
           <div className="pk-guildband">
             <div className="pk-split pk-split--wide-right">
               <Stack gap={5}>
                 <div>
-                  <Chip label="Optional" tone="bloom" icon="guild" />
+                  <Chip label="Not open" icon="guild" />
                 </div>
                 <h2 className="display-m" style={{ maxWidth: "13ch" }}>
-                  Guilds, if you want them.
+                  Guilds, later, if at all.
                 </h2>
                 <p className="body-lg pk-muted" style={{ maxWidth: "44ch" }}>
-                  Some communities run events, vote on the next cosmetic, and keep a shared
-                  treasury out in the open. Joining one adds people to your game. It adds nothing
-                  to your pet.
+                  There is no guild to join. The rule is already written: joining one would add
+                  people to the game. It would add nothing to a pet.
                 </p>
                 <Row gap={3} wrap>
-                  <ButtonLink label="Browse guilds" href="/guilds" tone="bloom" icon="guild" />
-                  <ButtonLink label="How guilds work" href="/guilds/boundary" tone="quiet" />
+                  <ButtonLink label="Read the boundary" href="/guilds" tone="bloom" icon="guild" />
                 </Row>
               </Stack>
 
               <Stack gap={3}>
-                {DEMO_GUILDS.slice(0, 2).map((guild) => (
-                  <GuildRow
-                    key={guild.slug}
-                    name={guild.name}
-                    href={`/guilds/${guild.slug}`}
-                    letter={guild.letter}
-                    color={guild.color}
-                    members={guild.members}
-                    stage={guild.stageLabel}
-                    blurb={guild.blurb}
-                    official={guild.official}
-                  />
-                ))}
                 <Banner
                   tone="info"
                   title="A guild token never touches your pet"
                   body="No stat increase, no faster care, no XP multiplier, no matchmaking priority, no queue skip. Ever."
+                />
+                <Banner
+                  tone="risk"
+                  title="Nothing on this page is for sale"
+                  body="No listing, no treasury, no swap. A price is not part of caring for a pet."
                 />
               </Stack>
             </div>
           </div>
         </section>
 
-        {/* what you actually own — Paper, and on the front page */}
         <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
           <div className="pk-split pk-split--wide-left">
             <Stack gap={4}>
@@ -248,8 +216,6 @@ export default function LandingPage() {
             </Stack>
 
             <Paper title="Asset model" meta="Plain language">
-              {/* Roles are explicit because a phone lays these rows out as
-                  blocks, and a table must stay a table to a screen reader. */}
               <table className="pk-assets" role="table">
                 <thead role="rowgroup">
                   <tr role="row">
@@ -293,10 +259,9 @@ export default function LandingPage() {
           <NetworkBadge />
         </Stack>
         <p className="body-sm pk-faint">
-          Pawket is a game. Guild tokens are optional community infrastructure, not investments,
-          and carry no promise of value. Supply, allocations, fees and treasury activity are
-          published before any launch opens. The product surfaces are a design preview and render
-          demo data.
+          Pawket is a game you play in this browser. The pet you adopt is saved here, and clearing
+          this browser&apos;s data removes them. Guild tokens are not for sale. The cluster below is
+          configuration for a later record — nothing on these pages is sent there.
         </p>
       </footer>
     </>

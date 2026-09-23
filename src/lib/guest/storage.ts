@@ -1,4 +1,4 @@
-import { guestPetSchema, type GuestPet } from "./pet";
+import { guestPetSchema, migrateStoredPet, type GuestPet } from "./pet";
 
 const STORAGE_KEY = "pawket.guest-pet.v1";
 
@@ -19,12 +19,12 @@ export function loadGuestPet(): GuestPet | null {
     removeStored();
     return null;
   }
-  const result = guestPetSchema.safeParse(parsed);
-  if (!result.success) {
+  const pet = migrateStoredPet(parsed);
+  if (!pet) {
     removeStored();
     return null;
   }
-  return result.data;
+  return pet;
 }
 
 function removeStored(): void {
@@ -35,16 +35,19 @@ function removeStored(): void {
   }
 }
 
-export function saveGuestPet(pet: GuestPet): void {
-  if (typeof window === "undefined") return;
+/** Persist a pet. False when storage is blocked or the record is invalid. */
+export function saveGuestPet(pet: GuestPet): boolean {
+  if (typeof window === "undefined") return false;
+  if (!guestPetSchema.safeParse(pet).success) return false;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(pet));
   } catch {
-    // Storage full or blocked (private mode) — the session still works,
-    // it just won't survive a reload. Never crash the loop over this.
-    return;
+    // Storage full or blocked (private mode). The caller has to say so —
+    // a silent save is how a player loses a pet they think they kept.
+    return false;
   }
   notifyGuestPetListeners();
+  return true;
 }
 
 export function clearGuestPet(): void {

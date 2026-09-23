@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatCountdown,
   formatSol,
+  formatUtcDate,
   parseSolToLamports,
   truncateAddress,
 } from "./format";
@@ -26,6 +27,13 @@ describe("formatSol", () => {
   it("keeps the sign on negative values", () => {
     expect(formatSol(-1_500_000_000n)).toBe("-1.5");
     expect(formatSol(-1n)).toBe("-0.000000001");
+  });
+});
+
+describe("formatUtcDate", () => {
+  it("formats a UTC calendar date and refuses a bad value", () => {
+    expect(formatUtcDate("2026-09-23T23:30:00.000Z")).toBe("23 Sep 2026");
+    expect(formatUtcDate("not-a-date")).toBe("");
   });
 });
 

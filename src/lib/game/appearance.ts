@@ -1,5 +1,5 @@
 import type { PetForm, Sky } from "@/components/pk";
-import { PetMood, PetSpecies } from "./enums";
+import { CareActionType, PetMood, PetPersonality, PetSpecies } from "./enums";
 
 /**
  * How a domain pet is drawn. The species enum is lockstep with the on-chain
@@ -25,6 +25,29 @@ export const SPECIES_SKY: Record<PetSpecies, Sky> = {
   [PetSpecies.LunaCat]: "warm",
   [PetSpecies.MossPup]: "plain",
   [PetSpecies.CloudBun]: "cool",
+};
+
+export const PERSONALITY_LABEL: Record<PetPersonality, string> = {
+  [PetPersonality.Curious]: "Curious",
+  [PetPersonality.Cozy]: "Cozy",
+  [PetPersonality.Brave]: "Brave",
+  [PetPersonality.Mischief]: "Mischief",
+};
+
+/** The verb on the care button. */
+export const CARE_ACTION_LABEL: Record<CareActionType, string> = {
+  [CareActionType.Feed]: "Feed",
+  [CareActionType.Play]: "Play",
+  [CareActionType.Groom]: "Brush",
+  [CareActionType.Rest]: "Rest",
+};
+
+/** The verb after the care has happened. */
+export const CARE_DONE_LABEL: Record<CareActionType, string> = {
+  [CareActionType.Feed]: "Fed",
+  [CareActionType.Play]: "Played",
+  [CareActionType.Groom]: "Brushed",
+  [CareActionType.Rest]: "Rested",
 };
 
 /** A pet's mood is one word, shown on the frame. */

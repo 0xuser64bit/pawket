@@ -20,6 +20,28 @@ export function formatSol(lamports: bigint): string {
 /** Largest encodable lamport amount (u64) — anything above fails on-chain. */
 const MAX_LAMPORTS = (1n << 64n) - 1n;
 
+const UTC_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+/** `2026-09-23T12:00:00.000Z` → `23 Sep 2026`. UTC, so server and client agree. */
+export function formatUtcDate(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getUTCDate()} ${UTC_MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+}
+
 /** Cooldown countdown: 90 → "1:30", 7 → "0:07". */
 export function formatCountdown(totalSeconds: number): string {
   const safe = Math.max(0, Math.floor(totalSeconds));

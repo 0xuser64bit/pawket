@@ -51,4 +51,4 @@ export {
 export { BackLink, Columns, Grid, Row, Screen, ScreenBar, SectionLabel, Stack } from "./layout";
 export { PawLoader } from "./paw-loader";
 export { Dock } from "./dock";
-export { ThemeToggle } from "./theme-toggle";
+export { ThemeToggle, useTheme, useToken } from "./theme-toggle";

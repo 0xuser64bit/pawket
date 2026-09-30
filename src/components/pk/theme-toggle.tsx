@@ -25,12 +25,26 @@ function readTheme(): Theme {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
+/** The theme in force: a player's pick, or the system's. */
+export function useTheme(): Theme {
+  return useSyncExternalStore(subscribe, readTheme, () => "light" as Theme);
+}
+
+/** A token's value in the theme in force, read from the page, not from a copy. */
+export function useToken(name: `--${string}`, fallback: string): string {
+  return useSyncExternalStore(
+    subscribe,
+    () => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback,
+    () => fallback,
+  );
+}
+
 /**
  * Lamplight is the same room after dark, not a re-skin. The control names
  * the room you are switching to, so it never depends on an icon alone.
  */
 export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, readTheme, () => "light" as Theme);
+  const theme = useTheme();
   const toDark = theme !== "dark";
 
   function swap() {

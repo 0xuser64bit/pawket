@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import {
   Button,
   ButtonLink,
@@ -13,7 +13,10 @@ import {
   ScreenBar,
   Stack,
 } from "@/components/pk";
-import { Room } from "@/components/home/room";
+import { EmoteRow } from "@/components/home/emote-row";
+import { LookCard } from "@/components/home/look-card";
+import { Room, useRoomMode, type RoomState } from "@/components/home/room";
+import type { DirectorStatus } from "@/components/room3d/director";
 import { findWearable } from "@/lib/closet/catalog";
 import {
   CARE_ACTION_LABEL,
@@ -22,6 +25,7 @@ import {
   PERSONALITY_LABEL,
   SPECIES_ART,
   SPECIES_LABEL,
+  SPECIES_SKY,
 } from "@/lib/game/appearance";
 import { CareActionType } from "@/lib/game/enums";
 import {
@@ -33,6 +37,9 @@ import {
   type GuestPet,
 } from "@/lib/guest/pet";
 import { useGuestPet } from "@/lib/guest/use-guest-pet";
+import { describeLook } from "@/lib/player/look";
+import { usePlayerLook } from "@/lib/player/use-player-look";
+import { CARE_MOMENT, type RoomCue } from "@/lib/room/moments";
 import { clearGuestPet, readGuestPetSnapshot, saveGuestPet } from "@/lib/guest/storage";
 import { formatCountdown } from "@/lib/utils/format";
 
@@ -53,9 +60,18 @@ const ACTIONS: Array<{
  */
 export function HomeScreen() {
   const { ready, pet } = useGuestPet();
+  const look = usePlayerLook();
   const [now, setNow] = useState(() => new Date());
   const [notice, setNotice] = useState<{ tone: "ok" | "stop"; text: string }>();
   const [confirming, setConfirming] = useState(false);
+  const [cue, setCue] = useState<RoomCue | null>(null);
+  const [status, setStatus] = useState<DirectorStatus>({ moment: null, sentence: "" });
+  const [roomState, setRoomState] = useState<RoomState>("loading");
+  const [mode, setMode] = useRoomMode();
+  const wide = useWide();
+  const onStatus = useCallback((next: DirectorStatus) => setStatus(next), []);
+  const lookShown = roomState === "live" || roomState === "loading";
+  const ask = (moment: string) => setCue({ moment, nonce: Date.now() });
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 1000);
@@ -84,17 +100,33 @@ export function HomeScreen() {
         </ScreenBar>
         <Columns
           pin
-          first={<Room occupied={false} description="You, in an empty room, the window open." />}
+          first={
+            <>
+              <Room
+                pet={null}
+                look={look}
+                sky="warm"
+                cue={cue}
+                description={`${describeLook(look)}, in an empty room with the window open.`}
+                onState={setRoomState}
+              />
+              <RoomMode mode={mode} state={roomState} onMode={setMode} />
+              {wide ? null : <LookCard look={look} shown={lookShown} />}
+            </>
+          }
           second={
-            <Card>
-              <h2 className="title">The window is open</h2>
-              <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-                Nobody lives here yet. Adopting takes three taps, and the pet stays in this browser.
-              </p>
-              <div style={{ marginTop: "var(--space-4)" }}>
-                <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />
-              </div>
-            </Card>
+            <>
+              <Card>
+                <h2 className="title">The window is open</h2>
+                <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
+                  Nobody lives here yet. Adopting takes three taps, and the pet stays in this browser.
+                </p>
+                <div style={{ marginTop: "var(--space-4)" }}>
+                  <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />
+                </div>
+              </Card>
+              {wide ? <LookCard look={look} shown={lookShown} /> : null}
+            </>
           }
         />
       </Screen>
@@ -126,6 +158,8 @@ export function HomeScreen() {
       tone: "ok",
       text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}`,
     });
+    // Only now, with the care saved, does the room show it.
+    ask(CARE_MOMENT[action]);
   }
 
   return (
@@ -145,14 +179,33 @@ export function HomeScreen() {
         first={
           <>
             <Room
-              form={SPECIES_ART[pet.species]}
-              description={`You and ${pet.name} in the room, window open.`}
+              pet={{
+                species: pet.species,
+                form: SPECIES_ART[pet.species],
+                name: pet.name,
+                wearing: pet.wearing,
+                mood: projected.mood,
+              }}
+              look={look}
+              sky={SPECIES_SKY[pet.species]}
+              cue={cue}
+              description={`${describeLook(look)}, and ${pet.name} the ${SPECIES_LABEL[pet.species].toLowerCase()}${worn ? ` in the ${worn.name.toLowerCase()}` : ""}, in the room with the window open.`}
+              onStatus={onStatus}
+              onState={setRoomState}
             />
-            <Row gap={2} wrap>
-              <Chip label={MOOD_LABEL[projected.mood]} icon="paw" />
-              <Chip label={SPECIES_LABEL[pet.species]} />
-              {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
-            </Row>
+            <div className="pk-spread">
+              <Row gap={2} wrap>
+                <Chip label={MOOD_LABEL[projected.mood]} icon="paw" />
+                <Chip label={SPECIES_LABEL[pet.species]} />
+                {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
+              </Row>
+              <RoomMode mode={mode} state={roomState} onMode={setMode} />
+            </div>
+            {/* Stacked, the look sits right under the room so it stays in view. */}
+            {wide ? null : <LookCard look={look} shown={lookShown} />}
+            {lookShown ? (
+              <EmoteRow petName={pet.name} playing={status.moment} sentence={status.sentence} onEmote={ask} />
+            ) : null}
           </>
         }
         second={
@@ -168,6 +221,7 @@ export function HomeScreen() {
               notice={notice}
               onCare={care}
             />
+            {wide ? <LookCard look={look} shown={lookShown} /> : null}
             <Card variant="quiet">
               <div className="pk-spread">
                 <h2 className="title">{pet.name} lives in this browser</h2>
@@ -292,5 +346,39 @@ function Vital({ label, value }: { label: string; value: number }) {
       readout={`${value} / 100`}
       tone={value < 25 ? "sun" : "sprout"}
     />
+  );
+}
+
+/** The player's choice between the 3D room and the flat one, on this device. */
+function RoomMode({
+  mode,
+  state,
+  onMode,
+}: {
+  mode: "3d" | "flat";
+  state: RoomState;
+  onMode: (mode: "3d" | "flat") => void;
+}) {
+  if (state === "unsupported" || state === "failed") return null;
+  return (
+    <Button
+      label={mode === "3d" ? "Flat room" : "3D room"}
+      tone="ghost"
+      size="sm"
+      onClick={() => onMode(mode === "3d" ? "flat" : "3d")}
+    />
+  );
+}
+
+/** Side by side (the Columns breakpoint), the room stays pinned beside the second column. */
+function useWide(): boolean {
+  return useSyncExternalStore(
+    (listener) => {
+      const media = window.matchMedia("(min-width: 1024px)");
+      media.addEventListener("change", listener);
+      return () => media.removeEventListener("change", listener);
+    },
+    () => window.matchMedia("(min-width: 1024px)").matches,
+    () => true,
   );
 }

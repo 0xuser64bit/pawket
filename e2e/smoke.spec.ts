@@ -89,7 +89,7 @@ test("the wardrobe is worn on the pet, and the record keeps the care", async ({ 
   await expect(page.getByRole("button", { name: /Wool scarf/ })).toHaveAttribute("aria-pressed", "true");
 
   await page.goto("/home");
-  await expect(page.getByText("Wool scarf")).toBeVisible();
+  await expect(page.getByText("Wool scarf", { exact: true })).toBeVisible();
 });
 
 test("a playground round finishes and keeps a daily bonus", async ({ page }) => {

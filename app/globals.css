@@ -2683,3 +2683,131 @@ li {
   outline: 0;
   box-shadow: none;
 }
+
+/* ------------------------------------------------ the room, drawn in 3D
+
+   The same frame, radius and sticker shadow; the canvas fills it. The
+   flat room stays in the frame until the first 3D frame is drawn. The
+   frame is focusable once it is live, so the arrow keys can turn it, and
+   it keeps its sticker shadow under the focus ring. */
+
+.pk-room {
+  --pk-keep: var(--shadow-sticker);
+}
+.pk-room__stage {
+  position: absolute;
+  inset: 0;
+}
+.pk-room__stage canvas {
+  display: block;
+}
+.pk-room--live {
+  cursor: grab;
+}
+.pk-room--live:active {
+  cursor: grabbing;
+}
+
+/* A cue in the flat room: the pet hops once and lands on its feet. */
+.pk-room__pet--hop {
+  animation: pk-hop 460ms var(--ease-press);
+  transform-origin: 50% 100%;
+}
+@keyframes pk-hop {
+  0% {
+    transform: none;
+  }
+  30% {
+    transform: translateY(-14%) scale(0.97, 1.04);
+  }
+  62% {
+    transform: none;
+  }
+  78% {
+    transform: scale(1.04, 0.95);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------ how you look
+
+   A short list is a row of choices; a colour is a dot. The chosen one is
+   lifted onto a sticker shadow — elevation, not colour — so no choice
+   competes with the sun action on the screen. */
+
+.pk-look {
+  margin-top: var(--space-5);
+}
+.pk-look__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.pk-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.pk-choice {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-text);
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pk-choice[aria-checked="true"] {
+  --pk-keep: var(--shadow-sticker-sm);
+  border-color: var(--edge);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sticker-sm);
+}
+@media (hover: hover) {
+  .pk-choice:not([aria-checked="true"]):hover {
+    background: var(--surface-sunk);
+  }
+}
+.pk-swatch {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.pk-swatch[aria-checked="true"] {
+  --pk-keep: 0 0 0 3px var(--surface), 0 0 0 5px var(--edge);
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--edge);
+}
+@media (pointer: coarse) {
+  .pk-choice {
+    min-height: 44px;
+  }
+  .pk-swatch {
+    width: 44px;
+    height: 44px;
+  }
+}
+.pk-look__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: var(--stroke-line) solid var(--edge-soft);
+}
+.pk-choice[aria-selected="true"] {
+  --pk-keep: var(--shadow-sticker-sm);
+  border-color: var(--edge);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sticker-sm);
+}

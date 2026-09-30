@@ -14,6 +14,13 @@ export const SPECIES_ART: Record<PetSpecies, PetForm> = {
   [PetSpecies.CloudBun]: "bun",
 };
 
+/** The 3D model each species wears in the room (`public/3d/pets/`). */
+export const SPECIES_MODEL: Record<PetSpecies, "cat" | "dog" | "bunny"> = {
+  [PetSpecies.LunaCat]: "cat",
+  [PetSpecies.MossPup]: "dog",
+  [PetSpecies.CloudBun]: "bunny",
+};
+
 export const SPECIES_LABEL: Record<PetSpecies, string> = {
   [PetSpecies.LunaCat]: "Luna cat",
   [PetSpecies.MossPup]: "Moss pup",

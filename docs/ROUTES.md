@@ -9,7 +9,7 @@ Built today:
 ```text
 /                          landing
 /adopt                     one pet, three steps, saved in this browser
-(game)/home                that pet's room, or an empty room
+(game)/home                that pet's room (3D, or flat), or an empty room
 (game)/inventory           the pet and the wardrobe (?tab=wardrobe)
 (game)/playground          one solo round
 (game)/pet/[id]            the record, if the id is the pet in this browser

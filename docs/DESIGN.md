@@ -14,7 +14,8 @@ disagree, fix one of them in the same change.
 | Components, as React | `src/components/pk/` |
 | Species → artwork, sky and words | `src/lib/game/appearance.ts` |
 | Companion record | `src/lib/guest/` |
-| Wearables | `src/lib/closet/catalog.ts` |
+| Wearables | `src/lib/closet/catalog.ts` (drawn in 3D by `src/components/room3d/wearables.ts`) |
+| The room in 3D, the player's look | `src/components/room3d/`, `src/lib/player/`, `docs/ROOM-3D.md` |
 
 Everything visual is a token. There are no raw colours, radii or spacing
 values in components — if a value is missing, add a token, do not inline one.
@@ -104,6 +105,12 @@ load. All of it stops under `prefers-reduced-motion`.
    press curve. A paw leaves before the next arrives, so it is a replacement,
    not a dissolve. Under `prefers-reduced-motion` one paw sits still.
 
+A third is fenced the same way: **the 3D room's life** on Home. The player
+breathes and blinks, the pet breathes, wanders and naps, the camera drifts a
+degree. It is the breath, grown into a place — Playroom only, only in the
+room, and under `prefers-reduced-motion` all of it stops: the room renders
+on demand and a moment is shown as one held still.
+
 The loader is an amendment to the system's original "nothing else loops" rule,
 made deliberately and fenced just as deliberately:
 
@@ -143,11 +150,42 @@ on a desktop, bands at `space-9`).
 The vertical order on every game screen is the same: the thing itself, then
 what you can do to it, then anything that explains it.
 
+## The room in 3D
+
+Home's room is drawn in 3D where a device can draw it (`docs/ROOM-3D.md`).
+It is the flat room's language in three dimensions, not a model viewer:
+
+- **Flat colour, ink outline.** Toon shading on three steps and a
+  fixed-width inverted-hull outline in the theme's `edge`. No shadow maps:
+  a hard-edged contact shadow under each character. No tone mapping, so a
+  token lands as itself.
+- **Materials are things.** A pool-blue shirt is the same shirt after dark,
+  so materials take the Daylight token values (`room3d/palette.ts`, locked
+  to `:root` by a test) and the light changes. Lamplight is the same room
+  after dark: the sky token swaps, the lantern lights, the ink turns light,
+  and nothing moves.
+- **The pet's sky is the wall.** `sun-soft`, `pool-soft` or `surface-sunk`,
+  the species' `SPECIES_SKY` — never bloom behind a pet.
+- **The pet is its PetArt.** Each species wears the coat and patch the flat
+  art draws, on Kenney's cube animals.
+- **The player is the one likeness in Pawket.** In the flat room the player
+  stays a peg doll with no skin tone, wearing the top colour chosen for the
+  3D room. In the 3D room the player is a person the player dressed — build,
+  skin tone, hair, clothes — in the palette's hues; bloom and alarm are not
+  offered.
+- **Nothing floats over the animal.** Emotes, the look, the room switch and
+  every failure note live below the frame. The frame keeps its
+  `radius-room`, its 2px `edge` and its sticker shadow.
+- **The room says what it is doing.** A moment's sentence is read out in a
+  status line; the frame names who is in it and how to turn it.
+
 ## What is real
 
 Adoption, the room, care, the wardrobe, the playground round and the guild
 boundary are the product. The pet is saved in this browser. A wearable is a
-name beside the pet, not a change to the drawing and not a change to a vital.
+name beside the pet in the flat drawing, and is drawn on the pet in the 3D
+room — never a change to a vital. A care plays its moment in the room only
+after the care is saved; an emote changes nothing on the record and says so.
 Guilds are the two lists of what a token may and may not do. There is no
 market, no treasury, no swap and no lobby.
 

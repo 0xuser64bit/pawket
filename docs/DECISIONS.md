@@ -3,6 +3,26 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-09: Home is a 3D room, and the flat room stays
+
+**Context:** Home is where the player and the pet are together. The flat
+room could not show them doing anything together. Two CC0 packs were
+supplied: Kenney's Cube Pets and Quaternius' Universal Base Characters
+(free edition — no animation, no clothes).
+**Decision:** Home draws one React Three Fiber Canvas, loaded only by Home,
+with the player and the pet in the design system's room: toon shading, ink
+outlines, Daylight materials under a changing light. The asset pipeline
+(`scripts/3d/`) is part of the repo: it recolours the pets to their PetArt
+coats, cuts clothes from the body, fits hair across heads, authors the
+clips, and validates every GLB. Moments are data (`src/lib/room/`), so an
+emote is a clip and an entry. The player's look is saved on the device. The
+flat SVG room is kept, complete, for no WebGL, a failed load, a lost
+context, and a player who prefers it.
+**Consequence:** three.js (~275 KB gzipped) and about 1 MB of GLB load
+after the first paint, on Home only. A care plays its moment only after it
+is saved. The player is now the one likeness in the product — outside the
+3D room it is still the peg doll.
+
 ## 2026-09: The shipped game is one browser companion
 
 **Context:** The screens for a market, guild swaps, treasuries and multiplayer

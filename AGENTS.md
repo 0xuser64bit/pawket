@@ -12,9 +12,14 @@ Wallet Standard wallet in the browser, adopts a companion, and cares for it
 
 **Current truth:** one companion, saved in this browser. `/adopt` writes it
 through `src/lib/guest/` and `src/lib/game/`. Home runs care (feed, play,
-groom, rest) with decay, cooldowns, XP, a UTC streak and a care log.
-Inventory dresses that pet from `src/lib/closet/` — expression only, no
-effect on vitals. The playground is one solo round in `src/lib/play/`;
+groom, rest) with decay, cooldowns, XP, a UTC streak and a care log, in a
+room drawn in 3D — the player and that pet in one scene
+(`src/components/room3d/`, `docs/ROOM-3D.md`), with the flat SVG room
+wherever 3D cannot draw. A saved care plays its moment in the room; emotes
+(wave, dance, pet, treat, cheer) change nothing on the record. The player's
+look is saved on this device (`src/lib/player/`). Inventory dresses that
+pet from `src/lib/closet/` — expression only, no effect on vitals; the 3D
+room draws every item. The playground is one solo round in `src/lib/play/`;
 finishing it once per UTC day grants `DAILY_GOAL_REWARD_XP` and changes
 nothing else. Guilds is the written boundary in `src/lib/guilds/boundary.ts`:
 nothing to join, buy or swap. There is no market. Instruction builders and
@@ -34,6 +39,7 @@ price, treasury, member count or lobby back on a screen.
 | Touching Solana / wallets | `docs/SOLANA.md`                                            |
 | Touching game math        | `docs/GAME-DESIGN.md` (`src/lib/game/` is lockstep)         |
 | Touching pets/NFTs        | `docs/NFT-CUSTOMIZATION.md` + `docs/DOMAIN-MODEL.md`        |
+| Touching the 3D room      | `docs/ROOM-3D.md` + `docs/DESIGN.md` (“The room in 3D”)     |
 | Touching marketplace      | `docs/MARKETPLACE.md` + `docs/API-CONTRACTS.md`             |
 | Touching guilds/launches  | `docs/GUILDS.md` + `docs/METEORA-INTEGRATION.md` + `docs/SAFETY-ECONOMY.md` |
 | Touching indexer/API      | `docs/INDEXER.md` + `docs/API-CONTRACTS.md` + `docs/ROUTES.md` |
@@ -62,6 +68,9 @@ One home per fact. If two files disagree, the left column wins.
 | Wearables (expression only)       | `src/lib/closet/catalog.ts`         |
 | Playground pattern                | `src/lib/play/gates.ts`             |
 | Guild boundary copy               | `src/lib/guilds/boundary.ts`        |
+| Player look (3D room)             | `src/lib/player/look.ts`            |
+| Moments and emotes                | `src/lib/room/moments.ts`           |
+| 3D assets (built, never hand-edited) | `scripts/3d/` → `public/3d/`     |
 | Target architecture (M3–M6)       | `docs/ARCHITECTURE-TARGET.md`       |
 | Domain types, state machines      | `docs/DOMAIN-MODEL.md`              |
 | Route IA + Server/Client split    | `docs/ROUTES.md`                    |
@@ -81,6 +90,7 @@ pnpm dev              # http://localhost:3000
 pnpm verify           # typecheck + lint + test + build (run before Done)
 pnpm test             # Vitest
 pnpm e2e              # Playwright (needs no wallet; asserts shell, not signing)
+pnpm assets:3d        # rebuild public/3d from the source files in assets/
 ```
 
 ## Workflow (short version)

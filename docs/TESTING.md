@@ -9,6 +9,9 @@
 | Env / cluster / format / errors| colocated `*.test.ts`                   | Vitest   |
 | Presentational components      | `src/components/*.test.tsx`             | Vitest + Testing Library |
 | Guest record, wardrobe, gates  | `src/lib/guest`, `closet`, `play`       | Vitest   |
+| Player look, moment registry (checked against the shipped GLBs' clips) | `src/lib/player`, `src/lib/room` | Vitest |
+| 3D room: palette ↔ `:root` tokens, every wearable drawn, two-bone reach | `src/components/room3d/*.test.ts` | Vitest |
+| 3D room: live room, emote, care moment after save, flat choice, no-WebGL fallback, reduced motion, saved look, empty room, 320px | `e2e/room.spec.ts` | Playwright |
 | Shell, adopt, care, wardrobe, playground, guild boundary, health | `e2e/smoke.spec.ts` | Playwright |
 | Layout: no sideways scroll at 320/375/768, dock placement | `e2e/layout.spec.ts` | Playwright |
 
@@ -28,6 +31,11 @@ pnpm verify     # typecheck + lint + test + build
   is new; the spec fails on any page wider than a 320px phone.
 - Wallet signing flows are verified in the browser (devnet), never in unit
   tests. E2E asserts shell presence, not signatures.
+- Touch the moment registry or the clips → `moments.test.ts` reads the
+  built GLBs, so run `pnpm assets:3d` first when the pipeline changed.
+  `pnpm assets:3d` itself fails on any glTF-Validator error or blown budget.
+- The 3D room is verified by what it says (its status line, its label) and
+  what can be pressed, never by pixels.
 
 ## Conventions
 

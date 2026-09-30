@@ -30,7 +30,7 @@ Target loop: connect wallet → adopt PDA pet (name 2–24 UTF-8 bytes, species,
 
 ## Capabilities and Constraints
 
-Ships today: landing, adoption, the room and care loop, the care log and UTC streak, a free wardrobe (one wearable, no effect on vitals), one solo playground round with a once-a-day XP bonus, the guild boundary page, and `GET /api/health`. Persistence is `localStorage` only.
+Ships today: landing, adoption, the room and care loop — the room drawn in 3D with the player and the pet together, a saved care shown as a moment between them, emotes, and the player's own look (flat SVG room wherever 3D cannot draw) — the care log and UTC streak, a free wardrobe (one wearable, no effect on vitals, drawn on the pet in 3D), one solo playground round with a once-a-day XP bonus, the guild boundary page, and `GET /api/health`. Persistence is `localStorage` only.
 
 Built and not on a screen: Kit v8 client, PDAs, adopt/care instruction builders, the representative SOL send path. Do not add a send button until a devnet program deploy is real and the screen can show a signature and an Explorer link.
 
@@ -48,7 +48,7 @@ Name: Pawket. Tagline in the shell: "A living companion". The mark, type and pal
 
 Real implementation: the routes in `docs/ROUTES.md`, `src/lib/guest/` (the record), `src/lib/game/` (math), `src/lib/closet/` (wearables), `src/lib/play/` (the round), `src/lib/guilds/boundary.ts`, `src/lib/solana/` (library only), `src/components/pk/` (design system and the geometric pet), `e2e/` Playwright.
 
-Absences future work must not fabricate: no pet NFT, no testimonials, customers, press, benchmarks, prices, or live player data. A wearable does not change the drawing. Marketplace, guild launches and multiplayer remain specs.
+Absences future work must not fabricate: no pet NFT, no testimonials, customers, press, benchmarks, prices, or live player data. A wearable does not change the flat drawing, and changes nothing but looks in the 3D room. An emote changes nothing on the record. Marketplace, guild launches and multiplayer remain specs.
 
 ## Product Principles
 

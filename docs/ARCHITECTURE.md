@@ -21,16 +21,21 @@ app/                        routes, layouts, route handlers (Server by default)
 src/components/             UI; "use client" only at interactive leaves
   pk/                       design system
   home/ adopt/ pet/ inventory/ play/
+  room3d/                   the 3D room: one R3F Canvas, loaded only by Home
 src/config/                 validated env + site constants
 src/lib/game/               pure companion math (no React, no Solana)
 src/lib/guest/              companion record, migration, localStorage
 src/lib/closet/             wearable catalog
 src/lib/play/               gate pattern and score
 src/lib/guilds/             boundary copy
+src/lib/player/             the player's look (3D room), localStorage
+src/lib/room/               moments and emotes, as data
 src/lib/solana/             cluster, client, PDAs, instructions, tx lifecycle
                             (library only — no screen sends)
 src/lib/utils/              formatting + hydration helpers
 e2e/                        Playwright browser tests
+scripts/3d/                 asset pipeline: source packs → public/3d/ GLBs
+public/3d/                  built GLBs (validated, meshopt-compressed)
 docs/                       the docs you are reading
 ```
 
@@ -43,6 +48,13 @@ docs/                       the docs you are reading
   pet replaces it.
 - Care, wardrobe and a finished round are pure functions in `src/lib/guest/`.
   The screen saves the returned pet. A failed save is told to the player.
+- The player's look lives in `localStorage` (`pawket.player-look.v1`),
+  read the same way; the choice of flat or 3D room is a per-device
+  convenience (`pawket.room`).
+- The 3D room is a client leaf behind `next/dynamic`: three.js loads only
+  with it. Home hands it plain props and a cue (moment id + nonce); it
+  reports what it is doing back as a status sentence. It never reads or
+  writes the pet record.
 - One browser Solana client (`browser-client.ts`) still exists for a later
   send path. No screen calls it.
 - No global store, no second API client, no database, no giant utils file.

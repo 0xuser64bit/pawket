@@ -94,15 +94,17 @@ export function FlatRoom({ pet, colour, hop }: { pet: FlatPet | null; colour: st
         <PlayerArt color={colour} hat="beanie" />
       </div>
 
-      {pet ? (
-        <div className="pk-room__nook">
+      {/* The basket is there before the pet is: an empty one is waiting. */}
+      <div className="pk-room__nook">
           <svg className="pk-room__bed" viewBox="0 0 120 120" aria-hidden="true">
             <path d="M2 94c0-11 26-19 58-19s58 8 58 19" fill="var(--trim-copper)" stroke="var(--edge)" strokeWidth="3" />
             <path d="M10 94c0-7 22-13 50-13s50 6 50 13" fill="var(--pet-cream)" stroke="none" />
           </svg>
-          <div key={hop} className={["pk-room__pet", hop ? "pk-room__pet--hop" : ""].join(" ")}>
-            <PetArt {...pet} />
-          </div>
+          {pet ? (
+            <div key={hop} className={["pk-room__pet", hop ? "pk-room__pet--hop" : ""].join(" ")}>
+              <PetArt {...pet} />
+            </div>
+          ) : null}
           <svg className="pk-room__bed" viewBox="0 0 120 120" aria-hidden="true">
             <g stroke="var(--edge)" strokeWidth="3" strokeLinejoin="round">
               <path d="M2 94c0 17 24 26 58 26s58-9 58-26c-14 8-34 12-58 12S16 102 2 94z" fill="var(--trim-copper)" />
@@ -110,7 +112,6 @@ export function FlatRoom({ pet, colour, hop }: { pet: FlatPet | null; colour: st
             </g>
           </svg>
         </div>
-      ) : null}
     </>
   );
 }

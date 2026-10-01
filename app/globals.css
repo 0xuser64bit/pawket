@@ -2067,15 +2067,7 @@ li {
 }
 
 /* A recessed square holding an icon, used as a card's leading mark. */
-.pk-glyph {
-  display: inline-flex;
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--surface-sunk);
-  box-shadow: var(--shadow-well);
-  color: var(--ink-soft);
-  flex: none;
-}
+
 
 /* A collection should look like a shelf, not a table. Pet cards run two to
    a phone row, three on a tablet and four on a desktop; item tiles are
@@ -2284,93 +2276,6 @@ li {
   }
 }
 
-/* Three pockets in one row at any width, stepped so they read as three
-   pets and not a table of them. They are fluid, so on a phone they shed
-   their moods before those can cover a face. */
-.pk-stage {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: start;
-  gap: var(--space-3) var(--space-4);
-  padding: var(--space-6) var(--space-5);
-  border-radius: var(--radius-room);
-  border: var(--stroke-line) solid var(--edge);
-  background: var(--sun-soft);
-  box-shadow: var(--shadow-sticker);
-}
-.pk-stage > :nth-child(2) {
-  margin-top: var(--space-7);
-}
-.pk-stage > :nth-child(3) {
-  margin-top: var(--space-3);
-}
-.pk-stage__chips {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
-/* The loop, as six pills joined by hairlines. On a phone the chain runs
-   down the page; on a tablet it runs across in rows of three, and no row
-   ends on a loose hairline; where all six fit, it is one row. */
-.pk-chain {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.pk-chain__step {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.pk-chain__step:not(:last-child)::after {
-  content: "";
-  height: var(--space-3);
-  margin-left: var(--space-6);
-  border-left: var(--stroke-hair) dashed var(--ink-faint);
-}
-@media (min-width: 720px) {
-  .pk-chain {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    row-gap: var(--space-3);
-    align-items: center;
-  }
-  .pk-chain__step {
-    flex-direction: row;
-    align-items: center;
-  }
-  .pk-chain__step:not(:last-child)::after {
-    flex: 1 1 18px;
-    min-width: 18px;
-    height: 0;
-    margin: 0 var(--space-2);
-    border-left: 0;
-    border-top: var(--stroke-hair) dashed var(--ink-faint);
-  }
-  .pk-chain__step:nth-child(3n)::after {
-    content: none;
-  }
-}
-@media (min-width: 1200px) {
-  .pk-chain {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-  }
-  .pk-chain__step {
-    flex: 1 1 auto;
-  }
-  .pk-chain__step:last-child {
-    flex: none;
-  }
-  .pk-chain__step:nth-child(3n):not(:last-child)::after {
-    content: "";
-  }
-}
 .pk-pill {
   display: inline-flex;
   align-items: center;
@@ -2401,50 +2306,12 @@ li {
     align-items: start;
   }
   .pk-split--wide-left {
-    grid-template-columns: 1fr 1.5fr;
+    grid-template-columns: 1.1fr 1fr;
     align-items: start;
   }
-}
-
-/* The Playground band: the ink card at landing scale. */
-.pk-inkband {
-  padding: var(--space-6) var(--space-5);
-}
-@media (min-width: 720px) {
-  .pk-inkband {
-    padding: var(--space-7);
-  }
-}
-
-/* two pockets side by side, never wider than their drawn size */
-.pk-duo {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 168px));
-  justify-content: center;
-  gap: var(--space-4);
-}
-
-.pk-pillars {
-  display: grid;
-  gap: var(--space-5);
-  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
-}
-
-.pk-guildband {
-  border-radius: var(--radius-room);
-  border: var(--stroke-line) solid var(--edge);
-  background: var(--bloom-soft);
-  box-shadow: var(--shadow-sticker);
-  padding: var(--space-6) var(--space-5);
-}
-@media (min-width: 720px) {
-  .pk-guildband {
-    padding: var(--space-7);
-  }
-}
-@media (min-width: 1024px) {
-  .pk-guildband {
-    padding: 56px;
+  .pk-split--table {
+    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.6fr);
+    align-items: start;
   }
 }
 
@@ -3910,4 +3777,282 @@ li {
 }
 .pk-mirror .pk-pet--lg {
   width: min(100%, 360px);
+}
+
+/* ------------------------------------------------------ the front door */
+
+.pk-landing__hero {
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-8);
+}
+/* The hero picture: the three pets on a hill, eyes on the visitor. */
+.pk-heroscene {
+  position: relative;
+  aspect-ratio: 1.12;
+  overflow: hidden;
+  container-type: size;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-room);
+  background: var(--pool-soft);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-heroscene__land {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.pk-heroscene__pet {
+  position: absolute;
+  aspect-ratio: 1;
+  translate: -50% 0;
+}
+.pk-heroscene__pet svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pk-heroscene__pet--bun {
+  left: 24%;
+  bottom: 26%;
+  width: 34cqh;
+}
+.pk-heroscene__pet--dog {
+  left: 76%;
+  bottom: 22%;
+  width: 40cqh;
+}
+.pk-heroscene__pet--cat {
+  left: 50%;
+  bottom: 5%;
+  width: 50cqh;
+}
+.pk-heroscene__trail span {
+  position: absolute;
+  width: 6.5cqh;
+  opacity: 0.55;
+}
+.pk-heroscene__trail svg {
+  display: block;
+  width: 100%;
+}
+
+/* Live figures, read from the program: Paper, because they are facts. */
+.pk-live {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+@media (min-width: 720px) {
+  .pk-live {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.pk-live__fig {
+  display: grid;
+  gap: var(--space-1);
+}
+.pk-live__fig dd {
+  margin: 0;
+}
+
+.pk-landing__intro {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+/* A day with them: four cards, each drawn rather than iconned. */
+.pk-days {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+}
+.pk-day {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-5);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-day__art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  container-type: size;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-well);
+  color: var(--ink-faint);
+}
+.pk-day__art--adopt {
+  background: var(--sun-soft);
+}
+.pk-day__art--play {
+  background: var(--pool-soft);
+}
+.pk-day__art--play::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 18%;
+  background: var(--sprout-soft);
+  border-top: var(--stroke-line) solid var(--edge);
+}
+.pk-day__frame {
+  position: relative;
+  width: 72cqh;
+}
+.pk-day__tag {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  translate: -50% 0;
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+  font-size: 9cqh;
+  font-weight: 600;
+}
+.pk-day__face {
+  width: 40%;
+}
+.pk-day__face--big {
+  width: 58%;
+}
+.pk-day__pieces {
+  display: grid;
+  gap: 4px;
+  width: 24%;
+}
+.pk-day__pieces span {
+  display: block;
+  padding: 4px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.pk-day__pieces svg,
+.pk-day__item svg,
+.pk-day__pot svg,
+.pk-day__pet svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pk-day__item {
+  position: absolute;
+  width: 20cqh;
+  aspect-ratio: 1;
+}
+.pk-day__pot {
+  position: absolute;
+  z-index: 1;
+  left: 64%;
+  bottom: 16%;
+  width: 11cqh;
+  height: 24cqh;
+}
+.pk-day__pet {
+  position: absolute;
+  z-index: 1;
+  left: 36%;
+  bottom: 22%;
+  width: 52cqh;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  rotate: -8deg;
+}
+
+/* Keep them on Solana: the one inverted band, ink for the layer underneath. */
+.pk-solana {
+  padding: var(--space-7) var(--space-5);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-room);
+  background: var(--surface-ink);
+  box-shadow: var(--shadow-sticker);
+}
+@media (min-width: 1024px) {
+  .pk-solana {
+    padding: var(--space-9) 56px;
+  }
+}
+.pk-solana__muted {
+  display: block;
+  color: color-mix(in srgb, var(--ink-inverse) 74%, var(--surface-ink));
+}
+.pk-solana__list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pk-solana__list li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+.pk-solana__list li > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+.pk-solana__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--pool);
+  color: var(--on-pool);
+}
+.pk-passcard {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-passcard__head {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: center;
+}
+
+/* The last word: three pets, the question, the door. */
+.pk-finale {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-room);
+  background: var(--sun-soft);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-finale__pets {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+.pk-finale__pets svg {
+  width: clamp(64px, 20vw, 150px);
+}
+.pk-finale__pets svg:nth-child(2) {
+  width: clamp(80px, 25vw, 184px);
 }

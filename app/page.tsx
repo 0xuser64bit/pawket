@@ -3,54 +3,45 @@ import { Suspense } from "react";
 import {
   Banner,
   ButtonLink,
-  Card,
   Chip,
   Icon,
   Mark,
   Paper,
+  PetArt,
   PetFrame,
   Receipt,
   Row,
   Stack,
   ThemeToggle,
+  WearableArt,
+  type IconName,
 } from "@/components/pk";
+import { HeroPets } from "@/components/landing/hero-pets";
 import { NetworkBadge } from "@/components/network-badge";
+import { Obstacle, Star, Treat } from "@/components/play/game-art";
+import { PERSONALITY_LABEL, SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
+import { projectGuestPet, utcDay } from "@/lib/guest/pet";
+import { toCompanionRecord } from "@/lib/solana/accounts";
+import { formatAgo, truncateAddress } from "@/lib/utils/format";
 import { readAllPets } from "@/server/solana";
 import { sponsorState } from "@/server/sponsor";
 
-/** The count of pets on Solana is read at most once a minute. */
+/** What the program holds is read at most once a minute. */
 export const revalidate = 60;
 
-const LOOP = ["Adopt a pet", "Name them", "Care for them", "Play a round", "Keep the record", "Watch them grow"];
-
-const PILLARS = [
-  {
-    icon: "paw",
-    title: "Adopt",
-    body: "A luna cat, a moss pup or a cloud bun, and a temperament you choose. Every pet is Cloth. Rarity is not a checkout.",
-  },
-  {
-    icon: "spark",
-    title: "Dress",
-    body: "A wool scarf, a paper crown, a rain cape. One look at a time, and none of it changes a vital.",
-  },
-  {
-    icon: "heart",
-    title: "Care",
-    body: "Feed, brush, play, rest. Each one waits half an hour. The vitals you see are an estimate of time away, and there is no death.",
-  },
-  {
-    icon: "ball",
-    title: "Play",
-    body: "Catch, Hop or Copy, with your pet in the game. Finish a round and the day counts. The score never changes a vital.",
-  },
-] as const;
+const ON_SOLANA: Array<{ icon: IconName; title: string; body: string }> = [
+  { icon: "paw", title: "One signature to move in", body: "Keep the pet you raised in this browser on Solana. Its name, species and temperament go with it." },
+  { icon: "spark", title: "Pawket pays the fee", body: "A sponsor covers the network fee and the rent, and signs nothing but Pawket's own instructions. A wallet with no SOL can play." },
+  { icon: "doc", title: "A Passport anyone can open", body: "Every care, round and outfit is a signed record: the streak, the counts and the last eight cares, public at the pet's address." },
+  { icon: "image", title: "A card in your wallet", body: "A keepsake that points at the pet, frozen for good: it cannot be sold or sent, because the pet is not for sale." },
+];
 
 const ASSET_COLUMNS = ["Thing", "What it is for", "Needed to play?", "Has a market price?"];
 
 const ASSETS = [
   ["Your pet", "Identity, appearance, care, progress", "No — it starts in this browser", "No"],
   ["Its record on Solana", "Every care, the streak and the level, kept where nobody can edit them", "No — keeping it there is your choice", "No"],
+  ["Its keepsake card", "A frozen card in your wallet that points at the pet", "No", "No — it cannot be sold or sent"],
   ["Clothes", "Expression: the one look they are wearing", "No", "No — the wardrobe is free"],
   ["Guild token", "A future community, if guilds ever open", "No", "Not in this version"],
   ["SOL", "Network fees on devnet, which Pawket covers while it can", "No", "Yes, elsewhere"],
@@ -65,8 +56,10 @@ const NAV = [
 ];
 
 /**
- * The front door: the pet first, the rules last. `display-hero` is used
- * once, here, and nowhere else in the product.
+ * The front door: the pets first, then what a day with them is, then what
+ * Solana adds — shown with a real Passport read from the program — then the
+ * plain table of what is and is not owned. `display-hero` is used once,
+ * here, and nowhere else in the product.
  */
 export default function LandingPage() {
   return (
@@ -92,159 +85,160 @@ export default function LandingPage() {
       </header>
 
       <main id="main">
-        <section className="pk-band" style={{ paddingTop: "var(--space-6)", paddingBottom: "var(--space-9)" }}>
+        <section className="pk-band pk-landing__hero">
           <div className="pk-hero">
             <Stack gap={6}>
-              <h1 className="display-hero" style={{ maxWidth: "11ch" }}>
-                A pet in your pocket.
+              <div>
+                <Chip label="Live on Solana devnet" tone="pool" icon="check" />
+              </div>
+              <h1 className="display-hero" style={{ maxWidth: "12ch" }}>
+                Raise a pet. Keep every paw print.
               </h1>
               <p className="body-lg pk-muted" style={{ maxWidth: "46ch" }}>
-                Adopt a luna cat, a moss pup or a cloud bun. Feed it, dress it, and run a short
-                game together. It grows because you show up — not because you spent more.
+                Adopt a luna cat, a moss pup or a cloud bun. Feed them, dress them, play three little
+                games together — they grow because you show up, not because you spent more. Keep them
+                on Solana, and every care becomes a record nobody can erase.
               </p>
               <Row gap={3} wrap>
                 <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" size="lg" />
-                <ButtonLink label="Look around first" href="/home" tone="quiet" size="lg" />
+                <ButtonLink label="See the park" href="/park" tone="quiet" icon="users" size="lg" />
               </Row>
               <p className="body-sm pk-faint">
-                Free to start. No wallet, no token, no Solana knowledge needed. When you want a
-                record nobody can erase, you can keep your pet on Solana.
+                Free to start. No wallet, no token, no Solana knowledge needed — your pet starts in this
+                browser, and moves on chain only if you ask.
               </p>
             </Stack>
-
-            <div className="pk-stage">
-              <PetFrame form="cat" level={1} rarity="cloth" mood="Happy" sky="warm" size="fluid" />
-              <PetFrame form="dog" level={2} rarity="cloth" mood="Okay" sky="plain" size="fluid" />
-              <PetFrame form="bun" level={3} rarity="cloth" mood="Radiant" sky="cool" size="fluid" />
-              <div className="pk-stage__chips">
-                <Chip label="Level 1" tone="sprout" icon="spark" />
-                <Chip label="Wool scarf" tone="sun" icon="heart" />
-              </div>
-            </div>
+            <HeroPets />
           </div>
         </section>
 
-        <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
-          <h2 className="label pk-faint" style={{ marginBottom: "var(--space-5)" }}>
-            How it goes
-          </h2>
-          <ol className="pk-chain">
-            {LOOP.map((step) => (
-              <li key={step} className="pk-chain__step">
-                <span className="pk-pill">{step}</span>
-              </li>
-            ))}
-          </ol>
+        <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }} aria-label="Pawket right now">
+          <Suspense fallback={<p className="receipt pk-faint">Reading the program…</p>}>
+            <LiveStrip />
+          </Suspense>
         </section>
 
         <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
-          <h2 className="pk-sr">What you do in Pawket</h2>
-          <div className="pk-pillars">
-            {PILLARS.map((pillar) => (
-              <Card key={pillar.title}>
-                <span className="pk-glyph">
-                  <Icon name={pillar.icon} size={22} />
+          <div className="pk-landing__intro">
+            <h2 className="display-m">A day with them</h2>
+            <p className="body-lg pk-muted">Four things, a few minutes, and a face that remembers.</p>
+          </div>
+          <div className="pk-days">
+            <article className="pk-day">
+              <div className="pk-day__art pk-day__art--adopt">
+                <span className="pk-day__frame">
+                  <PetFrame form="cat" temper="curious" feeling="radiant" sky="warm" size="fluid" seed="Pepper" />
+                  <span className="pk-day__tag">Pepper</span>
                 </span>
-                <h3 className="display-s" style={{ margin: "var(--space-4) 0 var(--space-2)" }}>
-                  {pillar.title}
-                </h3>
-                <p className="body pk-muted">{pillar.body}</p>
-              </Card>
-            ))}
+              </div>
+              <h3 className="display-s">Adopt</h3>
+              <p className="body pk-muted">Choose one of three, give them a name and a temperament. Three taps, and the temperament is the face they wear.</p>
+            </article>
+            <article className="pk-day">
+              <div className="pk-day__art pk-day__art--care">
+                <span className="pk-day__face">
+                  <PetFrame form="dog" temper="brave" feeling="hungry" sky="plain" size="fluid" still />
+                </span>
+                <Icon name="right" size={28} />
+                <span className="pk-day__face">
+                  <PetFrame form="dog" temper="brave" feeling="happy" sky="plain" size="fluid" seed="Biscuit" />
+                </span>
+              </div>
+              <h3 className="display-s">Care</h3>
+              <p className="body pk-muted">Feed, play, brush, rest. They show how they feel — a need is on their face until you meet it. There is no death, only a pet that misses you.</p>
+            </article>
+            <article className="pk-day">
+              <div className="pk-day__art pk-day__art--play">
+                <span className="pk-day__item" style={{ left: "16%", top: "14%" }}>
+                  <Treat form="bun" />
+                </span>
+                <span className="pk-day__item" style={{ left: "72%", top: "10%" }}>
+                  <Star />
+                </span>
+                <span className="pk-day__pot">
+                  <Obstacle kind="pot" />
+                </span>
+                <span className="pk-day__pet">
+                  <PetArt form="bun" temper="mischief" feeling="radiant" pose="full" seed="Tuesday" />
+                </span>
+              </div>
+              <h3 className="display-s">Play</h3>
+              <p className="body pk-muted">Catch the treats, hop the park path, copy the pattern on a giant paw. Any one is the day&apos;s round. The score stays yours.</p>
+            </article>
+            <article className="pk-day">
+              <div className="pk-day__art pk-day__art--dress">
+                <span className="pk-day__face pk-day__face--big">
+                  <PetFrame form="bun" temper="cozy" feeling="happy" wearing="paper-crown" sky="cool" size="fluid" seed="Clover" />
+                </span>
+                <span className="pk-day__pieces">
+                  {["wool-scarf", "red-collar", "nap-ribbon"].map((id) => (
+                    <span key={id}>
+                      <WearableArt id={id} />
+                    </span>
+                  ))}
+                </span>
+              </div>
+              <h3 className="display-s">Dress</h3>
+              <p className="body pk-muted">A scarf, a crown, a cape. Free, one at a time, tried on in the mirror first — and none of it changes a vital.</p>
+            </article>
           </div>
         </section>
 
         <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
-          <Card variant="ink" className="pk-inkband">
-            <div className="pk-split">
-              <div>
-                <h2 className="display-m" style={{ color: "var(--ink-inverse)", maxWidth: "14ch" }}>
-                  Your pet plays too.
-                </h2>
-                <p className="body-lg pk-muted" style={{ marginTop: "var(--space-4)", maxWidth: "48ch" }}>
-                  Three games in the playground: catch the treats, hop the park path, copy the
-                  pattern on a giant paw. Finish one and the day counts. The score stays yours.
-                </p>
-                <div style={{ marginTop: "var(--space-6)" }}>
-                  <ButtonLink label="See the game" href="/playground" tone="pool" icon="ball" />
-                </div>
-              </div>
-              <div className="pk-duo">
-                <PetFrame form="dog" level={2} rarity="cloth" sky="cool" size="fluid" />
-                <PetFrame form="cat" level={3} rarity="cloth" sky="warm" size="fluid" />
-              </div>
-            </div>
-          </Card>
-        </section>
-
-        <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
-          <div className="pk-split pk-split--wide-right">
-            <Stack gap={4}>
-              <h2 className="display-m" style={{ maxWidth: "14ch" }}>
-                A record nobody can erase.
-              </h2>
-              <p className="body-lg pk-muted" style={{ maxWidth: "44ch" }}>
-                Keep your pet on Solana and every care becomes a signed record: the level, the
-                streak, the last cares, in an account only your wallet can write to. It outlives this
-                browser, and anyone can look it up.
-              </p>
-              <Row gap={3} wrap>
-                <ButtonLink label="See the park" href="/park" tone="pool" icon="users" />
-              </Row>
-            </Stack>
-            <Paper title="On Solana devnet" meta="Read live">
-              <Suspense fallback={<p className="receipt pk-faint">Reading the program…</p>}>
-                <PetsOnChain />
-              </Suspense>
-            </Paper>
-          </div>
-        </section>
-
-        <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
-          <div className="pk-guildband">
-            <div className="pk-split pk-split--wide-right">
+          <div className="pk-solana">
+            <div className="pk-split pk-split--wide-left">
               <Stack gap={5}>
                 <div>
-                  <Chip label="Not open" icon="guild" />
+                  <h2 className="display-m" style={{ color: "var(--ink-inverse)", maxWidth: "15ch" }}>
+                    Keep them on Solana.
+                  </h2>
+                  <p className="body-lg pk-solana__muted" style={{ marginTop: "var(--space-3)", maxWidth: "46ch" }}>
+                    When you want a record that outlives this browser, one signature moves your pet into
+                    the Pawket program. From then on, care is something anyone can check.
+                  </p>
                 </div>
-                <h2 className="display-m" style={{ maxWidth: "13ch" }}>
-                  Guilds, later, if at all.
-                </h2>
-                <p className="body-lg pk-muted" style={{ maxWidth: "44ch" }}>
-                  There is no guild to join. The rule is already written: joining one would add
-                  people to the game. It would add nothing to a pet.
-                </p>
+                <ul className="pk-solana__list">
+                  {ON_SOLANA.map((item) => (
+                    <li key={item.title}>
+                      <span className="pk-solana__icon">
+                        <Icon name={item.icon} size={20} />
+                      </span>
+                      <span>
+                        <span className="title" style={{ color: "var(--ink-inverse)" }}>
+                          {item.title}
+                        </span>
+                        <span className="body-sm pk-solana__muted">{item.body}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
                 <Row gap={3} wrap>
-                  <ButtonLink label="Read the boundary" href="/guilds" tone="bloom" icon="guild" />
+                  <ButtonLink label="See every pet" href="/park" tone="pool" icon="users" />
                 </Row>
               </Stack>
-
-              <Stack gap={3}>
-                <Banner
-                  tone="info"
-                  title="A guild token never touches your pet"
-                  body="No stat increase, no faster care, no XP multiplier, no matchmaking priority, no queue skip. Ever."
-                />
-                <Banner
-                  tone="risk"
-                  title="Nothing on this page is for sale"
-                  body="No listing, no treasury, no swap. A price is not part of caring for a pet."
-                />
-              </Stack>
+              <Suspense fallback={<p className="receipt pk-solana__muted">Reading a Passport…</p>}>
+                <FeaturedPassport />
+              </Suspense>
             </div>
           </div>
         </section>
 
         <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
-          <div className="pk-split pk-split--wide-left">
+          <div className="pk-split pk-split--table">
             <Stack gap={4}>
               <h2 className="display-m" style={{ maxWidth: "15ch" }}>
                 What you actually own
               </h2>
               <p className="body pk-muted" style={{ maxWidth: "40ch" }}>
-                Most games put this on a page nobody reads. Ours is on the front page, in the same
-                table we use internally.
+                Most games put this on a page nobody reads. Ours is on the front page, in the same table
+                we use internally.
               </p>
+              <Banner
+                tone="info"
+                title="Guilds, later, if at all"
+                body="There is no guild to join. Joining one would add people to the game. It would add nothing to a pet — no stat, no speed, no XP."
+                action={<ButtonLink label="Read the boundary" href="/guilds" tone="ghost" size="sm" after="right" />}
+              />
             </Stack>
 
             <Paper title="Asset model" meta="Plain language">
@@ -273,6 +267,19 @@ export default function LandingPage() {
             </Paper>
           </div>
         </section>
+
+        <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
+          <div className="pk-finale">
+            <div className="pk-finale__pets" aria-hidden="true">
+              <PetArt form="cat" temper="mischief" feeling="happy" wearing="star-pin" pose="full" seed="Miso" />
+              <PetArt form="bun" temper="curious" feeling="radiant" pose="full" seed="Mochi" />
+              <PetArt form="dog" temper="cozy" feeling="happy" wearing="red-collar" pose="full" seed="Noodle" />
+            </div>
+            <h2 className="display-l">Who is coming home with you?</h2>
+            <p className="body-lg pk-muted">Three taps. No wallet. They will be waiting tomorrow.</p>
+            <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" size="lg" />
+          </div>
+        </section>
       </main>
 
       <footer className="pk-band pk-landing__foot">
@@ -293,37 +300,88 @@ export default function LandingPage() {
         <p className="body-sm pk-faint">
           Pawket is a game you play in this browser. The pet you adopt is saved here, and clearing
           this browser&apos;s data removes them — unless you keep them on Solana, where the program
-          below holds the record. Guild tokens are not for sale.
+          holds the record. Guild tokens are not for sale.
         </p>
       </footer>
     </>
   );
 }
 
-/** A count that has happened: the pets the program keeps right now. */
-async function PetsOnChain() {
-  let count: number | null = null;
-  let cares = 0;
-  let covered = false;
+/** What has happened, counted from the program's accounts: no database, no estimate. */
+async function LiveStrip() {
+  let figures: Array<{ k: string; v: string }> | null = null;
   try {
     const [pets, sponsor] = await Promise.all([readAllPets(), sponsorState().catch(() => null)]);
-    count = pets.length;
-    cares = pets.reduce((sum, entry) => sum + entry.passport.careCount, 0);
-    covered = sponsor?.available ?? false;
+    const today = utcDay(new Date());
+    figures = [
+      { k: "Pets kept on Solana", v: String(pets.length) },
+      { k: "Out today", v: String(pets.filter((entry) => toCompanionRecord(entry).streak.lastDay === today).length) },
+      { k: "Cares recorded", v: String(pets.reduce((sum, entry) => sum + entry.passport.careCount, 0)) },
+      { k: "Network fee", v: sponsor?.available ? "Paid by Pawket" : "A little devnet SOL" },
+    ];
   } catch {
-    count = null;
+    figures = null;
   }
-  if (count === null) {
+  if (!figures) {
     return <p className="body-sm pk-muted">Solana did not answer just now. The record is unchanged.</p>;
   }
   return (
-    <Receipt
-      rows={[
-        { k: "Pets kept", v: String(count) },
-        { k: "Cares recorded", v: String(cares) },
-        { k: "Network fee", v: covered ? "Paid by Pawket" : "A little devnet SOL" },
-      ]}
-      note="Counted from the program's accounts, not from a database."
-    />
+    <Paper title="On Solana devnet, right now" meta="Read from the program">
+      <dl className="pk-live">
+        {figures.map((figure) => (
+          <div key={figure.k} className="pk-live__fig">
+            <dt className="receipt-label">{figure.k}</dt>
+            <dd className="amount">{figure.v}</dd>
+          </div>
+        ))}
+      </dl>
+    </Paper>
+  );
+}
+
+/** The most cared-for pet the program keeps, as anyone can see it. */
+async function FeaturedPassport() {
+  let best: Awaited<ReturnType<typeof readAllPets>>[number] | undefined;
+  try {
+    best = (await readAllPets()).sort((a, b) => b.passport.careCount - a.passport.careCount || b.pet.xp - a.pet.xp)[0];
+  } catch {
+    best = undefined;
+  }
+  if (!best) {
+    return <p className="body-sm pk-solana__muted">Solana did not answer just now. Every Passport is unchanged.</p>;
+  }
+  const now = new Date();
+  const record = toCompanionRecord(best);
+  const projected = projectGuestPet(record, now);
+  const last = best.passport.recent.at(-1);
+  return (
+    <div className="pk-passcard">
+      <div className="pk-passcard__head">
+        <span className="pk-passcard__pet">
+          <PetFrame {...petLook(record, projected.mood)} sky={SPECIES_SKY[best.pet.species]} size="fluid" level={projected.level} />
+        </span>
+        <div>
+          <p className="label pk-faint">A real Passport</p>
+          <p className="display-s" style={{ overflowWrap: "anywhere" }}>
+            {best.pet.name}
+          </p>
+          <p className="body-sm pk-muted">
+            {SPECIES_LABEL[best.pet.species]} · {PERSONALITY_LABEL[best.pet.personality]}
+          </p>
+        </div>
+      </div>
+      <Paper title="Read from chain" meta={truncateAddress(best.pet.address)}>
+        <Receipt
+          rows={[
+            { k: "Level", v: String(projected.level) },
+            { k: "Cares", v: String(best.passport.careCount) },
+            { k: "Best run", v: `${best.passport.bestStreak} ${best.passport.bestStreak === 1 ? "day" : "days"}` },
+            { k: "Rounds played", v: String(best.passport.plays) },
+            { k: "Last care", v: last ? `${formatAgo(now.getTime() / 1000 - last.at)}` : "None yet" },
+          ]}
+        />
+      </Paper>
+      <ButtonLink label="Open their Passport" href={`/pet/${best.pet.address}`} tone="quiet" after="right" full />
+    </div>
   );
 }

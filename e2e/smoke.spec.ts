@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("landing leads with the pet and closes with the rules", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "A pet in your pocket." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Raise a pet. Keep every paw print." })).toBeVisible();
   await expect(page.getByText(/no wallet, no token, no solana knowledge needed/i)).toBeVisible();
   await expect(page.getByRole("link", { name: /adopt a pet/i }).first()).toBeVisible();
 

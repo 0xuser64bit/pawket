@@ -30,12 +30,14 @@ import {
   CARE_ACTION_LABEL,
   CARE_DONE_LABEL,
   MOOD_LABEL,
+  MOOD_SENTENCE,
   PERSONALITY_LABEL,
   SPECIES_LABEL,
   SPECIES_SKY,
   petLook,
+  suggestCare,
 } from "@/lib/game/appearance";
-import { CareActionType } from "@/lib/game/enums";
+import { CareActionType, type PetMood } from "@/lib/game/enums";
 import {
   applyGuestCare,
   cooldownsFor,
@@ -52,15 +54,11 @@ import { getCareInstruction } from "@/lib/solana/instructions";
 import { usePawketSend, type TxState } from "@/lib/solana/use-send";
 import { formatCountdown } from "@/lib/utils/format";
 
-const ACTIONS: Array<{
-  action: CareActionType;
-  icon: "bowl" | "ball" | "heart" | "clock";
-  tone?: "sprout" | "quiet";
-}> = [
+const ACTIONS: Array<{ action: CareActionType; icon: "bowl" | "ball" | "heart" | "clock" }> = [
   { action: CareActionType.Feed, icon: "bowl" },
-  { action: CareActionType.Play, icon: "ball", tone: "sprout" },
-  { action: CareActionType.Groom, icon: "heart", tone: "quiet" },
-  { action: CareActionType.Rest, icon: "clock", tone: "quiet" },
+  { action: CareActionType.Play, icon: "ball" },
+  { action: CareActionType.Groom, icon: "heart" },
+  { action: CareActionType.Rest, icon: "clock" },
 ];
 
 /**
@@ -277,6 +275,7 @@ export function HomeScreen() {
           <>
             <CareCard
               pet={pet}
+              mood={projected.mood}
               xpIntoLevel={projected.xpIntoLevel}
               xpForNext={projected.xpForNext}
               stats={projected.stats}
@@ -377,6 +376,7 @@ function ChainTrouble({ error, onRetry }: { error: unknown; onRetry: () => void 
 
 function CareCard({
   pet,
+  mood,
   xpIntoLevel,
   xpForNext,
   stats,
@@ -391,6 +391,7 @@ function CareCard({
   onCare,
 }: {
   pet: GuestPet;
+  mood: PetMood;
   xpIntoLevel: number;
   xpForNext: number;
   stats: GuestPet["stats"];
@@ -405,14 +406,19 @@ function CareCard({
   onCare: (action: CareActionType) => void;
 }) {
   const streakReadout = streakCount === 0 ? "0 days" : `${streakCount} ${streakCount === 1 ? "day" : "days"}`;
+  // The care the pet most wants wears sun; the rest wait their turn.
+  const wanted = busy ? null : suggestCare(stats, cooldowns);
   return (
     <Card>
-      <div className="pk-spread" style={{ marginBottom: "var(--space-4)" }}>
+      <div className="pk-spread">
         <h2 className="title">Today with {pet.name}</h2>
         <span className="amount-sm pk-faint">
           {xpIntoLevel} / {xpForNext} XP
         </span>
       </div>
+      <p className="body-sm pk-muted" style={{ margin: "var(--space-1) 0 var(--space-4)" }}>
+        {pet.name} {MOOD_SENTENCE[mood]}
+      </p>
       <Stack gap={3}>
         <Vital label="Fullness" value={stats.hunger} />
         <Vital label="Happiness" value={stats.happiness} />
@@ -431,7 +437,7 @@ function CareCard({
           : "An estimate. Each action is +10 XP, then that action rests for 30 minutes."}
       </p>
       <Row gap={2} wrap style={{ marginTop: "var(--space-4)" }}>
-        {ACTIONS.map(({ action, icon, tone }) => {
+        {ACTIONS.map(({ action, icon }) => {
           const left = cooldowns[action];
           return (
             <Button
@@ -440,7 +446,7 @@ function CareCard({
               meta={left > 0 ? formatCountdown(left) : undefined}
               icon={icon}
               size="sm"
-              tone={tone}
+              tone={action === wanted ? undefined : "quiet"}
               disabled={left > 0 || busy}
               onClick={() => onCare(action)}
             />

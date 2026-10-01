@@ -1,5 +1,5 @@
 import type { Feeling, PetForm, Sky, Temper } from "@/components/pk";
-import { CareActionType, PetMood, PetPersonality, PetSpecies } from "./enums";
+import { CareActionType, PetMood, PetPersonality, PetSpecies, type PetStats } from "./enums";
 
 /**
  * How a domain pet is drawn. The species enum is lockstep with the on-chain
@@ -111,4 +111,37 @@ export function petLook(
     wearing: pet.wearing,
     seed: pet.name,
   };
+}
+
+/** What a mood sounds like in a sentence, after the pet's name. */
+export const MOOD_SENTENCE: Record<PetMood, string> = {
+  [PetMood.Radiant]: "is radiant. Whatever you are doing, keep doing it.",
+  [PetMood.Happy]: "is happy.",
+  [PetMood.Okay]: "is okay. A little care would lift them.",
+  [PetMood.Hungry]: "is hungry. A meal would help.",
+  [PetMood.Lonely]: "is lonely. Play with them.",
+  [PetMood.Tired]: "is tired. Let them rest.",
+  [PetMood.Scruffy]: "is scruffy. A brush would help.",
+};
+
+/** The vital each care looks after. */
+const CARE_STAT: Record<CareActionType, keyof PetStats> = {
+  [CareActionType.Feed]: "hunger",
+  [CareActionType.Play]: "happiness",
+  [CareActionType.Groom]: "hygiene",
+  [CareActionType.Rest]: "energy",
+};
+
+/**
+ * The care a pet would most like right now: the one for its lowest vital,
+ * among those not resting. Null when every care is resting. Guidance only —
+ * it picks which button wears sun, and changes no rule.
+ */
+export function suggestCare(stats: PetStats, resting: Record<CareActionType, number>): CareActionType | null {
+  let best: CareActionType | null = null;
+  for (const action of [CareActionType.Feed, CareActionType.Play, CareActionType.Groom, CareActionType.Rest]) {
+    if (resting[action] > 0) continue;
+    if (best === null || stats[CARE_STAT[action]] < stats[CARE_STAT[best]]) best = action;
+  }
+  return best;
 }

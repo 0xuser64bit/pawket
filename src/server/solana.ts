@@ -7,8 +7,8 @@ import { fetchPetOnChain, fetchPetsOnChain, type PetOnChain } from "@/lib/solana
 
 /**
  * Server Components read Solana here: the server's RPC (which may carry a
- * provider key), never the wallet client. Every read is live — the chain is
- * the record, and there is no cache between it and the page.
+ * provider key), never the wallet client. Reads are live — the chain is the
+ * record. The one exception is the scan of every pet: see `readAllPets`.
  */
 function rpc() {
   return createSolanaRpc(getServerEnv().solanaRpcUrl ?? getPublicEnv().solanaRpcUrl);
@@ -20,7 +20,26 @@ export async function readPet(id: string): Promise<PetOnChain | null> {
   return fetchPetOnChain(rpc(), id);
 }
 
-/** Every pet the program keeps. */
+/** How long one scan of every pet answers for. */
+export const ALL_PETS_FRESH_MS = 8_000;
+let scan: { at: number; pets: Promise<PetOnChain[]> } | null = null;
+
+/**
+ * Every pet the program keeps. A scan is the heaviest read Pawket makes
+ * (`getProgramAccounts`), and the park and the front door ask for it on
+ * every visit — the front door twice — so callers within a few seconds of
+ * each other share one: a crowd arriving at once is one request, not a
+ * rate limit. A failed scan is never kept, so the next visit asks again and
+ * nothing stale is ever shown as live.
+ */
 export async function readAllPets(): Promise<PetOnChain[]> {
-  return fetchPetsOnChain(rpc());
+  const now = Date.now();
+  if (scan && now - scan.at < ALL_PETS_FRESH_MS) return scan.pets;
+  const pets = fetchPetsOnChain(rpc());
+  const mine = { at: now, pets };
+  scan = mine;
+  pets.catch(() => {
+    if (scan === mine) scan = null;
+  });
+  return pets;
 }

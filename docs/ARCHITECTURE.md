@@ -63,8 +63,9 @@ docs/                       the docs you are reading
   unchanged and sends it with preflight, waits for `confirmed`, then
   re-reads the pet. The room plays the moment only then.
 - Server Components (Passport, Park, the landing's count) read the chain
-  through `src/server/solana.ts` at request time. No cache, no indexer, no
-  database.
+  through `src/server/solana.ts` at request time. No indexer, no database;
+  the one shared read is the scan of every pet, which callers within 8
+  seconds of each other share (a failed scan is never kept).
 - The 3D room is a client leaf behind `next/dynamic`: three.js loads only
   with it. It never reads or writes the pet record.
 - No global store, no second API client, no database, no giant utils file.

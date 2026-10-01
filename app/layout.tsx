@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { getPublicEnv } from "@/config/env";
 import { fontClassNames } from "@/config/fonts";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/config/site";
 import "./globals.css";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getPublicEnv().appUrl),
   title: {
     default: `${APP_NAME} — ${APP_TAGLINE.charAt(0).toLowerCase()}${APP_TAGLINE.slice(1)}`,
     template: `%s · ${APP_NAME}`,

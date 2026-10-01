@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-  deriveGameConfigPda,
   derivePassportPda,
   derivePetPda,
   normalizePetName,
-  normalizeSku,
   SolanaValidationError,
 } from "./pda";
+import { PAWKET_PROGRAM_ID } from "./program";
 
 const OWNER = "11111111111111111111111111111111";
-const PROGRAM = "FQwe9LUPMTrhYyr32mHPpX87tcpjr98Eamz9wJQDaSef";
+const PROGRAM = PAWKET_PROGRAM_ID;
 
 describe("normalizePetName", () => {
   it("trims before measuring", () => {
@@ -23,25 +22,11 @@ describe("normalizePetName", () => {
   });
 });
 
-describe("normalizeSku", () => {
-  it("accepts 2–32 byte SKUs and rejects the rest", () => {
-    expect(normalizeSku("egg_alpha")).toBe("egg_alpha");
-    expect(() => normalizeSku("x")).toThrow(SolanaValidationError);
-    expect(() => normalizeSku("x".repeat(33))).toThrow(SolanaValidationError);
-  });
-});
-
 describe("PDA derivation", () => {
-  it("derives the locked game-config PDA", async () => {
-    const { address, bump } = await deriveGameConfigPda(PROGRAM);
-    expect(String(address)).toBe("oRoeJ7buLDW1vbCtavT6YkZK61PdMH2YZEsYC4vW1W9");
-    expect(bump).toBe(255);
-  });
-
   it("derives the locked pet PDA for the fixture owner + name", async () => {
     const { address, bump } = await derivePetPda(OWNER, "Nova", PROGRAM);
-    expect(String(address)).toBe("7C6FJ44NqBgJwnhjfKWeqRbqefVxWtv6GrcvyCwteCrF");
-    expect(bump).toBe(254);
+    expect(String(address)).toBe("J3nMY26sQZiBod2RCwsUFrh8E5PW56Mhr4ksm8RFQJAp");
+    expect(bump).toBe(255);
   });
 
   it("trims names before derivation (same PDA)", async () => {
@@ -59,8 +44,8 @@ describe("PDA derivation", () => {
   it("derives the locked passport PDA from the pet PDA", async () => {
     const pet = await derivePetPda(OWNER, "Nova", PROGRAM);
     const { address, bump } = await derivePassportPda(pet.address, PROGRAM);
-    expect(String(address)).toBe("BvgKi517VzV7hKiRha6v4q5UrvR6FtZfYZ88WfPEqGmM");
-    expect(bump).toBe(254);
+    expect(String(address)).toBe("FEJ7fHr3JBuYMDZ67UsWZfaGVo2S4dMizG6T3xp1BQMm");
+    expect(bump).toBe(253);
   });
 
   it("rejects invalid addresses and names", async () => {

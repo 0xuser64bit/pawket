@@ -1,17 +1,25 @@
-import { AccountRole } from "@solana/kit";
+import { AccountRole, createNoopSigner, address } from "@solana/kit";
 import { describe, expect, it } from "vitest";
 import {
   encodeAnchorString,
   getAdoptPetInstruction,
   getCareInstruction,
+  getDressInstruction,
+  getFinishRoundInstruction,
 } from "./instructions";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
 
 const OWNER = "11111111111111111111111111111111";
-const PET = "7C6FJ44NqBgJwnhjfKWeqRbqefVxWtv6GrcvyCwteCrF";
-const PASSPORT = "BvgKi517VzV7hKiRha6v4q5UrvR6FtZfYZ88WfPEqGmM";
+const SPONSOR = "SysvarRent111111111111111111111111111111111";
+const PET = "J3nMY26sQZiBod2RCwsUFrh8E5PW56Mhr4ksm8RFQJAp";
+const PASSPORT = "FEJ7fHr3JBuYMDZ67UsWZfaGVo2S4dMizG6T3xp1BQMm";
 const SYSTEM_PROGRAM = "11111111111111111111111111111111";
+
+const addresses = (ix: { accounts?: readonly { address: string }[] }) =>
+  (ix.accounts ?? []).map((a) => String(a.address));
+const roles = (ix: { accounts?: readonly { role: AccountRole }[] }) =>
+  (ix.accounts ?? []).map((a) => a.role);
 
 describe("encodeAnchorString", () => {
   it("prefixes UTF-8 bytes with a u32 LE length", () => {
@@ -24,6 +32,7 @@ describe("encodeAnchorString", () => {
 describe("getAdoptPetInstruction", () => {
   const ix = getAdoptPetInstruction({
     owner: OWNER,
+    payer: SPONSOR,
     pet: PET,
     passport: PASSPORT,
     name: "Nova",
@@ -35,26 +44,64 @@ describe("getAdoptPetInstruction", () => {
     expect(String(ix.programAddress)).toBe(PAWKET_PROGRAM_ID);
   });
 
-  it("orders accounts owner → pet → passport → system with exact roles", () => {
-    expect(ix.accounts).toEqual([
-      { address: expect.anything(), role: AccountRole.WRITABLE_SIGNER },
-      { address: expect.anything(), role: AccountRole.WRITABLE },
-      { address: expect.anything(), role: AccountRole.WRITABLE },
-      { address: expect.anything(), role: AccountRole.READONLY },
+  it("orders accounts owner → payer → pet → passport → system with exact roles", () => {
+    expect(addresses(ix)).toEqual([OWNER, SPONSOR, PET, PASSPORT, SYSTEM_PROGRAM]);
+    expect(roles(ix)).toEqual([
+      AccountRole.READONLY_SIGNER,
+      AccountRole.WRITABLE_SIGNER,
+      AccountRole.WRITABLE,
+      AccountRole.WRITABLE,
+      AccountRole.READONLY,
     ]);
-    const addrs = (ix.accounts ?? []).map((a) => String(a.address));
-    expect(addrs).toEqual([OWNER, PET, PASSPORT, SYSTEM_PROGRAM]);
   });
 
-  it("encodes discriminator + name + species + personality", () => {
-    const data = Array.from(ix.data ?? []);
+  it("makes the owner the payer when no sponsor is named", () => {
+    const own = getAdoptPetInstruction({
+      owner: OWNER,
+      pet: PET,
+      passport: PASSPORT,
+      name: "Nova",
+      species: PetSpecies.LunaCat,
+      personality: PetPersonality.Cozy,
+    });
+    expect(addresses(own).slice(0, 2)).toEqual([OWNER, OWNER]);
+  });
+
+  it("encodes discriminator + trimmed name + species + personality", () => {
+    const trimmed = getAdoptPetInstruction({
+      owner: OWNER,
+      payer: SPONSOR,
+      pet: PET,
+      passport: PASSPORT,
+      name: "  Nova ",
+      species: PetSpecies.MossPup,
+      personality: PetPersonality.Brave,
+    });
     // discriminator(8) + name len(4) + "Nova"(4) + species(1) + personality(1)
-    expect(data).toEqual([
+    const expected = [
       ...PAWKET_DISCRIMINATORS.adoptPet,
       4, 0, 0, 0, 78, 111, 118, 97,
       1, // moss_pup
       2, // brave
-    ]);
+    ];
+    expect(Array.from(ix.data ?? [])).toEqual(expected);
+    expect(Array.from(trimmed.data ?? [])).toEqual(expected);
+  });
+
+  it("carries a signer on the meta so partial signing can find it", () => {
+    const wallet = createNoopSigner(address(OWNER));
+    const signed = getAdoptPetInstruction({
+      owner: wallet,
+      payer: createNoopSigner(address(SPONSOR)),
+      pet: PET,
+      passport: PASSPORT,
+      name: "Nova",
+      species: PetSpecies.LunaCat,
+      personality: PetPersonality.Cozy,
+    });
+    const owner = signed.accounts?.[0] as { signer?: unknown };
+    expect(owner.signer).toBe(wallet);
+    expect(addresses(signed)[0]).toBe(OWNER);
   });
 
   it("rejects bad names", () => {
@@ -80,14 +127,43 @@ describe("getCareInstruction", () => {
       action: CareActionType.Play,
     });
     expect(String(ix.programAddress)).toBe(PAWKET_PROGRAM_ID);
-    expect(ix.accounts).toEqual([
-      { address: expect.anything(), role: AccountRole.READONLY_SIGNER },
-      { address: expect.anything(), role: AccountRole.WRITABLE },
-      { address: expect.anything(), role: AccountRole.WRITABLE },
+    expect(addresses(ix)).toEqual([OWNER, PET, PASSPORT]);
+    expect(roles(ix)).toEqual([
+      AccountRole.READONLY_SIGNER,
+      AccountRole.WRITABLE,
+      AccountRole.WRITABLE,
     ]);
     expect(Array.from(ix.data ?? [])).toEqual([
       ...PAWKET_DISCRIMINATORS.performCareAction,
       1, // play
     ]);
+  });
+});
+
+describe("getFinishRoundInstruction", () => {
+  it("is the discriminator alone over owner, pet and passport", () => {
+    const ix = getFinishRoundInstruction({ owner: OWNER, pet: PET, passport: PASSPORT });
+    expect(addresses(ix)).toEqual([OWNER, PET, PASSPORT]);
+    expect(roles(ix)).toEqual([
+      AccountRole.READONLY_SIGNER,
+      AccountRole.WRITABLE,
+      AccountRole.WRITABLE,
+    ]);
+    expect(Array.from(ix.data ?? [])).toEqual([...PAWKET_DISCRIMINATORS.finishRound]);
+  });
+});
+
+describe("getDressInstruction", () => {
+  it("encodes the wardrobe slot over owner and pet", () => {
+    const ix = getDressInstruction({ owner: OWNER, pet: PET, wearing: 3 });
+    expect(addresses(ix)).toEqual([OWNER, PET]);
+    expect(roles(ix)).toEqual([AccountRole.READONLY_SIGNER, AccountRole.WRITABLE]);
+    expect(Array.from(ix.data ?? [])).toEqual([...PAWKET_DISCRIMINATORS.dress, 3]);
+  });
+
+  it("refuses a slot the wardrobe does not have", () => {
+    expect(() => getDressInstruction({ owner: OWNER, pet: PET, wearing: 7 })).toThrow();
+    expect(() => getDressInstruction({ owner: OWNER, pet: PET, wearing: -1 })).toThrow();
+    expect(getDressInstruction({ owner: OWNER, pet: PET, wearing: 0 }).data?.[8]).toBe(0);
   });
 });

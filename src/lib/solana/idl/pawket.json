@@ -1,0 +1,686 @@
+{
+  "address": "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74",
+  "metadata": {
+    "name": "pawket",
+    "version": "0.2.0",
+    "spec": "0.1.0",
+    "description": "A companion whose care is its record"
+  },
+  "instructions": [
+    {
+      "name": "adopt_pet",
+      "docs": [
+        "A new pet at 72 across the board. The owner signs for the name; `payer` covers rent and",
+        "may be the owner or a sponsor."
+      ],
+      "discriminator": [
+        76,
+        210,
+        131,
+        114,
+        75,
+        135,
+        64,
+        171
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "name"
+              }
+            ]
+          }
+        },
+        {
+          "name": "passport",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  115,
+                  115,
+                  112,
+                  111,
+                  114,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "species",
+          "type": {
+            "defined": {
+              "name": "PetSpecies"
+            }
+          }
+        },
+        {
+          "name": "personality",
+          "type": {
+            "defined": {
+              "name": "PetPersonality"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dress",
+      "docs": [
+        "Put something on, or take it off with 0. Looks only: nothing else on the pet changes."
+      ],
+      "discriminator": [
+        131,
+        60,
+        37,
+        18,
+        58,
+        57,
+        110,
+        230
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "pet",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "wearing",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "finish_round",
+      "docs": [
+        "A finished playground round. The first of a UTC day adds 25 XP; every one counts as a play",
+        "and as showing up. Vitals and cooldowns stay where they are."
+      ],
+      "discriminator": [
+        23,
+        104,
+        163,
+        186,
+        110,
+        225,
+        11,
+        242
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "pet",
+          "writable": true,
+          "relations": [
+            "passport"
+          ]
+        },
+        {
+          "name": "passport",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "perform_care_action",
+      "docs": [
+        "Feed, play, groom or rest: decay to now, apply the locked deltas, +10 XP, then write the",
+        "Passport. Each action waits 30 minutes after its last use."
+      ],
+      "discriminator": [
+        74,
+        53,
+        41,
+        221,
+        110,
+        244,
+        231,
+        218
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "pet",
+          "writable": true,
+          "relations": [
+            "passport"
+          ]
+        },
+        {
+          "name": "passport",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "action",
+          "type": {
+            "defined": {
+              "name": "CareActionType"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Pet",
+      "discriminator": [
+        180,
+        195,
+        178,
+        241,
+        61,
+        123,
+        238,
+        32
+      ]
+    },
+    {
+      "name": "PetPassport",
+      "discriminator": [
+        197,
+        235,
+        164,
+        111,
+        43,
+        33,
+        153,
+        145
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "CarePerformed",
+      "discriminator": [
+        1,
+        240,
+        250,
+        150,
+        159,
+        33,
+        110,
+        74
+      ]
+    },
+    {
+      "name": "PetAdopted",
+      "discriminator": [
+        171,
+        119,
+        209,
+        220,
+        201,
+        16,
+        139,
+        121
+      ]
+    },
+    {
+      "name": "PetDressed",
+      "discriminator": [
+        229,
+        120,
+        103,
+        228,
+        37,
+        139,
+        188,
+        39
+      ]
+    },
+    {
+      "name": "RoundFinished",
+      "discriminator": [
+        219,
+        203,
+        57,
+        176,
+        225,
+        115,
+        234,
+        93
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidPetName",
+      "msg": "A pet's name is 2 to 24 UTF-8 bytes."
+    },
+    {
+      "code": 6001,
+      "name": "NotPetOwner",
+      "msg": "Only the pet's owner can do that."
+    },
+    {
+      "code": 6002,
+      "name": "CareCooldownActive",
+      "msg": "That care is cooling down."
+    },
+    {
+      "code": 6003,
+      "name": "UnknownWearable",
+      "msg": "There is nothing like that to wear."
+    }
+  ],
+  "types": [
+    {
+      "name": "CareActionType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Feed"
+          },
+          {
+            "name": "Play"
+          },
+          {
+            "name": "Groom"
+          },
+          {
+            "name": "Rest"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CareMark",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "action",
+            "type": {
+              "defined": {
+                "name": "CareActionType"
+              }
+            }
+          },
+          {
+            "name": "at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CarePerformed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "action",
+            "type": {
+              "defined": {
+                "name": "CareActionType"
+              }
+            }
+          },
+          {
+            "name": "xp",
+            "type": "u32"
+          },
+          {
+            "name": "level",
+            "type": "u16"
+          },
+          {
+            "name": "streak",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pet",
+      "docs": [
+        "Fixed-size fields first and the name last, so every offset but the name's is constant."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "species",
+            "type": {
+              "defined": {
+                "name": "PetSpecies"
+              }
+            }
+          },
+          {
+            "name": "personality",
+            "type": {
+              "defined": {
+                "name": "PetPersonality"
+              }
+            }
+          },
+          {
+            "name": "birth_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "level",
+            "type": "u16"
+          },
+          {
+            "name": "xp",
+            "type": "u32"
+          },
+          {
+            "name": "hunger",
+            "type": "u8"
+          },
+          {
+            "name": "happiness",
+            "type": "u8"
+          },
+          {
+            "name": "energy",
+            "type": "u8"
+          },
+          {
+            "name": "hygiene",
+            "type": "u8"
+          },
+          {
+            "name": "stats_updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "last_feed_at",
+            "type": "i64"
+          },
+          {
+            "name": "last_play_at",
+            "type": "i64"
+          },
+          {
+            "name": "last_groom_at",
+            "type": "i64"
+          },
+          {
+            "name": "last_rest_at",
+            "type": "i64"
+          },
+          {
+            "name": "wearing",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PetAdopted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "species",
+            "type": {
+              "defined": {
+                "name": "PetSpecies"
+              }
+            }
+          },
+          {
+            "name": "personality",
+            "type": {
+              "defined": {
+                "name": "PetPersonality"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PetDressed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "wearing",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PetPassport",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "event_count",
+            "type": "u32"
+          },
+          {
+            "name": "care_count",
+            "type": "u32"
+          },
+          {
+            "name": "plays",
+            "type": "u32"
+          },
+          {
+            "name": "streak",
+            "type": "u16"
+          },
+          {
+            "name": "best_streak",
+            "type": "u16"
+          },
+          {
+            "name": "last_active_day",
+            "docs": [
+              "UTC day of the last care or round, counted from the epoch. 0 means never."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "last_play_day",
+            "docs": [
+              "UTC day the daily round bonus was last granted. 0 means never."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "recent",
+            "docs": [
+              "Ring of the last cares; slot `care_count % 8` is written next. `at == 0` is empty."
+            ],
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "CareMark"
+                  }
+                },
+                8
+              ]
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PetPersonality",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Curious"
+          },
+          {
+            "name": "Cozy"
+          },
+          {
+            "name": "Brave"
+          },
+          {
+            "name": "Mischief"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PetSpecies",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "LunaCat"
+          },
+          {
+            "name": "MossPup"
+          },
+          {
+            "name": "CloudBun"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RoundFinished",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "xp_gained",
+            "type": "u32"
+          },
+          {
+            "name": "plays",
+            "type": "u32"
+          }
+        ]
+      }
+    }
+  ]
+}

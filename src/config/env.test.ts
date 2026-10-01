@@ -27,7 +27,7 @@ describe("getPublicEnv", () => {
     expect(env.solanaCluster).toBe("devnet");
     expect(env.solanaRpcUrl).toBe("https://api.devnet.solana.com");
     expect(env.pawketProgramId).toBe(
-      "FQwe9LUPMTrhYyr32mHPpX87tcpjr98Eamz9wJQDaSef",
+      "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74",
     );
   });
 
@@ -46,7 +46,7 @@ describe("getPublicEnv", () => {
     expect(env.solanaCluster).toBe("devnet");
     expect(env.solanaRpcUrl).toBe("https://api.devnet.solana.com");
     expect(env.pawketProgramId).toBe(
-      "FQwe9LUPMTrhYyr32mHPpX87tcpjr98Eamz9wJQDaSef",
+      "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74",
     );
   });
 

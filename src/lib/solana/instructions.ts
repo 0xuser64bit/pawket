@@ -4,8 +4,12 @@ import {
   getU32Encoder,
   getU8Encoder,
   getUtf8Encoder,
+  isTransactionSigner,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Instruction,
+  type TransactionSigner,
 } from "@solana/kit";
 import {
   CareActionType,
@@ -19,6 +23,7 @@ import {
   PAWKET_PROGRAM_ID,
   PET_PERSONALITY_VARIANTS,
   PET_SPECIES_VARIANTS,
+  WEARABLE_COUNT,
 } from "./program";
 
 const SYSTEM_PROGRAM = address("11111111111111111111111111111111");
@@ -26,6 +31,13 @@ const SYSTEM_PROGRAM = address("11111111111111111111111111111111");
 const u8 = getU8Encoder();
 const u32 = getU32Encoder();
 const utf8 = getUtf8Encoder();
+
+/**
+ * An account that signs: a plain address when the caller signs some other
+ * way, or a Kit signer — the wallet, or a sponsor's no-op stand-in — which
+ * `partiallySignTransactionMessageWithSigners` then finds on the meta.
+ */
+export type SignerInput = string | Address | TransactionSigner;
 
 function concatBytes(...parts: ArrayLike<number>[]): Uint8Array {
   const total = parts.reduce((sum, p) => sum + p.length, 0);
@@ -54,8 +66,25 @@ function encodeVariant(
   return Uint8Array.from(u8.encode(value));
 }
 
+function signerMeta(
+  value: SignerInput,
+  role: AccountRole.READONLY_SIGNER | AccountRole.WRITABLE_SIGNER,
+  label: string,
+): AccountMeta | AccountSignerMeta {
+  if (typeof value === "object" && isTransactionSigner(value)) {
+    return { address: value.address, role, signer: value };
+  }
+  return { address: parseAddress(value, label), role };
+}
+
+function programAddress(programId?: string | Address): Address {
+  return parseAddress(programId ?? PAWKET_PROGRAM_ID, "program ID");
+}
+
 export interface AdoptPetInstructionInput {
-  owner: string | Address;
+  owner: SignerInput;
+  /** Who pays rent: the owner, or a sponsor. Defaults to the owner. */
+  payer?: SignerInput;
   pet: string | Address;
   passport: string | Address;
   name: string;
@@ -64,31 +93,33 @@ export interface AdoptPetInstructionInput {
   programId?: string | Address;
 }
 
-export interface CareInstructionInput {
-  owner: string | Address;
+export interface PetInstructionInput {
+  owner: SignerInput;
   pet: string | Address;
   passport: string | Address;
+  programId?: string | Address;
+}
+
+export interface CareInstructionInput extends PetInstructionInput {
   action: CareActionType;
+}
+
+export interface DressInstructionInput {
+  owner: SignerInput;
+  pet: string | Address;
+  /** 0 takes everything off; 1–6 is the wardrobe in catalog order. */
+  wearing: number;
   programId?: string | Address;
 }
 
 /**
- * Builds the `adopt_pet` instruction. Returns an unsigned Kit instruction —
- * callers send it through the wallet-backed client (`client.sendTransaction`),
- * which handles blockhash, signing, simulation, and confirmation.
+ * Builds the `adopt_pet` instruction. Returns an unsigned Kit instruction:
+ * the owner signs for the name, the payer for the rent.
  */
 export function getAdoptPetInstruction(
   input: AdoptPetInstructionInput,
 ): Instruction {
-  const programAddress = parseAddress(
-    input.programId ?? PAWKET_PROGRAM_ID,
-    "program ID",
-  );
-  const owner = parseAddress(input.owner, "owner");
-  const pet = parseAddress(input.pet, "pet");
-  const passport = parseAddress(input.passport, "passport");
   const name = normalizePetName(input.name);
-
   const species = PET_SPECIES_VARIANTS[input.species];
   const personality = PET_PERSONALITY_VARIANTS[input.personality];
   if (species === undefined) throw new Error(`Unknown species: ${input.species}`);
@@ -97,11 +128,12 @@ export function getAdoptPetInstruction(
   }
 
   return {
-    programAddress,
+    programAddress: programAddress(input.programId),
     accounts: [
-      { address: owner, role: AccountRole.WRITABLE_SIGNER },
-      { address: pet, role: AccountRole.WRITABLE },
-      { address: passport, role: AccountRole.WRITABLE },
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      signerMeta(input.payer ?? input.owner, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.passport, "passport"), role: AccountRole.WRITABLE },
       { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
     ],
     data: concatBytes(
@@ -113,29 +145,52 @@ export function getAdoptPetInstruction(
   };
 }
 
+function petAccounts(input: PetInstructionInput) {
+  return [
+    signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+    { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
+    { address: parseAddress(input.passport, "passport"), role: AccountRole.WRITABLE },
+  ];
+}
+
 /** Builds the `perform_care_action` instruction (unsigned). */
 export function getCareInstruction(input: CareInstructionInput): Instruction {
-  const programAddress = parseAddress(
-    input.programId ?? PAWKET_PROGRAM_ID,
-    "program ID",
-  );
-  const owner = parseAddress(input.owner, "owner");
-  const pet = parseAddress(input.pet, "pet");
-  const passport = parseAddress(input.passport, "passport");
-
   const variant = CARE_ACTION_VARIANTS[input.action];
   if (variant === undefined) throw new Error(`Unknown action: ${input.action}`);
 
   return {
-    programAddress,
-    accounts: [
-      { address: owner, role: AccountRole.READONLY_SIGNER },
-      { address: pet, role: AccountRole.WRITABLE },
-      { address: passport, role: AccountRole.WRITABLE },
-    ],
+    programAddress: programAddress(input.programId),
+    accounts: petAccounts(input),
     data: concatBytes(
       new Uint8Array(PAWKET_DISCRIMINATORS.performCareAction),
       encodeVariant(variant, "care action"),
+    ),
+  };
+}
+
+/** Builds the `finish_round` instruction (unsigned): a playground round, finished. */
+export function getFinishRoundInstruction(input: PetInstructionInput): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: petAccounts(input),
+    data: new Uint8Array(PAWKET_DISCRIMINATORS.finishRound),
+  };
+}
+
+/** Builds the `dress` instruction (unsigned). */
+export function getDressInstruction(input: DressInstructionInput): Instruction {
+  if (!Number.isInteger(input.wearing) || input.wearing < 0 || input.wearing > WEARABLE_COUNT) {
+    throw new Error(`Nothing to wear at ${input.wearing}`);
+  }
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
+    ],
+    data: concatBytes(
+      new Uint8Array(PAWKET_DISCRIMINATORS.dress),
+      encodeVariant(input.wearing, "wearable"),
     ),
   };
 }

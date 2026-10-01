@@ -11,7 +11,7 @@ import { PAWKET_PROGRAM_ID, PAWKET_SEEDS } from "./program";
 
 const utf8Encoder = getUtf8Encoder();
 
-export { normalizePetName, normalizeSku, SolanaValidationError } from "./names";
+export { normalizePetName, SolanaValidationError } from "./names";
 
 export function parseAddress(value: string | Address, label: string): Address {
   try {
@@ -26,17 +26,6 @@ export function parseAddress(value: string | Address, label: string): Address {
 export interface DerivedPda {
   address: Address;
   bump: number;
-}
-
-export async function deriveGameConfigPda(
-  programId: string | Address = PAWKET_PROGRAM_ID,
-): Promise<DerivedPda> {
-  const programAddress = parseAddress(programId, "program ID");
-  const [addr, bump] = await getProgramDerivedAddress({
-    programAddress,
-    seeds: [utf8Encoder.encode(PAWKET_SEEDS.gameConfig)],
-  });
-  return { address: addr, bump };
 }
 
 export async function derivePetPda(

@@ -1,3 +1,8 @@
+import {
+  getSolanaErrorFromTransactionError,
+  SolanaError,
+  SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
+} from "@solana/kit";
 import { describe, expect, it } from "vitest";
 import {
   extractProgramErrorCode,
@@ -18,12 +23,36 @@ describe("transaction errors", () => {
   it("maps program codes to one-sentence copy", () => {
     expect(pawketErrorMessage(6002)).toMatch(/cooling down/);
     expect(pawketErrorMessage(6001)).toMatch(/owner/);
-    expect(pawketErrorMessage(9999)).toMatch(/rejected/);
+    expect(pawketErrorMessage(9999)).toMatch(/refused/);
   });
 
   it("extracts embedded program codes", () => {
     expect(extractProgramErrorCode(new Error("custom 6002 here"))).toBe(6002);
     expect(extractProgramErrorCode(new Error("nope"))).toBeNull();
+  });
+
+  it("finds the code Kit hangs on the cause of a failed simulation", () => {
+    // The simulation fields do not matter here; the cause is the point.
+    const failed = new SolanaError(SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE, {
+      cause: getSolanaErrorFromTransactionError({ InstructionError: [0, { Custom: 6002 }] }),
+    } as never);
+    expect(failed.message).not.toMatch(/6002/);
+    expect(extractProgramErrorCode(failed)).toBe(6002);
+    expect(toUserFacingError(failed)).toMatch(/cooling down/);
+  });
+
+  it("reads hex codes from logs, Anchor's error number, and the sponsor's relay", () => {
+    expect(extractProgramErrorCode(new Error("custom program error: 0x1773"))).toBe(6003);
+    expect(extractProgramErrorCode(new Error("custom program error: 0x0"))).toBeNull();
+    expect(extractProgramErrorCode(new Error("Error Code: NotPetOwner. Error Number: 6001."))).toBe(6001);
+    expect(extractProgramErrorCode(Object.assign(new Error("refused"), { programError: 6000 }))).toBe(6000);
+    expect(extractProgramErrorCode(Object.assign(new Error("refused"), { programError: 42 }))).toBeNull();
+  });
+
+  it("says what did not change", () => {
+    for (const code of [6000, 6001, 6002, 6003, 9999]) {
+      expect(pawketErrorMessage(code)).toMatch(/Nothing/);
+    }
   });
 
   it("prefers the rejection message, then program copy", () => {

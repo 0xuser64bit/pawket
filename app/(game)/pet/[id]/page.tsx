@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { pet, passport } = onChain;
   return {
     title: pet.name,
-    description: `${pet.name}, a ${SPECIES_LABEL[pet.species].toLowerCase()} kept on Solana: level ${pet.level}, ${passport.careCount} cares, a ${passport.bestStreak}-day best run.`,
+    description: `${pet.name}, a ${SPECIES_LABEL[pet.species].toLowerCase()} kept on Solana: level ${pet.level}, ${passport.careCount} ${passport.careCount === 1 ? "care" : "cares"}, a ${passport.bestStreak}-day best run.`,
   };
 }
 

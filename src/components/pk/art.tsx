@@ -113,6 +113,7 @@ export function PetArt({
   rim = false,
   still = false,
   className,
+  colours,
 }: {
   form: PetForm;
   coat?: string;
@@ -121,9 +122,11 @@ export function PetArt({
   rim?: boolean;
   still?: boolean;
   className?: string;
+  /** Resolved ink and rim, for a drawing made where no stylesheet applies (a share card). */
+  colours?: { ink: string; rim: string };
 }) {
   const base = COATS[form];
-  const ink = "var(--edge)";
+  const ink = colours?.ink ?? "var(--edge)";
   return (
     <svg
       viewBox="0 0 120 120"
@@ -145,7 +148,7 @@ export function PetArt({
       </g>
       {rim ? (
         <>
-          <path d="M-10 130V94Q60 77 130 94v36z" fill="var(--surface)" stroke="none" />
+          <path d="M-10 130V94Q60 77 130 94v36z" fill={colours?.rim ?? "var(--surface)"} stroke="none" />
           <path d="M-10 94Q60 77 130 94" fill="none" stroke={ink} strokeWidth="3" />
         </>
       ) : null}

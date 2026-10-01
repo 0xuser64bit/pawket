@@ -26,6 +26,8 @@ export const DAYLIGHT = {
   pool: "#7ba4ec",
   "pool-edge": "#3a63ad",
   "pool-soft": "#dfe8fb",
+  bloom: "#b8407a",
+  "bloom-edge": "#7c2650",
   "trim-cloth": "#8c7a60",
   "trim-copper": "#a45f2a",
   "trim-glass": "#2d8296",

@@ -328,8 +328,8 @@ function dogEars(patch: string) {
   );
 }
 
-function bunBack(coat: string) {
-  return <circle cx="91" cy="82" r="7.6" fill={coat} />;
+function bunBack(coat: string, full: boolean) {
+  return <circle cx={full ? 89 : 91} cy={full ? 100 : 82} r="7.6" fill={coat} />;
 }
 function bunEars(coat: string, p: PetPaint) {
   return (
@@ -449,12 +449,15 @@ export function PetArt({
   coat,
   patch,
   rim = false,
+  pose = "rim",
   still = false,
   seed,
   className,
   colours,
 }: {
   form: PetForm;
+  /** `rim` peeks over a pocket or a basket; `full` is the whole pet, sitting, for the playground. */
+  pose?: "rim" | "full";
   temper?: Temper;
   feeling?: Feeling;
   /** A wardrobe id; drawn on the pet. */
@@ -496,7 +499,7 @@ export function PetArt({
       </>
     );
   } else {
-    back = bunBack(c);
+    back = bunBack(c, pose === "full");
     head = (
       <>
         {bunEars(c, p)}
@@ -517,7 +520,7 @@ export function PetArt({
       {/* A pet breathes on a 3.6s loop from a 50% 100% origin, so it
           settles on its feet; its eyes blink and its tail sways on the same
           life. All of it stops under reduced motion. */}
-      <g transform="translate(0 4)">
+      <g transform={pose === "full" ? "translate(0 -2)" : "translate(0 4)"}>
       <g
         className={still ? undefined : "pk-breathe"}
         stroke={p.ink}
@@ -527,7 +530,14 @@ export function PetArt({
       >
         {worn(wearing, form, p, "back")}
         {back}
-        <path d="M27 124V90c0-14.4 14.6-23 33-23s33 8.6 33 23v34z" fill={c} />
+        {pose === "full" ? (
+          <>
+            <path d="M30 108c-2-24 11-41 30-41s32 17 30 41c-.5 6-6 10-12 10H42c-6 0-11.5-4-12-10z" fill={c} />
+            {form === "bun" ? null : <ellipse cx="60" cy="100" rx="13" ry="11" fill={p.cream} stroke="none" />}
+          </>
+        ) : (
+          <path d="M27 124V90c0-14.4 14.6-23 33-23s33 8.6 33 23v34z" fill={c} />
+        )}
         <g transform={face.tilt ? `rotate(${face.tilt} 60 74)` : undefined}>
           {head}
           <ellipse cx={f.eyeL - 8.6} cy={f.cheekY} rx="5.2" ry="3.2" fill={p.blush} stroke="none" opacity={face.blush} />
@@ -544,7 +554,14 @@ export function PetArt({
           {wearing && ON_HEAD.has(wearing) ? worn(wearing, form, p, "front") : null}
         </g>
         {wearing && !ON_HEAD.has(wearing) ? worn(wearing, form, p, "front") : null}
-        {paws(45, 75, 84, c, form === "bun")}
+        {pose === "full" ? (
+          <g className="pk-pet-feet">
+            <ellipse cx="46" cy="115" rx="9" ry="5.6" fill={c} />
+            <ellipse cx="74" cy="115" rx="9" ry="5.6" fill={c} />
+          </g>
+        ) : (
+          paws(45, 75, 84, c, form === "bun")
+        )}
         {extras(face.extra, form, p)}
       </g>
       </g>

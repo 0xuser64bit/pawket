@@ -42,7 +42,7 @@ const PILLARS = [
   {
     icon: "ball",
     title: "Play",
-    body: "Five gates in the playground. Finish a round and the day counts. The score never changes a vital.",
+    body: "Catch, Hop or Copy, with your pet in the game. Finish a round and the day counts. The score never changes a vital.",
   },
 ] as const;
 
@@ -159,11 +159,11 @@ export default function LandingPage() {
             <div className="pk-split">
               <div>
                 <h2 className="display-m" style={{ color: "var(--ink-inverse)", maxWidth: "14ch" }}>
-                  Your pet runs the gates.
+                  Your pet plays too.
                 </h2>
                 <p className="body-lg pk-muted" style={{ marginTop: "var(--space-4)", maxWidth: "48ch" }}>
-                  In the playground there is one round: five gates, then you run them back. Same
-                  name, same species. Finish it and the day counts. The score stays yours.
+                  Three games in the playground: catch the treats, hop the park path, copy the
+                  pattern on a giant paw. Finish one and the day counts. The score stays yours.
                 </p>
                 <div style={{ marginTop: "var(--space-6)" }}>
                   <ButtonLink label="See the game" href="/playground" tone="pool" icon="ball" />

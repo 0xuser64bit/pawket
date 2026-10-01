@@ -2066,47 +2066,6 @@ li {
   display: block;
 }
 
-/* ------------------------------------------------- the playground field
-
-   Like the room, one drawing at 390px proportions: racers are sized from
-   the field's height and placed along its width. */
-
-.pk-field-of-play {
-  position: relative;
-  container-type: size;
-  aspect-ratio: 335 / 280;
-  max-height: 400px;
-  border-radius: var(--radius-room);
-  border: var(--stroke-line) solid var(--edge);
-  background: var(--sprout-soft);
-  box-shadow: var(--shadow-sticker);
-  overflow: hidden;
-}
-.pk-field-of-play__ground {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 25.7cqh;
-  background: var(--surface-sunk);
-  border-top: var(--stroke-line) solid var(--edge);
-}
-.pk-field-of-play__racer {
-  position: absolute;
-  bottom: 14.3cqh;
-}
-
-/* the pet beside "ready", on the ink card */
-.pk-ready__pet {
-  flex: none;
-  width: 74px;
-}
-@media (min-width: 1024px) {
-  .pk-ready__pet {
-    width: 96px;
-  }
-}
-
 /* A recessed square holding an icon, used as a card's leading mark. */
 .pk-glyph {
   display: inline-flex;
@@ -3307,4 +3266,434 @@ li {
   display: grid;
   gap: 2px;
   min-width: 0;
+}
+
+/* ------------------------------------------------------- the playground
+
+   Three games, each a drawn place: Catch is a garden, Hop is the park path,
+   Copy is one giant paw whose toe beans are the buttons. The pet is the
+   player's own, drawn whole. Fields are sized in their own units
+   (container queries), so a phone and a desktop play the same round. */
+
+.pk-games {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+}
+.pk-gamecard {
+  display: grid;
+  padding: 0;
+  overflow: hidden;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-press), box-shadow var(--dur-press) var(--ease-press);
+}
+@media (hover: hover) {
+  .pk-gamecard:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-sticker-lift);
+  }
+}
+.pk-gamecard:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-gamecard__art {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  container-type: size;
+  border-bottom: var(--stroke-line) solid var(--edge);
+  background: var(--pool-soft);
+}
+.pk-gamecard__art::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 16%;
+  background: var(--sprout-soft);
+  border-top: var(--stroke-line) solid var(--edge);
+}
+.pk-gamecard__art--hop::after {
+  height: 22%;
+  background: var(--surface-sunk);
+}
+.pk-gamecard__art--copy {
+  background: var(--sun-soft);
+}
+.pk-gamecard__art--copy::after {
+  display: none;
+}
+.pk-gamecard__pet {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 3%;
+  width: 52cqh;
+  transform: translateX(-50%);
+}
+.pk-gamecard__art--hop .pk-gamecard__pet {
+  left: 36%;
+  bottom: 30%;
+  transform: translateX(-50%) rotate(-8deg);
+}
+.pk-gamecard__art--copy .pk-gamecard__pet {
+  width: 46cqh;
+}
+.pk-gamecard__pot {
+  position: absolute;
+  z-index: 1;
+  left: 60%;
+  bottom: 19%;
+  width: 11cqh;
+  height: 26cqh;
+}
+.pk-gamecard__pot svg,
+.pk-gamecard__item svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pk-gamecard__item {
+  position: absolute;
+  width: 26cqh;
+  aspect-ratio: 1;
+}
+.pk-gamecard__item--sm {
+  width: 22cqh;
+}
+.pk-gamecard__bean {
+  position: absolute;
+  width: 17cqh;
+  aspect-ratio: 0.82;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: 50%;
+}
+.pk-gamecard__bean.pk-paws__bean--0 {
+  left: 26%;
+  top: 34%;
+}
+.pk-gamecard__bean.pk-paws__bean--1 {
+  left: 37%;
+  top: 9%;
+}
+.pk-gamecard__bean.pk-paws__bean--2 {
+  right: 37%;
+  top: 9%;
+}
+.pk-gamecard__bean.pk-paws__bean--3 {
+  right: 26%;
+  top: 34%;
+}
+.pk-gamecard__words {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+.pk-play {
+  display: grid;
+  gap: var(--space-5);
+}
+@media (min-width: 1024px) {
+  .pk-play {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.pk-play__field {
+  min-width: 0;
+}
+
+.pk-game {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  container-type: size;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-room);
+  box-shadow: var(--shadow-sticker);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  outline: none;
+}
+.pk-game:focus-visible {
+  box-shadow: var(--shadow-sticker), 0 0 0 4px var(--ground), 0 0 0 calc(4px + var(--stroke-line)) var(--focus);
+}
+@media (max-width: 719px) {
+  .pk-game--catch {
+    aspect-ratio: 4 / 5;
+  }
+}
+.pk-game__sky {
+  position: absolute;
+  inset: 0;
+  background: var(--pool-soft);
+}
+/* Sky clouds are soft and outline-free, so they never read as the storm
+   clouds a player has to dodge. */
+.pk-game__cloud {
+  position: absolute;
+  width: 20cqw;
+  height: 6cqw;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  opacity: 0.8;
+}
+.pk-game__cloud::before {
+  content: "";
+  position: absolute;
+  left: 20%;
+  bottom: 40%;
+  width: 44%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: inherit;
+}
+.pk-game__cloud--far {
+  scale: 0.7;
+  opacity: 0.85;
+}
+.pk-game__grass {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 12%;
+  background: var(--sprout-soft);
+  border-top: var(--stroke-line) solid var(--edge);
+}
+.pk-game__drop {
+  position: absolute;
+  width: 13cqh;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+}
+.pk-game__drop svg,
+.pk-game__heart svg,
+.pk-game__thing svg,
+.pk-game__runner svg,
+.pk-game__catcher svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pk-game__catcher {
+  position: absolute;
+  z-index: 1;
+  bottom: 2%;
+  width: 34cqh;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+}
+.pk-game__hud {
+  position: absolute;
+  z-index: 2;
+  top: var(--space-3);
+  left: var(--space-3);
+  right: var(--space-3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+.pk-game__score,
+.pk-game__time,
+.pk-game__lives {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  padding: 2px 12px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker-sm);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+}
+.pk-game__score {
+  font-size: 19px;
+}
+.pk-game__lives svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+.pk-game__life--gone {
+  opacity: 0.25;
+}
+.pk-game__start {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  text-align: center;
+  background: color-mix(in srgb, var(--ground) 76%, transparent);
+}
+.pk-game__start p {
+  max-width: 36ch;
+}
+
+/* Hop: far hills drift, the path's dashes run, the pet bobs as it goes. */
+.pk-game__hills {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 19%;
+  height: 26%;
+  background: var(--sprout-soft);
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 50' preserveAspectRatio='none'><path d='M0 50V30C30 6 60 6 100 28S170 8 200 30V50z'/></svg>") repeat-x;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 50' preserveAspectRatio='none'><path d='M0 50V30C30 6 60 6 100 28S170 8 200 30V50z'/></svg>") repeat-x;
+  -webkit-mask-size: 50% 100%;
+  mask-size: 50% 100%;
+  -webkit-mask-position: var(--pk-hills, 0) 0;
+  mask-position: var(--pk-hills, 0) 0;
+}
+.pk-game__path {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20%;
+  background-color: var(--surface-sunk);
+  background-image: repeating-linear-gradient(90deg, var(--edge-soft) 0 7cqw, transparent 7cqw 18cqw);
+  background-size: 100% 5px;
+  background-repeat: repeat-x;
+  background-position-y: 45%;
+  border-top: var(--stroke-line) solid var(--edge);
+}
+.pk-game__thing {
+  position: absolute;
+}
+.pk-game__heart {
+  position: absolute;
+  width: 8cqh;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+}
+.pk-game__runner {
+  position: absolute;
+  z-index: 1;
+  width: 26cqh;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+}
+.pk-game__runner--run {
+  animation: pk-run 260ms ease-in-out infinite;
+}
+.pk-game__runner--air {
+  transform: translateX(-50%) rotate(-10deg);
+}
+@keyframes pk-run {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-5%) rotate(3deg);
+  }
+}
+
+/* Copy: a giant paw. The centre pad holds the pet; the four beans play. */
+.pk-paws {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-5);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-room);
+  background: var(--sun-soft);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-paws__paw {
+  position: relative;
+  width: min(100%, 460px);
+  margin-inline: auto;
+  aspect-ratio: 1 / 0.96;
+}
+.pk-paws__bean {
+  position: absolute;
+  width: 23%;
+  aspect-ratio: 0.82;
+  padding: 0;
+  border: var(--stroke-shelf) solid var(--edge);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sticker);
+  cursor: pointer;
+  transition: scale 120ms var(--ease-press), translate 120ms var(--ease-press), filter 120ms var(--ease-press);
+}
+.pk-paws__bean--0 {
+  left: 1%;
+  top: 29%;
+  rotate: -26deg;
+  background: var(--sun);
+}
+.pk-paws__bean--1 {
+  left: 23%;
+  top: 3%;
+  rotate: -9deg;
+  background: var(--pool);
+}
+.pk-paws__bean--2 {
+  right: 23%;
+  top: 3%;
+  rotate: 9deg;
+  background: var(--sprout);
+}
+.pk-paws__bean--3 {
+  right: 1%;
+  top: 29%;
+  rotate: 26deg;
+  background: var(--trim-copper);
+}
+.pk-paws__bean:disabled {
+  cursor: default;
+}
+.pk-paws__bean--lit {
+  scale: 1.14;
+  translate: 0 -4%;
+  filter: brightness(1.3) saturate(1.15);
+  outline: var(--stroke-shelf) solid var(--edge);
+  outline-offset: 5px;
+}
+@media (hover: hover) {
+  .pk-paws__bean:not(:disabled):hover {
+    translate: 0 -2%;
+  }
+}
+.pk-paws__bean:not(:disabled):active {
+  scale: 0.95;
+}
+.pk-paws__pad {
+  position: absolute;
+  left: 21%;
+  right: 21%;
+  top: 38%;
+}
+.pk-paws__pad .pk-pet__frame {
+  border-width: var(--stroke-shelf);
+  border-radius: 44% 44% 48% 48%;
+}
+.pk-paws__foot {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
 }

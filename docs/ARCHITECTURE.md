@@ -16,7 +16,7 @@ app/                        routes, layouts, route handlers (Server by default)
     home/                   the room and the care loop
     park/                   every pet on Solana, read live (Server)
     inventory/              pets (on Solana, in this browser) and the wardrobe
-    playground/             one solo round
+    playground/             three games: Catch, Hop, Copy
     guilds/                 the boundary. no directory, no swap
     pet/[id]/               an address: the public Passport (Server);
                             anything else: the browser pet's record
@@ -33,7 +33,7 @@ src/lib/game/               pure companion math (no React, no Solana) + lockstep
 src/lib/guest/              the browser pet's record, migration, localStorage
 src/lib/companion/          which pet a screen draws: on Solana, else this browser
 src/lib/closet/             wearable catalog (its order is the on-chain slot)
-src/lib/play/               gate pattern and score
+src/lib/play/               the three games as pure seeded steps, local bests, sound
 src/lib/guilds/             boundary copy
 src/lib/player/             the player's look (3D room), localStorage
 src/lib/room/               moments and emotes, as data

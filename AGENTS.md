@@ -31,8 +31,9 @@ on Solana plays its moment only after it is confirmed; nothing is optimistic.
 `useCompanion` (`src/lib/companion/`) decides what a screen draws: the
 connected wallet's pet on Solana, else the browser pet — one record shape
 for both. Inventory dresses the pet (expression only; on Solana a signed
-`dress`). The playground is one solo round; on Solana a finished round is
-kept when the player presses "Record the round". `/pet/<address>` is the
+`dress`). The playground is three solo games (Catch, Hop, Copy), any one of
+them a round; on Solana a finished round is kept when the player presses
+"Record the round". `/pet/<address>` is the
 public Passport, server-rendered from chain; `/park` is every pet the
 program keeps, read live. Guilds is the written boundary in
 `src/lib/guilds/boundary.ts`: nothing to join, buy or swap. There is no
@@ -92,7 +93,7 @@ One home per fact. If two files disagree, the left column wins.
 | Design system (tokens, components)| `app/globals.css` + `src/components/pk/` |
 | Guest companion record            | `src/lib/guest/`                    |
 | Wearables (expression only)       | `src/lib/closet/catalog.ts`         |
-| Playground pattern                | `src/lib/play/gates.ts`             |
+| Playground games (pure, seeded)   | `src/lib/play/`                     |
 | Guild boundary copy               | `src/lib/guilds/boundary.ts`        |
 | Player look (3D room)             | `src/lib/player/look.ts`            |
 | Moments and emotes                | `src/lib/room/moments.ts`           |

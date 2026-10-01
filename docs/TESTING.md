@@ -15,7 +15,7 @@
 | The path through the screens   | `e2e/chain.spec.ts` + `e2e/test-wallet.ts` | `PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts` |
 | Env / cluster / format / errors| colocated `*.test.ts`                   | Vitest   |
 | Presentational components      | `src/components/*.test.tsx`             | Vitest + Testing Library |
-| Guest record, wardrobe, gates  | `src/lib/guest`, `closet`, `play`       | Vitest   |
+| Guest record, wardrobe, games  | `src/lib/guest`, `closet`, `play`       | Vitest   |
 | Player look, moment registry (checked against the shipped GLBs' clips) | `src/lib/player`, `src/lib/room` | Vitest |
 | 3D room: palette ↔ `:root` tokens, every wearable drawn, two-bone reach | `src/components/room3d/*.test.ts` | Vitest |
 | 3D room: live room, emote, care moment after save, flat choice, no-WebGL fallback, reduced motion, saved look, empty room, 320px | `e2e/room.spec.ts` | Playwright |

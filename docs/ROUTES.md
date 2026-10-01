@@ -12,7 +12,7 @@ Built today:
 (game)/home                the pet in play — on Solana, else in this browser — or an empty room
 (game)/park                every pet the program keeps, read live
 (game)/inventory           your pets and the wardrobe (?tab=wardrobe)
-(game)/playground          one solo round; on Solana, "Record the round"
+(game)/playground          three games, any one the day's round; on Solana, "Record the round"
 (game)/pet/[id]            an address: the public Passport, from chain;
                            otherwise the record of the pet in this browser
 (game)/guilds              the boundary. not a directory

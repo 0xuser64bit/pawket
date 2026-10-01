@@ -73,8 +73,10 @@ adopt or care without visiting the site. Pawket pays those fees too.
   between you, after it is saved (or confirmed, on Solana).
 - **Park** — every pet the program keeps, read live: who was out today and
   what just happened.
-- **Playground** — five gates, then run them back. The first finished round
-  of a day is +25 XP.
+- **Playground** — three games with your pet in them: Catch (treats fall,
+  dodge the storm clouds), Hop (jump the park path as it speeds up) and
+  Copy (a pattern on a giant paw). The first round finished in a day is +25
+  XP, on Solana too.
 - **Inventory** — your pets, on Solana and in this browser, and a free
   wardrobe that changes looks and nothing else.
 - **Guilds** — the written boundary for a layer that does not exist yet:

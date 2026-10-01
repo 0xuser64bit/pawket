@@ -130,16 +130,26 @@ test("a playground round finishes and keeps a daily bonus", async ({ page }) => 
   await page.getByRole("button", { name: /take them home/i }).click();
 
   await page.goto("/playground");
-  await page.getByRole("button", { name: "Start the round" }).click();
-  for (let gate = 0; gate < 4; gate++) {
-    await page.getByRole("button", { name: "Next gate" }).click();
-  }
-  await page.getByRole("button", { name: "Run them" }).click();
-  for (let gate = 0; gate < 5; gate++) {
-    await page.getByRole("button", { name: "Left" }).click();
-  }
-  await expect(page.getByText(/Matched \d of 5/)).toBeVisible();
+  await expect(page.getByText("Today's round is worth 25 XP")).toBeVisible();
+  // A pet that never jumps meets the first flower pot: the round is over.
+  await page.getByRole("button", { name: /^Hop/ }).click();
+  await page.getByRole("application", { name: /^Hop/ }).click();
+  await expect(page.getByText("Round finished")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/\+25 XP for playing today/)).toBeVisible();
+
+  // The bonus is once a day; another game still counts and says so.
+  await page.getByRole("button", { name: "Another game" }).click();
+  await expect(page.getByText("Today's round is kept")).toBeVisible();
+  await page.getByRole("button", { name: /^Copy/ }).click();
+  await page.getByRole("button", { name: "Start copying" }).click();
+  for (let tap = 0; tap < 40; tap++) {
+    if (await page.getByText("Round finished").isVisible()) break;
+    const bean = page.getByRole("button", { name: "Sun bean (1)" });
+    if (await bean.isEnabled()) await bean.click();
+    await page.waitForTimeout(250);
+  }
+  await expect(page.getByText("Round finished")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/already earned today's play bonus/)).toBeVisible();
 });
 
 test("adoption shows the pet you are making: its name on its blanket, its temperament on its first page", async ({ page }) => {

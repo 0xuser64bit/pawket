@@ -52,11 +52,28 @@ bonus by the same rule, when the player records the round.
 4. Streak: consecutive-active-days counter (timezone-safe: UTC day boundaries, inject `now`); streak break is forgiving copy ("Come back anytime — no penalties").
 5. Share moment (playground result / new level) → share card.
 
-## 6. Playground scoring (power-free)
+## 6. Playground (power-free)
 
-- Scores derive from **care consistency + loadout flair display**, never token holdings, never spend.
-- Formula sketch (E06 finalizes): `score = f(streak, moodAvg, varietyBonus) + cosmeticFlairDisplay(0 power)`. Flair affects presentation/tiebreak display only; document that tiebreaks are random-from-seed, not spend-weighted.
-- Rewards: XP (existing path), cosmetic fragments, badges. No SOL prizes in v1 (legal/ops simplicity).
+Three games ship, each one round, each a pure step function of a seed and
+the player's input (`src/lib/play/`), tested for determinism:
+
+| Game | Round | Score |
+| --- | --- | --- |
+| Catch (`catch.ts`) | 30 s or three storm clouds | treats caught (a star is three) |
+| Hop (`hop.ts`) | until the first bump; the path speeds up from 0.42 to 1.05 field widths a second | ten a field width run, five a heart |
+| Copy (`copy.ts`) | until the first wrong bean; the pattern grows by one | longest pattern copied |
+
+- Finishing any of them is the day's round: `DAILY_GOAL_REWARD_XP` once per
+  UTC day, the same rule `finish_round` enforces on chain. The score never
+  scales it and is never sent anywhere; a player's best per game is kept on
+  their device only (`best.ts`).
+- No game module imports `src/lib/game`, `guest`, `closet` or `solana`
+  (`games.test.ts` holds this): a vital, a level, a wearable or a balance
+  cannot reach a score.
+- Hop is always clearable: every gap is a full jump, the obstacle and the
+  pet's own width apart at the speed it is met. The jump is floaty enough
+  that the starting window is about 0.3 s.
+- Rewards: XP (existing path). No SOL prizes (legal/ops simplicity).
 
 ## 7. Customization (expression power = 0)
 

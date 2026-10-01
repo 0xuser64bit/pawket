@@ -14,27 +14,37 @@ import {
   ScreenBar,
   Stack,
 } from "@/components/pk";
+import { TxReceipt } from "@/components/wallet/tx-receipt";
+import { getPublicEnv } from "@/config/env";
 import { DAILY_GOAL_REWARD_XP } from "@/lib/game/constants";
 import { SPECIES_ART } from "@/lib/game/appearance";
 import { findWearable } from "@/lib/closet/catalog";
+import { useCompanion } from "@/lib/companion/use-companion";
 import { recordPlay, utcDay, type GuestPet } from "@/lib/guest/pet";
-import { useGuestPet } from "@/lib/guest/use-guest-pet";
 import { readGuestPetSnapshot, saveGuestPet } from "@/lib/guest/storage";
+import { getFinishRoundInstruction } from "@/lib/solana/instructions";
+import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
 import { GATE_COUNT, gatePattern, scoreGates, type Gate } from "@/lib/play/gates";
 
 type Phase = "ready" | "look" | "run" | "done";
 
+/** A finished round: the score, and — for a pet in this browser — what was saved. */
+type Outcome = { score: number; xpGained: number; saved: boolean; onChain: boolean };
+
 /**
  * One solo round. The player watches five gates, then runs them back.
  * Finishing grants the daily XP bonus once. The score changes nothing else.
+ * A pet in this browser keeps the round at once; a pet on Solana keeps it
+ * when the player records it — a send is never made for them.
  */
 export function PlaygroundScreen() {
-  const { ready, pet } = useGuestPet();
+  const { ready, pet, active, refresh } = useCompanion();
+  const sender = usePawketSend();
   const [seed, setSeed] = useState(() => Math.random().toString(36).slice(2));
   const [phase, setPhase] = useState<Phase>("ready");
   const [cursor, setCursor] = useState(0);
   const [answers, setAnswers] = useState<Gate[]>([]);
-  const [outcome, setOutcome] = useState<{ score: number; xpGained: number; saved: boolean }>();
+  const [outcome, setOutcome] = useState<Outcome>();
   const pattern = useMemo(() => gatePattern(seed), [seed]);
 
   function begin() {
@@ -45,6 +55,7 @@ export function PlaygroundScreen() {
   }
 
   function again() {
+    sender.reset();
     setSeed(Math.random().toString(36).slice(2));
     setCursor(0);
     setAnswers([]);
@@ -56,16 +67,31 @@ export function PlaygroundScreen() {
     const next = [...answers, gate];
     setAnswers(next);
     if (next.length < pattern.length) return;
+    const score = scoreGates(pattern, next);
+    if (active && pet) {
+      // Kept on Solana only when the player records it; the bonus is the program's call.
+      setOutcome({ score, xpGained: recordPlay(pet, new Date()).xpGained, saved: false, onChain: true });
+      setPhase("done");
+      return;
+    }
     const current = readGuestPetSnapshot();
     if (!current) {
-      setOutcome({ score: scoreGates(pattern, next), xpGained: 0, saved: false });
+      setOutcome({ score, xpGained: 0, saved: false, onChain: false });
       setPhase("done");
       return;
     }
     const result = recordPlay(current, new Date());
     const saved = saveGuestPet(result.pet);
-    setOutcome({ score: scoreGates(pattern, next), xpGained: result.xpGained, saved });
+    setOutcome({ score, xpGained: result.xpGained, saved, onChain: false });
     setPhase("done");
+  }
+
+  async function recordRound() {
+    if (!active || !pet) return;
+    const result = await sender.send(`Finish a round with ${pet.name}`, ({ owner }) => [
+      getFinishRoundInstruction({ owner, pet: active.pet.address, passport: active.passport.address }),
+    ]);
+    if (result) refresh();
   }
 
   return (
@@ -107,6 +133,8 @@ export function PlaygroundScreen() {
               onReplayLook={() => setCursor(0)}
               onAnswer={answer}
               onAgain={again}
+              sender={sender}
+              onRecord={() => void recordRound()}
             />
           }
           second={
@@ -134,19 +162,24 @@ function Round({
   onReplayLook,
   onAnswer,
   onAgain,
+  sender,
+  onRecord,
 }: {
   pet: GuestPet;
   phase: Phase;
   pattern: Gate[];
   cursor: number;
   answers: Gate[];
-  outcome?: { score: number; xpGained: number; saved: boolean };
+  outcome?: Outcome;
   onBegin: () => void;
   onAdvance: () => void;
   onReplayLook: () => void;
   onAnswer: (gate: Gate) => void;
   onAgain: () => void;
+  sender: PawketSender;
+  onRecord: () => void;
 }) {
+  const recorded = sender.tx.stage === "confirmed";
   const worn = findWearable(pet.wearing);
   const claimed = pet.lastDailyPlayDay === utcDay(new Date());
   const gate = phase === "look" ? pattern[cursor] : undefined;
@@ -186,11 +219,19 @@ function Round({
               ? `Gate ${cursor + 1} of ${GATE_COUNT}. Remember it, then the next.`
               : phase === "run"
                 ? `Gate ${answers.length + 1} of ${GATE_COUNT}.`
-                : outcome?.saved
-                  ? outcome.xpGained > 0
-                    ? `Finished. +${outcome.xpGained} XP for playing today.`
-                    : "Finished. You already earned today's play bonus."
-                  : "Finished, but this browser did not store the bonus."}
+                : outcome?.onChain
+                  ? recorded
+                    ? outcome.xpGained > 0
+                      ? `Recorded. +${outcome.xpGained} XP for playing today, kept on Solana.`
+                      : "Recorded on Solana. Today's play bonus was already kept."
+                    : outcome.xpGained > 0
+                      ? `Finished. Record it on Solana to keep +${outcome.xpGained} XP for playing today.`
+                      : "Finished. Today's bonus is already kept; recording counts the round."
+                  : outcome?.saved
+                    ? outcome.xpGained > 0
+                      ? `Finished. +${outcome.xpGained} XP for playing today.`
+                      : "Finished. You already earned today's play bonus."
+                    : "Finished, but this browser did not store the bonus."}
         </p>
       </div>
 
@@ -217,9 +258,23 @@ function Round({
         </Row>
       ) : null}
 
+      {phase === "done" && outcome?.onChain && !recorded ? (
+        <div>
+          <Button
+            label="Record the round"
+            icon="spark"
+            tone="sun"
+            disabled={sender.busy}
+            onClick={onRecord}
+          />
+        </div>
+      ) : null}
+
+      {phase === "done" && outcome?.onChain ? <TxReceipt tx={sender.tx} cluster={getPublicEnv().solanaCluster} /> : null}
+
       {phase === "done" ? (
         <Row gap={2} wrap>
-          <Button label="Run them again" icon="ball" tone="pool" onClick={onAgain} />
+          <Button label="Run them again" icon="ball" tone="pool" disabled={sender.busy} onClick={onAgain} />
           <ButtonLink label="Back to the room" href="/home" tone="quiet" icon="home" />
         </Row>
       ) : null}

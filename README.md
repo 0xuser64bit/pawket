@@ -12,6 +12,19 @@ the network fees, so a wallet with no SOL can play.
 
 **Program:** [`PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`](https://explorer.solana.com/address/PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74?cluster=devnet) (devnet)
 
+## Try it
+
+1. Open the live app and adopt — no wallet, no sign-up. Feed, play, brush
+   and rest in the room; the pet's needs fall while you are away.
+2. To keep the pet on Solana, connect a wallet set to devnet (in Phantom,
+   turn on testnet mode and pick Solana Devnet). It needs no SOL.
+3. Press "Record Pepper" and approve. Every care after that is a signed
+   transaction, with its signature and an Explorer link on screen.
+4. Open "Their record" — the public Passport anyone can read — and keep the
+   pet's card in your wallet from there.
+5. Share the Passport link: in a Blink-aware client it opens as the pet's
+   card, with its four cares.
+
 ## What happens on chain
 
 | On Solana | What it holds |

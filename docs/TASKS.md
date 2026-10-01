@@ -1,6 +1,6 @@
 # Pawket — Tasks (sequenced, atomic, agent-ready)
 
-**Status:** T01–T06 are done in the shape the product took (browser adoption first, "Keep it on Solana", a fee sponsor — see `DECISIONS.md` 2026-10); T09's equip is on chain; T15's share is a link and the Park, not an OG card yet. The rest is PLAN for the database and guild-token work — do not re-implement shipped loops as fixtures, and do not start T10+ while its question is open. Report per `WORKFLOW.md` §8. Mark done only with `pnpm verify` green (or the listed layer cmd + typecheck for docs-only steps — state which).
+**Status:** T01–T06 are done in the shape the product took (browser adoption first, "Keep it on Solana", a fee sponsor — see `DECISIONS.md` 2026-10); T09's equip is on chain; T15 shipped as the Park, the public Passport and its share card (the link is also a Blink); Q1's keepsake (a frozen Core card per pet) shipped outside this table. The rest is PLAN for the database and guild-token work — do not re-implement shipped loops as fixtures, and do not start T10+ while its question is open. Report per `WORKFLOW.md` §8. Mark done only with `pnpm verify` green (or the listed layer cmd + typecheck for docs-only steps — state which).
 
 ## M1 — Care loop (E01–E02)
 

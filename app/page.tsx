@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   Banner,
   ButtonLink,
@@ -8,13 +9,19 @@ import {
   Mark,
   Paper,
   PetFrame,
+  Receipt,
   Row,
   Stack,
   ThemeToggle,
 } from "@/components/pk";
 import { NetworkBadge } from "@/components/network-badge";
+import { readAllPets } from "@/server/solana";
+import { sponsorState } from "@/server/sponsor";
 
-const LOOP = ["Adopt a pet", "Name them", "Care for them", "Play a round", "Watch them grow"];
+/** The count of pets on Solana is read at most once a minute. */
+export const revalidate = 60;
+
+const LOOP = ["Adopt a pet", "Name them", "Care for them", "Play a round", "Keep the record", "Watch them grow"];
 
 const PILLARS = [
   {
@@ -42,14 +49,16 @@ const PILLARS = [
 const ASSET_COLUMNS = ["Thing", "What it is for", "Needed to play?", "Has a market price?"];
 
 const ASSETS = [
-  ["Your pet", "Identity, appearance, care, progress", "No — one pet, in this browser", "No"],
+  ["Your pet", "Identity, appearance, care, progress", "No — it starts in this browser", "No"],
+  ["Its record on Solana", "Every care, the streak and the level, kept where nobody can edit them", "No — keeping it there is your choice", "No"],
   ["Clothes", "Expression: the one look they are wearing", "No", "No — the wardrobe is free"],
   ["Guild token", "A future community, if guilds ever open", "No", "Not in this version"],
-  ["SOL", "Not used by anything you can do here", "No", "Yes, elsewhere"],
+  ["SOL", "Network fees on devnet, which Pawket covers while it can", "No", "Yes, elsewhere"],
 ];
 
 const NAV = [
   { label: "Home", href: "/home" },
+  { label: "Park", href: "/park" },
   { label: "Playground", href: "/playground" },
   { label: "Inventory", href: "/inventory" },
   { label: "Guilds", href: "/guilds" },
@@ -98,8 +107,8 @@ export default function LandingPage() {
                 <ButtonLink label="Look around first" href="/home" tone="quiet" size="lg" />
               </Row>
               <p className="body-sm pk-faint">
-                Free to start. No wallet, no token, no Solana knowledge needed — and none of it is
-                needed later either.
+                Free to start. No wallet, no token, no Solana knowledge needed. When you want a
+                record nobody can erase, you can keep your pet on Solana.
               </p>
             </Stack>
 
@@ -166,6 +175,29 @@ export default function LandingPage() {
               </div>
             </div>
           </Card>
+        </section>
+
+        <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
+          <div className="pk-split pk-split--wide-right">
+            <Stack gap={4}>
+              <h2 className="display-m" style={{ maxWidth: "14ch" }}>
+                A record nobody can erase.
+              </h2>
+              <p className="body-lg pk-muted" style={{ maxWidth: "44ch" }}>
+                Keep your pet on Solana and every care becomes a signed record: the level, the
+                streak, the last cares, in an account only your wallet can write to. It outlives this
+                browser, and anyone can look it up.
+              </p>
+              <Row gap={3} wrap>
+                <ButtonLink label="See the park" href="/park" tone="pool" icon="users" />
+              </Row>
+            </Stack>
+            <Paper title="On Solana devnet" meta="Read live">
+              <Suspense fallback={<p className="receipt pk-faint">Reading the program…</p>}>
+                <PetsOnChain />
+              </Suspense>
+            </Paper>
+          </div>
         </section>
 
         <section className="pk-band" style={{ paddingBottom: "var(--space-9)" }}>
@@ -260,10 +292,38 @@ export default function LandingPage() {
         </Stack>
         <p className="body-sm pk-faint">
           Pawket is a game you play in this browser. The pet you adopt is saved here, and clearing
-          this browser&apos;s data removes them. Guild tokens are not for sale. The cluster below is
-          configuration for a later record — nothing on these pages is sent there.
+          this browser&apos;s data removes them — unless you keep them on Solana, where the program
+          below holds the record. Guild tokens are not for sale.
         </p>
       </footer>
     </>
+  );
+}
+
+/** A count that has happened: the pets the program keeps right now. */
+async function PetsOnChain() {
+  let count: number | null = null;
+  let cares = 0;
+  let covered = false;
+  try {
+    const [pets, sponsor] = await Promise.all([readAllPets(), sponsorState().catch(() => null)]);
+    count = pets.length;
+    cares = pets.reduce((sum, entry) => sum + entry.passport.careCount, 0);
+    covered = sponsor?.available ?? false;
+  } catch {
+    count = null;
+  }
+  if (count === null) {
+    return <p className="body-sm pk-muted">Solana did not answer just now. The record is unchanged.</p>;
+  }
+  return (
+    <Receipt
+      rows={[
+        { k: "Pets kept", v: String(count) },
+        { k: "Cares recorded", v: String(cares) },
+        { k: "Network fee", v: covered ? "Paid by Pawket" : "A little devnet SOL" },
+      ]}
+      note="Counted from the program's accounts, not from a database."
+    />
   );
 }

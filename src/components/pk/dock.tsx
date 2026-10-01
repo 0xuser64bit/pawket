@@ -21,12 +21,15 @@ const PLACES: Array<{ key: string; label: string; icon: IconName; href: string }
   { key: "guilds", label: "Guilds", icon: "guild", href: "/guilds" },
 ];
 
-/** A detail screen still belongs to its place: a pet is reached from Inventory. */
+/**
+ * A detail screen still belongs to its place: a pet kept on Solana (its id
+ * is an address) to the Park, the pet in this browser to Inventory.
+ */
 export function activePlace(pathname: string): string {
-  return (
-    PLACES.find((p) => pathname === p.href || pathname.startsWith(`${p.href}/`))?.key ??
-    (pathname.startsWith("/pet") ? "inventory" : "home")
-  );
+  const place = PLACES.find((p) => pathname === p.href || pathname.startsWith(`${p.href}/`))?.key;
+  if (place) return place;
+  if (/^\/pet\/[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(pathname)) return "park";
+  return pathname.startsWith("/pet") ? "inventory" : "home";
 }
 
 export function Dock() {

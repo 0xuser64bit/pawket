@@ -35,7 +35,9 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
   let owner: KeyPairSigner;
   let pet: Awaited<ReturnType<typeof derivePetPda>>["address"];
   let passport: typeof pet;
-  const name = `Devnet ${Math.random().toString(36).slice(2, 8)}`;
+  // A pet adopted here is a real pet on devnet, so it gets a pet's name.
+  const NAMES = ["Biscuit", "Mochi", "Clover", "Juniper", "Waffles", "Pickle", "Noodle", "Sprout"];
+  const name = NAMES[Math.floor(Math.random() * NAMES.length)];
 
   const send = (instructions: Parameters<typeof sendPawket>[0]["instructions"]) =>
     sendPawket({

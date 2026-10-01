@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { createKeyPairSignerFromBytes, createSolanaRpc, type KeyPairSigner } from "@solana/kit";
 import { z } from "zod";
-import { getPublicEnv } from "@/config/env";
-import { getServerEnv } from "@/config/server-env";
 import { cosignAndSend, createLimiter, SponsorRefusal } from "@/lib/solana/sponsor";
+import { sponsorRpc, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
 
 /**
  * The sponsor: pays the network fee, and a new pet's rent, for transactions
@@ -14,8 +12,6 @@ import { cosignAndSend, createLimiter, SponsorRefusal } from "@/lib/solana/spons
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Below this the sponsor stops and players pay their own fees. */
-const MIN_FLOAT_LAMPORTS = 50_000_000n;
 const HOUR = 60 * 60 * 1000;
 // Rent is the real cost, so adoption is the scarce one.
 const adoptions = createLimiter(3, HOUR);
@@ -23,36 +19,9 @@ const actions = createLimiter(240, HOUR);
 
 const bodySchema = z.object({ transaction: z.string().min(1).max(2_000) });
 
-let signer: Promise<KeyPairSigner> | null = null;
-let float: { checkedAt: number; lamports: bigint } | null = null;
-
-function rpc() {
-  return createSolanaRpc(getServerEnv().solanaRpcUrl ?? getPublicEnv().solanaRpcUrl);
-}
-
-type State = { available: true; address: string; signer: KeyPairSigner } | { available: false; reason: string };
-
-async function state(): Promise<State> {
-  if (getPublicEnv().solanaCluster === "mainnet-beta") {
-    return { available: false, reason: "Pawket covers fees on devnet only." };
-  }
-  const keypair = getServerEnv().sponsorKeypair;
-  if (!keypair) return { available: false, reason: "Fees are not covered on this deployment." };
-  signer ??= createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(keypair) as number[]));
-  const sponsor = await signer;
-  if (!float || Date.now() - float.checkedAt > 30_000) {
-    const { value } = await rpc().getBalance(sponsor.address, { commitment: "confirmed" }).send();
-    float = { checkedAt: Date.now(), lamports: value };
-  }
-  if (float.lamports < MIN_FLOAT_LAMPORTS) {
-    return { available: false, reason: "Pawket's fee float is empty for now." };
-  }
-  return { available: true, address: sponsor.address, signer: sponsor };
-}
-
 export async function GET() {
   try {
-    const current = await state();
+    const current = await sponsorState();
     return NextResponse.json(
       current.available ? { available: true, address: current.address } : current,
       { headers: { "cache-control": "no-store" } },
@@ -67,9 +36,9 @@ export async function POST(request: Request) {
   if (!body.success) {
     return NextResponse.json({ error: "Send { transaction } as base64. Nothing was sent." }, { status: 400 });
   }
-  let current: State;
+  let current: SponsorState;
   try {
-    current = await state();
+    current = await sponsorState();
   } catch {
     return NextResponse.json({ error: "The sponsor cannot reach the network. Nothing was sent." }, { status: 503 });
   }
@@ -77,10 +46,10 @@ export async function POST(request: Request) {
 
   const caller = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   try {
-    const { signature } = await cosignAndSend(rpc(), current.signer, body.data.transaction, (kinds) =>
+    const { signature } = await cosignAndSend(sponsorRpc(), current.signer, body.data.transaction, (kinds) =>
       (kinds.includes("adopt") ? adoptions(caller) : true) && actions(caller),
     );
-    float = null;
+    sponsorSpent();
     return NextResponse.json({ signature });
   } catch (error) {
     if (error instanceof SponsorRefusal) {

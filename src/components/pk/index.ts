@@ -50,6 +50,6 @@ export {
   type Stage,
 } from "./guild";
 export { BackLink, Columns, Grid, Row, Screen, ScreenBar, SectionLabel, Stack } from "./layout";
-export { PawLoader } from "./paw-loader";
+export { PawLoader, Waiting } from "./paw-loader";
 export { Dock } from "./dock";
 export { ThemeToggle, useTheme, useToken } from "./theme-toggle";

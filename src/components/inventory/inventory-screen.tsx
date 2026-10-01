@@ -18,6 +18,7 @@ import {
   Stack,
   Tabs,
   WearableArt,
+  Waiting,
 } from "@/components/pk";
 import { CarryCard } from "@/components/home/carry-card";
 import { TxReceipt } from "@/components/wallet/tx-receipt";
@@ -99,7 +100,7 @@ export function InventoryScreen({ tab }: { tab: "pet" | "wardrobe" }) {
       <Stack gap={4}>
         <Tabs label="What you keep" active={tab} items={TABS} />
 
-        {!ready ? <p className="body-sm pk-faint">Opening the shelf.</p> : null}
+        {!ready ? <Waiting label="Opening the shelf" /> : null}
 
         {ready && tab === "pet" ? (
           <Stack gap={6}>

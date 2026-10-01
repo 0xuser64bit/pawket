@@ -2577,6 +2577,13 @@ li {
   }
 }
 
+.pk-waiting {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+
 /* Under reduced motion one paw simply sits in the square. This has to come
    after the global rule, which would otherwise snap every paw into view. */
 @media (prefers-reduced-motion: reduce) {

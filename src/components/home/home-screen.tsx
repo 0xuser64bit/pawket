@@ -14,6 +14,7 @@ import {
   Screen,
   ScreenBar,
   Stack,
+  Waiting,
 } from "@/components/pk";
 import { CarryCard } from "@/components/home/carry-card";
 import { EmoteRow } from "@/components/home/emote-row";
@@ -108,7 +109,7 @@ export function HomeScreen() {
         <ScreenBar>
           <h1 className="display-s">Your room</h1>
         </ScreenBar>
-        <p className="body-sm pk-faint">Opening the room.</p>
+        <Waiting label="Opening the room" />
       </Screen>
     );
   }

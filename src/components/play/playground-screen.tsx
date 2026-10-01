@@ -13,6 +13,7 @@ import {
   Screen,
   ScreenBar,
   Stack,
+  Waiting,
 } from "@/components/pk";
 import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { getPublicEnv } from "@/config/env";
@@ -116,7 +117,7 @@ export function PlaygroundScreen() {
         </Row>
       </ScreenBar>
 
-      {!ready ? <p className="body-sm pk-faint">Opening the playground.</p> : null}
+      {!ready ? <Waiting label="Opening the playground" /> : null}
 
       {ready && !pet ? (
         <EmptyState

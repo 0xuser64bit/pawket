@@ -12,6 +12,7 @@ import {
   Row,
   Screen,
   Stack,
+  Waiting,
 } from "@/components/pk";
 import { findWearable } from "@/lib/closet/catalog";
 import {
@@ -37,7 +38,7 @@ export function PetScreen({ id }: { id: string }) {
     return (
       <Screen>
         <BackLink label="Inventory" href="/inventory" />
-        <p className="body-sm pk-faint">Opening their record.</p>
+        <Waiting label="Opening their record" />
       </Screen>
     );
   }

@@ -14,6 +14,7 @@ import {
   Receipt,
   Stack,
   WalletState,
+  Waiting,
 } from "@/components/pk";
 import {
   PERSONALITY_LABEL,
@@ -169,7 +170,7 @@ export function AdoptFlow() {
     return (
       <main id="main" className="pk-adopt">
         <Bar step={1} />
-        <p className="body-sm pk-faint">Opening adoption.</p>
+        <Waiting label="Opening adoption" />
       </main>
     );
   }

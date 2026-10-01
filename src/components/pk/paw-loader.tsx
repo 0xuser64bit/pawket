@@ -51,3 +51,18 @@ export function PawLoader({
     </div>
   );
 }
+
+/**
+ * A screen waiting on this browser or a wallet before it can draw: the
+ * loader, small, with the wait said in words beside it.
+ */
+export function Waiting({ label }: { label: string }) {
+  return (
+    <div className="pk-waiting">
+      <PawLoader size="sm" label={label} />
+      <p className="body-sm pk-faint" aria-hidden="true">
+        {label}
+      </p>
+    </div>
+  );
+}

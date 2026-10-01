@@ -47,10 +47,3 @@ export function caller(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
 }
 
-/** A link that opens an Action as a Blink on dial.to, on this deployment's cluster. */
-export function blinkHref(path: string): string {
-  const env = getPublicEnv();
-  const action = `solana-action:${new URL(path, env.appUrl).toString()}`;
-  const cluster = env.solanaCluster === "mainnet-beta" ? "mainnet" : env.solanaCluster;
-  return `https://dial.to/?action=${encodeURIComponent(action)}&cluster=${cluster}`;
-}

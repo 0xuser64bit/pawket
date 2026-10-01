@@ -5,7 +5,8 @@ import { CARE_SEEN, MOOD_LABEL, SPECIES_ART, SPECIES_LABEL, SPECIES_SKY } from "
 import { formatAgo } from "@/lib/utils/format";
 import { projectGuestPet, streakAsOf, utcDay } from "@/lib/guest/pet";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
-import { blinkHref } from "@/server/actions";
+import { getPublicEnv } from "@/config/env";
+import { AdoptLink } from "@/components/park/adopt-link";
 import { readAllPets } from "@/server/solana";
 
 export const metadata: Metadata = {
@@ -19,19 +20,19 @@ export const dynamic = "force-dynamic";
  * nothing ranked by money because nothing here has a price. Who was out
  * today comes first; then everyone, most cared-for first.
  */
-/** The adoption as a Solana Action: a link that becomes an adoption card wherever it is posted. */
+/** The adoption as a Solana Action: the /adopt link unfurls as an adoption card in a Blink-aware client. */
 function AdoptAnywhere() {
+  const url = new URL("/adopt", getPublicEnv().appUrl).toString();
   return (
     <Card variant="quiet">
       <h2 className="title">Adopt from anywhere</h2>
       <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)", maxWidth: "60ch" }}>
-        The adoption is also a Blink: a link that turns into an adoption card on X, in a wallet or on
-        dial.to. Whoever opens it can adopt straight onto Solana, and Pawket pays the fee.
+        The adoption page is also a Solana Action. Posted where a Blink-aware wallet is reading — X, with
+        Phantom — the link opens as an adoption card, and the pet is adopted straight onto Solana. Pawket
+        pays the fee.
       </p>
       <div style={{ marginTop: "var(--space-4)" }}>
-        <a className="pk-btn pk-btn--quiet pk-btn--sm" href={blinkHref("/api/actions/adopt")} target="_blank" rel="noreferrer">
-          <span>Open the adoption Blink</span>
-        </a>
+        <AdoptLink url={url} />
       </div>
     </Card>
   );

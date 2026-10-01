@@ -38,6 +38,11 @@ rent payer and nothing else, no lookup tables, no priority fees, every other
 signer already signed — co-signs and sends it with preflight on. A care
 still cooling down is refused before anyone pays for it.
 
+**Blinks.** `/adopt` and every `/pet/<address>` link are also Solana
+Actions (`/actions.json`): in a Blink-aware client they unfurl as an
+adoption card, or as the pet's card with its four cares, and a player can
+adopt or care without visiting the site. Pawket pays those fees too.
+
 ## The places
 
 - **Home** — the room, in 3D: you and your pet in one scene. Care plays out

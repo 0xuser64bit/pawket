@@ -103,6 +103,26 @@ the sponsor is off and players pay. GET says
 whether it is up; pages that say "Pawket pays" read the same state
 (`src/server/sponsor.ts`).
 
+## Blinks (Solana Actions)
+
+Two Actions, so a pet can be adopted and cared for from wherever a
+Blink-aware client renders them (Phantom on X, wallets' own browsers):
+
+| Action | GET | POST `{ account }` |
+| --- | --- | --- |
+| `/api/actions/adopt` | the adoption card: species, temperament and name as parameters | an `adopt_pet` transaction the sponsor built and signed as fee and rent payer; chains to "Pepper is yours" |
+| `/api/actions/care/<pet>` | the pet's card, read live, with feed, play, brush, rest | a care transaction, for the owner only; a care still cooling down is refused with the time left |
+
+`/actions.json` maps the links people already share: `/adopt` →
+`/api/actions/adopt`, `/pet/*` → `/api/actions/care/*`. Every response has
+the spec's CORS headers, `X-Action-Version: 2.4` and `X-Blockchain-Ids`
+(the cluster's genesis). Icons are square cards from
+`/api/actions/icon[?pet=]`. A transaction the sponsor signs first passes
+`checkSponsorable` in its `before-player` mode; Blink adoptions are limited
+per wallet, because a Blink client may proxy everyone through one address.
+dial.to, Dialect's interstitial, was paused when this was built, so the app
+links no renderer: the share link is the Blink.
+
 ## Devnet workflow
 
 Build and test: `pnpm program:test`. Deploy or upgrade:

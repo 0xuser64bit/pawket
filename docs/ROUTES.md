@@ -18,6 +18,11 @@ Built today:
 (game)/guilds              the boundary. not a directory
 /api/health
 /api/sponsor               GET: is it up. POST { transaction }: co-sign and send
+/api/actions/adopt         Solana Action: adopt straight onto Solana
+/api/actions/care/[pet]    Solana Action: the four cares, owner only
+/api/actions/icon          a square card for an Action (?pet=)
+/actions.json              /adopt and /pet/* unfurl as those Actions
+(game)/pet/[id]/opengraph-image, /opengraph-image   share cards
 ```
 
 Redirects: `/market` and anything under it go to `/inventory`. `/guilds/*`

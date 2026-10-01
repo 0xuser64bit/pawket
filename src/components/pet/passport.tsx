@@ -25,7 +25,6 @@ import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
-import { blinkHref } from "@/server/actions";
 import { formatUtcDate } from "@/lib/utils/format";
 import { OwnerActions } from "./owner-actions";
 import { ShareButton } from "./share-button";
@@ -85,15 +84,11 @@ export function Passport({ onChain, now }: { onChain: PetOnChain; now: Date }) {
             <Row gap={2} wrap>
               <OwnerActions owner={pet.owner} address={pet.address} name={pet.name} />
               <ShareButton name={pet.name} />
-              <a
-                className="pk-btn pk-btn--ghost pk-btn--sm"
-                href={blinkHref(`/api/actions/care/${pet.address}`)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span>Open as a Blink</span>
-              </a>
             </Row>
+            <p className="caption pk-faint" style={{ marginTop: "calc(-1 * var(--space-2))" }}>
+              Shared, this link is also a Solana Action: in a Blink-aware wallet it opens as {pet.name}&apos;s
+              card, where the owner can care without coming here.
+            </p>
 
             <Card>
               <Stack gap={3}>

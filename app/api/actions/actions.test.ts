@@ -17,7 +17,13 @@ const ACCOUNT = "11111111111111111111111111111112";
 describe("Solana Actions", () => {
   it("names its routes and answers with the spec's headers", async () => {
     const rules = await actionsJson();
-    expect(await rules.json()).toEqual({ rules: [{ pathPattern: "/api/actions/**", apiPath: "/api/actions/**" }] });
+    expect(await rules.json()).toEqual({
+      rules: [
+        { pathPattern: "/adopt", apiPath: "/api/actions/adopt" },
+        { pathPattern: "/pet/*", apiPath: "/api/actions/care/*" },
+        { pathPattern: "/api/actions/**", apiPath: "/api/actions/**" },
+      ],
+    });
     for (const response of [rules, OPTIONS(), await adoptCard(at("/api/actions/adopt"))]) {
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
       expect(response.headers.get("X-Action-Version")).toBe("2.4");

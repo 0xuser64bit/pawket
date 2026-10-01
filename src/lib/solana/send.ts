@@ -140,6 +140,39 @@ export async function sendPawket({
     signed = await partiallySignTransactionMessageWithSigners(message);
   }
 
+  return land(rpc, signed, onStage, sponsor !== null);
+}
+
+/**
+ * A transaction Pawket's server built and signed first — a keepsake, whose
+ * card signs its own creation. The wallet signs as the owner, the message is
+ * checked to be the one the server signed, and it goes the same way.
+ */
+export async function sendPrepared({
+  rpc,
+  owner,
+  prepare,
+  onStage,
+}: Pick<SendOptions, "rpc" | "owner" | "onStage"> & {
+  /** Fetches the server's transaction, as base64. */
+  prepare: () => Promise<string>;
+}): Promise<SendResult> {
+  onStage?.("signing");
+  const prepared = decode(await prepare());
+  const signed = await walletSigns(owner, prepared);
+  if (!same(signed.messageBytes, prepared.messageBytes)) {
+    throw new Error("Your wallet changed the transaction, so Pawket's signature no longer fits it. Nothing was sent.");
+  }
+  return land(rpc, signed, onStage, true);
+}
+
+/** Sends with preflight on — one that would fail lands nothing — and waits for Solana. */
+async function land(
+  rpc: SendRpc,
+  signed: Transaction,
+  onStage: SendOptions["onStage"],
+  sponsored: boolean,
+): Promise<SendResult> {
   onStage?.("sending");
   const wire = getBase64EncodedWireTransaction(signed);
   const signature = getSignatureFromTransaction(signed);
@@ -154,5 +187,5 @@ export async function sendPawket({
     throw Object.assign(error instanceof Error ? error : new Error(String(error)), { signature });
   }
   onStage?.(outcome);
-  return { signature, outcome, sponsored: sponsor !== null };
+  return { signature, outcome, sponsored };
 }

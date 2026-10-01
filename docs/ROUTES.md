@@ -21,6 +21,8 @@ Built today:
 /api/actions/adopt         Solana Action: adopt straight onto Solana
 /api/actions/care/[pet]    Solana Action: the four cares, owner only
 /api/actions/icon          a square card for an Action (?pet=)
+/api/keepsake/[pet]        GET: the card's metadata, live. POST { account }: its creation, owner only
+/api/keepsake/collection   the collection's metadata
 /actions.json              /adopt and /pet/* unfurl as those Actions
 (game)/pet/[id]/opengraph-image, /opengraph-image   share cards
 ```

@@ -22,6 +22,7 @@ app/                        routes, layouts, route handlers (Server by default)
                             anything else: the browser pet's record
   api/health/route.ts       build version + active cluster
   api/sponsor/route.ts      signs Pawket transactions first, as fee payer
+  api/keepsake/             a pet's card in its owner's wallet (Metaplex Core)
 src/components/             UI; "use client" only at interactive leaves
   pk/                       design system
   wallet/                   connect sheet, wallet chip, address line, tx receipt

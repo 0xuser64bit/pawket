@@ -14,6 +14,7 @@ import {
   type Address,
   type Instruction,
   type KeyPairSigner,
+  type Transaction,
   type TransactionSigner,
 } from "@solana/kit";
 import { getPublicEnv } from "@/config/env";
@@ -66,39 +67,43 @@ export async function sponsorState(): Promise<SponsorState> {
 const HOUR = 60 * 60 * 1000;
 /** Shared by every route that sponsors. */
 export const actionLimit = createLimiter(240, HOUR);
-// Rent is the real cost, so adoption is the scarce one. A venue shares one
-// IP between many players, so the per-key limit is generous.
-const adoptionsPerKey = createLimiter(20, HOUR);
-const everyAdoption = createLimiter(120, HOUR);
+// Rent is the real cost — a new pet, a keepsake — so it is the scarce one. A
+// venue shares one IP between many players, so the per-key limit is generous.
+const rentPerKey = createLimiter(20, HOUR);
+const allRent = createLimiter(120, HOUR);
 
 /**
- * Whether one more sponsored adoption may go, for this caller key. Keys are
- * cheap to change (a new keypair, a proxy's shared IP), so a cap on all
- * adoptions bounds the worst case: 120 an hour is under 0.5 SOL of rent.
+ * Whether the sponsor may pay one more rent, for this caller key. Keys are
+ * cheap to change (a new keypair, a proxy's shared IP), so a cap on all of
+ * it bounds the worst case: 120 an hour is under 0.5 SOL.
  */
-export function mayAdopt(key: string): boolean {
-  return adoptionsPerKey(key) && everyAdoption("all");
+export function mayPayRent(key: string): boolean {
+  return rentPerKey(key) && allRent("all");
+}
+
+/** A transaction the sponsor builds and signs first, as fee payer, with any signer the instructions carry. */
+export async function signedBySponsor(sponsor: KeyPairSigner, instructions: Instruction[]): Promise<Transaction> {
+  const { value: blockhash } = await sponsorRpc().getLatestBlockhash({ commitment: "confirmed" }).send();
+  const message = pipe(
+    createTransactionMessage({ version: "legacy" }),
+    (m) => setTransactionMessageFeePayerSigner(sponsor, m),
+    (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
+    (m) => appendTransactionMessageInstructions(instructions, m),
+  );
+  return partiallySignTransactionMessageWithSigners(message);
 }
 
 /**
- * A transaction the sponsor builds and signs first, for a player who signs
- * it after — a Solana Action. The player is a no-op stand-in here; the same
- * policy holds as for one the player signed first.
+ * Pawket instructions for a player who signs after — a Solana Action. The
+ * player is a no-op stand-in here; the same policy holds as for one the
+ * player built.
  */
 export async function sponsoredForPlayer(
   sponsor: KeyPairSigner,
   player: Address,
   instructions: (signers: { owner: TransactionSigner; payer: TransactionSigner }) => Instruction[],
 ): Promise<string> {
-  const owner = createNoopSigner(player);
-  const { value: blockhash } = await sponsorRpc().getLatestBlockhash({ commitment: "confirmed" }).send();
-  const message = pipe(
-    createTransactionMessage({ version: "legacy" }),
-    (m) => setTransactionMessageFeePayerSigner(sponsor, m),
-    (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
-    (m) => appendTransactionMessageInstructions(instructions({ owner, payer: sponsor }), m),
-  );
-  const transaction = await partiallySignTransactionMessageWithSigners(message);
+  const transaction = await signedBySponsor(sponsor, instructions({ owner: createNoopSigner(player), payer: sponsor }));
   const check = checkSponsorable(transaction, sponsor.address);
   if (!check.ok) throw new Error(check.reason);
   return getBase64EncodedWireTransaction(transaction);

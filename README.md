@@ -26,6 +26,8 @@ the network fees, so a wallet with no SOL can play.
 | `finish_round` | the playground's daily bonus: +25 XP once per UTC day |
 | `dress` | one thing to wear, or nothing. Looks only |
 
+| Keepsake (Metaplex Core) | a card for the pet in its owner's wallet, in Pawket's collection [`5t7dq…PfEC9`](https://explorer.solana.com/address/5t7dqAEwdcG6C38XtHsMXbtwWyWZQFDqkjPy7JWPfEC9?cluster=devnet): frozen for good (`PermanentFreezeDelegate`), with the pet's address, species and personality as attributes |
+
 Decay is lazy: stored vitals are their value at `stats_updated_at`, and the
 program decays them forward with the same integer arithmetic the web app
 uses to draw them. One scripted life (`src/lib/game/lockstep.txt`) is
@@ -39,6 +41,13 @@ as the owner (a transaction that already carries a signature is one wallets
 such as Phantom sign as it is, instead of rewriting it), and the app sends
 it with preflight on. A care still cooling down is refused before anyone
 pays for it.
+
+**Keepsakes.** On its Passport, a pet's owner can keep the pet's card in
+their wallet. The server builds the `CreateV2` — the sponsor pays and signs
+as the collection's authority, the card signs its own creation — and the
+owner's wallet signs last, so a card never lands where nobody asked for it.
+Its key comes from the sponsor's and the pet's address: one card per pet,
+found without an indexer. It cannot be sold or sent; there is no market.
 
 **Blinks.** `/adopt` and every `/pet/<address>` link are also Solana
 Actions (`/actions.json`): in a Blink-aware client they unfurl as an
@@ -57,7 +66,8 @@ adopt or care without visiting the site. Pawket pays those fees too.
   wardrobe that changes looks and nothing else.
 - **Guilds** — the written boundary for a layer that does not exist yet:
   nothing to join, buy or swap.
-- **`/pet/<address>`** — a pet's public Passport, server-rendered from chain.
+- **`/pet/<address>`** — a pet's public Passport, server-rendered from chain;
+  its owner can keep the pet's card in their wallet from here.
 
 ## Quickstart
 

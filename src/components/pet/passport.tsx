@@ -26,6 +26,8 @@ import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { formatUtcDate } from "@/lib/utils/format";
+import type { Keepsake } from "@/server/keepsake";
+import { KeepsakeCard } from "./keepsake";
 import { OwnerActions } from "./owner-actions";
 import { ShareButton } from "./share-button";
 
@@ -36,7 +38,19 @@ const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
  * on Paper, what it is on chain. Read live from the program's accounts at
  * request time — nothing here is cached, kept or guessed by Pawket.
  */
-export function Passport({ onChain, now }: { onChain: PetOnChain; now: Date }) {
+export function Passport({
+  onChain,
+  now,
+  keepsake,
+  canKeep,
+}: {
+  onChain: PetOnChain;
+  now: Date;
+  /** The pet's card, where keepsakes are on. */
+  keepsake: Keepsake | null;
+  /** Whether Pawket can pay for a new card right now. */
+  canKeep: boolean;
+}) {
   const { pet, passport } = onChain;
   const record = toCompanionRecord(onChain);
   const projected = projectGuestPet(record, now);
@@ -90,6 +104,10 @@ export function Passport({ onChain, now }: { onChain: PetOnChain; now: Date }) {
               card, where the owner can care without coming here.
             </p>
 
+            {keepsake && (keepsake.made || canKeep) ? (
+              <KeepsakeCard owner={pet.owner} pet={pet.address} name={pet.name} made={keepsake.made} />
+            ) : null}
+
             <Card>
               <Stack gap={3}>
                 <Meter
@@ -141,6 +159,7 @@ export function Passport({ onChain, now }: { onChain: PetOnChain; now: Date }) {
                 <Fact k="Pet account" value={pet.address} cluster={cluster} />
                 <Fact k="Passport" value={passport.address} cluster={cluster} />
                 <Fact k="Program" value={PAWKET_PROGRAM_ID} cluster={cluster} />
+                {keepsake?.made ? <Fact k="Keepsake" value={keepsake.address} cluster={cluster} /> : null}
                 <div className="pk-receipt__row">
                   <span className="pk-receipt__k">Adopted</span>
                   <span className="pk-receipt__v">{formatUtcDate(record.createdAt)}</span>

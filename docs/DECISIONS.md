@@ -3,6 +3,27 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: A pet's keepsake is a frozen Metaplex Core card
+
+**Context:** Q1 asked for an NFT standard because the vision wants pets
+people collect and show. Pets are `Pet` PDAs, and the program is the
+authority for everything about them; there is no market (Q5) and nothing
+should invite one.
+**Decision:** Metaplex Core, as a keepsake rather than the pet: one asset
+per pet on Solana, in Pawket's collection, held by the pet's owner, with a
+`pet` attribute pointing at the PDA. It is frozen for good
+(`PermanentFreezeDelegate`, held by the collection), so it cannot be sold
+or sent. The owner asks for it on the Passport; the server builds it, the
+sponsor pays the rent, and the owner's wallet signs last. Its key derives
+from the sponsor's and the pet's address, so there is one per pet and no
+indexer is needed to find it. No program change: the Core program is
+called from the transaction, not from Pawket's program.
+**Consequence:** Q1 is decided for this version: Core, PDA stays the
+authority, the asset is a soulbound pointer. The sponsor key is now also
+the collection's update authority, so rotating it moves the collection
+too. Copy says "card" or "keepsake", never NFT. A tradeable asset waits on
+Q5.
+
 ## 2026-10: A pet can live on Solana, and Pawket pays the fees
 
 **Context:** The product's position is a pet whose care history is a
@@ -28,7 +49,7 @@ custody language now distinguishes a player's keys (never) from the app's
 own sponsor (server-only, Pawket instructions only, not the upgrade
 authority). Carrying a pet resets its level and streak, said before the
 wallet opens. Rate limits are per serverless instance. There is no NFT: Q1
-stays open.
+stays open (later decided: the keepsake, above).
 
 ## 2026-10: The Park is a place
 

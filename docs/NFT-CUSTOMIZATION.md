@@ -1,6 +1,6 @@
 # Pawket — Pets as NFTs & Customization
 
-**Status:** SPEC. Today pets are PDA records (`Pet`/`PetPassport`), not NFTs. This file defines the migration to "every pet begins as a unique NFT" without breaking the current program or forcing agents to guess. Human decision Q1 (NFT standard) gates on-chain work; off-chain shapes below are buildable now.
+**Status:** SPEC, part built. Pets are PDA records (`Pet`/`PetPassport`). Since 2026-10 a pet on Solana can have a keepsake: a frozen Metaplex Core asset in Pawket's collection with a `pet` attribute (the "Core asset carries a PDA attribute" link below; see `SOLANA.md` → Keepsakes). It is not tradeable; everything else here is still spec. This file defines the migration to "every pet begins as a unique NFT" without breaking the current program or forcing agents to guess. Human decision Q1 (NFT standard) gates on-chain work; off-chain shapes below are buildable now.
 
 ## 1. Recommendation (founding-engineer take)
 
@@ -40,8 +40,8 @@ pick base (species) → name (2–24 UTF-8 bytes, trim→PDA) → personality �
 
 ## 5. Copy rules (honest UI)
 
-- Pre-NFT: say **"on-chain pet record"**, never "NFT" / "owned NFT".
-- Post-NFT: say "Pet NFT · Core asset · [collection]" with Explorer link to mint **and** PDA.
+- The pet: say **"on Solana"** / "on-chain pet record", never "NFT" / "owned NFT".
+- The keepsake: say "card" or "keepsake"; on the record, its address with an Explorer link beside the PDA's.
 - Preview equips: banner "Preview — appearance not saved on-chain yet."
 - No "rare = stronger" language anywhere; rarity is look-only.
 

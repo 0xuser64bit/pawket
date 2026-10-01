@@ -106,9 +106,10 @@ It signs before the player and does not send: the client sends, with
 preflight on, so a transaction that would fail lands nothing and costs the
 float nothing.
 
-Adoptions are limited to 20 an hour per caller (an IP for the web app, a
-wallet for a Blink) and 120 an hour in all, which bounds the worst case to
-under 0.5 SOL of rent an hour; everything else to 240 an hour per caller.
+Rent — an adoption or a keepsake — is limited to 20 an hour per caller (an
+IP for the web app, a wallet for a Blink) and 120 an hour in all, which
+bounds the worst case to under 0.5 SOL an hour; everything else to 240 an
+hour per caller.
 The limits live in one process's memory. Below 0.05 SOL, and on mainnet,
 the sponsor is off and players pay. GET says
 whether it is up; pages that say "Pawket pays" read the same state
@@ -128,11 +129,41 @@ Blink-aware client renders them (Phantom on X, wallets' own browsers):
 `/api/actions/adopt`, `/pet/*` → `/api/actions/care/*`. Every response has
 the spec's CORS headers, `X-Action-Version: 2.4` and `X-Blockchain-Ids`
 (the cluster's genesis). Icons are square cards from
-`/api/actions/icon[?pet=]`. A transaction the sponsor signs first passes
-`checkSponsorable` in its `before-player` mode; Blink adoptions are limited
+`/api/actions/icon[?pet=]`. A transaction the sponsor builds passes the
+same `checkSponsorable` as one the player built; Blink adoptions are limited
 per wallet, because a Blink client may proxy everyone through one address.
 dial.to, Dialect's interstitial, was paused when this was built, so the app
 links no renderer: the share link is the Blink.
+
+## Keepsakes (Metaplex Core)
+
+A pet on Solana can have one card in its owner's wallet: a Metaplex Core
+asset (`CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d`) in Pawket's
+collection, devnet `5t7dqAEwdcG6C38XtHsMXbtwWyWZQFDqkjPy7JWPfEC9`, whose
+update authority is the sponsor. `src/lib/solana/core.ts` encodes
+`CreateV2` and `CreateCollectionV2` from mpl-core's IDL (`core.test.ts`
+locks the bytes). Each card carries:
+
+- `PermanentFreezeDelegate { frozen: true }`, held by the collection: it
+  cannot be transferred or burned. There is no market, so it has no price.
+- `Attributes`: `pet` (the `Pet` account), `species`, `personality`.
+- URI `/api/keepsake/<pet>`: metadata built live from the pet's record —
+  level, cares, longest run — with the pet's square card as the image.
+
+`POST /api/keepsake/<pet> { account }` (owner only, sponsor up, card not
+made yet) returns the creation signed by the sponsor (fee, rent, the
+collection's say-so) and by the card's key; the owner's slot is open, and
+`sendPrepared` in `send.ts` has the wallet sign it, checks the message is
+unchanged, and sends with preflight on. The answer is shaped as a Solana
+Action's. The card's key is `HMAC-SHA256(sponsor secret, "pawket keepsake
+<pet>")`, so each pet has one card at one address, a second creation fails
+at preflight, and the Passport finds it with one read (`readKeepsake`).
+Rotating the sponsor key moves where new cards are looked for; the
+collection's authority would have to move with it.
+
+The collection was made once with
+`pnpm dlx tsx scripts/keepsake-collection.mts https://pawket-pets.vercel.app`;
+its own key signs only its creation and is not kept.
 
 ## Devnet workflow
 
@@ -146,9 +177,9 @@ solana program deploy target/deploy/pawket.so \
 
 The program keypair lives in `.keys/` (ignored) and is only needed for the
 first deploy; upgrades are signed by the deploy wallet. Then
-`pnpm e2e:devnet` (the path through the sponsor code) and
-`PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts` (the same through the screens,
-with `e2e/test-wallet.ts`). Top the sponsor up from the deploy wallet with
+`pnpm e2e:devnet` (the path through the sponsor code, ending with a
+keepsake) and `PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts` (the same through
+the screens, with `e2e/test-wallet.ts`). Top the sponsor up from the deploy wallet with
 `solana transfer <sponsor> 1 --url devnet`.
 
 ## Localnet (optional)

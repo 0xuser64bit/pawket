@@ -28,7 +28,7 @@ type Seed = "pet" | "passport";
 
 The pre-reset `register_item` / `record_purchase` / `GameConfig` are deleted from the program; a store, if one is ever built, is a new design (Q5).
 
-**Needed program work (future, human-gated):** NFT linkage (`petMint` on `Pet` or Core collection with PDA attribute), on-chain equip (or explicit off-chain-equip decision), marketplace escrow (or explicit fixed-price treasury-signer decision). See `OPEN-QUESTIONS.md` Q1/Q5. Agents: spec against the current PDAs; gate new instructions behind deploy-plan tasks.
+**Needed program work (future, human-gated):** NFT linkage — done without a program change as a frozen Core keepsake with a `pet` attribute (`src/server/keepsake.ts`), on-chain equip (or explicit off-chain-equip decision), marketplace escrow (or explicit fixed-price treasury-signer decision). See `OPEN-QUESTIONS.md` Q1/Q5. Agents: spec against the current PDAs; gate new instructions behind deploy-plan tasks.
 
 ## 3. Core TypeScript (normative sketches)
 

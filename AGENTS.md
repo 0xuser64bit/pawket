@@ -36,9 +36,12 @@ kept when the player presses "Record the round". `/pet/<address>` is the
 public Passport, server-rendered from chain; `/park` is every pet the
 program keeps, read live. Guilds is the written boundary in
 `src/lib/guilds/boundary.ts`: nothing to join, buy or swap. There is no
-market and no NFT. Do not put a simulated price, treasury, member count or
-lobby on a screen, and call a pet "on Solana" only when it was read from
-chain.
+market. A pet on Solana can have a keepsake: a card in its owner's wallet, a
+Metaplex Core asset in Pawket's collection, frozen for good, that points at
+the pet (`src/lib/solana/core.ts`, `src/server/keepsake.ts`). The pet stays
+the program's account; the card cannot be sold or sent. Do not put a
+simulated price, treasury, member count or lobby on a screen, and call a pet
+"on Solana" only when it was read from chain.
 
 ## Read first
 
@@ -79,6 +82,8 @@ One home per fact. If two files disagree, the left column wins.
 | Transaction lifecycle + UX copy   | `src/lib/solana/transactions.ts`    |
 | What the sponsor will sign        | `src/lib/solana/sponsor.ts`         |
 | Sponsor key, float, availability  | `src/server/sponsor.ts`             |
+| Keepsake instructions, collection | `src/lib/solana/core.ts` (Metaplex Core) |
+| Keepsake key, metadata, creation  | `src/server/keepsake.ts`            |
 | Server-side chain reads           | `src/server/solana.ts`              |
 | The pet a screen draws            | `src/lib/companion/use-companion.ts`|
 | Env names and defaults            | `.env.example` + `src/config/env.ts`|
@@ -130,7 +135,9 @@ PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts   # the same path through the real sc
 - **No custody.** Never ask for, log, upload, or persist a player's seed
   phrase or key. Wallets sign. The only key the app holds is its own devnet
   sponsor (`SPONSOR_KEYPAIR`, server-only), which signs only what
-  `checkSponsorable` allows and is not the program's upgrade authority.
+  `checkSponsorable` allows, and the keepsakes `src/server/keepsake.ts`
+  builds (it is the collection's authority). It is not the program's
+  upgrade authority.
 - **No hand-rolled instruction bytes in components.** Use
   `src/lib/solana/instructions.ts`. Never invent discriminators;
   `program.test.ts` holds them to the IDL.
@@ -148,6 +155,17 @@ PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts   # the same path through the real sc
   leaves. Never fetch in `useEffect` what a Server Component or `useRequest`
   can own.
 - **Honest UI.** "On Solana" only for a pet read from chain; a browser pet
-  is "in this browser". No "owned"/NFT/mainnet language. "Pawket pays the
-  fee" only while `sponsorState()` says it does.
+  is "in this browser". No "owned"/NFT/mainnet language: a keepsake is a
+  "card", shown only once it is read from chain. "Pawket pays the fee" only
+  while `sponsorState()` says it does.
 - **Devnet default.** Never target mainnet in code; cluster comes from env.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

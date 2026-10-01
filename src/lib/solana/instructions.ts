@@ -39,7 +39,7 @@ const utf8 = getUtf8Encoder();
  */
 export type SignerInput = string | Address | TransactionSigner;
 
-function concatBytes(...parts: ArrayLike<number>[]): Uint8Array {
+export function concatBytes(...parts: ArrayLike<number>[]): Uint8Array {
   const total = parts.reduce((sum, p) => sum + p.length, 0);
   const out = new Uint8Array(total);
   let offset = 0;
@@ -66,7 +66,7 @@ function encodeVariant(
   return Uint8Array.from(u8.encode(value));
 }
 
-function signerMeta(
+export function signerMeta(
   value: SignerInput,
   role: AccountRole.READONLY_SIGNER | AccountRole.WRITABLE_SIGNER,
   label: string,

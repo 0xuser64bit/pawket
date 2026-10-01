@@ -4,7 +4,9 @@ import path from "node:path";
 import {
   createKeyPairSignerFromBytes,
   createSolanaRpc,
+  fetchEncodedAccount,
   generateKeyPairSigner,
+  getAddressDecoder,
   type KeyPairSigner,
 } from "@solana/kit";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -17,7 +19,9 @@ import {
   getFinishRoundInstruction,
 } from "./instructions";
 import { derivePassportPda, derivePetPda } from "./pda";
-import { sendPawket } from "./send";
+import { keepsakeTransaction, readKeepsake } from "@/server/keepsake";
+import { MPL_CORE_PROGRAM_ID } from "./core";
+import { sendPawket, sendPrepared } from "./send";
 import { cosign } from "./sponsor";
 import { extractProgramErrorCode } from "./transactions";
 
@@ -52,6 +56,7 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
   beforeAll(async () => {
     const raw = process.env.SPONSOR_KEYPAIR ?? readFileSync(path.join(process.cwd(), ".keys/sponsor.json"), "utf8");
     sponsor = await createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(raw) as number[]));
+    process.env.SPONSOR_KEYPAIR = raw; // the keepsake's key comes from the sponsor's
     owner = await generateKeyPairSigner();
     pet = (await derivePetPda(owner.address, name)).address;
     passport = (await derivePassportPda(pet)).address;
@@ -114,5 +119,27 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
   it("finds the pet among its owner's", async () => {
     const mine = await fetchPetsOnChain(rpc, owner.address);
     expect(mine.map((entry) => entry.pet.address)).toEqual([pet]);
+  });
+
+  it("keeps the pet's card in the owner's wallet, frozen, once", async () => {
+    const onChain = await fetchPetOnChain(rpc, pet);
+    const result = await sendPrepared({ rpc, owner, prepare: () => keepsakeTransaction(sponsor, onChain!) });
+    expect(result).toMatchObject({ outcome: "confirmed", sponsored: true });
+
+    const keepsake = await readKeepsake(pet);
+    expect(keepsake?.made).toBe(true);
+    const account = await fetchEncodedAccount(rpc, keepsake!.address);
+    expect(account.exists && account.programAddress).toBe(MPL_CORE_PROGRAM_ID);
+    // AssetV1: its key (1), then the owner.
+    const data = account.exists ? account.data : new Uint8Array();
+    expect(data[0]).toBe(1);
+    expect(getAddressDecoder().decode(data.subarray(1, 33))).toBe(owner.address);
+    expect((await rpc.getBalance(owner.address).send()).value).toBe(0n);
+
+    // The card's address is taken: a second one fails at preflight, unpaid.
+    const again = await sendPrepared({ rpc, owner, prepare: () => keepsakeTransaction(sponsor, onChain!) }).catch(
+      (error: unknown) => error,
+    );
+    expect(again).toBeInstanceOf(Error);
   });
 });

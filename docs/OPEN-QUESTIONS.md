@@ -8,6 +8,7 @@
 **Context:** pets are PDA records today; vision requires unique NFTs. Core fits 1:1 assets + attributes/plugins with lower rent than Token Metadata stacks; PDA stays stats authority, NFT is identity wrapper.
 **Alternatives:** Token Metadata + editions (heavier; keep if marketplace tooling demands); compressed NFTs (cheaper at scale, higher indexer cost — revisit at 100k+ pets); pure-PDA (simplest, fails collectibility vision).
 **Decision needed:** standard + collection plan + PDA↔mint link direction. Until then: build off-chain `PetMetadata` shape (mint optional) so migration is mechanical.
+**Decided for this version (2026-10, `DECISIONS.md`):** Metaplex Core; one frozen keepsake per pet in Pawket's collection, linked by a `pet` attribute (asset → PDA); the PDA stays the authority. Still open: tradeable cosmetics, and whether a pet's asset is ever transferable (with Q5).
 
 ## Q2 — Backend DB + hosting
 

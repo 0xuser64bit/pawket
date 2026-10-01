@@ -1,6 +1,6 @@
 # Pawket — Roadmap (phased, agent-sequenced)
 
-**Status (2026-10):** M0 and M1 are done: the program is on devnet, and adopt, care, the daily round and the wardrobe are signed, sponsored transactions with receipts, in lockstep with the browser math. From M2, equip is on chain (looks only) and the avatar is the 3D room; NFTs wait on Q1. From M4, the Park and the public Passport ship; real-time play does not. M3, M5–M7 stay spec until their open questions close. Do not rebuild the removed market and guild-swap screens as fixtures.
+**Status (2026-10):** M0 and M1 are done: the program is on devnet, and adopt, care, the daily round and the wardrobe are signed, sponsored transactions with receipts, in lockstep with the browser math. From M2, equip is on chain (looks only) and the avatar is the 3D room; a pet on Solana can have a frozen Metaplex Core keepsake in its owner's wallet (Q1, decided for this version); tradeable assets wait on Q5. From M4, the Park and the public Passport ship; real-time play does not. M3, M5–M7 stay spec until their open questions close. Do not rebuild the removed market and guild-swap screens as fixtures.
 **Order is normative.** Do not skip ahead to Guild Launches before the pet loop retains.
 
 ```text

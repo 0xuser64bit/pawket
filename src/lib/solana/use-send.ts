@@ -3,9 +3,9 @@
 import { useCallback, useState } from "react";
 import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
-import type { Address } from "@solana/kit";
+import type { Address, TransactionSigner } from "@solana/kit";
 import { rpc, wallet } from "./browser-client";
-import { sendPawket, type SendOptions, type SendResult } from "./send";
+import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
 import { isActiveStage, toUserFacingError, type TransactionStage } from "./transactions";
 
 export interface SponsorStatus {
@@ -48,23 +48,16 @@ export function usePawketSend() {
   const connected = useConnectedWallet(wallet);
   const [tx, setTx] = useState<TxState>({ stage: "idle" });
 
-  const send = useCallback(
-    async (label: string, instructions: SendOptions["instructions"]): Promise<SendResult | null> => {
+  const run = useCallback(
+    async (label: string, go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void) => Promise<SendResult>) => {
       const signer = connected?.signer;
       if (!signer) {
         setTx({ stage: "failed", label, error: "This wallet cannot sign. Nothing was sent." });
         return null;
       }
       setTx({ stage: "signing", label });
-      const sponsor = await fetchSponsor();
       try {
-        const result = await sendPawket({
-          rpc,
-          owner: signer,
-          sponsor: sponsor.available && sponsor.address ? (sponsor.address as Address) : null,
-          instructions,
-          onStage: (stage) => setTx((current) => ({ ...current, stage })),
-        });
+        const result = await go(signer, (stage) => setTx((current) => ({ ...current, stage })));
         setTx({ stage: result.outcome, label, signature: result.signature, sponsored: result.sponsored });
         return result;
       } catch (error) {
@@ -80,8 +73,48 @@ export function usePawketSend() {
     [connected],
   );
 
+  const send = useCallback(
+    (label: string, instructions: SendOptions["instructions"]): Promise<SendResult | null> =>
+      run(label, async (owner, onStage) => {
+        const sponsor = await fetchSponsor();
+        return sendPawket({
+          rpc,
+          owner,
+          sponsor: sponsor.available && sponsor.address ? (sponsor.address as Address) : null,
+          instructions,
+          onStage,
+        });
+      }),
+    [run],
+  );
+
+  /** A transaction Pawket's server builds at `path` for this wallet (POST { account }), signed here and sent. */
+  const sendFromServer = useCallback(
+    (label: string, path: string): Promise<SendResult | null> =>
+      run(label, (owner, onStage) =>
+        sendPrepared({
+          rpc,
+          owner,
+          onStage,
+          prepare: async () => {
+            const response = await fetch(path, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ account: owner.address }),
+            });
+            const body = (await response.json().catch(() => ({}))) as { transaction?: string; message?: string };
+            if (!response.ok || !body.transaction) {
+              throw new RelayError(body.message ?? "Pawket could not prepare it. Nothing was sent.", response.status);
+            }
+            return body.transaction;
+          },
+        }),
+      ),
+    [run],
+  );
+
   const reset = useCallback(() => setTx({ stage: "idle" }), []);
-  return { tx, send, reset, busy: isActiveStage(tx.stage) };
+  return { tx, send, sendFromServer, reset, busy: isActiveStage(tx.stage) };
 }
 
 export type PawketSender = ReturnType<typeof usePawketSend>;

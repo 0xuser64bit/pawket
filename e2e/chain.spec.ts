@@ -4,7 +4,7 @@ import { createTestWallet } from "./test-wallet";
 /**
  * The on-chain path through the real screens, against devnet: a pet adopted
  * in the browser is carried onto Solana by a wallet holding no SOL, fed
- * there, and shows up on its public record. Opt-in, because it spends the
+ * there, shows up on its public record, and its card goes to the wallet. Opt-in, because it spends the
  * sponsor's devnet float and waits on the network:
  *   PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts
  */
@@ -48,4 +48,12 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await expect(page.getByText("On the record")).toBeVisible();
   await expect(page.getByText("Fed", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: `Care for ${name}` })).toBeVisible();
+
+  // The keepsake: a card in the owner's wallet, made by the server, signed here.
+  await page.getByRole("button", { name: `Keep ${name}'s card` }).click();
+  await expect(page.getByText("Recorded on Solana")).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText("Paid by Pawket")).toBeVisible();
+  // Read again from chain, the record now lists it.
+  await expect(page.getByText("Keepsake", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: `Keep ${name}'s card` })).toHaveCount(0);
 });

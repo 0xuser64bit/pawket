@@ -3894,3 +3894,20 @@ li {
   scale: 1.7;
   translate: 0 18%;
 }
+
+/* The wardrobe's mirror: the pet large, wearing what is on — or what is
+   being tried on, before a tap makes it so. */
+.pk-mirror {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  text-align: center;
+}
+.pk-mirror__glass {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+}
+.pk-mirror .pk-pet--lg {
+  width: min(100%, 360px);
+}

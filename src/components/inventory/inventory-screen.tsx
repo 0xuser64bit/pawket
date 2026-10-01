@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,6 +8,7 @@ import {
   ButtonLink,
   Card,
   Chip,
+  Columns,
   EmptyState,
   ItemTile,
   PetFrame,
@@ -31,6 +32,7 @@ import { readGuestPetSnapshot, saveGuestPet } from "@/lib/guest/storage";
 import { toCompanionRecord, wearableSlot } from "@/lib/solana/accounts";
 import { getDressInstruction } from "@/lib/solana/instructions";
 import { usePawketSend } from "@/lib/solana/use-send";
+import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 
 const TABS = [
   { key: "pet", label: "Pets", href: "/inventory" },
@@ -51,6 +53,11 @@ export function InventoryScreen({ tab }: { tab: "pet" | "wardrobe" }) {
   const worn = findWearable(pet?.wearing);
   const [notice, setNotice] = useState<string>();
   const [connecting, setConnecting] = useState(false);
+  /** A piece being tried on in the mirror (null: nothing on), before it is worn. */
+  const [trying, setTrying] = useState<string | null | undefined>(undefined);
+  const room = useRef<HTMLDivElement>(null);
+  useEyesFollow(room);
+  const shown = trying !== undefined ? trying : (pet?.wearing ?? null);
 
   async function wear(id: string) {
     if (active && pet) {
@@ -186,41 +193,97 @@ export function InventoryScreen({ tab }: { tab: "pet" | "wardrobe" }) {
         ) : null}
 
         {ready && tab === "wardrobe" ? (
-          <Stack gap={3}>
-            <SectionLabel count={`${WEARABLES.length}`}>Free to wear</SectionLabel>
-            <p className="body-sm pk-muted">
-              One at a time. A look is a description beside your pet. It does not change a vital, a
-              cooldown, or a score.{active ? " On Solana, changing it is a signed record; Pawket pays the fee." : ""}
-            </p>
-            <div className="pk-tiles">
-              {WEARABLES.map((item) => {
-                const on = pet?.wearing === item.id;
-                const tile = (
-                  <ItemTile name={item.name} kind={item.kind} art={<WearableArt id={item.id} className="pk-tile__piece" />} equipped={on} />
-                );
-                if (!pet) return <div key={item.id}>{tile}</div>;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="pk-tile-hit"
-                    aria-pressed={on}
-                    disabled={sender.busy}
-                    onClick={() => void wear(item.id)}
-                  >
-                    {tile}
-                  </button>
-                );
-              })}
+          pet ? (
+            <div ref={room}>
+              <Columns
+                pin
+                split="portrait"
+                first={
+                  <div className="pk-mirror">
+                    <div className="pk-mirror__glass" data-eyes>
+                      <PetFrame
+                        {...petLook({ ...pet, wearing: shown }, projectGuestPet(pet).mood)}
+                        sky={SPECIES_SKY[pet.species]}
+                        size="lg"
+                      />
+                    </div>
+                    <p className="body-sm pk-muted" aria-live="polite">
+                      {trying !== undefined && trying !== pet.wearing
+                        ? trying
+                          ? `Trying on the ${findWearable(trying)?.name.toLowerCase()}. Tap it to keep it on.`
+                          : `Trying ${pet.name} with nothing on.`
+                        : worn
+                          ? `${pet.name} is wearing the ${worn.name.toLowerCase()}.`
+                          : `${pet.name} is wearing nothing yet.`}
+                    </p>
+                  </div>
+                }
+                second={
+                  <Stack gap={3}>
+                    <SectionLabel count={`${WEARABLES.length}`}>Free to wear</SectionLabel>
+                    <p className="body-sm pk-muted">
+                      One at a time. Point at a piece to try it on; tap it to wear it. It changes how{" "}
+                      {pet.name} looks, never a vital, a cooldown or a score.
+                      {active ? " On Solana, changing it is a signed record; Pawket pays the fee." : ""}
+                    </p>
+                    <div className="pk-tiles" onPointerLeave={() => setTrying(undefined)}>
+                      {WEARABLES.map((item) => {
+                        const on = pet.wearing === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className="pk-tile-hit"
+                            aria-pressed={on}
+                            disabled={sender.busy}
+                            onPointerEnter={() => setTrying(on ? undefined : item.id)}
+                            onFocus={() => setTrying(on ? undefined : item.id)}
+                            onBlur={() => setTrying(undefined)}
+                            onClick={() => {
+                              setTrying(undefined);
+                              void wear(item.id);
+                            }}
+                          >
+                            <ItemTile
+                              name={item.name}
+                              kind={on ? "Wearing" : item.kind}
+                              art={<WearableArt id={item.id} className="pk-tile__piece" />}
+                              equipped={on}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {worn ? (
+                      <div>
+                        <Button
+                          label={`Take off the ${worn.name.toLowerCase()}`}
+                          tone="ghost"
+                          size="sm"
+                          disabled={sender.busy}
+                          onClick={() => void wear(worn.id)}
+                        />
+                      </div>
+                    ) : null}
+                    {active ? <TxReceipt tx={sender.tx} cluster={cluster} /> : null}
+                    <p role="status" className="body-sm" style={{ color: "var(--alarm-text)" }}>
+                      {notice}
+                    </p>
+                  </Stack>
+                }
+              />
             </div>
-            {pet ? null : (
+          ) : (
+            <Stack gap={3}>
+              <SectionLabel count={`${WEARABLES.length}`}>Free to wear</SectionLabel>
+              <div className="pk-tiles">
+                {WEARABLES.map((item) => (
+                  <ItemTile key={item.id} name={item.name} kind={item.kind} art={<WearableArt id={item.id} className="pk-tile__piece" />} />
+                ))}
+              </div>
               <ButtonLink label="Adopt a pet to wear one" href="/adopt" icon="paw" />
-            )}
-            {active ? <TxReceipt tx={sender.tx} cluster={cluster} /> : null}
-            <p role="status" className="body-sm" style={{ color: "var(--alarm-text)" }}>
-              {notice}
-            </p>
-          </Stack>
+            </Stack>
+          )
         ) : null}
       </Stack>
       {connecting ? (

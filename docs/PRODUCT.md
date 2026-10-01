@@ -40,7 +40,7 @@ Explicitly undecided (see `docs/OPEN-QUESTIONS.md`): Q1 beyond the keepsake (tra
 
 ## Brand Commitments
 
-Name: Pawket. Tagline in the shell: "A living companion". The mark, type and palette live in the design system (`docs/DESIGN.md`). Do not invent a new logo or mascot. Binding commitments: welcoming before protocol-savvy, expression over speculation, transparent about what is saved and where.
+Name: Pawket. Tagline in the shell: "A living companion". The mark (a paw print whose centre pad is a heart), type and palette live in `docs/DESIGN.md`. Do not invent another logo or a mascot. Binding commitments: welcoming before protocol-savvy, expression over speculation, transparent about what is saved and where.
 
 ## Evidence on Hand
 

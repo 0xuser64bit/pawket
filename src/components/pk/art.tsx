@@ -157,65 +157,64 @@ export function PetArt({
 }
 
 /**
- * A species' paw print, on a 64px grid with the same 3px outline the pets
- * take. A paw is a fragment, which is why it can stand in for a pet while
- * something loads without spending the pet itself.
+ * A paw print, on a 64px grid with the same 3px outline the pets take. A
+ * paw is a fragment, which is why it can stand in for a pet while something
+ * loads without spending the pet itself — and it is the mark, since the paw
+ * is what Pawket is named for.
  *
- * The four read apart by silhouette alone: a round cluster, the same cluster
- * with claws, a three-toed fan, and a long hind foot.
+ * Four prints, told apart by silhouette alone: the cat's round beans, the
+ * pup's broad pad with claws, the bun's long hind foot, and Pawket's own,
+ * whose centre pad is a heart.
  */
-export function PawArt({
-  form,
-  coat,
-  className,
-}: {
-  form: PetForm;
-  coat?: string;
-  className?: string;
-}) {
-  const base = COATS[form];
-  const fill = coat ?? base.coat;
-  const ink = "var(--edge)";
+export type PawPrint = "cat" | "dog" | "bun" | "heart";
 
+const PAW_COATS: Record<PawPrint, string> = {
+  cat: "var(--sun)",
+  dog: "var(--trim-copper)",
+  bun: "var(--bloom)",
+  heart: "var(--pool)",
+};
+
+export function PawArt({ form, coat, className }: { form: PawPrint; coat?: string; className?: string }) {
+  const fill = coat ?? PAW_COATS[form];
   return (
     <svg viewBox="0 0 64 64" fill="none" preserveAspectRatio="xMidYMid meet" aria-hidden="true" className={className}>
-      <g stroke={ink} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
+      <g stroke="var(--edge)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" fill={fill}>
         {form === "cat" ? (
           <>
-            <ellipse cx="32" cy="43" rx="15" ry="11.5" fill={fill} />
-            <circle cx="14.5" cy="27" r="5.6" fill={fill} />
-            <circle cx="25" cy="20.5" r="6.2" fill={fill} />
-            <circle cx="39" cy="20.5" r="6.2" fill={fill} />
-            <circle cx="49.5" cy="27" r="5.6" fill={fill} />
+            <path d="M32 31c6.4 0 10.4 5.2 13 9.6 2.4 4 4.6 6.2 4.6 9.4 0 4-3.3 6-6.8 6-3.6 0-6.2-1.7-10.8-1.7s-7.2 1.7-10.8 1.7c-3.5 0-6.8-2-6.8-6 0-3.2 2.2-5.4 4.6-9.4 2.6-4.4 6.6-9.6 13-9.6z" />
+            <ellipse cx="12.5" cy="28" rx="5.4" ry="6.6" transform="rotate(-26 12.5 28)" />
+            <ellipse cx="24" cy="16.5" rx="5.8" ry="7.2" transform="rotate(-9 24 16.5)" />
+            <ellipse cx="40" cy="16.5" rx="5.8" ry="7.2" transform="rotate(9 40 16.5)" />
+            <ellipse cx="51.5" cy="28" rx="5.4" ry="6.6" transform="rotate(26 51.5 28)" />
           </>
         ) : null}
-
         {form === "dog" ? (
           <>
-            <ellipse cx="32" cy="44" rx="16" ry="12" fill={fill} />
-            <ellipse cx="13.5" cy="28" rx="5.2" ry="7" fill={fill} transform="rotate(-20 13.5 28)" />
-            <ellipse cx="25" cy="20" rx="5.2" ry="7" fill={fill} transform="rotate(-8 25 20)" />
-            <ellipse cx="39" cy="20" rx="5.2" ry="7" fill={fill} transform="rotate(8 39 20)" />
-            <ellipse cx="50.5" cy="28" rx="5.2" ry="7" fill={fill} transform="rotate(20 50.5 28)" />
-            <path d="M11.6 20.6 10 16.4M24 12.4 23.5 8M40 12.4 40.5 8M52.4 20.6 54 16.4" strokeWidth="2.4" />
+            <path d="M32 28.5c8 0 14.5 7.4 16.4 13.6 1.4 4.6-.4 9.6-5.6 11-3.8 1-7-1.4-10.8-1.4s-7 2.4-10.8 1.4c-5.2-1.4-7-6.4-5.6-11C17.5 35.9 24 28.5 32 28.5z" />
+            <ellipse cx="11" cy="27" rx="5.6" ry="7.4" transform="rotate(-24 11 27)" />
+            <ellipse cx="23.4" cy="15" rx="6" ry="7.8" transform="rotate(-8 23.4 15)" />
+            <ellipse cx="40.6" cy="15" rx="6" ry="7.8" transform="rotate(8 40.6 15)" />
+            <ellipse cx="53" cy="27" rx="5.6" ry="7.4" transform="rotate(24 53 27)" />
+            <path d="M7.4 18.4 5.6 14M21.4 6.6 20.6 2.4M42.6 6.6l.8-4.2M56.6 18.4 58.4 14" fill="none" strokeWidth="2.6" />
           </>
         ) : null}
-
-        {form === "bird" ? (
-          <>
-            {/* Drawn twice: the wide pass is the outline, the narrow pass the coat. */}
-            <path d="M32 46 15 19M32 46 32 13M32 46 49 19" stroke={ink} strokeWidth="12.5" />
-            <path d="M32 46 15 19M32 46 32 13M32 46 49 19" stroke={fill} strokeWidth="6.5" />
-          </>
-        ) : null}
-
         {form === "bun" ? (
           <>
-            <ellipse cx="32" cy="37" rx="12" ry="19" fill={fill} />
-            <circle cx="22" cy="17" r="4.2" fill={fill} />
-            <circle cx="29" cy="12" r="4.2" fill={fill} />
-            <circle cx="35" cy="12" r="4.2" fill={fill} />
-            <circle cx="42" cy="17" r="4.2" fill={fill} />
+            <path d="M32 24c6.6 0 9.6 6.6 9.6 15.4 0 9.4-3.6 19.6-9.6 19.6s-9.6-10.2-9.6-19.6C22.4 30.6 25.4 24 32 24z" />
+            <ellipse cx="19.4" cy="17.6" rx="4.2" ry="5.4" transform="rotate(-24 19.4 17.6)" />
+            <ellipse cx="27.6" cy="10.4" rx="4.4" ry="5.8" transform="rotate(-8 27.6 10.4)" />
+            <ellipse cx="36.4" cy="10.4" rx="4.4" ry="5.8" transform="rotate(8 36.4 10.4)" />
+            <ellipse cx="44.6" cy="17.6" rx="4.2" ry="5.4" transform="rotate(24 44.6 17.6)" />
+          </>
+        ) : null}
+        {form === "heart" ? (
+          <>
+            <path d="M32 56.5C22.4 50 15.6 44.7 15.6 37.6c0-5 3.8-8.6 8.4-8.6 3.6 0 6.2 1.9 8 4.8 1.8-2.9 4.4-4.8 8-4.8 4.6 0 8.4 3.6 8.4 8.6 0 7.1-6.8 12.4-16.4 18.9z" />
+            <ellipse cx="11.6" cy="27.4" rx="5.4" ry="6.6" transform="rotate(-26 11.6 27.4)" />
+            <ellipse cx="23.6" cy="16" rx="5.8" ry="7.2" transform="rotate(-9 23.6 16)" />
+            <ellipse cx="40.4" cy="16" rx="5.8" ry="7.2" transform="rotate(9 40.4 16)" />
+            <ellipse cx="52.4" cy="27.4" rx="5.4" ry="6.6" transform="rotate(26 52.4 27.4)" />
           </>
         ) : null}
       </g>
@@ -287,20 +286,13 @@ export function PlayerArt({
 }
 
 /**
- * The mark: a pocket with four pads arched above it, because a paw print and
- * a pocket are the same shape. The opening is worn as a collar, and the tag
- * hanging from it is a heart — the thing a pocket keeps, and the thing a paw
- * keeps at its centre, drawn once.
+ * The mark: a paw print, because Pawket is named for paws. Four toe beans
+ * over a centre pad that is a heart — the thing a pet leaves behind, and the
+ * care it is left for, drawn once.
  *
- * The pocket is deeper than a pocket needs to be. That is what buys the two
- * units of clear space between the collar and the tag: below that the two
- * merge into one mass at 16px, which is where the first attempt at this died.
- * The ring between them is deliberately thinner than either, so it fades out
- * before it can blot.
- *
- * Two inks, so it survives a favicon. It never rotates, never takes a
- * gradient, never sits inside another shape, and never appears without the
- * pocket.
+ * Two inks, so it survives a 16px favicon: `sun` beans with an `on-sun`
+ * outline. The beans sit far enough apart that the gaps stay open at 16px;
+ * check 16, 20 and 24px before changing any of it.
  */
 export function Mark({
   size = 28,
@@ -320,23 +312,16 @@ export function Mark({
   className?: string;
 }) {
   const glyph = (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      {/* the pocket, deepened to make room for what hangs in it */}
-      <rect x="2.5" y="10.8" width="27" height="19.2" rx="6.5" fill={fill} stroke={ink} strokeWidth="2.4" />
-      {/* its opening, worn as a collar */}
-      <path d="M5.6 14.4q10.4 2.6 20.8 0" stroke={ink} strokeWidth="3" strokeLinecap="round" />
-      {/* the ring, thin enough to drop away before the shapes it joins do */}
-      <path d="M16 17v2.6" stroke={ink} strokeWidth="1.4" strokeLinecap="round" />
-      {/* the tag, hanging where a paw keeps its centre pad */}
-      <path
-        d="M16 27.4c-3.3-2.4-5-4-5-5.7a2.6 2.6 0 0 1 5-.9 2.6 2.6 0 0 1 5 .9c0 1.7-1.7 3.3-5 5.7z"
-        fill={ink}
-      />
-      {/* four pads */}
-      <circle cx="6.7" cy="6.1" r="2.55" fill={ink} />
-      <circle cx="13.6" cy="3.1" r="2.8" fill={ink} />
-      <circle cx="20.9" cy="3.5" r="2.8" fill={ink} />
-      <circle cx="27.3" cy="7" r="2.4" fill={ink} />
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" className="pk-mark__glyph">
+      <g fill={fill} stroke={ink} strokeWidth="2.2" strokeLinejoin="round">
+        {/* the centre pad, which is a heart */}
+        <path d="M16 29.6c-5.1-3.3-8.6-6.1-8.6-9.9 0-2.7 2-4.6 4.5-4.6 1.9 0 3.2 1 4.1 2.5.9-1.5 2.2-2.5 4.1-2.5 2.5 0 4.5 1.9 4.5 4.6 0 3.8-3.5 6.6-8.6 9.9z" />
+        {/* four beans, arched */}
+        <ellipse cx="4.7" cy="13.6" rx="2.9" ry="3.6" transform="rotate(-26 4.7 13.6)" />
+        <ellipse cx="11.2" cy="6.9" rx="3.1" ry="3.9" transform="rotate(-9 11.2 6.9)" />
+        <ellipse cx="20.8" cy="6.9" rx="3.1" ry="3.9" transform="rotate(9 20.8 6.9)" />
+        <ellipse cx="27.3" cy="13.6" rx="2.9" ry="3.6" transform="rotate(26 27.3 13.6)" />
+      </g>
     </svg>
   );
 

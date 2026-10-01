@@ -104,17 +104,14 @@ describe("Chip", () => {
 });
 
 describe("Mark", () => {
-  it("never appears without the pocket", () => {
+  it("is a paw: four beans over a centre pad", () => {
     const html = renderToStaticMarkup(<Mark />);
-    // The pocket is the filled, rounded body; the pads alone are not the mark.
-    expect(html).toMatch(/<rect[^>]+rx="[\d.]+"[^>]+fill="var\(--sun\)"/);
-    expect(html.match(/<circle/g)).toHaveLength(4);
+    expect(html.match(/<ellipse/g)).toHaveLength(4);
+    expect(html.match(/<path/g)).toHaveLength(1);
   });
 
-  it("hangs a heart tag from the collar, where a paw keeps its centre pad", () => {
-    const html = renderToStaticMarkup(<Mark />);
-    expect(html).toContain("M16 27.4c-3.3-2.4");
-    expect(html).toContain("M5.6 14.4q10.4 2.6 20.8 0");
+  it("makes the centre pad a heart", () => {
+    expect(renderToStaticMarkup(<Mark />)).toContain("M16 29.6c-5.1-3.3");
   });
 
   it("stays two inks, so it survives a 16px favicon", () => {
@@ -122,11 +119,16 @@ describe("Mark", () => {
     const tokens = new Set(html.match(/var\(--[a-z-]+\)/g));
     expect(tokens).toEqual(new Set(["var(--sun)", "var(--on-sun)"]));
   });
+
+  it("names Pawket beside the glyph unless asked not to", () => {
+    expect(renderToStaticMarkup(<Mark />)).toContain("Pawket");
+    expect(renderToStaticMarkup(<Mark glyphOnly />)).not.toContain("Pawket");
+  });
 });
 
 describe("PawArt", () => {
-  it("draws a different silhouette per species", () => {
-    const drawn = (["cat", "dog", "bird", "bun"] as const).map((form) =>
+  it("draws a different print per paw", () => {
+    const drawn = (["cat", "dog", "bun", "heart"] as const).map((form) =>
       renderToStaticMarkup(<PawArt form={form} />),
     );
     expect(new Set(drawn).size).toBe(4);
@@ -134,12 +136,19 @@ describe("PawArt", () => {
 });
 
 describe("PawLoader", () => {
-  it("cycles all four species, one step apart", () => {
+  it("passes four paws through one square, a step apart", () => {
     const html = renderToStaticMarkup(<PawLoader />);
-    expect(html.match(/pk-paw-loader__paw/g)).toHaveLength(5); // 4 paws, one also first
-    for (const delay of ["0.00s", "1.12s", "2.24s", "3.36s"]) {
+    expect(html.match(/class="pk-paw-loader__view"/g)).toHaveLength(1);
+    expect(html.match(/<svg/g)).toHaveLength(4);
+    for (const delay of ["0.00s", "1.20s", "2.40s", "3.60s"]) {
       expect(html).toContain(`animation-delay:${delay}`);
     }
+  });
+
+  it("alternates the side each paw comes in from, so every hand-off is one push", () => {
+    const html = renderToStaticMarkup(<PawLoader />);
+    const sides = [...html.matchAll(/pk-paw-loader__paw--(left|right)/g)].map((m) => m[1]);
+    expect(sides).toEqual(["left", "right", "left", "right"]);
   });
 
   it("marks one paw to stand still under reduced motion", () => {

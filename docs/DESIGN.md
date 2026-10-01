@@ -69,19 +69,18 @@ are a separate `ink-faint` suffix.
 
 ## The mark
 
-A pocket with four pads arched above it, because a paw print and a pocket are
-the same shape. The opening is worn as a collar, and the tag hanging from it is
-a heart — the thing a pocket keeps and the thing a paw keeps at its centre,
-drawn once.
+A paw print, because Pawket is named for paws. Four toe beans arch over a
+centre pad, and the centre pad is a heart — the print a pet leaves, and the
+care it was left for, drawn once.
 
-The pocket is deeper than a pocket needs to be. That depth is what buys the two
-units of clear space between the collar and the tag; below that the two merge
-into a single mass at 16px, which is where the first attempt at this died. The
-ring joining them is deliberately thinner than either, so it fades out before
-it can blot. Check the mark at 16, 20 and 24px before changing any of it.
+Two inks: `sun` beans with an `on-sun` outline, so it survives a 16px
+favicon. The beans sit far enough apart that the gaps stay open at 16px;
+check the mark at 16, 20 and 24px before changing any of it. The wordmark
+beside it is Fraunces at 600 with `SOFT 64` and `WONK 1`. It never takes a
+gradient and never sits inside another shape.
 
-Two inks. It never rotates, never takes a gradient, never sits inside another
-shape, and never appears without the pocket — the pads alone are not the mark.
+(It replaced a pocket with pads above it in 2026-10: the name was always the
+paw, and a pocket read as a wallet.)
 
 ## Motion
 
@@ -99,11 +98,13 @@ load. All of it stops under `prefers-reduced-motion`.
 
 1. **The breath.** A pet scales `1 → 1.035 × 0.975 → 1` over 3.6s from a
    `50% 100%` origin, so it settles on its feet.
-2. **The paw loader** (`PawLoader`). A paw inside a pocket — the mark
-   assembling itself — with the four species taking the frame in turn. Each is
-   held 900ms and hands over in 220ms, the duration of a rising sheet, on the
-   press curve. A paw leaves before the next arrives, so it is a replacement,
-   not a dissolve. Under `prefers-reduced-motion` one paw sits still.
+2. **The paw loader** (`PawLoader`). One square, one paw at a time: a new
+   print slides in from the side while the last slides out the same way,
+   and the side alternates — left, right, left, right — like a pet padding
+   along. Four prints (cat, pup, bun, and the mark's heart paw), each held
+   860ms and handed over in 340ms, so the fourth gives way to the first and
+   the loop never shows a seam. Under `prefers-reduced-motion` one paw sits
+   still.
 
 A third is fenced the same way: **the 3D room's life** on Home. The player
 breathes and blinks, the pet breathes, wanders and naps, the camera drifts a
@@ -122,9 +123,8 @@ made deliberately and fenced just as deliberately:
   and carries the loader; `app/(game)/loading.tsx` holds still, because a loop
   flashing on every navigation is the shimmering-skeleton problem in a nicer
   costume.
-- **A paw, not a pet.** A pet in a pocket is the product's hero image, and a
-  loader is not the place to spend it. A paw is a fragment, so it reads as
-  waiting.
+- **A paw, not a pet.** The pet is the product's hero image, and a loader
+  is not the place to spend it. A paw is a fragment, so it reads as waiting.
 
 ## Layout
 

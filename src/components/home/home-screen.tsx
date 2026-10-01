@@ -38,6 +38,7 @@ import {
   suggestCare,
 } from "@/lib/game/appearance";
 import { CareActionType, type PetMood } from "@/lib/game/enums";
+import { calculateLevelFromXp } from "@/lib/game/math";
 import {
   applyGuestCare,
   cooldownsFor,
@@ -200,12 +201,14 @@ export function HomeScreen() {
       return;
     }
     const day = result.pet.streak.lastDay === utcDay(new Date()) ? ` Day ${result.pet.streak.count}.` : "";
+    const level = levelUp(current.xp, result.pet.xp);
     setNotice({
       tone: "ok",
-      text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}`,
+      text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${level ? ` ${current.name} is level ${level} now.` : ""}`,
     });
-    // Only now, with the care saved, does the room show it.
-    ask(CARE_MOMENT[action]);
+    // Only now, with the care saved, does the room show it — and a new
+    // level is the one thing worth a cheer.
+    ask(level ? "cheer" : CARE_MOMENT[action]);
   }
 
   async function careOnChain(action: CareActionType) {
@@ -223,7 +226,11 @@ export function HomeScreen() {
     if (!result) return;
     companion.refresh();
     // Only now, with the care confirmed, does the room show it.
-    if (result.outcome === "confirmed") ask(CARE_MOMENT[action]);
+    if (result.outcome === "confirmed") {
+      const level = check.ok ? levelUp(pet.xp, check.pet.xp) : null;
+      if (level) setNotice({ tone: "ok", text: `${pet.name} is level ${level} now.` });
+      ask(level ? "cheer" : CARE_MOMENT[action]);
+    }
   }
 
   return (
@@ -359,6 +366,12 @@ export function HomeScreen() {
       />
     </Screen>
   );
+}
+
+/** The new level when XP crosses one, else null. */
+function levelUp(before: number, after: number): number | null {
+  const level = calculateLevelFromXp(after);
+  return level > calculateLevelFromXp(before) ? level : null;
 }
 
 /** Solana did not answer: say what is shown instead, and offer to ask again. */

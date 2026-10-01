@@ -85,6 +85,26 @@ test("adopting a pet needs no wallet and makes Home real", async ({ page }) => {
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
 });
 
+test("a new level is said out loud, and nothing else about the care changes", async ({ page }) => {
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await page.getByRole("button", { name: /take them home/i }).click();
+  await expect(page.getByText("Today with Pepper")).toBeVisible();
+
+  // Five XP short of level two.
+  await page.evaluate(() => {
+    const pet = JSON.parse(localStorage.getItem("pawket.guest-pet.v1")!);
+    localStorage.setItem("pawket.guest-pet.v1", JSON.stringify({ ...pet, xp: 95 }));
+  });
+  await page.reload();
+  await expect(page.getByText("95 / 100 XP")).toBeVisible();
+  await page.getByRole("button", { name: "Feed" }).click();
+  await expect(page.getByText(/Fed\. \+10 XP\. Day 1\. Pepper is level 2 now\./)).toBeVisible();
+  await expect(page.getByText("Level 2", { exact: true })).toBeVisible();
+});
+
 test("a second adoption does not overwrite the pet you have", async ({ page }) => {
   await page.goto("/adopt");
   await page.getByRole("button", { name: /choose the luna cat/i }).click();

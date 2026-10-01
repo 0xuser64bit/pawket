@@ -1,0 +1,5 @@
+# Anchor 1.2's MSRV, and the rustc inside the SBF platform tools.
+[toolchain]
+channel = "1.89.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

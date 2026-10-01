@@ -2,7 +2,7 @@
   "name": "pawket",
   "version": "0.1.0",
   "private": true,
-  "description": "Pawket — a living companion kept in the browser",
+  "description": "Pawket \u2014 a living companion kept in the browser",
   "packageManager": "pnpm@10.0.0",
   "engines": {
     "node": ">=20"
@@ -17,6 +17,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "assets:3d": "node scripts/3d/build.mjs",
+    "program:build": "anchor build --arch v2 && mkdir -p src/lib/solana/idl && cp target/idl/pawket.json src/lib/solana/idl/pawket.json",
+    "program:test": "pnpm program:build && cargo test -p pawket",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },
   "dependencies": {

@@ -35,3 +35,10 @@ test-results/
 
 # Vercel
 .vercel
+
+# Solana program build output and keypairs. A keypair is never committed.
+target/
+.keys/
+*-keypair.json
+test-ledger/
+.anchor/

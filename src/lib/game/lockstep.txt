@@ -1,0 +1,39 @@
+# One scripted life, replayed twice: against the program by
+# programs/pawket/tests/program/lockstep.rs, and against the guest record by
+# src/lib/guest/lockstep.test.ts. Both must land on every number below.
+#
+# The pet is adopted at 2026-10-01T10:00:00Z (UTC day 20727).
+#   <seconds after adoption> <feed|play|groom|rest|round> [cooldown]
+#       act; `cooldown` means the act must be refused
+#   expect <field>=<value> ...
+#       the stored record: hunger happiness energy hygiene xp level streak plays
+#   project <seconds after adoption> <field>=<value> ...
+#       vitals decayed forward to that moment without acting
+
+0 feed
+720 play
+1000 feed cooldown
+1800 feed
+1800 groom
+1801 rest
+expect hunger=100 happiness=100 energy=88 hygiene=97 xp=50 level=1 streak=1 plays=0
+5400 round
+6000 round
+expect hunger=100 happiness=100 energy=88 hygiene=97 xp=75 level=1 streak=1 plays=2
+project 43200 hunger=71 happiness=79 energy=71 hygiene=83
+
+# Oct 2, 14:00: the next day
+100800 feed
+100800 round
+expect hunger=54 happiness=53 energy=47 hygiene=64 xp=110 level=2 streak=2 plays=3
+
+# Oct 4, 14:00: Oct 3 was missed
+273600 play
+273700 play cooldown
+288000 rest
+expect hunger=0 happiness=16 energy=28 hygiene=1 xp=130 level=2 streak=1 plays=3
+
+# Oct 11: a week alone, then dinner
+893000 feed
+expect hunger=23 happiness=2 energy=0 hygiene=0 xp=140 level=2 streak=1 plays=3
+project 1000000 hunger=0 happiness=0 energy=0 hygiene=0

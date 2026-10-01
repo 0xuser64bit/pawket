@@ -18,6 +18,17 @@ export function clampStat(value: number): number {
 }
 
 /**
+ * `round(value − rate × hours)`, clamped. Round half up is floor(x + ½); in
+ * 36000ths of a point (rate in tenths per hour, time in whole seconds) every
+ * term is an integer, so this is exact — and identical to `decayed` in the
+ * program (`programs/pawket/src/lib.rs`).
+ */
+function decayStat(value: number, perHour: number, seconds: number): number {
+  const scaled = value * 36_000 - Math.round(perHour * 10) * seconds + 18_000;
+  return scaled <= 0 ? MIN_STAT : Math.min(MAX_STAT, Math.floor(scaled / 36_000));
+}
+
+/**
  * Drains vitals for time spent unattended. Pure and deterministic so callers
  * can project lazily: stored stats are the value at `statsUpdatedAt`, and the
  * live value is this function applied forward to now.
@@ -29,14 +40,12 @@ export function applyStatDecay(
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds <= 0) {
     return { ...stats };
   }
-  const hours = elapsedSeconds / 3600;
+  const seconds = Math.floor(elapsedSeconds);
   return {
-    hunger: clampStat(stats.hunger - STAT_DECAY_PER_HOUR.hunger * hours),
-    happiness: clampStat(
-      stats.happiness - STAT_DECAY_PER_HOUR.happiness * hours,
-    ),
-    energy: clampStat(stats.energy - STAT_DECAY_PER_HOUR.energy * hours),
-    hygiene: clampStat(stats.hygiene - STAT_DECAY_PER_HOUR.hygiene * hours),
+    hunger: decayStat(stats.hunger, STAT_DECAY_PER_HOUR.hunger, seconds),
+    happiness: decayStat(stats.happiness, STAT_DECAY_PER_HOUR.happiness, seconds),
+    energy: decayStat(stats.energy, STAT_DECAY_PER_HOUR.energy, seconds),
+    hygiene: decayStat(stats.hygiene, STAT_DECAY_PER_HOUR.hygiene, seconds),
   };
 }
 

@@ -41,6 +41,8 @@
     ".next",
     "out",
     "playwright-report",
-    "test-results"
+    "test-results",
+    "target",
+    "programs"
   ]
 }

@@ -3,6 +3,45 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: A pet can live on Solana, and Pawket pays the fees
+
+**Context:** The product's position is a pet whose care history is a
+record nobody can edit. The pet lived only in `localStorage`; the program
+from before the reset was never deployed (its program ID held no account on
+devnet) and its keypair was gone. A player on devnet also needs SOL before
+they can sign anything, which stops most people at the door.
+**Decision:** Program v2 on Anchor 1.2, deployed to devnet as
+`PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74` (a new ID, ground for the
+prefix). Decay, cooldowns, XP, the UTC streak and the daily round bonus are
+enforced on chain with the browser's integer math, held together by
+`src/lib/game/lockstep.txt`; the Passport keeps the last eight cares.
+`register_item` and `record_purchase` are deleted, not ported. `adopt_pet`
+takes a separate rent payer, and a server sponsor co-signs as fee payer for
+Pawket instructions only. A pet still starts in the browser: "Keep it on
+Solana" carries it into the program, and the record there starts that day.
+One record shape serves both, through `useCompanion`. This resolves Q7 for
+this version: a Wallet Standard wallet as identity, no embedded wallet, no
+server session.
+**Consequence:** The app holds one key — the sponsor's devnet float — so
+custody language now distinguishes a player's keys (never) from the app's
+own sponsor (server-only, Pawket instructions only, not the upgrade
+authority). Carrying a pet resets its level and streak, said before the
+wallet opens. Rate limits are per serverless instance. There is no NFT: Q1
+stays open.
+
+## 2026-10: The Park is a place
+
+**Context:** "Meet others" had no surface, and pets on Solana are public by
+construction.
+**Decision:** `/park`, the fifth slot in the dock between Home and
+Playground, lists every pet the program keeps, read live with
+`getProgramAccounts`: who was cared for today, what just happened (merged
+from every Passport's last cares), and everyone, most cared-for first.
+`/pet/<address>` is each pet's public Passport, server-rendered from chain.
+**Consequence:** No indexer and no database: the park reads the chain on
+every request. That is fine at hackathon scale and is the first thing to
+cache (or index, Q4) if the program holds thousands of pets.
+
 ## 2026-09: Home is a 3D room, and the flat room stays
 
 **Context:** Home is where the player and the pet are together. The flat

@@ -2,28 +2,32 @@
 
 **Status:** The routes under "Built today" are the product. The site map
 further down is still the later target. Never ship a nav link to an unwired
-route, and never describe the browser pet as on-chain.
+route, and call a pet "on Solana" only when it was read from chain.
 
 Built today:
 
 ```text
-/                          landing
+/                          landing (live count of pets on Solana)
 /adopt                     one pet, three steps, saved in this browser
-(game)/home                that pet's room (3D, or flat), or an empty room
-(game)/inventory           the pet and the wardrobe (?tab=wardrobe)
-(game)/playground          one solo round
-(game)/pet/[id]            the record, if the id is the pet in this browser
+(game)/home                the pet in play — on Solana, else in this browser — or an empty room
+(game)/park                every pet the program keeps, read live
+(game)/inventory           your pets and the wardrobe (?tab=wardrobe)
+(game)/playground          one solo round; on Solana, "Record the round"
+(game)/pet/[id]            an address: the public Passport, from chain;
+                           otherwise the record of the pet in this browser
 (game)/guilds              the boundary. not a directory
 /api/health
+/api/sponsor               GET: is it up. POST { transaction }: co-sign and send
 ```
 
 Redirects: `/market` and anything under it go to `/inventory`. `/guilds/*`
 (except the index) and `/playground/*` go back to their index. `/pet/:id/ownership`
 goes to `/pet/:id`.
 
-The `(game)` group owns the shell: the label-sized bar and the floating Dock.
-The dock is Home, Playground, Inventory, Guilds. A pet is reached from
-Inventory and from Home. There is no market slot.
+The `(game)` group owns the shell: the label-sized bar (with the wallet
+chip, once a wallet is connected) and the floating Dock. The dock is Home,
+Park, Playground, Inventory, Guilds. A pet on Solana lights Park; the browser
+pet lights Inventory. There is no market slot.
 
 ## 1. Site map (target)
 

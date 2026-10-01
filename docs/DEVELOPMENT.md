@@ -21,6 +21,8 @@ pnpm dev        # http://localhost:3000
 | `pnpm test:watch`| Vitest in watch mode                       |
 | `pnpm e2e`       | Playwright (starts `pnpm dev`; `PLAYWRIGHT_PORT` overrides 3000) |
 | `pnpm verify`    | typecheck + lint + test + build            |
+| `pnpm program:test` | anchor build (SBF v2) + LiteSVM tests   |
+| `pnpm e2e:devnet` | the chain path against the deployed program |
 
 ## Editing rules
 
@@ -32,6 +34,11 @@ pnpm dev        # http://localhost:3000
 
 ## Deployment
 
-Push to `main` deploys to Vercel. Production cluster/RPC come from Vercel
-environment variables, never code edits. Preview deployments inherit
-devnet defaults unless overridden per-environment in the dashboard.
+Push to `main` deploys to Vercel (project `pawket`, live at
+https://pawket-pets.vercel.app). Production cluster, RPC, program ID and the
+sponsor key come from Vercel environment variables written by
+`scripts/vercel-env.sh`, never code edits. Preview deployments inherit
+devnet defaults and have no sponsor unless one is added for them.
+
+The program deploys separately (`docs/SOLANA.md`). Its toolchain: Anchor
+1.2 (`avm`), Rust 1.89 (`rust-toolchain.toml`), Solana CLI 3.x.

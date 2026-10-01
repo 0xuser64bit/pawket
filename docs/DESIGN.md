@@ -181,16 +181,27 @@ It is the flat room's language in three dimensions, not a model viewer:
 
 ## What is real
 
-Adoption, the room, care, the wardrobe, the playground round and the guild
-boundary are the product. The pet is saved in this browser. A wearable is a
-name beside the pet in the flat drawing, and is drawn on the pet in the 3D
-room — never a change to a vital. A care plays its moment in the room only
-after the care is saved; an emote changes nothing on the record and says so.
-Guilds are the two lists of what a token may and may not do. There is no
-market, no treasury, no swap and no lobby.
+Adoption, the room, care, the wardrobe, the playground round, keeping a pet
+on Solana, the Passport, the Park and the guild boundary are the product. A
+pet starts in this browser; kept on Solana, every care is a signed record.
+A wearable is a name beside the pet in the flat drawing, and is drawn on the
+pet in the 3D room — never a change to a vital. A care plays its moment in
+the room only after the care is saved (or, on Solana, confirmed); an emote
+changes nothing on the record and says so. Guilds are the two lists of what
+a token may and may not do. There is no market, no treasury, no swap and no
+lobby.
 
-Do not describe the pet as on-chain. Do not put a simulated price back on a
-screen to fill a dock slot. The dock is Home, Playground, Inventory, Guilds.
+The wallet layer follows the system's own rules: connecting is offered only
+where it does something (keeping a pet on Solana, finding the pets a wallet
+keeps) and never in the shell; the connect sheet, the address chip and every
+receipt are Paper; an address always sits beside a copy control; waiting is
+the neutral `wait` banner, a confirmation is a `done` banner with its
+signature, a timeout is "Still waiting" and never "failed", and a failure
+names what did not change.
+
+Call a pet "on Solana" only when it was read from chain. Do not put a
+simulated price back on a screen to fill a dock slot. The dock is Home, Park,
+Playground, Inventory, Guilds.
 
 ## Voice
 

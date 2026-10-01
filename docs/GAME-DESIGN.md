@@ -17,12 +17,13 @@
 
 Implemented in `applyCareAction` (pure, tested exact). UI shows deltas before signing ("Feed: +23 hunger, +2 happiness, +10 XP").
 
-## 2. Decay (off-chain estimate only)
+## 2. Decay (lazy, and enforced on chain)
 
 Per hour: hunger **2.5**, happiness **1.8**, energy **1.5**, hygiene **1.2** (`STAT_DECAY_PER_HOUR`). Tuned so ~72 drifts to "needs care" over ~a day — daily-loop tension without missed-day punishment.
 
-- Projection is **lazy**: stored stats = value at `statsUpdatedAt`; live = `applyStatDecay(stored, elapsed)`.
-- UI labels projections **"estimate"** — chain never decays; only the display projects.
+- Decay is **lazy**: stored stats = value at `statsUpdatedAt`; live = `applyStatDecay(stored, elapsed)`. A care decays to now first, then applies its deltas — in the browser record and in the program alike.
+- Computed **exactly**, in integers: `round(v − rate·h)` = `floor((36000·v − 10·rate·s + 18000) / 36000)`, clamped 0–100, `s` whole seconds. `src/lib/game/lockstep.txt` holds the browser and the program to the same numbers.
+- UI labels the projection between cares **"estimate"**: it is what the next care will find, not something the chain has written yet.
 - `elapsedSecondsBetween` injects `now`; tests inject fixed clocks, never global-mock timers.
 
 ## 3. XP, levels, mood
@@ -33,15 +34,15 @@ Per hour: hunger **2.5**, happiness **1.8**, energy **1.5**, hygiene **1.2** (`S
 
 ## 4. Passport (progression record)
 
-`PetPassport` PDA (`[passport, pet]`) accumulates: care history, XP/level, streaks, achievements, memories (M4+). Timeline UI (`passport-timeline.tsx`) reads chain → indexer cache; guest passports are local-only and labeled as such.
+`PetPassport` PDA (`[passport, pet]`) holds the UTC-day streak and best streak, care and round counts, an event count, and a ring of the last eight cares. `/pet/<address>` renders it from chain for anyone. Achievements and memories (M4+) can be derived from these counts without new state. A browser pet's record is local-only and labeled as such.
 
 ## 4b. Guest record (this version)
 
 The browser companion stores a care log (latest 40), a UTC streak, one
 wearable id, and a play count. A finished playground round grants
 `DAILY_GOAL_REWARD_XP` once per UTC day and does not change vitals. The
-score does not scale the bonus. Chain care does not know about this bonus
-yet — it stays a guest-record fact until a program change says otherwise.
+score does not scale the bonus. On Solana, `finish_round` grants the same
+bonus by the same rule, when the player records the round.
 
 ## 5. Daily loop (target, M4)
 
@@ -73,5 +74,6 @@ Cosmetics change look/mood-display only. Forbidden fields: `statModifier`, `xpBo
 | Date | Change | Reason |
 | --- | --- | --- |
 | 2026-09 | Initial 72 / deltas / 30m / decay table | Pre-reset shared package + program lockstep |
+| 2026-10 | Decay computed in exact integers (same values, no float edge); decay, streak and the daily round enforced on chain | Program v2: the browser record and the program must agree to the point |
 
 Agents: any rebalance edits `constants.ts` + program + `math.test.ts` exact values together, with a deploy-plan note and a new row here.

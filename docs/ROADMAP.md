@@ -1,6 +1,6 @@
 # Pawket — Roadmap (phased, agent-sequenced)
 
-**Status:** The browser companion is what ships (see `AGENTS.md`). M0's chain client is built and unwired. M1's care loop is real for the guest pet and not yet a chain send. M2's wardrobe is a local catalog, not an NFT. M3+ below stay spec until their open questions close. Do not rebuild the removed market and guild-swap screens as fixtures.
+**Status (2026-10):** M0 and M1 are done: the program is on devnet, and adopt, care, the daily round and the wardrobe are signed, sponsored transactions with receipts, in lockstep with the browser math. From M2, equip is on chain (looks only) and the avatar is the 3D room; NFTs wait on Q1. From M4, the Park and the public Passport ship; real-time play does not. M3, M5–M7 stay spec until their open questions close. Do not rebuild the removed market and guild-swap screens as fixtures.
 **Order is normative.** Do not skip ahead to Guild Launches before the pet loop retains.
 
 ```text
@@ -16,7 +16,7 @@ M0 foundation (DONE) → M1 care loop → M2 identity+inventory → M3 marketpla
 ## M1 — Care loop (first playable)
 
 **Goal:** wallet user adopts a PDA pet, performs feed/play/groom/rest on-chain, sees stats/XP/level/cooldown/mood honestly.
-**Entry:** M0 green. Program deployed on devnet (current `FQwe9…Sef`) or localnet validator.
+**Entry:** M0 green. Program deployed on devnet (`PawkHv…eM74`, done 2026-10) or localnet validator.
 **Build:**
 - `app/(game)/adopt` + `app/(game)/pet/[address]` routes (Server shell + client leaves).
 - Adopt form: name (2–24 UTF-8 bytes, trim before PDA), species, personality → `getAdoptPetInstruction` → lifecycle in `transactions.ts` → reload from chain.
@@ -48,7 +48,7 @@ M0 foundation (DONE) → M1 care loop → M2 identity+inventory → M3 marketpla
 - `app/(game)/marketplace` (browse, base-pet pick, cosmetic upsell), `app/api/marketplace/*` (see `API-CONTRACTS.md`).
 - Primary adoption: fixed SOL price, explicit sign, simulate → confirm → reload, receipt + Explorer link.
 - Secondary / cosmetics: constrained to treasury-signed fixed-price first; auction/AMM deferred.
-- `register_item` / `record_purchase` stay unwired until program is admin-gated + moves tokens (per `program.ts` SAFETY).
+- The pre-reset `register_item` / `record_purchase` are deleted from the program; settlement is a new design behind Q5.
 **Exit:** devnet purchase completes with receipt; marketplace never mentions bonding curves.
 **Non-goals:** bonding curves, guild tokens, Jupiter routing.
 

@@ -6,26 +6,38 @@ agent works in this repo.
 
 ## What this is
 
-Pawket is a **web-first** living companion on Solana. A player connects a
-Wallet Standard wallet in the browser, adopts a companion, and cares for it
-(feed / play / groom / rest). Devnet by default.
+Pawket is a **web-first** living companion on Solana. A player adopts a pet
+in the browser with no wallet, cares for it (feed / play / groom / rest),
+and — when they choose — keeps it on Solana, where every care is a signed
+record anyone can check. Devnet by default; Pawket pays the fees.
 
-**Current truth:** one companion, saved in this browser. `/adopt` writes it
-through `src/lib/guest/` and `src/lib/game/`. Home runs care (feed, play,
-groom, rest) with decay, cooldowns, XP, a UTC streak and a care log, in a
-room drawn in 3D — the player and that pet in one scene
-(`src/components/room3d/`, `docs/ROOM-3D.md`), with the flat SVG room
-wherever 3D cannot draw. A saved care plays its moment in the room; emotes
-(wave, dance, pet, treat, cheer) change nothing on the record. The player's
-look is saved on this device (`src/lib/player/`). Inventory dresses that
-pet from `src/lib/closet/` — expression only, no effect on vitals; the 3D
-room draws every item. The playground is one solo round in `src/lib/play/`;
-finishing it once per UTC day grants `DAILY_GOAL_REWARD_XP` and changes
-nothing else. Guilds is the written boundary in `src/lib/guilds/boundary.ts`:
-nothing to join, buy or swap. There is no market. Instruction builders and
-the wallet client still live in `src/lib/solana/` and are not wired to a
-screen. Do not describe the pet as on-chain, and do not put a simulated
-price, treasury, member count or lobby back on a screen.
+**Current truth:** a pet starts in this browser. `/adopt` writes it through
+`src/lib/guest/` and `src/lib/game/`. Home runs care (feed, play, groom,
+rest) with decay, cooldowns, XP, a UTC streak and a care log, in a room
+drawn in 3D — the player and the pet in one scene (`src/components/room3d/`,
+`docs/ROOM-3D.md`), with the flat SVG room wherever 3D cannot draw.
+
+"Keep Pepper on Solana" carries that pet into the program in
+`programs/pawket/` (devnet `PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`): a
+`Pet` PDA holds vitals, XP, cooldowns and what it wears; its `PetPassport`
+holds the streak, counts and the last eight cares. Decay, cooldowns, XP,
+the streak and the daily round bonus are enforced on chain by the same
+integer math as `src/lib/game/` (`src/lib/game/lockstep.txt` is replayed by
+both). The wallet signs as owner; the sponsor (`/api/sponsor`) co-signs as
+fee payer and pays rent, and signs nothing but Pawket instructions. A care
+on Solana plays its moment only after it is confirmed; nothing is optimistic.
+
+`useCompanion` (`src/lib/companion/`) decides what a screen draws: the
+connected wallet's pet on Solana, else the browser pet — one record shape
+for both. Inventory dresses the pet (expression only; on Solana a signed
+`dress`). The playground is one solo round; on Solana a finished round is
+kept when the player presses "Record the round". `/pet/<address>` is the
+public Passport, server-rendered from chain; `/park` is every pet the
+program keeps, read live. Guilds is the written boundary in
+`src/lib/guilds/boundary.ts`: nothing to join, buy or swap. There is no
+market and no NFT. Do not put a simulated price, treasury, member count or
+lobby on a screen, and call a pet "on Solana" only when it was read from
+chain.
 
 ## Read first
 
@@ -54,12 +66,20 @@ One home per fact. If two files disagree, the left column wins.
 | Fact                              | Authoritative file                  |
 | --------------------------------- | ----------------------------------- |
 | Game math, enums                  | `src/lib/game/`                     |
-| Program ID, seeds, discriminators | `src/lib/solana/program.ts`         |
+| The program (rules on chain)      | `programs/pawket/src/lib.rs`        |
+| Game math ↔ program lockstep      | `src/lib/game/lockstep.txt`         |
+| Program ID, seeds, discriminators | `src/lib/solana/program.ts` (held to `src/lib/solana/idl/pawket.json`) |
 | PDA derivation                    | `src/lib/solana/pda.ts`             |
 | Instruction builders              | `src/lib/solana/instructions.ts`    |
+| Account decoding, chain → record  | `src/lib/solana/accounts.ts`        |
 | Cluster / RPC / Explorer links    | `src/lib/solana/cluster.ts`         |
-| Browser client singleton          | `src/lib/solana/browser-client.ts`  |
+| Browser rpc + wallet client       | `src/lib/solana/browser-client.ts`  |
+| The one send path                 | `src/lib/solana/send.ts`            |
 | Transaction lifecycle + UX copy   | `src/lib/solana/transactions.ts`    |
+| What the sponsor will sign        | `src/lib/solana/sponsor.ts`         |
+| Sponsor key, float, availability  | `src/server/sponsor.ts`             |
+| Server-side chain reads           | `src/server/solana.ts`              |
+| The pet a screen draws            | `src/lib/companion/use-companion.ts`|
 | Env names and defaults            | `.env.example` + `src/config/env.ts`|
 | Server-only env (guarded)         | `src/config/server-env.ts`          |
 | Routes                            | `app/`                              |
@@ -91,6 +111,9 @@ pnpm verify           # typecheck + lint + test + build (run before Done)
 pnpm test             # Vitest
 pnpm e2e              # Playwright (needs no wallet; asserts shell, not signing)
 pnpm assets:3d        # rebuild public/3d from the source files in assets/
+pnpm program:test     # anchor build (SBF v2) + the LiteSVM suite, incl. the lockstep replay
+pnpm e2e:devnet       # Vitest against the deployed program: a 0-SOL wallet adopts and cares
+PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts   # the same path through the real screens
 ```
 
 ## Workflow (short version)
@@ -103,20 +126,27 @@ pnpm assets:3d        # rebuild public/3d from the source files in assets/
 
 ## Hard rules
 
-- **No custody.** Never ask for, log, upload, or persist seed phrases or
-  private keys. Wallets sign; the app never holds keys.
+- **No custody.** Never ask for, log, upload, or persist a player's seed
+  phrase or key. Wallets sign. The only key the app holds is its own devnet
+  sponsor (`SPONSOR_KEYPAIR`, server-only), which signs only what
+  `checkSponsorable` allows and is not the program's upgrade authority.
 - **No hand-rolled instruction bytes in components.** Use
-  `src/lib/solana/instructions.ts`. Never invent discriminators.
+  `src/lib/solana/instructions.ts`. Never invent discriminators;
+  `program.test.ts` holds them to the IDL.
 - **No silent sends.** Every send needs explicit user action, simulation
-  first (preflight on), and a visible signature + Explorer link after.
+  first (preflight on, here or at the sponsor), and a visible signature +
+  Explorer link after (`TxReceipt`). Go through `send.ts`; never a second path.
 - **No optimistic adopt/care state.** Wait for confirmation, then reload from
   the source of truth.
 - **No `NEXT_PUBLIC_` secrets.** Server-only config has no such prefix and is
   read only via `getServerEnv()` in server code.
 - **No program ID / seed / discriminator changes** without an explicit human
-  ask and a program deploy plan.
+  ask and a program deploy plan. A change to the program's math moves
+  `src/lib/game/`, `lockstep.txt` and both test suites together.
 - **Server Components by default.** `"use client"` only at interactive
   leaves. Never fetch in `useEffect` what a Server Component or `useRequest`
   can own.
-- **Honest UI.** No "on-chain", "owned", or mainnet language unless wired.
+- **Honest UI.** "On Solana" only for a pet read from chain; a browser pet
+  is "in this browser". No "owned"/NFT/mainnet language. "Pawket pays the
+  fee" only while `sponsorState()` says it does.
 - **Devnet default.** Never target mainnet in code; cluster comes from env.

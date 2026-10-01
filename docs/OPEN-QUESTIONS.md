@@ -57,3 +57,4 @@
 | --- | --- | --- | --- |
 | 2026-09 | Q7 | localStorage guest. No embedded wallet, no server session in this version. | product pass — see DECISIONS |
 | 2026-09 | Q8 | One solo gate round. No real-time netcode. Daily XP is flat, not score-scaled. | product pass — see DECISIONS |
+| 2026-10 | Q7 | Browser pet first; a Wallet Standard wallet is the identity on Solana; a server sponsor pays devnet fees. No embedded wallet, no session. | program v2 — see DECISIONS |

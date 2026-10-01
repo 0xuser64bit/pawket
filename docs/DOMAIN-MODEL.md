@@ -19,13 +19,14 @@
 ## 2. On-chain (existing program — do not change without deploy plan)
 
 ```ts
-// PDA seeds (LOCKED — src/lib/solana/program.ts)
-type Seed = "game_config" | "pet" | "passport" | "item" | "ownership";
+// PDA seeds (LOCKED — src/lib/solana/program.ts, held to src/lib/solana/idl/pawket.json)
+type Seed = "pet" | "passport";
 // Pet identity = (owner Address, exact UTF-8 name bytes, 2–24 bytes, trimmed before derivation)
-// Discriminators: initializeGameConfig [45,61,80,55,152,63,158,47], adoptPet [76,210,131,114,75,135,64,171], performCareAction [74,53,41,221,110,244,231,218]
+// Instructions: adopt_pet, perform_care_action, finish_round, dress (see docs/SOLANA.md)
+// Accounts: Pet (130 bytes, name last), PetPassport (169 bytes, ring of the last 8 cares)
 ```
 
-`register_item` / `record_purchase` have **no builders, no UI** until the program becomes admin-gated + moves tokens (SAFETY in `program.ts`).
+The pre-reset `register_item` / `record_purchase` / `GameConfig` are deleted from the program; a store, if one is ever built, is a new design (Q5).
 
 **Needed program work (future, human-gated):** NFT linkage (`petMint` on `Pet` or Core collection with PDA attribute), on-chain equip (or explicit off-chain-equip decision), marketplace escrow (or explicit fixed-price treasury-signer decision). See `OPEN-QUESTIONS.md` Q1/Q5. Agents: spec against the current PDAs; gate new instructions behind deploy-plan tasks.
 

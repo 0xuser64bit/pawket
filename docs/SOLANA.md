@@ -95,8 +95,11 @@ small float — not the upgrade authority. `checkSponsorable` signs only when:
   fee is the one way to spend the float faster);
 - every other signer has already signed.
 
-Adoptions are limited per caller (3 an hour), everything else to 240 an hour;
-below 0.05 SOL, and on mainnet, the sponsor is off and players pay. GET says
+Adoptions are limited to 20 an hour per caller (an IP for the web app, a
+wallet for a Blink) and 120 an hour in all, which bounds the worst case to
+under 0.5 SOL of rent an hour; everything else to 240 an hour per caller.
+The limits live in one process's memory. Below 0.05 SOL, and on mainnet,
+the sponsor is off and players pay. GET says
 whether it is up; pages that say "Pawket pays" read the same state
 (`src/server/sponsor.ts`).
 

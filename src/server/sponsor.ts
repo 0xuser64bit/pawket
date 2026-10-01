@@ -64,9 +64,21 @@ export async function sponsorState(): Promise<SponsorState> {
 }
 
 const HOUR = 60 * 60 * 1000;
-/** Rent is the real cost, so adoption is the scarce one. Shared by every route that sponsors. */
-export const adoptionLimit = createLimiter(3, HOUR);
+/** Shared by every route that sponsors. */
 export const actionLimit = createLimiter(240, HOUR);
+// Rent is the real cost, so adoption is the scarce one. A venue shares one
+// IP between many players, so the per-key limit is generous.
+const adoptionsPerKey = createLimiter(20, HOUR);
+const everyAdoption = createLimiter(120, HOUR);
+
+/**
+ * Whether one more sponsored adoption may go, for this caller key. Keys are
+ * cheap to change (a new keypair, a proxy's shared IP), so a cap on all
+ * adoptions bounds the worst case: 120 an hour is under 0.5 SOL of rent.
+ */
+export function mayAdopt(key: string): boolean {
+  return adoptionsPerKey(key) && everyAdoption("all");
+}
 
 /**
  * A transaction the sponsor builds and signs first, for a player who signs

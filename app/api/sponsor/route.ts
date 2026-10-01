@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { cosignAndSend, SponsorRefusal } from "@/lib/solana/sponsor";
-import { actionLimit, adoptionLimit, sponsorRpc, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
+import { actionLimit, mayAdopt, sponsorRpc, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
 
 /**
  * The sponsor: pays the network fee, and a new pet's rent, for transactions
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const caller = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   try {
     const { signature } = await cosignAndSend(sponsorRpc(), current.signer, body.data.transaction, (kinds) =>
-      (kinds.includes("adopt") ? adoptionLimit(caller) : true) && actionLimit(caller),
+      (kinds.includes("adopt") ? mayAdopt(caller) : true) && actionLimit(caller),
     );
     sponsorSpent();
     return NextResponse.json({ signature });

@@ -5,7 +5,7 @@ import { fetchPetOnChain } from "@/lib/solana/accounts";
 import { getAdoptPetInstruction } from "@/lib/solana/instructions";
 import { derivePassportPda, derivePetPda, normalizePetName } from "@/lib/solana/pda";
 import { absolute, actionError, actionJson, caller, postedAccount, preflight } from "@/server/actions";
-import { actionLimit, adoptionLimit, sponsoredForPlayer, sponsorRpc, sponsorState } from "@/server/sponsor";
+import { actionLimit, mayAdopt, sponsoredForPlayer, sponsorRpc, sponsorState } from "@/server/sponsor";
 
 /**
  * "Adopt a pet on Pawket", as a Solana Action: a link that becomes a card
@@ -85,8 +85,8 @@ export async function POST(request: Request) {
   if (await fetchPetOnChain(sponsorRpc(), pet).catch(() => null)) {
     return actionError(`This wallet already keeps a pet named ${name}. Pick another name.`, 409);
   }
-  const who = caller(request);
-  if (!adoptionLimit(`${who}:${account}`) || !actionLimit(who)) {
+  // A Blink client may proxy every player through one address, so the key is the wallet.
+  if (!mayAdopt(account) || !actionLimit(caller(request))) {
     return actionError("Too many adoptions in a row. Nothing was made — try again in a while.", 429);
   }
 

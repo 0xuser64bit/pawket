@@ -44,6 +44,7 @@ import {
 export interface ChainPet {
   address: Address;
   owner: Address;
+  /** For display (`displayName`). The address, not the name, identifies the pet. */
   name: string;
   species: PetSpecies;
   personality: PetPersonality;
@@ -121,6 +122,16 @@ const passportDecoder = getStructDecoder([
   ["bump", getU8Decoder()],
 ]);
 
+/**
+ * A name as it is shown. Names are chosen by strangers and shown to everyone
+ * in the park, so bidi overrides and control characters are dropped from the
+ * drawn copy. The stored name is the PDA seed: never derive from this one.
+ */
+export function displayName(name: string): string {
+  const shown = name.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, "").trim();
+  return shown || "A pet";
+}
+
 function variantOf<T extends string>(table: Record<T, number>, index: number, label: string): T {
   const found = (Object.keys(table) as T[]).find((key) => table[key] === index);
   if (found === undefined) throw new Error(`Unknown ${label} variant ${index}`);
@@ -140,7 +151,7 @@ export function decodePet(address: Address, bytes: Uint8Array): ChainPet {
   return {
     address,
     owner: raw.owner,
-    name: raw.name,
+    name: displayName(raw.name),
     species: variantOf(PET_SPECIES_VARIANTS, raw.species, "species"),
     personality: variantOf(PET_PERSONALITY_VARIANTS, raw.personality, "personality"),
     birthTimestamp: Number(raw.birthTimestamp),

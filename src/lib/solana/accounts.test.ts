@@ -2,7 +2,7 @@ import { address } from "@solana/kit";
 import { describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { guestPetSchema, projectGuestPet, cooldownsFor } from "@/lib/guest/pet";
-import { decodePassport, decodePet, toCompanionRecord, wearableSlot } from "./accounts";
+import { decodePassport, decodePet, displayName, toCompanionRecord, wearableSlot } from "./accounts";
 import { PAWKET_ACCOUNTS } from "./program";
 
 /**
@@ -144,6 +144,16 @@ describe("toCompanionRecord", () => {
       [CareActionType.Groom]: 0,
       [CareActionType.Rest]: 0,
     });
+  });
+});
+
+describe("displayName", () => {
+  it("drops what could disguise a stranger's name in the park", () => {
+    expect(displayName("Pep\u202Eper")).toBe("Pepper");
+    expect(displayName("Ni\u200Bb\u0007")).toBe("Nib");
+    expect(displayName("\u202E\u2066")).toBe("A pet");
+    expect(displayName("ねこねこ")).toBe("ねこねこ");
+    expect(decodePet(PET, petBytes({ name: "Pep\u202Eper" })).name).toBe("Pepper");
   });
 });
 

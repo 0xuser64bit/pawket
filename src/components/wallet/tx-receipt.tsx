@@ -13,7 +13,11 @@ import { AddressLine } from "./address";
  * change. The joy belongs to the animal above it.
  */
 export function TxReceipt({ tx, cluster }: { tx: TxState; cluster: SolanaCluster }) {
-  if (tx.stage === "idle") return null;
+  // Announced as it changes, so a send is followed without looking at it.
+  return <div aria-live="polite">{tx.stage === "idle" ? null : <Stage tx={tx} cluster={cluster} />}</div>;
+}
+
+function Stage({ tx, cluster }: { tx: TxState; cluster: SolanaCluster }) {
   const signature = tx.signature ? (
     <div className="pk-receipt__row">
       <span className="pk-receipt__k">Signature</span>
@@ -62,6 +66,15 @@ export function TxReceipt({ tx, cluster }: { tx: TxState; cluster: SolanaCluster
       return (
         <Banner tone="risk" title="It did not go through" body={tx.error}>
           {signature ? <div className="pk-receipt" style={{ marginTop: "var(--space-2)" }}>{signature}</div> : null}
+          {tx.error && /not enough sol/i.test(tx.error) && cluster !== "mainnet-beta" ? (
+            <p className="body-sm" style={{ marginTop: "var(--space-2)" }}>
+              Devnet SOL is free at{" "}
+              <a href="https://faucet.solana.com" target="_blank" rel="noreferrer">
+                faucet.solana.com
+              </a>
+              .
+            </p>
+          ) : null}
         </Banner>
       );
   }

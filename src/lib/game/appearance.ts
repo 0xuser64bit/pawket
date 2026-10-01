@@ -57,6 +57,14 @@ export const CARE_DONE_LABEL: Record<CareActionType, string> = {
   [CareActionType.Rest]: "Rested",
 };
 
+/** A care as someone else sees it happen, in the park: "Pepper was fed". */
+export const CARE_SEEN: Record<CareActionType, (name: string) => string> = {
+  [CareActionType.Feed]: (name) => `${name} was fed`,
+  [CareActionType.Play]: (name) => `${name} played`,
+  [CareActionType.Groom]: (name) => `${name} was brushed`,
+  [CareActionType.Rest]: (name) => `${name} had a rest`,
+};
+
 /** A pet's mood is one word, shown on the frame. */
 export const MOOD_LABEL: Record<PetMood, string> = {
   [PetMood.Radiant]: "Radiant",

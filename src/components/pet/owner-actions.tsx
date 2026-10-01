@@ -13,16 +13,15 @@ export function OwnerActions({ owner, address, name }: { owner: string; address:
   const router = useRouter();
   if (connected?.account.address !== owner) return null;
   return (
-    <div>
-      <Button
-        label={`Care for ${name}`}
-        icon="home"
-        tone="sun"
-        onClick={() => {
-          choose(address);
-          router.push("/home");
-        }}
-      />
-    </div>
+    <Button
+      label={`Care for ${name}`}
+      icon="home"
+      tone="sun"
+      size="sm"
+      onClick={() => {
+        choose(address);
+        router.push("/home");
+      }}
+    />
   );
 }

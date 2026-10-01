@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatAgo,
   formatCountdown,
   formatSol,
   formatUtcDate,
@@ -65,5 +66,16 @@ describe("parseSolToLamports", () => {  it("parses valid amounts to BigInt lampo
 
   it("rejects amounts that cannot fit in u64 lamports", () => {
     expect(parseSolToLamports("18446744074")).toBeNull();
+  });
+});
+
+describe("formatAgo", () => {
+  it("reads like a feed", () => {
+    expect(formatAgo(-5)).toBe("just now");
+    expect(formatAgo(59)).toBe("just now");
+    expect(formatAgo(600)).toBe("10 min ago");
+    expect(formatAgo(7200)).toBe("2 h ago");
+    expect(formatAgo(86_400)).toBe("1 day ago");
+    expect(formatAgo(3 * 86_400 + 5)).toBe("3 days ago");
   });
 });

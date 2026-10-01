@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Banner, Card, Chip, EmptyState, ButtonLink, PetFrame, Presence, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
-import { MOOD_LABEL, SPECIES_ART, SPECIES_LABEL, SPECIES_SKY } from "@/lib/game/appearance";
+import { CARE_SEEN, MOOD_LABEL, SPECIES_ART, SPECIES_LABEL, SPECIES_SKY } from "@/lib/game/appearance";
+import { formatAgo } from "@/lib/utils/format";
 import { projectGuestPet, streakAsOf, utcDay } from "@/lib/guest/pet";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { readAllPets } from "@/server/solana";
@@ -45,6 +46,11 @@ export default async function ParkPage() {
     })
     .sort((a, b) => b.entry.passport.careCount - a.entry.passport.careCount || b.record.xp - a.record.xp);
   const outToday = shown.filter(({ record }) => record.streak.lastDay === today);
+  // Every Passport keeps its last eight cares: together, what just happened in the park.
+  const lately = pets
+    .flatMap(({ pet, passport }) => passport.recent.map((mark) => ({ pet, ...mark })))
+    .sort((a, b) => b.at - a.at)
+    .slice(0, 8);
 
   return (
     <Screen>
@@ -81,6 +87,25 @@ export default async function ParkPage() {
               </div>
             )}
           </Card>
+
+          {lately.length > 0 ? (
+            <Card>
+              <SectionLabel>Lately</SectionLabel>
+              <ul className="pk-log">
+                {lately.map((mark) => (
+                  <li key={`${mark.pet.address}-${mark.at}-${mark.action}`}>
+                    <Link href={`/pet/${mark.pet.address}`} className="pk-feed-link">
+                      {CARE_SEEN[mark.action](mark.pet.name)}
+                    </Link>
+                    <span className="caption pk-faint">{formatAgo(now.getTime() / 1000 - mark.at)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
+                Each line is a transaction signed by the pet&apos;s owner.
+              </p>
+            </Card>
+          ) : null}
 
           <Stack gap={3}>
             <SectionLabel count={`${pets.length}`}>Everyone</SectionLabel>

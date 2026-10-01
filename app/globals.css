@@ -2891,3 +2891,12 @@ li {
     inset: -12px -4px;
   }
 }
+.pk-feed-link {
+  color: inherit;
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .pk-feed-link:hover {
+    text-decoration: underline;
+  }
+}

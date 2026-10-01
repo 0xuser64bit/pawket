@@ -27,6 +27,7 @@ import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { formatUtcDate } from "@/lib/utils/format";
 import { OwnerActions } from "./owner-actions";
+import { ShareButton } from "./share-button";
 
 const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
 
@@ -80,7 +81,10 @@ export function Passport({ onChain, now }: { onChain: PetOnChain; now: Date }) {
               {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
             </Row>
 
-            <OwnerActions owner={pet.owner} address={pet.address} name={pet.name} />
+            <Row gap={2} wrap>
+              <OwnerActions owner={pet.owner} address={pet.address} name={pet.name} />
+              <ShareButton name={pet.name} />
+            </Row>
 
             <Card>
               <Stack gap={3}>

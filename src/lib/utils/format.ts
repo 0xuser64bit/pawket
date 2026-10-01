@@ -61,3 +61,13 @@ export function parseSolToLamports(input: string): bigint | null {
   if (amount <= 0n || amount > MAX_LAMPORTS) return null;
   return amount;
 }
+
+/** How long ago, for a feed: 40 → "just now", 600 → "10 min ago", 7200 → "2 h ago", 3 days → "3 days ago". */
+export function formatAgo(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+  if (s < 86_400) return `${Math.floor(s / 3600)} h ago`;
+  const days = Math.floor(s / 86_400);
+  return `${days} ${days === 1 ? "day" : "days"} ago`;
+}

@@ -55,7 +55,8 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
         ) : (
           <Stack gap={2}>
             <p className="body-sm pk-muted">
-              No Solana wallet in this browser. Any of these works; install one, then come back.
+              No Solana wallet in this browser. Any of these works; install one, then come back. On a
+              phone, open Pawket inside the wallet app&apos;s own browser instead.
             </p>
             {INSTALL.map((option) => (
               <a key={option.name} className="pk-btn pk-btn--paper pk-btn--full" href={option.href} target="_blank" rel="noreferrer">

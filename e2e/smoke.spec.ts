@@ -15,10 +15,39 @@ test("landing leads with the pet and closes with the rules", async ({ page }) =>
 test("the dock reaches the places that exist", async ({ page }) => {
   await page.goto("/home");
   const dock = page.getByRole("navigation", { name: "Pawket" });
-  for (const place of ["Home", "Playground", "Inventory", "Guilds"]) {
+  for (const place of ["Home", "Park", "Playground", "Inventory", "Guilds"]) {
     await expect(dock.getByRole("link", { name: place })).toBeVisible();
   }
   await expect(dock.getByRole("link", { name: "Market" })).toHaveCount(0);
+});
+
+test("the park is read from Solana, or says plainly that it could not be", async ({ page }) => {
+  await page.goto("/park");
+  await expect(page.getByRole("heading", { name: "Park" })).toBeVisible();
+  await expect(
+    page.getByText(/every pet kept on solana, read live|solana did not answer/i).first(),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /buy|swap|pay/i })).toHaveCount(0);
+});
+
+test("an address with no pet is a plain miss, not an error", async ({ page }) => {
+  await page.goto("/pet/11111111111111111111111111111111");
+  await expect(
+    page.getByText(/no pet lives at that address|solana did not answer/i),
+  ).toBeVisible();
+});
+
+test("a wallet is offered where it does something, and never asked for up front", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: /connect/i })).toHaveCount(0);
+  await page.goto("/home");
+  await expect(page.getByRole("heading", { name: "Already keep a pet on Solana?" })).toBeVisible();
+  await page.getByRole("button", { name: "Connect a wallet" }).click();
+  const sheet = page.getByRole("dialog", { name: "Connect a wallet" });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByText(/devnet/i).first()).toBeVisible();
+  await sheet.getByRole("button", { name: "Not now" }).click();
+  await expect(sheet).toHaveCount(0);
 });
 
 test("an empty room asks you to adopt and does not pretend to care", async ({ page }) => {

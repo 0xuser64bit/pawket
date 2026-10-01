@@ -2865,3 +2865,29 @@ li {
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* ---------------------------------------------------------------- the park
+   Who was out today: presence in pool, each name a way to their record. */
+.pk-presences {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-3);
+}
+.pk-presence-link {
+  position: relative;
+  color: inherit;
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .pk-presence-link:hover .body-sm {
+    text-decoration: underline;
+  }
+}
+@media (pointer: coarse) {
+  .pk-presence-link::after {
+    content: "";
+    position: absolute;
+    inset: -12px -4px;
+  }
+}

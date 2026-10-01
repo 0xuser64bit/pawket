@@ -87,6 +87,11 @@
   --pet-cloud: #fbf8f4;
   --pet-cloud-shade: #c7d3f2;
 
+  /* what the flat room shows: the sun in Daylight, the moon and the lamp's
+     light in Lamplight */
+  --pk-day: 1;
+  --pk-night: 0;
+
   /* depth is offset and outline, never blur — except a sheet */
   --shadow-sticker: 3px 3px 0 #2a1e14;
   --shadow-sticker-sm: 2px 2px 0 #2a1e14;
@@ -199,6 +204,8 @@
     --pet-cocoa: #8a5530;
     --pet-cloud: #efe9f2;
     --pet-cloud-shade: #b3c1ea;
+    --pk-day: 0;
+    --pk-night: 1;
 
     --shadow-sticker: 3px 3px 0 #0b0806;
     --shadow-sticker-sm: 2px 2px 0 #0b0806;
@@ -270,6 +277,8 @@
   --pet-cocoa: #8a5530;
   --pet-cloud: #efe9f2;
   --pet-cloud-shade: #b3c1ea;
+  --pk-day: 0;
+  --pk-night: 1;
 
   --shadow-sticker: 3px 3px 0 #0b0806;
   --shadow-sticker-sm: 2px 2px 0 #0b0806;
@@ -2006,48 +2015,55 @@ li {
   box-shadow: var(--shadow-sticker);
   overflow: hidden;
 }
-/* Everything in the room is sized from its height and placed along its
-   width, so a wider room gives the two of them more floor, not bigger
-   heads. The proportions are the 390px drawing's. */
-.pk-room__floor {
+/* The flat room is one drawing sliced to fill the frame, with the player
+   and the pet (in its basket) placed on top of it. They are sized from the
+   room's height and placed along its width, so a wider room gives the two
+   of them more floor, not bigger heads. */
+.pk-room__scene {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 27cqh;
-  background: var(--surface-sunk);
-  border-top: var(--stroke-line) solid var(--edge);
-}
-.pk-room__win {
-  position: absolute;
-  left: 7%;
-  top: 9.3cqh;
-  width: 36.4cqh;
-  height: 31.4cqh;
-  border: var(--stroke-line) solid var(--edge);
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  background: var(--surface);
-}
-.pk-room__win::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: var(--stroke-line);
-  background: var(--edge);
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 .pk-room__who {
   position: absolute;
-  bottom: 14.4cqh;
-  left: 8%;
-  width: 48.3cqh;
+  bottom: 9cqh;
+  left: 9%;
+  width: 46cqh;
 }
-.pk-room__pet {
+.pk-room__who::after {
+  content: "";
   position: absolute;
-  bottom: 11cqh;
-  left: 46%;
-  width: 56.8cqh;
+  left: 18%;
+  right: 18%;
+  bottom: -3cqh;
+  height: 6cqh;
+  border-radius: 50%;
+  background: var(--edge);
+  opacity: 0.14;
+}
+.pk-room__who svg {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.pk-room__nook {
+  position: absolute;
+  bottom: 3cqh;
+  left: 50%;
+  width: 62cqh;
+  aspect-ratio: 1;
+}
+.pk-room__nook > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.pk-room__pet svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* ------------------------------------------------- the playground field

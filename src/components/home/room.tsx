@@ -12,7 +12,8 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Button, PetArt, PlayerArt, useTheme, useToken, type Feeling, type PetForm, type Sky, type Temper } from "@/components/pk";
+import { Button, useTheme, useToken, type Feeling, type PetForm, type Sky, type Temper } from "@/components/pk";
+import { FlatRoom } from "@/components/home/flat-room";
 import type { RoomView } from "@/components/room3d/room-3d";
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { PetMood, PetSpecies } from "@/lib/game/enums";
@@ -37,31 +38,6 @@ const PEG_COLOUR: Record<ClothColour, string> = {
   ink: "var(--surface-ink)",
   cream: "var(--surface)",
 };
-
-/**
- * The room drawn flat: what shows before the 3D room is ready, and
- * instead of it when this device cannot draw it, when it fails, or when the
- * player asks for it. It is the design system's room, and it is complete
- * on its own.
- */
-type FlatPet = { form: PetForm; temper: Temper; feeling: Feeling; wearing: string | null; seed: string };
-
-function FlatRoom({ pet, colour, hop }: { pet: FlatPet | null; colour: string; hop: number }) {
-  return (
-    <>
-      <div className="pk-room__win" />
-      <div className="pk-room__floor" />
-      <div className="pk-room__who">
-        <PlayerArt color={colour} hat="beanie" />
-      </div>
-      {pet ? (
-        <div key={hop} className={["pk-room__pet", hop ? "pk-room__pet--hop" : ""].join(" ")}>
-          <PetArt {...pet} />
-        </div>
-      ) : null}
-    </>
-  );
-}
 
 /* ------------------------------------------------ device and choice */
 

@@ -75,20 +75,18 @@ export function PawArt({ form, coat, className }: { form: PawPrint; coat?: strin
 const HATS = {
   cap: (color: string) => (
     <>
-      <path d="M40 30c0-11 9-19 20-19s20 8 20 19z" fill={color} />
-      <path d="M80 30h16" strokeWidth="5" />
+      <path d="M36 34c0-14 11-24 24-24s24 10 24 24z" fill={color} />
+      <path d="M82 34h16" strokeWidth="5" />
     </>
   ),
   bow: (color: string) => (
-    <path
-      d="M60 14c-6-7-16-6-16 2s10 9 16 2M60 14c6-7 16-6 16 2s-10 9-16 2"
-      fill={color}
-    />
+    <path d="M60 14c-6-7-16-6-16 2s10 9 16 2M60 14c6-7 16-6 16 2s-10 9-16 2" fill={color} />
   ),
   beanie: (color: string) => (
     <>
-      <path d="M38 32c0-13 10-22 22-22s22 9 22 22z" fill={color} />
-      <path d="M36 32h48" strokeWidth="5" />
+      <path d="M34 36c0-15 11-26 26-26s26 11 26 26z" fill={color} />
+      <path d="M33 36h54" strokeWidth="6" />
+      <circle cx="60" cy="9" r="5.4" fill={color} />
     </>
   ),
 };
@@ -96,9 +94,9 @@ const HATS = {
 export type HatName = keyof typeof HATS;
 
 /**
- * The player is a peg doll: one colour for the whole figure, dot eyes and a
- * hat. There is no skin tone and no face beyond the eyes and mouth, so
- * expression comes from colour and accessory rather than from likeness.
+ * The player is a peg doll: a wooden-cream face, one colour for the rest of
+ * the figure, dot eyes, a blush and a hat. There is no skin tone and no
+ * likeness, so expression comes from colour and accessory.
  */
 export function PlayerArt({
   color = "var(--pool)",
@@ -123,13 +121,20 @@ export function PlayerArt({
       className={[still ? "" : "pk-breathe", className].filter(Boolean).join(" ")}
     >
       <g stroke={ink} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
-        <path d="M30 120V78c0-17 13-28 30-28s30 11 30 28v42z" fill={color} />
-        <path d="M30 92c-6 6-8 14-7 22M90 92c6 6 8 14 7 22" strokeWidth="9" stroke={color} />
-        <circle cx="60" cy="34" r="22" fill={color} />
+        <ellipse cx="49" cy="116" rx="9" ry="4.6" fill={ink} />
+        <ellipse cx="71" cy="116" rx="9" ry="4.6" fill={ink} />
+        <path d="M34 114V86c0-15 11.6-25 26-25s26 10 26 25v28z" fill={color} />
+        <ellipse cx="31" cy="92" rx="7" ry="11" fill={color} transform="rotate(14 31 92)" />
+        <ellipse cx="89" cy="92" rx="7" ry="11" fill={color} transform="rotate(-14 89 92)" />
+        <circle cx="60" cy="40" r="25" fill="var(--pet-cream)" />
         {hat ? HATS[hat](hatColor ?? defaultHatColor[hat]) : null}
-        <circle cx="52" cy="34" r="3.2" fill={ink} stroke="none" />
-        <circle cx="68" cy="34" r="3.2" fill={ink} stroke="none" />
-        <path d="M55 43c3 2.5 7 2.5 10 0" />
+        <ellipse cx="48" cy="49" rx="4.4" ry="2.6" fill="var(--pet-blush)" stroke="none" />
+        <ellipse cx="72" cy="49" rx="4.4" ry="2.6" fill="var(--pet-blush)" stroke="none" />
+        <circle cx="52" cy="42" r="3.4" fill="var(--pet-eye)" stroke="none" />
+        <circle cx="68" cy="42" r="3.4" fill="var(--pet-eye)" stroke="none" />
+        <circle cx="53.2" cy="40.8" r="1.2" fill="var(--pet-shine)" stroke="none" />
+        <circle cx="69.2" cy="40.8" r="1.2" fill="var(--pet-shine)" stroke="none" />
+        <path d="M55.6 50c2.8 2.4 6 2.4 8.8 0" stroke="var(--pet-eye)" />
       </g>
     </svg>
   );

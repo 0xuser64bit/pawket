@@ -172,8 +172,8 @@ It is the flat room's language in three dimensions, not a model viewer:
   art draws, on Kenney's cube animals — the bun cloud white, the pup with
   cocoa ears.
 - **The player is the one likeness in Pawket.** In the flat room the player
-  stays a peg doll with no skin tone, wearing the top colour chosen for the
-  3D room. In the 3D room the player is a person the player dressed — build,
+  stays a peg doll — a wooden-cream face, dot eyes, a blush and a beanie,
+  no skin tone — wearing the top colour chosen for the 3D room. In the 3D room the player is a person the player dressed — build,
   skin tone, hair, clothes — in the palette's hues; bloom and alarm are not
   offered.
 - **Nothing floats over the animal.** Emotes, the look, the room switch and
@@ -181,6 +181,17 @@ It is the flat room's language in three dimensions, not a model viewer:
   `radius-room`, its 2px `edge` and its sticker shadow.
 - **The room says what it is doing.** A moment's sentence is read out in a
   status line; the frame names who is in it and how to turn it.
+
+## The flat room
+
+Wherever 3D cannot draw (or the player prefers it), Home is a flat drawing
+of the same room (`src/components/home/flat-room.tsx`): a curtained window
+with the day in it — the sun in Daylight, the moon and stars in Lamplight
+(`--pk-day` / `--pk-night`) — a lamp whose light falls on the floor after
+dark, a high shelf clear of the pet's ears, a wood floor and a rug. The pet
+sits in a woven basket, one unit with it, so the basket always tucks the
+pet in and no drawing ever shows a cut-off body. The scene slices to any
+width; the player and the pet are sized from the room's height.
 
 ## What is real
 

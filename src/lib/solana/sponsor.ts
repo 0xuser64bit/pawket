@@ -64,6 +64,8 @@ export function checkSponsorable(
   transaction: Transaction,
   sponsor: Address,
   programId: string = PAWKET_PROGRAM_ID,
+  /** `before-player`: the sponsor built it and signs first (a Solana Action); the player signs after. */
+  when: "after-player" | "before-player" = "after-player",
 ): SponsorCheck {
   let message;
   try {
@@ -97,8 +99,10 @@ export function checkSponsorable(
     kinds.push(kind);
   }
 
-  for (const signer of accounts.slice(1, message.header.numSignerAccounts)) {
-    if (!transaction.signatures[signer]) return refuse("Every other signer must sign first.");
+  if (when === "after-player") {
+    for (const signer of accounts.slice(1, message.header.numSignerAccounts)) {
+      if (!transaction.signatures[signer]) return refuse("Every other signer must sign first.");
+    }
   }
   return { ok: true, kinds };
 }

@@ -32,8 +32,8 @@ export interface SendOptions {
   owner: TransactionSigner;
   /** The sponsor's address, or null when the owner pays. */
   sponsor: Address | null;
-  /** The instructions, given whoever pays rent (adoption needs it). */
-  instructions: (payer: TransactionSigner) => Instruction[];
+  /** The instructions, given the owner's signer and whoever pays rent (adoption needs it). */
+  instructions: (signers: { owner: TransactionSigner; payer: TransactionSigner }) => Instruction[];
   onStage?: (stage: TransactionStage) => void;
   /** Hands the owner-signed transaction to the sponsor; returns the signature. */
   relay?: (wireBase64: string) => Promise<string>;
@@ -90,7 +90,7 @@ export async function sendPawket({
     createTransactionMessage({ version: "legacy" }),
     (m) => setTransactionMessageFeePayerSigner(payer, m),
     (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
-    (m) => appendTransactionMessageInstructions(instructions(payer), m),
+    (m) => appendTransactionMessageInstructions(instructions({ owner, payer }), m),
   );
   const signed = await partiallySignTransactionMessageWithSigners(message);
   const wire = getBase64EncodedWireTransaction(signed);
@@ -101,7 +101,13 @@ export async function sendPawket({
     : await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" }).send();
 
   onStage?.("confirming");
-  const outcome = await waitForConfirmation({ rpc }, signature);
+  let outcome: ConfirmationOutcome;
+  try {
+    outcome = await waitForConfirmation({ rpc }, signature);
+  } catch (error) {
+    // It landed and the program refused it: the signature is the receipt.
+    throw Object.assign(error instanceof Error ? error : new Error(String(error)), { signature });
+  }
   onStage?.(outcome);
   return { signature, outcome, sponsored: sponsor !== null };
 }

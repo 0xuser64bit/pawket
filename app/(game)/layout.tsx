@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Dock, Mark, ThemeToggle } from "@/components/pk";
+import { WalletChip } from "@/components/wallet/wallet-chip";
 
 /**
  * The app shell: the mark, the Dock, and the two facts about this session.
@@ -21,6 +22,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
           <Mark href="/home" size={24} type={17} />
           <Dock />
           <div className="pk-shell__aside">
+            <WalletChip />
             <ThemeToggle />
           </div>
         </div>

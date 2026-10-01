@@ -55,7 +55,7 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
   });
 
   it("adopts for a wallet with no SOL", async () => {
-    const result = await send((payer) => [
+    const result = await send(({ payer }) => [
       getAdoptPetInstruction({
         owner,
         payer,

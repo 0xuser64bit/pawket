@@ -2811,3 +2811,57 @@ li {
   color: var(--ink);
   box-shadow: var(--shadow-sticker-sm);
 }
+
+/* ------------------------------------------------------- the wallet layer
+   An address or a signature is a fact: mono, truncated no shorter than four
+   characters each side, and always beside a copy control. */
+.pk-addr {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+}
+.pk-copy {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-paper);
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .pk-copy:hover {
+    color: var(--ink);
+    background: var(--paper-sunk);
+  }
+}
+@media (pointer: coarse) {
+  .pk-copy::after {
+    content: "";
+    position: absolute;
+    inset: -10px;
+  }
+}
+/* A wallet in the picker: its own mark, then its name, on Paper. */
+.pk-wallet-pick {
+  justify-content: flex-start;
+}
+.pk-wallet-pick img {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex: none;
+}
+.pk-chip--wallet {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}

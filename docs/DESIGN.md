@@ -193,6 +193,33 @@ sits in a woven basket, one unit with it, so the basket always tucks the
 pet in and no drawing ever shows a cut-off body. The scene slices to any
 width; the player and the pet are sized from the room's height.
 
+## The places, drawn
+
+Every place a pet appears is a drawn place, in the pets' own style — flat
+shapes, one outline, the palette — never a grid of identical pockets:
+
+- **Adoption** (`src/components/adopt/`). The three species sit large and
+  alive; their eyes follow the pointer (`useEyesFollow`); the chosen one
+  lifts into a `sun` ring and hops. On a phone they are a row you swipe,
+  and the one you land on is chosen. Naming stitches the name on the pet's
+  blanket as it is typed, and each temperament is shown as the face it
+  makes. The welcome is the pet radiant beside its first page, on Paper.
+- **The park** (`src/components/park/park-scene.tsx`). Hills, trees, a
+  bench, a path, the sun or the moon; the pets out today (then the most
+  cared for) stand on the lawn as figurines, front row by care, depth by
+  scale, each wandering a few steps at a pace from its address. Name tags
+  are `pool` when out today. Server-rendered, CSS motion only.
+- **The playground** (`src/components/play/`). Catch is a garden, Hop is
+  the park path with drifting hills, Copy is one giant paw whose toe beans
+  are the buttons and whose centre pad holds the pet. The pet is drawn
+  whole (`pose="full"`) and its face answers the game. Sky clouds have no
+  outline, so they never read as the storm clouds to dodge.
+- **The wardrobe** (`src/components/inventory/`). A mirror: the pet large,
+  trying on whatever the pointer or focus rests on before a tap wears it.
+- **The front door** (`app/page.tsx`). The three pets on a hill, eyes on
+  the visitor; what is on Solana right now, counted from the program; a day
+  with them, drawn; the one ink band beside a real Passport read from chain.
+
 ## What is real
 
 Adoption, the room, care, the wardrobe, the playground round, keeping a pet

@@ -138,6 +138,9 @@ export function toUserFacingError(error: unknown): string {
   if (isInsufficientFunds(error)) {
     return "Not enough SOL for the fee. Nothing was sent.";
   }
+  if (/blockhash not found|block height exceeded/i.test(messageOf(error))) {
+    return "That waited too long to be signed and expired. Nothing was sent — try again.";
+  }
   if (error instanceof Error && error.message) return error.message;
   if (typeof error === "string" && error) return error;
   return "Something went wrong sending the transaction. Nothing changed.";

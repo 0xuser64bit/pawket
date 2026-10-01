@@ -18,8 +18,9 @@ there first with a safe default or a blank placeholder.
 | `NEXT_PUBLIC_SOLANA_CLUSTER`    | `devnet`                               | `devnet`/`testnet`/`mainnet-beta`/`localnet` |
 | `NEXT_PUBLIC_SOLANA_RPC_URL`    | `https://api.devnet.solana.com`        | Custom RPC per environment         |
 | `NEXT_PUBLIC_SOLANA_WS_URL`     | (derived from RPC URL)                 | Override only when needed          |
-| `NEXT_PUBLIC_PAWKET_PROGRAM_ID`| `FQwe9…Sef` (devnet program)           | Do not change without a deploy plan|
-| `SOLANA_RPC_API_KEY`            | (empty)                                | Server-only, reserved for future   |
+| `NEXT_PUBLIC_PAWKET_PROGRAM_ID`| `PawkHv…M74` (devnet program)          | Changes only with a program deploy |
+| `SOLANA_RPC_URL`                | (the public RPC URL)                   | Server-only; may carry a provider key |
+| `SPONSOR_KEYPAIR`               | (empty: players pay their own fees)    | Server-only; the devnet fee sponsor |
 
 ## Validation
 
@@ -31,7 +32,13 @@ leaking. Invalid values fail fast at startup, not mid-transaction.
 
 ## Security rules
 
-- Private keys, seed phrases, and signing credentials must never exist in env
-  or in the repo. Wallets sign; the app never holds keys.
+- A player's keys never exist here: wallets sign, the app never asks for,
+  holds or logs a seed phrase or a player's key.
+- The one key the app holds is its own: `SPONSOR_KEYPAIR`, a devnet hot
+  wallet with a small float that pays fees and rent. It is server-only, it
+  is not the program's upgrade authority, and it signs only what
+  `checkSponsorable` allows (Pawket instructions, itself as fee payer and
+  rent payer only). Never commit it; `.keys/` and `*-keypair.json` are
+  ignored.
 - Nothing sensitive reaches the client bundle: grep for `NEXT_PUBLIC_` in
   review if a secret is ever added nearby.

@@ -49,6 +49,10 @@ describe("transaction errors", () => {
     expect(extractProgramErrorCode(Object.assign(new Error("refused"), { programError: 42 }))).toBeNull();
   });
 
+  it("tells an expired signature from a refusal", () => {
+    expect(toUserFacingError(new Error("Transaction simulation failed: Blockhash not found"))).toMatch(/expired/);
+  });
+
   it("says what did not change", () => {
     for (const code of [6000, 6001, 6002, 6003, 9999]) {
       expect(pawketErrorMessage(code)).toMatch(/Nothing/);

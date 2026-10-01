@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "e2e:devnet": "PAWKET_DEVNET=1 vitest run src/lib/solana/devnet.test.ts",
     "assets:3d": "node scripts/3d/build.mjs",
     "program:build": "anchor build --arch v2 && mkdir -p src/lib/solana/idl && cp target/idl/pawket.json src/lib/solana/idl/pawket.json",
     "program:test": "pnpm program:build && cargo test -p pawket",

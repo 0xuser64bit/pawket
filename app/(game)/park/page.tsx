@@ -1,6 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Banner, Card, Chip, EmptyState, ButtonLink, PetFrame, Presence, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
+import {
+  Banner,
+  ButtonLink,
+  Card,
+  Chip,
+  Columns,
+  EmptyState,
+  Icon,
+  PetArt,
+  PetFrame,
+  Presence,
+  Screen,
+  ScreenBar,
+  SectionLabel,
+  Stack,
+  type IconName,
+} from "@/components/pk";
+import { ParkScene, PARK_CAPACITY, type ParkPet } from "@/components/park/park-scene";
+import { CareActionType } from "@/lib/game/enums";
 import { CARE_SEEN, MOOD_LABEL, SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { formatAgo } from "@/lib/utils/format";
 import { projectGuestPet, streakAsOf, utcDay } from "@/lib/guest/pet";
@@ -38,6 +56,13 @@ function AdoptAnywhere() {
   );
 }
 
+const CARE_ICON: Record<CareActionType, IconName> = {
+  [CareActionType.Feed]: "bowl",
+  [CareActionType.Play]: "ball",
+  [CareActionType.Groom]: "heart",
+  [CareActionType.Rest]: "clock",
+};
+
 export default async function ParkPage() {
   let pets: PetOnChain[];
   try {
@@ -62,10 +87,20 @@ export default async function ParkPage() {
   const shown = pets
     .map((entry) => {
       const record = toCompanionRecord(entry);
-      return { entry, record, projected: projectGuestPet(record, now), streak: streakAsOf(record.streak, now) };
+      const projected = projectGuestPet(record, now);
+      return { entry, record, projected, streak: streakAsOf(record.streak, now), out: record.streak.lastDay === today };
     })
     .sort((a, b) => b.entry.passport.careCount - a.entry.passport.careCount || b.record.xp - a.record.xp);
-  const outToday = shown.filter(({ record }) => record.streak.lastDay === today);
+  const outToday = shown.filter(({ out }) => out);
+  const looks = new Map(shown.map(({ entry, record, projected }) => [entry.pet.address, petLook(record, projected.mood)]));
+  // Out today first, then the most cared for: the ones in the park right now.
+  const scene: ParkPet[] = [...outToday, ...shown.filter(({ out }) => !out)].slice(0, PARK_CAPACITY).map(({ entry, out }) => ({
+    address: entry.pet.address,
+    name: entry.pet.name,
+    look: looks.get(entry.pet.address)!,
+    out,
+  }));
+  const cares = pets.reduce((sum, { passport }) => sum + passport.careCount, 0);
   // Every Passport keeps its last eight cares: together, what just happened in the park.
   const lately = pets
     .flatMap(({ pet, passport }) => passport.recent.map((mark) => ({ pet, ...mark })))
@@ -91,46 +126,77 @@ export default async function ParkPage() {
         />
       ) : (
         <Stack gap={6}>
-          <Card variant="quiet">
-            <SectionLabel count={`${outToday.length}`}>Out today</SectionLabel>
-            {outToday.length === 0 ? (
-              <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
-                Nobody has been cared for yet today, in UTC. The first care of the day brings a pet out.
-              </p>
-            ) : (
-              <div className="pk-presences">
-                {outToday.map(({ entry, streak }) => (
-                  <Link key={entry.pet.address} href={`/pet/${entry.pet.address}`} className="pk-presence-link">
-                    <Presence name={entry.pet.name} note={`${streak.count}-day run`} />
-                  </Link>
-                ))}
-              </div>
-            )}
-          </Card>
+          <div>
+            <ParkScene pets={scene} />
+            <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
+              {outToday.length > 0
+                ? `${outToday.length} out today, in UTC, name tags in blue. Tap one for their record.`
+                : "Nobody has been cared for yet today, in UTC. These are the most cared for; the first care of the day brings a pet out."}
+            </p>
+          </div>
 
-          {lately.length > 0 ? (
-            <Card>
-              <SectionLabel>Lately</SectionLabel>
-              <ul className="pk-log">
-                {lately.map((mark) => (
-                  <li key={`${mark.pet.address}-${mark.at}-${mark.action}`}>
-                    <Link href={`/pet/${mark.pet.address}`} className="pk-feed-link">
-                      {CARE_SEEN[mark.action](mark.pet.name)}
-                    </Link>
-                    <span className="caption pk-faint">{formatAgo(now.getTime() / 1000 - mark.at)}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
-                Each line is a transaction signed by the pet&apos;s owner.
-              </p>
-            </Card>
-          ) : null}
+          <Columns
+            first={
+              lately.length > 0 ? (
+                <Card>
+                  <SectionLabel>Lately</SectionLabel>
+                  <ul className="pk-feed">
+                    {lately.map((mark) => {
+                      const look = looks.get(mark.pet.address);
+                      return (
+                        <li key={`${mark.pet.address}-${mark.at}-${mark.action}`}>
+                          <Link href={`/pet/${mark.pet.address}`} className="pk-feed__row">
+                            <span className="pk-avatar" aria-hidden="true">
+                              {look ? <PetArt {...look} still /> : null}
+                            </span>
+                            <span className="body-sm pk-feed__what">{CARE_SEEN[mark.action](mark.pet.name)}</span>
+                            <span className="pk-feed__icon" aria-hidden="true">
+                              <Icon name={CARE_ICON[mark.action]} size={16} />
+                            </span>
+                            <span className="caption pk-faint">{formatAgo(now.getTime() / 1000 - mark.at)}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
+                    Each line is a transaction signed by the pet&apos;s owner.
+                  </p>
+                </Card>
+              ) : (
+                <Card variant="quiet">
+                  <SectionLabel>Lately</SectionLabel>
+                  <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
+                    No cares recorded yet. Each one shows here once it is signed.
+                  </p>
+                </Card>
+              )
+            }
+            second={
+              <>
+                <div className="pk-parkfacts" role="list">
+                  <div className="pk-parkfact" role="listitem">
+                    <span className="pk-parkfact__n">{pets.length}</span>
+                    <span className="label pk-faint">Pets kept</span>
+                  </div>
+                  <div className="pk-parkfact" role="listitem">
+                    <span className="pk-parkfact__n">{outToday.length}</span>
+                    <span className="label pk-faint">Out today</span>
+                  </div>
+                  <div className="pk-parkfact" role="listitem">
+                    <span className="pk-parkfact__n">{cares}</span>
+                    <span className="label pk-faint">Cares recorded</span>
+                  </div>
+                </div>
+                <AdoptAnywhere />
+              </>
+            }
+          />
 
           <Stack gap={3}>
             <SectionLabel count={`${pets.length}`}>Everyone</SectionLabel>
             <div className="pk-cards">
-              {shown.map(({ entry, record, projected, streak }) => (
+              {shown.map(({ entry, record, projected, streak, out }) => (
                 <Card key={entry.pet.address} href={`/pet/${entry.pet.address}`} variant="flush">
                   <div className="pk-card__art">
                     <PetFrame
@@ -151,13 +217,17 @@ export default async function ParkPage() {
                       {entry.passport.careCount} {entry.passport.careCount === 1 ? "care" : "cares"}
                       {streak.count > 0 ? ` · ${streak.count}-day run` : ""}
                     </p>
+                    {out ? (
+                      <div style={{ marginTop: "var(--space-2)" }}>
+                        <Presence name="Out today" />
+                      </div>
+                    ) : null}
                   </div>
                 </Card>
               ))}
             </div>
           </Stack>
 
-          <AdoptAnywhere />
         </Stack>
       )}
     </Screen>

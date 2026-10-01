@@ -3697,3 +3697,200 @@ li {
   justify-items: center;
   text-align: center;
 }
+
+/* ------------------------------------------------------- the park, drawn
+
+   The pets that are out stand on the lawn, each wandering a few steps on
+   its spot at its own pace, with its name under it. Depth is scale. The
+   frame is a place like the room: radius-room, 2px edge, the sticker. */
+
+.pk-parkscene {
+  position: relative;
+  aspect-ratio: 16 / 7;
+  min-height: 300px;
+  overflow: hidden;
+  container-type: size;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-room);
+  background: var(--pool-soft);
+  box-shadow: var(--shadow-sticker);
+}
+@media (max-width: 719px) {
+  .pk-parkscene {
+    aspect-ratio: 1;
+    min-height: 0;
+  }
+}
+.pk-parkscene__land {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.pk-parkscene__pets {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pk-parkscene__pet {
+  position: absolute;
+  width: calc(30cqh * var(--pk-depth, 1));
+  translate: -50% 0;
+}
+/* A phone's park holds eight, so nobody stands on anybody. */
+@media (max-width: 719px) {
+  .pk-parkscene__pet {
+    width: calc(24cqh * var(--pk-depth, 1));
+  }
+  .pk-parkscene__pet:nth-child(n + 9) {
+    display: none;
+  }
+}
+.pk-parkscene__link {
+  display: grid;
+  justify-items: center;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+}
+.pk-parkscene__walk {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  animation: pk-wander var(--pk-wander, 8s) ease-in-out infinite;
+  animation-delay: var(--pk-wander-delay, 0s);
+}
+.pk-parkscene__walk svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+@media (hover: hover) {
+  .pk-parkscene__link:hover .pk-parkscene__walk {
+    animation-play-state: paused;
+    scale: 1.06;
+  }
+}
+.pk-parkscene__tag {
+  margin-top: -6%;
+  max-width: 160%;
+  padding: 1px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: clamp(10px, calc(4.4cqh * var(--pk-depth, 1)), 13px);
+  font-weight: 700;
+  line-height: 1.4;
+}
+.pk-parkscene__tag--out {
+  background: var(--pool);
+  border-color: var(--on-pool);
+  color: var(--on-pool);
+}
+/* A few steps one way, a look around, a few steps back. */
+@keyframes pk-wander {
+  0%,
+  100% {
+    transform: translateX(0) scaleX(1);
+  }
+  30% {
+    transform: translateX(22%) scaleX(1);
+  }
+  36% {
+    transform: translateX(22%) scaleX(-1);
+  }
+  66% {
+    transform: translateX(-18%) scaleX(-1);
+  }
+  72% {
+    transform: translateX(-18%) scaleX(1);
+  }
+}
+
+.pk-parkfacts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+@media (min-width: 1024px) {
+  .pk-columns__second .pk-parkfacts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pk-columns__second .pk-parkfact {
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+}
+.pk-parkfact {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-4);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-parkfact__n {
+  font-family: var(--font-mono);
+  font-size: clamp(22px, 4vw, 32px);
+  line-height: 1.1;
+  font-weight: 500;
+}
+
+.pk-feed {
+  display: grid;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pk-feed__row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: var(--stroke-hair) solid var(--edge-soft);
+  color: inherit;
+  text-decoration: none;
+}
+.pk-feed li:first-child .pk-feed__row {
+  border-top: 0;
+}
+@media (hover: hover) {
+  .pk-feed__row:hover .pk-feed__what {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+.pk-feed__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunk);
+  color: var(--ink-soft);
+}
+/* A pet's face in a circle, for a line in a list. */
+.pk-avatar {
+  display: block;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: 50%;
+  background: var(--pool-soft);
+}
+.pk-avatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  scale: 1.7;
+  translate: 0 18%;
+}

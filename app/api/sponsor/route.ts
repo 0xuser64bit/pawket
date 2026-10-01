@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { cosignAndSend, SponsorRefusal } from "@/lib/solana/sponsor";
-import { actionLimit, mayAdopt, sponsorRpc, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
+import { cosign, SponsorRefusal } from "@/lib/solana/sponsor";
+import { actionLimit, mayAdopt, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
 
 /**
- * The sponsor: pays the network fee, and a new pet's rent, for transactions
- * the player has already signed. What it will sign is `checkSponsorable`'s
- * call. GET says whether it is up; POST { transaction } returns { signature }.
+ * The sponsor: pays the network fee, and a new pet's rent. It signs first,
+ * as fee payer, and hands the transaction back for the player's wallet to
+ * sign and send (see `src/lib/solana/sponsor.ts` for why that order). What
+ * it will sign is `checkSponsorable`'s call. GET says whether it is up; POST
+ * { transaction } returns { transaction } with the sponsor's signature.
  */
 
 export const runtime = "nodejs";
@@ -41,18 +43,15 @@ export async function POST(request: Request) {
 
   const caller = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   try {
-    const { signature } = await cosignAndSend(sponsorRpc(), current.signer, body.data.transaction, (kinds) =>
+    const { transaction } = await cosign(current.signer, body.data.transaction, (kinds) =>
       (kinds.includes("adopt") ? mayAdopt(caller) : true) && actionLimit(caller),
     );
     sponsorSpent();
-    return NextResponse.json({ signature });
+    return NextResponse.json({ transaction });
   } catch (error) {
     if (error instanceof SponsorRefusal) {
-      return NextResponse.json(
-        { error: error.message, programError: error.programError, logs: error.logs?.slice(-12) },
-        { status: error.status },
-      );
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    return NextResponse.json({ error: "The sponsor could not send it. Nothing changed." }, { status: 502 });
+    return NextResponse.json({ error: "The sponsor could not sign it. Nothing changed." }, { status: 502 });
   }
 }

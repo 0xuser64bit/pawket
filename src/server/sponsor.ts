@@ -99,7 +99,7 @@ export async function sponsoredForPlayer(
     (m) => appendTransactionMessageInstructions(instructions({ owner, payer: sponsor }), m),
   );
   const transaction = await partiallySignTransactionMessageWithSigners(message);
-  const check = checkSponsorable(transaction, sponsor.address, undefined, "before-player");
+  const check = checkSponsorable(transaction, sponsor.address);
   if (!check.ok) throw new Error(check.reason);
   return getBase64EncodedWireTransaction(transaction);
 }

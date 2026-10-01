@@ -1,12 +1,13 @@
 // @vitest-environment node
 import {
-  AccountRole,
   appendTransactionMessageInstructions,
+  compileTransaction,
   createNoopSigner,
   createTransactionMessage,
   generateKeyPairSigner,
+  getBase64Encoder,
   getBase64EncodedWireTransaction,
-  partiallySignTransactionMessageWithSigners,
+  getTransactionDecoder,
   pipe,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
@@ -19,7 +20,7 @@ import { getTransferSolInstruction } from "@solana-program/system";
 import { beforeAll, describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { getAdoptPetInstruction, getCareInstruction, getDressInstruction } from "./instructions";
-import { checkSponsorable, cosignAndSend, createLimiter, SponsorRefusal } from "./sponsor";
+import { checkSponsorable, cosign, createLimiter, SponsorRefusal } from "./sponsor";
 
 const LIFETIME = {
   blockhash: "11111111111111111111111111111111" as Blockhash,
@@ -36,7 +37,7 @@ beforeAll(async () => {
   owner = await generateKeyPairSigner();
 });
 
-/** What the browser builds: the sponsor as a no-op fee payer, the owner signing. */
+/** What the browser builds and sends the sponsor: compiled, signed by nobody yet. */
 async function built(
   instructions: (payer: TransactionSigner) => Instruction[],
   feePayer: TransactionSigner = createNoopSigner(sponsor.address),
@@ -47,7 +48,7 @@ async function built(
     (m) => setTransactionMessageLifetimeUsingBlockhash(LIFETIME, m),
     (m) => appendTransactionMessageInstructions(instructions(feePayer), m),
   );
-  return partiallySignTransactionMessageWithSigners(message);
+  return compileTransaction(message);
 }
 
 const adopt = (payer: TransactionSigner, who: TransactionSigner = owner) =>
@@ -131,63 +132,33 @@ describe("checkSponsorable", () => {
       reason: "That is not a Pawket instruction.",
     });
   });
-
-  it("refuses until every other signer has signed", async () => {
-    const unsigned = await built(() => [
-      getCareInstruction({
-        owner: owner.address,
-        pet: PET,
-        passport: PASSPORT,
-        action: CareActionType.Rest,
-      }),
-      {
-        programAddress: care().programAddress,
-        accounts: [{ address: owner.address, role: AccountRole.READONLY_SIGNER }],
-        data: care().data,
-      },
-    ]);
-    expect(checkSponsorable(unsigned, sponsor.address)).toEqual({
-      ok: false,
-      reason: "Every other signer must sign first.",
-    });
-  });
 });
 
-describe("cosignAndSend", () => {
-  const rpc = (onSend: (wire: string) => void) =>
-    ({
-      sendTransaction: (wire: string) => ({
-        send: async () => {
-          onSend(wire);
-          return "sig";
-        },
-      }),
-    }) as never;
-
-  it("adds its signature and sends with preflight", async () => {
-    let sent = "";
+describe("cosign", () => {
+  it("signs first, as fee payer, and leaves the player's slot for the wallet", async () => {
     const wire = getBase64EncodedWireTransaction(await built((payer) => [adopt(payer)]));
-    const result = await cosignAndSend(rpc((w) => (sent = w)), sponsor, wire);
+    const result = await cosign(sponsor, wire);
     expect(result.kinds).toEqual(["adopt"]);
-    expect(sent).not.toBe(wire);
-    expect(result.signature).toMatch(/^[1-9A-HJ-NP-Za-km-z]{64,88}$/);
+    const signed = getTransactionDecoder().decode(getBase64Encoder().encode(result.transaction));
+    expect(signed.signatures[sponsor.address]).toBeTruthy();
+    expect(signed.signatures[owner.address]).toBeNull();
+    // The message is exactly the one that was built: the client checks this too.
+    expect(Array.from(signed.messageBytes)).toEqual(
+      Array.from(getTransactionDecoder().decode(getBase64Encoder().encode(wire)).messageBytes),
+    );
   });
 
-  it("sends nothing it refuses, and says why", async () => {
-    let sent = false;
+  it("signs nothing it refuses, and says why", async () => {
     const wire = getBase64EncodedWireTransaction(await built((payer) => [care(payer)]));
-    const refusal = await cosignAndSend(rpc(() => (sent = true)), sponsor, wire).catch((e) => e);
+    const refusal = await cosign(sponsor, wire).catch((error: unknown) => error);
     expect(refusal).toBeInstanceOf(SponsorRefusal);
-    expect(refusal.status).toBe(403);
-    expect(sent).toBe(false);
-    await expect(cosignAndSend(rpc(() => {}), sponsor, "not base64!")).rejects.toMatchObject({ status: 400 });
+    expect((refusal as SponsorRefusal).status).toBe(403);
+    await expect(cosign(sponsor, "not base64!")).rejects.toMatchObject({ status: 400 });
   });
 
   it("stops when the limiter says so", async () => {
     const wire = getBase64EncodedWireTransaction(await built(() => [care()]));
-    await expect(cosignAndSend(rpc(() => {}), sponsor, wire, () => false)).rejects.toMatchObject({
-      status: 429,
-    });
+    await expect(cosign(sponsor, wire, () => false)).rejects.toMatchObject({ status: 429 });
   });
 });
 

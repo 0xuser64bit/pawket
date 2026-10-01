@@ -18,7 +18,8 @@ import {
 } from "./instructions";
 import { derivePassportPda, derivePetPda } from "./pda";
 import { sendPawket } from "./send";
-import { cosignAndSend } from "./sponsor";
+import { cosign } from "./sponsor";
+import { extractProgramErrorCode } from "./transactions";
 
 /**
  * The whole path on devnet, run by `pnpm e2e:devnet` and skipped otherwise:
@@ -45,7 +46,7 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
       owner,
       sponsor: sponsor.address,
       instructions,
-      relay: async (wire) => (await cosignAndSend(rpc, sponsor, wire)).signature,
+      cosign: async (wire: string) => (await cosign(sponsor, wire)).transaction,
     });
 
   beforeAll(async () => {
@@ -101,10 +102,13 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
   });
 
   it("refuses a care still cooling down before anyone pays for it", async () => {
+    const before = (await rpc.getBalance(sponsor.address).send()).value;
     const refused = await send(() => [
       getCareInstruction({ owner, pet, passport, action: CareActionType.Feed }),
-    ]).catch((error) => error);
-    expect(refused).toMatchObject({ status: 422, programError: 6002 });
+    ]).catch((error: unknown) => error);
+    expect(extractProgramErrorCode(refused)).toBe(6002);
+    // Preflight refused it, so nothing landed and nobody paid.
+    expect((await rpc.getBalance(sponsor.address).send()).value).toBe(before);
   });
 
   it("finds the pet among its owner's", async () => {

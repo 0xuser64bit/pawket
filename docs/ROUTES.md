@@ -17,7 +17,7 @@ Built today:
                            otherwise the record of the pet in this browser
 (game)/guilds              the boundary. not a directory
 /api/health
-/api/sponsor               GET: is it up. POST { transaction }: co-sign and send
+/api/sponsor               GET: is it up. POST { transaction }: signed first, as fee payer
 /api/actions/adopt         Solana Action: adopt straight onto Solana
 /api/actions/care/[pet]    Solana Action: the four cares, owner only
 /api/actions/icon          a square card for an Action (?pet=)

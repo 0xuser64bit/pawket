@@ -21,7 +21,7 @@ app/                        routes, layouts, route handlers (Server by default)
     pet/[id]/               an address: the public Passport (Server);
                             anything else: the browser pet's record
   api/health/route.ts       build version + active cluster
-  api/sponsor/route.ts      co-signs Pawket transactions as fee payer
+  api/sponsor/route.ts      signs Pawket transactions first, as fee payer
 src/components/             UI; "use client" only at interactive leaves
   pk/                       design system
   wallet/                   connect sheet, wallet chip, address line, tx receipt
@@ -57,8 +57,9 @@ docs/                       the docs you are reading
   `toCompanionRecord` turns each into the same record shape, so every screen
   draws both kinds with the same functions. `useCompanion` picks the one in
   play (`pawket.active-pet`, a per-device choice).
-- A care on Solana: `send.ts` builds, the wallet signs, the sponsor
-  co-signs and sends with preflight, the client waits for `confirmed`, then
+- A care on Solana: `send.ts` builds, the sponsor signs first as fee
+  payer, the wallet signs as owner, the client checks the message came back
+  unchanged and sends it with preflight, waits for `confirmed`, then
   re-reads the pet. The room plays the moment only then.
 - Server Components (Passport, Park, the landing's count) read the chain
   through `src/server/solana.ts` at request time. No cache, no indexer, no

@@ -16,8 +16,9 @@ prefix). Decay, cooldowns, XP, the UTC streak and the daily round bonus are
 enforced on chain with the browser's integer math, held together by
 `src/lib/game/lockstep.txt`; the Passport keeps the last eight cares.
 `register_item` and `record_purchase` are deleted, not ported. `adopt_pet`
-takes a separate rent payer, and a server sponsor co-signs as fee payer for
-Pawket instructions only. A pet still starts in the browser: "Keep it on
+takes a separate rent payer, and a server sponsor signs first, as fee payer,
+for Pawket instructions only (first, because wallets rewrite unsigned
+transactions and the sponsor would refuse the rewrite). A pet still starts in the browser: "Keep it on
 Solana" carries it into the program, and the record there starts that day.
 One record shape serves both, through `useCompanion`. This resolves Q7 for
 this version: a Wallet Standard wallet as identity, no embedded wallet, no

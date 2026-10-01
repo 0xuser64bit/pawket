@@ -23,8 +23,9 @@ drawn in 3D — the player and the pet in one scene (`src/components/room3d/`,
 holds the streak, counts and the last eight cares. Decay, cooldowns, XP,
 the streak and the daily round bonus are enforced on chain by the same
 integer math as `src/lib/game/` (`src/lib/game/lockstep.txt` is replayed by
-both). The wallet signs as owner; the sponsor (`/api/sponsor`) co-signs as
-fee payer and pays rent, and signs nothing but Pawket instructions. A care
+both). The sponsor (`/api/sponsor`) signs first, as fee payer and rent payer,
+and signs nothing but Pawket instructions; the wallet signs second, as
+owner. A care
 on Solana plays its moment only after it is confirmed; nothing is optimistic.
 
 `useCompanion` (`src/lib/companion/`) decides what a screen draws: the

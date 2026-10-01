@@ -74,13 +74,21 @@ are none, and says Pawket is on devnet.
 
 ## Transaction lifecycle
 
-`send.ts` is the one path: build with the builders → the wallet signs as
-owner (`partiallySignTransactionMessageWithSigners`) → the sponsor (or the
-RPC, when the player pays) sends with preflight on → confirm (`confirmed`,
+`send.ts` is the one path: build with the builders → the sponsor signs
+first, as fee payer → the wallet signs as owner → the message is checked to
+be the one that was built → send with preflight on → confirm (`confirmed`,
 30s timeout, then "unknown", never "failed") → reload from chain →
-`TxReceipt` shows the signature, a copy control and an Explorer link. No
-optimistic adopt/care state. The cooldown is checked before the wallet
-opens, with the program's own rule.
+`TxReceipt` shows the signature, a copy control and an Explorer link. When
+the player pays, the wallet is fee payer and signs alone. No optimistic
+adopt/care state. The cooldown is checked before the wallet opens, with the
+program's own rule.
+
+Why the sponsor signs first: a wallet rewrites a transaction that carries no
+signature yet — Phantom adds priority-fee and guard instructions — and the
+sponsor refuses instructions that are not Pawket's. A transaction that
+already carries a signature, a wallet signs as it is. If one rewrites it
+anyway, the sponsor's signature no longer fits, and `send.ts` says so and
+sends nothing.
 
 ## The sponsor
 
@@ -92,8 +100,11 @@ small float — not the upgrade authority. `checkSponsorable` signs only when:
 - the sponsor is the fee payer, and appears in no instruction except as
   `adopt_pet`'s `payer`;
 - there are no lookup tables and no compute-budget instructions (a priority
-  fee is the one way to spend the float faster);
-- every other signer has already signed.
+  fee is the one way to spend the float faster).
+
+It signs before the player and does not send: the client sends, with
+preflight on, so a transaction that would fail lands nothing and costs the
+float nothing.
 
 Adoptions are limited to 20 an hour per caller (an IP for the web app, a
 wallet for a Blink) and 120 an hour in all, which bounds the worst case to

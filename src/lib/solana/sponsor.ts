@@ -2,27 +2,29 @@ import {
   getBase64Encoder,
   getBase64EncodedWireTransaction,
   getCompiledTransactionMessageDecoder,
-  getSignatureFromTransaction,
   getTransactionDecoder,
   partiallySignTransaction,
   type Address,
   type KeyPairSigner,
   type ReadonlyUint8Array,
-  type Rpc,
-  type SendTransactionApi,
   type Transaction,
 } from "@solana/kit";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
-import { extractProgramErrorCode, toUserFacingError } from "./transactions";
 
 /**
  * The sponsor pays network fees, and rent for a new pet, so a player can
  * adopt and care with an empty wallet. It holds a small devnet float and
  * signs only what this module allows: a transaction whose every instruction
  * is Pawket's, where the sponsor is the fee payer and appears in no
- * instruction except as `adopt_pet`'s rent payer, and which every other
- * signer has already signed. A compute-budget instruction is refused too —
- * a priority fee is the one way a caller could spend the float faster.
+ * instruction except as `adopt_pet`'s rent payer. A compute-budget
+ * instruction is refused too — a priority fee is the one way a caller could
+ * spend the float faster.
+ *
+ * The sponsor signs first and the wallet second. A wallet rewrites a
+ * transaction that carries no signature yet (Phantom adds priority fees and
+ * guard instructions), and the sponsor would refuse the rewrite; one that
+ * already carries a signature it signs as it is. The client checks the
+ * message came back unchanged before sending it.
  */
 
 export type SponsoredKind = "adopt" | "care" | "round" | "dress";
@@ -64,8 +66,6 @@ export function checkSponsorable(
   transaction: Transaction,
   sponsor: Address,
   programId: string = PAWKET_PROGRAM_ID,
-  /** `before-player`: the sponsor built it and signs first (a Solana Action); the player signs after. */
-  when: "after-player" | "before-player" = "after-player",
 ): SponsorCheck {
   let message;
   try {
@@ -98,12 +98,6 @@ export function checkSponsorable(
     if (misplaced) return refuse("The sponsor only pays; it takes no other part.");
     kinds.push(kind);
   }
-
-  if (when === "after-player") {
-    for (const signer of accounts.slice(1, message.header.numSignerAccounts)) {
-      if (!transaction.signatures[signer]) return refuse("Every other signer must sign first.");
-    }
-  }
   return { ok: true, kinds };
 }
 
@@ -127,10 +121,8 @@ export function createLimiter(limit: number, windowMs: number) {
 export class SponsorRefusal extends Error {
   constructor(
     message: string,
-    /** 400 not a transaction, 403 not one the sponsor signs, 422 the chain refused it, 429 slow down. */
-    readonly status: 400 | 403 | 422 | 429,
-    readonly programError?: number,
-    readonly logs?: readonly string[],
+    /** 400 not a transaction, 403 not one the sponsor signs, 429 slow down. */
+    readonly status: 400 | 403 | 429,
   ) {
     super(message);
     this.name = "SponsorRefusal";
@@ -138,16 +130,17 @@ export class SponsorRefusal extends Error {
 }
 
 /**
- * The sponsor's whole job: decode, check, co-sign as fee payer, and send
- * with preflight on, so a transaction that would fail is never paid for.
- * Returns the signature; throws `SponsorRefusal` with what went wrong.
+ * The sponsor's whole job: decode, check, and sign as fee payer — first,
+ * before the player. Returns the transaction with the sponsor's signature
+ * and every other slot as it came; throws `SponsorRefusal` with the reason.
+ * A transaction that would fail is still never paid for: the client sends
+ * it with preflight on, and a failed preflight lands nothing.
  */
-export async function cosignAndSend(
-  rpc: Rpc<SendTransactionApi>,
+export async function cosign(
   sponsor: KeyPairSigner,
   wireBase64: string,
   limit?: (kinds: SponsoredKind[]) => boolean,
-): Promise<{ signature: string; kinds: SponsoredKind[] }> {
+): Promise<{ transaction: string; kinds: SponsoredKind[] }> {
   let transaction: Transaction;
   try {
     transaction = getTransactionDecoder().decode(getBase64Encoder().encode(wireBase64));
@@ -159,19 +152,6 @@ export async function cosignAndSend(
   if (limit && !limit(check.kinds)) {
     throw new SponsorRefusal("Too many in a row. Nothing was sent — try again in a while.", 429);
   }
-
   const signed = await partiallySignTransaction([sponsor.keyPair], transaction);
-  const wire = getBase64EncodedWireTransaction(signed);
-  try {
-    await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" }).send();
-  } catch (error) {
-    const logs = (error as { context?: { logs?: readonly string[] } }).context?.logs;
-    throw new SponsorRefusal(
-      toUserFacingError(error),
-      422,
-      extractProgramErrorCode(error) ?? undefined,
-      logs ?? undefined,
-    );
-  }
-  return { signature: getSignatureFromTransaction(signed), kinds: check.kinds };
+  return { transaction: getBase64EncodedWireTransaction(signed), kinds: check.kinds };
 }

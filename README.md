@@ -32,11 +32,13 @@ uses to draw them. One scripted life (`src/lib/game/lockstep.txt`) is
 replayed against the program and against the browser's record; both land on
 every number.
 
-**Fees.** The wallet signs as the owner. `/api/sponsor` checks the
-transaction — only Pawket's four instructions, the sponsor as fee payer and
-rent payer and nothing else, no lookup tables, no priority fees, every other
-signer already signed — co-signs and sends it with preflight on. A care
-still cooling down is refused before anyone pays for it.
+**Fees.** `/api/sponsor` checks a transaction — only Pawket's four
+instructions, the sponsor as fee payer and rent payer and nothing else, no
+lookup tables, no priority fees — and signs it first; the wallet then signs
+as the owner (a transaction that already carries a signature is one wallets
+such as Phantom sign as it is, instead of rewriting it), and the app sends
+it with preflight on. A care still cooling down is refused before anyone
+pays for it.
 
 **Blinks.** `/adopt` and every `/pet/<address>` link are also Solana
 Actions (`/actions.json`): in a Blink-aware client they unfurl as an

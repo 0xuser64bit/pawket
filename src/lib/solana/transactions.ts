@@ -13,11 +13,12 @@ import { PAWKET_ERROR_CODES } from "./program";
  * 2. Validate client-side — game math + `normalizePetName` (trim before PDA).
  * 3. Build instructions — the builders in `instructions.ts`. Never hand-roll
  *    instruction bytes in a component.
- * 4. Sign — the wallet signs as the owner. Never ask for seed phrases or keys.
- * 5. Send — to the sponsor (`/api/sponsor`), which checks the transaction,
- *    co-signs as fee payer and sends it with preflight on; or, when the
- *    player pays, straight to the RPC with preflight on. A failing
- *    simulation is never sent.
+ * 4. Sign — the sponsor (`/api/sponsor`) first, as fee payer, after checking
+ *    the transaction; then the wallet, as the owner, on a transaction it
+ *    then has no reason to rewrite. When the player pays, the wallet alone.
+ *    Never ask for seed phrases or keys.
+ * 5. Send — to the RPC with preflight on. A failing simulation is never sent
+ *    and costs nobody anything.
  * 6. Confirm — `confirmed` commitment, 30s timeout, then treat as unknown
  *    (not failed, not succeeded).
  * 7. Refresh — reload state from the chain. No optimistic XP.

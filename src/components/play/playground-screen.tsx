@@ -17,7 +17,7 @@ import {
 import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { getPublicEnv } from "@/config/env";
 import { DAILY_GOAL_REWARD_XP } from "@/lib/game/constants";
-import { SPECIES_ART } from "@/lib/game/appearance";
+import { petLook } from "@/lib/game/appearance";
 import { findWearable } from "@/lib/closet/catalog";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { recordPlay, utcDay, type GuestPet } from "@/lib/guest/pet";
@@ -199,7 +199,7 @@ function Round({
       <div className="pk-field-of-play">
         <div className="pk-field-of-play__ground" />
         <div className="pk-field-of-play__racer" style={{ left: "34%", width: "32cqh" }}>
-          <PetArt form={SPECIES_ART[pet.species]} />
+          <PetArt {...petLook(pet)} />
         </div>
         <span className="pk-sr">
           {pet.name} waiting at the gates{worn ? `, wearing ${worn.name}` : ""}.

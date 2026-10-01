@@ -32,6 +32,13 @@ export const DAYLIGHT = {
   "trim-copper": "#a45f2a",
   "trim-glass": "#2d8296",
   "trim-foil": "#95761a",
+  "pet-eye": "#2a1e14",
+  "pet-shine": "#ffffff",
+  "pet-blush": "#ff9f8f",
+  "pet-cream": "#fff3e2",
+  "pet-cocoa": "#6b3d1f",
+  "pet-cloud": "#fbf8f4",
+  "pet-cloud-shade": "#c7d3f2",
 } as const;
 
 export type Tone = keyof typeof DAYLIGHT;

@@ -2,11 +2,12 @@ import "server-only";
 
 import { Fragment, isValidElement, type ReactElement, type ReactNode } from "react";
 import { ImageResponse } from "next/og";
-import { PetArt, type PetForm } from "@/components/pk/art";
+import { PetArt, type PetForm, type PetPaint } from "@/components/pk/pet-art";
 import { DAYLIGHT } from "@/components/room3d/palette";
-import { PERSONALITY_LABEL, SPECIES_ART, SPECIES_LABEL } from "@/lib/game/appearance";
+import { PERSONALITY_LABEL, SPECIES_LABEL, petLook } from "@/lib/game/appearance";
 import { calculateLevelFromXp } from "@/lib/game/math";
-import type { PetOnChain } from "@/lib/solana/accounts";
+import { projectGuestPet } from "@/lib/guest/pet";
+import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 
 /**
  * Pictures of a pet for outside the app: the card a shared link unfurls as
@@ -14,19 +15,53 @@ import type { PetOnChain } from "@/lib/solana/accounts";
  * the record at request time; without a pet, the three species together.
  */
 
-/** A coat in hex: the card is drawn without a stylesheet, so no token resolves. */
+/** The pet's paint in hex: the card is drawn without a stylesheet, so no token resolves. */
+const PAINT: PetPaint = {
+  ink: DAYLIGHT.edge,
+  rim: DAYLIGHT.surface,
+  coat: "",
+  patch: "",
+  eye: DAYLIGHT["pet-eye"],
+  shine: DAYLIGHT["pet-shine"],
+  blush: DAYLIGHT["pet-blush"],
+  cream: DAYLIGHT["pet-cream"],
+  cocoa: DAYLIGHT["pet-cocoa"],
+  cloud: DAYLIGHT["pet-cloud"],
+  cloudShade: DAYLIGHT["pet-cloud-shade"],
+  pool: DAYLIGHT.pool,
+  poolEdge: DAYLIGHT["pool-edge"],
+  sun: DAYLIGHT.sun,
+  sunEdge: DAYLIGHT["sun-edge"],
+  sprout: DAYLIGHT.sprout,
+  sproutEdge: DAYLIGHT["sprout-edge"],
+  foil: DAYLIGHT["trim-foil"],
+  glass: DAYLIGHT["trim-glass"],
+  surface: DAYLIGHT.surface,
+};
 const COAT: Record<PetForm, [string, string]> = {
   cat: [DAYLIGHT.sun, DAYLIGHT["sun-edge"]],
-  dog: [DAYLIGHT["trim-copper"], DAYLIGHT["trim-cloth"]],
-  bird: [DAYLIGHT.pool, DAYLIGHT["pool-edge"]],
-  bun: [DAYLIGHT.bloom, DAYLIGHT["bloom-edge"]],
+  dog: [DAYLIGHT["trim-copper"], DAYLIGHT["pet-cocoa"]],
+  bun: [DAYLIGHT["pet-cloud"], DAYLIGHT["pet-cloud-shade"]],
 };
 const SKY: Record<PetForm, string> = {
   cat: DAYLIGHT["sun-soft"],
   dog: DAYLIGHT["surface-sunk"],
-  bird: DAYLIGHT["pool-soft"],
   bun: DAYLIGHT["pool-soft"],
 };
+
+type Look = Omit<ReturnType<typeof petLook>, "seed">;
+const SPECIES_LOOKS: Look[] = [
+  { form: "cat", temper: "curious", feeling: "happy", wearing: null },
+  { form: "dog", temper: "brave", feeling: "happy", wearing: "wool-scarf" },
+  { form: "bun", temper: "cozy", feeling: "happy", wearing: null },
+];
+
+/** How this pet looks right now, from its record. */
+function lookOf(onChain: PetOnChain): Look {
+  const record = toCompanionRecord(onChain);
+  const { form, temper, feeling, wearing } = petLook(record, projectGuestPet(record).mood);
+  return { form, temper, feeling, wearing };
+}
 
 let fonts: Promise<Array<{ name: string; data: ArrayBuffer; weight: 500 | 700 }>> | null = null;
 
@@ -73,14 +108,14 @@ function markup(node: ReactNode): string {
   return `<${String(element.type)}${attrs}>${markup(element.props.children)}</${String(element.type)}>`;
 }
 
-function petImage(form: PetForm): string {
+function petImage(look: Look): string {
   const svg = markup(
-    <PetArt form={form} coat={COAT[form][0]} patch={COAT[form][1]} rim still colours={{ ink: DAYLIGHT.edge, rim: DAYLIGHT.surface }} />,
+    <PetArt {...look} coat={COAT[look.form][0]} patch={COAT[look.form][1]} rim still colours={PAINT} />,
   ).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
-function Pocket({ form, size }: { form: PetForm; size: number }) {
+function Pocket({ look, size }: { look: Look; size: number }) {
   return (
     <div
       style={{
@@ -91,12 +126,12 @@ function Pocket({ form, size }: { form: PetForm; size: number }) {
         borderRadius: size * 0.145,
         border: `${Math.round(size / 72)}px solid ${DAYLIGHT.edge}`,
         boxShadow: `${Math.round(size / 44)}px ${Math.round(size / 44)}px 0 ${DAYLIGHT.edge}`,
-        background: SKY[form],
+        background: SKY[look.form],
         overflow: "hidden",
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
-      <img src={petImage(form)} width={size - 12} height={size - 12} alt="" />
+      <img src={petImage(look)} width={size - 12} height={size - 12} alt="" />
     </div>
   );
 }
@@ -147,11 +182,11 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
       (
         <div style={{ ...base, flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 28 }}>
           {onChain ? (
-            <Pocket form={SPECIES_ART[onChain.pet.species]} size={420} />
+            <Pocket look={lookOf(onChain)} size={420} />
           ) : (
             <div style={{ display: "flex", gap: 28 }}>
-              {(["cat", "dog", "bun"] as const).map((form) => (
-                <Pocket key={form} form={form} size={200} />
+              {SPECIES_LOOKS.map((look) => (
+                <Pocket key={look.form} look={look} size={200} />
               ))}
             </div>
           )}
@@ -169,8 +204,8 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
       (
         <div style={{ ...base, flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 26 }}>
           <div style={{ display: "flex", gap: 36 }}>
-            {(["cat", "dog", "bun"] as const).map((form) => (
-              <Pocket key={form} form={form} size={230} />
+            {SPECIES_LOOKS.map((look) => (
+              <Pocket key={look.form} look={look} size={230} />
             ))}
           </div>
           <div style={{ fontFamily: "Fraunces", fontSize: 92, lineHeight: 1, marginTop: 8 }}>Pawket</div>
@@ -186,7 +221,7 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
   return new ImageResponse(
     (
       <div style={{ ...base, alignItems: "center", padding: 72 }}>
-        <Pocket form={SPECIES_ART[onChain.pet.species]} size={440} />
+        <Pocket look={lookOf(onChain)} size={440} />
         <div style={{ display: "flex", flexDirection: "column", marginLeft: 64, gap: 20 }}>
           <div style={{ fontFamily: "Fraunces", fontSize: name.length > 12 ? 72 : 104, lineHeight: 1 }}>{name}</div>
           {lines.map((line) => (

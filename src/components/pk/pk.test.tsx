@@ -91,7 +91,7 @@ describe("PetFrame", () => {
   });
 
   it("keeps rarity readable without a name, for a grid tile", () => {
-    expect(renderToStaticMarkup(<PetFrame form="bird" rarity="glass" size="sm" />)).toContain("pk-pet--glass");
+    expect(renderToStaticMarkup(<PetFrame form="bun" rarity="glass" size="sm" />)).toContain("pk-pet--glass");
   });
 });
 

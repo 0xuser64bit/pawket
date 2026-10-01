@@ -1,4 +1,4 @@
-import type { PetForm, Sky } from "@/components/pk";
+import type { Feeling, PetForm, Sky, Temper } from "@/components/pk";
 import { CareActionType, PetMood, PetPersonality, PetSpecies } from "./enums";
 
 /**
@@ -75,3 +75,40 @@ export const MOOD_LABEL: Record<PetMood, string> = {
   [PetMood.Tired]: "Tired",
   [PetMood.Scruffy]: "Scruffy",
 };
+
+/** The face a temperament wears when nothing is wrong. */
+export const PERSONALITY_TEMPER: Record<PetPersonality, Temper> = {
+  [PetPersonality.Curious]: "curious",
+  [PetPersonality.Cozy]: "cozy",
+  [PetPersonality.Brave]: "brave",
+  [PetPersonality.Mischief]: "mischief",
+};
+
+/** The face a mood puts on. A need shows on the pet until it is met. */
+export const MOOD_FEELING: Record<PetMood, Feeling> = {
+  [PetMood.Radiant]: "radiant",
+  [PetMood.Happy]: "happy",
+  [PetMood.Okay]: "okay",
+  [PetMood.Hungry]: "hungry",
+  [PetMood.Lonely]: "lonely",
+  [PetMood.Tired]: "tired",
+  [PetMood.Scruffy]: "scruffy",
+};
+
+/**
+ * Everything a drawing of this pet needs from its record: the species'
+ * form, the face its temperament and mood make, and what it is wearing.
+ * Spread it into a `PetFrame` or a `PetArt`.
+ */
+export function petLook(
+  pet: { species: PetSpecies; personality: PetPersonality; wearing: string | null; name: string },
+  mood?: PetMood,
+) {
+  return {
+    form: SPECIES_ART[pet.species],
+    temper: PERSONALITY_TEMPER[pet.personality],
+    feeling: mood === undefined ? ("happy" as const) : MOOD_FEELING[mood],
+    wearing: pet.wearing,
+    seed: pet.name,
+  };
+}

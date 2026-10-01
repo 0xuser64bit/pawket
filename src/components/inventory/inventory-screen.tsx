@@ -16,6 +16,7 @@ import {
   SectionLabel,
   Stack,
   Tabs,
+  WearableArt,
 } from "@/components/pk";
 import { CarryCard } from "@/components/home/carry-card";
 import { TxReceipt } from "@/components/wallet/tx-receipt";
@@ -23,11 +24,11 @@ import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { getPublicEnv } from "@/config/env";
 import { WEARABLES, findWearable } from "@/lib/closet/catalog";
 import { useCompanion } from "@/lib/companion/use-companion";
-import { SPECIES_ART, SPECIES_LABEL, SPECIES_SKY } from "@/lib/game/appearance";
+import { SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { calculateLevelFromXp } from "@/lib/game/math";
 import { projectGuestPet, setWearing, type GuestPet } from "@/lib/guest/pet";
 import { readGuestPetSnapshot, saveGuestPet } from "@/lib/guest/storage";
-import { wearableSlot } from "@/lib/solana/accounts";
+import { toCompanionRecord, wearableSlot } from "@/lib/solana/accounts";
 import { getDressInstruction } from "@/lib/solana/instructions";
 import { usePawketSend } from "@/lib/solana/use-send";
 
@@ -105,7 +106,7 @@ export function InventoryScreen({ tab }: { tab: "pet" | "wardrobe" }) {
                       <Card key={entry.pet.address} variant="flush">
                         <Link href={`/pet/${entry.pet.address}`} className="pk-card__art" aria-label={`${entry.pet.name}'s record`}>
                           <PetFrame
-                            form={SPECIES_ART[entry.pet.species]}
+                            {...petLook(toCompanionRecord(entry), projectGuestPet(toCompanionRecord(entry)).mood)}
                             sky={SPECIES_SKY[entry.pet.species]}
                             level={calculateLevelFromXp(entry.pet.xp)}
                             size="fluid"
@@ -195,7 +196,7 @@ export function InventoryScreen({ tab }: { tab: "pet" | "wardrobe" }) {
               {WEARABLES.map((item) => {
                 const on = pet?.wearing === item.id;
                 const tile = (
-                  <ItemTile name={item.name} kind={item.kind} icon={item.icon} equipped={on} />
+                  <ItemTile name={item.name} kind={item.kind} art={<WearableArt id={item.id} className="pk-tile__piece" />} equipped={on} />
                 );
                 if (!pet) return <div key={item.id}>{tile}</div>;
                 return (
@@ -233,11 +234,11 @@ export function InventoryScreen({ tab }: { tab: "pet" | "wardrobe" }) {
 }
 
 function BrowserPetCard({ pet }: { pet: GuestPet }) {
-  const level = projectGuestPet(pet).level;
+  const { level, mood } = projectGuestPet(pet);
   return (
     <Card href={`/pet/${pet.id}`} variant="flush">
       <div className="pk-card__art">
-        <PetFrame form={SPECIES_ART[pet.species]} sky={SPECIES_SKY[pet.species]} level={level} size="fluid" still />
+        <PetFrame {...petLook(pet, mood)} sky={SPECIES_SKY[pet.species]} level={level} size="fluid" still />
       </div>
       <div className="pk-card__body">
         <h2 className="title">{pet.name}</h2>

@@ -75,8 +75,8 @@ Everything else in the packs was dropped; download them again to use more.
 ### Pets
 
 `buildPet` recolours the three species to the coats `PetArt` draws —
-`sun`/`sun-edge` (Luna cat), `trim-copper` (Moss pup), `bloom`/`bloom-edge`
-(Cloud bun) — as Daylight hex values, converts the colormap lookup to
+`sun`/`sun-edge` (Luna cat), `trim-copper` with `pet-cocoa` ears (Moss
+pup), `pet-cloud` with `pet-blush` inner ears (Cloud bun) — as Daylight hex values, converts the colormap lookup to
 vertex colours, drops UVs, tangents, the texture and `static`, and prunes
 channels that never leave rest.
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Banner, Card, Chip, EmptyState, ButtonLink, PetFrame, Presence, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
-import { CARE_SEEN, MOOD_LABEL, SPECIES_ART, SPECIES_LABEL, SPECIES_SKY } from "@/lib/game/appearance";
+import { CARE_SEEN, MOOD_LABEL, SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { formatAgo } from "@/lib/utils/format";
 import { projectGuestPet, streakAsOf, utcDay } from "@/lib/guest/pet";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
@@ -130,11 +130,11 @@ export default async function ParkPage() {
           <Stack gap={3}>
             <SectionLabel count={`${pets.length}`}>Everyone</SectionLabel>
             <div className="pk-cards">
-              {shown.map(({ entry, projected, streak }) => (
+              {shown.map(({ entry, record, projected, streak }) => (
                 <Card key={entry.pet.address} href={`/pet/${entry.pet.address}`} variant="flush">
                   <div className="pk-card__art">
                     <PetFrame
-                      form={SPECIES_ART[entry.pet.species]}
+                      {...petLook(record, projected.mood)}
                       sky={SPECIES_SKY[entry.pet.species]}
                       level={projected.level}
                       mood={MOOD_LABEL[projected.mood]}

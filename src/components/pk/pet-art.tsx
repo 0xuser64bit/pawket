@@ -1,0 +1,638 @@
+import type { CSSProperties, ReactNode } from "react";
+
+/**
+ * The pets. Flat shapes, one outline weight, no gradients — and drawn to be
+ * held: a big head on a small body, eyes set low and wide with a shine in
+ * each, a blush, small paws resting on the rim.
+ *
+ * Every drawing is composed for the pocket rim: the head sits in the upper
+ * two thirds, the paws land at y≈88 where the rim crests at 92, and
+ * everything below y≈100 is hidden inside a frame.
+ *
+ * A pet's face is its record, not decoration. Temperament sets the face it
+ * wears when all is well; a need (hungry, lonely, tired, scruffy) replaces
+ * it until it is cared for; radiant adds a few sparks. What it wears is
+ * drawn on it. None of this is randomised, so a pet looks the same on every
+ * screen that draws it.
+ *
+ * Hook-free on purpose: the share card renders this tree as plain SVG.
+ */
+
+export type PetForm = "cat" | "dog" | "bun";
+/** How a pet holds its face when nothing is wrong. */
+export type Temper = "curious" | "cozy" | "brave" | "mischief";
+/** What the pet's record says it feels, in the art's terms. */
+export type Feeling = "radiant" | "happy" | "okay" | "hungry" | "lonely" | "tired" | "scruffy";
+
+/** Every colour a pet is drawn in. Tokens by default; hex for a card drawn with no stylesheet. */
+export interface PetPaint {
+  ink: string;
+  rim: string;
+  coat: string;
+  patch: string;
+  eye: string;
+  shine: string;
+  blush: string;
+  cream: string;
+  cocoa: string;
+  cloud: string;
+  cloudShade: string;
+  pool: string;
+  poolEdge: string;
+  sun: string;
+  sunEdge: string;
+  sprout: string;
+  sproutEdge: string;
+  foil: string;
+  glass: string;
+  surface: string;
+}
+
+const TOKENS: PetPaint = {
+  ink: "var(--edge)",
+  rim: "var(--surface)",
+  coat: "",
+  patch: "",
+  eye: "var(--pet-eye)",
+  shine: "var(--pet-shine)",
+  blush: "var(--pet-blush)",
+  cream: "var(--pet-cream)",
+  cocoa: "var(--pet-cocoa)",
+  cloud: "var(--pet-cloud)",
+  cloudShade: "var(--pet-cloud-shade)",
+  pool: "var(--pool)",
+  poolEdge: "var(--pool-edge)",
+  sun: "var(--sun)",
+  sunEdge: "var(--sun-edge)",
+  sprout: "var(--sprout)",
+  sproutEdge: "var(--sprout-edge)",
+  foil: "var(--trim-foil)",
+  glass: "var(--trim-glass)",
+  surface: "var(--surface)",
+};
+
+/** Each species' coat and patch, as token names in the paint. */
+export const PET_COATS: Record<PetForm, { coat: string; patch: string }> = {
+  cat: { coat: "var(--sun)", patch: "var(--sun-edge)" },
+  dog: { coat: "var(--trim-copper)", patch: "var(--pet-cocoa)" },
+  bun: { coat: "var(--pet-cloud)", patch: "var(--pet-cloud-shade)" },
+};
+
+/* ------------------------------------------------------------ geometry */
+
+/** Where the face sits on each species, so faces and clothes are drawn once. */
+const FACE: Record<PetForm, { eyeY: number; eyeL: number; eyeR: number; mouthY: number; cheekY: number; top: number; neck: number }> = {
+  cat: { eyeY: 48, eyeL: 46, eyeR: 74, mouthY: 57.6, cheekY: 58, top: 19, neck: 72 },
+  dog: { eyeY: 46, eyeL: 46, eyeR: 74, mouthY: 58, cheekY: 58, top: 21, neck: 72 },
+  bun: { eyeY: 50, eyeL: 47.5, eyeR: 72.5, mouthY: 58.6, cheekY: 60, top: 25, neck: 74 },
+};
+
+function paws(lx: number, rx: number, y: number, coat: string, small = false) {
+  const rxPaw = small ? 8.4 : 9.6;
+  return [lx, rx].map((x) => (
+    <g key={x}>
+      <ellipse cx={x} cy={y} rx={rxPaw} ry={6.6} fill={coat} />
+      <path d={`M${x - 3.4} ${y - 3.4}v2.6M${x} ${y - 4.4}v2.8M${x + 3.4} ${y - 3.4}v2.6`} strokeWidth="2" />
+    </g>
+  ));
+}
+
+/** A tail is drawn twice: a wide pass in ink, then the coat inside it. */
+function tail(d: string, coat: string, ink: string, width = 8) {
+  return (
+    <g className="pk-pet-tail">
+      <path d={d} stroke={ink} strokeWidth={width + 6} fill="none" />
+      <path d={d} stroke={coat} strokeWidth={width} fill="none" />
+    </g>
+  );
+}
+
+/* ---------------------------------------------------------------- faces */
+
+type EyeKind = "open" | "sparkle" | "smile" | "sleepy" | "wink";
+type Brow = "none" | "brave" | "sad";
+type Mouth = "species" | "grin" | "smirk" | "o" | "frown" | "drool";
+
+interface Face {
+  eyes: EyeKind;
+  brow: Brow;
+  mouth: Mouth;
+  tilt: number;
+  blush: number;
+  extra?: "sparks" | "zzz" | "tear" | "tufts" | "drop";
+}
+
+/**
+ * Temperament is the face at ease; a need overrides it until it is met.
+ * Radiant is the face at ease with sparks around it.
+ */
+export function faceFor(temper: Temper, feeling: Feeling): Face {
+  if (feeling === "hungry") return { eyes: "open", brow: "sad", mouth: "drool", tilt: 0, blush: 0.6, extra: "drop" };
+  if (feeling === "lonely") return { eyes: "open", brow: "sad", mouth: "frown", tilt: 4, blush: 0.4, extra: "tear" };
+  if (feeling === "tired") return { eyes: "sleepy", brow: "none", mouth: "o", tilt: 5, blush: 0.5, extra: "zzz" };
+  if (feeling === "scruffy") return { eyes: "open", brow: "sad", mouth: "species", tilt: 0, blush: 0.4, extra: "tufts" };
+  const base: Record<Temper, Face> = {
+    curious: { eyes: "sparkle", brow: "none", mouth: "species", tilt: -7, blush: 0.85 },
+    cozy: { eyes: "smile", brow: "none", mouth: "species", tilt: 3, blush: 1 },
+    brave: { eyes: "open", brow: "brave", mouth: "grin", tilt: 0, blush: 0.7 },
+    mischief: { eyes: "wink", brow: "none", mouth: "smirk", tilt: -3, blush: 0.85 },
+  };
+  const face = base[temper];
+  return feeling === "radiant" ? { ...face, extra: "sparks", blush: 1 } : face;
+}
+
+function eye(kind: EyeKind, cx: number, cy: number, side: "l" | "r", p: PetPaint) {
+  if (kind === "smile" || (kind === "wink" && side === "r")) {
+    return <path d={`M${cx - 5.6} ${cy + 1.6}q5.6-7.4 11.2 0`} strokeWidth="3" fill="none" stroke={p.eye} />;
+  }
+  if (kind === "sleepy") {
+    return <path d={`M${cx - 5.6} ${cy - 0.6}q5.6 5.6 11.2 0`} strokeWidth="3" fill="none" stroke={p.eye} />;
+  }
+  return (
+    <>
+      <ellipse cx={cx} cy={cy} rx="5.6" ry="6.8" fill={p.eye} stroke="none" />
+      <circle cx={cx + 1.9} cy={cy - 2.5} r="2.3" fill={p.shine} stroke="none" />
+      <circle cx={cx - 1.9} cy={cy + 2.4} r="1.1" fill={p.shine} stroke="none" />
+      {kind === "sparkle" ? (
+        <path
+          d={`M${cx - 2.2} ${cy - 4.6}l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z`}
+          fill={p.shine}
+          stroke="none"
+        />
+      ) : null}
+    </>
+  );
+}
+
+function brows(kind: Brow, f: (typeof FACE)[PetForm], p: PetPaint) {
+  if (kind === "none") return null;
+  const y = f.eyeY - 11;
+  const d =
+    kind === "brave"
+      ? `M${f.eyeL - 6} ${y - 1.5}l10.5 3.5M${f.eyeR + 6} ${y - 1.5}l-10.5 3.5`
+      : `M${f.eyeL - 5.5} ${y + 1.5}l10-3.2M${f.eyeR + 5.5} ${y + 1.5}l-10-3.2`;
+  return <path d={d} strokeWidth="2.6" stroke={p.eye} />;
+}
+
+function nose(form: PetForm, y: number, p: PetPaint) {
+  if (form === "dog") {
+    return (
+      <>
+        <ellipse cx="60" cy={y - 3.6} rx="5.8" ry="4.2" fill={p.eye} stroke="none" />
+        <ellipse cx="58.4" cy={y - 5} rx="1.8" ry="1" fill={p.shine} stroke="none" />
+      </>
+    );
+  }
+  return <path d={`M56.8 ${y - 4}h6.4l-3.2 3.4z`} fill={p.blush} strokeWidth="1.8" />;
+}
+
+function mouth(kind: Mouth, form: PetForm, y: number, p: PetPaint) {
+  const w = 2.2;
+  if (kind === "grin") {
+    return (
+      <>
+        <path d={`M52.6 ${y + 0.4}q7.4 9.4 14.8 0z`} fill={p.eye} strokeWidth={w} />
+        <path d={`M55.6 ${y + 4.4}q4.4-2.6 8.8 0q-4.4 3.2-8.8 0z`} fill={p.blush} stroke="none" />
+      </>
+    );
+  }
+  if (kind === "smirk") {
+    return (
+      <>
+        <path d={`M53.4 ${y + 1.6}c3.8 2.6 8.6 2.6 13.4-2.2`} strokeWidth={w} fill="none" />
+        <path d={`M60.8 ${y + 2.4}c.2 3.4 1.6 5 3.2 5s2.6-1.8 2.2-5.4`} fill={p.blush} strokeWidth="1.8" />
+      </>
+    );
+  }
+  if (kind === "o") return <ellipse cx="60" cy={y + 2.4} rx="2.4" ry="2.8" fill={p.eye} stroke="none" />;
+  if (kind === "frown") return <path d={`M55 ${y + 4}q5-4.6 10 0`} strokeWidth={w} fill="none" />;
+  if (kind === "drool") {
+    return (
+      <>
+        <ellipse cx="60" cy={y + 2.6} rx="3.6" ry="3.4" fill={p.eye} stroke="none" />
+        <path d={`M64.6 ${y + 2.4}c1.2 1.8 1.6 3.4 1.6 4.6a1.6 1.6 0 0 1-3.2 0c0-1.2.4-2.8 1.6-4.6z`} fill={p.pool} strokeWidth="1.6" />
+      </>
+    );
+  }
+  // The species' own resting mouth.
+  if (form === "dog") {
+    return (
+      <>
+        <path d={`M60 ${y}v2.6M53.4 ${y + 1.4}c2 3.2 5.2 3.6 6.6 1.2 1.4 2.4 4.6 2 6.6-1.2`} strokeWidth={w} fill="none" />
+        <path d={`M57.2 ${y + 3.4}c0 4.2 1.2 6.4 2.8 6.4s2.8-2.2 2.8-6.4z`} fill={p.blush} strokeWidth="1.8" />
+      </>
+    );
+  }
+  if (form === "bun") {
+    return (
+      <>
+        <path d={`M60 ${y - 0.6}v2.2M56.4 ${y + 1.6}c1.2 1.8 2.8 1.8 3.6 0 .8 1.8 2.4 1.8 3.6 0`} strokeWidth={w} fill="none" />
+        <path d={`M58.2 ${y + 1.8}h3.6v3.4h-3.6z`} fill={p.shine} strokeWidth="1.6" />
+      </>
+    );
+  }
+  return <path d={`M60 ${y - 0.6}v1.8M54 ${y + 1.2}c1.6 2.6 4.6 2.6 6 0 1.4 2.6 4.4 2.6 6 0`} strokeWidth={w} fill="none" />;
+}
+
+function extras(kind: Face["extra"], form: PetForm, p: PetPaint) {
+  const f = FACE[form];
+  if (kind === "sparks") {
+    const spark = (x: number, y: number, s: number) =>
+      `M${x} ${y - s}l${s * 0.3} ${s * 0.7} ${s * 0.7} ${s * 0.3}-${s * 0.7} ${s * 0.3}-${s * 0.3} ${s * 0.7}-${s * 0.3}-${s * 0.7}-${s * 0.7}-${s * 0.3} ${s * 0.7}-${s * 0.3}z`;
+    return (
+      <g className="pk-pet-sparks" fill={p.foil} strokeWidth="1.6">
+        <path d={spark(14, 26, 6)} />
+        <path d={spark(106, 18, 5)} />
+        <path d={spark(104, 54, 3.6)} />
+      </g>
+    );
+  }
+  if (kind === "zzz") {
+    return (
+      <path
+        className="pk-pet-zzz"
+        d="M93 14h7l-7 8h7M103 4h5l-5 6h5"
+        strokeWidth="2.2"
+        fill="none"
+        stroke={p.ink}
+      />
+    );
+  }
+  if (kind === "tear") {
+    return (
+      <path
+        d={`M${f.eyeL - 3} ${f.eyeY + 7}c1.6 2.4 2.2 4.4 2.2 5.6a2.2 2.2 0 0 1-4.4 0c0-1.2.6-3.2 2.2-5.6z`}
+        fill={p.pool}
+        strokeWidth="1.6"
+      />
+    );
+  }
+  if (kind === "tufts") {
+    return (
+      <g fill="none" strokeWidth="2.2">
+        <path d={`M48 ${f.top + 3}l3-6 2 5 3-6 2 6`} />
+        <path d={`M86 ${f.eyeY + 2}l6-2-3 5 6-1`} />
+        <ellipse cx="38" cy={f.cheekY + 8} rx="3.4" ry="2.2" fill={p.cocoa} stroke="none" opacity="0.55" />
+        <ellipse cx="80" cy={f.top + 12} rx="2.6" ry="1.8" fill={p.cocoa} stroke="none" opacity="0.55" />
+      </g>
+    );
+  }
+  return null;
+}
+
+/* ------------------------------------------------------------- species */
+
+function catBack(coat: string, p: PetPaint) {
+  return tail("M86 88c13-1 20-9 20-21 0-6-3-10-7.6-10.4", coat, p.ink);
+}
+function catEars(coat: string, p: PetPaint) {
+  return (
+    <>
+      <path d="M30.4 38 32.6 9.6c.2-2.6 2.6-3.6 4.6-2L57 22z" fill={coat} />
+      <path d="M89.6 38 87.4 9.6c-.2-2.6-2.6-3.6-4.6-2L63 22z" fill={coat} />
+      <path d="M35.6 30.4 37 15.4l11.4 8.6z" fill={p.blush} stroke="none" />
+      <path d="M84.4 30.4 83 15.4l-11.4 8.6z" fill={p.blush} stroke="none" />
+    </>
+  );
+}
+function catHead(coat: string, patch: string, p: PetPaint) {
+  return (
+    <>
+      <path d="M60 18c20 0 34 11.6 34 28.4 0 16.4-15.2 27.6-34 27.6S26 62.8 26 46.4C26 29.6 40 18 60 18z" fill={coat} />
+      <path d="M60 20.4v7.4M51.6 22l1.8 6M68.4 22l-1.8 6" stroke={patch} strokeWidth="3.2" />
+      <ellipse cx="54" cy="59.4" rx="7.2" ry="5.6" fill={p.cream} stroke="none" />
+      <ellipse cx="66" cy="59.4" rx="7.2" ry="5.6" fill={p.cream} stroke="none" />
+      <path d="M26.6 52.4 15 50M26.6 57.4 15.4 58.6M93.4 52.4 105 50M93.4 57.4l11.2 1.2" strokeWidth="1.9" />
+    </>
+  );
+}
+
+function dogBack(coat: string, p: PetPaint) {
+  return tail("M86 86c10-3 15-11 14.6-21.4", coat, p.ink);
+}
+function dogHead(coat: string, patch: string, p: PetPaint) {
+  return (
+    <>
+      <path d="M60 20c19 0 32 11.6 32 27.6S78.4 74 60 74 28 63.6 28 47.6 41 20 60 20z" fill={coat} />
+      <ellipse cx="74.6" cy="45" rx="9.4" ry="9.8" fill={patch} stroke="none" />
+      <path d="M60 50.6c8.4 0 15.4 4 15.4 9.6S68.6 70.6 60 70.6s-15.4-4.6-15.4-10.4 7-9.6 15.4-9.6z" fill={p.cream} stroke="none" />
+    </>
+  );
+}
+function dogEars(patch: string) {
+  return (
+    <g className="pk-pet-ears">
+      <path d="M35.4 25.6C24.6 25 16.4 32.6 15 44.4c-1 8.6.8 17.6 6 20.4 4.2 2.2 8.4-.6 10.6-6.4 2.8-7.2 4.6-17.6 8.4-26.4-.6-4.2-1.8-6.4-4.6-6.4z" fill={patch} />
+      <path d="M84.6 25.6c10.8-.6 19 7 20.4 18.8 1 8.6-.8 17.6-6 20.4-4.2 2.2-8.4-.6-10.6-6.4-2.8-7.2-4.6-17.6-8.4-26.4.6-4.2 1.8-6.4 4.6-6.4z" fill={patch} />
+    </g>
+  );
+}
+
+function bunBack(coat: string) {
+  return <circle cx="91" cy="82" r="7.6" fill={coat} />;
+}
+function bunEars(coat: string, p: PetPaint) {
+  return (
+    <g className="pk-pet-ears">
+      <path d="M44.6 31C37.6 19 35.4 6.4 40.2 3.4c5-3 11.6 7.4 14.6 25z" fill={coat} />
+      <path d="M75.4 31C82.4 19 84.6 6.4 79.8 3.4c-5-3-11.6 7.4-14.6 25z" fill={coat} />
+      <path d="M45.6 26.4c-4-8.4-5-15.6-2.6-17.2 2.6-1.4 6.2 5 8.4 16.6z" fill={p.blush} stroke="none" />
+      <path d="M74.4 26.4c4-8.4 5-15.6 2.6-17.2-2.6-1.4-6.2 5-8.4 16.6z" fill={p.blush} stroke="none" />
+    </g>
+  );
+}
+function bunHead(coat: string, patch: string) {
+  return (
+    <>
+      <path d="M60 25c18.4 0 31.4 11 31.4 26.8 0 14-13.6 24-31.4 24S28.6 65.8 28.6 51.8C28.6 36 41.6 25 60 25z" fill={coat} />
+      <path d="M53.4 28.6c-.6-3.4 2.6-5.4 5-3.6 1.4-2.6 5.4-2.4 6 .6 2.6-.6 4 2.4 2.4 4.2" fill={patch} strokeWidth="2.2" />
+    </>
+  );
+}
+
+/* --------------------------------------------------------- clothes */
+
+/**
+ * A wearable drawn on the pet. Ids are `src/lib/closet/catalog.ts`'s; an id
+ * this does not know draws nothing, which is the honest failure.
+ */
+function worn(id: string | null | undefined, form: PetForm, p: PetPaint, layer: "back" | "front") {
+  if (!id) return null;
+  const f = FACE[form];
+  const n = f.neck;
+  if (layer === "back") {
+    if (id !== "rain-cape") return null;
+    return <path d={`M30 ${n - 4}c-10 12-14 26-16 46h92c-2-20-6-34-16-46z`} fill={p.glass} />;
+  }
+  switch (id) {
+    case "wool-scarf":
+      return (
+        <g>
+          <path d={`M72 ${n + 1}c3 7 3.4 13 1.6 19l9.6-1.2c.8-6.6-.6-12.4-3.8-18.6z`} fill={p.pool} />
+          <path d={`M75.2 ${n + 8.4}l6.2-.8M75.6 ${n + 13.6}l6.4-.8`} stroke={p.surface} strokeWidth="2.2" />
+          <path d={`M33 ${n - 6}c17 8.6 37 8.6 54 0l1.6 8.4c-18 9-38.6 9-57.2 0z`} fill={p.pool} />
+          <path d={`M42 ${n - 0.6}v6.6M52 ${n + 1.6}v6.8M62 ${n + 2}v6.8M72 ${n + 0.6}v6.8`} stroke={p.surface} strokeWidth="2.2" />
+        </g>
+      );
+    case "red-collar":
+      return (
+        <g>
+          <path d={`M36 ${n - 4}c15.6 6.4 32.4 6.4 48 0l1 5.4c-16.4 7-33.6 7-50 0z`} fill={p.sunEdge} />
+          <path d={`M60 ${n + 3.4}v2.6`} strokeWidth="2" />
+          <path
+            d={`M60 ${n + 15}c-4.4-3-6.8-5.2-6.8-7.8a3.4 3.4 0 0 1 6.8-1.2 3.4 3.4 0 0 1 6.8 1.2c0 2.6-2.4 4.8-6.8 7.8z`}
+            fill={p.foil}
+            strokeWidth="2"
+          />
+        </g>
+      );
+    case "star-pin": {
+      const x = form === "bun" ? 44 : 40;
+      const y = form === "bun" ? f.top + 9 : f.top + 12;
+      return (
+        <path
+          d={`M${x} ${y - 6.4}l2.3 4.8 5.2.7-3.8 3.6.9 5.2-4.6-2.5-4.6 2.5.9-5.2-3.8-3.6 5.2-.7z`}
+          fill={p.foil}
+          strokeWidth="2"
+        />
+      );
+    }
+    case "rain-cape":
+      return (
+        <g>
+          <path d={`M34 ${n - 6}c16.8 7.6 35.2 7.6 52 0l2 6.4c-18 8.6-38 8.6-56 0z`} fill={p.glass} />
+          <circle cx="60" cy={n + 2.6} r="3.6" fill={p.foil} strokeWidth="2" />
+        </g>
+      );
+    case "paper-crown": {
+      const t = f.top + (form === "cat" ? 1 : form === "bun" ? 1 : -1);
+      return (
+        <g className="pk-pet-crown">
+          <path d={`M45 ${t + 4}l-2-15 8.6 7.4L60 ${t - 13}l8.4 9.4 8.6-7.4-2 15c-10 2.6-20 2.6-30 0z`} fill={p.foil} />
+          <circle cx="60" cy={t - 3} r="2" fill={p.sun} strokeWidth="1.6" />
+        </g>
+      );
+    }
+    case "nap-ribbon": {
+      const x = form === "bun" ? 70 : 76;
+      const y = form === "bun" ? 28 : f.top + 6;
+      return (
+        <g>
+          <path d={`M${x} ${y}c-4-6-12-6-12 0s8 6 12 0zM${x} ${y}c4-6 12-6 12 0s-8 6-12 0z`} fill={p.sprout} />
+          <circle cx={x} cy={y} r="3.2" fill={p.sproutEdge} strokeWidth="2" />
+        </g>
+      );
+    }
+    default:
+      return null;
+  }
+}
+
+/** Worn on the head, so they tilt with it; the rest hang from the neck. */
+const ON_HEAD = new Set(["paper-crown", "nap-ribbon", "star-pin"]);
+
+/* ---------------------------------------------------------------- PetArt */
+
+/** A small, stable offset from a name, so a park full of pets does not blink in step. */
+function phase(seed: string | undefined): string | undefined {
+  if (!seed) return undefined;
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return `-${(Math.abs(h) % 40) / 10}s`;
+}
+
+export function PetArt({
+  form,
+  temper = "curious",
+  feeling = "happy",
+  wearing,
+  coat,
+  patch,
+  rim = false,
+  still = false,
+  seed,
+  className,
+  colours,
+}: {
+  form: PetForm;
+  temper?: Temper;
+  feeling?: Feeling;
+  /** A wardrobe id; drawn on the pet. */
+  wearing?: string | null;
+  coat?: string;
+  patch?: string;
+  /** The pocket rim the paws rest on. Drawn inside the artwork, not over it. */
+  rim?: boolean;
+  still?: boolean;
+  /** Anything stable about this pet (its name), to offset its blink from its neighbours'. */
+  seed?: string;
+  className?: string;
+  /** Resolved colours, for a drawing made where no stylesheet applies (a share card). */
+  colours?: Partial<PetPaint>;
+}) {
+  const p: PetPaint = { ...TOKENS, ...colours };
+  const c = coat ?? colours?.coat ?? PET_COATS[form].coat;
+  const pt = patch ?? colours?.patch ?? PET_COATS[form].patch;
+  const face = faceFor(temper, feeling);
+  const f = FACE[form];
+  const life = still ? undefined : ({ "--pk-phase": phase(seed) } as CSSProperties);
+
+  let back: ReactNode;
+  let head: ReactNode;
+  if (form === "cat") {
+    back = catBack(c, p);
+    head = (
+      <>
+        {catEars(c, p)}
+        {catHead(c, pt, p)}
+      </>
+    );
+  } else if (form === "dog") {
+    back = dogBack(c, p);
+    head = (
+      <>
+        {dogHead(c, pt, p)}
+        {dogEars(pt)}
+      </>
+    );
+  } else {
+    back = bunBack(c);
+    head = (
+      <>
+        {bunEars(c, p)}
+        {bunHead(c, pt)}
+      </>
+    );
+  }
+
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      fill="none"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      className={className}
+      style={life}
+    >
+      {/* A pet breathes on a 3.6s loop from a 50% 100% origin, so it
+          settles on its feet; its eyes blink and its tail sways on the same
+          life. All of it stops under reduced motion. */}
+      <g transform="translate(0 4)">
+      <g
+        className={still ? undefined : "pk-breathe"}
+        stroke={p.ink}
+        strokeWidth="3"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      >
+        {worn(wearing, form, p, "back")}
+        {back}
+        <path d="M27 124V90c0-14.4 14.6-23 33-23s33 8.6 33 23v34z" fill={c} />
+        <g transform={face.tilt ? `rotate(${face.tilt} 60 74)` : undefined}>
+          {head}
+          <ellipse cx={f.eyeL - 8.6} cy={f.cheekY} rx="5.2" ry="3.2" fill={p.blush} stroke="none" opacity={face.blush} />
+          <ellipse cx={f.eyeR + 8.6} cy={f.cheekY} rx="5.2" ry="3.2" fill={p.blush} stroke="none" opacity={face.blush} />
+          <g className="pk-pet-eyes">
+            <g className={still || face.eyes === "smile" || face.eyes === "sleepy" ? undefined : "pk-blink"}>
+              {eye(face.eyes, f.eyeL, f.eyeY, "l", p)}
+              {eye(face.eyes, f.eyeR, f.eyeY, "r", p)}
+            </g>
+          </g>
+          {brows(face.brow, f, p)}
+          {nose(form, f.mouthY, p)}
+          {mouth(face.mouth, form, f.mouthY, p)}
+          {wearing && ON_HEAD.has(wearing) ? worn(wearing, form, p, "front") : null}
+        </g>
+        {wearing && !ON_HEAD.has(wearing) ? worn(wearing, form, p, "front") : null}
+        {paws(45, 75, 84, c, form === "bun")}
+        {extras(face.extra, form, p)}
+      </g>
+      </g>
+      {rim ? (
+        <>
+          <path d="M-10 130V101Q60 83 130 101v29z" fill={p.rim} stroke="none" />
+          <path d="M-10 101Q60 83 130 101" fill="none" stroke={p.ink} strokeWidth="3" />
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
+/* ------------------------------------------------------------ WearableArt */
+
+/**
+ * A wearable on its own, for a tile on the shelf: the same piece the pet
+ * wears, laid flat on a 64px grid.
+ */
+export function WearableArt({ id, className }: { id: string; className?: string }) {
+  const p = TOKENS;
+  let art: ReactNode = null;
+  switch (id) {
+    case "wool-scarf":
+      art = (
+        <>
+          <path d="M8 20c15 8 33 8 48 0l2 9c-17 9-35 9-52 0z" fill={p.pool} />
+          <path d="M40 27c3 9 3 18 .6 26l10.4-1.4c1.2-8.6-.6-16.8-4.4-25.4z" fill={p.pool} />
+          <path d="M43.2 37l7-1M43.6 44l7.4-1M17 24.6v7.4M26 26.6v7.4M35 26.6v7.4" stroke={p.surface} strokeWidth="2.4" />
+          <path d="M42 53l-1.6 5M46 52.4l-.4 5.2M50 51.6l.8 5" strokeWidth="2.2" />
+        </>
+      );
+      break;
+    case "paper-crown":
+      art = (
+        <>
+          <path d="M12 46l-3-28 13 11 10-17 10 17 13-11-3 28c-13 4-27 4-40 0z" fill={p.foil} />
+          <path d="M14 40c12 3 24 3 36 0" strokeWidth="2.2" />
+          <circle cx="32" cy="34" r="3.4" fill={p.sun} strokeWidth="2" />
+          <circle cx="20" cy="37" r="2" fill={p.surface} strokeWidth="1.6" />
+          <circle cx="44" cy="37" r="2" fill={p.surface} strokeWidth="1.6" />
+        </>
+      );
+      break;
+    case "red-collar":
+      art = (
+        <>
+          <ellipse cx="32" cy="24" rx="23" ry="10" fill="none" stroke={p.ink} strokeWidth="10" />
+          <ellipse cx="32" cy="24" rx="23" ry="10" fill="none" stroke={p.sunEdge} strokeWidth="5" />
+          <path d="M32 34v4" strokeWidth="2.2" />
+          <path d="M32 56c-6.6-4.6-10.2-7.8-10.2-11.6a5 5 0 0 1 10.2-1.8 5 5 0 0 1 10.2 1.8c0 3.8-3.6 7-10.2 11.6z" fill={p.foil} />
+        </>
+      );
+      break;
+    case "star-pin":
+      art = (
+        <>
+          <path d="M32 8l6.6 13.4 14.8 2.2-10.7 10.4 2.5 14.7L32 41.8l-13.2 6.9 2.5-14.7L10.6 23.6l14.8-2.2z" fill={p.foil} />
+          <path d="M32 18.6v6M26.6 27.4h0" stroke={p.surface} strokeWidth="2.4" />
+          <path d="M32 50v8" strokeWidth="2.2" />
+        </>
+      );
+      break;
+    case "rain-cape":
+      art = (
+        <>
+          <path d="M20 12c-6 14-10 28-12 44h48c-2-16-6-30-12-44-8 4-16 4-24 0z" fill={p.glass} />
+          <path d="M20 12c8 5 16 5 24 0" strokeWidth="2.4" />
+          <path d="M22 34c-1 6-1.6 12-1.6 18M42 34c1 6 1.6 12 1.6 18" stroke={p.surface} strokeWidth="2.2" />
+          <circle cx="32" cy="16" r="4" fill={p.foil} strokeWidth="2.2" />
+        </>
+      );
+      break;
+    case "nap-ribbon":
+      art = (
+        <>
+          <path d="M32 30c-8-12-22-12-22 0s14 12 22 0zM32 30c8-12 22-12 22 0s-14 12-22 0z" fill={p.sprout} />
+          <path d="M28 33l-6 20 7-4 3 7 1-22M36 33l6 20-7-4-3 7-1-22" fill={p.sprout} />
+          <circle cx="32" cy="30" r="5" fill={p.sproutEdge} strokeWidth="2.2" />
+        </>
+      );
+      break;
+  }
+  return (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" className={className}>
+      <g stroke={p.ink} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
+        {art}
+      </g>
+    </svg>
+  );
+}

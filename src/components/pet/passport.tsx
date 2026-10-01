@@ -17,9 +17,9 @@ import {
   CARE_DONE_LABEL,
   MOOD_LABEL,
   PERSONALITY_LABEL,
-  SPECIES_ART,
   SPECIES_LABEL,
   SPECIES_SKY,
+  petLook,
 } from "@/lib/game/appearance";
 import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
@@ -69,7 +69,7 @@ export function Passport({
         first={
           <div className="pk-portrait">
             <PetFrame
-              form={SPECIES_ART[pet.species]}
+              {...petLook(record, projected.mood)}
               sky={SPECIES_SKY[pet.species]}
               size="lg"
               level={projected.level}

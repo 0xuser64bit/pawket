@@ -377,7 +377,8 @@ async function buildHuman(key) {
 /**
  * Pawket's three species on Kenney's cube animals. Coat and patch are the
  * design-system colours the flat PetArt already uses (Daylight values:
- * `sun`/`sun-edge`, `trim-copper`/`trim-cloth`, `bloom`/`bloom-edge`), so
+ * `sun`/`sun-edge`, `trim-copper`/`pet-cocoa`, `pet-cloud`/`pet-cloud-shade`
+ * with `pet-blush` inside the bun's ears), so
  * the pet in the room is recognisably the pet on every other screen.
  * Cells are Kenney colormap cells (column, row) → the colour they become;
  * cells not listed keep Kenney's own colour. Colours become vertex colours
@@ -390,11 +391,11 @@ const PETS = {
   },
   dog: {
     file: "animal-dog.glb",
-    cells: { c5r2: "#a45f2a", c5r3: "#8c7a60", c15r3: "#2a1e14", c3r2: "#fffbf3" },
+    cells: { c5r2: "#a45f2a", c5r3: "#6b3d1f", c15r3: "#2a1e14", c3r2: "#fff3e2" },
   },
   bunny: {
     file: "animal-bunny.glb",
-    cells: { c5r2: "#b8407a", c7r2: "#7c2650", c5r3: "#f9dde9", c15r3: "#2a1e14", c3r2: "#fffbf3" },
+    cells: { c5r2: "#fbf8f4", c7r2: "#c7d3f2", c5r3: "#ff9f8f", c15r3: "#2a1e14", c3r2: "#fff3e2" },
   },
 };
 const PET_CLIPS = ["idle", "walk", "run", "eat", "dance", "gesture-positive", "gesture-negative"];

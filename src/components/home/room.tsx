@@ -12,7 +12,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Button, PetArt, PlayerArt, useTheme, useToken, type PetForm, type Sky } from "@/components/pk";
+import { Button, PetArt, PlayerArt, useTheme, useToken, type Feeling, type PetForm, type Sky, type Temper } from "@/components/pk";
 import type { RoomView } from "@/components/room3d/room-3d";
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { PetMood, PetSpecies } from "@/lib/game/enums";
@@ -44,7 +44,9 @@ const PEG_COLOUR: Record<ClothColour, string> = {
  * player asks for it. It is the design system's room, and it is complete
  * on its own.
  */
-function FlatRoom({ form, colour, hop }: { form: PetForm | null; colour: string; hop: number }) {
+type FlatPet = { form: PetForm; temper: Temper; feeling: Feeling; wearing: string | null; seed: string };
+
+function FlatRoom({ pet, colour, hop }: { pet: FlatPet | null; colour: string; hop: number }) {
   return (
     <>
       <div className="pk-room__win" />
@@ -52,9 +54,9 @@ function FlatRoom({ form, colour, hop }: { form: PetForm | null; colour: string;
       <div className="pk-room__who">
         <PlayerArt color={colour} hat="beanie" />
       </div>
-      {form ? (
+      {pet ? (
         <div key={hop} className={["pk-room__pet", hop ? "pk-room__pet--hop" : ""].join(" ")}>
-          <PetArt form={form} />
+          <PetArt {...pet} />
         </div>
       ) : null}
     </>
@@ -151,7 +153,15 @@ export function Room({
   onStatus,
   onState,
 }: {
-  pet: { species: PetSpecies; form: PetForm; name: string; wearing: string | null; mood: PetMood } | null;
+  pet: {
+    species: PetSpecies;
+    form: PetForm;
+    temper: Temper;
+    feeling: Feeling;
+    name: string;
+    wearing: string | null;
+    mood: PetMood;
+  } | null;
   look: PlayerLook;
   sky: Sky;
   cue: RoomCue | null;
@@ -237,7 +247,13 @@ export function Room({
       aria-label={live ? `${description} The left and right arrow keys turn the room.` : undefined}
       role={live ? "group" : undefined}
     >
-      {live ? null : <FlatRoom form={pet?.form ?? null} colour={PEG_COLOUR[look.topColour]} hop={hop} />}
+      {live ? null : (
+        <FlatRoom
+          pet={pet ? { form: pet.form, temper: pet.temper, feeling: pet.feeling, wearing: pet.wearing, seed: pet.name } : null}
+          colour={PEG_COLOUR[look.topColour]}
+          hop={hop}
+        />
+      )}
       {want3d ? (
         <div className="pk-room__stage" aria-hidden="true">
           <Guard key={attempt} onError={() => setFailed(true)}>

@@ -7,7 +7,8 @@
  */
 
 export { Icon, ICON_NAMES, type IconName } from "./icon";
-export { Mark, PawArt, PetArt, PlayerArt, type HatName, type PetForm } from "./art";
+export { Mark, PawArt, PlayerArt, type HatName, type PawPrint } from "./art";
+export { PetArt, WearableArt, faceFor, type Feeling, type PetForm, type PetPaint, type Temper } from "./pet-art";
 export {
   Button,
   ButtonLink,

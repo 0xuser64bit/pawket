@@ -30,9 +30,9 @@ import {
   CARE_DONE_LABEL,
   MOOD_LABEL,
   PERSONALITY_LABEL,
-  SPECIES_ART,
   SPECIES_LABEL,
   SPECIES_SKY,
+  petLook,
 } from "@/lib/game/appearance";
 import { CareActionType } from "@/lib/game/enums";
 import {
@@ -245,10 +245,9 @@ export function HomeScreen() {
           <>
             <Room
               pet={{
+                ...petLook(pet, projected.mood),
                 species: pet.species,
-                form: SPECIES_ART[pet.species],
                 name: pet.name,
-                wearing: pet.wearing,
                 mood: projected.mood,
               }}
               look={look}

@@ -77,6 +77,16 @@
   --trim-glass: #2d8296;
   --trim-foil: #95761a;
 
+  /* a pet's own colours: they are animals, so they do not swap at dusk the
+     way a surface does — eyes stay dark, a muzzle stays cream */
+  --pet-eye: #2a1e14;
+  --pet-shine: #ffffff;
+  --pet-blush: #ff9f8f;
+  --pet-cream: #fff3e2;
+  --pet-cocoa: #6b3d1f;
+  --pet-cloud: #fbf8f4;
+  --pet-cloud-shade: #c7d3f2;
+
   /* depth is offset and outline, never blur — except a sheet */
   --shadow-sticker: 3px 3px 0 #2a1e14;
   --shadow-sticker-sm: 2px 2px 0 #2a1e14;
@@ -184,6 +194,12 @@
     --trim-glass: #63c0d4;
     --trim-foil: #d8b43e;
 
+    --pet-blush: #f2907f;
+    --pet-cream: #f6e6cc;
+    --pet-cocoa: #8a5530;
+    --pet-cloud: #efe9f2;
+    --pet-cloud-shade: #b3c1ea;
+
     --shadow-sticker: 3px 3px 0 #0b0806;
     --shadow-sticker-sm: 2px 2px 0 #0b0806;
     --shadow-sticker-lift: 4px 4px 0 #0b0806;
@@ -248,6 +264,12 @@
   --trim-copper: #d08a4e;
   --trim-glass: #63c0d4;
   --trim-foil: #d8b43e;
+
+  --pet-blush: #f2907f;
+  --pet-cream: #f6e6cc;
+  --pet-cocoa: #8a5530;
+  --pet-cloud: #efe9f2;
+  --pet-cloud-shade: #b3c1ea;
 
   --shadow-sticker: 3px 3px 0 #0b0806;
   --shadow-sticker-sm: 2px 2px 0 #0b0806;
@@ -1015,6 +1037,46 @@ li {
   }
 }
 
+/* The rest of a pet's life rides on the breath: a blink every few
+   seconds and a tail that sways, offset per pet (`--pk-phase`) so a park
+   full of them is not in step. Eyes can follow a pointer where a screen
+   sets `--pk-look-x` / `--pk-look-y` (−1…1) on an ancestor. */
+.pk-blink {
+  transform-box: fill-box;
+  transform-origin: 50% 55%;
+  animation: pk-blink 4.6s ease-in-out infinite;
+  animation-delay: var(--pk-phase, 0s);
+}
+@keyframes pk-blink {
+  0%,
+  93%,
+  100% {
+    transform: scaleY(1);
+  }
+  95.5% {
+    transform: scaleY(0.08);
+  }
+}
+.pk-breathe .pk-pet-tail {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: pk-sway 3.6s ease-in-out infinite;
+  animation-delay: var(--pk-phase, 0s);
+}
+@keyframes pk-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-8deg);
+  }
+}
+.pk-pet-eyes {
+  transform: translate(calc(var(--pk-look-x, 0) * 2.6px), calc(var(--pk-look-y, 0) * 1.8px));
+  transition: transform 180ms var(--ease-press);
+}
+
 /* ------------------------------ meter: countable, never a smooth bar */
 
 .pk-meter {
@@ -1305,6 +1367,10 @@ li {
 .pk-tile__art svg {
   width: 40%;
   height: auto;
+}
+/* A drawn piece fills the well; an icon stays small inside it. */
+.pk-tile__art .pk-tile__piece {
+  width: 72%;
 }
 .pk-tile__trim {
   height: var(--stroke-trim);

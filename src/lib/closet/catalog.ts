@@ -7,16 +7,17 @@ export interface Wearable {
   id: string;
   name: string;
   kind: string;
-  icon: "heart" | "star" | "paw" | "spark" | "shield" | "clock";
+  /** The piece's own glyph, for a chip beside the pet's name. */
+  icon: "scarf" | "crown" | "collar" | "star" | "cape" | "ribbon";
 }
 
 export const WEARABLES: readonly Wearable[] = [
-  { id: "wool-scarf", name: "Wool scarf", kind: "Scarf", icon: "heart" },
-  { id: "paper-crown", name: "Paper crown", kind: "Crown", icon: "star" },
-  { id: "red-collar", name: "Red collar", kind: "Collar", icon: "paw" },
-  { id: "star-pin", name: "Star pin", kind: "Pin", icon: "spark" },
-  { id: "rain-cape", name: "Rain cape", kind: "Cape", icon: "shield" },
-  { id: "nap-ribbon", name: "Nap ribbon", kind: "Ribbon", icon: "clock" },
+  { id: "wool-scarf", name: "Wool scarf", kind: "Scarf", icon: "scarf" },
+  { id: "paper-crown", name: "Paper crown", kind: "Crown", icon: "crown" },
+  { id: "red-collar", name: "Red collar", kind: "Collar", icon: "collar" },
+  { id: "star-pin", name: "Star pin", kind: "Pin", icon: "star" },
+  { id: "rain-cape", name: "Rain cape", kind: "Cape", icon: "cape" },
+  { id: "nap-ribbon", name: "Nap ribbon", kind: "Ribbon", icon: "ribbon" },
 ];
 
 const WEARABLE_IDS = new Set(WEARABLES.map((item) => item.id));

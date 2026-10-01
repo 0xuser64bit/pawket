@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { PetArt, type PetForm } from "./art";
+import { PetArt, type Feeling, type PetForm, type Temper } from "./pet-art";
 import { Chip } from "./controls";
 import { Icon, type IconName } from "./icon";
 
@@ -32,6 +32,10 @@ const SKY_CLASS: Record<Sky, string> = {
  */
 export function PetFrame({
   form,
+  temper,
+  feeling,
+  wearing,
+  seed,
   name,
   level,
   rarity = "cloth",
@@ -44,6 +48,12 @@ export function PetFrame({
   className,
 }: {
   form: PetForm;
+  temper?: Temper;
+  feeling?: Feeling;
+  /** A wardrobe id, drawn on the pet. */
+  wearing?: string | null;
+  /** Anything stable about the pet (its name), so neighbours do not blink in step. */
+  seed?: string;
   name?: string;
   level?: number;
   rarity?: Rarity;
@@ -65,7 +75,17 @@ export function PetFrame({
       <div className="pk-pet__frame">
         <div className={`pk-pet__sky ${SKY_CLASS[sky]}`} />
         <div className="pk-pet__art">
-          <PetArt form={form} coat={coat} patch={patch} rim still={still} />
+          <PetArt
+            form={form}
+            temper={temper}
+            feeling={feeling}
+            wearing={wearing}
+            seed={seed ?? name}
+            coat={coat}
+            patch={patch}
+            rim
+            still={still}
+          />
         </div>
         <div className="pk-pet__trim" />
         {level != null ? (
@@ -153,6 +173,7 @@ export function ItemTile({
   price,
   equipped = false,
   icon = "spark",
+  art,
 }: {
   name: string;
   kind: string;
@@ -161,6 +182,8 @@ export function ItemTile({
   price?: string;
   equipped?: boolean;
   icon?: IconName;
+  /** The thing itself, drawn; an icon stands in when there is no drawing. */
+  art?: ReactNode;
 }) {
   return (
     <div className={["pk-tile", `pk-tile--${rarity}`].join(" ")}>
@@ -170,7 +193,7 @@ export function ItemTile({
         </span>
       ) : null}
       <div className="pk-tile__art">
-        <Icon name={icon} size={34} />
+        {art ?? <Icon name={icon} size={34} />}
       </div>
       <div className="pk-tile__trim" />
       <div className="pk-tile__name pk-truncate" title={name}>

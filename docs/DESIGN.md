@@ -97,7 +97,9 @@ load. All of it stops under `prefers-reduced-motion`.
 **Two loops exist, and no more.**
 
 1. **The breath.** A pet scales `1 → 1.035 × 0.975 → 1` over 3.6s from a
-   `50% 100%` origin, so it settles on its feet.
+   `50% 100%` origin, so it settles on its feet. Its blink (every 4.6s) and
+   the sway of its tail ride on the same life, offset per pet by its name so
+   a park full of pets is not in step.
 2. **The paw loader** (`PawLoader`). One square, one paw at a time: a new
    print slides in from the side while the last slides out the same way,
    and the side alternates — left, right, left, right — like a pet padding
@@ -167,7 +169,8 @@ It is the flat room's language in three dimensions, not a model viewer:
 - **The pet's sky is the wall.** `sun-soft`, `pool-soft` or `surface-sunk`,
   the species' `SPECIES_SKY` — never bloom behind a pet.
 - **The pet is its PetArt.** Each species wears the coat and patch the flat
-  art draws, on Kenney's cube animals.
+  art draws, on Kenney's cube animals — the bun cloud white, the pup with
+  cocoa ears.
 - **The player is the one likeness in Pawket.** In the flat room the player
   stays a peg doll with no skin tone, wearing the top colour chosen for the
   3D room. In the 3D room the player is a person the player dressed — build,
@@ -184,8 +187,7 @@ It is the flat room's language in three dimensions, not a model viewer:
 Adoption, the room, care, the wardrobe, the playground round, keeping a pet
 on Solana, the Passport, the Park and the guild boundary are the product. A
 pet starts in this browser; kept on Solana, every care is a signed record.
-A wearable is a name beside the pet in the flat drawing, and is drawn on the
-pet in the 3D room — never a change to a vital. A care plays its moment in
+A wearable is drawn on the pet, flat or in 3D — never a change to a vital. A care plays its moment in
 the room only after the care is saved (or, on Solana, confirmed); an emote
 changes nothing on the record and says so. Guilds are the two lists of what
 a token may and may not do. There is no market, no treasury, no swap and no
@@ -202,6 +204,33 @@ names what did not change.
 Call a pet "on Solana" only when it was read from chain. Do not put a
 simulated price back on a screen to fill a dock slot. The dock is Home, Park,
 Playground, Inventory, Guilds.
+
+## The pets
+
+`PetArt` (`src/components/pk/pet-art.tsx`) draws three species as flat
+shapes with one outline weight: a big head on a small body, eyes set low and
+wide with a shine in each, a blush, two paws on the rim. They are drawn to be
+held, and they are drawn from the record:
+
+- **Temperament is the face at ease.** Curious looks up with bright eyes and
+  a tilted head, cozy smiles with its eyes shut, brave sets its brows and
+  grins, mischief winks with its tongue out.
+- **A need shows on the pet until it is met.** Hungry, lonely, tired and
+  scruffy each replace the temperament's face (a drool, a tear, closed eyes
+  and a z, ruffled fur) — which is what makes the vitals visible without a
+  meter. Radiant keeps the temperament's face and adds three sparks.
+- **What it wears is drawn on it**, in the colours the 3D room uses for the
+  same piece. The shelf shows each piece drawn on its own (`WearableArt`),
+  and a chip names it with its own glyph — never a borrowed heart or clock.
+- **Coats are the species'.** Luna cat is `sun` with `sun-edge` stripes and a
+  cream muzzle; Moss pup is `trim-copper` with `pet-cocoa` ears and eye
+  patch; Cloud bun is `pet-cloud` white with `pet-blush` inside its ears.
+  The `pet-*` tokens are animal colours, so eyes stay dark and a muzzle
+  stays cream after dark.
+
+`petLook(record, mood)` (`src/lib/game/appearance.ts`) is the one mapping
+from a record to a drawing. Nothing is randomised: a pet looks the same on
+every screen, on its share card, and after it moves onto Solana.
 
 ## Voice
 

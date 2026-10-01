@@ -142,6 +142,25 @@ test("a playground round finishes and keeps a daily bonus", async ({ page }) => 
   await expect(page.getByText(/\+25 XP for playing today/)).toBeVisible();
 });
 
+test("adoption shows the pet you are making: its name on its blanket, its temperament on its first page", async ({ page }) => {
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: "Cloud bun", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Cloud bun", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: /choose the cloud bun/i }).click();
+
+  await page.getByRole("button", { name: "Mochi" }).click();
+  await expect(page.getByRole("textbox", { name: "Pet name" })).toHaveValue("Mochi");
+  await expect(page.locator(".pk-adopt__tag")).toHaveText("Mochi");
+  await page.getByRole("button", { name: /Mischief/ }).click();
+  await expect(page.getByRole("button", { name: /Mischief/ })).toHaveAttribute("aria-pressed", "true");
+
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await expect(page.getByRole("heading", { name: "Mochi is yours." })).toBeVisible();
+  await expect(page.getByText("Their first page")).toBeVisible();
+  await expect(page.getByText("Mischief", { exact: true })).toBeVisible();
+  await expect(page.getByText("Cloud bun", { exact: true })).toBeVisible();
+});
+
 test("a short name is refused in words, not in bytes", async ({ page }) => {
   await page.goto("/adopt");
   await page.getByRole("button", { name: /choose the luna cat/i }).click();

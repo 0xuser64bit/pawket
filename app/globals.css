@@ -2984,3 +2984,311 @@ li {
     text-decoration: underline;
   }
 }
+
+/* ------------------------------------------------------- adoption
+
+   The pets are the page. Three sit large and alive on the first step, the
+   one you choose lifts into a sun ring and hops; on the second its name is
+   stitched on its blanket as you type, and each temperament is shown as
+   the face it would wear. No dock: there is nowhere else to be yet. */
+
+.pk-adopt {
+  width: 100%;
+  max-width: calc(1080px + 2 * var(--gutter));
+  margin-inline: auto;
+  padding: var(--space-2) max(var(--gutter), env(safe-area-inset-right)) var(--space-9)
+    max(var(--gutter), env(safe-area-inset-left));
+}
+.pk-adopt--narrow {
+  max-width: calc(560px + 2 * var(--gutter));
+}
+.pk-adopt__bar {
+  margin-bottom: var(--space-4);
+}
+.pk-steps {
+  display: flex;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pk-steps li {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  border: var(--stroke-line) solid var(--edge-soft);
+  color: var(--ink-faint);
+}
+.pk-steps__done {
+  background: var(--pool);
+  border-color: var(--on-pool) !important;
+  color: var(--on-pool) !important;
+}
+.pk-steps__now {
+  background: var(--sun-soft);
+  border-color: var(--sun-text) !important;
+  color: var(--sun-text) !important;
+}
+
+.pk-adopt__head {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-7);
+}
+@media (min-width: 720px) {
+  .pk-adopt__head {
+    text-align: center;
+    justify-items: center;
+    margin-top: var(--space-5);
+  }
+}
+
+/* Three across from a tablet up; on a phone they are a row you swipe,
+   each most of the width, so a pet is never thumbnail-sized. */
+.pk-adopt__stage {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 74%;
+  gap: var(--space-5);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  margin-inline: calc(-1 * var(--gutter));
+  padding: var(--space-4) var(--gutter) var(--space-5);
+  scrollbar-width: none;
+}
+.pk-adopt__stage::-webkit-scrollbar {
+  display: none;
+}
+@media (min-width: 720px) {
+  .pk-adopt__stage {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+    margin-inline: 0;
+    padding: var(--space-4) 0 var(--space-2);
+    gap: var(--space-6);
+  }
+}
+@media (min-width: 1024px) {
+  .pk-adopt__stage {
+    gap: var(--space-8);
+  }
+}
+.pk-adopt__pick {
+  scroll-snap-align: center;
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  text-align: center;
+}
+.pk-adopt__hit {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-pocket);
+  color: inherit;
+  transform: scale(0.94);
+  transition: transform 260ms var(--ease-press);
+}
+.pk-adopt__pick--on .pk-adopt__hit {
+  transform: translateY(-8px);
+}
+@media (hover: hover) {
+  .pk-adopt__pick:not(.pk-adopt__pick--on) .pk-adopt__hit:hover {
+    transform: scale(0.97) translateY(-3px);
+  }
+}
+.pk-adopt__pick--on .pk-pet__frame {
+  box-shadow: var(--shadow-sticker-lift), 0 0 0 6px var(--ground), 0 0 0 calc(6px + var(--stroke-shelf)) var(--sun);
+}
+.pk-adopt__pet {
+  display: block;
+  animation: pk-peek 560ms var(--ease-press) both;
+}
+.pk-adopt__pet--hop {
+  animation: pk-hop 520ms var(--ease-press);
+  transform-origin: 50% 100%;
+}
+.pk-adopt__name {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 64, "WONK" 1;
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.pk-adopt__line {
+  max-width: 28ch;
+}
+.pk-adopt__go {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 440px;
+  margin: var(--space-6) auto 0;
+  text-align: center;
+}
+
+@keyframes pk-peek {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.96);
+  }
+}
+
+/* Step two: the pet you chose, large, with its name on its blanket. */
+.pk-adopt__name-step {
+  display: grid;
+  gap: var(--space-6);
+}
+@media (min-width: 1024px) {
+  .pk-adopt__name-step {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+    gap: var(--space-9);
+    align-items: start;
+  }
+  .pk-adopt__name-step > .pk-adopt__portrait {
+    position: sticky;
+    top: var(--space-6);
+  }
+}
+.pk-adopt__portrait {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+.pk-adopt__portrait > .pk-adopt__pet {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+}
+.pk-adopt__portrait .pk-pet--lg {
+  width: min(100%, 340px);
+}
+@media (min-width: 1024px) {
+  .pk-adopt__portrait .pk-pet--lg {
+    width: min(100%, 440px);
+  }
+}
+.pk-adopt__tag {
+  position: absolute;
+  left: 50%;
+  bottom: 6.5%;
+  max-width: 70%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+  font-size: clamp(20px, 6cqi, 32px);
+  font-weight: 600;
+  color: var(--ink);
+  pointer-events: none;
+}
+.pk-adopt__portrait {
+  container-type: inline-size;
+}
+.pk-adopt__tag--empty {
+  color: var(--ink-faint);
+  font-style: italic;
+  font-weight: 400;
+}
+.pk-adopt__names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.pk-adopt__suggest {
+  cursor: pointer;
+  color: var(--ink);
+  font-family: inherit;
+  transition: transform var(--dur-press) var(--ease-press);
+}
+.pk-adopt__suggest[aria-pressed="true"] {
+  background: var(--sun-soft);
+  border-color: var(--sun-text);
+  color: var(--sun-text);
+}
+@media (hover: hover) {
+  .pk-adopt__suggest:hover {
+    transform: translateY(-1px);
+  }
+}
+.pk-adopt__tempers {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.pk-adopt__tempers legend {
+  margin-bottom: var(--space-3);
+}
+.pk-tempers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+@media (max-width: 419px) {
+  .pk-tempers {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.pk-temper {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker-sm);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-press), box-shadow var(--dur-press) var(--ease-press);
+}
+.pk-temper[aria-pressed="true"] {
+  background: var(--sun-soft);
+  border-color: var(--sun-text);
+  box-shadow: var(--shadow-sticker), 0 0 0 4px var(--ground), 0 0 0 calc(4px + var(--stroke-line)) var(--sun-text);
+}
+@media (hover: hover) {
+  .pk-temper:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sticker);
+  }
+  .pk-temper[aria-pressed="true"]:hover {
+    box-shadow: var(--shadow-sticker), 0 0 0 4px var(--ground), 0 0 0 calc(4px + var(--stroke-line)) var(--sun-text);
+  }
+}
+/* Small, so it shows the face alone: the frame is zoomed onto the head. */
+.pk-temper__face {
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+}
+.pk-temper__face .pk-pet {
+  display: block;
+  transform: scale(1.5);
+  transform-origin: 50% 34%;
+}
+.pk-temper__face .pk-pet__frame {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.pk-temper__words {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}

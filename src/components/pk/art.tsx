@@ -258,7 +258,7 @@ export function PlayerArt({
  *
  * In a bar it is two inks, `sun` with an `on-sun` keyline, and the gaps stay
  * open at 16px; drawn large it stands on its shelf and catches the light
- * (`PawGlyph`). Check 16, 24 and 96px in both rooms before changing any of it.
+ * (`PawGlyph`). Check 16, 24, 40 and 96px in both rooms before changing it.
  */
 export function Mark({
   size = 28,

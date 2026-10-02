@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Fragment } from "react";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
 
 /**
  * Flat geometry, 3px outline, built from the palette. There is no
@@ -33,6 +33,14 @@ export const PAW = {
     "M55.07 21.08C56.24 21.21 57.16 21.94 57.56 23.04",
     "M40.35 33.58C41.96 33.93 43.33 34.99 44.05 36.47",
   ],
+  /** The middle of each shape, the beans then the heart: where the loader grows it from. */
+  centres: [
+    [10.4, 25.5],
+    [23.4, 15.5],
+    [40.6, 15.5],
+    [53.6, 25.5],
+    [32, 44.5],
+  ],
 } as const;
 
 const SHAPES = [...PAW.beans, PAW.heart];
@@ -47,43 +55,81 @@ const hundredths = (n: number) => Math.round(n * 100) / 100;
  * the system's weights at every size. From 40px each shape stands on a
  * `sun-edge` shelf, as a button does; from 56px each catches a highlight.
  * Below that the paw is flat, two inks, which is what a 16px tab can hold.
+ *
+ * `moving` is the loader's: each shape is wrapped so CSS can grow it in, and
+ * each face so it can press into its shelf (`PawLoader`).
  */
-export function PawGlyph({ size, fill = "var(--sun)", ink = "var(--on-sun)" }: { size: number; fill?: string; ink?: string }) {
+export function PawGlyph({
+  size,
+  moving = false,
+  fill = "var(--sun)",
+  ink = "var(--on-sun)",
+}: {
+  size: number;
+  moving?: boolean;
+  fill?: string;
+  ink?: string;
+}) {
   const unit = 64 / size;
   const keyline = Math.max(1, size * 0.022) * unit;
   const shelf = size >= 40 ? hundredths(Math.max(2, size * 0.03) * unit) : 0;
+  const lit = size >= 56;
   const lowered = `translate(0 ${shelf})`;
+
+  // Every layer draws the five shapes in the same order: the beans left to right, then the heart.
+  const each = (draw: (d: string, i: number) => ReactNode) =>
+    SHAPES.map((d, i) =>
+      moving ? (
+        <g
+          key={d}
+          className="pk-paw__grow"
+          style={{ "--i": i, transformOrigin: `${PAW.centres[i][0]}px ${PAW.centres[i][1]}px` } as CSSProperties}
+        >
+          {draw(d, i)}
+        </g>
+      ) : (
+        <Fragment key={d}>{draw(d, i)}</Fragment>
+      ),
+    );
+  const face = (d: string, i: number, shine?: string) => {
+    const drawn = (
+      <>
+        <path d={d} />
+        {shine ? <path d={shine} fill="none" stroke="var(--pet-shine)" strokeWidth="1.5" strokeLinecap="round" opacity="0.9" /> : null}
+      </>
+    );
+    return moving ? <g className={i < 4 ? "pk-paw__tap" : "pk-paw__beat"}>{drawn}</g> : drawn;
+  };
+
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      fill="none"
+      aria-hidden="true"
+      style={moving ? ({ "--pk-shelf": `${shelf}px` } as CSSProperties) : undefined}
+    >
       {/* the shelf adds depth below, so the drawing rises by half of it to stay centred */}
       <g transform={shelf ? `translate(0 ${-shelf / 2})` : undefined}>
         <g fill={ink} stroke={ink} strokeWidth={hundredths(keyline * 2)} strokeLinejoin="round">
-          {SHAPES.map((d) => (
-            <Fragment key={d}>
+          {each((d, i) => (
+            <>
               {shelf ? <path d={d} transform={lowered} /> : null}
-              <path d={d} />
-            </Fragment>
+              {face(d, i)}
+            </>
           ))}
         </g>
-        {shelf ? <g fill="var(--sun-edge)">{SHAPES.map((d) => <path key={d} d={d} transform={lowered} />)}</g> : null}
-        <g fill={fill}>
-          {SHAPES.map((d) => <path key={d} d={d} />)}
-          {size >= 56
-            ? PAW.shine.map((d) => (
-                <path key={d} d={d} fill="none" stroke="var(--pet-shine)" strokeWidth="1.5" strokeLinecap="round" opacity="0.9" />
-              ))
-            : null}
-        </g>
+        {shelf ? <g fill="var(--sun-edge)">{each((d) => <path d={d} transform={lowered} />)}</g> : null}
+        <g fill={fill}>{each((d, i) => face(d, i, lit ? PAW.shine[i] : undefined))}</g>
       </g>
     </svg>
   );
 }
 
 /**
- * A paw print, on a 64px grid with the same 3px outline the pets take. A
- * paw is a fragment, which is why it can stand in for a pet while something
- * loads without spending the pet itself — and it is the mark, since the paw
- * is what Pawket is named for.
+ * A paw print, on a 64px grid with the same 3px outline the pets take: the
+ * trail the pets leave across the front door.
  *
  * Four prints, told apart by silhouette alone: the cat's round beans, the
  * pup's broad pad with claws, the bun's long hind foot, and Pawket's own,

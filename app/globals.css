@@ -2495,104 +2495,171 @@ li {
 /* ------------------------------------------------------ the paw loader
 
    The one place a second loop is allowed, for a wait with no known end:
-   one square, one paw at a time. A new paw slides in from the side while
-   the last slides out the same way, and the direction alternates — left,
-   right, left, right — like a pet padding along. Four prints, so the fourth
-   hands back to the first and the loop never shows a seam.
+   the mark itself, alive. Nothing shows for 250ms, so a quick wait never
+   flashes it. Then it draws itself — the beans pop out left to right, 70ms
+   apart, and the heart lands last with a softer overshoot so it never
+   touches them. From 1s it taps: each bean lifts, presses into its shelf
+   on the press curve and springs back, 110ms after the one before, and
+   200ms after the fourth press the heart beats, a full press then a half.
+   Then stillness, and again every 2s.
 
    Playroom only. Never on Paper — nothing animates there, and a playful
    cycle while money moves is the wrong feeling. Never as a route-change
    skeleton either. */
 
 .pk-paw-loader {
-  --pk-loader: 96px;
   display: inline-grid;
 }
-.pk-paw-loader--sm {
-  --pk-loader: 56px;
+.pk-paw-loader svg {
+  overflow: visible;
 }
-.pk-paw-loader--lg {
-  --pk-loader: 136px;
+.pk-paw__grow {
+  transform-box: view-box;
+  animation: pk-paw-grow 460ms linear backwards;
+  animation-delay: calc(250ms + var(--i) * 70ms);
 }
-.pk-paw-loader__view {
-  position: relative;
-  width: var(--pk-loader);
-  aspect-ratio: 1;
-  overflow: hidden;
-  border: var(--stroke-line) solid var(--edge);
-  border-radius: calc(var(--pk-loader) * 0.28);
-  background: var(--sun-soft);
-  box-shadow: var(--shadow-sticker);
+.pk-paw__grow:last-child {
+  animation-name: pk-paw-land;
+  animation-delay: 560ms;
 }
-.pk-paw-loader__paw {
-  position: absolute;
-  inset: 17%;
-  animation-duration: 4.8s;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  animation-fill-mode: backwards;
+.pk-paw__tap,
+.pk-paw__beat {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: pk-paw-tap 2s linear infinite;
+  animation-delay: calc(1s + var(--i) * 110ms);
 }
-.pk-paw-loader__paw svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.pk-paw-loader__paw--left {
-  animation-name: pk-paw-left;
-}
-.pk-paw-loader__paw--right {
-  animation-name: pk-paw-right;
+.pk-paw__beat {
+  animation-name: pk-paw-beat;
+  /* the fourth bean presses 210ms into its tap; the heart's press lands 200ms after it */
+  animation-delay: 1.65s;
 }
 
-/* 4.8s per lap; each paw slides for 340ms (7.08%), holds, and leaves when
-   the next one arrives a quarter later. */
-@keyframes pk-paw-left {
+/* A bean pops out of nothing, a little past full size, and settles. */
+@keyframes pk-paw-grow {
   0% {
-    transform: translateX(-160%);
-    animation-timing-function: cubic-bezier(0.55, 0, 0.2, 1);
+    transform: scale(0);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
   }
-  7.08%,
-  25% {
-    transform: translateX(0);
-    animation-timing-function: cubic-bezier(0.55, 0, 0.2, 1);
+  55% {
+    transform: scale(1.1);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.4, 1);
   }
-  32.08%,
+  80% {
+    transform: scale(0.97);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.4, 1);
+  }
   100% {
-    transform: translateX(-160%);
+    transform: scale(1);
   }
 }
-@keyframes pk-paw-right {
+@keyframes pk-paw-land {
   0% {
-    transform: translateX(160%);
-    animation-timing-function: cubic-bezier(0.55, 0, 0.2, 1);
+    transform: scale(0);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
   }
-  7.08%,
-  25% {
-    transform: translateX(0);
-    animation-timing-function: cubic-bezier(0.55, 0, 0.2, 1);
+  55% {
+    transform: scale(1.05);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.4, 1);
   }
-  32.08%,
+  80% {
+    transform: scale(0.985);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.4, 1);
+  }
   100% {
-    transform: translateX(160%);
+    transform: scale(1);
   }
 }
 
+/* One tap, as a button takes a finger: it lifts as under a pointer, drops
+   into its shelf with a squash, comes back up on the press curve
+   (--ease-press) and settles. 2s per lap. */
+@keyframes pk-paw-tap {
+  0% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0.3, 0, 0.3, 1);
+  }
+  6% {
+    transform: translateY(calc(var(--pk-shelf) * -0.6)) scale(0.98, 1.02);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.5);
+  }
+  10.5% {
+    transform: translateY(var(--pk-shelf)) scale(1.06, 0.94);
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+  18% {
+    transform: translateY(calc(var(--pk-shelf) * -0.2)) scale(0.99, 1.01);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.4, 1);
+  }
+  24%,
+  100% {
+    transform: none;
+  }
+}
+/* lub-dub: no lift, a full press, then a half one */
+@keyframes pk-paw-beat {
+  0% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.5);
+  }
+  4.5% {
+    transform: translateY(var(--pk-shelf)) scale(1.06, 0.94);
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+  11% {
+    transform: translateY(calc(var(--pk-shelf) * -0.3)) scale(0.99, 1.01);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.5);
+  }
+  14.5% {
+    transform: translateY(calc(var(--pk-shelf) * 0.55)) scale(1.03, 0.97);
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+  23%,
+  100% {
+    transform: none;
+  }
+}
+
+/* A screen waiting on this browser: the words arrive with the paw. */
 .pk-waiting {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-4) 0;
+  animation: pk-fade 200ms ease-out 250ms backwards;
 }
 
-/* Under reduced motion one paw simply sits in the square. This has to come
-   after the global rule, which would otherwise snap every paw into view. */
-@media (prefers-reduced-motion: reduce) {
-  .pk-paw-loader__paw {
-    animation: none !important;
-    transform: translateX(-160%);
+/* The cold boot: the paw, then its name once the heart has landed. */
+.pk-splash {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+.pk-splash__name {
+  font-size: 28px;
+  line-height: 1;
+  animation: pk-splash-name 360ms cubic-bezier(0.2, 0.9, 0.3, 1) 900ms backwards;
+}
+@keyframes pk-splash-name {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
-  .pk-paw-loader__paw--first {
-    transform: none;
+}
+
+/* Under reduced motion the paw is simply there, whole, and so are the
+   words. This has to beat the global rule, which would still play each
+   animation once in an instant. */
+@media (prefers-reduced-motion: reduce) {
+  .pk-paw__grow,
+  .pk-paw__tap,
+  .pk-paw__beat,
+  .pk-waiting,
+  .pk-splash__name {
+    animation: none !important;
   }
 }
 

@@ -1,52 +1,26 @@
-import { PawArt, type PawPrint } from "./art";
-
-/** Four prints, so the left–right rhythm comes back to where it started. */
-const PRINTS: PawPrint[] = ["cat", "dog", "bun", "heart"];
-
-/** Hold 860ms, slide 340ms — 1.2s per paw, 4.8s for the set. */
-const STEP_SECONDS = 1.2;
+import { PawGlyph } from "./art";
 
 /**
- * One square, one paw at a time. Each new paw slides in from the side while
- * the one before it slides out the other way, alternating left and right
- * like a pet padding along, and the fourth hands back to the first so it
- * never visibly restarts.
+ * The mark, alive, for a wait with no known end.
  *
- * Pure CSS, so it renders before hydration — the point of a loader is to be
- * there while the JavaScript is not. Under `prefers-reduced-motion` one paw
- * sits still.
+ * It draws itself first: the toe beans pop out one by one, left to right,
+ * and the heart lands last. Then the toes tap the same way, each pressed
+ * into its shelf like a button, and the heart answers — lub, dub — and the
+ * paw rests before it goes again: a pet padding its toes while it waits
+ * with you. The first 250ms are held back, so a wait that ends sooner never
+ * flashes a loader at all.
+ *
+ * Pure CSS, so it plays before hydration — the point of a loader is to be
+ * there while the JavaScript is not. Under `prefers-reduced-motion` the paw
+ * simply sits there, whole.
  *
  * Playroom only. Never on a Paper surface, and never as a route-change
  * skeleton: see `docs/DESIGN.md`.
  */
-export function PawLoader({
-  size = "md",
-  label = "Loading",
-}: {
-  size?: "sm" | "md" | "lg";
-  label?: string;
-}) {
+export function PawLoader({ size = "md", label = "Loading" }: { size?: "sm" | "md"; label?: string }) {
   return (
-    <div className={["pk-paw-loader", size !== "md" && `pk-paw-loader--${size}`].filter(Boolean).join(" ")} role="status">
-      <div className="pk-paw-loader__view" aria-hidden="true">
-        {PRINTS.map((print, index) => (
-          <div
-            key={print}
-            className={[
-              "pk-paw-loader__paw",
-              // Even paws come in from the left and go back out that way; odd
-              // ones use the right. Each hand-off is one push in one direction.
-              index % 2 === 0 ? "pk-paw-loader__paw--left" : "pk-paw-loader__paw--right",
-              index === 0 && "pk-paw-loader__paw--first",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            style={{ animationDelay: `${(index * STEP_SECONDS).toFixed(2)}s` }}
-          >
-            <PawArt form={print} />
-          </div>
-        ))}
-      </div>
+    <div className="pk-paw-loader" role="status">
+      <PawGlyph size={size === "sm" ? 40 : 88} moving />
       <span className="pk-sr">{label}</span>
     </div>
   );

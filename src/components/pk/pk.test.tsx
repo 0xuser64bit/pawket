@@ -143,23 +143,22 @@ describe("PawArt", () => {
 });
 
 describe("PawLoader", () => {
-  it("passes four paws through one square, a step apart", () => {
+  it("is the mark itself, come alive", () => {
     const html = renderToStaticMarkup(<PawLoader />);
-    expect(html.match(/class="pk-paw-loader__view"/g)).toHaveLength(1);
-    expect(html.match(/<svg/g)).toHaveLength(4);
-    for (const delay of ["0.00s", "1.20s", "2.40s", "3.60s"]) {
-      expect(html).toContain(`animation-delay:${delay}`);
-    }
+    for (const d of [...PAW.beans, PAW.heart]) expect(html).toContain(d);
   });
 
-  it("alternates the side each paw comes in from, so every hand-off is one push", () => {
+  it("taps the four beans and beats the heart, keyline and face together", () => {
     const html = renderToStaticMarkup(<PawLoader />);
-    const sides = [...html.matchAll(/pk-paw-loader__paw--(left|right)/g)].map((m) => m[1]);
-    expect(sides).toEqual(["left", "right", "left", "right"]);
+    expect(html.match(/class="pk-paw__tap"/g)).toHaveLength(8);
+    expect(html.match(/class="pk-paw__beat"/g)).toHaveLength(2);
   });
 
-  it("marks one paw to stand still under reduced motion", () => {
-    expect(renderToStaticMarkup(<PawLoader />)).toContain("pk-paw-loader__paw--first");
+  it("grows every shape from its own middle, the beans in order and the heart last", () => {
+    const html = renderToStaticMarkup(<PawLoader />);
+    const grown = [...html.matchAll(/--i:(\d);transform-origin:([\d.]+)px ([\d.]+)px/g)].slice(0, 5);
+    expect(grown.map((m) => Number(m[1]))).toEqual([0, 1, 2, 3, 4]);
+    expect(grown.map((m) => [Number(m[2]), Number(m[3])])).toEqual(PAW.centres);
   });
 
   it("names the wait for anything that cannot see it", () => {

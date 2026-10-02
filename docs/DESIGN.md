@@ -116,13 +116,15 @@ load. All of it stops under `prefers-reduced-motion`.
    `50% 100%` origin, so it settles on its feet. Its blink (every 4.6s) and
    the sway of its tail ride on the same life, offset per pet by its name so
    a park full of pets is not in step.
-2. **The paw loader** (`PawLoader`). One square, one paw at a time: a new
-   print slides in from the side while the last slides out the same way,
-   and the side alternates — left, right, left, right — like a pet padding
-   along. Four prints (cat, pup, bun, and the mark's heart paw), each held
-   860ms and handed over in 340ms, so the fourth gives way to the first and
-   the loop never shows a seam. Under `prefers-reduced-motion` one paw sits
-   still.
+2. **The paw loader** (`PawLoader`): the mark, alive. Nothing shows for
+   250ms, so a quick wait never flashes it. Then it draws itself — the toe
+   beans pop out left to right, 70ms apart, and the heart lands last — and
+   from 1s the toes tap the same way: each lifts, presses into its shelf on
+   the press curve and springs back, 110ms after the one before, and 200ms
+   after the fourth the heart answers with a full press and a half one —
+   lub, dub. Then stillness, and again every 2s. It is the button's press,
+   played on the paw. Under `prefers-reduced-motion` the paw is simply
+   there, whole.
 
 A third is fenced the same way: **the 3D room's life** on Home. The player
 breathes and blinks, the pet breathes, wanders and naps, the camera drifts a
@@ -138,9 +140,9 @@ made deliberately and fenced just as deliberately:
   moves is exactly the wrong feeling. A pending transaction keeps its Paper
   treatment — a neutral `wait` banner and a countable `Meter`.
 - **Never as a route-change skeleton.** `app/loading.tsx` is the root fallback
-  and carries the loader; `app/(game)/loading.tsx` holds still, because a loop
-  flashing on every navigation is the shimmering-skeleton problem in a nicer
-  costume.
+  and carries the loader, its name arriving once the heart has landed;
+  `app/(game)/loading.tsx` holds still, because a loop flashing on every
+  navigation is the shimmering-skeleton problem in a nicer costume.
 - **A paw, not a pet.** The pet is the product's hero image, and a loader
   is not the place to spend it. A paw is a fragment, so it reads as waiting.
 

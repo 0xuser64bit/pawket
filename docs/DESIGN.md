@@ -71,16 +71,32 @@ are a separate `ink-faint` suffix.
 
 A paw print, because Pawket is named for paws. Four toe beans arch over a
 centre pad, and the centre pad is a heart — the print a pet leaves, and the
-care it was left for, drawn once.
+care it was left for, drawn once. One drawing (`PAW` in
+`src/components/pk/art.tsx`) is the mark, the favicon, the home-screen icon
+and the loader.
 
-Two inks: `sun` beans with an `on-sun` outline, so it survives a 16px
-favicon. The beans sit far enough apart that the gaps stay open at 16px;
-check the mark at 16, 20 and 24px before changing any of it. The wordmark
-beside it is Fraunces at 600 with `SOFT 64` and `WONK 1`. It never takes a
-gradient and never sits inside another shape.
+- **Built, not traced.** Each bean is an egg, broader at its tip, leaning
+  toward one point below the pad, and every gap — bean to bean, bean to
+  heart — is the same. The heart is two circles meeting at a rounded tip,
+  plump because a pad is soft.
+- **The fill is the shape.** The `on-sun` keyline sits outside each shape,
+  so Lamplight, which swallows it, shows the same paw Daylight does. The
+  keyline is sized in pixels, so it stays near the system's stroke weights
+  at every size instead of thickening with the drawing.
+- **Drawn large, it is built like a button.** Below 40px it is two inks,
+  which a 16px tab can hold. From 40px each shape stands on a `sun-edge`
+  shelf — the face and shelf of a `sun` button — and from 56px each catches
+  a `pet-shine` highlight, all lit from the upper right, as a pet's eyes are.
+
+The wordmark beside it is Fraunces at 600 with `SOFT 64` and `WONK 1`. The
+mark never takes a gradient, a glow or a blur, and never sits inside another
+shape; the home-screen icon's `sun-soft` square is the one exception, since a
+home screen asks for a square. Check it at 16, 24, 40 and 96px in both rooms
+before changing any of it.
 
 (It replaced a pocket with pads above it in 2026-10: the name was always the
-paw, and a pocket read as a wallet.)
+paw, and a pocket read as a wallet. It was redrawn the same month so that it
+is one shape in both rooms.)
 
 ## Motion
 

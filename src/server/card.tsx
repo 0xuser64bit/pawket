@@ -2,8 +2,9 @@ import "server-only";
 
 import { Fragment, isValidElement, type ReactElement, type ReactNode } from "react";
 import { ImageResponse } from "next/og";
+import { PawGlyph } from "@/components/pk/art";
 import { PetArt, type PetForm, type PetPaint } from "@/components/pk/pet-art";
-import { DAYLIGHT } from "@/components/room3d/palette";
+import { DAYLIGHT, type Tone } from "@/components/room3d/palette";
 import { PERSONALITY_LABEL, SPECIES_LABEL, petLook } from "@/lib/game/appearance";
 import { calculateLevelFromXp } from "@/lib/game/math";
 import { projectGuestPet } from "@/lib/guest/pet";
@@ -113,6 +114,27 @@ function petImage(look: Look): string {
     <PetArt {...look} coat={COAT[look.form][0]} patch={COAT[look.form][1]} rim still colours={PAINT} />,
   ).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
+
+/**
+ * Pawket's own icon, for a home screen: the paw at its fullest — shelf and
+ * highlights — on a `sun-soft` square. Tokens resolve to their Daylight hex,
+ * since the picture is drawn without a stylesheet.
+ */
+export function pawIcon(size: number): ImageResponse {
+  const glyph = Math.round(size * 0.66);
+  const svg = markup(<PawGlyph size={glyph} />)
+    .replace(/var\(--([a-z-]+)\)/g, (_, token: string) => DAYLIGHT[token as Tone])
+    .replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
+  return new ImageResponse(
+    (
+      <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", background: DAYLIGHT["sun-soft"] }}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+        <img src={`data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`} width={glyph} height={glyph} alt="" />
+      </div>
+    ),
+    { width: size, height: size },
+  );
 }
 
 function Pocket({ look, size }: { look: Look; size: number }) {

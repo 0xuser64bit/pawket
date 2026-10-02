@@ -1,7 +1,9 @@
+import fs from "node:fs";
+import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { activePlace } from "./dock";
-import { Button, Card, Chip, Mark, Meter, Paper, PawArt, PawLoader, PetFrame, Receipt } from "./index";
+import { Button, Card, Chip, Mark, Meter, PAW, Paper, PawArt, PawLoader, PetFrame, Receipt } from "./index";
 
 describe("Button", () => {
   it("wears its tone and size, and sun needs no modifier", () => {
@@ -104,25 +106,30 @@ describe("Chip", () => {
 });
 
 describe("Mark", () => {
-  it("is a paw: four beans over a centre pad", () => {
+  it("is Pawket's paw: four beans over a centre pad that is a heart", () => {
     const html = renderToStaticMarkup(<Mark />);
-    expect(html.match(/<ellipse/g)).toHaveLength(4);
-    expect(html.match(/<path/g)).toHaveLength(1);
+    for (const d of [...PAW.beans, PAW.heart]) expect(html).toContain(d);
   });
 
-  it("makes the centre pad a heart", () => {
-    expect(renderToStaticMarkup(<Mark />)).toContain("M16 29.6c-5.1-3.3");
+  it("stays two inks at the sizes a bar draws it, so it survives a 16px tab", () => {
+    const html = renderToStaticMarkup(<Mark glyphOnly size={24} />);
+    expect(new Set(html.match(/var\(--[a-z-]+\)/g))).toEqual(new Set(["var(--sun)", "var(--on-sun)"]));
   });
 
-  it("stays two inks, so it survives a 16px favicon", () => {
-    const html = renderToStaticMarkup(<Mark glyphOnly />);
-    const tokens = new Set(html.match(/var\(--[a-z-]+\)/g));
-    expect(tokens).toEqual(new Set(["var(--sun)", "var(--on-sun)"]));
+  it("stands on its shelf and catches the light when drawn large", () => {
+    const html = renderToStaticMarkup(<Mark glyphOnly size={96} />);
+    expect(html).toContain("var(--sun-edge)");
+    for (const d of PAW.shine) expect(html).toContain(d);
   });
 
   it("names Pawket beside the glyph unless asked not to", () => {
     expect(renderToStaticMarkup(<Mark />)).toContain("Pawket");
     expect(renderToStaticMarkup(<Mark glyphOnly />)).not.toContain("Pawket");
+  });
+
+  it("is the same drawing in the favicon", () => {
+    const favicon = fs.readFileSync(path.join(process.cwd(), "public/favicon.svg"), "utf8");
+    for (const d of [...PAW.beans, PAW.heart]) expect(favicon).toContain(d);
   });
 });
 

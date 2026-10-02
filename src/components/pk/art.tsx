@@ -1,10 +1,83 @@
 import Link from "next/link";
+import { Fragment } from "react";
 
 /**
  * Flat geometry, 3px outline, built from the palette. There is no
  * photography in Pawket and no gradients. The pets themselves are in
  * `pet-art.tsx`; this file is the paw, the player and the mark.
  */
+
+/**
+ * Pawket's own paw, on a 64 grid: four toe beans over a centre pad that is
+ * a heart. Each bean is an egg, broader at its tip, leaning toward one point
+ * below the pad, and every gap — bean to bean, bean to heart — is the same
+ * 4.1, so the print reads as one thing. The heart is two circles meeting at
+ * a rounded tip, plump because a pad is soft. The drawing sits 0.8 below
+ * centre, where its weight balances.
+ *
+ * `shine` is a highlight per shape, every one lit from the upper right.
+ */
+export const PAW = {
+  beans: [
+    "M6.03 19.86C8.51 17.97 12.26 18.72 14.42 21.54C17.06 24.98 17.05 29.42 14.72 31.2C12.4 32.98 8.11 31.84 5.47 28.39C3.31 25.57 3.56 21.75 6.03 19.86Z",
+    "M21.54 7.28C25.08 6.48 28.71 9.16 29.63 13.26C30.76 18.27 28.59 23.03 25.25 23.78C21.92 24.53 17.92 21.16 16.79 16.15C15.87 12.05 17.99 8.07 21.54 7.28Z",
+    "M42.46 7.28C46.01 8.07 48.13 12.05 47.21 16.15C46.08 21.16 42.08 24.53 38.75 23.78C35.41 23.03 33.24 18.27 34.37 13.26C35.29 9.16 38.92 6.48 42.46 7.28Z",
+    "M57.97 19.86C60.44 21.75 60.69 25.57 58.53 28.39C55.89 31.84 51.6 32.98 49.28 31.2C46.95 29.42 46.94 24.98 49.58 21.54C51.74 18.72 55.49 17.97 57.97 19.86Z",
+  ],
+  heart:
+    "M32 34.63C30.1 31.35 26.24 29.76 22.59 30.74C18.94 31.72 16.4 35.04 16.4 38.82C16.4 48.24 24.28 51.63 30.11 57.66C30.6 58.18 31.29 58.47 32 58.47C32.71 58.47 33.4 58.18 33.89 57.66C39.72 51.63 47.6 48.24 47.6 38.82C47.6 35.04 45.06 31.72 41.41 30.74C37.76 29.76 33.9 31.35 32 34.63Z",
+  shine: [
+    "M10.57 21.28C11.8 21.69 12.9 22.65 13.56 23.87",
+    "M23.96 10.01C25.26 10.43 26.4 11.57 27.05 13.08",
+    "M41.82 9.91C43.09 10.17 44.12 11.17 44.63 12.62",
+    "M55.07 21.08C56.24 21.21 57.16 21.94 57.56 23.04",
+    "M40.35 33.58C41.96 33.93 43.33 34.99 44.05 36.47",
+  ],
+} as const;
+
+const SHAPES = [...PAW.beans, PAW.heart];
+const hundredths = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * The paw at a size, as the mark draws it. Its shape is carried by the
+ * fill, so it is the same paw in Daylight and Lamplight: the keyline sits
+ * outside each shape, and it is the one thing a dark room swallows.
+ *
+ * Keyline and shelf are sized in pixels, not with the drawing, so they stay
+ * the system's weights at every size. From 40px each shape stands on a
+ * `sun-edge` shelf, as a button does; from 56px each catches a highlight.
+ * Below that the paw is flat, two inks, which is what a 16px tab can hold.
+ */
+export function PawGlyph({ size, fill = "var(--sun)", ink = "var(--on-sun)" }: { size: number; fill?: string; ink?: string }) {
+  const unit = 64 / size;
+  const keyline = Math.max(1, size * 0.022) * unit;
+  const shelf = size >= 40 ? hundredths(Math.max(2, size * 0.03) * unit) : 0;
+  const lowered = `translate(0 ${shelf})`;
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      {/* the shelf adds depth below, so the drawing rises by half of it to stay centred */}
+      <g transform={shelf ? `translate(0 ${-shelf / 2})` : undefined}>
+        <g fill={ink} stroke={ink} strokeWidth={hundredths(keyline * 2)} strokeLinejoin="round">
+          {SHAPES.map((d) => (
+            <Fragment key={d}>
+              {shelf ? <path d={d} transform={lowered} /> : null}
+              <path d={d} />
+            </Fragment>
+          ))}
+        </g>
+        {shelf ? <g fill="var(--sun-edge)">{SHAPES.map((d) => <path key={d} d={d} transform={lowered} />)}</g> : null}
+        <g fill={fill}>
+          {SHAPES.map((d) => <path key={d} d={d} />)}
+          {size >= 56
+            ? PAW.shine.map((d) => (
+                <path key={d} d={d} fill="none" stroke="var(--pet-shine)" strokeWidth="1.5" strokeLinecap="round" opacity="0.9" />
+              ))
+            : null}
+        </g>
+      </g>
+    </svg>
+  );
+}
 
 /**
  * A paw print, on a 64px grid with the same 3px outline the pets take. A
@@ -58,15 +131,7 @@ export function PawArt({ form, coat, className }: { form: PawPrint; coat?: strin
             <ellipse cx="44.6" cy="17.6" rx="4.2" ry="5.4" transform="rotate(24 44.6 17.6)" />
           </>
         ) : null}
-        {form === "heart" ? (
-          <>
-            <path d="M32 56.5C22.4 50 15.6 44.7 15.6 37.6c0-5 3.8-8.6 8.4-8.6 3.6 0 6.2 1.9 8 4.8 1.8-2.9 4.4-4.8 8-4.8 4.6 0 8.4 3.6 8.4 8.6 0 7.1-6.8 12.4-16.4 18.9z" />
-            <ellipse cx="11.6" cy="27.4" rx="5.4" ry="6.6" transform="rotate(-26 11.6 27.4)" />
-            <ellipse cx="23.6" cy="16" rx="5.8" ry="7.2" transform="rotate(-9 23.6 16)" />
-            <ellipse cx="40.4" cy="16" rx="5.8" ry="7.2" transform="rotate(9 40.4 16)" />
-            <ellipse cx="52.4" cy="27.4" rx="5.4" ry="6.6" transform="rotate(26 52.4 27.4)" />
-          </>
-        ) : null}
+        {form === "heart" ? SHAPES.map((d) => <path key={d} d={d} />) : null}
       </g>
     </svg>
   );
@@ -143,18 +208,18 @@ export function PlayerArt({
 /**
  * The mark: a paw print, because Pawket is named for paws. Four toe beans
  * over a centre pad that is a heart — the thing a pet leaves behind, and the
- * care it is left for, drawn once.
+ * care it is left for, drawn once (`PAW`).
  *
- * Two inks, so it survives a 16px favicon: `sun` beans with an `on-sun`
- * outline. The beans sit far enough apart that the gaps stay open at 16px;
- * check 16, 20 and 24px before changing any of it.
+ * In a bar it is two inks, `sun` with an `on-sun` keyline, and the gaps stay
+ * open at 16px; drawn large it stands on its shelf and catches the light
+ * (`PawGlyph`). Check 16, 24 and 96px in both rooms before changing any of it.
  */
 export function Mark({
   size = 28,
   type = 22,
   glyphOnly = false,
-  fill = "var(--sun)",
-  ink = "var(--on-sun)",
+  fill,
+  ink,
   href,
   className,
 }: {
@@ -166,19 +231,7 @@ export function Mark({
   href?: string;
   className?: string;
 }) {
-  const glyph = (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" className="pk-mark__glyph">
-      <g fill={fill} stroke={ink} strokeWidth="2.2" strokeLinejoin="round">
-        {/* the centre pad, which is a heart */}
-        <path d="M16 29.6c-5.1-3.3-8.6-6.1-8.6-9.9 0-2.7 2-4.6 4.5-4.6 1.9 0 3.2 1 4.1 2.5.9-1.5 2.2-2.5 4.1-2.5 2.5 0 4.5 1.9 4.5 4.6 0 3.8-3.5 6.6-8.6 9.9z" />
-        {/* four beans, arched */}
-        <ellipse cx="4.7" cy="13.6" rx="2.9" ry="3.6" transform="rotate(-26 4.7 13.6)" />
-        <ellipse cx="11.2" cy="6.9" rx="3.1" ry="3.9" transform="rotate(-9 11.2 6.9)" />
-        <ellipse cx="20.8" cy="6.9" rx="3.1" ry="3.9" transform="rotate(9 20.8 6.9)" />
-        <ellipse cx="27.3" cy="13.6" rx="2.9" ry="3.6" transform="rotate(26 27.3 13.6)" />
-      </g>
-    </svg>
-  );
+  const glyph = <PawGlyph size={size} fill={fill} ink={ink} />;
 
   if (glyphOnly) return glyph;
 

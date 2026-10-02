@@ -20,6 +20,7 @@ export const DAYLIGHT = {
   sun: "#ff8a3d",
   "sun-edge": "#b8500f",
   "sun-soft": "#ffe4cd",
+  "on-sun": "#2a1e14",
   sprout: "#63b655",
   "sprout-edge": "#3a7a31",
   "sprout-soft": "#dcefd3",

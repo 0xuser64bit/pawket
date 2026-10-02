@@ -42,6 +42,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={fontClassNames} suppressHydrationWarning>
       <head>
+        {/* Lamplight is Pawket's own dark room, so Dark Reader is asked to stand
+            down. Left on, it repaints the palette and rewrites every SVG's fill and
+            stroke before React hydrates, which React reports as a mismatch. It reads
+            this tag before it touches the page, so it must be in the served head. */}
+        <meta name="darkreader-lock" />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>

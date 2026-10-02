@@ -116,21 +116,22 @@ function petImage(look: Look): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
-/**
- * Pawket's own icon, for a home screen: the paw at its fullest — shelf and
- * highlights — on a `sun-soft` square. Tokens resolve to their Daylight hex,
- * since the picture is drawn without a stylesheet.
- */
-export function pawIcon(size: number): ImageResponse {
-  const glyph = Math.round(size * 0.66);
-  const svg = markup(<PawGlyph size={glyph} />)
+/** The mark at a size, as an image the renderer can place: tokens resolve to their Daylight hex. */
+function pawImage(size: number): string {
+  const svg = markup(<PawGlyph size={size} />)
     .replace(/var\(--([a-z-]+)\)/g, (_, token: string) => DAYLIGHT[token as Tone])
     .replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
+
+/** Pawket's own icon, for a home screen: the paw at its fullest — shelf and highlights — on a `sun-soft` square. */
+export function pawIcon(size: number): ImageResponse {
+  const glyph = Math.round(size * 0.66);
   return new ImageResponse(
     (
       <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", background: DAYLIGHT["sun-soft"] }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
-        <img src={`data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`} width={glyph} height={glyph} alt="" />
+        <img src={pawImage(glyph)} width={glyph} height={glyph} alt="" />
       </div>
     ),
     { width: size, height: size },
@@ -230,7 +231,11 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
               <Pocket key={look.form} look={look} size={230} />
             ))}
           </div>
-          <div style={{ fontFamily: "Fraunces", fontSize: 92, lineHeight: 1, marginTop: 8 }}>Pawket</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 22, marginTop: 8 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+            <img src={pawImage(112)} width={112} height={112} alt="" />
+            <div style={{ fontFamily: "Fraunces", fontSize: 92, lineHeight: 1 }}>Pawket</div>
+          </div>
           <div style={{ fontSize: 32, color: DAYLIGHT["trim-cloth"] }}>
             A living companion. Adopt one, care for it, keep it on Solana.
           </div>

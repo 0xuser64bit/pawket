@@ -10,7 +10,7 @@ test("landing leads with the pet and closes with the rules", async ({ page }) =>
 
   await expect(page.getByRole("heading", { name: "What you actually own" })).toBeVisible();
   await expect(page.getByRole("cell", { name: "Guild token" })).toBeVisible();
-  await expect(page.getByText(/add nothing to a pet/i).first()).toBeVisible();
+  await expect(page.getByText(/adds? nothing to a pet/i).first()).toBeVisible();
   await expect(page.getByText(/design preview|demo data/i)).toHaveCount(0);
 });
 

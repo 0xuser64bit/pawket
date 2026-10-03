@@ -39,11 +39,12 @@ const ON_SOLANA: Array<{ icon: IconName; title: string; body: string }> = [
 const ASSET_COLUMNS = ["Thing", "What it is for", "Needed to play?", "Has a market price?"];
 
 const ASSETS = [
-  ["Your pet", "Identity, appearance, care, progress", "No — it starts in this browser", "No"],
+  ["Your pets", "Identity, appearance, care, progress — as many as you adopt", "No — they start in this browser", "No"],
   ["Its record on Solana", "Every care, the streak and the level, kept where nobody can edit them", "No — keeping it there is your choice", "No"],
   ["Its keepsake card", "A frozen card in your wallet that points at the pet", "No", "No — it cannot be sold or sent"],
-  ["Clothes", "Expression: the one look they are wearing", "No", "No — the wardrobe is free"],
-  ["Guild token", "A future community, if guilds ever open", "No", "Not in this version"],
+  ["Clothes", "Expression: eighteen looks, five of them earned by caring", "No", "No — the wardrobe is free"],
+  ["A guild", "A crest and a place among other pets, kept on Solana", "No — joining is optional", "No — joining and leaving are free"],
+  ["Guild token", "None exists. A guild is its pets, not a coin", "No", "Not in this version"],
   ["SOL", "Network fees on devnet, which Pawket covers while it can", "No", "Yes, elsewhere"],
 ];
 
@@ -234,10 +235,10 @@ export default function LandingPage() {
                 we use internally.
               </p>
               <Banner
-                tone="info"
-                title="Guilds, later, if at all"
-                body="There is no guild to join. Joining one would add people to the game. It would add nothing to a pet — no stat, no speed, no XP."
-                action={<ButtonLink label="Read the boundary" href="/guilds" tone="ghost" size="sm" after="right" />}
+                tone="guild"
+                title="Guilds, optional, always"
+                body="A pet can join a guild on Solana — a crest, a motto, other pets — and leave whenever its owner likes. Joining adds people to the game. It adds nothing to a pet — no stat, no speed, no XP — and there is no token."
+                action={<ButtonLink label="See the guilds" href="/guilds" tone="ghost" size="sm" after="right" />}
               />
             </Stack>
 

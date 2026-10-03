@@ -4,10 +4,11 @@ import { describe, expect, it } from "vitest";
 import { CLOTH_COLOURS } from "@/lib/player/look";
 import { CLOTH_TONE, DAYLIGHT } from "./palette";
 
-/** The Daylight tokens as `app/globals.css` declares them on `:root`. */
+/** The Daylight tokens as `app/globals.css` declares them on `:root` (the block Daylight's preview shares). */
 function rootTokens(): Record<string, string> {
   const css = fs.readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
-  const block = css.slice(css.indexOf(":root {"), css.indexOf("}", css.indexOf(":root {")));
+  const start = css.indexOf(':root,\n[data-theme-preview="light"] {');
+  const block = css.slice(start, css.indexOf("}", start));
   return Object.fromEntries([...block.matchAll(/--([a-z-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2].toLowerCase()]));
 }
 

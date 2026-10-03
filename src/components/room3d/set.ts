@@ -37,7 +37,8 @@ import { DAYLIGHT, type Tone } from "./palette";
 export const BACK = -1.6;
 export const BED = { x: 1.55, z: -0.72 };
 
-const SKY_TONE: Record<Sky, Tone> = { warm: "sun-soft", cool: "pool-soft", plain: "surface-sunk" };
+/** The pet's sky, as the token each backdrop takes (`SPECIES_SKY`). */
+export const SKY_TONE: Record<Sky, Tone> = { warm: "sun-soft", cool: "pool-soft", plain: "surface-sunk" };
 
 function solid(geometry: BufferGeometry, tone: Tone, outline = true): Mesh {
   const mesh = new Mesh(geometry, toon({ color: DAYLIGHT[tone] }));
@@ -76,8 +77,12 @@ function roundedRect(width: number, depth: number, radius: number): Shape {
 
 export interface RoomSet {
   group: Group;
-  /** Evening or day, and the pet's sky on the wall. */
-  light: (evening: boolean, sky: Sky) => void;
+  /**
+   * Evening or day, and the wall: by day it is the pet's sky in the room the
+   * player picked (a token's value, read from the page); after dark it is the
+   * one evening wall, lit by the lantern.
+   */
+  light: (evening: boolean, wall: string) => void;
   window: { x: number; y: number; z: number };
 }
 
@@ -200,8 +205,8 @@ export function buildRoom(): RoomSet {
   lamp.position.set(1.45, 1.9, -0.55);
   group.add(hemi, sun, sun.target, fill, lamp);
 
-  const light = (evening: boolean, sky: Sky) => {
-    wallMaterial.color.set(DAYLIGHT[evening ? "surface-sunk" : SKY_TONE[sky]]);
+  const light = (evening: boolean, wall: string) => {
+    wallMaterial.color.set(evening ? DAYLIGHT["surface-sunk"] : wall);
     skyMaterial.color.set(evening ? DAYLIGHT["pool-edge"] : DAYLIGHT["pool-soft"]);
     (disc.material as MeshBasicMaterial).color.set(evening ? DAYLIGHT["sun-soft"] : DAYLIGHT["ink-inverse"]);
     disc.scale.setScalar(evening ? 0.7 : 1);
@@ -217,7 +222,7 @@ export function buildRoom(): RoomSet {
     bulbMaterial.emissiveIntensity = evening ? 1.4 : 0;
     lineMaterial.color.set(DAYLIGHT.edge);
   };
-  light(false, "warm");
+  light(false, DAYLIGHT[SKY_TONE.warm]);
 
   return { group, light, window: { x: win.x, y: win.y + 0.5, z: win.z } };
 }

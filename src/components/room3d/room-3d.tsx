@@ -28,6 +28,8 @@ export interface Room3DProps {
   sky: Sky;
   evening: boolean;
   edge: string;
+  /** The pet's sky in the room the player picked: the wall by day. */
+  wall: string;
   cue: RoomCue | null;
   reduced: boolean;
   /** False while the room is off screen or the tab is hidden: nothing renders. */
@@ -88,7 +90,7 @@ export default memo(function Room3D(props: Room3DProps) {
   );
 });
 
-function Stage({ pet, look, sky, evening, edge, cue, reduced, compact, view, onStatus, onReady, onSlow }: Room3DProps & { onSlow?: () => void }) {
+function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, onStatus, onReady, onSlow }: Room3DProps & { onSlow?: () => void }) {
   // The body on screen changes only once the new one has arrived, so a
   // switch never blanks the room.
   const [shown, setShown] = useState(look.body);
@@ -179,10 +181,10 @@ function Stage({ pet, look, sky, evening, edge, cue, reduced, compact, view, onS
   }, [petActor, pet?.wearing, invalidate]);
 
   useEffect(() => {
-    room.light(evening, sky);
+    room.light(evening, wall);
     outlineUniforms.uColor.value.set(edge);
     invalidate();
-  }, [room, evening, sky, edge, invalidate]);
+  }, [room, evening, wall, edge, invalidate]);
 
   useEffect(() => {
     director.setReduced(reduced);

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { getPublicEnv } from "@/config/env";
 import { fontClassNames } from "@/config/fonts";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/config/site";
+import { THEME_SCRIPT } from "@/config/themes";
 import "./globals.css";
 import Providers from "./providers";
 
@@ -27,12 +28,6 @@ export const viewport: Viewport = {
   ],
 };
 
-/**
- * Daylight and Lamplight are the same room, so the theme follows the system
- * unless a player picked one. Applied before paint to avoid a flash of the
- * wrong room.
- */
-const THEME_SCRIPT = `try{var t=localStorage.getItem("pawket.theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export default function RootLayout({
   children,
@@ -47,6 +42,7 @@ export default function RootLayout({
             stroke before React hydrates, which React reports as a mismatch. It reads
             this tag before it touches the page, so it must be in the served head. */}
         <meta name="darkreader-lock" />
+        {/* The room a player picked, applied before paint so the wrong one never flashes. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Dock, Mark, ThemeToggle } from "@/components/pk";
+import { Dock, Mark, ThemeMenu } from "@/components/pk";
 import { WalletChip } from "@/components/wallet/wallet-chip";
 
 /**
@@ -23,7 +23,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
           <Dock />
           <div className="pk-shell__aside">
             <WalletChip />
-            <ThemeToggle />
+            <ThemeMenu />
           </div>
         </div>
       </header>

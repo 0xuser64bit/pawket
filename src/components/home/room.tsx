@@ -155,6 +155,7 @@ export function Room({
   const [onScreen, setOnScreen] = useState(true);
   const [visible, setVisible] = useState(true);
   const edge = useToken("--edge", "#2a1e14");
+  const wall = useToken(sky === "warm" ? "--sun-soft" : sky === "cool" ? "--pool-soft" : "--surface-sunk", "#ffe4cd");
   const [compact, setCompact] = useState(false);
   const frame = useRef<HTMLDivElement>(null);
   const view = useRef<RoomView>(null);
@@ -239,6 +240,7 @@ export function Room({
               sky={sky}
               evening={theme === "dark"}
               edge={edge}
+              wall={wall}
               cue={cue}
               reduced={reduced}
               active={onScreen && visible}

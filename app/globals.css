@@ -8,9 +8,16 @@
    Paper, and a number that costs money never wears Playroom.
    ========================================================================= */
 
-/* ---------------------------------------------------------------- tokens */
+/* ---------------------------------------------------------------- tokens
 
-:root {
+   Daylight is the default room. Every other theme is a complete set of the
+   same tokens, set on the root when a player picks it and on any element
+   marked data-theme-preview, so the picker can show each one in its own
+   colours. With no pick, the room follows the system: Daylight by day,
+   Lamplight after dark. */
+
+:root,
+[data-theme-preview="light"] {
   color-scheme: light;
 
   /* grounds and surfaces — Daylight */
@@ -142,7 +149,7 @@
 /* Lamplight is the same room after dark, not a re-skin: warm near-black
    ground, light edge outlines, every hue lightened so it takes dark on- ink. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme]) {
     color-scheme: dark;
 
     --ground: #17120e;
@@ -215,7 +222,8 @@
   }
 }
 
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+[data-theme-preview="dark"] {
   color-scheme: dark;
 
   --ground: #17120e;
@@ -283,6 +291,393 @@
   --shadow-sticker: 3px 3px 0 #0b0806;
   --shadow-sticker-sm: 2px 2px 0 #0b0806;
   --shadow-sticker-lift: 4px 4px 0 #0b0806;
+  --shadow-lift: 0 20px 44px -16px rgba(0, 0, 0, 0.72);
+  --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* The cute rooms. Each keeps every hue at its job — sun acts, sprout grows,
+   pool is people, bloom is the guild layer, alarm is risk — and changes the
+   room around them. themes.test.ts holds each to the contrast floor. */
+/* Strawberry milk: the room in pink, with a coral sun. */
+:root[data-theme="strawberry"],
+[data-theme-preview="strawberry"] {
+  color-scheme: light;
+
+  --ground: #fbe9ed;
+  --surface: #fff8f9;
+  --surface-sunk: #f5d7de;
+  --surface-ink: #3b1a22;
+  --paper: #f7f7f4;
+  --paper-sunk: #ecece7;
+  --rule: #85816f;
+  --ink: #3b1a22;
+  --ink-soft: #6c3a47;
+  --ink-faint: #7b4855;
+  --ink-inverse: #fff6f7;
+  --edge: #3b1a22;
+  --edge-soft: #efc9d3;
+  --sun: #ff8476;
+  --sun-edge: #bd4049;
+  --sun-text: #a12f3a;
+  --sun-soft: #ffdcd7;
+  --sprout: #63b655;
+  --sprout-edge: #3a7a31;
+  --sprout-text: #2b6a26;
+  --sprout-soft: #dcefd3;
+  --pool: #7ba4ec;
+  --pool-edge: #3a63ad;
+  --pool-text: #2a5399;
+  --pool-soft: #dfe8fb;
+  --bloom: #b8407a;
+  --bloom-edge: #7c2650;
+  --bloom-text: #8f2d5a;
+  --bloom-soft: #f9dde9;
+  --alarm: #d13a1f;
+  --alarm-edge: #8f2412;
+  --alarm-text: #a0280f;
+  --alarm-soft: #fbdcd4;
+  --on-sun: #3b1a22;
+  --on-sprout: #2a1e14;
+  --on-pool: #2a1e14;
+  --on-bloom: #fff8ec;
+  --on-alarm: #fff8ec;
+  --focus: #1d3270;
+  --focus-contrast: #fff8f9;
+  --trim-cloth: #8c7a60;
+  --trim-copper: #a45f2a;
+  --trim-glass: #2d8296;
+  --trim-foil: #95761a;
+  --pet-blush: #ff9f8f;
+  --pet-cream: #fff3e2;
+  --pet-cocoa: #6b3d1f;
+  --pet-cloud: #fbf8f4;
+  --pet-cloud-shade: #c7d3f2;
+  --pk-day: 1;
+  --pk-night: 0;
+
+  --shadow-sticker: 3px 3px 0 #3b1a22;
+  --shadow-sticker-sm: 2px 2px 0 #3b1a22;
+  --shadow-sticker-lift: 4px 4px 0 #3b1a22;
+  --shadow-lift: 0 20px 44px -16px rgba(42, 30, 20, 0.35);
+  --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
+}
+
+/* Honey: butter yellow and warm wood. */
+:root[data-theme="honey"],
+[data-theme-preview="honey"] {
+  color-scheme: light;
+
+  --ground: #fbf2d4;
+  --surface: #fffcef;
+  --surface-sunk: #f2e2b0;
+  --surface-ink: #33260f;
+  --paper: #f7f7f4;
+  --paper-sunk: #ecece7;
+  --rule: #85816f;
+  --ink: #33260f;
+  --ink-soft: #62502c;
+  --ink-faint: #6d5a32;
+  --ink-inverse: #fffaea;
+  --edge: #33260f;
+  --edge-soft: #ead79e;
+  --sun: #ff8f3f;
+  --sun-edge: #b5520f;
+  --sun-text: #954009;
+  --sun-soft: #ffe1c4;
+  --sprout: #63b655;
+  --sprout-edge: #3a7a31;
+  --sprout-text: #2a6524;
+  --sprout-soft: #dcefd3;
+  --pool: #7ba4ec;
+  --pool-edge: #3a63ad;
+  --pool-text: #29518f;
+  --pool-soft: #dfe8fb;
+  --bloom: #b8407a;
+  --bloom-edge: #7c2650;
+  --bloom-text: #8f2d5a;
+  --bloom-soft: #f9dde9;
+  --alarm: #d13a1f;
+  --alarm-edge: #8f2412;
+  --alarm-text: #9e2811;
+  --alarm-soft: #fbdcd4;
+  --on-sun: #33260f;
+  --on-sprout: #2a1e14;
+  --on-pool: #2a1e14;
+  --on-bloom: #fff8ec;
+  --on-alarm: #fff8ec;
+  --focus: #152f6b;
+  --focus-contrast: #fffcef;
+  --trim-cloth: #8c7a60;
+  --trim-copper: #a45f2a;
+  --trim-glass: #2d8296;
+  --trim-foil: #95761a;
+  --pet-blush: #ff9f8f;
+  --pet-cream: #fff3e2;
+  --pet-cocoa: #6b3d1f;
+  --pet-cloud: #fbf8f4;
+  --pet-cloud-shade: #c7d3f2;
+  --pk-day: 1;
+  --pk-night: 0;
+
+  --shadow-sticker: 3px 3px 0 #33260f;
+  --shadow-sticker-sm: 2px 2px 0 #33260f;
+  --shadow-sticker-lift: 4px 4px 0 #33260f;
+  --shadow-lift: 0 20px 44px -16px rgba(42, 30, 20, 0.35);
+  --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
+}
+
+/* Matcha latte: soft green, and calm. */
+:root[data-theme="matcha"],
+[data-theme-preview="matcha"] {
+  color-scheme: light;
+
+  --ground: #edf3e1;
+  --surface: #fbfdf4;
+  --surface-sunk: #dce8c9;
+  --surface-ink: #22301c;
+  --paper: #f7f7f4;
+  --paper-sunk: #ecece7;
+  --rule: #85816f;
+  --ink: #22301c;
+  --ink-soft: #4a5b3d;
+  --ink-faint: #57684a;
+  --ink-inverse: #f8fcef;
+  --edge: #22301c;
+  --edge-soft: #c9d8b1;
+  --sun: #ff9447;
+  --sun-edge: #b5561a;
+  --sun-text: #93410c;
+  --sun-soft: #ffe3c9;
+  --sprout: #5cae4d;
+  --sprout-edge: #3a7a31;
+  --sprout-text: #255f20;
+  --sprout-soft: #d3e9c6;
+  --pool: #7ba4ec;
+  --pool-edge: #3a63ad;
+  --pool-text: #27508f;
+  --pool-soft: #dfe8fb;
+  --bloom: #b8407a;
+  --bloom-edge: #7c2650;
+  --bloom-text: #8f2d5a;
+  --bloom-soft: #f9dde9;
+  --alarm: #d13a1f;
+  --alarm-edge: #8f2412;
+  --alarm-text: #9c2811;
+  --alarm-soft: #fbdcd4;
+  --on-sun: #22301c;
+  --on-sprout: #22301c;
+  --on-pool: #2a1e14;
+  --on-bloom: #fff8ec;
+  --on-alarm: #fff8ec;
+  --focus: #173069;
+  --focus-contrast: #fbfdf4;
+  --trim-cloth: #8c7a60;
+  --trim-copper: #a45f2a;
+  --trim-glass: #2d8296;
+  --trim-foil: #95761a;
+  --pet-blush: #ff9f8f;
+  --pet-cream: #fff3e2;
+  --pet-cocoa: #6b3d1f;
+  --pet-cloud: #fbf8f4;
+  --pet-cloud-shade: #c7d3f2;
+  --pk-day: 1;
+  --pk-night: 0;
+
+  --shadow-sticker: 3px 3px 0 #22301c;
+  --shadow-sticker-sm: 2px 2px 0 #22301c;
+  --shadow-sticker-lift: 4px 4px 0 #22301c;
+  --shadow-lift: 0 20px 44px -16px rgba(42, 30, 20, 0.35);
+  --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
+}
+
+/* Seaside: sea glass and white sand. */
+:root[data-theme="seaside"],
+[data-theme-preview="seaside"] {
+  color-scheme: light;
+
+  --ground: #e5f2f3;
+  --surface: #f7fdfd;
+  --surface-sunk: #cde4e7;
+  --surface-ink: #14303a;
+  --paper: #f7f7f4;
+  --paper-sunk: #ecece7;
+  --rule: #85816f;
+  --ink: #14303a;
+  --ink-soft: #3a5963;
+  --ink-faint: #456470;
+  --ink-inverse: #f4fcfc;
+  --edge: #14303a;
+  --edge-soft: #c0dbe0;
+  --sun: #ff9a4d;
+  --sun-edge: #b25617;
+  --sun-text: #93420b;
+  --sun-soft: #ffe5cf;
+  --sprout: #63b655;
+  --sprout-edge: #3a7a31;
+  --sprout-text: #256226;
+  --sprout-soft: #dcefd3;
+  --pool: #6fa6e6;
+  --pool-edge: #3a63ad;
+  --pool-text: #22508f;
+  --pool-soft: #d9e8f8;
+  --bloom: #b8407a;
+  --bloom-edge: #7c2650;
+  --bloom-text: #8c2c58;
+  --bloom-soft: #f9dde9;
+  --alarm: #d13a1f;
+  --alarm-edge: #8f2412;
+  --alarm-text: #9b2812;
+  --alarm-soft: #fbdcd4;
+  --on-sun: #14303a;
+  --on-sprout: #2a1e14;
+  --on-pool: #14303a;
+  --on-bloom: #fff8ec;
+  --on-alarm: #fff8ec;
+  --focus: #152f6b;
+  --focus-contrast: #f7fdfd;
+  --trim-cloth: #8c7a60;
+  --trim-copper: #a45f2a;
+  --trim-glass: #2d8296;
+  --trim-foil: #95761a;
+  --pet-blush: #ff9f8f;
+  --pet-cream: #fff3e2;
+  --pet-cocoa: #6b3d1f;
+  --pet-cloud: #fbf8f4;
+  --pet-cloud-shade: #c7d3f2;
+  --pk-day: 1;
+  --pk-night: 0;
+
+  --shadow-sticker: 3px 3px 0 #14303a;
+  --shadow-sticker-sm: 2px 2px 0 #14303a;
+  --shadow-sticker-lift: 4px 4px 0 #14303a;
+  --shadow-lift: 0 20px 44px -16px rgba(42, 30, 20, 0.35);
+  --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
+}
+
+/* Lavender: lilac, and a little sleepy. */
+:root[data-theme="lavender"],
+[data-theme-preview="lavender"] {
+  color-scheme: light;
+
+  --ground: #efeafa;
+  --surface: #fcfaff;
+  --surface-sunk: #ded6f1;
+  --surface-ink: #2b2140;
+  --paper: #f7f7f4;
+  --paper-sunk: #ecece7;
+  --rule: #85816f;
+  --ink: #2b2140;
+  --ink-soft: #57496f;
+  --ink-faint: #62547c;
+  --ink-inverse: #fbf8ff;
+  --edge: #2b2140;
+  --edge-soft: #d6cdec;
+  --sun: #ff8c5a;
+  --sun-edge: #b34e1d;
+  --sun-text: #983f12;
+  --sun-soft: #ffe0d0;
+  --sprout: #63b655;
+  --sprout-edge: #3a7a31;
+  --sprout-text: #2a6624;
+  --sprout-soft: #dcefd3;
+  --pool: #8aa8f0;
+  --pool-edge: #3a63ad;
+  --pool-text: #2c4f96;
+  --pool-soft: #e0e6fb;
+  --bloom: #b8407a;
+  --bloom-edge: #7c2650;
+  --bloom-text: #8e2c5c;
+  --bloom-soft: #f9dde9;
+  --alarm: #d13a1f;
+  --alarm-edge: #8f2412;
+  --alarm-text: #9f2913;
+  --alarm-soft: #fbdcd4;
+  --on-sun: #2b2140;
+  --on-sprout: #2a1e14;
+  --on-pool: #2a1e14;
+  --on-bloom: #fff8ec;
+  --on-alarm: #fff8ec;
+  --focus: #1e2c6c;
+  --focus-contrast: #fcfaff;
+  --trim-cloth: #8c7a60;
+  --trim-copper: #a45f2a;
+  --trim-glass: #2d8296;
+  --trim-foil: #95761a;
+  --pet-blush: #ff9f8f;
+  --pet-cream: #fff3e2;
+  --pet-cocoa: #6b3d1f;
+  --pet-cloud: #fbf8f4;
+  --pet-cloud-shade: #c7d3f2;
+  --pk-day: 1;
+  --pk-night: 0;
+
+  --shadow-sticker: 3px 3px 0 #2b2140;
+  --shadow-sticker-sm: 2px 2px 0 #2b2140;
+  --shadow-sticker-lift: 4px 4px 0 #2b2140;
+  --shadow-lift: 0 20px 44px -16px rgba(42, 30, 20, 0.35);
+  --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
+}
+
+/* Starlight: a navy night with a gold moon. */
+:root[data-theme="starlight"],
+[data-theme-preview="starlight"] {
+  color-scheme: dark;
+
+  --ground: #10162a;
+  --surface: #1a2340;
+  --surface-sunk: #0a0f1e;
+  --surface-ink: #e2e8ff;
+  --paper: #16181f;
+  --paper-sunk: #0f1116;
+  --rule: #737a8c;
+  --ink: #eef1ff;
+  --ink-soft: #b9c1dd;
+  --ink-faint: #98a1c2;
+  --ink-inverse: #10162a;
+  --edge: #dfe5ff;
+  --edge-soft: #2e3858;
+  --sun: #ffa05c;
+  --sun-edge: #a8530f;
+  --sun-text: #ffb784;
+  --sun-soft: #3a2a2a;
+  --sprout: #7fcf72;
+  --sprout-edge: #2f6427;
+  --sprout-text: #9ddc91;
+  --sprout-soft: #1f3326;
+  --pool: #9dbcff;
+  --pool-edge: #2f538f;
+  --pool-text: #b5ccff;
+  --pool-soft: #202c4d;
+  --bloom: #ea74ad;
+  --bloom-edge: #8a2d5a;
+  --bloom-text: #f497c3;
+  --bloom-soft: #3a2038;
+  --alarm: #ff6b52;
+  --alarm-edge: #932412;
+  --alarm-text: #ff957e;
+  --alarm-soft: #3d1b1f;
+  --on-sun: #10162a;
+  --on-sprout: #10162a;
+  --on-pool: #10162a;
+  --on-bloom: #10162a;
+  --on-alarm: #10162a;
+  --focus: #ffd27a;
+  --focus-contrast: #10162a;
+  --trim-cloth: #c0ab8b;
+  --trim-copper: #d08a4e;
+  --trim-glass: #63c0d4;
+  --trim-foil: #d8b43e;
+  --pet-blush: #f2907f;
+  --pet-cream: #f6e6cc;
+  --pet-cocoa: #8a5530;
+  --pet-cloud: #efe9f2;
+  --pet-cloud-shade: #b3c1ea;
+  --pk-day: 0;
+  --pk-night: 1;
+
+  --shadow-sticker: 3px 3px 0 #05070f;
+  --shadow-sticker-sm: 2px 2px 0 #05070f;
+  --shadow-sticker-lift: 4px 4px 0 #05070f;
   --shadow-lift: 0 20px 44px -16px rgba(0, 0, 0, 0.72);
   --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
 }
@@ -2661,6 +3056,192 @@ li {
   .pk-splash__name {
     animation: none !important;
   }
+}
+
+/* ------------------------------------------------------- rooms (themes)
+
+   A room is a whole set of tokens. The switch in the shell names the room
+   you are in beside a dot of its ground and sun; the picker shows every
+   room as a small drawing in that room's own tokens (data-theme-preview),
+   so a preview can never disagree with the room it opens. */
+
+.pk-theme-dot {
+  position: relative;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  background: var(--ground);
+}
+.pk-theme-dot::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--sun);
+  box-shadow: 0 0 0 1.5px var(--edge);
+}
+
+.pk-menu {
+  position: fixed;
+  inset: auto;
+  top: calc(var(--space-10) - var(--space-5) + env(safe-area-inset-top));
+  right: max(var(--gutter), env(safe-area-inset-right));
+  margin: 0;
+  width: min(260px, calc(100vw - 2 * var(--gutter)));
+  padding: var(--space-3);
+  background: var(--surface);
+  color: var(--ink);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sticker);
+}
+@supports (position-anchor: --pk-a) {
+  .pk-menu {
+    top: calc(anchor(bottom) + var(--space-2));
+    right: anchor(right);
+    position-try-fallbacks: flip-block;
+  }
+}
+.pk-menu:popover-open {
+  animation: pk-fade var(--dur-sheet) var(--ease-press);
+}
+.pk-menu__list {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+.pk-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border: var(--stroke-line) solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.pk-menu__item[aria-pressed="true"] {
+  border-color: var(--edge);
+  background: var(--surface-sunk);
+}
+@media (hover: hover) {
+  .pk-menu__item:not([aria-pressed="true"]):hover {
+    background: var(--surface-sunk);
+  }
+}
+@media (pointer: coarse) {
+  .pk-menu__item {
+    min-height: 44px;
+  }
+}
+
+.pk-themes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+.pk-theme {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-press), box-shadow var(--dur-press) var(--ease-press);
+}
+.pk-theme:has(input:checked) {
+  border-color: var(--edge);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-theme:has(input:focus-visible) {
+  outline: var(--stroke-line) solid var(--focus);
+  outline-offset: 2px;
+}
+@media (hover: hover) {
+  .pk-theme:not(:has(input:checked)):hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sticker-sm);
+  }
+}
+.pk-theme__art {
+  display: flex;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  aspect-ratio: 4 / 3;
+}
+.pk-theme__art > * {
+  flex: 1;
+  min-width: 0;
+}
+.pk-theme__words {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--space-1) var(--space-1);
+}
+
+/* The drawing: the room's ground, a card on it with the sun and a sprout
+   bar, and a pet sitting in front. */
+.pk-swatch-room {
+  position: relative;
+  display: block;
+  height: 100%;
+  background: var(--ground);
+  color: var(--ink);
+}
+.pk-swatch-room__card {
+  position: absolute;
+  left: 12%;
+  top: 14%;
+  width: 52%;
+  height: 46%;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-swatch-room__sun {
+  position: absolute;
+  left: 12%;
+  top: 18%;
+  width: 34%;
+  height: 26%;
+  border: 1.5px solid var(--on-sun);
+  border-radius: var(--radius-pill);
+  background: var(--sun);
+}
+.pk-swatch-room__grow {
+  position: absolute;
+  left: 12%;
+  bottom: 18%;
+  width: 70%;
+  height: 14%;
+  border-radius: var(--radius-pill);
+  background: var(--sprout);
+}
+.pk-swatch-room__pet {
+  position: absolute;
+  right: 6%;
+  bottom: 4%;
+  width: 46%;
+}
+.pk-swatch-room__pet svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* ---------------------------------------------- focus: two bands, drawn last

@@ -52,15 +52,14 @@ test("the flat room is a choice this device remembers", async ({ page }) => {
 
 test("your look is saved on this device and dresses the room", async ({ page }) => {
   await adopt(page);
-  await page.getByRole("button", { name: "Look" }).click();
-  await page.getByRole("button", { name: "Change your look" }).click();
+  await page.getByRole("link", { name: "Look" }).click();
+  await expect(page).toHaveURL(/\/profile#look/);
   await page.getByRole("tab", { name: "Clothes" }).click();
   await page.getByRole("radio", { name: "Long sleeve" }).click();
   await page.getByRole("radiogroup", { name: "Top colour" }).getByRole("radio", { name: "Sprout" }).click();
   const summary = page.getByText(/^Espresso buns, sprout long sleeve/);
   await expect(summary).toBeVisible();
   await page.reload();
-  await page.getByRole("button", { name: "Look" }).click();
   await expect(summary).toBeVisible();
 });
 
@@ -69,7 +68,7 @@ test("an empty room still draws you, and asks for no pet it does not have", asyn
   await expect(page.getByRole("heading", { name: "The window is open" })).toBeVisible();
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
   await expect(page.getByRole("button", { name: "Wave" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Change your look" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Change your look" })).toBeVisible();
 });
 
 test.describe("without WebGL", () => {
@@ -89,11 +88,12 @@ test.describe("without WebGL", () => {
     await expect(page.locator(".pk-room canvas")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Wave" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Flat room" })).toHaveCount(0);
-    await page.getByRole("button", { name: "Look" }).click();
-    await expect(page.getByText(/the flat room shows your top colour/i)).toBeVisible();
     // Care still works exactly as before.
     await page.getByRole("button", { name: "Feed" }).click();
     await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
+    // And the look says plainly where it is worn.
+    await page.goto("/profile");
+    await expect(page.getByText(/the flat room shows your top colour/i)).toBeVisible();
   });
 });
 
@@ -112,8 +112,7 @@ test.describe("with reduced motion", () => {
 test("nothing scrolls sideways on a small phone with the look open", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await adopt(page);
-  await page.getByRole("button", { name: "Look" }).click();
-  await page.getByRole("button", { name: "Change your look" }).click();
+  await page.goto("/profile");
   for (const part of ["Body", "Hair", "Clothes", "Shoes"]) {
     await page.getByRole("tab", { name: part }).click();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

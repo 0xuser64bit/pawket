@@ -3449,6 +3449,199 @@ li {
   }
 }
 
+/* ------------------------------------------------------- the profile
+
+   You in your room, the same stage as Home, with a plate floating on its
+   foot: your name, and what you and your pets have done together, counted.
+   Then the look, then everything you keep. */
+
+.pk-anchor {
+  scroll-margin-top: var(--space-6);
+}
+.pk-plate {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: var(--space-4);
+  margin: calc(-1 * var(--space-5)) var(--space-3) var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pocket);
+  box-shadow: var(--shadow-sticker);
+}
+@media (min-width: 1024px) {
+  .pk-plate {
+    grid-template-columns: minmax(260px, 340px) auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+    width: fit-content;
+    max-width: calc(100% - 2 * var(--space-5));
+    margin-inline: auto;
+    padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3);
+  }
+}
+.pk-plate__stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, max-content));
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+}
+@media (max-width: 479px) {
+  .pk-plate__stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.pk-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pk-stat dd {
+  margin: 0;
+}
+
+.pk-outfits {
+  display: grid;
+  gap: var(--space-3);
+}
+@media (min-width: 720px) {
+  .pk-outfits {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.pk-outfit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-outfit--empty {
+  border-style: dashed;
+  border-color: var(--edge-soft);
+  box-shadow: none;
+}
+.pk-outfit__dots {
+  display: inline-flex;
+}
+.pk-outfit__dot {
+  width: 16px;
+  height: 16px;
+  margin-left: -4px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+}
+
+.pk-slot--link {
+  color: var(--ink);
+  text-decoration: none;
+  min-height: 120px;
+}
+@media (hover: hover) {
+  .pk-slot--link:hover {
+    border-color: var(--edge);
+  }
+}
+
+/* The sticker book: a sticker is a disc in its hue's soft tint, its glyph
+   in the hue's text colour. One not yet earned is a dashed outline. */
+.pk-stickers {
+  list-style: none;
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+}
+@media (min-width: 720px) {
+  .pk-stickers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .pk-stickers {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.pk-sticker {
+  --pk-tint: var(--sun-soft);
+  --pk-glyph: var(--sun-text);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-sticker--sprout {
+  --pk-tint: var(--sprout-soft);
+  --pk-glyph: var(--sprout-text);
+}
+.pk-sticker--pool {
+  --pk-tint: var(--pool-soft);
+  --pk-glyph: var(--pool-text);
+}
+.pk-sticker--bloom {
+  --pk-tint: var(--bloom-soft);
+  --pk-glyph: var(--bloom-text);
+}
+.pk-sticker__art {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  background: var(--pk-tint);
+  color: var(--pk-glyph);
+  transform: rotate(-6deg);
+}
+.pk-sticker__words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pk-sticker__by {
+  display: flex;
+  flex: none;
+}
+.pk-sticker__pet {
+  width: 30px;
+  height: 30px;
+  margin-left: -8px;
+  overflow: hidden;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunk);
+}
+.pk-sticker__pet svg {
+  width: 120%;
+  height: 120%;
+  margin: -2% 0 0 -10%;
+}
+.pk-sticker--locked {
+  border-style: dashed;
+  border-color: var(--edge-soft);
+  background: transparent;
+  box-shadow: none;
+}
+.pk-sticker--locked .pk-sticker__art {
+  border-style: dashed;
+  border-color: var(--edge-soft);
+  background: transparent;
+  color: var(--ink-faint);
+  transform: none;
+}
+
 /* ------------------------------------------------------- rooms (themes)
 
    A room is a whole set of tokens. The switch in the shell names the room

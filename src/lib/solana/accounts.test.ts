@@ -128,7 +128,7 @@ describe("toCompanionRecord", () => {
     expect(guestPetSchema.safeParse(record).success).toBe(true);
     expect(record.id).toBe(PET);
     expect(record.wearing).toBe("paper-crown");
-    expect(record.streak).toEqual({ count: 3, lastDay: "2026-10-01" });
+    expect(record.streak).toEqual({ count: 3, lastDay: "2026-10-01", best: 5 });
     expect(record.lastDailyPlayDay).toBe("2026-09-30");
     expect(record.careLog).toEqual([
       { action: CareActionType.Feed, at: "2026-10-01T11:00:00.000Z", xpGained: 10 },

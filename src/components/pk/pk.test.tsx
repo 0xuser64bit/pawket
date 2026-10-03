@@ -170,7 +170,9 @@ describe("Dock", () => {
   it("keeps a detail screen lit under the place it belongs to", () => {
     expect(activePlace("/playground")).toBe("playground");
     expect(activePlace("/guilds")).toBe("guilds");
-    expect(activePlace("/pet/pepper")).toBe("inventory");
+    expect(activePlace("/pet/pepper")).toBe("profile");
+    expect(activePlace("/inventory")).toBe("profile");
+    expect(activePlace("/profile")).toBe("profile");
     expect(activePlace("/pet/PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74")).toBe("park");
     expect(activePlace("/park")).toBe("park");
     expect(activePlace("/home")).toBe("home");

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Icon, type IconName } from "@/components/pk";
 import { CARE_ACTION_LABEL, MOOD_LABEL } from "@/lib/game/appearance";
 import { CareActionType, type PetMood, type PetStats } from "@/lib/game/enums";
@@ -19,12 +20,11 @@ const VITALS: Array<{ key: keyof PetStats; label: string; icon: IconName }> = [
   { key: "hygiene", label: "Coat", icon: "spark" },
 ];
 
-export type Panel = "say" | "today" | "look";
+export type Panel = "say" | "today";
 
 const TOOLS: Array<{ key: Panel; label: string; icon: IconName }> = [
   { key: "say", label: "Say", icon: "chat" },
   { key: "today", label: "Today", icon: "info" },
-  { key: "look", label: "Look", icon: "person" },
 ];
 
 /**
@@ -79,8 +79,8 @@ function MiniVital({ label, icon, value }: { label: string; icon: IconName; valu
  * Everything you can do in the room, floating under it: how the pet is
  * (level, the four vitals, the mood in a word), the four cares as round
  * buttons — the one the pet most wants in sun, a resting one counting down
- * — and three tools that open a panel below: say something, today's
- * record, and how you look. Nothing here sits over the animal.
+ * — and the tools: say something and today's numbers open a panel below,
+ * and how you look opens in your profile. Nothing here sits over the animal.
  */
 export function Deck({
   name,
@@ -177,6 +177,10 @@ export function Deck({
             </button>
           );
         })}
+        <Link href="/profile#look" className="pk-tool">
+          <Icon name="person" size={18} />
+          <span>Look</span>
+        </Link>
       </div>
     </section>
   );

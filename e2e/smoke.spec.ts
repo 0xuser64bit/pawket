@@ -15,7 +15,7 @@ test("landing leads with the pet and closes with the rules", async ({ page }) =>
 test("the dock reaches the places that exist", async ({ page }) => {
   await page.goto("/home");
   const dock = page.getByRole("navigation", { name: "Pawket" });
-  for (const place of ["Home", "Park", "Playground", "Inventory", "Guilds"]) {
+  for (const place of ["Home", "Park", "Playground", "Profile", "Guilds"]) {
     await expect(dock.getByRole("link", { name: place })).toBeVisible();
   }
   await expect(dock.getByRole("link", { name: "Market" })).toHaveCount(0);
@@ -133,7 +133,9 @@ test("a second adoption keeps the first pet, and either can be at home", async (
   // Either one comes home from the room itself.
   await page.getByRole("button", { name: "Bring Pepper home" }).click();
   await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
+  // The old shelf's link lands on the profile, where every pet is kept.
   await page.goto("/inventory");
+  await expect(page).toHaveURL(/\/profile/);
   await page.getByRole("button", { name: "Bring home" }).click();
   await expect(page.getByRole("heading", { name: "Miso's room" })).toBeVisible();
 });
@@ -158,6 +160,33 @@ test("the wardrobe is worn on the pet, and the record keeps the care", async ({ 
 
   await page.goto("/home");
   await expect(page.getByText("Wool scarf", { exact: true })).toBeVisible();
+});
+
+test("the profile names you, counts what you have done, and keeps three outfits", async ({ page }) => {
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await page.getByRole("button", { name: /take them home/i }).click();
+  await page.getByRole("button", { name: "Feed" }).click();
+  await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
+
+  await page.getByRole("navigation", { name: "Pawket" }).getByRole("link", { name: "Profile" }).click();
+  await expect(page.getByRole("heading", { name: "You", exact: true })).toBeVisible();
+  await page.getByRole("textbox", { name: "Your name" }).fill("Arth");
+  await expect(page.getByRole("heading", { name: "Arth", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Keep this look" }).first().click();
+  await expect(page.getByText("Kept as outfit 1.")).toBeVisible();
+  await page.getByRole("tab", { name: "Clothes" }).click();
+  await page.getByRole("radiogroup", { name: "Top colour" }).getByRole("radio", { name: "Sprout" }).click();
+  await page.getByRole("button", { name: "Wear" }).click();
+  await expect(page.getByRole("radiogroup", { name: "Top colour" }).getByRole("radio", { name: "Pool" })).toHaveAttribute("aria-checked", "true");
+
+  await page.getByRole("link", { name: "Stickers" }).click();
+  await expect(page.getByText("Earned by Pepper").first()).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Arth", exact: true })).toBeVisible();
 });
 
 test("a playground round finishes and keeps a daily bonus", async ({ page }) => {

@@ -51,7 +51,7 @@ const NAV = [
   { label: "Home", href: "/home" },
   { label: "Park", href: "/park" },
   { label: "Playground", href: "/playground" },
-  { label: "Inventory", href: "/inventory" },
+  { label: "Profile", href: "/profile" },
   { label: "Guilds", href: "/guilds" },
 ];
 

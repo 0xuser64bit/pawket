@@ -1,0 +1,59 @@
+"use client";
+
+import { Icon, PetArt, SectionLabel } from "@/components/pk";
+import { BADGES, badgesFor } from "@/lib/game/badges";
+import { petLook } from "@/lib/game/appearance";
+import type { GuestPet } from "@/lib/guest/pet";
+
+/**
+ * The sticker book: every sticker a pet's record can earn, and which of your
+ * pets have earned it. Each is read from the record, so a sticker cannot be
+ * bought and is never lost; one not yet earned says how.
+ */
+export function StickerBook({ pets, onChain }: { pets: GuestPet[]; onChain: Set<string> }) {
+  const earnedBy = new Map<string, GuestPet[]>();
+  for (const pet of pets) {
+    for (const id of badgesFor(pet, { onChain: onChain.has(pet.id) })) {
+      earnedBy.set(id, [...(earnedBy.get(id) ?? []), pet]);
+    }
+  }
+  return (
+    <div className="pk-stack" style={{ gap: "var(--space-4)" }}>
+      <SectionLabel count={`${earnedBy.size} / ${BADGES.length}`}>Stickers</SectionLabel>
+      <p className="body-sm pk-muted">
+        Earned by care, by showing up and by playing — read from each pet&apos;s record, so they cannot be bought
+        and are never lost. They change nothing about a pet but its pride.
+      </p>
+      <ul className="pk-stickers">
+        {BADGES.map((badge) => {
+          const by = earnedBy.get(badge.id) ?? [];
+          const earned = by.length > 0;
+          return (
+            <li key={badge.id} className={["pk-sticker", `pk-sticker--${badge.tone}`, earned ? "" : "pk-sticker--locked"].filter(Boolean).join(" ")}>
+              <span className="pk-sticker__art" aria-hidden="true">
+                <Icon name={badge.icon} size={26} />
+              </span>
+              <span className="pk-sticker__words">
+                <span className="title">{badge.name}</span>
+                <span className="caption pk-muted">
+                  {earned ? `Earned by ${by.map((pet) => pet.name).join(", ")}` : badge.how}
+                </span>
+              </span>
+              {earned ? (
+                <span className="pk-sticker__by" aria-hidden="true">
+                  {by.slice(0, 3).map((pet) => (
+                    <span key={pet.id} className="pk-sticker__pet">
+                      <PetArt {...petLook(pet)} still />
+                    </span>
+                  ))}
+                </span>
+              ) : (
+                <span className="pk-sr">Not earned yet.</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}

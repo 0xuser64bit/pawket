@@ -8,21 +8,30 @@ import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
 const SKY_CLASS = { warm: "pk-sky--warm", cool: "pk-sky", plain: "pk-sky--plain" } as const;
 
 /**
- * Who is home. Every pet the player keeps, as a face in a circle; the one at
- * home is ringed, and any other comes home with a tap. The last circle
- * adopts another.
+ * Every pet the player keeps, as a face in a circle; the chosen one is
+ * ringed and any other is a tap away. On Home it says who is home (and the
+ * last circle adopts another); in the wardrobe, who is being dressed.
  */
 export function PetSwitcher({
   pets,
   home,
   onChoose,
+  label = "Who is home",
+  chooseLabel = (pet) => `Bring ${pet.name} home`,
+  chosenLabel = (pet) => `${pet.name}, at home`,
+  adopt = true,
 }: {
   pets: GuestPet[];
   home: string;
   onChoose: (id: string) => void;
+  label?: string;
+  chooseLabel?: (pet: GuestPet) => string;
+  chosenLabel?: (pet: GuestPet) => string;
+  /** End with a circle that adopts another. */
+  adopt?: boolean;
 }) {
   return (
-    <div className="pk-switch" role="group" aria-label="Who is home">
+    <div className="pk-switch" role="group" aria-label={label}>
       {pets.map((pet) => {
         const on = pet.id === home;
         return (
@@ -31,7 +40,7 @@ export function PetSwitcher({
             type="button"
             className={["pk-avatar", SKY_CLASS[SPECIES_SKY[pet.species]], on && "pk-avatar--on"].filter(Boolean).join(" ")}
             aria-pressed={on}
-            aria-label={on ? `${pet.name}, at home` : `Bring ${pet.name} home`}
+            aria-label={on ? chosenLabel(pet) : chooseLabel(pet)}
             title={pet.name}
             onClick={() => onChoose(pet.id)}
           >
@@ -39,9 +48,11 @@ export function PetSwitcher({
           </button>
         );
       })}
-      <Link href="/adopt" className="pk-avatar pk-avatar--add" aria-label="Adopt another pet" title="Adopt another">
-        <Icon name="plus" size={18} />
-      </Link>
+      {adopt ? (
+        <Link href="/adopt" className="pk-avatar pk-avatar--add" aria-label="Adopt another pet" title="Adopt another">
+          <Icon name="plus" size={18} />
+        </Link>
+      ) : null}
     </div>
   );
 }

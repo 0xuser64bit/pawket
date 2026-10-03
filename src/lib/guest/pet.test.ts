@@ -34,7 +34,7 @@ describe("createGuestPet", () => {
     expect(pet.xp).toBe(0);
     expect(pet.version).toBe(2);
     expect(pet.careLog).toEqual([]);
-    expect(pet.streak).toEqual({ count: 0, lastDay: null });
+    expect(pet.streak).toEqual({ count: 0, lastDay: null, best: 0 });
     expect(pet.wearing).toBeNull();
   });
 
@@ -67,7 +67,7 @@ describe("applyGuestCare", () => {
     expect(result.pet.careLog).toEqual([
       { action: CareActionType.Feed, at: now.toISOString(), xpGained: 10 },
     ]);
-    expect(result.pet.streak).toEqual({ count: 1, lastDay: "2026-09-19" });
+    expect(result.pet.streak).toEqual({ count: 1, lastDay: "2026-09-19", best: 1 });
   });
 
   it("keeps a streak across UTC days and starts over after a gap", () => {
@@ -97,7 +97,7 @@ describe("applyGuestCare", () => {
       new Date("2026-03-03T08:00:00Z"),
     );
     if (!afterGap.ok) return;
-    expect(afterGap.pet.streak).toEqual({ count: 1, lastDay: "2026-03-03" });
+    expect(afterGap.pet.streak).toEqual({ count: 1, lastDay: "2026-03-03", best: 2 });
   });
 
   it("prints a streak that has already lapsed as zero", () => {
@@ -194,7 +194,7 @@ describe("wardrobe and play", () => {
     expect(first.pet.xp).toBe(DAILY_GOAL_REWARD_XP);
     expect(first.pet.plays).toBe(1);
     expect(first.pet.stats).toEqual(pet.stats);
-    expect(first.pet.streak).toEqual({ count: 1, lastDay: "2026-09-19" });
+    expect(first.pet.streak).toEqual({ count: 1, lastDay: "2026-09-19", best: 1 });
 
     const again = recordPlay(first.pet, new Date("2026-09-19T23:00:00Z"));
     expect(again.xpGained).toBe(0);
@@ -231,7 +231,7 @@ describe("migrateStoredPet", () => {
     expect(pet?.xp).toBe(10);
     expect(pet?.lastActionAt.feed).toBe(legacy.lastActionAt.feed);
     expect(pet?.careLog).toEqual([]);
-    expect(pet?.streak).toEqual({ count: 0, lastDay: null });
+    expect(pet?.streak).toEqual({ count: 0, lastDay: null, best: 0 });
     expect(pet?.id).toBe(migrateStoredPet(legacy)?.id);
   });
 
@@ -245,6 +245,12 @@ describe("migrateStoredPet", () => {
     const loaded = migrateStoredPet(raw);
     expect(loaded?.wearing).toBeNull();
     expect(loaded?.name).toBe(pet.name);
+  });
+
+  it("starts the best run of a record from before at the run it has", () => {
+    const pet = createGuestPet({ ...INPUT, now: new Date("2026-09-19T12:00:00Z") });
+    const older = { ...pet, streak: { count: 4, lastDay: "2026-09-22" } };
+    expect(migrateStoredPet(older)?.streak).toEqual({ count: 4, lastDay: "2026-09-22", best: 4 });
   });
 
   it("returns null for garbage", () => {

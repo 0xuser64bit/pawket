@@ -1,14 +1,7 @@
-import type { Metadata } from "next";
-import { InventoryScreen } from "@/components/inventory/inventory-screen";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Inventory" };
-
-/** The shelf. The pet and the wardrobe are read in the browser. */
-export default async function InventoryPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string }>;
-}) {
+/** The shelf moved into the profile; an old link still lands on it. */
+export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { tab } = await searchParams;
-  return <InventoryScreen tab={tab === "wardrobe" ? "wardrobe" : "pet"} />;
+  redirect(tab === "wardrobe" ? "/profile?tab=wardrobe#shelf" : "/profile#shelf");
 }

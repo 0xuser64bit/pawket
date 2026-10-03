@@ -38,7 +38,7 @@ export function PetScreen({ id }: { id: string }) {
   if (!ready) {
     return (
       <Screen>
-        <BackLink label="Inventory" href="/inventory" />
+        <BackLink label="Profile" href="/profile#shelf" />
         <Waiting label="Opening their record" />
       </Screen>
     );
@@ -47,7 +47,7 @@ export function PetScreen({ id }: { id: string }) {
   if (!pet) {
     return (
       <Screen width="narrow">
-        <BackLink label="Inventory" href="/inventory" />
+        <BackLink label="Profile" href="/profile#shelf" />
         <EmptyState
           icon="paw"
           title={pets.length ? "That pet is not in this browser" : "No pet in this browser"}
@@ -58,7 +58,7 @@ export function PetScreen({ id }: { id: string }) {
           }
           action={
             pets.length ? (
-              <ButtonLink label="Your pets" href="/inventory" icon="pocket" />
+              <ButtonLink label="Your pets" href="/profile#shelf" icon="pocket" />
             ) : (
               <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />
             )
@@ -77,7 +77,7 @@ export function PetScreen({ id }: { id: string }) {
 
   return (
     <Screen>
-      <BackLink label="Inventory" href="/inventory" />
+      <BackLink label="Profile" href="/profile#shelf" />
 
       <Columns
         split="portrait"
@@ -105,7 +105,7 @@ export function PetScreen({ id }: { id: string }) {
                   {formatUtcDate(pet.createdAt)}
                 </p>
               </div>
-              <ButtonLink label="Dress" href="/inventory?tab=wardrobe" icon="spark" size="sm" tone="quiet" />
+              <ButtonLink label="Dress" href="/profile?tab=wardrobe#shelf" icon="spark" size="sm" tone="quiet" />
             </div>
 
             <Row gap={2} wrap>

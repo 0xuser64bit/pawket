@@ -20,7 +20,6 @@ import {
 import { CarryCard } from "@/components/home/carry-card";
 import { CARE_ICON, Deck, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
-import { LookCard } from "@/components/home/look-card";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { Room, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";
@@ -52,6 +51,7 @@ import {
   type TodayGoals,
 } from "@/lib/guest/pet";
 import { readPet, removePet, savePet } from "@/lib/guest/storage";
+import { lookSummary } from "@/components/profile/look-editor";
 import { describeLook } from "@/lib/player/look";
 import { usePlayerLook } from "@/lib/player/use-player-look";
 import { CARE_MOMENT, type RoomCue } from "@/lib/room/moments";
@@ -152,7 +152,15 @@ export function HomeScreen() {
                 </div>
               </Card>
             )}
-            <LookCard look={look} shown={lookShown} />
+            <Card>
+              <h2 className="title">How you look</h2>
+              <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
+                {lookSummary(look)}. Saved on this device, and yours to change.
+              </p>
+              <div style={{ marginTop: "var(--space-4)" }}>
+                <ButtonLink label="Change your look" href="/profile#look" tone="quiet" size="sm" icon="person" />
+              </div>
+            </Card>
           </div>
           <ChainTrouble error={companion.chainError} onRetry={companion.refresh} />
         </Stack>
@@ -310,7 +318,6 @@ export function HomeScreen() {
               onChain={onChain}
             />
           ) : null}
-          {panel === "look" ? <LookCard look={look} shown={lookShown} /> : null}
         </div>
 
         <ChainTrouble error={companion.chainError} onRetry={companion.refresh} />
@@ -525,7 +532,7 @@ function RecordCard({
       </p>
       <Row gap={2} wrap style={{ marginTop: "var(--space-4)" }}>
         {others > 0 ? (
-          <ButtonLink label={`All ${others + 1} of your pets`} href="/inventory" tone="quiet" size="sm" icon="pocket" />
+          <ButtonLink label={`All ${others + 1} of your pets`} href="/profile#shelf" tone="quiet" size="sm" icon="pocket" />
         ) : (
           <ButtonLink label="Adopt another" href="/adopt" tone="quiet" size="sm" icon="plus" />
         )}

@@ -7,8 +7,10 @@ const SCREENS = [
   "/home",
   "/park",
   "/playground",
-  "/inventory",
-  "/inventory?tab=wardrobe",
+  "/profile",
+  "/profile?tab=wardrobe",
+  "/profile?tab=stickers",
+  "/profile?tab=settings",
   "/guilds",
   "/pet/missing",
   "/pet/11111111111111111111111111111111",
@@ -38,12 +40,12 @@ for (const width of [320, 375, 768]) {
 
 test("the dock keeps every place on a small phone, whichever is lit", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
-  for (const path of ["/home", "/park", "/playground", "/inventory", "/guilds"]) {
+  for (const path of ["/home", "/park", "/playground", "/profile", "/guilds"]) {
     await page.goto(path);
     const dock = page.getByRole("navigation", { name: "Pawket" });
     const box = await dock.boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= 320, path).toBe(true);
-    for (const place of ["Home", "Park", "Playground", "Inventory", "Guilds"]) {
+    for (const place of ["Home", "Park", "Playground", "Profile", "Guilds"]) {
       await expect(dock.getByRole("link", { name: place })).toBeInViewport();
     }
   }

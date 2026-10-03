@@ -48,6 +48,8 @@ const streakSchema = z.object({
   count: z.number().int().nonnegative(),
   /** UTC day `YYYY-MM-DD` of the last care or finished round. */
   lastDay: z.string().nullable(),
+  /** The longest run there has been, as the Passport keeps `best_streak`. Older records start it at the run they have. */
+  best: z.number().int().nonnegative().default(0),
 });
 
 export const guestPetSchema = z.object({
@@ -112,10 +114,8 @@ export function nextStreak(
 ): GuestPet["streak"] {
   const today = utcDay(now);
   if (streak.lastDay === today) return streak;
-  if (streak.lastDay && streak.lastDay === previousUtcDay(today)) {
-    return { count: streak.count + 1, lastDay: today };
-  }
-  return { count: 1, lastDay: today };
+  const count = streak.lastDay && streak.lastDay === previousUtcDay(today) ? streak.count + 1 : 1;
+  return { count, lastDay: today, best: Math.max(streak.best, count) };
 }
 
 /**
@@ -188,7 +188,7 @@ export function createGuestPet(input: AdoptGuestInput): GuestPet {
     statsUpdatedAt: now,
     lastActionAt: emptyLastAction(),
     careLog: [],
-    streak: { count: 0, lastDay: null },
+    streak: { count: 0, lastDay: null, best: 0 },
     wearing: null,
     plays: 0,
     lastDailyPlayDay: null,
@@ -374,10 +374,11 @@ function careLogFrom(raw: unknown[] | undefined): CareLogEntry[] {
 export function migrateStoredPet(raw: unknown): GuestPet | null {
   const direct = guestPetSchema.safeParse(raw);
   if (direct.success) {
-    const wearing = direct.data.wearing && isWearableId(direct.data.wearing)
-      ? direct.data.wearing
-      : null;
-    return wearing === direct.data.wearing ? direct.data : { ...direct.data, wearing };
+    const pet = direct.data;
+    const wearing = pet.wearing && isWearableId(pet.wearing) ? pet.wearing : null;
+    const best = Math.max(pet.streak.best, pet.streak.count);
+    if (wearing === pet.wearing && best === pet.streak.best) return pet;
+    return { ...pet, wearing, streak: { ...pet.streak, best } };
   }
 
   const loose = looseSchema.safeParse(raw);
@@ -397,7 +398,9 @@ export function migrateStoredPet(raw: unknown): GuestPet | null {
     statsUpdatedAt: stored.statsUpdatedAt,
     lastActionAt: lastActionFrom(stored.lastActionAt),
     careLog: careLogFrom(stored.careLog),
-    streak: stored.streak ?? { count: 0, lastDay: null },
+    streak: stored.streak
+      ? { ...stored.streak, best: Math.max(stored.streak.best, stored.streak.count) }
+      : { count: 0, lastDay: null, best: 0 },
     wearing: stored.wearing && isWearableId(stored.wearing) ? stored.wearing : null,
     plays: stored.plays ?? 0,
     lastDailyPlayDay: stored.lastDailyPlayDay ?? null,

@@ -235,7 +235,7 @@ export function toCompanionRecord({ pet, passport }: PetOnChain): GuestPet {
       at: iso(mark.at),
       xpGained: XP_PER_CARE_ACTION,
     })),
-    streak: { count: passport.streak, lastDay: isoDay(passport.lastActiveDay) },
+    streak: { count: passport.streak, lastDay: isoDay(passport.lastActiveDay), best: passport.bestStreak },
     wearing: WEARABLES[pet.wearing - 1]?.id ?? null,
     plays: passport.plays,
     lastDailyPlayDay: isoDay(passport.lastPlayDay),

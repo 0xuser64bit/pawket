@@ -17,19 +17,20 @@ const PLACES: Array<{ key: string; label: string; icon: IconName; href: string }
   { key: "home", label: "Home", icon: "home", href: "/home" },
   { key: "park", label: "Park", icon: "users", href: "/park" },
   { key: "playground", label: "Playground", icon: "ball", href: "/playground" },
-  { key: "inventory", label: "Inventory", icon: "pocket", href: "/inventory" },
+  { key: "profile", label: "Profile", icon: "person", href: "/profile" },
   { key: "guilds", label: "Guilds", icon: "guild", href: "/guilds" },
 ];
 
 /**
  * A detail screen still belongs to its place: a pet kept on Solana (its id
- * is an address) to the Park, the pet in this browser to Inventory.
+ * is an address) to the Park, a pet in this browser to the profile that
+ * keeps it. The old shelf's address belongs to the profile too.
  */
 export function activePlace(pathname: string): string {
   const place = PLACES.find((p) => pathname === p.href || pathname.startsWith(`${p.href}/`))?.key;
   if (place) return place;
   if (/^\/pet\/[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(pathname)) return "park";
-  return pathname.startsWith("/pet") ? "inventory" : "home";
+  return pathname.startsWith("/pet") || pathname.startsWith("/inventory") ? "profile" : "home";
 }
 
 export function Dock() {

@@ -1,4 +1,20 @@
-import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { expect, test, type Page } from "@playwright/test";
+import {
+  appendTransactionMessageInstruction,
+  createKeyPairSignerFromBytes,
+  createSolanaRpc,
+  createTransactionMessage,
+  getBase64EncodedWireTransaction,
+  getSignatureFromTransaction,
+  pipe,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+  signTransactionMessageWithSigners,
+  type Address,
+} from "@solana/kit";
+import { getTransferSolInstruction } from "@solana-program/system";
 import { createTestWallet } from "./test-wallet";
 
 /**
@@ -90,4 +106,78 @@ test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) 
   await page.getByRole("link", { name: `${name}'s record` }).click();
   await expect(page.getByText("In a guild")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("link", { name: new RegExp(guild) })).toBeVisible();
+});
+
+/** Some devnet SOL for the test wallet, from the sponsor, as a faucet would give it. */
+async function fund(address: string, lamports: bigint) {
+  const raw = process.env.SPONSOR_KEYPAIR ?? readFileSync(path.join(process.cwd(), ".keys/sponsor.json"), "utf8");
+  const sponsor = await createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(raw) as number[]));
+  const rpc = createSolanaRpc(process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com");
+  const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
+  const message = pipe(
+    createTransactionMessage({ version: "legacy" }),
+    (m) => setTransactionMessageFeePayerSigner(sponsor, m),
+    (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
+    (m) => appendTransactionMessageInstruction(getTransferSolInstruction({ source: sponsor, destination: address as Address, amount: lamports }), m),
+  );
+  const signed = await signTransactionMessageWithSigners(message);
+  await rpc.sendTransaction(getBase64EncodedWireTransaction(signed), { encoding: "base64" }).send();
+  const signature = getSignatureFromTransaction(signed);
+  for (let i = 0; i < 60; i++) {
+    const { value } = await rpc.getSignatureStatuses([signature]).send();
+    if (value[0]?.confirmationStatus === "confirmed" || value[0]?.confirmationStatus === "finalized") return;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  throw new Error("The test wallet's SOL did not arrive.");
+}
+
+const signedByWallet = (page: Page) => page.evaluate(() => (window as unknown as { __testWalletSigned?: number }).__testWalletSigned ?? 0);
+
+test("a Pawket Wallet links this device, and a care on Solana asks the wallet nothing", async ({ page }) => {
+  test.setTimeout(420_000);
+  const wallet = createTestWallet();
+  await fund(wallet.address, 50_000_000n);
+  await page.addInitScript(wallet.script);
+  const name = NAMES[Math.floor(Math.random() * NAMES.length)];
+
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill(name);
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await page.getByRole("button", { name: /take them home/i }).click();
+  await page.getByRole("button", { name: "Connect a wallet" }).click();
+  await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
+  await page.getByRole("button", { name: `Record ${name}` }).click();
+  await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText("Each care asks your wallet to approve it.")).toBeVisible();
+
+  // One approval opens it, fills it and links this device.
+  await page.getByRole("link", { name: "Link this device to a Pawket Wallet" }).click();
+  await expect(page.getByRole("heading", { name: "Open your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Open it and link this device" }).click();
+  await expect(page.getByText("This device is linked")).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText("0.019 SOL", { exact: true })).toBeVisible();
+
+  // A care now: signed here, paid from the balance, and the wallet asked nothing.
+  await page.getByRole("link", { name: "Home" }).click();
+  await expect(page.getByText("Cares here are signed by this device, with no prompt.")).toBeVisible({ timeout: 60_000 });
+  const before = await signedByWallet(page);
+  await page.getByRole("button", { name: "Feed" }).click();
+  await expect(page.getByText("Recorded on Solana")).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText("From your Pawket Wallet")).toBeVisible();
+  expect(await signedByWallet(page)).toBe(before);
+
+  // The history says so, read from Solana.
+  await page.goto("/wallet");
+  await expect(page.getByText(`Fed ${name}`)).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(/^Opened · Put in 0\.02 SOL · Linked a device, 0\.001 SOL to it for fees$/)).toBeVisible();
+
+  // Letting go of this device asks the wallet nothing either; closing gives everything back.
+  const beforeUnlink = await signedByWallet(page);
+  await page.getByRole("button", { name: "Unlink this device" }).click();
+  await expect(page.getByText("Not linked", { exact: true })).toBeVisible({ timeout: 120_000 });
+  expect(await signedByWallet(page)).toBe(beforeUnlink);
+  await page.getByRole("button", { name: "Close my Pawket Wallet" }).click();
+  await page.getByRole("button", { name: "Close it", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Open your Pawket Wallet" })).toBeVisible({ timeout: 120_000 });
 });

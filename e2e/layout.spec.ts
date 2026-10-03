@@ -13,6 +13,7 @@ const SCREENS = [
   "/profile?tab=settings",
   "/guilds",
   "/guilds/new",
+  "/wallet",
   "/pet/missing",
   "/pet/11111111111111111111111111111111",
 ];

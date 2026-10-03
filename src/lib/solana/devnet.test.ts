@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import {
   createKeyPairSignerFromBytes,
-  createSolanaRpc,
   fetchEncodedAccount,
   generateKeyPairSigner,
   getAddressDecoder,
@@ -11,20 +10,31 @@ import {
 } from "@solana/kit";
 import { beforeAll, describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
-import { fetchGuild, fetchGuildPets, fetchPetOnChain, fetchPetsOnChain, toCompanionRecord, wearableSlot } from "./accounts";
+import { getTransferSolInstruction } from "@solana-program/system";
+import { fetchGuild, fetchGuildPets, fetchPetOnChain, fetchPetsOnChain, fetchWallet, toCompanionRecord, wearableSlot } from "./accounts";
 import {
   getAdoptPetInstruction,
+  getCareByDeviceInstruction,
   getCareInstruction,
+  getCloseWalletInstruction,
+  getDepositInstruction,
   getDressInstruction,
   getFinishRoundInstruction,
   getFoundGuildInstruction,
   getJoinGuildInstruction,
   getLeaveGuildInstruction,
+  getLinkDeviceInstruction,
+  getOpenWalletInstruction,
+  getUnlinkDeviceInstruction,
+  getWithdrawInstruction,
 } from "./instructions";
-import { deriveGuildPda, deriveMemberPda, derivePassportPda, derivePetPda } from "./pda";
+import { deriveGuildPda, deriveMemberPda, derivePassportPda, derivePetPda, deriveWalletPda } from "./pda";
+import { WALLET_LIMITS } from "./program";
+import { fetchWalletHistory } from "@/lib/wallet/history";
 import { keepsakeTransaction, readKeepsake } from "@/server/keepsake";
 import { MPL_CORE_PROGRAM_ID } from "./core";
-import { sendPawket, sendPrepared } from "./send";
+import { createPatientRpc } from "./rpc";
+import { sendAsDevice, sendPawket, sendPrepared } from "./send";
 import { cosign } from "./sponsor";
 import { extractProgramErrorCode } from "./transactions";
 import { TEST_GUILD_NAME } from "@/lib/guilds/delisted";
@@ -39,7 +49,8 @@ const RUN = process.env.PAWKET_DEVNET === "1";
 const RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
 
 describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
-  const rpc = createSolanaRpc(RPC_URL);
+  // Patient: the public endpoint answers a burst of tests with 429s.
+  const rpc = createPatientRpc(RPC_URL);
   let sponsor: KeyPairSigner;
   let owner: KeyPairSigner;
   let pet: Awaited<ReturnType<typeof derivePetPda>>["address"];
@@ -188,4 +199,66 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     );
     expect(again).toBeInstanceOf(Error);
   });
+  it("opens a Pawket Wallet whose device cares with no owner signature, and every lamport comes back", async () => {
+    // Last, since the owner holds SOL from here on. A player with a little of their own: the sponsor hands the owner some, as a faucet would.
+    await sendPawket({
+      rpc,
+      owner: sponsor,
+      sponsor: null,
+      instructions: () => [getTransferSolInstruction({ source: sponsor, destination: owner.address, amount: 20_000_000n })],
+    });
+    const device = await generateKeyPairSigner();
+    const wallet = (await deriveWalletPda(owner.address)).address;
+    // One approval: open, fill and link — the sponsor pays the fee, the owner the rent and the deposit, the device signs.
+    const opened = await send(() => [
+      getOpenWalletInstruction({ owner, payer: owner, wallet }),
+      getDepositInstruction({ owner, wallet, amount: 10_000_000n }),
+      getLinkDeviceInstruction({ owner, wallet, device, expiresAt: Math.floor(Date.now() / 1000) + 3_600, dailyActions: 20 }),
+    ]);
+    expect(opened).toMatchObject({ outcome: "confirmed", sponsored: true });
+    const linked = await fetchWallet(rpc, owner.address);
+    expect(linked).toMatchObject({ owner: owner.address, device: device.address, dailyActions: 20, deposited: 10_000_000n });
+    expect((await rpc.getBalance(device.address).send()).value).toBe(WALLET_LIMITS.deviceFloat);
+
+    // The device rests the pet: nobody but the device signs, and the balance pays its fee.
+    const before = linked!.lamports;
+    const rested = await sendAsDevice({
+      rpc,
+      device,
+      instructions: [getCareByDeviceInstruction({ device, wallet, pet, passport, action: CareActionType.Rest })],
+    });
+    expect(rested.outcome).toBe("confirmed");
+    const record = toCompanionRecord((await fetchPetOnChain(rpc, pet))!);
+    expect(record.careLog.map((entry) => entry.action)).toEqual([CareActionType.Feed, CareActionType.Rest]);
+    const after = (await fetchWallet(rpc, owner.address))!;
+    expect(after.lamports).toBe(before - WALLET_LIMITS.feePerSignature);
+    expect(after.actions).toBe(1);
+    expect((await rpc.getBalance(device.address).send()).value).toBe(WALLET_LIMITS.deviceFloat);
+
+    // Some back to the owner; the device lets itself go, paying its own fee, and its float comes home.
+    await send(() => [getWithdrawInstruction({ owner, wallet, amount: 3_000_000n })]);
+    await sendAsDevice({
+      rpc,
+      device,
+      instructions: [getUnlinkDeviceInstruction({ authority: device, wallet, device, deviceSigns: true })],
+    });
+    expect((await rpc.getBalance(device.address).send()).value).toBe(0n);
+    expect((await fetchWallet(rpc, owner.address))?.device).toBeNull();
+
+    // Closing: the balance to the owner, the rent to the owner who paid it.
+    const ownerBefore = (await rpc.getBalance(owner.address).send()).value;
+    const closing = (await fetchWallet(rpc, owner.address))!;
+    await send(() => [getCloseWalletInstruction({ owner, wallet, rentPayer: owner.address })]);
+    expect(await fetchWallet(rpc, owner.address)).toBeNull();
+    expect((await rpc.getBalance(owner.address).send()).value).toBe(ownerBefore + closing.lamports);
+
+    // And the statement says all of it, newest first.
+    const rent = await rpc.getMinimumBalanceForRentExemption(157n).send();
+    const history = await fetchWalletHistory(rpc, wallet, { rent });
+    expect(history.entries.map((entry) => entry.kinds.join("+"))).toEqual(["close", "unlink", "withdraw", "care", "open+deposit+link"]);
+    expect(history.entries[3]).toMatchObject({ action: CareActionType.Rest, pet, change: -WALLET_LIMITS.feePerSignature, feePayer: device.address });
+    expect(history.entries[4]).toMatchObject({ amount: 10_000_000n, toDevice: WALLET_LIMITS.deviceFloat, change: 10_000_000n - WALLET_LIMITS.deviceFloat });
+    expect(history.entries[2]).toMatchObject({ amount: 3_000_000n, change: -3_000_000n });
+  });
+
 });

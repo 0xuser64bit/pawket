@@ -3184,6 +3184,22 @@ li {
 .pk-home__notice:empty {
   display: none;
 }
+.pk-home__noprompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+.pk-home__noprompt svg {
+  flex: none;
+  color: var(--sun-text);
+}
+.pk-home__noprompt a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .pk-home__notice {
   text-align: center;
 }
@@ -5911,4 +5927,93 @@ li {
 ::view-transition-new(root) {
   animation-duration: var(--dur-room);
   animation-timing-function: var(--ease-swap);
+}
+
+/* ------------------------------------------------------ the Pawket Wallet
+
+   Money is Paper: the balance is a figure on a statement, the history is a
+   ledger read from Solana, and nothing on either moves. What it is comes
+   first, three points across; then the statement beside this device. */
+
+.pk-wallet-intro {
+  display: grid;
+  gap: var(--space-3);
+}
+@media (min-width: 720px) {
+  .pk-wallet-intro {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+}
+.pk-wallet-intro__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  background: var(--sun-soft);
+  color: var(--sun-text);
+}
+.pk-wallet-top {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .pk-wallet-top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+}
+.pk-wallet-balance {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+.pk-wallet-balance__v {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  line-height: 36px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.pk-wallet-more summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+/* A ledger: one line a transaction, what it was on the left, how the
+   balance moved on the right — the figure is the link to the explorer. */
+.pk-ledger {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pk-ledger__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: var(--stroke-hair) dashed var(--rule);
+}
+.pk-ledger__row:last-child {
+  border-bottom: 0;
+}
+.pk-ledger__what {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.pk-ledger__amount {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
 }

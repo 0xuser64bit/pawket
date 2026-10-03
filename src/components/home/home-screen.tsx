@@ -58,7 +58,7 @@ import { describeLook } from "@/lib/player/look";
 import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
 import { CARE_MOMENT, type RoomCue } from "@/lib/room/moments";
-import { getCareInstruction } from "@/lib/solana/instructions";
+import { getCareByDeviceInstruction, getCareInstruction } from "@/lib/solana/instructions";
 import { usePawketSend } from "@/lib/solana/use-send";
 
 /**
@@ -232,9 +232,12 @@ export function HomeScreen() {
       return;
     }
     setNotice(undefined);
-    const result = await sender.send(`${CARE_ACTION_LABEL[action]} ${pet.name}`, ({ owner }) => [
-      getCareInstruction({ owner, pet: active.pet.address, passport: active.passport.address, action }),
-    ]);
+    const result = await sender.act(`${CARE_ACTION_LABEL[action]} ${pet.name}`, {
+      byOwner: ({ owner }) => [getCareInstruction({ owner, pet: active.pet.address, passport: active.passport.address, action })],
+      byDevice: ({ device, wallet }) => [
+        getCareByDeviceInstruction({ device, wallet, pet: active.pet.address, passport: active.passport.address, action }),
+      ],
+    });
     if (!result) return;
     companion.refresh();
     // Only now, with the care confirmed, does the room show it.
@@ -307,6 +310,7 @@ export function HomeScreen() {
         </p>
         <RoomLine sentence={status.sentence} mode={mode} state={roomState} onMode={setMode} />
         {onChain && sender.tx.stage !== "idle" ? <TxReceipt tx={sender.tx} cluster={cluster} /> : null}
+        {onChain ? <NoPrompt linked={sender.noPrompt} /> : null}
 
         <div id="pk-deck-panel" className="pk-deck__panel">
           {panel === "say" ? (
@@ -400,6 +404,25 @@ function RoomLine({
         />
       )}
     </div>
+  );
+}
+
+/** For a pet on Solana: whether a care asks the wallet each time, and the way to stop that. */
+function NoPrompt({ linked }: { linked: boolean }) {
+  return (
+    <p className="caption pk-faint pk-home__noprompt">
+      <Icon name="bolt" size={14} />
+      {linked ? (
+        <span>
+          Cares here are signed by this device, with no prompt. <Link href="/wallet">Your Pawket Wallet</Link>
+        </span>
+      ) : (
+        <span>
+          Each care asks your wallet to approve it. <Link href="/wallet">Link this device to a Pawket Wallet</Link> and it
+          will not.
+        </span>
+      )}
+    </p>
   );
 }
 

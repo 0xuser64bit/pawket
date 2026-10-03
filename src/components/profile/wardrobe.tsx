@@ -12,7 +12,7 @@ import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, setWearing } from "@/lib/guest/pet";
 import { readPet, savePet } from "@/lib/guest/storage";
 import { wearableSlot } from "@/lib/solana/accounts";
-import { getDressInstruction } from "@/lib/solana/instructions";
+import { getDressByDeviceInstruction, getDressInstruction } from "@/lib/solana/instructions";
 import type { PawketSender } from "@/lib/solana/use-send";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 
@@ -42,9 +42,14 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
     if (chain) {
       const next = setWearing(pet, id).wearing;
       const item = findWearable(next ?? id);
-      const result = await sender.send(
+      const result = await sender.act(
         next ? `Put the ${item?.name.toLowerCase()} on ${pet.name}` : `Take the ${item?.name.toLowerCase()} off ${pet.name}`,
-        ({ owner }) => [getDressInstruction({ owner, pet: chain.pet.address, wearing: wearableSlot(next) })],
+        {
+          byOwner: ({ owner }) => [getDressInstruction({ owner, pet: chain.pet.address, wearing: wearableSlot(next) })],
+          byDevice: ({ device, wallet }) => [
+            getDressByDeviceInstruction({ device, wallet, pet: chain.pet.address, wearing: wearableSlot(next) }),
+          ],
+        },
       );
       if (result) companion.refresh();
       return;

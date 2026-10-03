@@ -3,9 +3,10 @@
 import { useCallback, useState } from "react";
 import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
-import type { Address, TransactionSigner } from "@solana/kit";
+import type { Address, Instruction, KeyPairSigner, TransactionSigner } from "@solana/kit";
+import { refreshPawketWallet, usePawketWallet } from "@/lib/wallet/pawket-wallet";
 import { rpc, wallet } from "./browser-client";
-import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
+import { RelayError, sendAsDevice, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
 import { isActiveStage, toUserFacingError, type TransactionStage } from "./transactions";
 
 export interface SponsorStatus {
@@ -21,7 +22,15 @@ export interface TxState {
   label?: string;
   signature?: string;
   sponsored?: boolean;
+  /** Who signed: the wallet (with a prompt), or this device, linked to the Pawket Wallet (without one). */
+  by?: "wallet" | "device";
   error?: string;
+}
+
+/** An action for a pet the connected wallet keeps, built both ways: for the wallet to sign, and for a linked device. */
+export interface PetAction {
+  byOwner: SendOptions["instructions"];
+  byDevice: (linked: { device: KeyPairSigner; wallet: Address }) => Instruction[];
 }
 
 async function fetchSponsor(signal?: AbortSignal): Promise<SponsorStatus> {
@@ -46,6 +55,8 @@ export function useSponsor() {
  */
 export function usePawketSend() {
   const connected = useConnectedWallet(wallet);
+  const owner = (connected?.account.address as Address | undefined) ?? null;
+  const pawketWallet = usePawketWallet(owner);
   const [tx, setTx] = useState<TxState>({ stage: "idle" });
 
   const run = useCallback(
@@ -113,8 +124,65 @@ export function usePawketSend() {
     [run],
   );
 
+  /**
+   * Something this device signs on its own, with no prompt: an action it
+   * takes for its owner, or letting go of its own link. It pays its own fee.
+   * The Pawket Wallet is read again after, whatever happened.
+   */
+  const asDevice = useCallback(
+    async (label: string, device: KeyPairSigner, instructions: Instruction[]): Promise<SendResult | null> => {
+      setTx({ stage: "signing", label, by: "device" });
+      try {
+        const result = await sendAsDevice({
+          rpc,
+          device,
+          instructions,
+          onStage: (stage) => setTx((current) => ({ ...current, stage })),
+        });
+        setTx({ stage: result.outcome, label, signature: result.signature, sponsored: false, by: "device" });
+        return result;
+      } catch (error) {
+        setTx({
+          stage: "failed",
+          label,
+          by: "device",
+          error: toUserFacingError(error),
+          signature: (error as { signature?: string }).signature,
+        });
+        return null;
+      } finally {
+        if (owner) void refreshPawketWallet(owner);
+      }
+    },
+    [owner],
+  );
+
+  /**
+   * An action for one of the connected wallet's pets. Signed by this device,
+   * with no prompt, while it is linked to the owner's Pawket Wallet and may
+   * act; otherwise by the wallet, as any send.
+   */
+  const act = useCallback(
+    (label: string, action: PetAction): Promise<SendResult | null> => {
+      const linked = pawketWallet?.canAct ? pawketWallet : null;
+      if (!linked?.device || !linked.wallet) return send(label, action.byOwner);
+      return asDevice(label, linked.device, action.byDevice({ device: linked.device, wallet: linked.wallet.address }));
+    },
+    [pawketWallet, send, asDevice],
+  );
+
   const reset = useCallback(() => setTx({ stage: "idle" }), []);
-  return { tx, send, sendFromServer, reset, busy: isActiveStage(tx.stage) };
+  return {
+    tx,
+    send,
+    act,
+    asDevice,
+    sendFromServer,
+    reset,
+    busy: isActiveStage(tx.stage),
+    /** This device can act for the connected wallet with no prompt. */
+    noPrompt: Boolean(pawketWallet?.canAct),
+  };
 }
 
 export type PawketSender = ReturnType<typeof usePawketSend>;

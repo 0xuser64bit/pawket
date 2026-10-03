@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Row, ThemePicker } from "@/components/pk";
+import { Button, ButtonLink, Card, Row, ThemePicker } from "@/components/pk";
 import { useRoomMode } from "@/components/home/room";
 import { useSound } from "@/lib/play/sound";
 import type { PetForm } from "@/components/pk";
@@ -21,6 +21,16 @@ export function Settings({ form }: { form?: PetForm }) {
           The whole of Pawket, in another room. Every colour still means what it meant.
         </p>
         <ThemePicker form={form} />
+      </Card>
+      <Card>
+        <h2 className="title">Pawket Wallet</h2>
+        <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
+          Link this device once, and caring for your pets on Solana stops asking your wallet each time. Fees come
+          from a balance only you can fill or empty.
+        </p>
+        <div style={{ marginTop: "var(--space-4)" }}>
+          <ButtonLink label="Open the Pawket Wallet" href="/wallet" icon="bolt" tone="quiet" size="sm" />
+        </div>
       </Card>
       <Card>
         <h2 className="title">On this device</h2>

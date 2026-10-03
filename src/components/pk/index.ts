@@ -20,6 +20,7 @@ export {
   type ButtonTone,
   type ChipTone,
 } from "./controls";
+export { Choice } from "./choice";
 export {
   Banner,
   Card,

@@ -25,7 +25,7 @@ import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { recordPlay, utcDay, type GuestPet } from "@/lib/guest/pet";
 import { readPet, savePet } from "@/lib/guest/storage";
-import { getFinishRoundInstruction } from "@/lib/solana/instructions";
+import { getFinishRoundByDeviceInstruction, getFinishRoundInstruction } from "@/lib/solana/instructions";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
 import { dailySeed, keepBest, keepDaily, readBest, readDaily, type GameId } from "@/lib/play/best";
 import { useSound } from "@/lib/play/sound";
@@ -119,9 +119,12 @@ export function PlaygroundScreen() {
 
   async function recordRound() {
     if (!chain || !pet) return;
-    const result = await sender.send(`Finish a round with ${pet.name}`, ({ owner }) => [
-      getFinishRoundInstruction({ owner, pet: chain.pet.address, passport: chain.passport.address }),
-    ]);
+    const result = await sender.act(`Finish a round with ${pet.name}`, {
+      byOwner: ({ owner }) => [getFinishRoundInstruction({ owner, pet: chain.pet.address, passport: chain.passport.address })],
+      byDevice: ({ device, wallet }) => [
+        getFinishRoundByDeviceInstruction({ device, wallet, pet: chain.pet.address, passport: chain.passport.address }),
+      ],
+    });
     if (result) refresh();
   }
 

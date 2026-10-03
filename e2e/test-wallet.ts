@@ -71,6 +71,9 @@ function install(config: { name: string; address: string; pkcs8: string; publicK
   }
 
   async function signTransaction(wire: Uint8Array): Promise<Uint8Array> {
+    // Counted, so a test can tell what the wallet was asked to sign and what it was not.
+    const counted = window as unknown as { __testWalletSigned?: number };
+    counted.__testWalletSigned = (counted.__testWalletSigned ?? 0) + 1;
     const [count, signaturesAt] = shortvec(wire, 0);
     const message = wire.slice(signaturesAt + count * 64);
     const head = message[0] & 0x80 ? 1 : 0;

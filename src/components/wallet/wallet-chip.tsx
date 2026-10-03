@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useConnectedWallet, useDisconnect } from "@solana/kit-plugin-wallet/react";
-import { Button, Receipt, Sheet, Stack } from "@/components/pk";
+import { Button, ButtonLink, Receipt, Sheet, Stack } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { wallet } from "@/lib/solana/browser-client";
@@ -39,6 +39,7 @@ export function WalletChip() {
           onDismiss={() => setOpen(false)}
           foot={
             <Stack gap={2}>
+              <ButtonLink tone="paper" label="Pawket Wallet" href="/wallet" full onClick={() => setOpen(false)} />
               <Button
                 tone="paper"
                 label="Disconnect"
@@ -62,7 +63,7 @@ export function WalletChip() {
             </div>
             <p className="body-sm pk-muted">
               Disconnecting changes nothing on Solana. Your pets stay there, and this browser&apos;s pet comes
-              back to Home.
+              back to Home. Your Pawket Wallet — care with no prompt each time — is a tap away above.
             </p>
           </Stack>
         </Sheet>

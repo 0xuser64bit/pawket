@@ -28,7 +28,13 @@ function Stage({ tx, cluster }: { tx: TxState; cluster: SolanaCluster }) {
 
   switch (tx.stage) {
     case "signing":
-      return (
+      return tx.by === "device" ? (
+        <Banner
+          tone="wait"
+          title="Signing on this device"
+          body={`${what}This device is linked to your Pawket Wallet, so there is nothing to approve.`}
+        />
+      ) : (
         <Banner
           tone="wait"
           title="Waiting for your wallet"
@@ -48,7 +54,15 @@ function Stage({ tx, cluster }: { tx: TxState; cluster: SolanaCluster }) {
         <Banner tone="done" title="Recorded on Solana" body={tx.label}>
           <div className="pk-receipt" style={{ marginTop: "var(--space-2)" }}>
             {signature}
-            <Receipt rows={[{ k: "Network fee", v: tx.sponsored ? "Paid by Pawket" : "Paid by you" }]} />
+            <Receipt
+              rows={[
+                ...(tx.by === "device" ? [{ k: "Signed by", v: "This device, linked" }] : []),
+                {
+                  k: "Network fee",
+                  v: tx.by === "device" ? "From your Pawket Wallet" : tx.sponsored ? "Paid by Pawket" : "Paid by you",
+                },
+              ]}
+            />
           </div>
         </Banner>
       );

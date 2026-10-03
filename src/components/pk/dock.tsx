@@ -30,7 +30,7 @@ export function activePlace(pathname: string): string {
   const place = PLACES.find((p) => pathname === p.href || pathname.startsWith(`${p.href}/`))?.key;
   if (place) return place;
   if (/^\/pet\/[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(pathname)) return "park";
-  return pathname.startsWith("/pet") || pathname.startsWith("/inventory") ? "profile" : "home";
+  return pathname.startsWith("/pet") || pathname.startsWith("/inventory") || pathname.startsWith("/wallet") ? "profile" : "home";
 }
 
 export function Dock() {

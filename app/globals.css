@@ -3824,6 +3824,12 @@ li {
   align-items: center;
   gap: var(--space-5);
 }
+.pk-park-more {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-2);
+}
+
 /* Under a guild's shelf of pets, what it has done together, joining it and
    its facts: one row of cards, one height, on a desktop; stacked on a phone. */
 .pk-guild-facts {

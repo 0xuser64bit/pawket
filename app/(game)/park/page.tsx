@@ -66,7 +66,11 @@ const CARE_ICON: Record<CareActionType, IconName> = {
   [CareActionType.Rest]: "clock",
 };
 
-export default async function ParkPage() {
+/** The park shows this many of everyone at first: the most cared for. The rest are a tap away. */
+const FIRST_LOOK = 16;
+
+export default async function ParkPage({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
+  const all = (await searchParams).all === "1";
   let pets: PetOnChain[];
   let guilds = new Map<string, ChainGuild>();
   try {
@@ -201,9 +205,12 @@ export default async function ParkPage() {
           />
 
           <Stack gap={3}>
-            <SectionLabel count={`${pets.length}`}>Everyone</SectionLabel>
+            <span id="everyone" className="pk-anchor" />
+            <SectionLabel count={all || shown.length <= FIRST_LOOK ? `${pets.length}` : `${FIRST_LOOK} of ${pets.length}`}>
+              Everyone
+            </SectionLabel>
             <div className="pk-cards">
-              {shown.map(({ entry, record, projected, streak, out }) => (
+              {(all ? shown : shown.slice(0, FIRST_LOOK)).map(({ entry, record, projected, streak, out }) => (
                 <Card key={entry.pet.address} href={`/pet/${entry.pet.address}`} variant="flush">
                   <div className="pk-card__art">
                     <PetFrame
@@ -244,6 +251,11 @@ export default async function ParkPage() {
                 </Card>
               ))}
             </div>
+            {!all && shown.length > FIRST_LOOK ? (
+              <div className="pk-park-more">
+                <ButtonLink label={`See all ${pets.length}`} href="/park?all=1#everyone" tone="quiet" icon="users" />
+              </div>
+            ) : null}
           </Stack>
 
         </Stack>

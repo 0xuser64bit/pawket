@@ -1,9 +1,10 @@
 "use client";
 
-import { createClient, createSolanaRpc } from "@solana/kit";
+import { createClient } from "@solana/kit";
 import { walletWithoutSigner } from "@solana/kit-plugin-wallet";
 import { getPublicEnv } from "@/config/env";
 import { CLUSTER_CHAINS } from "./cluster";
+import { createPatientRpc } from "./rpc";
 
 /**
  * The browser's two handles on Solana, each created once: `rpc` for reads
@@ -13,7 +14,7 @@ import { CLUSTER_CHAINS } from "./cluster";
  */
 const env = getPublicEnv();
 
-export const rpc = createSolanaRpc(env.solanaRpcUrl);
+export const rpc = createPatientRpc(env.solanaRpcUrl);
 
 export const wallet = createClient().use(
   walletWithoutSigner({ chain: CLUSTER_CHAINS[env.solanaCluster], storageKey: "pawket.wallet" }),

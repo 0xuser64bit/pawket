@@ -4,7 +4,6 @@ import {
   appendTransactionMessageInstructions,
   createKeyPairSignerFromBytes,
   createNoopSigner,
-  createSolanaRpc,
   createTransactionMessage,
   getBase64EncodedWireTransaction,
   partiallySignTransactionMessageWithSigners,
@@ -19,6 +18,7 @@ import {
 } from "@solana/kit";
 import { getPublicEnv } from "@/config/env";
 import { getServerEnv } from "@/config/server-env";
+import { createPatientRpc } from "@/lib/solana/rpc";
 import { checkSponsorable, createLimiter } from "@/lib/solana/sponsor";
 
 /**
@@ -38,7 +38,7 @@ let signer: Promise<KeyPairSigner> | null = null;
 let float: { checkedAt: number; lamports: bigint } | null = null;
 
 export function sponsorRpc() {
-  return createSolanaRpc(getServerEnv().solanaRpcUrl ?? getPublicEnv().solanaRpcUrl);
+  return createPatientRpc(getServerEnv().solanaRpcUrl ?? getPublicEnv().solanaRpcUrl);
 }
 
 /** Forget the cached float, after the sponsor has spent some of it. */

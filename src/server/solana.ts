@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createSolanaRpc, isAddress } from "@solana/kit";
+import { isAddress } from "@solana/kit";
 import { getPublicEnv } from "@/config/env";
 import { getServerEnv } from "@/config/server-env";
 import {
@@ -13,6 +13,7 @@ import {
   type ChainGuild,
   type PetOnChain,
 } from "@/lib/solana/accounts";
+import { createPatientRpc } from "@/lib/solana/rpc";
 
 /**
  * Server Components read Solana here: the server's RPC (which may carry a
@@ -20,7 +21,7 @@ import {
  * record. The one exception is the scan of every pet: see `readAllPets`.
  */
 function rpc() {
-  return createSolanaRpc(getServerEnv().solanaRpcUrl ?? getPublicEnv().solanaRpcUrl);
+  return createPatientRpc(getServerEnv().solanaRpcUrl ?? getPublicEnv().solanaRpcUrl);
 }
 
 /** The pet at `id`, null when `id` is not an address or nothing lives there; throws when Solana does not answer. */

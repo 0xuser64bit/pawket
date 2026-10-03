@@ -10,7 +10,7 @@ Built today:
 /                          landing (live count of pets on Solana)
 /adopt                     a pet in three steps, added beside the others in this browser
 (game)/home                the pet at home (the player's pick) in the room, the deck under it, or an empty room
-(game)/park                every pet the program keeps, read live
+(game)/park                every pet the program keeps, read live: the sixteen most cared for, ?all=1 for everyone
 (game)/profile             you: name, look, outfits; ?tab=pets|wardrobe|stickers|settings
 (game)/wallet              the Pawket Wallet: open it, link this device, put in, take out, the history read from chain
 (game)/playground          four games, a shared daily round each; on Solana, "Record the round"

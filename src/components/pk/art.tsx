@@ -200,7 +200,55 @@ const HATS = {
       <circle cx="60" cy="9" r="5.4" fill={color} />
     </>
   ),
+  party: (color: string) => (
+    <>
+      <path d="M44 22L62 -6l14 26c-10 5-22 6-32 2z" fill={color} />
+      <circle cx="62" cy="-7" r="4.6" fill="var(--trim-foil)" />
+    </>
+  ),
+  flower: (color: string) => (
+    <g transform="translate(80 22)">
+      {[0, 72, 144, 216, 288].map((a) => (
+        <circle key={a} cx={Math.cos((a * Math.PI) / 180) * 5} cy={Math.sin((a * Math.PI) / 180) * 5} r="4.4" fill={color} strokeWidth="2" />
+      ))}
+      <circle r="3" fill="var(--trim-foil)" strokeWidth="2" />
+    </g>
+  ),
+  bunny: (color: string) => (
+    <>
+      <path d="M48 20c-6-12-6-26 0-28s10 14 8 28M72 20c6-12 6-26 0-28s-10 14-8 28" fill={color} />
+      <path d="M50 14c-3-8-3-16 0-17M70 14c3-8 3-16 0-17" stroke="var(--pet-blush)" strokeWidth="3" />
+      <path d="M36 28c6-10 14-14 24-14s18 4 24 14" strokeWidth="4" fill="none" />
+    </>
+  ),
 };
+
+/** Glasses on the peg doll: round, hearts or shades. */
+const GLASSES = {
+  round: (
+    <g fill="none" strokeWidth="2.4">
+      <circle cx="52" cy="42" r="7" />
+      <circle cx="68" cy="42" r="7" />
+      <path d="M59 41.4h2" />
+    </g>
+  ),
+  hearts: (
+    <g strokeWidth="2.2">
+      <path d="M52 48c-9-5-9-13-4-13 2 0 3 1 4 3 1-2 2-3 4-3 5 0 5 8-4 13z" fill="var(--pet-blush)" />
+      <path d="M68 48c-9-5-9-13-4-13 2 0 3 1 4 3 1-2 2-3 4-3 5 0 5 8-4 13z" fill="var(--pet-blush)" />
+      <path d="M57.6 39.6h4.8" fill="none" />
+    </g>
+  ),
+  shades: (
+    <g strokeWidth="2.4">
+      <rect x="44" y="37" width="15" height="10" rx="4" fill="var(--pet-eye)" />
+      <rect x="61" y="37" width="15" height="10" rx="4" fill="var(--pet-eye)" />
+      <path d="M59 40h2" />
+    </g>
+  ),
+};
+
+export type GlassesName = keyof typeof GLASSES;
 
 export type HatName = keyof typeof HATS;
 
@@ -213,22 +261,32 @@ export function PlayerArt({
   color = "var(--pool)",
   hat,
   hatColor,
+  glasses,
   still = false,
   className,
 }: {
   color?: string;
   hat?: HatName;
   hatColor?: string;
+  glasses?: GlassesName;
   still?: boolean;
   className?: string;
 }) {
   const ink = "var(--edge)";
-  const defaultHatColor = { cap: "var(--sun)", bow: "var(--bloom)", beanie: "var(--sprout)" };
+  const defaultHatColor = {
+    cap: "var(--sun)",
+    bow: "var(--bloom)",
+    beanie: "var(--sprout)",
+    party: "var(--sun)",
+    flower: "var(--pet-blush)",
+    bunny: "var(--surface)",
+  };
   return (
     <svg
       viewBox="0 0 120 120"
       fill="none"
       aria-hidden="true"
+      overflow="visible"
       className={[still ? "" : "pk-breathe", className].filter(Boolean).join(" ")}
     >
       <g stroke={ink} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
@@ -246,6 +304,7 @@ export function PlayerArt({
         <circle cx="53.2" cy="40.8" r="1.2" fill="var(--pet-shine)" stroke="none" />
         <circle cx="69.2" cy="40.8" r="1.2" fill="var(--pet-shine)" stroke="none" />
         <path d="M55.6 50c2.8 2.4 6 2.4 8.8 0" stroke="var(--pet-eye)" />
+        {glasses ? GLASSES[glasses] : null}
       </g>
     </svg>
   );

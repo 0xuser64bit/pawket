@@ -18,6 +18,7 @@ import {
 } from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { SKIN_TONES, type PlayerLook } from "@/lib/player/look";
+import { accessoriesFor } from "./accessories";
 import { addOutline, skinMaterial, toon } from "./materials";
 import { clothHex, DAYLIGHT, hairHex } from "./palette";
 import { aimBone, dampVector, reach, worldPosition } from "./rig";
@@ -175,6 +176,11 @@ export class HumanActor {
     // The hair texture is a grey strand map; lift the tint so it lands on the shade.
     for (const m of this.dye.hair) m.color.set(hairHex(look.hairColour)).multiplyScalar(1.45);
     this.model.position.y = look.shoes === "none" ? 0 : this.sole;
+    // A hat and glasses hang from the head, measured from this body's own eyes.
+    const head = this.bones.Head;
+    head.getObjectByName("accessory")?.removeFromParent();
+    const eyes = { l: this.bones.eye_l?.position.clone() ?? new Vector3(0.034, 0.1, 0.08), r: this.bones.eye_r?.position.clone() ?? new Vector3(-0.034, 0.1, 0.08) };
+    head.add(accessoriesFor(look, eyes));
   }
 
   /**

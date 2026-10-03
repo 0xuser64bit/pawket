@@ -18,6 +18,9 @@ export const HAIRSTYLES = ["none", "buzzed", "parted", "long", "buns"] as const;
 export const TOPS = ["tee", "long", "tank"] as const;
 export const BOTTOMS = ["trousers", "shorts"] as const;
 export const SHOES = ["sneakers", "boots", "none"] as const;
+/** What sits on the head, and on the nose: built in the room (`room3d/accessories.ts`), drawn on the peg doll too. */
+export const HEADWEAR = ["none", "beanie", "cap", "party", "flower", "bunny"] as const;
+export const EYEWEAR = ["none", "round", "hearts", "shades"] as const;
 
 /**
  * Skin tones, as the average colour the skin should land on. The pack
@@ -27,8 +30,25 @@ export const SHOES = ["sneakers", "boots", "none"] as const;
  */
 export const SKIN_TONES = ["#f3d2b8", "#e3b48e", "#c8926d", "#a06a48", "#744630", "#4b2c1e"] as const;
 
-/** Clothes wear a design-system hue. Bloom is the guild layer and alarm is risk, so neither is here. */
-export const CLOTH_COLOURS = ["pool", "sun", "sprout", "copper", "cloth", "glass", "foil", "ink", "cream"] as const;
+/**
+ * Clothes wear a design-system hue — the fills, and their soft tints for the
+ * pastels. Bloom is the guild layer and alarm is risk, so neither is here.
+ */
+export const CLOTH_COLOURS = [
+  "pool",
+  "sun",
+  "sprout",
+  "copper",
+  "cloth",
+  "glass",
+  "foil",
+  "ink",
+  "cream",
+  "peach",
+  "sky",
+  "mint",
+  "blush",
+] as const;
 
 /** Natural hair shades, plus two from the palette. */
 export const HAIR_COLOURS = {
@@ -48,6 +68,8 @@ export type Hairstyle = (typeof HAIRSTYLES)[number];
 export type Top = (typeof TOPS)[number];
 export type Bottom = (typeof BOTTOMS)[number];
 export type Shoes = (typeof SHOES)[number];
+export type Headwear = (typeof HEADWEAR)[number];
+export type Eyewear = (typeof EYEWEAR)[number];
 export type ClothColour = (typeof CLOTH_COLOURS)[number];
 export type HairColour = keyof typeof HAIR_COLOURS;
 
@@ -64,6 +86,9 @@ export const lookSchema = z.object({
   bottomColour: z.enum(CLOTH_COLOURS),
   shoes: z.enum(SHOES),
   shoeColour: z.enum(CLOTH_COLOURS),
+  headwear: z.enum(HEADWEAR),
+  headwearColour: z.enum(CLOTH_COLOURS),
+  eyewear: z.enum(EYEWEAR),
 });
 
 export type PlayerLook = z.infer<typeof lookSchema>;
@@ -82,6 +107,9 @@ export const DEFAULT_LOOK: PlayerLook = {
   bottomColour: "ink",
   shoes: "sneakers",
   shoeColour: "sun",
+  headwear: "none",
+  headwearColour: "sun",
+  eyewear: "none",
 };
 
 /**
@@ -119,6 +147,8 @@ export const LOOK_LABEL = {
   top: { tee: "Tee", long: "Long sleeve", tank: "Tank" },
   bottom: { trousers: "Trousers", shorts: "Shorts" },
   shoes: { sneakers: "Sneakers", boots: "Boots", none: "Barefoot" },
+  headwear: { none: "Nothing", beanie: "Beanie", cap: "Cap", party: "Party hat", flower: "Flower clip", bunny: "Bunny ears" },
+  eyewear: { none: "Nothing", round: "Round glasses", hearts: "Heart glasses", shades: "Shades" },
   skin: ["Tone one", "Tone two", "Tone three", "Tone four", "Tone five", "Tone six"],
   cloth: {
     pool: "Pool",
@@ -130,6 +160,10 @@ export const LOOK_LABEL = {
     foil: "Foil",
     ink: "Ink",
     cream: "Cream",
+    peach: "Peach",
+    sky: "Sky",
+    mint: "Mint",
+    blush: "Blush",
   },
   hairColour: {
     black: "Black",
@@ -155,5 +189,31 @@ export function describeLook(look: PlayerLook): string {
     look.shoes === "none"
       ? "bare feet"
       : `${LOOK_LABEL.cloth[look.shoeColour].toLowerCase()} ${LOOK_LABEL.shoes[look.shoes].toLowerCase()}`;
-  return `You, with ${hair}${beard}, a ${LOOK_LABEL.cloth[look.topColour].toLowerCase()} ${LOOK_LABEL.top[look.top].toLowerCase()}, ${LOOK_LABEL.cloth[look.bottomColour].toLowerCase()} ${LOOK_LABEL.bottom[look.bottom].toLowerCase()} and ${feet}`;
+  const head = look.headwear === "none" ? "" : `, a ${LOOK_LABEL.cloth[look.headwearColour].toLowerCase()} ${LOOK_LABEL.headwear[look.headwear].toLowerCase()}`;
+  const eyes = look.eyewear === "none" ? "" : `, ${LOOK_LABEL.eyewear[look.eyewear].toLowerCase()}`;
+  return `You, with ${hair}${beard}${head}${eyes}, a ${LOOK_LABEL.cloth[look.topColour].toLowerCase()} ${LOOK_LABEL.top[look.top].toLowerCase()}, ${LOOK_LABEL.cloth[look.bottomColour].toLowerCase()} ${LOOK_LABEL.bottom[look.bottom].toLowerCase()} and ${feet}`;
+}
+
+/**
+ * What the player can wear to match the pet: a hat or glasses the pet has
+ * on, in the closest the player's own wardrobe has. Null when the pet's
+ * piece has no match.
+ */
+export function twinWith(wearing: string | null): Partial<Pick<PlayerLook, "headwear" | "headwearColour" | "eyewear">> | null {
+  switch (wearing) {
+    case "knit-beanie":
+      return { headwear: "beanie", headwearColour: "pool" };
+    case "party-hat":
+      return { headwear: "party", headwearColour: "sun" };
+    case "flower-crown":
+      return { headwear: "flower", headwearColour: "blush" };
+    case "strawberry-hat":
+      return { headwear: "beanie", headwearColour: "blush" };
+    case "round-glasses":
+      return { eyewear: "round" };
+    case "heart-glasses":
+      return { eyewear: "hearts" };
+    default:
+      return null;
+  }
 }

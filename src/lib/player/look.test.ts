@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LOOK, describeLook, lookSchema, parseLook, withLook } from "./look";
+import { DEFAULT_LOOK, describeLook, lookSchema, parseLook, twinWith, withLook } from "./look";
 
 describe("player look", () => {
   it("starts from a valid default", () => {
@@ -38,5 +38,26 @@ describe("player look", () => {
 
   it("has no field that could reach play", () => {
     for (const key of Object.keys(DEFAULT_LOOK)) expect(key).not.toMatch(/stat|xp|boost|cooldown|score/i);
+  });
+});
+
+describe("extras and matching", () => {
+  it("gives a look from before extras nothing on the head or the nose", () => {
+    const before = { ...DEFAULT_LOOK } as Record<string, unknown>;
+    delete before.headwear;
+    delete before.headwearColour;
+    delete before.eyewear;
+    expect(parseLook(before)).toMatchObject({ headwear: "none", eyewear: "none" });
+  });
+
+  it("matches the pet's hat or glasses where the player has one like it", () => {
+    expect(twinWith("knit-beanie")).toEqual({ headwear: "beanie", headwearColour: "pool" });
+    expect(twinWith("heart-glasses")).toEqual({ eyewear: "hearts" });
+    expect(twinWith("wool-scarf")).toBeNull();
+    expect(twinWith(null)).toBeNull();
+  });
+
+  it("keeps a pastel as a cloth colour", () => {
+    expect(withLook(DEFAULT_LOOK, "topColour", "mint").topColour).toBe("mint");
   });
 });

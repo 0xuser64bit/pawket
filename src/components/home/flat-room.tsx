@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { PetArt, PlayerArt, type Feeling, type PetForm, type Temper } from "@/components/pk";
+import { PetArt, PlayerArt, type Feeling, type GlassesName, type HatName, type PetForm, type Temper } from "@/components/pk";
 
 /** Day things show in Daylight, night things in Lamplight (`--pk-day` / `--pk-night`). */
 const DAY = { opacity: "var(--pk-day)" };
@@ -19,7 +19,22 @@ export type FlatPet = { form: PetForm; temper: Temper; feeling: Feeling; wearing
  * player, and the pet in its basket, which is one unit so the basket always
  * tucks the pet in.
  */
-export function FlatRoom({ pet, colour, hop }: { pet: FlatPet | null; colour: string; hop: number }) {
+export function FlatRoom({
+  pet,
+  colour,
+  hop,
+  hat,
+  hatColour,
+  glasses,
+}: {
+  pet: FlatPet | null;
+  colour: string;
+  hop: number;
+  /** What the player wears on the head, if anything; the peg doll wears the same. */
+  hat?: HatName;
+  hatColour?: string;
+  glasses?: GlassesName;
+}) {
   const id = useId().replace(/:/g, "");
   return (
     <>
@@ -91,7 +106,7 @@ export function FlatRoom({ pet, colour, hop }: { pet: FlatPet | null; colour: st
       </svg>
 
       <div className="pk-room__who">
-        <PlayerArt color={colour} hat="beanie" />
+        <PlayerArt color={colour} hat={hat} hatColor={hatColour} glasses={glasses} />
       </div>
 
       {/* The basket is there before the pet is: an empty one is waiting. */}

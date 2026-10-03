@@ -55,6 +55,10 @@ export const CLOTH_TONE: Record<ClothColour, Tone> = {
   foil: "trim-foil",
   ink: "edge",
   cream: "ink-inverse",
+  peach: "sun-soft",
+  sky: "pool-soft",
+  mint: "sprout-soft",
+  blush: "pet-blush",
 };
 
 export function clothHex(colour: ClothColour): string {

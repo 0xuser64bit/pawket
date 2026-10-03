@@ -4110,6 +4110,16 @@ li {
     height: 44px;
   }
 }
+.pk-twin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: var(--stroke-line) dashed var(--edge-soft);
+  border-radius: var(--radius-md);
+}
 .pk-look__tabs {
   display: flex;
   flex-wrap: wrap;

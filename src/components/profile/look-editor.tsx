@@ -3,16 +3,20 @@
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import { Button, Card, Row, Stack } from "@/components/pk";
 import { clothHex } from "@/components/room3d/palette";
+import { findWearable } from "@/lib/closet/catalog";
 import {
   BODIES,
   BOTTOMS,
   CLOTH_COLOURS,
+  EYEWEAR,
   HAIR_COLOURS,
   HAIRSTYLES,
+  HEADWEAR,
   LOOK_LABEL,
   SHOES,
   SKIN_TONES,
   TOPS,
+  twinWith,
   withLook,
   type PlayerLook,
 } from "@/lib/player/look";
@@ -91,6 +95,7 @@ const PARTS = [
   { key: "hair", label: "Hair" },
   { key: "clothes", label: "Clothes" },
   { key: "shoes", label: "Shoes" },
+  { key: "extras", label: "Extras" },
 ] as const;
 
 /** A look in a sentence, for a summary line. */
@@ -100,6 +105,8 @@ export function lookSummary(look: PlayerLook): string {
     `${LOOK_LABEL.cloth[look.topColour].toLowerCase()} ${LOOK_LABEL.top[look.top].toLowerCase()}`,
     `${LOOK_LABEL.cloth[look.bottomColour].toLowerCase()} ${LOOK_LABEL.bottom[look.bottom].toLowerCase()}`,
     look.shoes === "none" ? "barefoot" : `${LOOK_LABEL.cloth[look.shoeColour].toLowerCase()} ${LOOK_LABEL.shoes[look.shoes].toLowerCase()}`,
+    ...(look.headwear === "none" ? [] : [`${LOOK_LABEL.cloth[look.headwearColour].toLowerCase()} ${LOOK_LABEL.headwear[look.headwear].toLowerCase()}`]),
+    ...(look.eyewear === "none" ? [] : [LOOK_LABEL.eyewear[look.eyewear].toLowerCase()]),
   ].join(", ");
 }
 
@@ -128,7 +135,16 @@ const SAVE_FAILED = "This browser did not store that. Your look is as it was.";
  * like the pet's wardrobe it is expression only. The room above it changes
  * as you go.
  */
-export function LookEditor({ look, shown }: { look: PlayerLook; shown: boolean }) {
+export function LookEditor({
+  look,
+  shown,
+  twin,
+}: {
+  look: PlayerLook;
+  shown: boolean;
+  /** The pet at home, whose hat or glasses the player can match. */
+  twin?: { name: string; wearing: string | null };
+}) {
   const [part, setPart] = useState<(typeof PARTS)[number]["key"]>("body");
   const [notice, setNotice] = useState<string>();
   const profile = usePlayerProfile();
@@ -152,8 +168,19 @@ export function LookEditor({ look, shown }: { look: PlayerLook; shown: boolean }
       bottomColour: pick(CLOTH_COLOURS),
       shoes: pick(SHOES.filter((s) => s !== "none")),
       shoeColour: pick(CLOTH_COLOURS),
+      // Half the time, nothing on the head or the nose: a surprise is not always a hat.
+      headwear: Math.random() < 0.5 ? "none" : pick(HEADWEAR),
+      headwearColour: pick(CLOTH_COLOURS),
+      eyewear: Math.random() < 0.5 ? "none" : pick(EYEWEAR),
     };
     setNotice(saveLook(next) ? undefined : SAVE_FAILED);
+  }
+
+  const match = twin ? twinWith(twin.wearing) : null;
+  const twinPiece = twin ? findWearable(twin.wearing) : undefined;
+  function matchPet() {
+    if (!match || !twin) return;
+    setNotice(saveLook({ ...look, ...match }) ? `Matching ${twin.name}.` : SAVE_FAILED);
   }
 
   function keep(slot: number) {
@@ -244,6 +271,27 @@ export function LookEditor({ look, shown }: { look: PlayerLook; shown: boolean }
               {look.shoes === "none" ? null : (
                 <Choice label="Shoe colour" options={cloth} value={look.shoeColour} onPick={(v) => set("shoeColour", v)} swatch={clothHex} />
               )}
+            </>
+          ) : null}
+          {part === "extras" ? (
+            <>
+              <Choice label="On your head" options={words(HEADWEAR, LOOK_LABEL.headwear)} value={look.headwear} onPick={(v) => set("headwear", v)} />
+              {look.headwear === "none" ? null : (
+                <Choice label="Its colour" options={cloth} value={look.headwearColour} onPick={(v) => set("headwearColour", v)} swatch={clothHex} />
+              )}
+              <Choice label="On your nose" options={words(EYEWEAR, LOOK_LABEL.eyewear)} value={look.eyewear} onPick={(v) => set("eyewear", v)} />
+              {twin ? (
+                <div className="pk-twin">
+                  <p className="body-sm pk-muted">
+                    {match && twinPiece
+                      ? `${twin.name} is wearing the ${twinPiece.name.toLowerCase()}. Wear the same and you match.`
+                      : twinPiece
+                        ? `${twin.name} is wearing the ${twinPiece.name.toLowerCase()}, which has no match for you yet.`
+                        : `Put a hat or glasses on ${twin.name} in the wardrobe, and you can match them here.`}
+                  </p>
+                  {match ? <Button label={`Match ${twin.name}`} icon="heart" tone="quiet" size="sm" onClick={matchPet} /> : null}
+                </div>
+              ) : null}
             </>
           ) : null}
         </div>

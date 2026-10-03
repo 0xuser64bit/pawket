@@ -38,6 +38,10 @@ const PEG_COLOUR: Record<ClothColour, string> = {
   foil: "var(--trim-foil)",
   ink: "var(--surface-ink)",
   cream: "var(--surface)",
+  peach: "var(--sun-soft)",
+  sky: "var(--pool-soft)",
+  mint: "var(--sprout-soft)",
+  blush: "var(--pet-blush)",
 };
 
 /* ------------------------------------------------ device and choice */
@@ -237,6 +241,9 @@ export function Room({
           pet={pet ? { form: pet.form, temper: pet.temper, feeling: pet.feeling, wearing: pet.wearing, seed: pet.name } : null}
           colour={PEG_COLOUR[look.topColour]}
           hop={hop}
+          hat={look.headwear === "none" ? undefined : look.headwear}
+          hatColour={PEG_COLOUR[look.headwearColour]}
+          glasses={look.eyewear === "none" ? undefined : look.eyewear}
         />
       )}
       {want3d ? (

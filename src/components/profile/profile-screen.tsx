@@ -129,7 +129,11 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
         </section>
 
         <section id="look" className="pk-anchor">
-          <LookEditor look={look} shown={roomState === "live" || roomState === "loading"} />
+          <LookEditor
+            look={look}
+            shown={roomState === "live" || roomState === "loading"}
+            twin={pet ? { name: pet.name, wearing: pet.wearing } : undefined}
+          />
         </section>
 
         <section id="shelf" className="pk-anchor pk-stack" style={{ gap: "var(--space-4)", marginTop: "var(--space-5)" }}>

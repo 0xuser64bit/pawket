@@ -76,6 +76,20 @@ test("your look is saved on this device and dresses the room", async ({ page }) 
   await expect(summary).toBeVisible();
 });
 
+test("you can wear a hat and glasses, and match your pet's", async ({ page }) => {
+  await adopt(page);
+  await page.goto("/profile?tab=wardrobe#shelf");
+  await page.getByRole("button", { name: /Knit beanie/ }).click();
+  await expect(page.getByRole("button", { name: /Knit beanie/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("tab", { name: "Extras" }).click();
+  await page.getByRole("radiogroup", { name: "On your nose" }).getByRole("radio", { name: "Heart glasses" }).click();
+  await page.getByRole("button", { name: "Match Pepper" }).click();
+  await expect(page.getByText("Matching Pepper.")).toBeVisible();
+  await expect(page.getByText(/pool beanie, heart glasses\./)).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(/pool beanie, heart glasses\./)).toBeVisible();
+});
+
 test("an empty room still draws you, and asks for no pet it does not have", async ({ page }) => {
   await page.goto("/home");
   await expect(page.getByRole("heading", { name: "The window is open" })).toBeVisible();
@@ -126,7 +140,7 @@ test("nothing scrolls sideways on a small phone with the look open", async ({ pa
   await page.setViewportSize({ width: 320, height: 700 });
   await adopt(page);
   await page.goto("/profile");
-  for (const part of ["Body", "Hair", "Clothes", "Shoes"]) {
+  for (const part of ["Body", "Hair", "Clothes", "Shoes", "Extras"]) {
     await page.getByRole("tab", { name: part }).click();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, part).toBeLessThanOrEqual(0);

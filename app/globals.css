@@ -146,6 +146,8 @@
   --ease-swap: cubic-bezier(0.22, 0.8, 0.3, 1);
   --dur-swap: 240ms;
   --dur-room: 420ms;
+  /* a choice settling into place, just past and back */
+  --ease-spring: cubic-bezier(0.34, 1.5, 0.64, 1);
 
   /* the focus ring: 2px focus at 2px offset, focus-contrast outside it */
   --focus-ring: calc(var(--stroke-line) * 2 + 2px);
@@ -3393,10 +3395,16 @@ li {
   border-radius: var(--radius-pill);
   background: var(--pk-face);
   color: var(--pk-on);
+  /* pressed on the press curve; a care going to rest, or becoming the one
+     the pet wants, greys or warms over a moment rather than at once */
   transition:
     transform var(--dur-press) var(--ease-press),
     border-bottom-width var(--dur-press) var(--ease-press),
-    margin-bottom var(--dur-press) var(--ease-press);
+    margin-bottom var(--dur-press) var(--ease-press),
+    opacity var(--dur-swap) var(--ease-swap),
+    background-color var(--dur-swap) var(--ease-swap),
+    border-color var(--dur-swap) var(--ease-swap),
+    color var(--dur-swap) var(--ease-swap);
 }
 .pk-care--wanted .pk-care__face {
   --pk-face: var(--sun);
@@ -5476,7 +5484,8 @@ li {
   justify-items: center;
   text-align: center;
 }
-.pk-mirror__glass {
+.pk-mirror__glass,
+.pk-mirror__glass > .pk-pop-in {
   display: grid;
   justify-items: center;
   width: 100%;
@@ -5761,4 +5770,145 @@ li {
 }
 .pk-finale__pets svg:nth-child(2) {
   width: clamp(80px, 25vw, 184px);
+}
+
+/* ------------------------------------------------------------------ motion
+
+   One thing becoming another is seen happening, never cut: a choice taking
+   effect, a tab's panel arriving, a sentence that changed, a page coming
+   in. All of it eases out on --ease-swap over --dur-swap (240ms) — quick
+   enough never to wait on, long enough to follow — and moves a few pixels
+   at most. A state that changes transitions; content that is replaced is
+   remounted (a new key) and eases in. Nothing here loops, and under
+   reduced motion all of it is instant (the global rule). */
+
+@keyframes pk-swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes pk-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Content that was replaced: a tab's panel, a pet's things, a sentence. */
+.pk-swap-in {
+  animation: pk-swap-in var(--dur-swap) var(--ease-swap);
+}
+.pk-swap {
+  animation: pk-fade var(--dur-swap) var(--ease-swap);
+}
+.pk-pop-in {
+  animation: pk-pop-in 320ms var(--ease-swap);
+}
+
+/* A page arriving: what is new rises a few pixels into place. The shell
+   and the dock stay put — only the screen moves. */
+.pk-screen {
+  animation: pk-swap-in 320ms var(--ease-swap);
+}
+
+/* A pick takes effect: the chosen one rises onto its shelf, just past and
+   back, and the one it replaced lets go. Transitions, so nothing moves on
+   arrival — only when a choice changes. */
+.pk-choice,
+.pk-tabs__t,
+.pk-tool,
+.pk-switch__pet {
+  transition:
+    background-color var(--dur-swap) var(--ease-swap),
+    border-color var(--dur-swap) var(--ease-swap),
+    color var(--dur-swap) var(--ease-swap),
+    box-shadow var(--dur-swap) var(--ease-swap),
+    transform var(--dur-swap) var(--ease-spring);
+}
+.pk-choice[aria-checked="true"],
+.pk-choice[aria-selected="true"],
+.pk-tabs__t--on {
+  transform: translateY(-1px);
+}
+.pk-swatch {
+  transition:
+    box-shadow var(--dur-swap) var(--ease-spring),
+    transform var(--dur-swap) var(--ease-spring);
+}
+.pk-swatch[aria-checked="true"] {
+  transform: scale(1.06);
+}
+.pk-choice:active,
+.pk-swatch:active,
+.pk-tabs__t:active {
+  transform: scale(0.95);
+  transition-duration: var(--dur-press);
+}
+
+/* Counts that change — a vital after a care, a level filling — fill in,
+   segment by segment, rather than flipping. */
+.pk-meter__seg,
+.pk-mini__seg {
+  transition:
+    background-color var(--dur-swap) var(--ease-swap),
+    box-shadow var(--dur-swap) var(--ease-swap);
+}
+.pk-ring__seg {
+  transition: stroke var(--dur-swap) var(--ease-swap);
+}
+
+/* What a tool on the deck opens below it rises into place. */
+.pk-deck__panel > * {
+  animation: pk-swap-in var(--dur-swap) var(--ease-swap);
+}
+
+/* The look as a sentence, and what was said about it. */
+.pk-look__panel {
+  animation: pk-swap-in var(--dur-swap) var(--ease-swap);
+}
+.pk-look__row {
+  transition: opacity var(--dur-swap) var(--ease-swap);
+}
+@starting-style {
+  .pk-look__row {
+    opacity: 0;
+  }
+}
+.pk-outfit__dot {
+  transition: background-color var(--dur-swap) var(--ease-swap);
+}
+
+/* The flat room's peg doll changing: a squash and a stretch, from its feet. */
+.pk-room__who--dressed {
+  animation: pk-dressed 460ms var(--ease-swap);
+  transform-origin: 50% 100%;
+}
+@keyframes pk-dressed {
+  0% {
+    transform: none;
+  }
+  25% {
+    transform: scale(1.06, 0.93);
+  }
+  55% {
+    transform: scale(0.97, 1.05);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Changing rooms (themes) crossfades the whole page, where the browser can. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-room);
+  animation-timing-function: var(--ease-swap);
 }

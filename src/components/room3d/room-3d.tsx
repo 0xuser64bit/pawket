@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, Suspense, use, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Ref } from "react";
-import { Group, Vector3, type PerspectiveCamera } from "three";
+import { Group, Vector3, type Object3D, type PerspectiveCamera } from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import type { Sky } from "@/components/pk";
@@ -211,10 +211,17 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
     };
   }, [director, human, world, invalidate]);
 
+  // A change of clothes is seen happening: whoever changed gives a quick
+  // squash and stretch from the feet. Not on arrival, and never under
+  // reduced motion.
+  const dressedAt = useRef({ human: -Infinity, pet: -Infinity });
+  const lookSeen = useRef(false);
   useEffect(() => {
     human.wear(look);
+    if (lookSeen.current && !reduced) dressedAt.current.human = performance.now() / 1000;
+    lookSeen.current = true;
     invalidate();
-  }, [human, look, invalidate]);
+  }, [human, look, invalidate, reduced]);
 
   // With the cast in the scene, shaders compile off the main path before
   // the first 3D frame, so the flat room stays responsive meanwhile.
@@ -232,10 +239,13 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
     };
   }, [gl, scene, camera, invalidate]);
 
+  const wearSeen = useRef(false);
   useEffect(() => {
     petActor?.wear(pet?.wearing ?? null);
+    if (wearSeen.current && !reduced) dressedAt.current.pet = performance.now() / 1000;
+    wearSeen.current = true;
     invalidate();
-  }, [petActor, pet?.wearing, invalidate]);
+  }, [petActor, pet?.wearing, invalidate, reduced]);
 
   useEffect(() => {
     room.light(evening, wall);
@@ -350,6 +360,9 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
     }
     const dt = reduced ? delta : Math.min(delta, 1 / 20);
     director.update(dt);
+    const seconds = performance.now() / 1000;
+    dressed(director.human.root, seconds - dressedAt.current.human);
+    if (petActor) dressed(petActor.root, seconds - dressedAt.current.pet);
 
     shadows.human.position.set(director.human.root.position.x, 0.014, director.human.root.position.z);
     if (petActor) shadows.pet.position.set(petActor.root.position.x, 0.014, petActor.root.position.z);
@@ -408,6 +421,19 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
       ) : null}
     </>
   );
+}
+
+const DRESS_SECONDS = 0.46;
+
+/** Just dressed: a squash, a stretch and still again, from the feet (the root's origin), then left alone. */
+function dressed(object: Object3D, age: number): void {
+  if (!(age >= 0 && age < DRESS_SECONDS)) {
+    if (object.scale.y !== 1) object.scale.setScalar(1);
+    return;
+  }
+  const t = age / DRESS_SECONDS;
+  const s = Math.sin(t * Math.PI * 2.5) * (1 - t) * 0.08;
+  object.scale.set(1 + s * 0.6, 1 - s, 1 + s * 0.6);
 }
 
 /** The pet is pressable: a pointer over it says so. */

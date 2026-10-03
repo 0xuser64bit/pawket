@@ -148,10 +148,12 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
             </span>
           </div>
           <Tabs label="What you keep" active={tab} items={TABS} />
-          {tab === "pets" ? pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : <EmptyShelf /> : null}
-          {tab === "wardrobe" ? pet ? <Wardrobe companion={companion} sender={sender} /> : <EmptyShelf /> : null}
-          {tab === "stickers" ? <StickerBook pets={pets} onChain={onChain} inGuild={inGuild} /> : null}
-          {tab === "settings" ? <Settings form={pet ? SPECIES_ART[pet.species] : undefined} /> : null}
+          <div key={tab} className="pk-swap-in">
+            {tab === "pets" ? pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : <EmptyShelf /> : null}
+            {tab === "wardrobe" ? pet ? <Wardrobe companion={companion} sender={sender} /> : <EmptyShelf /> : null}
+            {tab === "stickers" ? <StickerBook pets={pets} onChain={onChain} inGuild={inGuild} /> : null}
+            {tab === "settings" ? <Settings form={pet ? SPECIES_ART[pet.species] : undefined} /> : null}
+          </div>
         </section>
       </Stack>
 

@@ -299,12 +299,16 @@ export function HomeScreen() {
           className="body-sm pk-home__notice"
           style={{ color: notice?.tone === "stop" ? "var(--alarm-text)" : "var(--sprout-text)" }}
         >
-          {notice?.text}
+          {notice ? (
+            <span key={notice.text} className="pk-swap-in" style={{ display: "inline-block" }}>
+              {notice.text}
+            </span>
+          ) : null}
         </p>
         <RoomLine sentence={status.sentence} mode={mode} state={roomState} onMode={setMode} />
         {onChain && sender.tx.stage !== "idle" ? <TxReceipt tx={sender.tx} cluster={cluster} /> : null}
 
-        <div id="pk-deck-panel">
+        <div id="pk-deck-panel" className="pk-deck__panel">
           {panel === "say" ? (
             lookShown ? (
               <EmoteRow petName={pet.name} playing={status.moment} onEmote={ask} />

@@ -80,7 +80,10 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
           first={
             <div className="pk-mirror">
               <div className="pk-mirror__glass" data-eyes>
-                <PetFrame {...petLook({ ...pet, wearing: shown }, projectGuestPet(pet).mood)} sky={SPECIES_SKY[pet.species]} size="lg" />
+                {/* A piece going on (or off) is seen going on: the pet pops into it. */}
+                <div key={`${pet.id}:${shown ?? "none"}`} className="pk-pop-in">
+                  <PetFrame {...petLook({ ...pet, wearing: shown }, projectGuestPet(pet).mood)} sky={SPECIES_SKY[pet.species]} size="lg" />
+                </div>
               </div>
               <p className="body-sm pk-muted" aria-live="polite">
                 {trying !== undefined && trying !== pet.wearing

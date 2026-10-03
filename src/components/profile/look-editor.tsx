@@ -199,7 +199,9 @@ export function LookEditor({
         <Button label="Surprise me" icon="spark" tone="quiet" size="sm" onClick={surprise} />
       </div>
       <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-        {lookSummary(look)}.{" "}
+        <span key={lookSummary(look)} className="pk-swap">
+          {lookSummary(look)}.
+        </span>{" "}
         {shown
           ? "Saved on this device. It changes how you look, nothing else."
           : "You wear it in the 3D room; the flat room shows your top colour."}
@@ -223,7 +225,14 @@ export function LookEditor({
             </button>
           ))}
         </div>
-        <div role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${part}`} className="pk-stack pk-look__panel" style={{ gap: "var(--space-4)" }}>
+        <div
+          key={part}
+          role="tabpanel"
+          id={`${tabsId}-panel`}
+          aria-labelledby={`${tabsId}-${part}`}
+          className="pk-stack pk-look__panel"
+          style={{ gap: "var(--space-4)" }}
+        >
           {part === "body" ? (
             <>
               <Choice label="Build" options={words(BODIES, LOOK_LABEL.body)} value={look.body} onPick={(v) => set("body", v)} />
@@ -306,7 +315,7 @@ export function LookEditor({
           {Array.from({ length: OUTFIT_SLOTS }, (_, slot) => {
             const outfit = profile.outfits[slot];
             return (
-              <div key={slot} className={outfit ? "pk-outfit" : "pk-outfit pk-outfit--empty"}>
+              <div key={outfit ? `${slot}:${lookSummary(outfit)}` : slot} className={outfit ? "pk-outfit pk-pop-in" : "pk-outfit pk-outfit--empty"}>
                 <div className="pk-spread">
                   <span className="title">Outfit {slot + 1}</span>
                   {outfit ? <OutfitDots look={outfit} /> : null}
@@ -322,7 +331,11 @@ export function LookEditor({
         </div>
       </Stack>
       <p role="status" className="body-sm" style={{ color: notice === SAVE_FAILED ? "var(--alarm-text)" : "var(--ink-soft)", marginTop: notice ? "var(--space-3)" : 0 }}>
-        {notice}
+        {notice ? (
+          <span key={notice} className="pk-swap">
+            {notice}
+          </span>
+        ) : null}
       </p>
     </Card>
   );

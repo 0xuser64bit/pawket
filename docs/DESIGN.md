@@ -123,6 +123,22 @@ behind goes inert, and Escape or the dimmed room leave the way Cancel does. Noth
 a Paper surface: a quote does not count up and a launch meter does not fill on
 load. All of it stops under `prefers-reduced-motion`.
 
+**One thing becoming another is seen happening, never cut.** A choice taking
+effect, a tab's panel arriving, a sentence that changed, a page coming in:
+each eases out on `--ease-swap` over `--dur-swap` (240ms) and moves a few
+pixels at most. A state that changes *transitions* (so nothing moves on
+arrival): the chosen choice rises onto its shelf on `--ease-spring`, just
+past and back; a vital fills segment by segment; a care going to rest greys
+over a moment. Content that is *replaced* is remounted with a new key and
+eases in (`pk-swap-in`, `pk-swap`, `pk-pop-in`): the look editor's panel and
+its summary, the profile's tabs, the deck's panels, a care's notice, a kept
+outfit, the wardrobe's mirror. A page arriving rises 6px into place; the
+shell and the dock stay put. Changing rooms crossfades the whole page with a
+view transition where the browser has one. Someone changing clothes is seen
+changing: the player (in 3D and on the flat room's peg doll) and the pet give
+one squash and stretch from the feet, never on arrival. The room itself
+crosses between flat and 3D over `--dur-room` (420ms): see `docs/ROOM-3D.md`.
+
 **Two loops exist, and no more.**
 
 1. **The breath.** A pet scales `1 → 1.035 × 0.975 → 1` over 3.6s from a

@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import { PetArt, PlayerArt, type Feeling, type GlassesName, type HatName, type PetForm, type Temper } from "@/components/pk";
 
 /** Day things show in Daylight, night things in Lamplight (`--pk-day` / `--pk-night`). */
@@ -36,6 +36,9 @@ export function FlatRoom({
   glasses?: GlassesName;
 }) {
   const id = useId().replace(/:/g, "");
+  // The doll changing clothes squashes and stretches once; arriving, it does not.
+  const dress = `${colour}|${hat ?? ""}|${hatColour ?? ""}|${glasses ?? ""}`;
+  const [arrived] = useState(dress);
   return (
     <>
       <svg className="pk-room__scene" viewBox="0 0 600 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -105,7 +108,7 @@ export function FlatRoom({
         </g>
       </svg>
 
-      <div className="pk-room__who">
+      <div key={dress} className={dress === arrived ? "pk-room__who" : "pk-room__who pk-room__who--dressed"}>
         <PlayerArt color={colour} hat={hat} hatColor={hatColour} glasses={glasses} />
       </div>
 

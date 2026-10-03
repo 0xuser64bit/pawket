@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useSyncExternalStore } from "react";
+import { flushSync } from "react-dom";
 import { THEMES, THEME_KEY, isThemeId, type ThemeChoice, type ThemeId } from "@/config/themes";
 import { Icon } from "./icon";
 import { PetArt, type PetForm } from "./pet-art";
@@ -49,18 +50,30 @@ export function useToken(name: `--${string}`, fallback: string): string {
 /** Move into a room. Remembered on this device; a blocked store keeps it until a reload. */
 export function setTheme(choice: ThemeChoice) {
   const root = document.documentElement;
-  if (choice === "system") delete root.dataset.theme;
-  else root.dataset.theme = choice;
-  try {
-    if (choice === "system") window.localStorage.removeItem(THEME_KEY);
-    else window.localStorage.setItem(THEME_KEY, choice);
-  } catch {
-    // A blocked store only means the choice does not survive a reload.
+  const apply = () => {
+    if (choice === "system") delete root.dataset.theme;
+    else root.dataset.theme = choice;
+    try {
+      if (choice === "system") window.localStorage.removeItem(THEME_KEY);
+      else window.localStorage.setItem(THEME_KEY, choice);
+    } catch {
+      // A blocked store only means the choice does not survive a reload.
+    }
+    // The browser's own chrome takes the room's ground.
+    const ground = getComputedStyle(root).getPropertyValue("--ground").trim();
+    for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) meta.content = ground;
+    // Drawn now, inside the transition, so its new picture has the new room in it.
+    flushSync(() => {
+      for (const listener of listeners) listener();
+    });
+  };
+  // The whole page crossfades into the new room where the browser can, and
+  // simply changes where it cannot or motion is reduced.
+  if ("startViewTransition" in document && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.startViewTransition(apply);
+  } else {
+    apply();
   }
-  // The browser's own chrome takes the room's ground.
-  const ground = getComputedStyle(root).getPropertyValue("--ground").trim();
-  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) meta.content = ground;
-  for (const listener of listeners) listener();
 }
 
 const named = (id: ThemeId) => THEMES.find((theme) => theme.id === id)!;

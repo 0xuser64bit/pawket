@@ -16,9 +16,9 @@ the network fees, so a wallet with no SOL can play.
 
 ## Try it
 
-1. Open the live app and adopt — no wallet, no sign-up. Feed, play, brush
-   and rest in the room; the pet's needs fall while you are away, and its
-   face (and the care card) says what it wants.
+1. Open the live app and adopt — no wallet, no sign-up, and as many pets as
+   you like. Feed, play, brush and rest in the room; the pet's needs fall
+   while you are away, and its face (and the deck) says what it wants.
 2. To keep the pet on Solana, connect a wallet set to devnet (in Phantom,
    turn on testnet mode and pick Solana Devnet). It needs no SOL.
 3. Press "Record Pepper" and approve. Every care after that is a signed
@@ -27,6 +27,11 @@ the network fees, so a wallet with no SOL can play.
    pet's card in your wallet from there.
 5. Share the Passport link: in a Blink-aware client it opens as the pet's
    card, with its four cares.
+6. Open Guilds and join Sunbeam Club, Muddy Paws or Cloud Nine with a pet on
+   Solana — or found your own. A guild's link is a Blink too: it opens as
+   the guild's card, and a pet joins from the wallet.
+7. Make it yours in Profile: your name, your look (hats, glasses, outfits),
+   the wardrobe, the stickers each record has earned, and eight rooms.
 
 ## What happens on chain
 
@@ -69,10 +74,11 @@ owner's wallet signs last, so a card never lands where nobody asked for it.
 Its key comes from the sponsor's and the pet's address: one card per pet,
 found without an indexer. It cannot be sold or sent; there is no market.
 
-**Blinks.** `/adopt` and every `/pet/<address>` link are also Solana
-Actions (`/actions.json`): in a Blink-aware client they unfurl as an
-adoption card, or as the pet's card with its four cares, and a player can
-adopt or care without visiting the site. Pawket pays those fees too.
+**Blinks.** `/adopt`, every `/pet/<address>` and every `/guilds/<slug>`
+link are also Solana Actions (`/actions.json`): in a Blink-aware client they
+unfurl as an adoption card, the pet's card with its four cares, or the
+guild's card with a way in, and a player can adopt, care or join without
+visiting the site. Pawket pays those fees too.
 
 ## The places
 

@@ -3,6 +3,47 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: A Pawket Wallet, so care stops asking every time
+
+**Context:** Every care, round and outfit for a pet on Solana opened the
+wallet to approve it — the sponsor paid, but the player still clicked
+Approve dozens of times a day. Players were happy to pay their own fees;
+they were not happy to be asked each time.
+**Decision:** An additive program upgrade: a `PawketWallet` PDA per owner
+(`[wallet, owner]`) whose lamports above rent are a balance only the owner
+fills or empties, and one linked device key that may sign
+`care_by_device`, `finish_round_by_device` and `dress_by_device` for the
+owner's pets — and nothing that moves money — until an end date (≤ 30
+days) and under a daily limit (≤ 500), both set by the owner when linking.
+The device key is a non-extractable WebCrypto key made and kept in the
+browser; the device co-signs its own link. The device pays its own fees
+from a 0.001 SOL float and each action refills it from the balance by at
+most that fee, so the balance pays for actions and nothing else. The
+sponsor pays the fee to manage a wallet but never signs a device's action,
+and never pays a wallet's rent. History is read from the chain.
+**Consequence:** A linked device on Solana acts with no prompt; everything
+else still asks. A device key is the one key Pawket makes for a player —
+AGENTS.md's custody rule now says exactly what it can and cannot do. A key
+that leaked can at worst spend the daily limit's fees and the float, and
+the owner can unlink it from anywhere. Clearing site data loses only the
+float (0.001 SOL). Program v4 on devnet, binary before it kept in
+`target/backups/`.
+
+## 2026-10: The room crosses between 3D and flat, and a page waits in the middle
+
+**Context:** Switching to the flat room read as the 3D room failing (its
+own teardown lost the WebGL context), switching back dropped the flat room
+before the canvas drew, and a full load showed nothing but a small paw in a
+corner.
+**Decision:** The flat room holds the frame until the first 3D frame, with
+a "Building the room in 3D" pill; the canvas crossfades in over it and out
+from over it. Every full load paints the splash first; a page waiting on
+this browser centres the full-size loader. One thing becoming another is
+seen happening (`--ease-swap`, 240ms) — a pick, a panel, a page, a theme.
+**Consequence:** A full load holds the splash for 1.35s from the start of
+the load (never longer than the load itself plus that). Motion stops under
+reduced motion, as all of it does.
+
 ## 2026-10: Guilds live on Solana, without a database
 
 **Context:** Guilds were a page of rules about a layer that did not exist,

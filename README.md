@@ -23,14 +23,20 @@ the network fees, so a wallet with no SOL can play.
    turn on testnet mode and pick Solana Devnet). It needs no SOL.
 3. Press "Record Pepper" and approve. Every care after that is a signed
    transaction, with its signature and an Explorer link on screen.
-4. Open "Their record" — the public Passport anyone can read — and keep the
+4. Tired of approving each one? Open the Pawket Wallet (from the wallet
+   chip, or the line under the deck), put in a little devnet SOL and link
+   this device — one approval. From then on care, rounds and clothes are
+   signed here with no prompt, inside the limits you set, and each fee
+   comes from that balance. Withdraw or close it any time; the history of
+   every lamport is read from Solana.
+5. Open "Their record" — the public Passport anyone can read — and keep the
    pet's card in your wallet from there.
-5. Share the Passport link: in a Blink-aware client it opens as the pet's
+6. Share the Passport link: in a Blink-aware client it opens as the pet's
    card, with its four cares.
-6. Open Guilds and join Sunbeam Club, Muddy Paws or Cloud Nine with a pet on
+7. Open Guilds and join Sunbeam Club, Muddy Paws or Cloud Nine with a pet on
    Solana — or found your own. A guild's link is a Blink too: it opens as
    the guild's card, and a pet joins from the wallet.
-7. Make it yours in Profile: your name, your look (hats, glasses, outfits),
+8. Make it yours in Profile: your name, your look (hats, glasses, outfits),
    the wardrobe, the stickers each record has earned, and eight rooms.
 
 ## What happens on chain
@@ -41,6 +47,7 @@ the network fees, so a wallet with no SOL can play.
 | `PetPassport` PDA `[passport, pet]` | the UTC-day streak and best streak, care and round counts, and the last eight cares |
 | `Guild` PDA `[guild, slug]` | a guild's name, motto, crest, founder and member count. No token, no treasury |
 | `GuildMember` PDA `[member, pet]` | one pet's place in one guild, and who paid its rent |
+| `PawketWallet` PDA `[wallet, owner]` | a balance only its owner fills or empties, the one device linked to it, until when and how many actions a day |
 
 | Instruction | What it does |
 | --- | --- |
@@ -50,6 +57,9 @@ the network fees, so a wallet with no SOL can play.
 | `dress` | one thing to wear (18 pieces), or nothing. Looks only |
 | `found_guild` | a pet founds a guild at its slug and is its first member; the sponsor can pay the rent |
 | `join_guild` / `leave_guild` | a pet joins one guild at a time; leaving returns the rent to whoever paid it |
+| `open_wallet` / `deposit` / `withdraw` / `close_wallet` | the owner's Pawket Wallet: money in from the owner, and out only to the owner |
+| `link_device` / `unlink_device` | the owner links one device (it co-signs) for up to 30 days and 500 actions a day; the owner or the device ends it |
+| `care_by_device` / `finish_round_by_device` / `dress_by_device` | the same care, round and clothes, signed by the linked device with no prompt; its fee refilled from the balance, one fee at a time |
 
 | Keepsake (Metaplex Core) | a card for the pet in its owner's wallet, in Pawket's collection [`5t7dq…PfEC9`](https://explorer.solana.com/address/5t7dqAEwdcG6C38XtHsMXbtwWyWZQFDqkjPy7JWPfEC9?cluster=devnet): frozen for good (`PermanentFreezeDelegate`), with the pet's address, species and personality as attributes |
 

@@ -12,6 +12,7 @@ Built today:
 (game)/home                the pet at home (the player's pick) in the room, the deck under it, or an empty room
 (game)/park                every pet the program keeps, read live
 (game)/profile             you: name, look, outfits; ?tab=pets|wardrobe|stickers|settings
+(game)/wallet              the Pawket Wallet: open it, link this device, put in, take out, the history read from chain
 (game)/playground          four games, a shared daily round each; on Solana, "Record the round"
 (game)/pet/[id]            an address: the public Passport, from chain (with its guild);
                            otherwise the record of a pet in this browser
@@ -37,7 +38,9 @@ goes to the profile's shelf (`?tab=wardrobe` to its wardrobe).
 The `(game)` group owns the shell: the label-sized bar (the wallet chip,
 once a wallet is connected, and the room switch) and the floating Dock. The
 dock is Home, Park, Playground, Profile, Guilds. A pet on Solana lights
-Park; a browser pet lights Profile. There is no market slot.
+Park; a browser pet lights Profile, and so does the Pawket Wallet (reached
+from the wallet chip, Home's line under a pet on Solana, and Settings).
+There is no market slot.
 
 ## 1. Site map (target)
 

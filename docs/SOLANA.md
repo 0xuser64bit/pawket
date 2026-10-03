@@ -19,6 +19,7 @@ enum variant order, error codes.
 | `PetPassport` | `[b"passport", pet]`         | 169  | pet, owner, event/care/play counts, streak, best streak, last active UTC day, last bonus UTC day, the last eight cares, bump |
 | `Guild`       | `[b"guild", slug]`           | 235  | founder (wallet), founder pet, created, member count, crest glyph, crest colour, bump, slug, name, motto (strings last) |
 | `GuildMember` | `[b"member", pet]`           | 145  | pet, guild, owner, payer (who gets the rent back), joined, bump — seeded by the pet, so one guild per pet |
+| `PawketWallet` | `[b"wallet", owner]`        | 157  | owner, linked device (or the default key), the link's end, daily actions, the UTC day and today's count, all-time actions, deposited, withdrawn, spent (moved onto devices for fees, less what came back), rent payer, created, bump. Its lamports above rent are the balance |
 
 | Instruction           | Signers              | Effect |
 | --------------------- | -------------------- | ------ |
@@ -29,14 +30,62 @@ enum variant order, error codes.
 | `found_guild`         | owner, payer         | slug 3–24 of `a-z0-9` and inner `-`; name 3–32 bytes; motto ≤ 80 bytes; crest < 8, colour < 6; the founding pet is the first member |
 | `join_guild`          | owner, payer         | a pet takes its member account (one guild at a time); the count goes up |
 | `leave_guild`         | owner                | the member account closes to its recorded `payer`; the count goes down; the guild stays |
+| `open_wallet`         | owner, payer         | the owner's `PawketWallet`; `payer` pays its rent (the owner — the sponsor never pays a wallet's rent) |
+| `deposit`             | owner                | lamports from the owner into the wallet (CPI transfer); counted in `deposited` |
+| `withdraw`            | owner                | lamports from the wallet to the owner and nowhere else, never into its rent |
+| `link_device`         | owner, device        | the device acts until `expires_at` (≤ 30 days), at most `daily_actions` (1–500) a UTC day; it signs to show it is there, is not the owner, and is handed its 0.001 SOL fee float from the balance; one device at a time |
+| `unlink_device`       | owner or device      | ends the link; when the device signs, everything it holds comes back to the balance (it may pay its own fee and close to zero) |
+| `close_wallet`        | owner                | no device linked; the balance to the owner, the rent to the recorded payer |
+| `care_by_device`, `finish_round_by_device`, `dress_by_device` | device | the same rules and record as the owner's own, for the wallet owner's pets only, inside the link's end and today's limit; then the device's fee is refilled from the balance — by at most one fee (5,000 lamports) and never past its float |
 
 Errors: 6000 `InvalidPetName`, 6001 `NotPetOwner`, 6002
 `CareCooldownActive`, 6003 `UnknownWearable`, 6004 `InvalidGuildSlug`, 6005
-`InvalidGuildName`, 6006 `InvalidGuildMotto`, 6007 `UnknownCrest`. Each maps
+`InvalidGuildName`, 6006 `InvalidGuildMotto`, 6007 `UnknownCrest`, 6008
+`InvalidAmount`, 6009 `InsufficientBalance`, 6010 `InvalidDeviceLink`, 6011
+`NotThisDevice`, 6012 `DeviceExpired`, 6013 `DailyLimitReached`, 6014
+`NoDeviceLinked`, 6015 `DeviceStillLinked`. Each maps
 to one sentence in `pawketErrorMessage` that says what did not change; a
 second join (the member account "already in use") has its own sentence.
 Events: `PetAdopted`, `CarePerformed`, `RoundFinished`, `PetDressed`,
-`GuildFounded`, `GuildJoined`, `GuildLeft`.
+`GuildFounded`, `GuildJoined`, `GuildLeft`, `WalletOpened`,
+`WalletDeposited`, `WalletWithdrew`, `DeviceLinked`, `DeviceUnlinked`,
+`WalletClosed`.
+
+### The Pawket Wallet
+
+A wallet popping up for every care is the price of a key in an extension.
+The Pawket Wallet trades it for a scoped key on the device instead, with the
+scope enforced by the program, not by Pawket:
+
+- **The device key** (`src/lib/wallet/device.ts`) is made by WebCrypto as a
+  non-extractable Ed25519 key and kept in that browser's IndexedDB, one per
+  owner. Its secret half cannot be read or exported, by Pawket's code either;
+  it can only sign. It is linked by the owner's own signature, and the device
+  co-signs the link.
+- **What it may sign** is `care_by_device`, `finish_round_by_device` and
+  `dress_by_device` for the wallet owner's pets, before the link's end and
+  under today's limit — and `unlink_device` for itself. Nothing that moves
+  the balance takes a device's signature.
+- **Who pays.** The device is its own fee payer (`sendAsDevice`). It is
+  handed a 0.001 SOL float when linked, and each of its actions refills it
+  from the balance by at most one fee, so the balance pays for those actions
+  and nothing else; a key that leaked could spend no faster than the daily
+  limit allows. The sponsor never signs a device's action
+  (`checkSponsorable` refuses it in words): Pawket's float pays for prompts a
+  person approves, not for a key that acts alone. It does pay the fee to
+  open, fill, link, unlink, withdraw and close — and appears in none of
+  those instructions.
+- **The money** is the wallet account's own lamports above rent. Deposits
+  come from the owner; a withdrawal and a close go only to the owner; the
+  rent goes back to whoever paid it (always the owner — the sponsor never
+  pays a wallet's rent, so opening and closing cannot drain it).
+- **The history** is read from Solana (`src/lib/wallet/history.ts`): every
+  transaction that touched the wallet account, decoded into what it was, how
+  the balance moved and who paid the fee. Pawket keeps none of it.
+
+`usePawketSend().act` sends an action for a pet the connected wallet keeps:
+by this device, with no prompt, while it may act (linked, under today's
+limit, holding a fee above its rent); otherwise by the wallet, as before.
 
 A guild is people and their pets and nothing else: no token, no treasury,
 no vote weight, and nothing in it touches a vital, XP or a score. The
@@ -111,7 +160,8 @@ sends nothing.
 place in one, so a wallet with no SOL can play. Its key (`SPONSOR_KEYPAIR`, server-only) is a devnet hot wallet with a
 small float — not the upgrade authority. `checkSponsorable` signs only when:
 
-- every instruction is one of Pawket's seven, on Pawket's program;
+- every instruction is one of Pawket's, on Pawket's program, and not one a
+  linked device takes (a device pays its own way);
 - the sponsor is the fee payer, and appears in no instruction except as the
   `payer` of `adopt_pet`, `found_guild` or `join_guild` (rent it pays), or
   `leave_guild`'s `payer` (rent it gets back);
@@ -127,7 +177,9 @@ IP for the web app, a wallet for a Blink) and 120 an hour in all, which
 bounds the worst case to under 0.5 SOL an hour; everything else to 240 an
 hour per caller.
 The limits live in one process's memory. Below 0.05 SOL, and on mainnet,
-the sponsor is off and players pay. GET says
+the sponsor is off and players pay. Pawket Wallet management (open,
+deposit, withdraw, link, unlink, close) is sponsored like any other
+instruction, and the sponsor takes no part in any of it. GET says
 whether it is up; pages that say "Pawket pays" read the same state
 (`src/server/sponsor.ts`).
 
@@ -197,7 +249,9 @@ solana program deploy target/deploy/pawket.so \
 The program keypair lives in `.keys/` (ignored) and is only needed for the
 first deploy; upgrades are signed by the deploy wallet. An upgrade larger
 than the program account needs `solana program extend <id> <bytes>` first
-(the guild upgrade of 2026-10-03 extended it by 120,000 bytes); dump the
+(the guild upgrade of 2026-10-03 extended it by 120,000 bytes, the Pawket
+Wallet upgrade of 2026-10-04 by 60,000 — the binary before it is
+`target/backups/pawket-v3-devnet-2026-10-04.so`); dump the
 deployed binary with `solana program dump` before any upgrade, so it can be
 put back. Upgrades only ever add: an existing instruction, account layout or
 error code does not change. `pnpm dlx tsx scripts/seed-guilds.mts` founds

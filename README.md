@@ -34,13 +34,17 @@ the network fees, so a wallet with no SOL can play.
 | --- | --- |
 | `Pet` PDA `[pet, owner, name]` | species, personality, vitals, XP and level, the last time each care was given, what it is wearing |
 | `PetPassport` PDA `[passport, pet]` | the UTC-day streak and best streak, care and round counts, and the last eight cares |
+| `Guild` PDA `[guild, slug]` | a guild's name, motto, crest, founder and member count. No token, no treasury |
+| `GuildMember` PDA `[member, pet]` | one pet's place in one guild, and who paid its rent |
 
 | Instruction | What it does |
 | --- | --- |
 | `adopt_pet` | a new pet at 72 across the board; the owner signs for the name, a separate `payer` covers rent |
 | `perform_care_action` | decays the vitals to now, applies the care, +10 XP, writes the Passport; each care rests 30 minutes |
 | `finish_round` | the playground's daily bonus: +25 XP once per UTC day |
-| `dress` | one thing to wear, or nothing. Looks only |
+| `dress` | one thing to wear (18 pieces), or nothing. Looks only |
+| `found_guild` | a pet founds a guild at its slug and is its first member; the sponsor can pay the rent |
+| `join_guild` / `leave_guild` | a pet joins one guild at a time; leaving returns the rent to whoever paid it |
 
 | Keepsake (Metaplex Core) | a card for the pet in its owner's wallet, in Pawket's collection [`5t7dq…PfEC9`](https://explorer.solana.com/address/5t7dqAEwdcG6C38XtHsMXbtwWyWZQFDqkjPy7JWPfEC9?cluster=devnet): frozen for good (`PermanentFreezeDelegate`), with the pet's address, species and personality as attributes |
 
@@ -72,22 +76,29 @@ adopt or care without visiting the site. Pawket pays those fees too.
 
 ## The places
 
-- **Home** — the room, in 3D: you and your pet in one scene (or a drawn room
-  where 3D cannot draw). Care plays out between you, after it is saved (or
-  confirmed, on Solana); the care the pet most wants is the one in sun.
+- **Home** — the room across the whole width, in 3D: you and the pet at home
+  (or a drawn room where 3D cannot draw), with a deck floating beneath it —
+  the level as a ring, the four vitals minimized, the four cares (the one
+  the pet wants in sun), and Say, Today, Photo and Look. Faces in the bar
+  bring any of your pets home. Today's round is a checklist; Photo prints
+  the room as a picture to save or share.
 - **Park** — every pet the program keeps, read live: a drawn park where the
   pets out today wander on the lawn, what just happened, and everyone.
-- **Playground** — three games with your pet in them: Catch (treats fall,
-  dodge the storm clouds), Hop (jump the park path as it speeds up) and
-  Copy (a pattern on a giant paw). The first round finished in a day is +25
-  XP, on Solana too.
-- **Inventory** — your pets, on Solana and in this browser, and a free
-  wardrobe as a dressing room: point at a piece and the pet tries it on in
-  the mirror; tap it to wear it (on Solana, a signed `dress`). Looks only.
-- **Guilds** — the written boundary for a layer that does not exist yet:
-  nothing to join, buy or swap.
-- **`/pet/<address>`** — a pet's public Passport, server-rendered from chain;
-  its owner can keep the pet's card in their wallet from here.
+- **Playground** — four games with any of your pets in them: Catch, Hop,
+  Copy and Pairs. A game card plays today's round, the same for everyone on
+  the same UTC day, so a score is worth sharing; practice is a new round.
+  The first round finished in a day is +25 XP, on Solana too.
+- **Profile** — you: your name, you in your room, your whole look (body,
+  hair, clothes, shoes, hats and glasses, pastels, three saved outfits, and
+  a way to match your pet), then what you keep — every pet, the wardrobe
+  (any pet in the mirror; 18 pieces, five earned by stickers), the sticker
+  book, and settings with eight rooms to live in.
+- **Guilds** — optional, always: pets and their people under a name, a motto
+  and a crest, kept on Solana. Found one with a pet on Solana, join or leave
+  any time; Pawket pays the fee. No token, nothing to buy, nothing that
+  touches a pet.
+- **`/pet/<address>`** — a pet's public Passport, server-rendered from chain,
+  with its guild; its owner can keep the pet's card in their wallet here.
 
 ## Quickstart
 

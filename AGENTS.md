@@ -28,16 +28,25 @@ and signs nothing but Pawket instructions; the wallet signs second, as
 owner. A care
 on Solana plays its moment only after it is confirmed; nothing is optimistic.
 
-`useCompanion` (`src/lib/companion/`) decides what a screen draws: the
-connected wallet's pet on Solana, else the browser pet — one record shape
-for both. Inventory dresses the pet (expression only; on Solana a signed
-`dress`). The playground is three solo games (Catch, Hop, Copy), any one of
-them a round; on Solana a finished round is kept when the player presses
-"Record the round". `/pet/<address>` is the
-public Passport, server-rendered from chain; `/park` is every pet the
-program keeps, read live. Guilds is the written boundary in
-`src/lib/guilds/boundary.ts`: nothing to join, buy or swap. There is no
-market. A pet on Solana can have a keepsake: a card in its owner's wallet, a
+`useCompanion` (`src/lib/companion/`) decides what a screen draws: a player
+keeps as many pets as they adopt — the connected wallet's on Solana and the
+browser's (`pawket.pets.v1`) — and one is at home (their pick, remembered on
+the device). One record shape for all of them. Home is the room across the
+whole width with a deck beneath it (care, Say, Today, Photo, Look). Profile
+(the dock slot Inventory had) is the player: their name, their 3D look with
+hats, glasses and saved outfits, and what they keep — pets, the wardrobe
+(18 pieces, five earned by stickers; on Solana a signed `dress`), stickers
+read from each record (`src/lib/game/badges.ts`), and settings, including
+eight rooms (`src/config/themes.ts`). The playground is four solo games
+(Catch, Hop, Copy, Pairs) with a daily round everyone shares; on Solana a
+finished round is kept when the player presses "Record the round".
+`/pet/<address>` is the public Passport, server-rendered from chain; `/park`
+is every pet the program keeps, read live. Guilds are on chain: a pet founds
+or joins one (`found_guild`, `join_guild`, `leave_guild`; one guild per pet,
+rent paid by the sponsor and returned on leave), discovery and each guild's
+page are read live, and `src/lib/guilds/boundary.ts` is the rule every guild
+lives inside: no token, nothing to buy or swap, nothing that touches a pet.
+There is no market. A pet on Solana can have a keepsake: a card in its owner's wallet, a
 Metaplex Core asset in Pawket's collection, frozen for good, that points at
 the pet (`src/lib/solana/core.ts`, `src/server/keepsake.ts`). The pet stays
 the program's account; the card cannot be sold or sent. Do not put a
@@ -95,6 +104,12 @@ One home per fact. If two files disagree, the left column wins.
 | Wearables (expression only)       | `src/lib/closet/catalog.ts`         |
 | Playground games (pure, seeded)   | `src/lib/play/`                     |
 | Guild boundary copy               | `src/lib/guilds/boundary.ts`        |
+| Guild rules (slug, crest, limits) | `src/lib/guilds/guild.ts` (held to `GUILD_LIMITS` in `program.ts`) |
+| Delisted guilds (product surface) | `src/lib/guilds/delisted.ts`        |
+| Stickers (read from a record)     | `src/lib/game/badges.ts`            |
+| Rooms (themes)                    | `src/config/themes.ts` + the token blocks in `app/globals.css` |
+| Player name and outfits           | `src/lib/player/profile.ts`         |
+| Player hats and glasses in 3D     | `src/components/room3d/accessories.ts` |
 | Player look (3D room)             | `src/lib/player/look.ts`            |
 | Moments and emotes                | `src/lib/room/moments.ts`           |
 | 3D assets (built, never hand-edited) | `scripts/3d/` → `public/3d/`     |

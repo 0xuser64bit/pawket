@@ -38,7 +38,7 @@ export function PetSwitcher({
           <button
             key={pet.id}
             type="button"
-            className={["pk-avatar", SKY_CLASS[SPECIES_SKY[pet.species]], on && "pk-avatar--on"].filter(Boolean).join(" ")}
+            className={["pk-switch__pet", SKY_CLASS[SPECIES_SKY[pet.species]], on && "pk-switch__pet--on"].filter(Boolean).join(" ")}
             aria-pressed={on}
             aria-label={on ? chosenLabel(pet) : chooseLabel(pet)}
             title={pet.name}
@@ -49,7 +49,7 @@ export function PetSwitcher({
         );
       })}
       {adopt ? (
-        <Link href="/adopt" className="pk-avatar pk-avatar--add" aria-label="Adopt another pet" title="Adopt another">
+        <Link href="/adopt" className="pk-switch__pet pk-switch__pet--add" aria-label="Adopt another pet" title="Adopt another">
           <Icon name="plus" size={18} />
         </Link>
       ) : null}

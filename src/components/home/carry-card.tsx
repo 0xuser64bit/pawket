@@ -69,7 +69,7 @@ export function CarryCard({
         outlives this browser, and anyone can look it up.{" "}
         {sponsor.data?.available ? "Pawket pays the network fee." : "It costs a small network fee in devnet SOL."}
       </p>
-      <Stack gap={3} style={{ marginTop: "var(--space-4)" }}>
+      <Stack gap={3} className="pk-foot">
         {owner && canSign ? (
           <>
             <p className="body-sm">

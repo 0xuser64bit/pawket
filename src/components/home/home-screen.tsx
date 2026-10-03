@@ -144,7 +144,7 @@ export function HomeScreen() {
               <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
                 Nobody lives here yet. Adopting takes three taps, and the pet starts out in this browser.
               </p>
-              <div style={{ marginTop: "var(--space-4)" }}>
+              <div className="pk-foot">
                 <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />
               </div>
             </Card>
@@ -154,7 +154,7 @@ export function HomeScreen() {
                 <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
                   Connect the wallet that keeps it, and it comes home here.
                 </p>
-                <div style={{ marginTop: "var(--space-4)" }}>
+                <div className="pk-foot">
                   <Button label="Connect a wallet" icon="wallet" tone="quiet" size="sm" onClick={() => setConnecting(true)} />
                 </div>
               </Card>
@@ -164,7 +164,7 @@ export function HomeScreen() {
               <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
                 {lookSummary(look)}. Saved on this device, and yours to change.
               </p>
-              <div style={{ marginTop: "var(--space-4)" }}>
+              <div className="pk-foot">
                 <ButtonLink label="Change your look" href="/profile#look" tone="quiet" size="sm" icon="person" />
               </div>
             </Card>
@@ -447,7 +447,7 @@ function GoalsCard({ name, today }: { name: string; today: TodayGoals }) {
           <span className="pk-sr">{today.round ? ", done" : ", not yet"}</span>
         </li>
       </ul>
-      <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
+      <p className="caption pk-faint pk-foot">
         {today.done === today.of
           ? `All of it, today. ${name} is well looked after.`
           : "Any one of these keeps the streak. A day with all five is a good day."}
@@ -550,7 +550,7 @@ function RecordCard({
           : "Saved here, and nowhere else. The vitals are an estimate of time away."}{" "}
         There is no death — only a pet that misses you.
       </p>
-      <Row gap={2} wrap style={{ marginTop: "var(--space-4)" }}>
+      <Row gap={2} wrap className="pk-foot">
         {others > 0 ? (
           <ButtonLink label={`All ${others + 1} of your pets`} href="/profile#shelf" tone="quiet" size="sm" icon="pocket" />
         ) : (

@@ -1039,8 +1039,10 @@ li {
   box-shadow: none;
 }
 /* A collection card: the pocket bleeds to a 12px margin, the words sit
-   below it. */
+   below it. Often a link, so it is a block: an inline link would pad only
+   its first line and push the pocket off the card's right edge. */
 .pk-card__art {
+  display: block;
   padding: var(--space-3) var(--space-3) 0;
 }
 .pk-card__body {
@@ -2158,6 +2160,11 @@ li {
   gap: var(--space-2) var(--space-4);
   padding: var(--space-3) 0 var(--space-2);
 }
+/* A display title's line is tighter than its descenders, so the line under
+   it keeps clear of the g and the y. */
+.pk-screen__bar :is(.display-l, .display-m) + p {
+  margin-top: var(--space-2);
+}
 
 /* The shell bar: the mark and the two facts about this session. Label-sized
    and hue-free, because nothing in the shell may outrank the animal below
@@ -2477,24 +2484,28 @@ li {
 /* A recessed square holding an icon, used as a card's leading mark. */
 
 
-/* A collection should look like a shelf, not a table. Pet cards run two to
-   a phone row, three on a tablet and four on a desktop; item tiles are
-   smaller and simply fill the shelf at no less than 148px each. */
+/* A collection should look like a shelf, not a table. Pet cards answer to
+   the shelf they are on, not the window: never fewer than two to a row and
+   never more than four, about 180px each between — so a pet in a guild's
+   half-width column is as legible as one on the park's full width. Item
+   tiles are smaller and simply fill the shelf at no less than 148px each. */
 .pk-cards {
+  --pk-cards-gap: var(--space-3);
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(calc((100% - var(--pk-cards-gap)) / 2), max(180px, calc((100% - 3 * var(--pk-cards-gap)) / 4))), 1fr)
+  );
+  gap: var(--pk-cards-gap);
 }
 @media (min-width: 720px) {
   .pk-cards {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-4);
+    --pk-cards-gap: var(--space-4);
   }
 }
 @media (min-width: 1024px) {
   .pk-cards {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-5);
+    --pk-cards-gap: var(--space-5);
   }
 }
 /* An empty pocket on the shelf: dashed where a card would be outlined, and
@@ -3182,9 +3193,19 @@ li {
 @media (min-width: 1024px) {
   .pk-home__more {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    align-items: start;
     gap: var(--space-5);
   }
+}
+/* A row of cards is one height, the tallest's, and each card's foot — its
+   actions, or its last word — sits at the bottom, so they line up across
+   the row. */
+.pk-home__more > .pk-card {
+  display: flex;
+  flex-direction: column;
+}
+.pk-foot {
+  margin-top: auto;
+  padding-top: var(--space-4);
 }
 .pk-home__vitals {
   display: grid;
@@ -3499,7 +3520,7 @@ li {
   align-items: center;
   gap: var(--space-2);
 }
-.pk-avatar {
+.pk-switch__pet {
   display: grid;
   place-items: end center;
   width: 44px;
@@ -3512,25 +3533,46 @@ li {
   cursor: pointer;
   transition: transform var(--dur-press) var(--ease-press);
 }
-.pk-avatar svg {
+.pk-switch__pet svg {
   width: 116%;
   height: 116%;
   margin-bottom: -18%;
 }
-.pk-avatar--on {
+.pk-switch__pet--on {
   --pk-keep: 0 0 0 3px var(--surface), 0 0 0 5px var(--sun);
   border-color: var(--edge);
   box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--sun);
 }
-.pk-avatar--add {
+/* The last circle adopts another: a plus, centred, on the dashed edge an
+   empty pocket has. The face rule above enlarges and lowers a pet to sit
+   on the circle's rim; a glyph is drawn at its own size, in the middle. */
+.pk-switch__pet--add {
   place-items: center;
   border-style: dashed;
-  background: transparent;
+  border-color: var(--edge-soft);
+  background: var(--surface);
   color: var(--ink-soft);
   text-decoration: none;
+  transition:
+    transform var(--dur-press) var(--ease-press),
+    color var(--dur-swap) var(--ease-swap),
+    border-color var(--dur-swap) var(--ease-swap),
+    background-color var(--dur-swap) var(--ease-swap);
+}
+.pk-switch__pet--add svg {
+  width: 20px;
+  height: 20px;
+  margin: 0;
 }
 @media (hover: hover) {
-  .pk-avatar:not(.pk-avatar--on):hover {
+  .pk-switch__pet--add:hover {
+    border-style: solid;
+    background: var(--sun-soft);
+    color: var(--sun-text);
+  }
+}
+@media (hover: hover) {
+  .pk-switch__pet:not(.pk-switch__pet--on):hover {
     transform: translateY(-2px);
     border-color: var(--edge);
   }
@@ -4739,6 +4781,8 @@ li {
 }
 .pk-gamecard-wrap .pk-gamecard {
   width: 100%;
+  flex: 1;
+  align-content: start;
 }
 .pk-gamecard__cards {
   position: absolute;

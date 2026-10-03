@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { memo, Suspense, use, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
+import { memo, Suspense, use, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Ref } from "react";
 import { Group, Vector3, type PerspectiveCamera } from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
@@ -45,12 +45,55 @@ export interface Room3DProps {
 }
 
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-const files = new Map<string, Promise<GLTF>>();
+type File = Promise<GLTF> & { status?: "fulfilled" | "rejected"; value?: GLTF; reason?: unknown };
+const files = new Map<string, File>();
 
-/** One request per file for the life of the page. */
+/**
+ * One request per file for the life of the page. A file that has arrived is
+ * marked as such, the way `use` reads a promise, so a model already here is
+ * drawn in the same frame rather than after a beat of suspense. One that
+ * failed is forgotten, so trying the room again asks again.
+ */
 function load(url: string): Promise<GLTF> {
-  if (!files.has(url)) files.set(url, loader.loadAsync(url));
-  return files.get(url)!;
+  let file = files.get(url);
+  if (!file) {
+    const loading: File = loader.loadAsync(url);
+    loading.then(
+      (value) => Object.assign(loading, { status: "fulfilled", value }),
+      (reason) => {
+        files.delete(url);
+        Object.assign(loading, { status: "rejected", reason });
+      },
+    );
+    files.set(url, loading);
+    file = loading;
+  }
+  return file;
+}
+
+const arrived = (url: string) => files.get(url)?.status === "fulfilled";
+const petFile = (species: PetSpecies) => `/3d/pets/${SPECIES_MODEL[species]}.glb`;
+
+/**
+ * The pet on stage. A pet of another species takes the stage only once its
+ * model has arrived — until then the last one stays — so switching pets
+ * never blanks the room.
+ */
+function useArrivedPet(pet: Room3DProps["pet"]): Room3DProps["pet"] {
+  const [last, setLast] = useState(pet);
+  const [, settled] = useState(0);
+  const ready = !pet || !last || pet.species === last.species || arrived(petFile(pet.species));
+  if (ready && last !== pet) setLast(pet);
+  useEffect(() => {
+    if (ready || !pet) return;
+    let alive = true;
+    const settle = () => alive && settled((n) => n + 1);
+    load(petFile(pet.species)).then(settle, settle);
+    return () => {
+      alive = false;
+    };
+  }, [ready, pet]);
+  return ready ? pet : last;
 }
 
 const bodyFile = (body: string) => `/3d/human/body-${body}.glb`;
@@ -66,9 +109,21 @@ function preloadBody(body: string): void {
  */
 export default memo(function Room3D(props: Room3DProps) {
   const { active, reduced, compact, onLost } = props;
+  const pet = useArrivedPet(props.pet);
   // A device that cannot keep up gets fewer pixels, once, rather than jank.
   const [slow, setSlow] = useState(false);
   const onSlow = useCallback(() => setSlow(true), []);
+  // Letting go of the canvas loses its context on purpose, and the renderer
+  // does it while React is still unmounting the room — so this is a layout
+  // effect, whose cleanup runs before the canvas's. Only a loss while the
+  // room is still here is a room that stopped drawing.
+  const here = useRef(false);
+  useLayoutEffect(() => {
+    here.current = true;
+    return () => {
+      here.current = false;
+    };
+  }, []);
   return (
     <Canvas
       flat
@@ -81,12 +136,12 @@ export default memo(function Room3D(props: Room3DProps) {
         gl.domElement.style.touchAction = "pan-y";
         gl.domElement.addEventListener("webglcontextlost", (event) => {
           event.preventDefault();
-          onLost();
+          if (here.current) onLost();
         });
       }}
     >
       <Suspense fallback={null}>
-        <Stage key={props.pet?.species ?? "empty"} {...props} onSlow={slow || compact ? undefined : onSlow} />
+        <Stage key={pet?.species ?? "empty"} {...props} pet={pet} onSlow={slow || compact ? undefined : onSlow} />
       </Suspense>
     </Canvas>
   );
@@ -104,7 +159,7 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
     };
   }, [look.body]);
   const body = use(load(bodyFile(shown)));
-  const petGltf = pet ? use(load(`/3d/pets/${SPECIES_MODEL[pet.species]}.glb`)) : null;
+  const petGltf = pet ? use(load(petFile(pet.species))) : null;
   const { camera, size, invalidate, gl, scene } = useThree();
 
   const room = useMemo(() => buildRoom(), []);

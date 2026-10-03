@@ -22,7 +22,7 @@ import { CARE_ICON, Deck, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
 import { PhotoDialog } from "@/components/home/photo";
 import { PetSwitcher } from "@/components/home/pet-switcher";
-import { Room, useRoomMode, type RoomState } from "@/components/home/room";
+import { Room, preloadRoom3D, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { RoomView } from "@/components/room3d/room-3d";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
@@ -387,10 +387,12 @@ function RoomLine({
       </p>
       {state === "unsupported" || state === "failed" ? null : (
         <Button
-          label={mode === "3d" ? "Flat room" : "3D room"}
+          label={mode === "3d" ? (state === "loading" ? "Stay flat" : "Flat room") : "3D room"}
           tone="ghost"
           size="sm"
           onClick={() => onMode(mode === "3d" ? "flat" : "3d")}
+          onPointerEnter={mode === "flat" ? preloadRoom3D : undefined}
+          onFocus={mode === "flat" ? preloadRoom3D : undefined}
         />
       )}
     </div>

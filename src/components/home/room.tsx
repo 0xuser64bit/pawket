@@ -13,7 +13,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { Button, useTheme, useToken, type Feeling, type PetForm, type Sky, type Temper } from "@/components/pk";
+import { Button, PawGlyph, useTheme, useToken, type Feeling, type PetForm, type Sky, type Temper } from "@/components/pk";
 import { FlatRoom } from "@/components/home/flat-room";
 import type { RoomView } from "@/components/room3d/room-3d";
 import type { DirectorStatus } from "@/components/room3d/director";
@@ -23,7 +23,16 @@ import type { RoomCue } from "@/lib/room/moments";
 import { useReducedMotion } from "@/lib/utils/use-reduced-motion";
 
 /** three.js arrives only with the room, never on the first paint. */
-const Room3D = dynamic(() => import("@/components/room3d/room-3d"), { ssr: false });
+const loadRoom3D = () => import("@/components/room3d/room-3d");
+const Room3D = dynamic(loadRoom3D, { ssr: false });
+
+/** Start fetching the 3D room before it is asked for — under a pointer on its switch, say. */
+export function preloadRoom3D(): void {
+  if (canDrawRoom()) void loadRoom3D();
+}
+
+/** How long the 3D room takes to fade in over the flat one, or out from over it: `--dur-room`. */
+const ROOM_FADE_MS = 420;
 
 /* ----------------------------------------------------- the flat room */
 
@@ -161,7 +170,8 @@ export function Room({
   const reduced = useReducedMotion();
   const theme = useTheme();
   const [failed, setFailed] = useState(false);
-  const [ready, setReady] = useState(false);
+  /** The mounted 3D room has drawn its first frame. */
+  const [drawn, setDrawn] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [onScreen, setOnScreen] = useState(true);
   const [visible, setVisible] = useState(true);
@@ -173,6 +183,11 @@ export function Room({
   const view = viewRef ?? own;
 
   const want3d = mode === "3d" && canDraw === true && !failed;
+  // The 3D room mounts as soon as it is wanted, and stays mounted while it
+  // fades out, so leaving it is a crossfade rather than a cut. Coming back
+  // before it has gone picks it up where it was.
+  const [mounted3d, setMounted3d] = useState(want3d);
+  if (want3d && !mounted3d) setMounted3d(true);
   // Home re-renders every second for its countdowns; the 3D leaf should not.
   const petKey = pet ? `${pet.species}|${pet.name}|${pet.wearing}|${pet.mood}` : "";
   const scenePet = useMemo(
@@ -185,14 +200,28 @@ export function Room({
     statusRef.current = onStatus;
   });
   const handleStatus = useCallback((status: DirectorStatus) => statusRef.current?.(status), []);
-  const handleReady = useCallback(() => setReady(true), []);
+  const handleReady = useCallback(() => setDrawn(true), []);
   const handleLost = useCallback(() => setFailed(true), []);
+  const live = want3d && drawn;
   const state: RoomState =
-    mode === "flat" ? "flat" : canDraw === false ? "unsupported" : failed ? "failed" : ready ? "live" : "loading";
+    mode === "flat" ? "flat" : canDraw === false ? "unsupported" : failed ? "failed" : live ? "live" : "loading";
 
   useEffect(() => {
     onState?.(state);
   }, [state, onState]);
+
+  // Once it has faded out, the 3D room lets go of its canvas.
+  useEffect(() => {
+    if (want3d || !mounted3d) return;
+    const timer = window.setTimeout(
+      () => {
+        setMounted3d(false);
+        setDrawn(false);
+      },
+      reduced ? 0 : ROOM_FADE_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [want3d, mounted3d, reduced]);
 
   // Nothing draws while the room is off screen or the tab is hidden.
   useEffect(() => {
@@ -214,7 +243,7 @@ export function Room({
   }, []);
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (!(want3d && ready)) return;
+    if (!live) return;
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       view.current?.nudge(event.key === "ArrowLeft" ? -1 : 1);
@@ -223,7 +252,6 @@ export function Room({
     }
   }
 
-  const live = want3d && ready;
   // The flat room answers a cue too: the pet hops once (a new key replays it).
   const hop = cue && !live && !reduced ? cue.nonce : 0;
   return (
@@ -236,7 +264,9 @@ export function Room({
       aria-label={live ? `${description} The left and right arrow keys turn the room.` : undefined}
       role={live ? "group" : undefined}
     >
-      {live ? null : (
+      {/* The flat room holds the frame whenever the 3D one is not drawing,
+          and sits under it while it fades in or out. */}
+      <div className="pk-room__flat">
         <FlatRoom
           pet={pet ? { form: pet.form, temper: pet.temper, feeling: pet.feeling, wearing: pet.wearing, seed: pet.name } : null}
           colour={PEG_COLOUR[look.topColour]}
@@ -245,8 +275,8 @@ export function Room({
           hatColour={PEG_COLOUR[look.headwearColour]}
           glasses={look.eyewear === "none" ? undefined : look.eyewear}
         />
-      )}
-      {want3d ? (
+      </div>
+      {mounted3d ? (
         <div className="pk-room__stage" aria-hidden="true">
           <Guard key={attempt} onError={() => setFailed(true)}>
             <Room3D
@@ -258,7 +288,7 @@ export function Room({
               wall={wall}
               cue={cue}
               reduced={reduced}
-              active={onScreen && visible}
+              active={want3d && onScreen && visible}
               compact={compact}
               view={view}
               onStatus={handleStatus}
@@ -266,6 +296,12 @@ export function Room({
               onLost={handleLost}
             />
           </Guard>
+        </div>
+      ) : null}
+      {state === "loading" ? (
+        <div className="pk-room__building" role="status">
+          <PawGlyph size={28} moving />
+          <span className="caption">Building the room in 3D</span>
         </div>
       ) : null}
       <span className="pk-sr">{description}</span>
@@ -281,7 +317,7 @@ export function Room({
           size="sm"
           onClick={() => {
             setFailed(false);
-            setReady(false);
+            setDrawn(false);
             setAttempt((n) => n + 1);
           }}
         />

@@ -56,6 +56,12 @@ test("the flat room is a choice this device remembers", async ({ page }) => {
   await page.getByRole("button", { name: "Flat room" }).click();
   await expect(liveRoom(page)).toHaveCount(0);
   await expect(page.locator(".pk-room canvas")).toHaveCount(0);
+  // Letting go of the canvas is not the room failing, and 3D comes straight back.
+  await expect(page.getByText(/stopped drawing/)).toHaveCount(0);
+  await page.getByRole("button", { name: "3D room" }).click();
+  await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
+  await page.getByRole("button", { name: "Flat room" }).click();
+  await expect(page.locator(".pk-room canvas")).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole("button", { name: "3D room" })).toBeVisible();
   await expect(page.locator(".pk-room canvas")).toHaveCount(0);

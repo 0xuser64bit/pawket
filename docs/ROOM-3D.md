@@ -9,7 +9,21 @@ to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”
 - One Canvas, a client-only React Three Fiber leaf
   (`src/components/room3d/room-3d.tsx`), loaded with `next/dynamic` only when
   Home renders a room. three.js never reaches the first paint: the flat room
-  is drawn first and stays until the first 3D frame.
+  is drawn first and stays until the first 3D frame, with a "Building the
+  room in 3D" pill at the top once the wait passes 300ms. Then the canvas
+  fades in over it (`--dur-room`, 420ms) and only then does the flat room
+  hide. Leaving 3D is the same in reverse: the flat room is back at once
+  underneath and the canvas fades off it before it is let go, so coming back
+  within that fade picks the room up where it was. A pointer on the switch
+  starts fetching the chunk early (`preloadRoom3D`).
+- The canvas's own teardown loses its WebGL context on purpose; a guard set
+  in a layout effect (whose cleanup runs before the canvas's) keeps that from
+  reading as "the 3D room stopped drawing". A real loss still does.
+- A pet of another species takes the stage only once its model has arrived,
+  so switching pets keeps the last one in the room until then — never a
+  blank frame. A model that has arrived is marked the way `use` reads a
+  settled promise, so it is drawn the same frame; one that failed to load is
+  forgotten, so "Try the 3D room again" asks again.
 - Five GLBs in `public/3d/`, built by `pnpm assets:3d`:
 
   | File | What | Size | Triangles (all variants) |

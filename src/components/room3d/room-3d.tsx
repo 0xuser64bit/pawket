@@ -20,6 +20,8 @@ export interface RoomView {
   /** Turn the view a step left (-1) or right (1). */
   nudge: (direction: number) => void;
   reset: () => void;
+  /** The room as it is now, as a PNG data URL: drawn and read in the same frame. */
+  snap: () => string | null;
 }
 
 export interface Room3DProps {
@@ -224,6 +226,15 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
       orbit.current.wantAz = 0;
       orbit.current.wantEl = 0;
       invalidate();
+    },
+    snap: () => {
+      // The drawing buffer is not kept between frames, so draw one and read it before the browser shows it.
+      gl.render(scene, camera);
+      try {
+        return gl.domElement.toDataURL("image/png");
+      } catch {
+        return null;
+      }
     },
   }));
   useEffect(() => {

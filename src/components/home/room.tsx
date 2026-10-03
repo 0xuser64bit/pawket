@@ -11,6 +11,7 @@ import {
   useSyncExternalStore,
   type KeyboardEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { Button, useTheme, useToken, type Feeling, type PetForm, type Sky, type Temper } from "@/components/pk";
 import { FlatRoom } from "@/components/home/flat-room";
@@ -129,6 +130,7 @@ export function Room({
   onStatus,
   onState,
   stage = false,
+  viewRef,
 }: {
   pet: {
     species: PetSpecies;
@@ -147,6 +149,8 @@ export function Room({
   onState?: (state: RoomState) => void;
   /** The whole width of the screen, as Home and the profile draw it. */
   stage?: boolean;
+  /** A handle on the 3D room, for a screen that turns it or takes its picture. */
+  viewRef?: RefObject<RoomView | null>;
 }) {
   const [mode] = useRoomMode();
   const canDraw = useCanDraw();
@@ -161,7 +165,8 @@ export function Room({
   const wall = useToken(sky === "warm" ? "--sun-soft" : sky === "cool" ? "--pool-soft" : "--surface-sunk", "#ffe4cd");
   const [compact, setCompact] = useState(false);
   const frame = useRef<HTMLDivElement>(null);
-  const view = useRef<RoomView>(null);
+  const own = useRef<RoomView>(null);
+  const view = viewRef ?? own;
 
   const want3d = mode === "3d" && canDraw === true && !failed;
   // Home re-renders every second for its countdowns; the 3D leaf should not.

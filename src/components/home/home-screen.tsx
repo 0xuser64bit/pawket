@@ -20,9 +20,11 @@ import {
 import { CarryCard } from "@/components/home/carry-card";
 import { CARE_ICON, Deck, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
+import { PhotoDialog } from "@/components/home/photo";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { Room, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";
+import type { RoomView } from "@/components/room3d/room-3d";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { getPublicEnv } from "@/config/env";
@@ -53,6 +55,7 @@ import {
 import { readPet, removePet, savePet } from "@/lib/guest/storage";
 import { lookSummary } from "@/components/profile/look-editor";
 import { describeLook } from "@/lib/player/look";
+import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
 import { CARE_MOMENT, type RoomCue } from "@/lib/room/moments";
 import { getCareInstruction } from "@/lib/solana/instructions";
@@ -71,12 +74,16 @@ export function HomeScreen() {
   const companion = useCompanion();
   const { ready, pet, active } = companion;
   const look = usePlayerLook();
+  const profile = usePlayerProfile();
   const sender = usePawketSend();
   const cluster = getPublicEnv().solanaCluster;
   const [now, setNow] = useState(() => new Date());
   const [said, setSaid] = useState<{ pet: string; tone: "ok" | "stop"; text: string }>();
   const [connecting, setConnecting] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
+  const [shot, setShot] = useState<string | null>(null);
+  const roomView = useRef<RoomView>(null);
+  const closePhoto = useCallback(() => setShot(null), []);
   /** A browser pet on its way onto Solana: its id here, and its address there. */
   const carried = useRef<{ id: string; address: Address } | null>(null);
   const [cue, setCue] = useState<RoomCue | null>(null);
@@ -269,6 +276,7 @@ export function HomeScreen() {
           onStatus={onStatus}
           onState={setRoomState}
           stage
+          viewRef={roomView}
         />
         <Deck
           name={pet.name}
@@ -284,6 +292,7 @@ export function HomeScreen() {
           panel={panel}
           onCare={care}
           onPanel={setPanel}
+          onSnap={roomState === "live" ? () => setShot(roomView.current?.snap() ?? null) : undefined}
         />
         <p
           role="status"
@@ -340,6 +349,15 @@ export function HomeScreen() {
           <RecordCard pet={pet} onChain={onChain} cluster={cluster} others={companion.all.length - 1} />
         </div>
       </Stack>
+      {shot ? (
+        <PhotoDialog
+          shot={shot}
+          title={`${pet.name} and ${profile.name.trim() || "me"}`}
+          line={`${PERSONALITY_LABEL[pet.personality]} ${SPECIES_LABEL[pet.species].toLowerCase()} · level ${projected.level} · ${utcDay(now)}`}
+          file={`pawket-${pet.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${utcDay(now)}`}
+          onClose={closePhoto}
+        />
+      ) : null}
     </Screen>
   );
 }

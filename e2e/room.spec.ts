@@ -27,6 +27,19 @@ test("the room comes up in 3D and an emote plays in it", async ({ page }) => {
   await expect(page.getByText(/do not change a vital, XP or the streak/i)).toBeVisible();
 });
 
+test("the room takes a photo of the two of you, to save or share", async ({ page }) => {
+  await adopt(page);
+  await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
+  await page.getByRole("button", { name: "Photo" }).click();
+  const photo = page.getByRole("dialog", { name: /Pepper and me/ });
+  await expect(photo).toBeVisible();
+  const save = photo.getByRole("link", { name: "Save the photo" });
+  await expect(save).toHaveAttribute("download", /^pawket-pepper-\d{4}-\d{2}-\d{2}\.png$/);
+  await expect(save).toHaveAttribute("href", /^data:image\/png;base64,/);
+  await photo.getByRole("button", { name: "Close" }).click();
+  await expect(photo).toHaveCount(0);
+});
+
 test("a care shows in the room only after it is saved", async ({ page }) => {
   await adopt(page);
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });

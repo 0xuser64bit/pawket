@@ -3757,6 +3757,40 @@ li {
   box-shadow: var(--shadow-sticker-sm);
 }
 
+/* ------------------------------------------------------- a photo
+
+   The room's picture, printed on the room's own paper, in a native dialog:
+   the one thing besides a sheet that floats, so it takes the sheet's lift. */
+.pk-photo {
+  width: min(560px, calc(100vw - 2 * var(--gutter)));
+  max-height: calc(100dvh - var(--space-8));
+  margin: auto;
+  padding: var(--space-5);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-lift);
+  overflow-y: auto;
+}
+.pk-photo::backdrop {
+  background: color-mix(in srgb, var(--ground) 72%, transparent);
+}
+.pk-photo[open] {
+  animation: pk-rise var(--dur-sheet) var(--ease-press);
+}
+.pk-photo__print {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-photo__print--wait {
+  aspect-ratio: 4 / 3;
+  background: var(--surface-sunk);
+}
+
 /* ------------------------------------------------------- rooms (themes)
 
    A room is a whole set of tokens. The switch in the shell names the room

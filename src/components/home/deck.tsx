@@ -96,6 +96,7 @@ export function Deck({
   panel,
   onCare,
   onPanel,
+  onSnap,
 }: {
   name: string;
   mood: PetMood;
@@ -110,6 +111,8 @@ export function Deck({
   panel: Panel | null;
   onCare: (action: CareActionType) => void;
   onPanel: (panel: Panel | null) => void;
+  /** Take a photo of the room; absent where the room cannot be photographed (the flat room). */
+  onSnap?: () => void;
 }) {
   return (
     <section className="pk-deck" aria-label={`With ${name}`}>
@@ -177,6 +180,12 @@ export function Deck({
             </button>
           );
         })}
+        {onSnap ? (
+          <button type="button" className="pk-tool" onClick={onSnap}>
+            <Icon name="camera" size={18} />
+            <span>Photo</span>
+          </button>
+        ) : null}
         <Link href="/profile#look" className="pk-tool">
           <Icon name="person" size={18} />
           <span>Look</span>

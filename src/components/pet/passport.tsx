@@ -32,6 +32,7 @@ import type { Keepsake } from "@/server/keepsake";
 import { KeepsakeCard } from "./keepsake";
 import { OwnerActions } from "./owner-actions";
 import { ShareButton } from "./share-button";
+import { StickerStrip } from "./sticker-strip";
 
 const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
 
@@ -146,6 +147,8 @@ export function Passport({
                 level are worked out from the record, the same way the program does.
               </p>
             </Card>
+
+            <StickerStrip name={pet.name} record={record} context={{ onChain: true, guild: Boolean(onChain.member) }} />
 
             <Card>
               <h2 className="title">Last cares</h2>

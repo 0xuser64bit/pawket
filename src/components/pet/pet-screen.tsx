@@ -26,6 +26,7 @@ import {
 import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
 import { usePets } from "@/lib/guest/use-pets";
 import { formatUtcDate } from "@/lib/utils/format";
+import { StickerStrip } from "./sticker-strip";
 
 /**
  * The record of a pet kept in this browser. An id this browser does not
@@ -152,6 +153,8 @@ export function PetScreen({ id }: { id: string }) {
                   : "Nothing yet. Anything in the wardrobe can be worn, and none of it changes a vital."}
               </p>
             </Card>
+
+            <StickerStrip name={pet.name} record={pet} context={{ onChain: false }} />
 
             <Card>
               <h2 className="title">Care</h2>

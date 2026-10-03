@@ -76,6 +76,11 @@ export type IconName = keyof typeof ICONS;
 
 export const ICON_NAMES = Object.keys(ICONS) as IconName[];
 
+/** A glyph's path, for a drawing made where the component cannot render (a share card). */
+export function iconPath(name: IconName): string {
+  return ICONS[name];
+}
+
 export function Icon({
   name,
   size = 20,

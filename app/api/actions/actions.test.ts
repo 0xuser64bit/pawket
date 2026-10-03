@@ -21,6 +21,7 @@ describe("Solana Actions", () => {
       rules: [
         { pathPattern: "/adopt", apiPath: "/api/actions/adopt" },
         { pathPattern: "/pet/*", apiPath: "/api/actions/care/*" },
+        { pathPattern: "/guilds/*", apiPath: "/api/actions/guild/*" },
         { pathPattern: "/api/actions/**", apiPath: "/api/actions/**" },
       ],
     });

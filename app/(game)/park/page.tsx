@@ -25,7 +25,10 @@ import { projectGuestPet, streakAsOf, utcDay } from "@/lib/guest/pet";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { getPublicEnv } from "@/config/env";
 import { AdoptLink } from "@/components/park/adopt-link";
-import { readAllPets } from "@/server/solana";
+import { readAllPets, readGuilds } from "@/server/solana";
+import { GuildCrest } from "@/components/guilds/guild-crest";
+import { isListed } from "@/lib/guilds/delisted";
+import type { ChainGuild } from "@/lib/solana/accounts";
 
 export const metadata: Metadata = {
   title: "Park",
@@ -65,8 +68,12 @@ const CARE_ICON: Record<CareActionType, IconName> = {
 
 export default async function ParkPage() {
   let pets: PetOnChain[];
+  let guilds = new Map<string, ChainGuild>();
   try {
     pets = await readAllPets();
+    // Each pet's guild, by its address: the crest beside its name. A guild list
+    // that does not come back is a park without crests, not a failure.
+    guilds = new Map((await readGuilds().catch(() => [])).filter(isListed).map((guild) => [guild.address, guild]));
   } catch {
     return (
       <Screen>
@@ -210,6 +217,17 @@ export default async function ParkPage() {
                   </div>
                   <div className="pk-card__body">
                     <h2 className="title" style={{ overflowWrap: "anywhere" }}>{entry.pet.name}</h2>
+                    {entry.member && guilds.get(entry.member.guild) ? (
+                      <span className="pk-park-guild">
+                        <GuildCrest
+                          crest={guilds.get(entry.member.guild)!.crest}
+                          colour={guilds.get(entry.member.guild)!.colour}
+                          name={guilds.get(entry.member.guild)!.name}
+                          size="sm"
+                        />
+                        <span className="caption pk-faint">{guilds.get(entry.member.guild)!.name}</span>
+                      </span>
+                    ) : null}
                     <p className="caption pk-faint">
                       Level {projected.level} · {SPECIES_LABEL[entry.pet.species]}
                     </p>

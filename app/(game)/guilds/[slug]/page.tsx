@@ -16,6 +16,7 @@ import {
 } from "@/components/pk";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { GuildMembership } from "@/components/guilds/membership";
+import { ShareButton } from "@/components/pet/share-button";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
@@ -100,6 +101,13 @@ export default async function GuildPage({ params }: Props) {
               <Chip label={`${guild.memberCount} ${guild.memberCount === 1 ? "pet" : "pets"}`} tone="pool" icon="users" />
               <Chip label={`Since ${since(guild.createdAt)}`} />
               <Chip label="Optional" tone="bloom" icon="guild" />
+            </Row>
+            <Row gap={3} wrap style={{ marginTop: "var(--space-3)", alignItems: "center" }}>
+              <ShareButton name={guild.name} label={`Share ${guild.name}`} />
+              <span className="caption pk-faint">
+                Shared, this link is also a Solana Action: in a Blink-aware wallet it opens as {guild.name}&apos;s card, and a pet
+                joins from there.
+              </span>
             </Row>
           </div>
         </div>

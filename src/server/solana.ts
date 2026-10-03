@@ -29,6 +29,11 @@ export async function readPet(id: string): Promise<PetOnChain | null> {
   return fetchPetOnChain(rpc(), id);
 }
 
+/** Every pet one wallet keeps on Solana, read live, most recently adopted first. */
+export async function readOwnedPets(owner: string): Promise<PetOnChain[]> {
+  return (await fetchPetsOnChain(rpc(), owner)).sort((a, b) => b.pet.birthTimestamp - a.pet.birthTimestamp);
+}
+
 /** How long one scan of every pet answers for. */
 export const ALL_PETS_FRESH_MS = 8_000;
 let scan: { at: number; pets: Promise<PetOnChain[]> } | null = null;

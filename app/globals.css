@@ -3673,6 +3673,17 @@ li {
   align-items: center;
   gap: var(--space-5);
 }
+.pk-park-guild {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-1) 0;
+}
+.pk-park-guild .pk-crest--sm {
+  width: 22px;
+  height: 24px;
+  border-width: 1.5px;
+}
 .pk-guild-tag {
   display: inline-flex;
   align-items: center;

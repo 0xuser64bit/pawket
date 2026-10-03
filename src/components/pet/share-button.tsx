@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/pk";
 
-/** Share a pet's record: the phone's share sheet where there is one, else a copied link. */
-export function ShareButton({ name }: { name: string }) {
+/** Share a page — a pet's record, a guild: the phone's share sheet where there is one, else a copied link. */
+export function ShareButton({ name, label }: { name: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <Button
-      label={copied ? "Link copied" : `Share ${name}'s record`}
+      label={copied ? "Link copied" : (label ?? `Share ${name}'s record`)}
       icon={copied ? "check" : "out"}
       tone="quiet"
       size="sm"

@@ -182,6 +182,8 @@ export function usePawketSend() {
     busy: isActiveStage(tx.stage),
     /** This device can act for the connected wallet with no prompt. */
     noPrompt: Boolean(pawketWallet?.canAct),
+    /** The connected wallet's Pawket Wallet, as every screen sees it. */
+    pawketWallet,
   };
 }
 

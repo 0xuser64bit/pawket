@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { BADGES, badgesFor, type BadgeRecord } from "./badges";
+import { BADGES, badgesFor, newlyEarned, type BadgeRecord } from "./badges";
 import { CareActionType } from "./enums";
 
 const NEW: BadgeRecord = {
@@ -27,6 +27,19 @@ describe("badges", () => {
       plays: 10,
     };
     expect(badgesFor(everything, { onChain: true, guild: true })).toEqual(BADGES.map((badge) => badge.id));
+  });
+
+  it("names what one care just earned, and nothing already had", () => {
+    const fed = { ...NEW, lastActionAt: { ...NEW.lastActionAt, [CareActionType.Feed]: AT } };
+    const allFour = {
+      ...fed,
+      xp: 100,
+      lastActionAt: { [CareActionType.Feed]: AT, [CareActionType.Play]: AT, [CareActionType.Groom]: AT, [CareActionType.Rest]: null },
+    };
+    const rested = { ...allFour, xp: 110, lastActionAt: { ...allFour.lastActionAt, [CareActionType.Rest]: AT } };
+    expect(newlyEarned(NEW, fed).map((badge) => badge.id)).toEqual(["first-meal"]);
+    expect(newlyEarned(allFour, rested).map((badge) => badge.id)).toEqual(["sweet-dreams", "all-four"]);
+    expect(newlyEarned(rested, rested)).toEqual([]);
   });
 
   it("keeps a run of days once it has been run, whatever the streak is now", () => {

@@ -67,3 +67,9 @@ export const BADGES: readonly Badge[] = [
 export function badgesFor(record: BadgeRecord, context: BadgeContext = {}): string[] {
   return BADGES.filter((badge) => badge.earned(record, context)).map((badge) => badge.id);
 }
+
+/** The stickers `after` has and `before` did not: what one care or one round just earned. */
+export function newlyEarned(before: BadgeRecord, after: BadgeRecord, context: BadgeContext = {}): Badge[] {
+  const had = new Set(badgesFor(before, context));
+  return BADGES.filter((badge) => !had.has(badge.id) && badge.earned(after, context));
+}

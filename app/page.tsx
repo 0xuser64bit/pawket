@@ -32,6 +32,7 @@ export const revalidate = 60;
 const ON_SOLANA: Array<{ icon: IconName; title: string; body: string }> = [
   { icon: "paw", title: "One signature to move in", body: "Keep the pet you raised in this browser on Solana. Its name, species and temperament go with it." },
   { icon: "spark", title: "Pawket pays the fee", body: "A sponsor covers the network fee and the rent, and signs nothing but Pawket's own instructions. A wallet with no SOL can play." },
+  { icon: "bolt", title: "No prompt for every care", body: "Link this device to a Pawket Wallet once, and care signs here inside the limits you set — each fee paid from a balance only you can fill or empty." },
   { icon: "doc", title: "A Passport anyone can open", body: "Every care, round and outfit is a signed record: the streak, the counts and the last eight cares, public at the pet's address." },
   { icon: "image", title: "A card in your wallet", body: "A keepsake that points at the pet, frozen for good: it cannot be sold or sent, because the pet is not for sale." },
 ];
@@ -45,6 +46,7 @@ const ASSETS = [
   ["Clothes", "Expression: eighteen looks, five of them earned by caring", "No", "No — the wardrobe is free"],
   ["A guild", "A crest and a place among other pets, kept on Solana", "No — joining is optional", "No — joining and leaving are free"],
   ["Guild token", "None exists. A guild is its pets, not a coin", "No", "Not in this version"],
+  ["A Pawket Wallet", "A balance for the fees of a device you link, so care asks nothing each time", "No — it is optional", "No — it holds your SOL and gives it back"],
   ["SOL", "Network fees on devnet, which Pawket covers while it can", "No", "Yes, elsewhere"],
 ];
 

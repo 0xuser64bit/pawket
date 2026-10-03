@@ -95,6 +95,8 @@ test("adopting a pet needs no wallet and makes Home real", async ({ page }) => {
 
   await page.getByRole("button", { name: "Feed" }).click();
   await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
+  // The first meal is a sticker, said as it is earned.
+  await expect(page.getByText(/New sticker: First meal\./)).toBeVisible();
   await expect(page.getByRole("img", { name: "Fullness 95 / 100" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
   await expect(page.getByRole("listitem").filter({ hasText: "A meal" })).toContainText("done");

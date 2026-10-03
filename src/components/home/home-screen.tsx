@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Address } from "@solana/kit";
 import {
   Banner,
@@ -28,7 +28,8 @@ import type { RoomView } from "@/components/room3d/room-3d";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { getPublicEnv } from "@/config/env";
-import { findWearable } from "@/lib/closet/catalog";
+import { WEARABLES, findWearable } from "@/lib/closet/catalog";
+import { newlyEarned, type BadgeContext } from "@/lib/game/badges";
 import { useCompanion } from "@/lib/companion/use-companion";
 import {
   CARE_ACTION_LABEL,
@@ -59,7 +60,9 @@ import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
 import { CARE_MOMENT, type RoomCue } from "@/lib/room/moments";
 import { getCareByDeviceInstruction, getCareInstruction } from "@/lib/solana/instructions";
+import { WALLET_LIMITS } from "@/lib/solana/program";
 import { usePawketSend } from "@/lib/solana/use-send";
+import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
 /**
  * The room you actually live in, and the whole width of the screen: you and
@@ -216,7 +219,7 @@ export function HomeScreen() {
     const level = levelUp(current.xp, result.pet.xp);
     setNotice({
       tone: "ok",
-      text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${level ? ` ${current.name} is level ${level} now.` : ""}`,
+      text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${level ? ` ${current.name} is level ${level} now.` : ""}${earnedLine(current, result.pet)}`,
     });
     // Only now, with the care saved, does the room show it — and a new
     // level is the one thing worth a cheer.
@@ -243,7 +246,12 @@ export function HomeScreen() {
     // Only now, with the care confirmed, does the room show it.
     if (result.outcome === "confirmed") {
       const level = check.ok ? levelUp(pet.xp, check.pet.xp) : null;
-      setNotice({ tone: "ok", text: `${CARE_DONE_LABEL[action]}. Kept on Solana.${level ? ` ${pet.name} is level ${level} now.` : ""}` });
+      setNotice({
+        tone: "ok",
+        text: `${CARE_DONE_LABEL[action]}. Kept on Solana.${level ? ` ${pet.name} is level ${level} now.` : ""}${
+          check.ok ? earnedLine(pet, check.pet, { onChain: true, guild: Boolean(active.member) }) : ""
+        }`,
+      });
       ask(level ? "cheer" : CARE_MOMENT[action]);
     }
   }
@@ -310,7 +318,7 @@ export function HomeScreen() {
         </p>
         <RoomLine sentence={status.sentence} mode={mode} state={roomState} onMode={setMode} />
         {onChain && sender.tx.stage !== "idle" ? <TxReceipt tx={sender.tx} cluster={cluster} /> : null}
-        {onChain ? <NoPrompt linked={sender.noPrompt} /> : null}
+        {onChain ? <NoPrompt state={sender.pawketWallet} now={now} /> : null}
 
         <div id="pk-deck-panel" className="pk-deck__panel">
           {panel === "say" ? (
@@ -370,6 +378,17 @@ export function HomeScreen() {
   );
 }
 
+/** A sticker a care just earned, said after it — and the piece of the wardrobe it opens, if any. */
+function earnedLine(before: GuestPet, after: GuestPet, context: BadgeContext = {}): string {
+  const earned = newlyEarned(before, after, context);
+  if (earned.length === 0) return "";
+  const pieces = WEARABLES.filter((item) => earned.some((badge) => badge.id === item.earnedBy));
+  const opens = pieces.length
+    ? ` The ${pieces.map((piece) => piece.name.toLowerCase()).join(" and the ")} ${pieces.length === 1 ? "is" : "are"} theirs to wear now.`
+    : "";
+  return ` New sticker: ${earned.map((badge) => badge.name).join(", ")}.${opens}`;
+}
+
 /** The new level when XP crosses one, else null. */
 function levelUp(before: number, after: number): number | null {
   const level = calculateLevelFromXp(after);
@@ -407,21 +426,51 @@ function RoomLine({
   );
 }
 
-/** For a pet on Solana: whether a care asks the wallet each time, and the way to stop that. */
-function NoPrompt({ linked }: { linked: boolean }) {
+/** Twenty fees: below this a linked device's balance is said to be running low. */
+const LOW_BALANCE = 20n * WALLET_LIMITS.feePerSignature;
+
+/**
+ * For a pet on Solana: whether a care will ask the wallet, and why — no
+ * Pawket Wallet, this device not linked, its link run out, today's limit
+ * used — with the way to change it.
+ */
+function NoPrompt({ state, now }: { state: PawketWalletState | null; now: Date }) {
+  const wallet = state?.wallet ?? null;
+  const here = Boolean(wallet && state?.device && wallet.device === state.device.address);
+  let line: ReactNode;
+  if (state?.canAct) {
+    line = (
+      <>
+        Cares here are signed by this device, with no prompt.{" "}
+        {state.balance < LOW_BALANCE ? <Link href="/wallet">Your balance is running low</Link> : <Link href="/wallet">Your Pawket Wallet</Link>}
+      </>
+    );
+  } else if (here && wallet!.deviceExpiresAt * 1000 <= now.getTime()) {
+    line = (
+      <>
+        This device&apos;s link ran out, so each care asks your wallet again. <Link href="/wallet">Link it again</Link>
+      </>
+    );
+  } else if (here && state?.linked && wallet!.actionsToday >= wallet!.dailyActions) {
+    line = <>This device has done all it may today; your wallet signs each care until midnight UTC.</>;
+  } else if (here && state?.linked) {
+    line = (
+      <>
+        This device is low on its fee float, so your wallet signs for now. <Link href="/wallet">Link it again to top it up</Link>
+      </>
+    );
+  } else {
+    line = (
+      <>
+        Each care asks your wallet to approve it.{" "}
+        <Link href="/wallet">{wallet ? "Link this device to your Pawket Wallet" : "Link this device to a Pawket Wallet"}</Link> and it will not.
+      </>
+    );
+  }
   return (
     <p className="caption pk-faint pk-home__noprompt">
       <Icon name="bolt" size={14} />
-      {linked ? (
-        <span>
-          Cares here are signed by this device, with no prompt. <Link href="/wallet">Your Pawket Wallet</Link>
-        </span>
-      ) : (
-        <span>
-          Each care asks your wallet to approve it. <Link href="/wallet">Link this device to a Pawket Wallet</Link> and it
-          will not.
-        </span>
-      )}
+      <span>{line}</span>
     </p>
   );
 }

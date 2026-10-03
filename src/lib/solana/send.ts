@@ -6,6 +6,7 @@ import {
   getBase64Encoder,
   getBase64EncodedWireTransaction,
   getSignatureFromTransaction,
+  getSignersFromTransactionMessage,
   getTransactionDecoder,
   isTransactionModifyingSigner,
   isTransactionPartialSigner,
@@ -14,10 +15,12 @@ import {
   setTransactionMessageFeePayer,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
+  signTransactionMessageWithSigners,
   type Address,
   type GetLatestBlockhashApi,
   type GetSignatureStatusesApi,
   type Instruction,
+  type KeyPairSigner,
   type ReadonlyUint8Array,
   type Rpc,
   type SendTransactionApi,
@@ -34,8 +37,13 @@ import { waitForConfirmation, type ConfirmationOutcome, type TransactionStage } 
  * signs as the owner — a transaction that already carries a signature is
  * one a wallet signs as it is, rather than rewriting it — and the message
  * is checked to be the one that was built before anything is sent. Without
- * a sponsor, the owner pays and signs alone. Either way the transaction goes
- * to the RPC with preflight on, so one that would fail lands nothing.
+ * a sponsor, the owner pays and signs alone. Any other key the instructions
+ * name as a signer — this device's, when it is being linked — signs here,
+ * last, once the wallet has. Either way the transaction goes to the RPC with
+ * preflight on, so one that would fail lands nothing.
+ *
+ * An action a linked device takes (`sendAsDevice`) is the third shape: the
+ * device pays and signs alone, on this device, with no prompt.
  */
 
 export type SendRpc = Rpc<GetLatestBlockhashApi & SendTransactionApi & GetSignatureStatusesApi>;
@@ -131,6 +139,12 @@ export async function sendPawket({
     if (!same(signed.messageBytes, built.messageBytes)) {
       throw new Error("Your wallet changed the transaction, so Pawket's signature no longer fits it. Nothing was sent.");
     }
+    // Any other key named as a signer (a device being linked) signs last, as it is.
+    for (const other of getSignersFromTransactionMessage(message)) {
+      if (other.address === owner.address || other.address === sponsor || !isTransactionPartialSigner(other)) continue;
+      const [signatures] = await other.signTransactions([signed as Parameters<typeof other.signTransactions>[0][number]]);
+      signed = { ...signed, signatures: { ...signed.signatures, ...signatures } };
+    }
   } else {
     const message = pipe(
       base,
@@ -141,6 +155,36 @@ export async function sendPawket({
   }
 
   return land(rpc, signed, onStage, sponsor !== null);
+}
+
+/**
+ * An action a linked device takes for its owner — a care, a round, clothes.
+ * The device is the fee payer and the only signer, and it signs here, with
+ * no prompt; the program holds it to its owner's pets, its end date and its
+ * daily limit, and refills its fee from the owner's Pawket Wallet. Preflight
+ * on, like every send: one the program would refuse lands nothing and costs
+ * nothing.
+ */
+export async function sendAsDevice({
+  rpc,
+  device,
+  instructions,
+  onStage,
+}: {
+  rpc: SendRpc;
+  device: KeyPairSigner;
+  instructions: Instruction[];
+  onStage?: (stage: TransactionStage) => void;
+}): Promise<SendResult> {
+  onStage?.("signing");
+  const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
+  const message = pipe(
+    createTransactionMessage({ version: "legacy" }),
+    (m) => setTransactionMessageFeePayerSigner(device, m),
+    (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
+    (m) => appendTransactionMessageInstructions(instructions, m),
+  );
+  return land(rpc, await signTransactionMessageWithSigners(message), onStage, false);
 }
 
 /**

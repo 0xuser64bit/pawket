@@ -10,7 +10,7 @@ use litesvm::{
     types::{FailedTransactionMetadata, TransactionMetadata},
     LiteSVM,
 };
-use pawket::{CareActionType, Guild, GuildMember, PawketError, Pet, PetPassport, PetPersonality, PetSpecies};
+use pawket::{CareActionType, Guild, GuildMember, PawketError, PawketWallet, Pet, PetPassport, PetPersonality, PetSpecies};
 use solana_keypair::Keypair;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
@@ -39,6 +39,10 @@ pub fn guild_pda(slug: &str) -> Pubkey {
 
 pub fn member_pda(pet: &Pubkey) -> Pubkey {
     Pubkey::find_program_address(&[b"member", pet.as_ref()], &pawket::ID).0
+}
+
+pub fn wallet_pda(owner: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[b"wallet", owner.as_ref()], &pawket::ID).0
 }
 
 pub struct Env {
@@ -104,6 +108,16 @@ impl Env {
 
     pub fn member(&self, pet: &Pubkey) -> GuildMember {
         self.account(&member_pda(pet))
+    }
+
+    pub fn wallet(&self, owner: &Pubkey) -> PawketWallet {
+        self.account(&wallet_pda(owner))
+    }
+
+    /// A Pawket Wallet's balance: its lamports above rent.
+    pub fn balance(&self, owner: &Pubkey) -> u64 {
+        let account = self.svm.get_account(&wallet_pda(owner)).unwrap();
+        account.lamports - self.svm.minimum_balance_for_rent_exemption(account.data.len())
     }
 
     pub fn exists(&self, address: &Pubkey) -> bool {
@@ -269,6 +283,130 @@ pub fn leave_ix(owner: &Pubkey, pet: &Pubkey, guild: &Pubkey, payer: &Pubkey) ->
         }
         .to_account_metas(None),
         data: pawket::instruction::LeaveGuild {}.data(),
+    }
+}
+
+pub fn open_wallet_ix(owner: &Pubkey, payer: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::OpenWallet {
+            owner: *owner,
+            payer: *payer,
+            wallet: wallet_pda(owner),
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::OpenWallet {}.data(),
+    }
+}
+
+pub fn deposit_ix(owner: &Pubkey, amount: u64) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::Deposit {
+            owner: *owner,
+            wallet: wallet_pda(owner),
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::Deposit { amount }.data(),
+    }
+}
+
+pub fn withdraw_ix(owner: &Pubkey, amount: u64) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::Withdraw {
+            owner: *owner,
+            wallet: wallet_pda(owner),
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::Withdraw { amount }.data(),
+    }
+}
+
+pub fn link_ix(owner: &Pubkey, device: &Pubkey, expires_at: i64, daily_actions: u16) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::LinkDevice {
+            owner: *owner,
+            wallet: wallet_pda(owner),
+            device: *device,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::LinkDevice { expires_at, daily_actions }.data(),
+    }
+}
+
+/// `authority` (the owner or the device) unlinks `device` from `owner`'s wallet. When the device
+/// signs, pass `device_signs` so its meta is a signer and its float comes back.
+pub fn unlink_ix(authority: &Pubkey, owner: &Pubkey, device: &Pubkey, device_signs: bool) -> Instruction {
+    let mut accounts = pawket::accounts::UnlinkDevice {
+        authority: *authority,
+        wallet: wallet_pda(owner),
+        device: *device,
+        system_program: system_program::ID,
+    }
+    .to_account_metas(None);
+    if device_signs {
+        accounts[2].is_signer = true;
+    }
+    Instruction {
+        program_id: pawket::ID,
+        accounts,
+        data: pawket::instruction::UnlinkDevice {}.data(),
+    }
+}
+
+pub fn close_wallet_ix(owner: &Pubkey, rent_payer: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::CloseWallet {
+            owner: *owner,
+            wallet: wallet_pda(owner),
+            rent_payer: *rent_payer,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::CloseWallet {}.data(),
+    }
+}
+
+fn device_care_accounts(device: &Pubkey, owner: &Pubkey, pet: &Pubkey) -> Vec<anchor_lang::prelude::AccountMeta> {
+    pawket::accounts::CareByDevice {
+        device: *device,
+        wallet: wallet_pda(owner),
+        pet: *pet,
+        passport: passport_pda(pet),
+    }
+    .to_account_metas(None)
+}
+
+pub fn care_by_device_ix(device: &Pubkey, owner: &Pubkey, pet: &Pubkey, action: CareActionType) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: device_care_accounts(device, owner, pet),
+        data: pawket::instruction::CareByDevice { action }.data(),
+    }
+}
+
+pub fn round_by_device_ix(device: &Pubkey, owner: &Pubkey, pet: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: device_care_accounts(device, owner, pet),
+        data: pawket::instruction::FinishRoundByDevice {}.data(),
+    }
+}
+
+pub fn dress_by_device_ix(device: &Pubkey, owner: &Pubkey, pet: &Pubkey, wearing: u8) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::DressByDevice {
+            device: *device,
+            wallet: wallet_pda(owner),
+            pet: *pet,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::DressByDevice { wearing }.data(),
     }
 }
 

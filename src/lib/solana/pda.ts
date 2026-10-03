@@ -88,3 +88,17 @@ export async function deriveMemberPda(
   });
   return { address: addr, bump };
 }
+
+/** A player's Pawket Wallet: seeded by its owner, so a wallet keeps one. */
+export async function deriveWalletPda(
+  owner: string | Address,
+  programId: string | Address = PAWKET_PROGRAM_ID,
+): Promise<DerivedPda> {
+  const ownerAddress = parseAddress(owner, "owner");
+  const programAddress = parseAddress(programId, "program ID");
+  const [addr, bump] = await getProgramDerivedAddress({
+    programAddress,
+    seeds: [utf8Encoder.encode(PAWKET_SEEDS.wallet), getAddressEncoder().encode(ownerAddress)],
+  });
+  return { address: addr, bump };
+}

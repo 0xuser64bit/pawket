@@ -21,11 +21,18 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import {
   getAdoptPetInstruction,
+  getCareByDeviceInstruction,
   getCareInstruction,
+  getCloseWalletInstruction,
+  getDepositInstruction,
   getDressInstruction,
   getFoundGuildInstruction,
   getJoinGuildInstruction,
   getLeaveGuildInstruction,
+  getLinkDeviceInstruction,
+  getOpenWalletInstruction,
+  getUnlinkDeviceInstruction,
+  getWithdrawInstruction,
 } from "./instructions";
 import { checkSponsorable, cosign, createLimiter, SponsorRefusal } from "./sponsor";
 
@@ -37,6 +44,8 @@ const PET = "J3nMY26sQZiBod2RCwsUFrh8E5PW56Mhr4ksm8RFQJAp";
 const PASSPORT = "FEJ7fHr3JBuYMDZ67UsWZfaGVo2S4dMizG6T3xp1BQMm";
 const GUILD = "8Vp2LsXSrgjxbNsmWg5pTGsEk3ag8x1wGkzvWbJ4b3Zt";
 const MEMBER = "4fQfsGgDvo3AgpfTDwL3eXLc3WNeTVpZ1b8fwW7cHRnD";
+const WALLET = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
+const DEVICE = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
 
 let sponsor: KeyPairSigner;
 let owner: KeyPairSigner;
@@ -153,6 +162,45 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(asMember, sponsor.address)).toMatchObject({ ok: false });
     const asLeaver = await built((payer) => [getLeaveGuildInstruction({ owner: payer, pet: PET, member: MEMBER, guild: GUILD, payer: payer.address })]);
     expect(checkSponsorable(asLeaver, sponsor.address)).toMatchObject({ ok: false });
+  });
+
+  it("pays the fee for looking after a Pawket Wallet, and takes no part in it", async () => {
+    const tending = await built(() => [
+      getOpenWalletInstruction({ owner, wallet: WALLET }),
+      getDepositInstruction({ owner, wallet: WALLET, amount: 50_000_000n }),
+      getLinkDeviceInstruction({ owner, wallet: WALLET, device: DEVICE, expiresAt: 1_790_848_800, dailyActions: 200 }),
+    ]);
+    expect(checkSponsorable(tending, sponsor.address)).toEqual({ ok: true, kinds: ["open-wallet", "deposit", "link"] });
+    const leaving = await built(() => [
+      getWithdrawInstruction({ owner, wallet: WALLET, amount: 1n }),
+      getUnlinkDeviceInstruction({ authority: owner, wallet: WALLET, device: DEVICE, deviceSigns: false }),
+      getCloseWalletInstruction({ owner, wallet: WALLET, rentPayer: owner.address }),
+    ]);
+    expect(checkSponsorable(leaving, sponsor.address)).toEqual({ ok: true, kinds: ["withdraw", "unlink", "close-wallet"] });
+  });
+
+  it("never pays a wallet's rent, never takes its money, and never stands in for its device", async () => {
+    // The owner pays a Pawket Wallet's rent; the sponsor as payer is refused.
+    const rent = await built((payer) => [getOpenWalletInstruction({ owner, payer, wallet: WALLET })]);
+    expect(checkSponsorable(rent, sponsor.address)).toMatchObject({ ok: false });
+    // A withdrawal to the sponsor, or a close that hands it the rent, is a part it does not take.
+    const asOwner = await built((payer) => [getWithdrawInstruction({ owner: payer, wallet: WALLET, amount: 1n })]);
+    expect(checkSponsorable(asOwner, sponsor.address)).toMatchObject({ ok: false });
+    const asRentPayer = await built((payer) => [getCloseWalletInstruction({ owner, wallet: WALLET, rentPayer: payer.address })]);
+    expect(checkSponsorable(asRentPayer, sponsor.address)).toMatchObject({ ok: false });
+    const asDevice = await built((payer) => [getLinkDeviceInstruction({ owner, wallet: WALLET, device: payer, expiresAt: 1, dailyActions: 1 })]);
+    expect(checkSponsorable(asDevice, sponsor.address)).toMatchObject({ ok: false });
+  });
+
+  it("never signs for an action a linked device takes: a device pays its own way", async () => {
+    const device = createNoopSigner(DEVICE as KeyPairSigner["address"]);
+    const byDevice = await built(() => [
+      getCareByDeviceInstruction({ device, wallet: WALLET, pet: PET, passport: PASSPORT, action: CareActionType.Feed }),
+    ]);
+    expect(checkSponsorable(byDevice, sponsor.address)).toEqual({
+      ok: false,
+      reason: "A linked device pays its own fees, from your Pawket Wallet.",
+    });
   });
 
   it("refuses an instruction it does not know, even on the Pawket program", async () => {

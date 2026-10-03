@@ -22,6 +22,13 @@ import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
  * instruction is refused too — a priority fee is the one way a caller could
  * spend the float faster.
  *
+ * It pays the fee for looking after a Pawket Wallet — opening it (the owner
+ * pays its rent), depositing, withdrawing, linking or unlinking a device,
+ * closing it — and appears in none of those instructions. It never signs for
+ * an action a linked device takes: a device pays its own fees, and the
+ * player's Pawket Wallet refills it, so a key that acts with no prompt
+ * never spends Pawket's float.
+ *
  * The sponsor signs first and the wallet second. A wallet rewrites a
  * transaction that carries no signature yet (Phantom adds priority fees and
  * guard instructions), and the sponsor would refuse the rewrite; one that
@@ -29,9 +36,23 @@ import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
  * message came back unchanged before sending it.
  */
 
-export type SponsoredKind = "adopt" | "care" | "round" | "dress" | "found" | "join" | "leave";
+export type SponsoredKind =
+  | "adopt"
+  | "care"
+  | "round"
+  | "dress"
+  | "found"
+  | "join"
+  | "leave"
+  | "open-wallet"
+  | "deposit"
+  | "withdraw"
+  | "link"
+  | "unlink"
+  | "close-wallet";
 
-const KIND_OF: Record<keyof typeof PAWKET_DISCRIMINATORS, SponsoredKind> = {
+/** Each instruction's kind; `null` is one the sponsor never signs for (a device's own action). */
+const KIND_OF: Record<keyof typeof PAWKET_DISCRIMINATORS, SponsoredKind | null> = {
   adoptPet: "adopt",
   performCareAction: "care",
   finishRound: "round",
@@ -39,6 +60,15 @@ const KIND_OF: Record<keyof typeof PAWKET_DISCRIMINATORS, SponsoredKind> = {
   foundGuild: "found",
   joinGuild: "join",
   leaveGuild: "leave",
+  openWallet: "open-wallet",
+  deposit: "deposit",
+  withdraw: "withdraw",
+  linkDevice: "link",
+  unlinkDevice: "unlink",
+  closeWallet: "close-wallet",
+  careByDevice: null,
+  finishRoundByDevice: null,
+  dressByDevice: null,
 };
 
 /**
@@ -54,6 +84,12 @@ const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
   found: [1],
   join: [1],
   leave: [4],
+  "open-wallet": [],
+  deposit: [],
+  withdraw: [],
+  link: [],
+  unlink: [],
+  "close-wallet": [],
 };
 
 /** The kinds that cost the sponsor rent: the scarce part of its float. */
@@ -65,11 +101,12 @@ export type SponsorCheck =
   | { ok: true; kinds: SponsoredKind[] }
   | { ok: false; reason: string };
 
-function kindOf(data: ReadonlyUint8Array | undefined): SponsoredKind | null {
+/** The instruction's kind, `"device"` for an action a linked device takes, or null for none of Pawket's. */
+function kindOf(data: ReadonlyUint8Array | undefined): SponsoredKind | "device" | null {
   if (!data || data.length < 8) return null;
   for (const [name, discriminator] of Object.entries(PAWKET_DISCRIMINATORS)) {
     if (discriminator.every((byte, i) => data[i] === byte)) {
-      return KIND_OF[name as keyof typeof PAWKET_DISCRIMINATORS];
+      return KIND_OF[name as keyof typeof PAWKET_DISCRIMINATORS] ?? "device";
     }
   }
   return null;
@@ -107,6 +144,7 @@ export function checkSponsorable(
     }
     const kind = kindOf(ix.data);
     if (!kind) return refuse("That is not a Pawket instruction.");
+    if (kind === "device") return refuse("A linked device pays its own fees, from your Pawket Wallet.");
     const misplaced = (ix.accountIndices ?? []).some(
       (index, position) => index === 0 && !SPONSOR_SLOTS[kind].includes(position),
     );

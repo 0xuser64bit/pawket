@@ -3,14 +3,25 @@ import { describe, expect, it } from "vitest";
 import { WEARABLES } from "@/lib/closet/catalog";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import idl from "./idl/pawket.json";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import {
   getAdoptPetInstruction,
+  getCareByDeviceInstruction,
   getCareInstruction,
+  getCloseWalletInstruction,
+  getDepositInstruction,
+  getDressByDeviceInstruction,
   getDressInstruction,
+  getFinishRoundByDeviceInstruction,
   getFinishRoundInstruction,
   getFoundGuildInstruction,
   getJoinGuildInstruction,
   getLeaveGuildInstruction,
+  getLinkDeviceInstruction,
+  getOpenWalletInstruction,
+  getUnlinkDeviceInstruction,
+  getWithdrawInstruction,
 } from "./instructions";
 import {
   CARE_ACTION_VARIANTS,
@@ -21,6 +32,7 @@ import {
   PAWKET_PROGRAM_ID,
   PET_PERSONALITY_VARIANTS,
   PET_SPECIES_VARIANTS,
+  WALLET_LIMITS,
   WEARABLE_COUNT,
 } from "./program";
 
@@ -31,6 +43,7 @@ import {
  */
 
 const A = "11111111111111111111111111111111";
+const B = "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74";
 const camel = (snake: string) => snake.replace(/_(\w)/g, (_, c: string) => c.toUpperCase());
 
 function variants(name: string): string[] {
@@ -65,6 +78,16 @@ const BUILT: Record<string, Instruction> = {
   }),
   join_guild: getJoinGuildInstruction({ owner: A, payer: A, pet: A, guild: A, member: A }),
   leave_guild: getLeaveGuildInstruction({ owner: A, pet: A, member: A, guild: A, payer: A }),
+  open_wallet: getOpenWalletInstruction({ owner: A, payer: A, wallet: A }),
+  deposit: getDepositInstruction({ owner: A, wallet: A, amount: 50_000_000n }),
+  withdraw: getWithdrawInstruction({ owner: A, wallet: A, amount: 1n }),
+  link_device: getLinkDeviceInstruction({ owner: A, wallet: A, device: B, expiresAt: 1_790_848_800, dailyActions: 300 }),
+  // As the IDL has it; a device that signs its own unlink is a signer there too (below).
+  unlink_device: getUnlinkDeviceInstruction({ authority: A, wallet: A, device: B, deviceSigns: false }),
+  close_wallet: getCloseWalletInstruction({ owner: A, wallet: A, rentPayer: A }),
+  care_by_device: getCareByDeviceInstruction({ device: A, wallet: A, pet: A, passport: A, action: CareActionType.Rest }),
+  finish_round_by_device: getFinishRoundByDeviceInstruction({ device: A, wallet: A, pet: A, passport: A }),
+  dress_by_device: getDressByDeviceInstruction({ device: A, wallet: A, pet: A, wearing: 18 }),
 };
 
 describe("program.ts against the IDL", () => {
@@ -98,7 +121,39 @@ describe("program.ts against the IDL", () => {
     expect(PAWKET_ACCOUNTS.passport.discriminator).toEqual(byName.PetPassport);
     expect(PAWKET_ACCOUNTS.guild.discriminator).toEqual(byName.Guild);
     expect(PAWKET_ACCOUNTS.member.discriminator).toEqual(byName.GuildMember);
+    expect(PAWKET_ACCOUNTS.wallet.discriminator).toEqual(byName.PawketWallet);
     expect(Object.keys(PAWKET_ACCOUNTS)).toHaveLength(idl.accounts.length);
+  });
+
+  it("encodes the Pawket Wallet's arguments as the program reads them", () => {
+    const args = (name: string) => idl.instructions.find((ix) => ix.name === name)!.args.map((a) => [a.name, a.type]);
+    expect(args("link_device")).toEqual([
+      ["expires_at", "i64"],
+      ["daily_actions", "u16"],
+    ]);
+    expect(args("deposit")).toEqual([["amount", "u64"]]);
+    const link = Array.from(BUILT.link_device.data ?? []);
+    expect(link.slice(8, 16)).toEqual(Array.from(new Uint8Array(new BigInt64Array([1_790_848_800n]).buffer)));
+    expect(link.slice(16)).toEqual([44, 1]);
+    expect(Array.from(BUILT.deposit.data ?? []).slice(8)).toEqual([128, 240, 250, 2, 0, 0, 0, 0]);
+    expect(Array.from(BUILT.dress_by_device.data ?? []).slice(8)).toEqual([18]);
+    // The device signs a link, and an unlink it gives its float back on.
+    expect(BUILT.link_device.accounts?.[2]).toMatchObject({ address: B, role: AccountRole.WRITABLE_SIGNER });
+    expect(getUnlinkDeviceInstruction({ authority: A, wallet: A, device: B, deviceSigns: true }).accounts?.[2]).toMatchObject({
+      address: B,
+      role: AccountRole.WRITABLE_SIGNER,
+    });
+    expect(BUILT.unlink_device.accounts?.[2].role).toBe(AccountRole.WRITABLE);
+  });
+
+  it("holds the Pawket Wallet's limits to the program's", () => {
+    const source = readFileSync(path.join(process.cwd(), "programs/pawket/src/lib.rs"), "utf8");
+    const constant = (name: string) => source.match(new RegExp(`pub const ${name}: \\w+ = ([^;]+);`))?.[1].replaceAll("_", "");
+    expect(constant("MAX_DEVICE_SECONDS")).toBe("30 * SECONDSPERDAY");
+    expect(WALLET_LIMITS.maxDeviceSeconds).toBe(30 * 86_400);
+    expect(Number(constant("MAX_DAILY_ACTIONS"))).toBe(WALLET_LIMITS.maxDailyActions);
+    expect(BigInt(constant("DEVICE_FLOAT_LAMPORTS")!)).toBe(WALLET_LIMITS.deviceFloat);
+    expect(BigInt(constant("FEE_PER_SIGNATURE")!)).toBe(WALLET_LIMITS.feePerSignature);
   });
 
   it("encodes a founding as the program reads its arguments", () => {

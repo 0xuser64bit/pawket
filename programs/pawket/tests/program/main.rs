@@ -11,3 +11,4 @@ mod care;
 mod guild;
 mod lockstep;
 mod round_and_dress;
+mod wallet;

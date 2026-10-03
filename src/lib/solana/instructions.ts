@@ -1,7 +1,10 @@
 import {
   AccountRole,
   address,
+  getI64Encoder,
+  getU16Encoder,
   getU32Encoder,
+  getU64Encoder,
   getU8Encoder,
   getUtf8Encoder,
   isTransactionSigner,
@@ -20,6 +23,7 @@ import { normalizePetName, parseAddress } from "./pda";
 import {
   CARE_ACTION_VARIANTS,
   GUILD_LIMITS,
+  WALLET_LIMITS,
   PAWKET_DISCRIMINATORS,
   PAWKET_PROGRAM_ID,
   PET_PERSONALITY_VARIANTS,
@@ -30,7 +34,10 @@ import {
 const SYSTEM_PROGRAM = address("11111111111111111111111111111111");
 
 const u8 = getU8Encoder();
+const u16 = getU16Encoder();
 const u32 = getU32Encoder();
+const u64 = getU64Encoder();
+const i64 = getI64Encoder();
 const utf8 = getUtf8Encoder();
 
 /**
@@ -289,5 +296,180 @@ export function getLeaveGuildInstruction(input: LeaveGuildInstructionInput): Ins
       { address: parseAddress(input.payer, "payer"), role: AccountRole.WRITABLE },
     ],
     data: new Uint8Array(PAWKET_DISCRIMINATORS.leaveGuild),
+  };
+}
+
+/* ------------------------------------------------------ the Pawket Wallet */
+
+export interface WalletInstructionInput {
+  owner: SignerInput;
+  /** The owner's Pawket Wallet (`deriveWalletPda`). */
+  wallet: string | Address;
+  programId?: string | Address;
+}
+
+/** `open_wallet`: the owner's Pawket Wallet, its rent paid by `payer` (the owner or the sponsor). */
+export function getOpenWalletInstruction(input: WalletInstructionInput & { payer?: SignerInput }): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      signerMeta(input.payer ?? input.owner, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: new Uint8Array(PAWKET_DISCRIMINATORS.openWallet),
+  };
+}
+
+function lamports(amount: bigint): Uint8Array {
+  if (amount <= 0n || amount > 0xffff_ffff_ffff_ffffn) throw new Error("An amount is more than nothing.");
+  return Uint8Array.from(u64.encode(amount));
+}
+
+/** `deposit`: `amount` lamports from the owner into their Pawket Wallet. */
+export function getDepositInstruction(input: WalletInstructionInput & { amount: bigint }): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.WRITABLE_SIGNER, "owner"),
+      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: concatBytes(PAWKET_DISCRIMINATORS.deposit, lamports(input.amount)),
+  };
+}
+
+/** `withdraw`: `amount` lamports from the Pawket Wallet back to its owner, the only place they can go. */
+export function getWithdrawInstruction(input: WalletInstructionInput & { amount: bigint }): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.WRITABLE_SIGNER, "owner"),
+      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+    ],
+    data: concatBytes(PAWKET_DISCRIMINATORS.withdraw, lamports(input.amount)),
+  };
+}
+
+/**
+ * `link_device`: the device acts for the owner until `expiresAt` (unix
+ * seconds), at most `dailyActions` times a UTC day. Both sign: the owner,
+ * and the device, to show it is really there.
+ */
+export function getLinkDeviceInstruction(
+  input: WalletInstructionInput & { device: SignerInput; expiresAt: number; dailyActions: number },
+): Instruction {
+  if (!Number.isInteger(input.dailyActions) || input.dailyActions < 1 || input.dailyActions > WALLET_LIMITS.maxDailyActions) {
+    throw new Error(`A device takes 1 to ${WALLET_LIMITS.maxDailyActions} actions a day.`);
+  }
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+      signerMeta(input.device, AccountRole.WRITABLE_SIGNER, "device"),
+    ],
+    data: concatBytes(
+      PAWKET_DISCRIMINATORS.linkDevice,
+      i64.encode(BigInt(Math.floor(input.expiresAt))),
+      u16.encode(input.dailyActions),
+    ),
+  };
+}
+
+/**
+ * `unlink_device`: `authority` — the owner, or the device itself — ends the
+ * link. When the device signs (`deviceSigns`), what it holds comes back.
+ */
+export function getUnlinkDeviceInstruction(input: {
+  authority: SignerInput;
+  wallet: string | Address;
+  device: SignerInput;
+  deviceSigns: boolean;
+  programId?: string | Address;
+}): Instruction {
+  const sameKey =
+    (typeof input.authority === "object" ? input.authority.address : input.authority) ===
+    (typeof input.device === "object" ? input.device.address : input.device);
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.authority, AccountRole.READONLY_SIGNER, "authority"),
+      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+      input.deviceSigns || sameKey
+        ? signerMeta(input.device, AccountRole.WRITABLE_SIGNER, "device")
+        : { address: parseAddress(typeof input.device === "object" ? input.device.address : input.device, "device"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: new Uint8Array(PAWKET_DISCRIMINATORS.unlinkDevice),
+  };
+}
+
+/** `close_wallet`: the balance to the owner, the rent to `rentPayer`, which paid it. */
+export function getCloseWalletInstruction(input: WalletInstructionInput & { rentPayer: string | Address }): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.WRITABLE_SIGNER, "owner"),
+      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.rentPayer, "rent payer"), role: AccountRole.WRITABLE },
+    ],
+    data: new Uint8Array(PAWKET_DISCRIMINATORS.closeWallet),
+  };
+}
+
+export interface DeviceInstructionInput {
+  /** The linked device: it signs and pays its own fee. */
+  device: SignerInput;
+  wallet: string | Address;
+  pet: string | Address;
+  programId?: string | Address;
+}
+
+function deviceCareAccounts(input: DeviceInstructionInput & { passport: string | Address }) {
+  return [
+    signerMeta(input.device, AccountRole.WRITABLE_SIGNER, "device"),
+    { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+    { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
+    { address: parseAddress(input.passport, "passport"), role: AccountRole.WRITABLE },
+  ];
+}
+
+/** `care_by_device`: a care the owner's linked device signs. */
+export function getCareByDeviceInstruction(
+  input: DeviceInstructionInput & { passport: string | Address; action: CareActionType },
+): Instruction {
+  const action = CARE_ACTION_VARIANTS[input.action];
+  if (action === undefined) throw new Error(`Unknown care action: ${input.action}`);
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: deviceCareAccounts(input),
+    data: concatBytes(PAWKET_DISCRIMINATORS.careByDevice, encodeVariant(action, "care action")),
+  };
+}
+
+/** `finish_round_by_device`: a finished round the owner's linked device signs. */
+export function getFinishRoundByDeviceInstruction(input: DeviceInstructionInput & { passport: string | Address }): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: deviceCareAccounts(input),
+    data: new Uint8Array(PAWKET_DISCRIMINATORS.finishRoundByDevice),
+  };
+}
+
+/** `dress_by_device`: dressing the owner's linked device signs. */
+export function getDressByDeviceInstruction(input: DeviceInstructionInput & { wearing: number }): Instruction {
+  if (!Number.isInteger(input.wearing) || input.wearing < 0 || input.wearing > WEARABLE_COUNT) {
+    throw new Error(`Unknown wearable: ${input.wearing}`);
+  }
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.device, AccountRole.WRITABLE_SIGNER, "device"),
+      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
+    ],
+    data: concatBytes(PAWKET_DISCRIMINATORS.dressByDevice, u8.encode(input.wearing)),
   };
 }

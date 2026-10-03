@@ -11,6 +11,7 @@ import {
   getStructDecoder,
   getU16Decoder,
   getU32Decoder,
+  getU64Decoder,
   getU8Decoder,
   getUtf8Decoder,
   type Address,
@@ -23,7 +24,7 @@ import { WEARABLES } from "@/lib/closet/catalog";
 import { XP_PER_CARE_ACTION } from "@/lib/game/constants";
 import { CareActionType, PetPersonality, PetSpecies, type PetStats } from "@/lib/game/enums";
 import type { GuestPet } from "@/lib/guest/pet";
-import { deriveGuildPda, deriveMemberPda, derivePassportPda, parseAddress } from "./pda";
+import { deriveGuildPda, deriveMemberPda, derivePassportPda, deriveWalletPda, parseAddress } from "./pda";
 import {
   CARE_ACTION_VARIANTS,
   PAWKET_ACCOUNTS,
@@ -97,6 +98,27 @@ export interface ChainMember {
   /** Who paid this account's rent, and gets it back when the pet leaves. */
   payer: Address;
   joinedAt: number;
+}
+
+/** A player's Pawket Wallet, as read from chain. Lamports are bigint; times are Unix seconds. */
+export interface ChainWallet {
+  address: Address;
+  owner: Address;
+  /** The linked device, or null when none is. */
+  device: Address | null;
+  deviceExpiresAt: number;
+  dailyActions: number;
+  /** Actions the device has taken today (UTC), already reset when the day has turned. */
+  actionsToday: number;
+  actions: number;
+  deposited: bigint;
+  withdrawn: bigint;
+  /** Moved onto a device for its fees, less what came back. */
+  spent: bigint;
+  rentPayer: Address;
+  createdAt: number;
+  /** All the account holds; the balance is this less its rent, which the caller knows. */
+  lamports: bigint;
 }
 
 export interface PetOnChain {
@@ -175,6 +197,61 @@ const memberDecoder = getStructDecoder([
   ["joinedAt", getI64Decoder()],
   ["bump", getU8Decoder()],
 ]);
+
+const walletDecoder = getStructDecoder([
+  ["discriminator", discriminator],
+  ["owner", getAddressDecoder()],
+  ["device", getAddressDecoder()],
+  ["deviceExpiresAt", getI64Decoder()],
+  ["dailyActions", getU16Decoder()],
+  ["day", getU32Decoder()],
+  ["actionsToday", getU16Decoder()],
+  ["actions", getU32Decoder()],
+  ["deposited", getU64Decoder()],
+  ["withdrawn", getU64Decoder()],
+  ["spent", getU64Decoder()],
+  ["rentPayer", getAddressDecoder()],
+  ["createdAt", getI64Decoder()],
+  ["bump", getU8Decoder()],
+]);
+
+/** The default key the program leaves where no device is linked. */
+const NO_DEVICE = "11111111111111111111111111111111";
+
+/**
+ * Decode a `PawketWallet` account holding `lamports`. Throws on bytes that
+ * are not one. `now` (seconds) decides whether today's count still stands.
+ */
+export function decodeWallet(address: Address, bytes: Uint8Array, lamports: bigint, now = Date.now() / 1000): ChainWallet {
+  if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.wallet.discriminator)) {
+    throw new Error(`${address} is not a Pawket Wallet`);
+  }
+  const raw = walletDecoder.decode(bytes);
+  const today = Math.floor(now / 86_400);
+  return {
+    address,
+    owner: raw.owner,
+    device: raw.device === NO_DEVICE ? null : raw.device,
+    deviceExpiresAt: Number(raw.deviceExpiresAt),
+    dailyActions: raw.dailyActions,
+    actionsToday: raw.day === today ? raw.actionsToday : 0,
+    actions: raw.actions,
+    deposited: raw.deposited,
+    withdrawn: raw.withdrawn,
+    spent: raw.spent,
+    rentPayer: raw.rentPayer,
+    createdAt: Number(raw.createdAt),
+    lamports,
+  };
+}
+
+/** The Pawket Wallet `owner` keeps, or null when they have not opened one. */
+export async function fetchWallet(rpc: Rpc<GetMultipleAccountsApi>, owner: string | Address): Promise<ChainWallet | null> {
+  const address = (await deriveWalletPda(owner)).address;
+  const [account] = await fetchEncodedAccounts(rpc, [address]);
+  if (!account.exists || account.programAddress !== PAWKET_PROGRAM_ID) return null;
+  return decodeWallet(address, account.data, account.lamports);
+}
 
 /**
  * A name as it is shown. Names are chosen by strangers and shown to everyone

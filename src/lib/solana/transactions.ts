@@ -82,11 +82,11 @@ export function isInsufficientFunds(error: unknown): boolean {
 }
 
 const MIN_CODE = 6000;
-const MAX_CODE = 6007;
+const MAX_CODE = 6015;
 const isPawketCode = (code: unknown): code is number =>
   typeof code === "number" && Number.isInteger(code) && code >= MIN_CODE && code <= MAX_CODE;
 
-/** Map a program error code (6000–6007) to one sentence that says what did not change. */
+/** Map a program error code (6000–6015) to one sentence that says what did not change. */
 export function pawketErrorMessage(code: number): string {
   switch (code) {
     case 6000:
@@ -105,6 +105,22 @@ export function pawketErrorMessage(code: number): string {
       return "A motto is at most 80 characters. No guild was founded.";
     case 6007:
       return "There is no crest like that. No guild was founded.";
+    case 6008:
+      return "An amount has to be more than nothing. Nothing moved.";
+    case 6009:
+      return "Your Pawket Wallet does not hold that much. Nothing moved.";
+    case 6010:
+      return "A device is linked for up to 30 days and 500 actions a day. Nothing changed.";
+    case 6011:
+      return "This device is not the one linked to your Pawket Wallet. Nothing changed.";
+    case 6012:
+      return "This device's link has run out. Link it again to keep going. Nothing changed.";
+    case 6013:
+      return "This device has done all it may today. Nothing changed; it can again after midnight UTC.";
+    case 6014:
+      return "No device is linked to your Pawket Wallet. Nothing changed.";
+    case 6015:
+      return "Unlink the device before closing your Pawket Wallet. Nothing moved.";
     default:
       return "The program refused it. Nothing changed.";
   }

@@ -111,6 +111,195 @@
       ]
     },
     {
+      "name": "care_by_device",
+      "docs": [
+        "A care, signed by the owner's linked device: the same rules and the same record as one the",
+        "owner signs."
+      ],
+      "discriminator": [
+        254,
+        225,
+        207,
+        10,
+        39,
+        224,
+        20,
+        95
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pet",
+          "writable": true,
+          "relations": [
+            "passport"
+          ]
+        },
+        {
+          "name": "passport",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "action",
+          "type": {
+            "defined": {
+              "name": "CareActionType"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "close_wallet",
+      "docs": [
+        "The Pawket Wallet closes: its balance goes to its owner, its rent to whoever paid it. A",
+        "device is unlinked first, so nothing is left behind on one."
+      ],
+      "discriminator": [
+        35,
+        212,
+        234,
+        224,
+        244,
+        208,
+        31,
+        204
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rent_payer",
+          "writable": true,
+          "relations": [
+            "wallet"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "deposit",
+      "docs": [
+        "`amount` lamports from the owner's own wallet into their Pawket Wallet."
+      ],
+      "discriminator": [
+        242,
+        35,
+        198,
+        137,
+        82,
+        225,
+        242,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "dress",
       "docs": [
         "Put something on, or take it off with 0. Looks only: nothing else on the pet changes."
@@ -132,6 +321,66 @@
           "relations": [
             "pet"
           ]
+        },
+        {
+          "name": "pet",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "wearing",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "dress_by_device",
+      "docs": [
+        "Dressing, signed by the owner's linked device."
+      ],
+      "discriminator": [
+        10,
+        67,
+        181,
+        210,
+        10,
+        49,
+        167,
+        98
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
         },
         {
           "name": "pet",
@@ -168,6 +417,68 @@
           "relations": [
             "pet"
           ]
+        },
+        {
+          "name": "pet",
+          "writable": true,
+          "relations": [
+            "passport"
+          ]
+        },
+        {
+          "name": "passport",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "finish_round_by_device",
+      "docs": [
+        "A finished round, signed by the owner's linked device."
+      ],
+      "discriminator": [
+        34,
+        205,
+        191,
+        224,
+        189,
+        124,
+        153,
+        227
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
         },
         {
           "name": "pet",
@@ -424,6 +735,131 @@
       "args": []
     },
     {
+      "name": "link_device",
+      "docs": [
+        "Link `device` to act for the owner until `expires_at` (30 days at most), at most",
+        "`daily_actions` times a UTC day: it may care for, play with and dress the owner's pets, and",
+        "nothing else. The device signs too, so only a key that is really there is linked, and it is",
+        "handed its fee float from the balance. One device at a time: linking one replaces the last."
+      ],
+      "discriminator": [
+        36,
+        224,
+        86,
+        186,
+        249,
+        32,
+        181,
+        136
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "device",
+          "docs": [
+            "The device's own key, which signs to show it is really there, and is handed its float."
+          ],
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "expires_at",
+          "type": "i64"
+        },
+        {
+          "name": "daily_actions",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "open_wallet",
+      "docs": [
+        "The owner's Pawket Wallet: a balance only they can fill or empty, and room for one linked",
+        "device. `payer` covers its rent, and gets it back when the wallet closes."
+      ],
+      "discriminator": [
+        201,
+        7,
+        112,
+        216,
+        203,
+        79,
+        88,
+        251
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "perform_care_action",
       "docs": [
         "Feed, play, groom or rest: decay to now, apply the locked deltas, +10 XP, then write the",
@@ -469,6 +905,121 @@
           }
         }
       ]
+    },
+    {
+      "name": "unlink_device",
+      "docs": [
+        "The device stops acting for the owner. The owner or the device itself may say so; when the",
+        "device signs, whatever it holds comes back to the balance."
+      ],
+      "discriminator": [
+        27,
+        24,
+        152,
+        248,
+        166,
+        199,
+        213,
+        128
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The owner, or the device itself."
+          ],
+          "signer": true
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "device",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "withdraw",
+      "docs": [
+        "`amount` lamports from the Pawket Wallet back to its owner — only ever to its owner, and",
+        "never into the rent that keeps the account alive."
+      ],
+      "discriminator": [
+        183,
+        18,
+        70,
+        156,
+        148,
+        109,
+        161,
+        34
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -496,6 +1047,19 @@
         246,
         114,
         56
+      ]
+    },
+    {
+      "name": "PawketWallet",
+      "discriminator": [
+        249,
+        205,
+        13,
+        235,
+        241,
+        145,
+        240,
+        173
       ]
     },
     {
@@ -537,6 +1101,32 @@
         33,
         110,
         74
+      ]
+    },
+    {
+      "name": "DeviceLinked",
+      "discriminator": [
+        111,
+        184,
+        194,
+        126,
+        94,
+        34,
+        48,
+        77
+      ]
+    },
+    {
+      "name": "DeviceUnlinked",
+      "discriminator": [
+        199,
+        218,
+        114,
+        56,
+        182,
+        205,
+        134,
+        245
       ]
     },
     {
@@ -616,6 +1206,58 @@
         234,
         93
       ]
+    },
+    {
+      "name": "WalletClosed",
+      "discriminator": [
+        163,
+        73,
+        132,
+        31,
+        180,
+        152,
+        98,
+        48
+      ]
+    },
+    {
+      "name": "WalletDeposited",
+      "discriminator": [
+        247,
+        102,
+        245,
+        161,
+        224,
+        221,
+        192,
+        189
+      ]
+    },
+    {
+      "name": "WalletOpened",
+      "discriminator": [
+        161,
+        48,
+        72,
+        223,
+        215,
+        152,
+        246,
+        137
+      ]
+    },
+    {
+      "name": "WalletWithdrew",
+      "discriminator": [
+        195,
+        37,
+        36,
+        226,
+        10,
+        4,
+        225,
+        254
+      ]
     }
   ],
   "errors": [
@@ -658,6 +1300,46 @@
       "code": 6007,
       "name": "UnknownCrest",
       "msg": "There is no crest like that."
+    },
+    {
+      "code": 6008,
+      "name": "InvalidAmount",
+      "msg": "An amount is more than nothing."
+    },
+    {
+      "code": 6009,
+      "name": "InsufficientBalance",
+      "msg": "The Pawket Wallet does not hold that much."
+    },
+    {
+      "code": 6010,
+      "name": "InvalidDeviceLink",
+      "msg": "A device is linked for up to 30 days and up to 500 actions a day, and is not the owner."
+    },
+    {
+      "code": 6011,
+      "name": "NotThisDevice",
+      "msg": "That device is not the one linked to this Pawket Wallet."
+    },
+    {
+      "code": 6012,
+      "name": "DeviceExpired",
+      "msg": "This device's link has run out. Link it again."
+    },
+    {
+      "code": 6013,
+      "name": "DailyLimitReached",
+      "msg": "This device has done all it may today."
+    },
+    {
+      "code": 6014,
+      "name": "NoDeviceLinked",
+      "msg": "No device is linked to this Pawket Wallet."
+    },
+    {
+      "code": 6015,
+      "name": "DeviceStillLinked",
+      "msg": "Unlink the device before closing the Pawket Wallet."
     }
   ],
   "types": [
@@ -733,6 +1415,50 @@
           {
             "name": "streak",
             "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeviceLinked",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "device",
+            "type": "pubkey"
+          },
+          {
+            "name": "expires_at",
+            "type": "i64"
+          },
+          {
+            "name": "daily_actions",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeviceUnlinked",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "device",
+            "type": "pubkey"
+          },
+          {
+            "name": "returned",
+            "type": "u64"
           }
         ]
       }
@@ -879,6 +1605,90 @@
           },
           {
             "name": "joined_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PawketWallet",
+      "docs": [
+        "A player's Pawket Wallet. Its lamports above rent are the balance."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "device",
+            "docs": [
+              "The key that may act for the owner, or the default key when no device is linked."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "device_expires_at",
+            "docs": [
+              "Unix seconds from which the device may no longer act."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "daily_actions",
+            "docs": [
+              "How many actions the device may take in one UTC day."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "day",
+            "docs": [
+              "The UTC day `actions_today` counts."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "actions_today",
+            "type": "u16"
+          },
+          {
+            "name": "actions",
+            "docs": [
+              "Every action a device has taken for this wallet."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "deposited",
+            "type": "u64"
+          },
+          {
+            "name": "withdrawn",
+            "type": "u64"
+          },
+          {
+            "name": "spent",
+            "docs": [
+              "Lamports moved from the balance onto a device for its fees, less what came back."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "rent_payer",
+            "docs": [
+              "Who paid the rent, and gets it back when the wallet closes."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "created_at",
             "type": "i64"
           },
           {
@@ -1154,6 +1964,70 @@
           {
             "name": "plays",
             "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WalletClosed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "returned",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WalletDeposited",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WalletOpened",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WalletWithdrew",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
           }
         ]
       }

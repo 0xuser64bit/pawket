@@ -33,7 +33,7 @@ pub const BASE_XP_PER_LEVEL: u32 = 100;
 /// Points lost per hour, in tenths: hunger 2.5, happiness 1.8, energy 1.5, hygiene 1.2.
 pub const DECAY_TENTHS_PER_HOUR: [i64; 4] = [25, 18, 15, 12];
 /// The wardrobe in `src/lib/closet/catalog.ts`, numbered from 1 in catalog order. 0 is nothing.
-pub const WEARABLE_COUNT: u8 = 6;
+pub const WEARABLE_COUNT: u8 = 18;
 /// How many cares the Passport keeps, newest overwriting oldest.
 pub const RECENT_CARES: usize = 8;
 pub const SECONDS_PER_DAY: i64 = 86_400;

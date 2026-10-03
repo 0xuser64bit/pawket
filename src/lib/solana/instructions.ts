@@ -108,7 +108,7 @@ export interface CareInstructionInput extends PetInstructionInput {
 export interface DressInstructionInput {
   owner: SignerInput;
   pet: string | Address;
-  /** 0 takes everything off; 1–6 is the wardrobe in catalog order. */
+  /** 0 takes everything off; 1–18 is the wardrobe in catalog order. */
   wearing: number;
   programId?: string | Address;
 }

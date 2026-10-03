@@ -361,8 +361,29 @@ function worn(id: string | null | undefined, form: PetForm, p: PetPaint, layer: 
   const f = FACE[form];
   const n = f.neck;
   if (layer === "back") {
-    if (id !== "rain-cape") return null;
-    return <path d={`M30 ${n - 4}c-10 12-14 26-16 46h92c-2-20-6-34-16-46z`} fill={p.glass} />;
+    if (id === "rain-cape") return <path d={`M30 ${n - 4}c-10 12-14 26-16 46h92c-2-20-6-34-16-46z`} fill={p.glass} />;
+    if (id === "bee-wings") {
+      const wing = (side: 1 | -1) => {
+        const x = (v: number) => 60 + side * (v - 60);
+        return (
+          <g key={side}>
+            <path d={`M${x(42)} ${n - 4}C${x(24)} ${n - 26} ${x(4)} ${n - 14} ${x(12)} ${n + 2}C${x(18)} ${n + 12} ${x(32)} ${n + 8} ${x(42)} ${n}z`} fill={p.cloud} />
+            <path d={`M${x(40)} ${n - 2}C${x(30)} ${n - 6} ${x(22)} ${n - 10} ${x(16)} ${n - 8}`} stroke={p.cloudShade} strokeWidth="2" fill="none" />
+          </g>
+        );
+      };
+      return <g>{[wing(-1), wing(1)]}</g>;
+    }
+    if (id === "little-backpack") {
+      return (
+        <g>
+          <rect x="74" y={n - 8} width="26" height="30" rx="8" fill={p.sun} />
+          <path d={`M78 ${n + 4}h18`} stroke={p.sunEdge} strokeWidth="2.4" />
+          <rect x="82" y={n + 8} width="10" height="7" rx="2" fill={p.sunEdge} strokeWidth="2" />
+        </g>
+      );
+    }
+    return null;
   }
   switch (id) {
     case "wool-scarf":
@@ -423,13 +444,150 @@ function worn(id: string | null | undefined, form: PetForm, p: PetPaint, layer: 
         </g>
       );
     }
+    case "bow-tie":
+      return (
+        <g>
+          <path d={`M60 ${n + 3}L46 ${n - 4}v14zM60 ${n + 3}l14-7v14z`} fill={p.pool} />
+          <rect x="56" y={n - 0.6} width="8" height="7.4" rx="2.4" fill={p.poolEdge} strokeWidth="2.2" />
+        </g>
+      );
+    case "bandana":
+      return (
+        <g>
+          <path d={`M36 ${n - 4}Q60 ${n + 5} 84 ${n - 4}L60 ${n + 20}z`} fill={p.sprout} />
+          <g fill={p.surface} stroke="none">
+            <circle cx="51" cy={n + 3} r="1.8" />
+            <circle cx="68" cy={n + 3} r="1.8" />
+            <circle cx="60" cy={n + 10} r="1.8" />
+          </g>
+        </g>
+      );
+    case "bell-collar":
+      return (
+        <g>
+          <path d={`M36 ${n - 4}c15.6 6.4 32.4 6.4 48 0l1 5.4c-16.4 7-33.6 7-50 0z`} fill={p.pool} />
+          <circle cx="60" cy={n + 9.4} r="6" fill={p.foil} strokeWidth="2.2" />
+          <path d={`M57 ${n + 11.6}h6`} strokeWidth="2" />
+        </g>
+      );
+    case "little-backpack":
+      // The straps, over the shoulders; the pack itself is drawn behind.
+      return <path d={`M43 ${n - 4}c-2 8-2 16 0 24M77 ${n - 4}c2 8 2 16 0 24`} stroke={p.sunEdge} strokeWidth="4" fill="none" />;
+    case "round-glasses": {
+      const { eyeL: l, eyeR: r, eyeY: y } = f;
+      return (
+        <g fill="none" strokeWidth="2.6">
+          <circle cx={l} cy={y} r="9.6" fill={p.shine} fillOpacity="0.22" />
+          <circle cx={r} cy={y} r="9.6" fill={p.shine} fillOpacity="0.22" />
+          <path d={`M${l + 9.6} ${y - 1}q${(r - l - 19.2) / 2} -4 ${r - l - 19.2} 0M${l - 9.6} ${y - 2}l-7-2.4M${r + 9.6} ${y - 2}l7-2.4`} />
+        </g>
+      );
+    }
+    case "heart-glasses": {
+      const { eyeL: l, eyeR: r, eyeY: y } = f;
+      const heart = (cx: number) =>
+        `M${cx} ${y + 8}C${cx - 13} ${y} ${cx - 8} ${y - 10} ${cx} ${y - 3.4}C${cx + 8} ${y - 10} ${cx + 13} ${y} ${cx} ${y + 8}z`;
+      return (
+        <g strokeWidth="2.4">
+          <path d={heart(l)} fill={p.blush} fillOpacity="0.62" />
+          <path d={heart(r)} fill={p.blush} fillOpacity="0.62" />
+          <path d={`M${l + 8} ${y - 2}q${(r - l - 16) / 2} -3.4 ${r - l - 16} 0`} fill="none" />
+        </g>
+      );
+    }
+    case "party-hat": {
+      const t = f.top;
+      return (
+        <g>
+          <path d={`M46 ${t + 6}L63 ${t - 25}l16 29c-11 4-22 4-33 0z`} fill={p.sun} />
+          <path d={`M52 ${t - 3}l18 4M57 ${t - 13}l11 2.4`} stroke={p.sunEdge} strokeWidth="2.4" />
+          <circle cx="63" cy={t - 26} r="4.4" fill={p.foil} strokeWidth="2.2" />
+        </g>
+      );
+    }
+    case "knit-beanie": {
+      const t = f.top;
+      return (
+        <g>
+          <path d={`M40 ${t + 8}C40 ${t - 13} 80 ${t - 13} 80 ${t + 8}z`} fill={p.pool} />
+          <path d={`M50 ${t - 4}v9M60 ${t - 6}v11M70 ${t - 4}v9`} stroke={p.poolEdge} strokeWidth="2" />
+          <rect x="37" y={t + 3} width="46" height="9" rx="4.5" fill={p.poolEdge} />
+          <circle cx="60" cy={t - 11} r="5.4" fill={p.surface} strokeWidth="2.2" />
+        </g>
+      );
+    }
+    case "strawberry-hat": {
+      const t = f.top;
+      return (
+        <g>
+          <path d={`M41 ${t + 6}C41 ${t - 14} 79 ${t - 14} 79 ${t + 6}Q60 ${t + 13} 41 ${t + 6}z`} fill={p.blush} />
+          <g fill={p.cream} stroke="none">
+            <ellipse cx="50" cy={t} rx="1.4" ry="2" />
+            <ellipse cx="60" cy={t + 3} rx="1.4" ry="2" />
+            <ellipse cx="70" cy={t} rx="1.4" ry="2" />
+            <ellipse cx="55" cy={t - 6} rx="1.4" ry="2" />
+            <ellipse cx="65" cy={t - 6} rx="1.4" ry="2" />
+          </g>
+          <path d={`M60 ${t - 9}l-10-4 5 8zM60 ${t - 9}l10-4-5 8zM60 ${t - 9}l-3-8h6z`} fill={p.sprout} strokeWidth="2" />
+        </g>
+      );
+    }
+    case "flower-crown": {
+      const t = f.top + 4;
+      const flower = (x: number, y: number, fill: string) => (
+        <g key={x}>
+          {[0, 72, 144, 216, 288].map((a) => (
+            <circle
+              key={a}
+              cx={x + Math.cos((a * Math.PI) / 180) * 3.4}
+              cy={y + Math.sin((a * Math.PI) / 180) * 3.4}
+              r="3"
+              fill={fill}
+              strokeWidth="1.6"
+            />
+          ))}
+          <circle cx={x} cy={y} r="2" fill={p.foil} strokeWidth="1.4" />
+        </g>
+      );
+      return (
+        <g>
+          <path d={`M36 ${t + 4}Q60 ${t - 12} 84 ${t + 4}`} stroke={p.sproutEdge} strokeWidth="2.6" fill="none" />
+          {flower(39, t + 2, p.blush)}
+          {flower(50, t - 4, p.surface)}
+          {flower(61, t - 6, p.blush)}
+          {flower(72, t - 4, p.surface)}
+          {flower(82, t + 2, p.blush)}
+        </g>
+      );
+    }
+    case "leaf-sprout": {
+      const t = f.top;
+      return (
+        <g>
+          <path d={`M60 ${t + 2}V${t - 10}`} stroke={p.sproutEdge} strokeWidth="2.8" fill="none" />
+          <path d={`M60 ${t - 8}C52 ${t - 18} 43 ${t - 13} 45 ${t - 6}C49 ${t - 3} 56 ${t - 5} 60 ${t - 8}z`} fill={p.sprout} />
+          <path d={`M60 ${t - 10}C67 ${t - 21} 77 ${t - 17} 76 ${t - 9}C72 ${t - 6} 65 ${t - 7} 60 ${t - 10}z`} fill={p.sprout} />
+        </g>
+      );
+    }
     default:
       return null;
   }
 }
 
 /** Worn on the head, so they tilt with it; the rest hang from the neck. */
-const ON_HEAD = new Set(["paper-crown", "nap-ribbon", "star-pin"]);
+const ON_HEAD = new Set([
+  "paper-crown",
+  "nap-ribbon",
+  "star-pin",
+  "round-glasses",
+  "heart-glasses",
+  "party-hat",
+  "knit-beanie",
+  "strawberry-hat",
+  "flower-crown",
+  "leaf-sprout",
+]);
 
 /* ---------------------------------------------------------------- PetArt */
 
@@ -641,6 +799,148 @@ export function WearableArt({ id, className }: { id: string; className?: string 
           <path d="M32 30c-8-12-22-12-22 0s14 12 22 0zM32 30c8-12 22-12 22 0s-14 12-22 0z" fill={p.sprout} />
           <path d="M28 33l-6 20 7-4 3 7 1-22M36 33l6 20-7-4-3 7-1-22" fill={p.sprout} />
           <circle cx="32" cy="30" r="5" fill={p.sproutEdge} strokeWidth="2.2" />
+        </>
+      );
+      break;
+    case "bow-tie":
+      art = (
+        <>
+          <path d="M32 32L10 20v24zM32 32l22-12v24z" fill={p.pool} />
+          <path d="M16 26l6 6-6 6M48 26l-6 6 6 6" stroke={p.poolEdge} strokeWidth="2.2" fill="none" />
+          <rect x="26" y="26" width="12" height="12" rx="4" fill={p.poolEdge} />
+        </>
+      );
+      break;
+    case "round-glasses":
+      art = (
+        <>
+          <circle cx="19" cy="32" r="11" fill={p.glass} fillOpacity="0.25" strokeWidth="3.4" />
+          <circle cx="45" cy="32" r="11" fill={p.glass} fillOpacity="0.25" strokeWidth="3.4" />
+          <path d="M30 31q2-3 4 0M8 30l-4-3M56 30l4-3" strokeWidth="3" fill="none" />
+          <path d="M14 27l3-3M40 27l3-3" stroke={p.surface} strokeWidth="2.2" />
+        </>
+      );
+      break;
+    case "party-hat":
+      art = (
+        <>
+          <path d="M14 52L32 10l18 42c-12 4-24 4-36 0z" fill={p.sun} />
+          <path d="M20 38l22 5M25 26l13 3" stroke={p.sunEdge} strokeWidth="2.6" />
+          <circle cx="32" cy="9" r="5" fill={p.foil} />
+        </>
+      );
+      break;
+    case "bandana":
+      art = (
+        <>
+          <path d="M6 18Q32 30 58 18L32 56z" fill={p.sprout} />
+          <g fill={p.surface} stroke="none">
+            <circle cx="22" cy="26" r="2.4" />
+            <circle cx="42" cy="26" r="2.4" />
+            <circle cx="32" cy="38" r="2.4" />
+          </g>
+        </>
+      );
+      break;
+    case "knit-beanie":
+      art = (
+        <>
+          <path d="M10 44C10 16 54 16 54 44z" fill={p.pool} />
+          <path d="M22 28v14M32 24v18M42 28v14" stroke={p.poolEdge} strokeWidth="2.4" />
+          <rect x="7" y="40" width="50" height="12" rx="6" fill={p.poolEdge} />
+          <circle cx="32" cy="14" r="7" fill={p.surface} />
+        </>
+      );
+      break;
+    case "heart-glasses":
+      art = (
+        <>
+          <path d="M19 44C5 34 8 20 19 27C30 20 33 34 19 44z" fill={p.blush} fillOpacity="0.7" strokeWidth="3" />
+          <path d="M45 44C31 34 34 20 45 27C56 20 59 34 45 44z" fill={p.blush} fillOpacity="0.7" strokeWidth="3" />
+          <path d="M28 29q4-3 8 0" strokeWidth="3" fill="none" />
+        </>
+      );
+      break;
+    case "bee-wings":
+      art = (
+        <>
+          <path d="M32 34C26 14 8 10 6 22c-2 10 12 16 26 12zM32 34c6-20 24-24 26-12 2 10-12 16-26 12z" fill={p.cloud} />
+          <path d="M32 34c-8 6-14 14-10 18 4 3 9-4 10-14M32 34c8 6 14 14 10 18-4 3-9-4-10-14" fill={p.cloud} />
+          <path d="M28 30C22 24 16 20 12 21M36 30c6-6 12-10 16-9" stroke={p.cloudShade} strokeWidth="2.2" fill="none" />
+        </>
+      );
+      break;
+    case "little-backpack":
+      art = (
+        <>
+          <path d="M24 12v-3a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v3" fill="none" strokeWidth="3" />
+          <rect x="12" y="12" width="40" height="44" rx="12" fill={p.sun} />
+          <rect x="20" y="34" width="24" height="14" rx="4" fill={p.sunEdge} />
+          <path d="M20 26h24" stroke={p.sunEdge} strokeWidth="2.6" />
+        </>
+      );
+      break;
+    case "strawberry-hat":
+      art = (
+        <>
+          <path d="M8 46C8 18 56 18 56 46Q32 56 8 46z" fill={p.blush} />
+          <g fill={p.cream} stroke="none">
+            <ellipse cx="20" cy="38" rx="2" ry="3" />
+            <ellipse cx="32" cy="44" rx="2" ry="3" />
+            <ellipse cx="44" cy="38" rx="2" ry="3" />
+            <ellipse cx="26" cy="29" rx="2" ry="3" />
+            <ellipse cx="38" cy="29" rx="2" ry="3" />
+          </g>
+          <path d="M32 20l-14-6 7 12zM32 20l14-6-7 12zM32 20l-4-12h8z" fill={p.sprout} strokeWidth="2.4" />
+        </>
+      );
+      break;
+    case "bell-collar":
+      art = (
+        <>
+          <ellipse cx="32" cy="22" rx="23" ry="10" fill="none" stroke={p.ink} strokeWidth="10" />
+          <ellipse cx="32" cy="22" rx="23" ry="10" fill="none" stroke={p.pool} strokeWidth="5" />
+          <path d="M32 32v4" strokeWidth="2.2" />
+          <circle cx="32" cy="46" r="10" fill={p.foil} />
+          <path d="M26 50h12M32 50v6" strokeWidth="2.4" />
+        </>
+      );
+      break;
+    case "flower-crown":
+      art = (
+        <>
+          <path d="M6 40Q32 18 58 40" stroke={p.sproutEdge} strokeWidth="3.4" fill="none" />
+          {[
+            [10, 36, p.blush],
+            [21, 28, p.surface],
+            [32, 25, p.blush],
+            [43, 28, p.surface],
+            [54, 36, p.blush],
+          ].map(([x, y, fill]) => (
+            <g key={`${x}`}>
+              {[0, 72, 144, 216, 288].map((a) => (
+                <circle
+                  key={a}
+                  cx={(x as number) + Math.cos((a * Math.PI) / 180) * 4.4}
+                  cy={(y as number) + Math.sin((a * Math.PI) / 180) * 4.4}
+                  r="3.8"
+                  fill={fill as string}
+                  strokeWidth="2"
+                />
+              ))}
+              <circle cx={x as number} cy={y as number} r="2.6" fill={p.foil} strokeWidth="1.8" />
+            </g>
+          ))}
+        </>
+      );
+      break;
+    case "leaf-sprout":
+      art = (
+        <>
+          <path d="M32 58V30" stroke={p.sproutEdge} strokeWidth="4" fill="none" />
+          <path d="M32 34C22 18 8 22 10 34c6 6 16 4 22 0z" fill={p.sprout} />
+          <path d="M32 30C40 12 56 14 56 28c-6 7-17 6-24 2z" fill={p.sprout} />
+          <path d="M16 31c5-2 10-1 14 2M38 26c5-3 10-4 14-2" stroke={p.sproutEdge} strokeWidth="2" fill="none" />
         </>
       );
       break;

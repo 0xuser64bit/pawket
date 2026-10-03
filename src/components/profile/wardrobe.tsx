@@ -5,7 +5,8 @@ import { Button, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt }
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { getPublicEnv } from "@/config/env";
-import { WEARABLES, findWearable } from "@/lib/closet/catalog";
+import { WEARABLES, findWearable, isUnlocked } from "@/lib/closet/catalog";
+import { BADGES, badgesFor } from "@/lib/game/badges";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, setWearing } from "@/lib/guest/pet";
@@ -33,6 +34,8 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
   useEyesFollow(room);
   if (!pet) return null;
   const shown = trying !== undefined ? trying : pet.wearing;
+  const stickers = badgesFor(pet, { onChain: chain !== null, guild: Boolean(chain?.member) });
+  const open = WEARABLES.filter((item) => isUnlocked(item, stickers)).length;
 
   async function wear(id: string) {
     if (!pet) return;
@@ -92,15 +95,29 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
           }
           second={
             <Stack gap={3}>
-              <SectionLabel count={`${WEARABLES.length}`}>Free to wear</SectionLabel>
+              <SectionLabel count={`${open} / ${WEARABLES.length}`}>Free to wear</SectionLabel>
               <p className="body-sm pk-muted">
                 One at a time. Point at a piece to try it on; tap it to wear it. It changes how {pet.name} looks,
-                never a vital, a cooldown or a score.
+                never a vital, a cooldown or a score. A few are earned by {pet.name}&apos;s stickers, never bought.
                 {chain ? " On Solana, changing it is a signed record." : ""}
               </p>
               <div className="pk-tiles" onPointerLeave={() => setTrying(undefined)}>
                 {WEARABLES.map((item) => {
                   const on = pet.wearing === item.id;
+                  const earned = isUnlocked(item, stickers);
+                  const badge = BADGES.find((b) => b.id === item.earnedBy);
+                  if (!earned) {
+                    return (
+                      <div key={item.id} className="pk-tile-hit pk-tile-hit--locked" title={badge?.how}>
+                        <ItemTile
+                          name={item.name}
+                          kind={`Earned by ${badge?.name ?? "a sticker"}`}
+                          art={<WearableArt id={item.id} className="pk-tile__piece" />}
+                        />
+                        <span className="pk-sr">Not earned yet. {badge?.how}</span>
+                      </div>
+                    );
+                  }
                   return (
                     <button
                       key={item.id}

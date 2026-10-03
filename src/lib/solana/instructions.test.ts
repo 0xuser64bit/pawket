@@ -8,7 +8,7 @@ import {
   getFinishRoundInstruction,
 } from "./instructions";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
-import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
+import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID, WEARABLE_COUNT } from "./program";
 
 const OWNER = "11111111111111111111111111111111";
 const SPONSOR = "SysvarRent111111111111111111111111111111111";
@@ -162,7 +162,8 @@ describe("getDressInstruction", () => {
   });
 
   it("refuses a slot the wardrobe does not have", () => {
-    expect(() => getDressInstruction({ owner: OWNER, pet: PET, wearing: 7 })).toThrow();
+    expect(getDressInstruction({ owner: OWNER, pet: PET, wearing: WEARABLE_COUNT }).data?.at(-1)).toBe(WEARABLE_COUNT);
+    expect(() => getDressInstruction({ owner: OWNER, pet: PET, wearing: WEARABLE_COUNT + 1 })).toThrow();
     expect(() => getDressInstruction({ owner: OWNER, pet: PET, wearing: -1 })).toThrow();
     expect(getDressInstruction({ owner: OWNER, pet: PET, wearing: 0 }).data?.[8]).toBe(0);
   });

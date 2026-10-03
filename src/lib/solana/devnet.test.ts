@@ -97,7 +97,8 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
   it("cares, plays a round and dresses, and reads it all back", async () => {
     await send(() => [getCareInstruction({ owner, pet, passport, action: CareActionType.Feed })]);
     await send(() => [getFinishRoundInstruction({ owner, pet, passport })]);
-    await send(() => [getDressInstruction({ owner, pet, wearing: wearableSlot("rain-cape") })]);
+    // The last piece in the wardrobe: slot 18 only exists since the wardrobe grew.
+    await send(() => [getDressInstruction({ owner, pet, wearing: wearableSlot("leaf-sprout") })]);
 
     const onChain = await fetchPetOnChain(rpc, pet);
     expect(onChain).not.toBeNull();
@@ -107,7 +108,7 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     expect(record.careLog.map((entry) => entry.action)).toEqual([CareActionType.Feed]);
     expect(record.streak.count).toBe(1);
     expect(record.plays).toBe(1);
-    expect(record.wearing).toBe("rain-cape");
+    expect(record.wearing).toBe("leaf-sprout");
   });
 
   it("refuses a care still cooling down before anyone pays for it", async () => {

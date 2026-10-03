@@ -2514,6 +2514,17 @@ li {
   grid-template-columns: repeat(auto-fill, minmax(min(148px, 100%), 1fr));
   gap: var(--space-3);
 }
+/* A piece not yet earned: drawn faintly, outlined in dashes, not pressable. */
+.pk-tile-hit--locked {
+  cursor: default;
+}
+.pk-tile-hit--locked .pk-tile {
+  border-style: dashed;
+  box-shadow: none;
+}
+.pk-tile-hit--locked .pk-tile__art {
+  opacity: 0.4;
+}
 /* The tile is the control. The button itself has no second frame. */
 .pk-tile-hit {
   display: block;

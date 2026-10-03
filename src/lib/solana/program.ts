@@ -33,7 +33,7 @@ export const MAX_NAME_BYTES = 24;
 export const MIN_NAME_BYTES = 2;
 
 /** The program's `WEARABLE_COUNT`: wearables are numbered from 1 in catalog order. */
-export const WEARABLE_COUNT = 6;
+export const WEARABLE_COUNT = 18;
 
 /** Cares the Passport keeps, newest overwriting oldest. */
 export const RECENT_CARES = 8;

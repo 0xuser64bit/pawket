@@ -3042,6 +3042,15 @@ li {
   padding: var(--space-4) 0;
   animation: pk-fade 200ms ease-out 250ms backwards;
 }
+/* A whole screen waiting: the paw at full size, centred in the space the
+   screen is about to fill, its words beneath. */
+.pk-waiting--page {
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-4);
+  min-height: min(58dvh, 520px);
+  text-align: center;
+}
 
 /* The cold boot: the paw, then its name once the heart has landed. */
 .pk-splash {
@@ -3061,6 +3070,60 @@ li {
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+}
+
+/* The splash on a full load: over everything, in the ground colour, the
+   paw drawing itself from the first paint — the loader's 250ms hold is for
+   a wait that may end at once, and this one is shown on purpose, so every
+   beat comes 190ms sooner. Once the page has arrived it lifts away, the paw
+   rising a touch as the ground fades; should no script ever run, it goes
+   on its own. */
+.pk-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-4);
+  background: var(--ground);
+  animation: pk-boot-out 400ms ease-in 8s forwards;
+}
+.pk-boot svg {
+  overflow: visible;
+}
+.pk-boot .pk-paw__grow {
+  animation-delay: calc(60ms + var(--i) * 70ms);
+}
+.pk-boot .pk-paw__grow:last-child {
+  animation-delay: 370ms;
+}
+.pk-boot .pk-paw__tap {
+  animation-delay: calc(810ms + var(--i) * 110ms);
+}
+.pk-boot .pk-paw__beat {
+  animation-delay: 1.46s;
+}
+.pk-boot .pk-splash__name {
+  animation-delay: 710ms;
+}
+.pk-boot--out {
+  pointer-events: none;
+  animation: pk-boot-out 380ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.pk-boot--out > * {
+  animation: pk-boot-rise 380ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes pk-boot-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes pk-boot-rise {
+  to {
+    transform: translateY(-10px) scale(1.04);
   }
 }
 

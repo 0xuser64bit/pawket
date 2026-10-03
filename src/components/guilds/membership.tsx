@@ -50,7 +50,7 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
     }
   }
 
-  if (!companion.ready) return <Waiting label="Reading your pets" />;
+  if (!companion.ready) return <Waiting label="Reading your pets" inline />;
 
   return (
     <Card>

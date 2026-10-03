@@ -149,6 +149,17 @@ The loader is an amendment to the system's original "nothing else loops" rule,
 made deliberately and fenced just as deliberately:
 
 - **Playroom only, for a wait with no known end.** Cold boot, matchmaking.
+- **The splash on every full load** (`BootSplash`, in the root layout): a
+  refresh or an opened link paints the paw first, at full size, centred on
+  the ground colour, drawing itself 190ms sooner than the in-page loader
+  (this wait is shown on purpose). It holds until its name has landed —
+  1.35s from the start of the load, so a slow load never waits twice — then
+  lifts away over 380ms. In-app navigation never shows it again; without a
+  script it is never drawn.
+- **A screen waiting on this browser or a wallet** (`Waiting`) shows the
+  same loader at full size, centred in the space the screen is about to
+  fill, its words beneath. Inside a card it is the small one, beside its
+  words (`inline`).
 - **Never on Paper.** Nothing animates there, and a playful cycle while money
   moves is exactly the wrong feeling. A pending transaction keeps its Paper
   treatment — a neutral `wait` banner and a countable `Meter`.

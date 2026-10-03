@@ -28,12 +28,14 @@ export function PawLoader({ size = "md", label = "Loading" }: { size?: "sm" | "m
 
 /**
  * A screen waiting on this browser or a wallet before it can draw: the
- * loader, small, with the wait said in words beside it.
+ * loader at full size, in the middle of the space the screen is about to
+ * fill, with the wait said in words beneath it. `inline` is the small one,
+ * beside its words, for a wait inside a card.
  */
-export function Waiting({ label }: { label: string }) {
+export function Waiting({ label, inline = false }: { label: string; inline?: boolean }) {
   return (
-    <div className="pk-waiting">
-      <PawLoader size="sm" label={label} />
+    <div className={inline ? "pk-waiting" : "pk-waiting pk-waiting--page"}>
+      <PawLoader size={inline ? "sm" : "md"} label={label} />
       <p className="body-sm pk-faint" aria-hidden="true">
         {label}
       </p>

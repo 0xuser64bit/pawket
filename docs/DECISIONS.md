@@ -3,6 +3,87 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: Guilds live on Solana, without a database
+
+**Context:** Guilds were a page of rules about a layer that did not exist,
+and M5 planned a database registry (Q2) before any guild could. Pets were
+already on Solana, read live; a guild is pets and their people.
+**Decision:** Two program accounts in an additive upgrade: `Guild`
+(`[guild, slug]`: name, motto, crest, founder, member count) and
+`GuildMember` (`[member, pet]`: one guild per pet, and who paid its rent).
+`found_guild`, `join_guild`, `leave_guild`; leaving closes the member
+account to its payer. No token, no treasury, no vote weight; nothing in a
+guild reaches a vital, XP or a score. The sponsor pays the rent (its
+allow-list grows by exactly those slots), discovery and each guild's page
+read the program live, and Pawket's delisting list stops promotion without
+pretending to remove anything. Three starter guilds were founded on devnet
+by `scripts/seed-guilds.mts`; guilds the tests found are named "Devnet
+Check" and left out of discovery.
+**Consequence:** Q2 is not needed for social guilds. Anyone with a pet on
+Solana can found one — there is no review queue before founding, so
+moderation is delisting after the fact, and a guild's name and motto are
+strangers' text, cleaned like pet names. Events, votes and anything with a
+token stay specs (M5 rest, M6), behind Q3, Q4 and Q6.
+
+## 2026-10: A player keeps many pets, and Profile is their page
+
+**Context:** A browser kept one pet, so a second adoption had to ask the
+player to give up the first; customising the player lived in a card on
+Home and the shelf was its own place.
+**Decision:** The browser keeps a list (`pawket.pets.v1`; the one pet from
+before moves in on first read) and one pet is at home, the player's pick
+among all of theirs on Solana and here. Profile takes Inventory's dock slot:
+the player's name, their whole look (with hats, glasses, pastels and three
+outfits), every pet, the wardrobe for any pet, the sticker book and
+settings. Stickers are read from each record, never stored.
+**Consequence:** A name is refused if one of the player's browser pets has
+it already. "Start over" is "Let {name} go", one pet at a time.
+`/inventory` redirects to the profile.
+
+## 2026-10: Home is a stage, and the room can take a picture
+
+**Context:** Home split the screen between the room and every card, so the
+vitals, the emotes and the look took as much room as the pet.
+**Decision:** The room spans the width, and a deck floats over its foot —
+the floor, never the animal — with the level as a ring, the vitals
+minimized, the four cares and the tools; Say and Today open panels below.
+Photo prints the 3D room on the room's own paper to save or share.
+**Consequence:** The full numbers are a tap away rather than always shown.
+
+## 2026-10: Four games, and a daily round everyone shares
+
+**Context:** Each round was new, only the pet at home could play, and a
+score went nowhere.
+**Decision:** Each game card plays today's round — one seed per game per
+UTC day (`dailySeed`), the same for every player — so a score can be shared
+and compared with no server; practice is a new round. Any of the player's
+pets can play, and the day's bonus goes to that pet. A fourth game, Pairs,
+is pure and seeded like the others. Bests (all-time and today's) stay on
+the device.
+**Consequence:** A daily round can be studied before it is played; it is
+a game among friends, not a ranked ladder, and nothing about it is kept
+anywhere but the player's device. Q8 stays "no netcode".
+
+## 2026-10: Eight rooms
+
+**Context:** Daylight and Lamplight were the only themes.
+**Decision:** Six more — Strawberry, Honey, Matcha, Seaside, Lavender,
+Starlight — each a complete token block that also applies to any element
+marked `data-theme-preview`, so a preview is the room itself. Every hue
+keeps its job; `themes.test.ts` holds every room to the contrast floor.
+**Consequence:** A new room is a token block and a line in
+`src/config/themes.ts`, and it must pass the same test.
+
+## 2026-10: The wardrobe is eighteen pieces, and five are earned
+
+**Context:** Six free pieces were the whole wardrobe.
+**Decision:** Twelve more, appended (catalog order is the on-chain slot;
+`WEARABLE_COUNT` 18, deployed as an upgrade). Five are earned by a sticker —
+the wardrobe offers them once the record has it.
+**Consequence:** Earning is the wardrobe's rule, not the program's: a pet on
+Solana could be dressed in an earned piece by a hand-built transaction.
+Every piece is still only looks, so nothing is gained by it.
+
 ## 2026-10: A pet's keepsake is a frozen Metaplex Core card
 
 **Context:** Q1 asked for an NFT standard because the vision wants pets

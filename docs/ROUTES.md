@@ -8,14 +8,16 @@ Built today:
 
 ```text
 /                          landing (live count of pets on Solana)
-/adopt                     one pet, three steps, saved in this browser
-(game)/home                the pet in play — on Solana, else in this browser — or an empty room
+/adopt                     a pet in three steps, added beside the others in this browser
+(game)/home                the pet at home (the player's pick) in the room, the deck under it, or an empty room
 (game)/park                every pet the program keeps, read live
-(game)/inventory           your pets and the wardrobe (?tab=wardrobe)
-(game)/playground          three games, any one the day's round; on Solana, "Record the round"
-(game)/pet/[id]            an address: the public Passport, from chain;
-                           otherwise the record of the pet in this browser
-(game)/guilds              the boundary. not a directory
+(game)/profile             you: name, look, outfits; ?tab=pets|wardrobe|stickers|settings
+(game)/playground          four games, a shared daily round each; on Solana, "Record the round"
+(game)/pet/[id]            an address: the public Passport, from chain (with its guild);
+                           otherwise the record of a pet in this browser
+(game)/guilds              every guild on Solana, read live (test and delisted ones left out), and the rule
+(game)/guilds/new          founding a guild: name, motto, crest, the founding pet
+(game)/guilds/[slug]       a guild: its pets read from their accounts, together counts, join or leave
 /api/health
 /api/sponsor               GET: is it up. POST { transaction }: signed first, as fee payer
 /api/actions/adopt         Solana Action: adopt straight onto Solana
@@ -27,14 +29,15 @@ Built today:
 (game)/pet/[id]/opengraph-image, /opengraph-image   share cards
 ```
 
-Redirects: `/market` and anything under it go to `/inventory`. `/guilds/*`
-(except the index) and `/playground/*` go back to their index. `/pet/:id/ownership`
-goes to `/pet/:id`.
+Redirects: `/market` and anything under it go to `/profile`; `/inventory`
+goes to the profile's shelf (`?tab=wardrobe` to its wardrobe).
+`/guilds/boundary` and `/playground/*` go back to their index.
+`/pet/:id/ownership` goes to `/pet/:id`.
 
-The `(game)` group owns the shell: the label-sized bar (with the wallet
-chip, once a wallet is connected) and the floating Dock. The dock is Home,
-Park, Playground, Inventory, Guilds. A pet on Solana lights Park; the browser
-pet lights Inventory. There is no market slot.
+The `(game)` group owns the shell: the label-sized bar (the wallet chip,
+once a wallet is connected, and the room switch) and the floating Dock. The
+dock is Home, Park, Playground, Profile, Guilds. A pet on Solana lights
+Park; a browser pet lights Profile. There is no market slot.
 
 ## 1. Site map (target)
 

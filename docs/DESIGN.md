@@ -60,6 +60,19 @@ A filled control outlines in its own `on-` colour, not in `edge`. The focus
 ring is two bands. Status never rests on hue alone. **No green on a token
 surface, ever.**
 
+## Rooms (themes)
+
+A player can live in one of eight rooms: Daylight and Lamplight (the
+device decides between them unless the player picks), Strawberry, Honey,
+Matcha, Seaside, Lavender and Starlight. Each is a complete token block in
+`app/globals.css` (`:root[data-theme="…"]`) that also applies to any
+element marked `data-theme-preview`, so the shell's room switch and the
+picker in Profile draw each room in its own tokens — a preview can never
+disagree with the room it opens. Every hue keeps its job in every room;
+only the grounds, surfaces, ink and tints move. `themes.test.ts` holds each
+room to the accessibility floor below. The 3D wall takes the pet's sky in
+the picked room; an evening room (Lamplight, Starlight) lights the lantern.
+
 ## Type
 
 `display` (Fraunces) is the game's voice, `text` (Hanken Grotesk) is everything
@@ -191,11 +204,13 @@ It is the flat room's language in three dimensions, not a model viewer:
   cocoa ears.
 - **The player is the one likeness in Pawket.** In the flat room the player
   stays a peg doll — a wooden-cream face, dot eyes, a blush and a beanie,
-  no skin tone — wearing the top colour chosen for the 3D room. In the 3D room the player is a person the player dressed — build,
+  no skin tone — wearing the top colour chosen for the 3D room, and the same
+  hat and glasses. In the 3D room the player is a person the player dressed — build,
   skin tone, hair, clothes — in the palette's hues; bloom and alarm are not
   offered.
-- **Nothing floats over the animal.** Emotes, the look, the room switch and
-  every failure note live below the frame. The frame keeps its
+- **Nothing floats over the animal.** The deck floats over the frame's foot —
+  the floor — and emotes, the look, the room switch and every failure note
+  live below it. The frame keeps its
   `radius-room`, its 2px `edge` and its sticker shadow.
 - **The room says what it is doing.** A moment's sentence is read out in a
   status line; the frame names who is in it and how to turn it.
@@ -232,22 +247,40 @@ shapes, one outline, the palette — never a grid of identical pockets:
   are the buttons and whose centre pad holds the pet. The pet is drawn
   whole (`pose="full"`) and its face answers the game. Sky clouds have no
   outline, so they never read as the storm clouds to dodge.
-- **The wardrobe** (`src/components/inventory/`). A mirror: the pet large,
-  trying on whatever the pointer or focus rests on before a tap wears it.
+- **Home** (`src/components/home/`). The room across the whole width and a
+  deck floating on its foot: the level as a ring of ten segments, the four
+  vitals minimized to a glyph, five segments and a count, the four cares as
+  round buttons on a shelf (the one the pet wants in sun), and the tools.
+  Faces in the bar say who is home. Photo prints the room on the room's own
+  paper.
+- **The profile** (`src/components/profile/`). The same stage with a plate
+  on its foot (the player's name and what they have done together,
+  counted), the look editor always open, then the shelf: pets, the
+  wardrobe, the sticker book (a sticker is a tilted disc in its hue's soft
+  tint; one not yet earned is a dashed outline), and settings.
+- **The wardrobe**. A mirror: any of the player's pets large, trying on
+  whatever the pointer or focus rests on before a tap wears it. A piece not
+  yet earned is a dashed tile that says which sticker earns it.
+- **Pairs**. Twelve cards on the table, the paw on their backs and the
+  wardrobe on their faces, turning over in 3D on the press curve.
+- **Guilds** (`src/components/guilds/`). A crest is square-shouldered and in
+  its guild's colour (bloom unless it chose another hue), never a pocket;
+  a guild's page leads with its crest beside its name and motto.
 - **The front door** (`app/page.tsx`). The three pets on a hill, eyes on
   the visitor; what is on Solana right now, counted from the program; a day
   with them, drawn; the one ink band beside a real Passport read from chain.
 
 ## What is real
 
-Adoption, the room, care, the wardrobe, the playground round, keeping a pet
-on Solana, the Passport, the Park and the guild boundary are the product. A
+Adoption, the room, care, the profile, the wardrobe, the playground, photos,
+keeping a pet on Solana, the Passport, the Park and guilds on Solana are the
+product. A
 pet starts in this browser; kept on Solana, every care is a signed record.
 A wearable is drawn on the pet, flat or in 3D — never a change to a vital. A care plays its moment in
 the room only after the care is saved (or, on Solana, confirmed); an emote
-changes nothing on the record and says so. Guilds are the two lists of what
-a token may and may not do. There is no market, no treasury, no swap and no
-lobby.
+changes nothing on the record and says so. A guild is a crest, a name, a motto and the
+pets in it — no token, no treasury, no swap — and the two lists of what it
+can and can never do. There is no market and no lobby.
 
 The wallet layer follows the system's own rules: connecting is offered only
 where it does something (keeping a pet on Solana, finding the pets a wallet
@@ -259,7 +292,7 @@ names what did not change.
 
 Call a pet "on Solana" only when it was read from chain. Do not put a
 simulated price back on a screen to fill a dock slot. The dock is Home, Park,
-Playground, Inventory, Guilds.
+Playground, Profile, Guilds.
 
 ## The pets
 

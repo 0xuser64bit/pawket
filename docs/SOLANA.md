@@ -17,18 +17,33 @@ enum variant order, error codes.
 | ------------- | ---------------------------- | ---- | ----- |
 | `Pet`         | `[b"pet", owner, name]`      | 130  | owner, species, personality, birth, level, XP, four vitals, `stats_updated_at`, last feed/play/groom/rest, wearing, bump, name (last, so every other offset is fixed) |
 | `PetPassport` | `[b"passport", pet]`         | 169  | pet, owner, event/care/play counts, streak, best streak, last active UTC day, last bonus UTC day, the last eight cares, bump |
+| `Guild`       | `[b"guild", slug]`           | 235  | founder (wallet), founder pet, created, member count, crest glyph, crest colour, bump, slug, name, motto (strings last) |
+| `GuildMember` | `[b"member", pet]`           | 145  | pet, guild, owner, payer (who gets the rent back), joined, bump — seeded by the pet, so one guild per pet |
 
 | Instruction           | Signers              | Effect |
 | --------------------- | -------------------- | ------ |
 | `adopt_pet`           | owner, payer         | name 2–24 UTF-8 bytes; vitals 72; `payer` pays rent (the owner, or the sponsor) |
 | `perform_care_action` | owner                | 30-min cooldown per action; decay to now; locked deltas; +10 XP; Passport ring, counts, streak |
 | `finish_round`        | owner                | +25 XP for the first round of a UTC day; every round counts and moves the streak; vitals untouched |
-| `dress`               | owner                | 0 (nothing) or 1–6, the wardrobe in catalog order |
+| `dress`               | owner                | 0 (nothing) or 1–18, the wardrobe in catalog order |
+| `found_guild`         | owner, payer         | slug 3–24 of `a-z0-9` and inner `-`; name 3–32 bytes; motto ≤ 80 bytes; crest < 8, colour < 6; the founding pet is the first member |
+| `join_guild`          | owner, payer         | a pet takes its member account (one guild at a time); the count goes up |
+| `leave_guild`         | owner                | the member account closes to its recorded `payer`; the count goes down; the guild stays |
 
 Errors: 6000 `InvalidPetName`, 6001 `NotPetOwner`, 6002
-`CareCooldownActive`, 6003 `UnknownWearable`. Each maps to one sentence in
-`pawketErrorMessage` that says what did not change. Events: `PetAdopted`,
-`CarePerformed`, `RoundFinished`, `PetDressed`.
+`CareCooldownActive`, 6003 `UnknownWearable`, 6004 `InvalidGuildSlug`, 6005
+`InvalidGuildName`, 6006 `InvalidGuildMotto`, 6007 `UnknownCrest`. Each maps
+to one sentence in `pawketErrorMessage` that says what did not change; a
+second join (the member account "already in use") has its own sentence.
+Events: `PetAdopted`, `CarePerformed`, `RoundFinished`, `PetDressed`,
+`GuildFounded`, `GuildJoined`, `GuildLeft`.
+
+A guild is people and their pets and nothing else: no token, no treasury,
+no vote weight, and nothing in it touches a vital, XP or a score. The
+program does not check that a slug is `slugFor(name)`; the app always
+derives it, and `/guilds/new` is reserved. Pawket's delisting list
+(`src/lib/guilds/delisted.ts`) only stops promotion — it cannot remove a
+guild, take a pet out of one or undo anything.
 
 Pet identity is `(owner, exact UTF-8 name bytes)`. Names are trimmed
 client-side before derivation and never case-folded.
@@ -92,13 +107,14 @@ sends nothing.
 
 ## The sponsor
 
-`/api/sponsor` pays fees, and a new pet's rent, so a wallet with no SOL can
-play. Its key (`SPONSOR_KEYPAIR`, server-only) is a devnet hot wallet with a
+`/api/sponsor` pays fees, and the rent of a new pet, a new guild or a pet's
+place in one, so a wallet with no SOL can play. Its key (`SPONSOR_KEYPAIR`, server-only) is a devnet hot wallet with a
 small float — not the upgrade authority. `checkSponsorable` signs only when:
 
-- every instruction is one of Pawket's four, on Pawket's program;
-- the sponsor is the fee payer, and appears in no instruction except as
-  `adopt_pet`'s `payer`;
+- every instruction is one of Pawket's seven, on Pawket's program;
+- the sponsor is the fee payer, and appears in no instruction except as the
+  `payer` of `adopt_pet`, `found_guild` or `join_guild` (rent it pays), or
+  `leave_guild`'s `payer` (rent it gets back);
 - there are no lookup tables and no compute-budget instructions (a priority
   fee is the one way to spend the float faster).
 
@@ -106,7 +122,7 @@ It signs before the player and does not send: the client sends, with
 preflight on, so a transaction that would fail lands nothing and costs the
 float nothing.
 
-Rent — an adoption or a keepsake — is limited to 20 an hour per caller (an
+Rent — an adoption, a founding, a join or a keepsake — is limited to 20 an hour per caller (an
 IP for the web app, a wallet for a Blink) and 120 an hour in all, which
 bounds the worst case to under 0.5 SOL an hour; everything else to 240 an
 hour per caller.
@@ -176,7 +192,13 @@ solana program deploy target/deploy/pawket.so \
 ```
 
 The program keypair lives in `.keys/` (ignored) and is only needed for the
-first deploy; upgrades are signed by the deploy wallet. Then
+first deploy; upgrades are signed by the deploy wallet. An upgrade larger
+than the program account needs `solana program extend <id> <bytes>` first
+(the guild upgrade of 2026-10-03 extended it by 120,000 bytes); dump the
+deployed binary with `solana program dump` before any upgrade, so it can be
+put back. Upgrades only ever add: an existing instruction, account layout or
+error code does not change. `pnpm dlx tsx scripts/seed-guilds.mts` founds
+the starter guilds and does only what is missing. Then
 `pnpm e2e:devnet` (the path through the sponsor code, ending with a
 keepsake) and `PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts` (the same through
 the screens, with `e2e/test-wallet.ts`). Top the sponsor up from the deploy wallet with

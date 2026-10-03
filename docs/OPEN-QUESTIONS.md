@@ -59,3 +59,5 @@
 | 2026-09 | Q7 | localStorage guest. No embedded wallet, no server session in this version. | product pass — see DECISIONS |
 | 2026-09 | Q8 | One solo gate round. No real-time netcode. Daily XP is flat, not score-scaled. | product pass — see DECISIONS |
 | 2026-10 | Q7 | Browser pet first; a Wallet Standard wallet is the identity on Solana; a server sponsor pays devnet fees. No embedded wallet, no session. | program v2 — see DECISIONS |
+| 2026-10 | Q2 (guilds only) | Social guilds need no database: membership is a program account per pet. Q2 stays open for anything else (listings, votes, events). | guilds on chain — see DECISIONS |
+| 2026-10 | Q8 | Four solo games; each game's daily round is one seed per UTC day, shared by everyone. Still no netcode. | playground — see DECISIONS |

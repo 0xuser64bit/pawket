@@ -1,6 +1,14 @@
 # Pawket — Guilds (optional community layer)
 
-**Status:** SPEC. M5 ships social guilds with **zero token mechanics**; M6 adds launches. Building token UI before M5 exits violates the product hierarchy (pets > guilds, play > protocol).
+**Status:** Social guilds SHIP, on Solana, with **zero token mechanics** (2026-10, `DECISIONS.md`). Everything below §4's membership — events, votes, badges as their own items, moderation queues, and all of M6 — is still SPEC. Building token UI before M5 exits violates the product hierarchy (pets > guilds, play > protocol).
+
+## 0. What ships
+
+- A pet founds a guild (`found_guild`): a slug that is its address, a name, a motto and a crest (one of eight glyphs in one of six colours, bloom first). The founding pet is its first member.
+- A pet joins one guild at a time (`join_guild`) and leaves when its owner likes (`leave_guild`; the rent goes back to whoever paid it). Pawket's sponsor pays the fee and the rent.
+- `/guilds` lists every guild read live (most members first), `/guilds/[slug]` shows its pets read from their own accounts and what they have done together counted from their Passports, `/guilds/new` founds one, and a pet's Passport names its guild. The sticker book has *In a guild*.
+- `src/lib/guilds/boundary.ts` is what a guild can and can never do; `src/lib/guilds/delisted.ts` stops Pawket promoting a guild without pretending to remove it. There is no review before founding.
+- Starter guilds on devnet: Sunbeam Club, Muddy Paws, Cloud Nine (`scripts/seed-guilds.mts`).
 
 ## 1. What a guild is
 

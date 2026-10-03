@@ -11,13 +11,14 @@ client forces it.
 programs/pawket/            the Anchor program (Rust) and its LiteSVM tests
 app/                        routes, layouts, route handlers (Server by default)
   page.tsx                  landing (revalidates each minute: a live count from chain)
-  adopt/                    three-step adoption, no dock
-  (game)/                   shell: mark, dock, wallet chip, theme
-    home/                   the room and the care loop
+  adopt/                    three-step adoption, no dock; adds a pet beside the others
+  (game)/                   shell: mark, dock, wallet chip, room switch
+    home/                   the room across the width, the deck, the care loop, photos
     park/                   every pet on Solana, read live (Server)
-    inventory/              pets (on Solana, in this browser) and the wardrobe
-    playground/             three games: Catch, Hop, Copy
-    guilds/                 the boundary. no directory, no swap
+    profile/                you: name, look, outfits, pets, wardrobe, stickers, settings
+    inventory/              redirects to the profile's shelf
+    playground/             four games: Catch, Hop, Copy, Pairs; a shared daily round
+    guilds/                 every guild on Solana (Server); new/ founds one; [slug]/ is one
     pet/[id]/               an address: the public Passport (Server);
                             anything else: the browser pet's record
   api/health/route.ts       build version + active cluster
@@ -26,7 +27,7 @@ app/                        routes, layouts, route handlers (Server by default)
 src/components/             UI; "use client" only at interactive leaves
   pk/                       design system
   wallet/                   connect sheet, wallet chip, address line, tx receipt
-  home/ adopt/ pet/ inventory/ play/
+  home/ adopt/ pet/ profile/ guilds/ play/
   room3d/                   the 3D room: one R3F Canvas, loaded only by Home
 src/config/                 validated env (public + server-only) + site constants
 src/lib/game/               pure companion math (no React, no Solana) + lockstep.txt
@@ -34,7 +35,7 @@ src/lib/guest/              the browser pet's record, migration, localStorage
 src/lib/companion/          which pet a screen draws: on Solana, else this browser
 src/lib/closet/             wearable catalog (its order is the on-chain slot)
 src/lib/play/               the three games as pure seeded steps, local bests, sound
-src/lib/guilds/             boundary copy
+src/lib/guilds/             the rule, slugs and crests, the delisting list
 src/lib/player/             the player's look (3D room), localStorage
 src/lib/room/               moments and emotes, as data
 src/lib/solana/             program constants + IDL, PDAs, builders, decoders,
@@ -50,14 +51,17 @@ docs/                       the docs you are reading
 
 ## Data flow
 
-- The browser pet lives in `localStorage` (`pawket.guest-pet.v1`), read
+- The browser's pets live in `localStorage` as one list
+  (`pawket.pets.v1`; the one pet from before moves in on first read), read
   with `useSyncExternalStore`; care, the wardrobe and a round are pure
-  functions in `src/lib/guest/` and the screen saves the result.
+  functions in `src/lib/guest/` and the screen saves the one pet it changed.
 - A pet on Solana lives in two PDAs. The browser reads the connected
   wallet's pets with `useRequest` over `fetchPetsOnChain`, and
   `toCompanionRecord` turns each into the same record shape, so every screen
-  draws both kinds with the same functions. `useCompanion` picks the one in
-  play (`pawket.active-pet`, a per-device choice).
+  draws both kinds with the same functions. `useCompanion` lists them all
+  and picks the one at home (`pawket.active-pet`, a per-device choice of a
+  browser id or an address). Each pet on Solana is read with its Passport
+  and its guild place in one batch.
 - A care on Solana: `send.ts` builds, the sponsor signs first as fee
   payer, the wallet signs as owner, the client checks the message came back
   unchanged and sends it with preflight, waits for `confirmed`, then

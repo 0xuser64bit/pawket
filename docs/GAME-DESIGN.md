@@ -38,13 +38,20 @@ Per hour: hunger **2.5**, happiness **1.8**, energy **1.5**, hygiene **1.2** (`S
 
 ## 4b. Guest record (this version)
 
-The browser companion stores a care log (latest 40), a UTC streak, one
-wearable id, and a play count. A finished playground round grants
+A browser keeps as many companions as the player adopts (`pawket.pets.v1`),
+and one is at home. Each stores a care log (latest 40), a UTC streak and its
+best run (the Passport's `best_streak`, kept the same way), one wearable id,
+and a play count. A finished playground round grants
 `DAILY_GOAL_REWARD_XP` once per UTC day and does not change vitals. The
 score does not scale the bonus. On Solana, `finish_round` grants the same
 bonus by the same rule, when the player records the round.
 
-## 5. Daily loop (target, M4)
+## 5. Daily loop (shipped as guidance; the bonus stays the round's)
+
+Home's *Today's round* is the checklist below — each of the four cares and
+one playground round, on the streak's UTC day. It grants nothing the record
+does not already grant.
+
 
 1. Open Home → see mood + decay estimate.
 2. 2–4 care actions (cooldown-spaced) → XP + Passport entries.
@@ -54,14 +61,18 @@ bonus by the same rule, when the player records the round.
 
 ## 6. Playground (power-free)
 
-Three games ship, each one round, each a pure step function of a seed and
-the player's input (`src/lib/play/`), tested for determinism:
+Four games ship, each one round, each a pure step function of a seed and
+the player's input (`src/lib/play/`), tested for determinism. A game card
+plays today's round — one seed per game per UTC day, the same for everyone
+(`dailySeed`) — and Practice plays a new one. Any of the player's pets can
+play; the bonus goes to that pet.
 
 | Game | Round | Score |
 | --- | --- | --- |
 | Catch (`catch.ts`) | 30 s or three storm clouds | treats caught (a star is three) |
 | Hop (`hop.ts`) | until the first bump; the path speeds up from 0.42 to 1.05 field widths a second | ten a field width run, five a heart |
 | Copy (`copy.ts`) | until the first wrong bean; the pattern grows by one | longest pattern copied |
+| Pairs (`pairs.ts`) | until all six pairs are found | 60, less 2 a miss, never under 6 |
 
 - Finishing any of them is the day's round: `DAILY_GOAL_REWARD_XP` once per
   UTC day, the same rule `finish_round` enforces on chain. The score never
@@ -77,7 +88,7 @@ the player's input (`src/lib/play/`), tested for determinism:
 
 ## 7. Customization (expression power = 0)
 
-Cosmetics change look/mood-display only. Forbidden fields: `statModifier`, `xpBoost`, `cooldownReduction`, `matchmakingWeight`. Type + review gate in `AGENT-GUIDE.md`. Theory: attachment via recognition ("that's Maya's star-glasses MossPup"), not advantage.
+Cosmetics change look/mood-display only. Forbidden fields: `statModifier`, `xpBoost`, `cooldownReduction`, `matchmakingWeight`. The wardrobe is 18 pieces; five are earned by a sticker (`earnedBy`, read from the record by `src/lib/game/badges.ts`), which only decides when the wardrobe offers them. The player's own extras (hats, glasses) are looks too. Type + review gate in `AGENT-GUIDE.md`. Theory: attachment via recognition ("that's Maya's star-glasses MossPup"), not advantage.
 
 ## 8. Anti-bot & fairness
 
@@ -92,5 +103,6 @@ Cosmetics change look/mood-display only. Forbidden fields: `statModifier`, `xpBo
 | --- | --- | --- |
 | 2026-09 | Initial 72 / deltas / 30m / decay table | Pre-reset shared package + program lockstep |
 | 2026-10 | Decay computed in exact integers (same values, no float edge); decay, streak and the daily round enforced on chain | Program v2: the browser record and the program must agree to the point |
+| 2026-10 | `WEARABLE_COUNT` 6 → 18 (appended; the first six keep their slots). No change to vitals, XP, cooldowns or decay | The wardrobe grew; looks only |
 
 Agents: any rebalance edits `constants.ts` + program + `math.test.ts` exact values together, with a deploy-plan note and a new row here.

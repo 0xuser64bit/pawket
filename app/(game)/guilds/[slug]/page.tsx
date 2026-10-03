@@ -5,7 +5,6 @@ import {
   Banner,
   Card,
   Chip,
-  Columns,
   EmptyState,
   Paper,
   PetFrame,
@@ -120,95 +119,91 @@ export default async function GuildPage({ params }: Props) {
           />
         ) : null}
 
-        <Columns
-          first={
-            <Stack gap={4}>
-              <div className="pk-spread">
-                <h2 className="display-s">The pets</h2>
-                {outToday > 0 ? <Presence name={`${outToday} out today`} /> : <span className="caption pk-faint">Nobody out yet today</span>}
-              </div>
-              {records.length === 0 ? (
-                <EmptyState icon="paw" title="Nobody here yet" body="A guild with nobody in it is still on the record. The next pet to join is its first." />
-              ) : (
-                <div className="pk-cards">
-                  {records.map(({ entry, record }) => {
-                    const { level, mood } = projectGuestPet(record, now);
-                    const out = streakAsOf(record.streak, now).activeToday;
-                    return (
-                      <Card key={entry.pet.address} variant="flush">
-                        <Link href={`/pet/${entry.pet.address}`} className="pk-card__art" aria-label={`${entry.pet.name}'s record`}>
-                          <PetFrame {...petLook(record, mood)} sky={SPECIES_SKY[record.species]} level={level} size="fluid" still />
-                        </Link>
-                        <div className="pk-card__body">
-                          <h3 className="title">{entry.pet.name}</h3>
-                          <p className="caption pk-faint">
-                            Level {level}
-                            {entry.pet.address === guild.founderPet ? " · founder" : ""}
-                          </p>
-                          {out ? (
-                            <div style={{ marginTop: "var(--space-2)" }}>
-                              <Presence name="Out today" />
-                            </div>
-                          ) : null}
+        <Stack gap={4}>
+          <div className="pk-spread">
+            <h2 className="display-s">The pets</h2>
+            {outToday > 0 ? <Presence name={`${outToday} out today`} /> : <span className="caption pk-faint">Nobody out yet today</span>}
+          </div>
+          {records.length === 0 ? (
+            <EmptyState icon="paw" title="Nobody here yet" body="A guild with nobody in it is still on the record. The next pet to join is its first." />
+          ) : (
+            <div className="pk-cards">
+              {records.map(({ entry, record }) => {
+                const { level, mood } = projectGuestPet(record, now);
+                const out = streakAsOf(record.streak, now).activeToday;
+                return (
+                  <Card key={entry.pet.address} variant="flush">
+                    <Link href={`/pet/${entry.pet.address}`} className="pk-card__art" aria-label={`${entry.pet.name}'s record`}>
+                      <PetFrame {...petLook(record, mood)} sky={SPECIES_SKY[record.species]} level={level} size="fluid" still />
+                    </Link>
+                    <div className="pk-card__body">
+                      <h3 className="title">{entry.pet.name}</h3>
+                      <p className="caption pk-faint">
+                        Level {level}
+                        {entry.pet.address === guild.founderPet ? " · founder" : ""}
+                      </p>
+                      {out ? (
+                        <div style={{ marginTop: "var(--space-2)" }}>
+                          <Presence name="Out today" />
                         </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </Stack>
-          }
-          second={
-            <Stack gap={4}>
-              <Card>
-                <h2 className="title">Together</h2>
-                <dl className="pk-together">
-                  <div>
-                    <dt className="label pk-faint">Cares given</dt>
-                    <dd className="amount">{cares}</dd>
-                  </div>
-                  <div>
-                    <dt className="label pk-faint">Longest run</dt>
-                    <dd>
-                      <span className="amount">{bestRun}</span> <span className="caption pk-faint">{bestRun === 1 ? "day" : "days"}</span>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="label pk-faint">Out today</dt>
-                    <dd className="amount">{outToday}</dd>
-                  </div>
-                </dl>
-                <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
-                  Counted from each pet&apos;s own Passport. A guild keeps no score of its own, and none of this
-                  changes a pet.
-                </p>
-              </Card>
-              {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name }} />}
-              <Paper title="On the record" meta={`Solana ${cluster}`}>
-                <div className="pk-receipt">
-                  <Fact k="Guild" value={guild.address} cluster={cluster} />
-                  <Fact k="Founded by" value={guild.founder} cluster={cluster} />
-                  <Fact k="Program" value={PAWKET_PROGRAM_ID} cluster={cluster} />
-                  <div className="pk-receipt__row">
-                    <span className="pk-receipt__k">Address</span>
-                    <span className="pk-receipt__v">{guild.slug}</span>
-                  </div>
-                  <div className="pk-receipt__row">
-                    <span className="pk-receipt__k">Founded</span>
-                    <span className="pk-receipt__v">
-                      {since(guild.createdAt)}
-                      {founder ? ` by ${founder.pet.name}` : ""}
-                    </span>
-                  </div>
-                </div>
-                <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
-                  Each pet joins and leaves with its owner&apos;s signature. Pawket cannot add a pet, remove one or
-                  change the guild.
-                </p>
-              </Paper>
-            </Stack>
-          }
-        />
+                      ) : null}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </Stack>
+
+        {/* What the guild has done together, joining it, and its facts: one row of equal cards under the shelf. */}
+        <div className="pk-guild-facts">
+          <Card>
+            <h2 className="title">Together</h2>
+            <dl className="pk-together">
+              <div>
+                <dt className="label pk-faint">Cares given</dt>
+                <dd className="amount">{cares}</dd>
+              </div>
+              <div>
+                <dt className="label pk-faint">Longest run</dt>
+                <dd>
+                  <span className="amount">{bestRun}</span> <span className="caption pk-faint">{bestRun === 1 ? "day" : "days"}</span>
+                </dd>
+              </div>
+              <div>
+                <dt className="label pk-faint">Out today</dt>
+                <dd className="amount">{outToday}</dd>
+              </div>
+            </dl>
+            <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
+              Counted from each pet&apos;s own Passport. A guild keeps no score of its own, and none of this
+              changes a pet.
+            </p>
+          </Card>
+          {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name }} />}
+          <Paper title="On the record" meta={`Solana ${cluster}`}>
+            <div className="pk-receipt">
+              <Fact k="Guild" value={guild.address} cluster={cluster} />
+              <Fact k="Founded by" value={guild.founder} cluster={cluster} />
+              <Fact k="Program" value={PAWKET_PROGRAM_ID} cluster={cluster} />
+              <div className="pk-receipt__row">
+                <span className="pk-receipt__k">Address</span>
+                <span className="pk-receipt__v">{guild.slug}</span>
+              </div>
+              <div className="pk-receipt__row">
+                <span className="pk-receipt__k">Founded</span>
+                <span className="pk-receipt__v">
+                  {since(guild.createdAt)}
+                  {founder ? ` by ${founder.pet.name}` : ""}
+                </span>
+              </div>
+            </div>
+            <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
+              Each pet joins and leaves with its owner&apos;s signature. Pawket cannot add a pet, remove one or
+              change the guild.
+            </p>
+          </Paper>
+        </div>
       </Stack>
     </Screen>
   );

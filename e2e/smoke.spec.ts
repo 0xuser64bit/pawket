@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { dailySeed } from "../src/lib/play/best";
+import { dealPairs } from "../src/lib/play/pairs";
 
 test("landing leads with the pet and closes with the rules", async ({ page }) => {
   await page.goto("/");
@@ -219,7 +221,7 @@ test("a playground round finishes and keeps a daily bonus", async ({ page }) => 
 
   // The bonus is once a day; another game still counts and says so.
   await page.getByRole("button", { name: "Another game" }).click();
-  await expect(page.getByText("Today's round is kept")).toBeVisible();
+  await expect(page.getByText("Tuesday has today's round")).toBeVisible();
   await page.getByRole("button", { name: /^Copy/ }).click();
   await page.getByRole("button", { name: "Start copying" }).click();
   for (let tap = 0; tap < 40; tap++) {
@@ -230,6 +232,29 @@ test("a playground round finishes and keeps a daily bonus", async ({ page }) => 
   }
   await expect(page.getByText("Round finished")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/already earned today's play bonus/)).toBeVisible();
+});
+
+test("today's Pairs is the same round for everyone, and a perfect one is sixty", async ({ page }) => {
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await page.getByRole("button", { name: /take them home/i }).click();
+  await page.goto("/playground");
+  await page.getByRole("button", { name: /^Pairs/ }).click();
+  await expect(page.getByText(/Today's round ·/)).toBeVisible();
+
+  // The deal is the day's, so the test can know it — as anyone could.
+  const today = new Date().toISOString().slice(0, 10);
+  const { cards } = dealPairs(dailySeed("pairs", today));
+  const board = page.getByRole("group", { name: /^Pairs\./ });
+  for (let face = 0; face < 6; face++) {
+    await board.getByRole("button").nth(cards.indexOf(face)).click();
+    await board.getByRole("button").nth(cards.lastIndexOf(face)).click();
+  }
+  await expect(page.getByText("60 points")).toBeVisible();
+  await expect(page.getByText(/\+25 XP for playing today/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Share the score" })).toBeVisible();
 });
 
 test("adoption shows the pet you are making: its name on its blanket, its temperament on its first page", async ({ page }) => {

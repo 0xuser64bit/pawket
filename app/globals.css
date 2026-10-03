@@ -4550,6 +4550,44 @@ li {
 .pk-gamecard__art--copy {
   background: var(--sun-soft);
 }
+.pk-gamecard__art--pairs {
+  background: var(--surface-sunk);
+}
+.pk-gamecard-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+.pk-gamecard-wrap .pk-gamecard {
+  width: 100%;
+}
+.pk-gamecard__cards {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 10%;
+  display: flex;
+  gap: 4cqh;
+  transform: translateX(-80%);
+}
+.pk-gamecard__card {
+  display: grid;
+  place-items: center;
+  width: 20cqh;
+  aspect-ratio: 3 / 4;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--sun);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-gamecard__card--up {
+  background: var(--surface);
+}
+.pk-gamecard__card svg {
+  width: 80%;
+  height: auto;
+}
 .pk-gamecard__art--copy::after {
   display: none;
 }
@@ -4632,6 +4670,98 @@ li {
 }
 .pk-play__field {
   min-width: 0;
+}
+
+/* Pairs: twelve cards on the table and the pet beside them. A card turns
+   over in 3D on the press curve; under reduced motion it simply shows its
+   other side. */
+.pk-pairs {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-room);
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-sticker);
+}
+@media (min-width: 720px) {
+  .pk-pairs {
+    grid-template-columns: minmax(0, 1fr) 160px;
+    align-items: center;
+  }
+}
+.pk-pairs__board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.pk-pairs__side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+.pk-pairs__pet {
+  width: 110px;
+}
+.pk-pairs__pet svg {
+  display: block;
+  width: 100%;
+}
+.pk-pair {
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  perspective: 600px;
+  border-radius: var(--radius-md);
+}
+.pk-pair[disabled] {
+  cursor: default;
+}
+.pk-pair__inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform var(--dur-sheet) var(--ease-press);
+}
+.pk-pair--up .pk-pair__inner {
+  transform: rotateY(180deg);
+}
+.pk-pair__back,
+.pk-pair__face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  backface-visibility: hidden;
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-pair__back {
+  background: var(--sun);
+}
+.pk-pair__face {
+  background: var(--surface);
+  transform: rotateY(180deg);
+}
+.pk-pair__face svg {
+  width: 78%;
+  height: auto;
+}
+.pk-pair--found .pk-pair__face {
+  background: var(--sprout-soft);
+  border-color: var(--sprout-edge);
+}
+@media (hover: hover) {
+  .pk-pair:not([disabled]):not(.pk-pair--up):hover .pk-pair__inner {
+    transform: translateY(-2px);
+  }
 }
 
 .pk-game {

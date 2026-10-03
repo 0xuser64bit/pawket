@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { CATCH_LIVES, CATCH_MOUTH, CATCH_SECONDS, startCatch, stepCatch, type CatchState } from "./catch";
 import { BEANS, checkCopy, copyPattern, showMs } from "./copy";
 import { AIRTIME, HOP, hopScore, startHop, stepHop, type HopState } from "./hop";
+import { PAIRS, dealPairs, flipCard, pairsScore, settle } from "./pairs";
 
 const DT = 1 / 60;
 
@@ -116,9 +117,43 @@ describe("Copy", () => {
   });
 });
 
+describe("Pairs", () => {
+  it("deals six pairs, the same way for the same seed", () => {
+    const deal = dealPairs(5);
+    expect(deal.cards).toEqual(dealPairs(5).cards);
+    expect(deal.cards).not.toEqual(dealPairs(6).cards);
+    for (let face = 0; face < PAIRS; face++) expect(deal.cards.filter((c) => c === face)).toHaveLength(2);
+  });
+
+  it("keeps a pair, turns back a miss, and ends when every pair is found", () => {
+    let state = dealPairs(9);
+    const first = state.cards.indexOf(0);
+    const mate = state.cards.lastIndexOf(0);
+    const other = state.cards.indexOf(1);
+    state = flipCard(flipCard(state, first), other);
+    expect(state.misses).toBe(1);
+    expect(flipCard(state, mate)).toBe(state); // two are up: look first
+    state = settle(state);
+    state = flipCard(flipCard(state, first), mate);
+    expect(state.found[first] && state.found[mate]).toBe(true);
+    expect(state.open).toEqual([]);
+    for (let face = 1; face < PAIRS; face++) {
+      state = flipCard(flipCard(state, state.cards.indexOf(face)), state.cards.lastIndexOf(face));
+    }
+    expect(state.over).toBe(true);
+    expect(state.moves).toBe(PAIRS + 1);
+    expect(pairsScore(state)).toBe(58);
+  });
+
+  it("scores a perfect round sixty and never less than six", () => {
+    expect(pairsScore({ misses: 0 })).toBe(60);
+    expect(pairsScore({ misses: 100 })).toBe(PAIRS);
+  });
+});
+
 describe("the playground", () => {
   it("never reads a vital, a level, a wearable or a balance", () => {
-    for (const file of ["catch.ts", "hop.ts", "copy.ts", "random.ts"]) {
+    for (const file of ["catch.ts", "hop.ts", "copy.ts", "pairs.ts", "random.ts"]) {
       const source = fs.readFileSync(path.join(__dirname, file), "utf8");
       expect(source, file).not.toMatch(/from "@\/lib\/(game|guest|closet|solana)/);
     }

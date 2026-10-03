@@ -203,6 +203,11 @@ export function Room({
   const handleReady = useCallback(() => setDrawn(true), []);
   const handleLost = useCallback(() => setFailed(true), []);
   const live = want3d && drawn;
+  // With 3D chosen, the flat room is not shown while the 3D one builds: the
+  // frame holds a loader instead, so a refresh never flashes the flat room's
+  // characters before the 3D ones. The flat room is for a choice of flat,
+  // and for a device or a moment where 3D cannot draw.
+  const flatShown = mode === "flat" || canDraw === false || failed;
   const state: RoomState =
     mode === "flat" ? "flat" : canDraw === false ? "unsupported" : failed ? "failed" : live ? "live" : "loading";
 
@@ -258,15 +263,23 @@ export function Room({
     <>
     <div
       ref={frame}
-      className={["pk-room", `pk-sky${sky === "warm" ? "--warm" : sky === "plain" ? "--plain" : ""}`, stage && "pk-room--stage", live && "pk-room--live"].filter(Boolean).join(" ")}
+      className={[
+        "pk-room",
+        `pk-sky${sky === "warm" ? "--warm" : sky === "plain" ? "--plain" : ""}`,
+        stage && "pk-room--stage",
+        !flatShown && "pk-room--3d",
+        live && "pk-room--live",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       tabIndex={live ? 0 : undefined}
       onKeyDown={onKeyDown}
       aria-label={live ? `${description} The left and right arrow keys turn the room.` : undefined}
       role={live ? "group" : undefined}
     >
-      {/* The flat room holds the frame whenever the 3D one is not drawing,
-          and sits under it while it fades in or out. */}
-      <div className="pk-room__flat">
+      {/* The flat room, when it is the room: chosen, or where 3D cannot draw.
+          Leaving 3D, it is back at once under the canvas fading off it. */}
+      <div className="pk-room__flat" aria-hidden={flatShown ? undefined : true}>
         <FlatRoom
           pet={pet ? { form: pet.form, temper: pet.temper, feeling: pet.feeling, wearing: pet.wearing, seed: pet.name } : null}
           colour={PEG_COLOUR[look.topColour]}
@@ -298,12 +311,14 @@ export function Room({
           </Guard>
         </div>
       ) : null}
-      {state === "loading" ? (
-        <div className="pk-room__building" role="status">
-          <PawGlyph size={28} moving />
+      {/* While the 3D room builds, the frame holds the paw and says so; the
+          canvas fades in under it as it fades out. */}
+      {flatShown ? null : (
+        <div className="pk-room__loading" role={live ? undefined : "status"} aria-hidden={live ? true : undefined}>
+          <PawGlyph size={56} moving={!live} />
           <span className="caption">Building the room in 3D</span>
         </div>
-      ) : null}
+      )}
       <span className="pk-sr">{description}</span>
     </div>
     {failed ? (

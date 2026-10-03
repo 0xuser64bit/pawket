@@ -20,7 +20,10 @@ const liveRoom = (page: Page) => page.getByRole("group", { name: /arrow keys tur
 
 test("the room comes up in 3D and an emote plays in it", async ({ page }) => {
   await adopt(page);
+  // With 3D chosen, the flat room's characters never show while the 3D room builds: the frame holds a loader.
+  await expect(page.locator(".pk-room__flat")).toBeHidden();
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
+  await expect(page.locator(".pk-room__flat")).toBeHidden();
   await page.getByRole("button", { name: "Say" }).click();
   await page.getByRole("button", { name: "Wave" }).click();
   await expect(page.getByRole("status").filter({ hasText: "You wave. Pepper saw." })).toBeVisible();
@@ -54,6 +57,7 @@ test("the flat room is a choice this device remembers", async ({ page }) => {
   await adopt(page);
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
   await page.getByRole("button", { name: "Flat room" }).click();
+  await expect(page.locator(".pk-room__flat")).toBeVisible();
   await expect(liveRoom(page)).toHaveCount(0);
   await expect(page.locator(".pk-room canvas")).toHaveCount(0);
   // Letting go of the canvas is not the room failing, and 3D comes straight back.
@@ -119,6 +123,8 @@ test.describe("without WebGL", () => {
     await adopt(page);
     await expect(page.locator(".pk-room__pet svg")).toBeVisible();
     await expect(page.locator(".pk-room canvas")).toHaveCount(0);
+    // No loader waits for a 3D room that will never come.
+    await expect(page.getByText("Building the room in 3D")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Wave" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Flat room" })).toHaveCount(0);
     // Care still works exactly as before.

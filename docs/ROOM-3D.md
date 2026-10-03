@@ -8,14 +8,18 @@ to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”
 
 - One Canvas, a client-only React Three Fiber leaf
   (`src/components/room3d/room-3d.tsx`), loaded with `next/dynamic` only when
-  Home renders a room. three.js never reaches the first paint: the flat room
-  is drawn first and stays until the first 3D frame, with a "Building the
-  room in 3D" pill at the top once the wait passes 300ms. Then the canvas
-  fades in over it (`--dur-room`, 420ms) and only then does the flat room
-  hide. Leaving 3D is the same in reverse: the flat room is back at once
-  underneath and the canvas fades off it before it is let go, so coming back
-  within that fade picks the room up where it was. A pointer on the switch
-  starts fetching the chunk early (`preloadRoom3D`).
+  Home renders a room. three.js never reaches the first paint. With 3D
+  chosen, the flat room is not shown while the 3D one builds — a refresh
+  never flashes the flat room's characters first: the frame holds the paw
+  loader, centred over the room's wall and floor, with "Building the room in
+  3D" beneath it. The canvas fades in under the loader as it fades out
+  (`--dur-room`, 420ms). Choosing 3D from the flat room, the flat room clears
+  to the loader (`--dur-swap`) the same way. Leaving 3D, the flat room is
+  back at once underneath and the canvas fades off it before it is let go,
+  so coming back within that fade picks the room up where it was. The flat
+  room is the room where it is chosen, where WebGL 2 is missing, and after
+  a failure. A pointer on the switch starts fetching the chunk early
+  (`preloadRoom3D`).
 - The canvas's own teardown loses its WebGL context on purpose; a guard set
   in a layout effect (whose cleanup runs before the canvas's) keeps that from
   reading as "the 3D room stopped drawing". A real loss still does.

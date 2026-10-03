@@ -3,6 +3,18 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: With 3D chosen, the room waits with the paw, not the flat room
+
+**Context:** The flat room held the frame while the 3D one built, so every
+refresh showed the flat room's characters for a second before the 3D ones
+replaced them — two versions of the same two characters in a row.
+**Decision:** With 3D chosen, the frame holds the paw loader over the room's
+wall and floor until the first 3D frame, then crossfades; choosing 3D from
+the flat room clears it to the loader first. The flat room shows only where
+it is the room: chosen, without WebGL 2, or after a failure.
+**Consequence:** A refresh shows the paw for the second the 3D room takes,
+never the flat room; the 300ms "pill" over the flat room is gone.
+
 ## 2026-10: A Pawket Wallet, so care stops asking every time
 
 **Context:** Every care, round and outfit for a pet on Solana opened the

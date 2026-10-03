@@ -128,6 +128,7 @@ export function Room({
   description,
   onStatus,
   onState,
+  stage = false,
 }: {
   pet: {
     species: PetSpecies;
@@ -144,6 +145,8 @@ export function Room({
   description: string;
   onStatus?: (status: DirectorStatus) => void;
   onState?: (state: RoomState) => void;
+  /** The whole width of the screen, as Home and the profile draw it. */
+  stage?: boolean;
 }) {
   const [mode] = useRoomMode();
   const canDraw = useCanDraw();
@@ -218,7 +221,7 @@ export function Room({
     <>
     <div
       ref={frame}
-      className={["pk-room", `pk-sky${sky === "warm" ? "--warm" : sky === "plain" ? "--plain" : ""}`, live ? "pk-room--live" : ""].join(" ")}
+      className={["pk-room", `pk-sky${sky === "warm" ? "--warm" : sky === "plain" ? "--plain" : ""}`, stage && "pk-room--stage", live && "pk-room--live"].filter(Boolean).join(" ")}
       tabIndex={live ? 0 : undefined}
       onKeyDown={onKeyDown}
       aria-label={live ? `${description} The left and right arrow keys turn the room.` : undefined}

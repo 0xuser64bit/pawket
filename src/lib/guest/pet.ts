@@ -133,6 +133,32 @@ export function streakAsOf(
   return { count: 0, activeToday: false };
 }
 
+export interface TodayGoals {
+  /** Each care, given today (UTC). */
+  cares: Record<CareActionType, boolean>;
+  /** A playground round finished today. */
+  round: boolean;
+  done: number;
+  of: number;
+}
+
+/**
+ * Today's round of care, as a checklist: each of the four cares and one
+ * playground round, on the UTC day the streak counts. Guidance only — it
+ * grants nothing the record does not already grant.
+ */
+export function todayFor(pet: Pick<GuestPet, "lastActionAt" | "lastDailyPlayDay">, now: Date = new Date()): TodayGoals {
+  const today = utcDay(now);
+  const cares = {} as Record<CareActionType, boolean>;
+  for (const action of Object.values(CareActionType)) {
+    const at = pet.lastActionAt[action];
+    cares[action] = at !== null && isTimestamp(at) && utcDay(new Date(at)) === today;
+  }
+  const round = pet.lastDailyPlayDay === today;
+  const done = Object.values(cares).filter(Boolean).length + (round ? 1 : 0);
+  return { cares, round, done, of: 5 };
+}
+
 function emptyLastAction(): GuestPet["lastActionAt"] {
   return {
     [CareActionType.Feed]: null,

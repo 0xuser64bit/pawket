@@ -75,14 +75,20 @@ test("adopting a pet needs no wallet and makes Home real", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Pepper is yours." })).toBeVisible();
 
   await page.getByRole("button", { name: /take them home/i }).click();
-  await expect(page.getByText("Today with Pepper")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
   await expect(page.getByText("Pepper lives in this browser")).toBeVisible();
-  await expect(page.getByText("72 / 100").first()).toBeVisible();
+  await expect(page.getByRole("img", { name: "Fullness 72 / 100" })).toBeVisible();
 
   await page.getByRole("button", { name: "Feed" }).click();
   await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
-  await expect(page.getByText("95 / 100")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Fullness 95 / 100" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
+  await expect(page.getByRole("listitem").filter({ hasText: "A meal" })).toContainText("done");
+
+  // The full numbers are a tool away, not in the way.
+  await page.getByRole("button", { name: "Today" }).click();
+  await expect(page.getByText("Today with Pepper")).toBeVisible();
+  await expect(page.getByText("95 / 100")).toBeVisible();
 });
 
 test("a new level is said out loud, and nothing else about the care changes", async ({ page }) => {
@@ -91,7 +97,7 @@ test("a new level is said out loud, and nothing else about the care changes", as
   await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
   await page.getByRole("button", { name: /that’s the one/i }).click();
   await page.getByRole("button", { name: /take them home/i }).click();
-  await expect(page.getByText("Today with Pepper")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
 
   // Five XP short of level two.
   await page.evaluate(() => {
@@ -102,7 +108,7 @@ test("a new level is said out loud, and nothing else about the care changes", as
   await expect(page.getByText("95 / 100 XP")).toBeVisible();
   await page.getByRole("button", { name: "Feed" }).click();
   await expect(page.getByText(/Fed\. \+10 XP\. Day 1\. Pepper is level 2 now\./)).toBeVisible();
-  await expect(page.getByText("Level 2", { exact: true })).toBeVisible();
+  await expect(page.getByRole("img", { name: /^Level 2,/ })).toBeVisible();
 });
 
 test("a second adoption keeps the first pet, and either can be at home", async ({ page }) => {
@@ -111,7 +117,7 @@ test("a second adoption keeps the first pet, and either can be at home", async (
   await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
   await page.getByRole("button", { name: /that’s the one/i }).click();
   await page.getByRole("button", { name: /take them home/i }).click();
-  await expect(page.getByText("Today with Pepper")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
 
   await page.goto("/adopt");
   await expect(page.getByText(/Pepper will have company/)).toBeVisible();
@@ -122,11 +128,14 @@ test("a second adoption keeps the first pet, and either can be at home", async (
   await page.getByRole("textbox", { name: "Pet name" }).fill("Miso");
   await page.getByRole("button", { name: /that’s the one/i }).click();
   await page.getByRole("button", { name: /take them home/i }).click();
-  await expect(page.getByText("Today with Miso")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Miso's room" })).toBeVisible();
 
+  // Either one comes home from the room itself.
+  await page.getByRole("button", { name: "Bring Pepper home" }).click();
+  await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
   await page.goto("/inventory");
   await page.getByRole("button", { name: "Bring home" }).click();
-  await expect(page.getByText("Today with Pepper")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Miso's room" })).toBeVisible();
 });
 
 test("the wardrobe is worn on the pet, and the record keeps the care", async ({ page }) => {

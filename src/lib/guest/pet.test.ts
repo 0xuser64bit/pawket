@@ -17,6 +17,7 @@ import {
   recordPlay,
   setWearing,
   streakAsOf,
+  todayFor,
 } from "./pet";
 import { loadPets, readPet, readPetsSnapshot, removePet, savePet } from "./storage";
 
@@ -261,6 +262,24 @@ describe("cooldownsFor", () => {
     const cooldowns = cooldownsFor(cared.pet, now);
     expect(cooldowns[CareActionType.Feed]).toBe(CARE_COOLDOWN_SECONDS);
     expect(cooldowns[CareActionType.Play]).toBe(0);
+  });
+});
+
+describe("todayFor", () => {
+  it("ticks each care given and the round finished on today's UTC day, and nothing from yesterday", () => {
+    const morning = new Date("2026-10-03T08:00:00Z");
+    let pet = createGuestPet({ ...INPUT, now: new Date("2026-10-02T20:00:00Z") });
+    const fed = applyGuestCare(pet, CareActionType.Feed, new Date("2026-10-02T23:59:00Z"));
+    if (fed.ok) pet = fed.pet;
+    expect(todayFor(pet, morning)).toMatchObject({ done: 0, of: 5, round: false });
+    const played = applyGuestCare(pet, CareActionType.Play, morning);
+    if (played.ok) pet = played.pet;
+    pet = recordPlay(pet, morning).pet;
+    const today = todayFor(pet, morning);
+    expect(today.cares[CareActionType.Play]).toBe(true);
+    expect(today.cares[CareActionType.Feed]).toBe(false);
+    expect(today.round).toBe(true);
+    expect(today.done).toBe(2);
   });
 });
 

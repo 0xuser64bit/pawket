@@ -7,17 +7,16 @@ const glyph = (name: string): IconName | undefined => (ICON_NAMES as string[]).i
 
 /**
  * Things to do together that are not care: a wave, a dance, a pat, a
- * treat. The room plays each one; nothing here touches the record.
+ * treat. The room plays each one, and says so on its own line; nothing
+ * here touches the record.
  */
 export function EmoteRow({
   petName,
   playing,
-  sentence,
   onEmote,
 }: {
   petName: string;
   playing: string | null;
-  sentence: string;
   onEmote: (id: string) => void;
 }) {
   return (
@@ -42,9 +41,6 @@ export function EmoteRow({
           );
         })}
       </Row>
-      <p role="status" className="body-sm" style={{ marginTop: sentence ? "var(--space-3)" : 0, minHeight: 0 }}>
-        {sentence}
-      </p>
       <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
         Emotes are for the two of you. They do not change a vital, XP or the streak.
       </p>

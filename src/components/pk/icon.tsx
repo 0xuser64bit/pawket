@@ -1,5 +1,5 @@
 /**
- * The one icon set: 31 glyphs on a 24px grid at 1.9px, round caps and joins,
+ * The one icon set: glyphs on a 24px grid at 1.9px, round caps and joins,
  * `currentColor`. The stroke weight matches `stroke-line`, which is why an
  * icon sits correctly inside a chip, a button and the dock.
  *
@@ -46,6 +46,12 @@ const ICONS = {
   vote: "M4.4 12.6h15.2v7.4H4.4zM8.4 12.6V4.8h7.2v7.8M10.4 8.4l1.4 1.4 2.4-2.6M10.2 16.2h3.6",
   scale: "M12 4.6v14.8M6 19.4h12M7 8.2h10M7 8.2 4 14.4h6zM17 8.2l-3 6.2h6z",
   pause: "M9 6.4v11.2M15 6.4v11.2",
+  // the room's own glyphs: saying something, a photo, you, energy and a nap
+  chat: "M6.6 4.6h10.8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-6.2L7 19.2v-3.6h-.4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2zM8.8 10.2h.2M12 10.2h.2M15.2 10.2h.2",
+  camera: "M4.4 8.6a1.6 1.6 0 0 1 1.6-1.6h2.4l1.6-2.2h4l1.6 2.2H18a1.6 1.6 0 0 1 1.6 1.6v9a1.6 1.6 0 0 1-1.6 1.6H6a1.6 1.6 0 0 1-1.6-1.6zM12 9.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4",
+  person: "M12 4.4a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8M5.4 19.8c0-3.6 3-6.2 6.6-6.2s6.6 2.6 6.6 6.2",
+  bolt: "M13.2 3.8 6.6 13.2h5l-1 7 6.8-9.4h-5.2z",
+  moon: "M15.6 4.6a7.4 7.4 0 1 0 3.8 12 6.2 6.2 0 0 1-3.8-12z",
   // the wardrobe: each piece drawn as itself, never borrowed from a mood
   scarf: "M4.4 6.8c5 2.8 10.2 2.8 15.2 0l.8 3.6c-5.6 3-11.2 3-16.8 0zM14.4 10.8c.9 2.9.9 5.8-.1 8.8l3.8-.5c.6-3 .3-5.8-.9-8.9M8.4 9.4v2.2M12 9.9v2.2",
   crown: "M5 17.2 3.8 7.8l4.6 3.8L12 5.4l3.6 6.2 4.6-3.8-1.2 9.4zM5.4 20h13.2",

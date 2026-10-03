@@ -3058,6 +3058,397 @@ li {
   }
 }
 
+/* ------------------------------------------------------- Home: the stage
+
+   The room is the whole width of the screen. The deck floats under it,
+   tucked over the frame's foot (the floor, never the animal): how the pet
+   is, the four cares as round buttons, and three tools whose panels open
+   below. On a desktop the deck is one row; narrower it stacks. */
+
+.pk-room--stage {
+  max-height: none;
+}
+@media (min-width: 1024px) {
+  .pk-room--stage {
+    aspect-ratio: 16 / 7;
+  }
+}
+
+.pk-home__line {
+  min-height: 36px;
+  padding: 0 var(--space-2);
+}
+.pk-home__line p {
+  min-width: 0;
+}
+.pk-home__notice:empty {
+  display: none;
+}
+.pk-home__notice {
+  text-align: center;
+}
+.pk-home__more {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+@media (min-width: 1024px) {
+  .pk-home__more {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    align-items: start;
+    gap: var(--space-5);
+  }
+}
+.pk-home__vitals {
+  display: grid;
+  gap: var(--space-3) var(--space-6);
+}
+@media (min-width: 720px) {
+  .pk-home__vitals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.pk-deck {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: var(--space-4);
+  margin: calc(-1 * var(--space-5)) var(--space-3) 0;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pocket);
+  box-shadow: var(--shadow-sticker);
+}
+@media (min-width: 1024px) {
+  .pk-deck {
+    grid-template-columns: auto auto auto;
+    align-items: center;
+    gap: 0;
+    width: fit-content;
+    max-width: calc(100% - 2 * var(--space-5));
+    margin-inline: auto;
+    padding: var(--space-3) var(--space-4);
+  }
+  .pk-deck > * + * {
+    margin-left: var(--space-5);
+    padding-left: var(--space-5);
+    border-left: var(--stroke-line) solid var(--edge-soft);
+  }
+}
+.pk-deck__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.pk-deck__who {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.pk-deck__mood {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+.pk-deck__streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--sprout-text);
+  font-weight: 600;
+}
+.pk-deck__vitals {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: var(--space-1) var(--space-4);
+}
+.pk-deck__care {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+@media (min-width: 1024px) {
+  .pk-deck__care {
+    grid-template-columns: repeat(4, 64px);
+  }
+}
+.pk-deck__tools {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+@media (max-width: 1023px) {
+  .pk-deck__tools {
+    padding-top: var(--space-3);
+    border-top: var(--stroke-line) solid var(--edge-soft);
+  }
+}
+
+/* Level as ten countable segments round the number. */
+.pk-ring {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 52px;
+}
+.pk-ring svg {
+  width: 100%;
+  height: 100%;
+}
+.pk-ring__seg {
+  fill: none;
+  stroke: var(--surface-sunk);
+  stroke-width: 5;
+  stroke-linecap: butt;
+}
+.pk-ring__seg--on {
+  stroke: var(--sprout);
+}
+.pk-ring__n {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 64, "WONK" 1;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* A vital, minimized: glyph, five segments, the count. */
+.pk-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-soft);
+}
+.pk-mini__track {
+  display: inline-flex;
+  gap: 2px;
+}
+.pk-mini__seg {
+  width: 7px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--surface-sunk);
+  box-shadow: inset 0 0 0 1px var(--edge-soft);
+}
+.pk-mini__seg--on {
+  background: var(--sprout);
+  box-shadow: inset 0 0 0 1px var(--sprout-edge);
+}
+.pk-mini--low .pk-mini__seg--on {
+  background: var(--sun);
+  box-shadow: inset 0 0 0 1px var(--sun-edge);
+}
+.pk-mini__n {
+  min-width: 2ch;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A care: a round face on a shelf, its name below. The one the pet wants
+   is in sun; a resting one counts down where its name was. */
+.pk-care {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  border-radius: var(--radius-md);
+}
+.pk-care__face {
+  --pk-face: var(--surface);
+  --pk-shelf: var(--edge-soft);
+  --pk-on: var(--ink);
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: var(--stroke-line) solid var(--edge);
+  border-bottom-width: calc(var(--stroke-line) + var(--stroke-shelf));
+  border-bottom-color: var(--pk-shelf);
+  border-radius: var(--radius-pill);
+  background: var(--pk-face);
+  color: var(--pk-on);
+  transition:
+    transform var(--dur-press) var(--ease-press),
+    border-bottom-width var(--dur-press) var(--ease-press),
+    margin-bottom var(--dur-press) var(--ease-press);
+}
+.pk-care--wanted .pk-care__face {
+  --pk-face: var(--sun);
+  --pk-shelf: var(--sun-edge);
+  --pk-on: var(--on-sun);
+  border-color: var(--on-sun);
+  border-bottom-color: var(--sun-edge);
+}
+@media (hover: hover) {
+  .pk-care:not([disabled]):hover .pk-care__face {
+    transform: translateY(-1px);
+    border-bottom-width: calc(var(--stroke-line) + var(--stroke-shelf) + 1px);
+    margin-bottom: -1px;
+  }
+}
+.pk-care:not([disabled]):active .pk-care__face {
+  transform: translateY(var(--stroke-shelf));
+  border-bottom-width: var(--stroke-line);
+  margin-bottom: var(--stroke-shelf);
+}
+.pk-care[disabled] {
+  cursor: default;
+}
+.pk-care[disabled] .pk-care__face {
+  opacity: var(--opacity-disabled);
+}
+.pk-care__label {
+  font-family: var(--font-text);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pk-care__label--wait {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A tool: a glyph over its word, no box until it is open. */
+.pk-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 56px;
+  min-height: 52px;
+  padding: var(--space-1) var(--space-2);
+  border: var(--stroke-line) solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-text);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pk-tool[aria-expanded="true"] {
+  --pk-keep: var(--shadow-sticker-sm);
+  border-color: var(--edge);
+  background: var(--surface-sunk);
+  color: var(--ink);
+  box-shadow: var(--shadow-sticker-sm);
+}
+@media (hover: hover) {
+  .pk-tool:not([aria-expanded="true"]):hover {
+    background: var(--surface-sunk);
+    color: var(--ink);
+  }
+}
+
+/* Today's round, as a checklist. */
+.pk-goals {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+.pk-goal {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.pk-goal a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+.pk-goal__mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-pill);
+  color: var(--ink-faint);
+}
+.pk-goal--done {
+  color: var(--ink);
+}
+.pk-goal--done .pk-goal__mark {
+  border-color: var(--sprout-edge);
+  background: var(--sprout-soft);
+  color: var(--sprout-text);
+}
+
+/* Who is home: every pet as a face in a circle, the one at home ringed. */
+.pk-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.pk-avatar {
+  display: grid;
+  place-items: end center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  overflow: hidden;
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-press);
+}
+.pk-avatar svg {
+  width: 116%;
+  height: 116%;
+  margin-bottom: -18%;
+}
+.pk-avatar--on {
+  --pk-keep: 0 0 0 3px var(--surface), 0 0 0 5px var(--sun);
+  border-color: var(--edge);
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--sun);
+}
+.pk-avatar--add {
+  place-items: center;
+  border-style: dashed;
+  background: transparent;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .pk-avatar:not(.pk-avatar--on):hover {
+    transform: translateY(-2px);
+    border-color: var(--edge);
+  }
+}
+
 /* ------------------------------------------------------- rooms (themes)
 
    A room is a whole set of tokens. The switch in the shell names the room

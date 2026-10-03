@@ -2,7 +2,7 @@ import { address } from "@solana/kit";
 import { describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { guestPetSchema, projectGuestPet, cooldownsFor } from "@/lib/guest/pet";
-import { decodePassport, decodePet, displayName, toCompanionRecord, wearableSlot } from "./accounts";
+import { decodeGuild, decodeMember, decodePassport, decodePet, displayName, toCompanionRecord, wearableSlot } from "./accounts";
 import { PAWKET_ACCOUNTS } from "./program";
 
 /**
@@ -56,6 +56,58 @@ function passportBytes(marks: Array<[number, number]>, careCount: number): Uint8
   bytes[168] = 255;
   return bytes;
 }
+
+/** A guild at the offsets `guild_layouts_are_the_contract_the_web_app_decodes` locks. */
+function guildBytes({ slug = "sunbeam-club", name = "Sunbeam Club", motto = "Naps first." } = {}): Uint8Array {
+  const bytes = new Uint8Array(PAWKET_ACCOUNTS.guild.size);
+  const view = new DataView(bytes.buffer);
+  bytes.set(PAWKET_ACCOUNTS.guild.discriminator, 0);
+  // founder 8..40 stays zero; founder pet 40..72
+  bytes.set(new Uint8Array(32).fill(7), 40);
+  view.setBigInt64(72, BigInt(T), true);
+  view.setUint32(80, 3, true); // members
+  bytes[84] = 2; // crest
+  bytes[85] = 1; // colour
+  bytes[86] = 253; // bump
+  let at = 87;
+  for (const text of [slug, name, motto]) {
+    const encoded = new TextEncoder().encode(text);
+    view.setUint32(at, encoded.length, true);
+    bytes.set(encoded, at + 4);
+    at += 4 + encoded.length;
+  }
+  return bytes;
+}
+
+describe("decodeGuild and decodeMember", () => {
+  it("reads a guild at the program's offsets", () => {
+    const guild = decodeGuild(PASSPORT, guildBytes());
+    expect(guild).toMatchObject({ memberCount: 3, crest: 2, colour: 1, slug: "sunbeam-club", name: "Sunbeam Club", motto: "Naps first.", createdAt: T });
+    expect(guild.founder).toBe(OWNER);
+  });
+
+  it("shows a stranger's guild without its control characters", () => {
+    const guild = decodeGuild(PASSPORT, guildBytes({ name: "\u202eSunbeam", motto: "" }));
+    expect(guild.name).toBe("Sunbeam");
+    expect(guild.motto).toBe("");
+  });
+
+  it("reads a member, pet first and guild second", () => {
+    const bytes = new Uint8Array(PAWKET_ACCOUNTS.member.size);
+    bytes.set(PAWKET_ACCOUNTS.member.discriminator, 0);
+    bytes.set(new Uint8Array(32).fill(1), 8);
+    bytes.set(new Uint8Array(32).fill(2), 40);
+    new DataView(bytes.buffer).setBigInt64(136, BigInt(T), true);
+    const member = decodeMember(PET, bytes);
+    expect(member.joinedAt).toBe(T);
+    expect(member.pet).not.toBe(member.guild);
+  });
+
+  it("refuses bytes that are not theirs", () => {
+    expect(() => decodeGuild(PASSPORT, petBytes())).toThrow(/not a Pawket guild/);
+    expect(() => decodeMember(PASSPORT, guildBytes())).toThrow(/not a Pawket guild member/);
+  });
+});
 
 describe("decodePet", () => {
   it("reads every field at its locked offset", () => {
@@ -121,6 +173,7 @@ describe("toCompanionRecord", () => {
   const onChain = {
     pet: decodePet(PET, petBytes({ wearing: 2 })),
     passport: decodePassport(PASSPORT, passportBytes([[0, T + 3600]], 1)),
+    member: null,
   };
   const record = toCompanionRecord(onChain);
 

@@ -56,13 +56,25 @@ test("an empty room asks you to adopt and does not pretend to care", async ({ pa
   await expect(page.getByRole("button", { name: "Feed" })).toHaveCount(0);
 });
 
-test("guilds are a boundary, not a club you can join", async ({ page }) => {
+test("guilds are optional, read from Solana, and sell nothing", async ({ page }) => {
   await page.goto("/guilds");
   await expect(page.getByRole("heading", { name: "Guilds" })).toBeVisible();
-  await expect(page.getByText("Not open")).toBeVisible();
+  await expect(page.getByText(/optional, always/i)).toBeVisible();
   await expect(page.getByText(/raise a pet/i)).toBeVisible();
-  await expect(page.getByRole("link", { name: /join/i })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /buy|swap|pay/i })).toHaveCount(0);
+  await expect(page.getByText(/token/i).first()).toBeVisible();
+
+  // Founding asks for a pet on Solana, and a wallet only once there is something to sign.
+  await page.getByRole("link", { name: "Found a guild" }).click();
+  await page.getByRole("textbox", { name: "Guild name" }).fill("Sunbeam Club");
+  await expect(page.getByText("/guilds/sunbeam-club")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Connect a wallet" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Found Sunbeam Club/ })).toBeDisabled();
+});
+
+test("a guild nobody founded is a plain miss", async ({ page }) => {
+  await page.goto("/guilds/no-such-guild-here");
+  await expect(page.getByText(/no guild has that name|solana did not answer/i)).toBeVisible();
 });
 
 test("adopting a pet needs no wallet and makes Home real", async ({ page }) => {

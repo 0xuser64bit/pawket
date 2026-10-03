@@ -8,5 +8,6 @@ mod harness;
 
 mod adopt;
 mod care;
+mod guild;
 mod lockstep;
 mod round_and_dress;

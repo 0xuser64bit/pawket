@@ -10,10 +10,10 @@ import type { GuestPet } from "@/lib/guest/pet";
  * pets have earned it. Each is read from the record, so a sticker cannot be
  * bought and is never lost; one not yet earned says how.
  */
-export function StickerBook({ pets, onChain }: { pets: GuestPet[]; onChain: Set<string> }) {
+export function StickerBook({ pets, onChain, inGuild }: { pets: GuestPet[]; onChain: Set<string>; inGuild: Set<string> }) {
   const earnedBy = new Map<string, GuestPet[]>();
   for (const pet of pets) {
-    for (const id of badgesFor(pet, { onChain: onChain.has(pet.id) })) {
+    for (const id of badgesFor(pet, { onChain: onChain.has(pet.id), guild: inGuild.has(pet.id) })) {
       earnedBy.set(id, [...(earnedBy.get(id) ?? []), pet]);
     }
   }

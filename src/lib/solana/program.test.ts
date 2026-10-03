@@ -8,9 +8,13 @@ import {
   getCareInstruction,
   getDressInstruction,
   getFinishRoundInstruction,
+  getFoundGuildInstruction,
+  getJoinGuildInstruction,
+  getLeaveGuildInstruction,
 } from "./instructions";
 import {
   CARE_ACTION_VARIANTS,
+  GUILD_LIMITS,
   PAWKET_ACCOUNTS,
   PAWKET_DISCRIMINATORS,
   PAWKET_ERROR_CODES,
@@ -47,6 +51,20 @@ const BUILT: Record<string, Instruction> = {
   perform_care_action: getCareInstruction({ owner: A, pet: A, passport: A, action: CareActionType.Feed }),
   finish_round: getFinishRoundInstruction({ owner: A, pet: A, passport: A }),
   dress: getDressInstruction({ owner: A, pet: A, wearing: 0 }),
+  found_guild: getFoundGuildInstruction({
+    owner: A,
+    payer: A,
+    pet: A,
+    guild: A,
+    member: A,
+    slug: "sunbeam-club",
+    name: "Sunbeam Club",
+    motto: "Naps first.",
+    crest: 0,
+    colour: 0,
+  }),
+  join_guild: getJoinGuildInstruction({ owner: A, payer: A, pet: A, guild: A, member: A }),
+  leave_guild: getLeaveGuildInstruction({ owner: A, pet: A, member: A, guild: A, payer: A }),
 };
 
 describe("program.ts against the IDL", () => {
@@ -74,10 +92,25 @@ describe("program.ts against the IDL", () => {
     }
   });
 
-  it("decodes the two accounts the program keeps", () => {
+  it("decodes every account the program keeps", () => {
     const byName = Object.fromEntries(idl.accounts.map((a) => [a.name, a.discriminator]));
     expect(PAWKET_ACCOUNTS.pet.discriminator).toEqual(byName.Pet);
     expect(PAWKET_ACCOUNTS.passport.discriminator).toEqual(byName.PetPassport);
+    expect(PAWKET_ACCOUNTS.guild.discriminator).toEqual(byName.Guild);
+    expect(PAWKET_ACCOUNTS.member.discriminator).toEqual(byName.GuildMember);
+    expect(Object.keys(PAWKET_ACCOUNTS)).toHaveLength(idl.accounts.length);
+  });
+
+  it("encodes a founding as the program reads its arguments", () => {
+    const args = idl.instructions.find((ix) => ix.name === "found_guild")!.args.map((a) => a.name);
+    expect(args).toEqual(["slug", "name", "motto", "crest", "colour"]);
+    const data = Array.from(BUILT.found_guild.data ?? []);
+    // discriminator, then "sunbeam-club" as a u32-prefixed string
+    expect(data.slice(8, 12)).toEqual([12, 0, 0, 0]);
+    expect(String.fromCharCode(...data.slice(12, 24))).toBe("sunbeam-club");
+    expect(data.slice(-2)).toEqual([0, 0]);
+    expect(GUILD_LIMITS.crests).toBe(8);
+    expect(GUILD_LIMITS.colours).toBe(6);
   });
 
   it("encodes enums in the program's variant order", () => {

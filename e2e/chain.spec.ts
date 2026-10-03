@@ -57,3 +57,37 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await expect(page.getByText("Keepsake", { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("button", { name: `Keep ${name}'s card` })).toHaveCount(0);
 });
+
+test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) => {
+  test.setTimeout(300_000);
+  const wallet = createTestWallet();
+  await page.addInitScript(wallet.script);
+  const name = NAMES[Math.floor(Math.random() * NAMES.length)];
+  // Test guilds are named so discovery leaves them out (src/lib/guilds/delisted.ts).
+  const guild = `Devnet Check ${Date.now().toString(36)}`;
+
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill(name);
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await page.getByRole("button", { name: /take them home/i }).click();
+  await page.getByRole("button", { name: "Connect a wallet" }).click();
+  await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
+  await page.getByRole("button", { name: `Record ${name}` }).click();
+  await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
+
+  await page.goto("/guilds/new");
+  await page.getByRole("textbox", { name: "Guild name" }).fill(guild);
+  await page.getByRole("textbox", { name: "Motto" }).fill("Made by the screens test.");
+  await page.getByRole("button", { name: new RegExp(`^Found ${guild}`) }).click();
+  await page.waitForURL(/\/guilds\/devnet-check-/, { timeout: 120_000 });
+  await expect(page.getByRole("heading", { name: guild, exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("1 pet", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
+  await expect(page.getByText(`In ${guild}`)).toBeVisible();
+
+  // The pet's own record names its guild.
+  await page.getByRole("link", { name: `${name}'s record` }).click();
+  await expect(page.getByText("In a guild")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("link", { name: new RegExp(guild) })).toBeVisible();
+});

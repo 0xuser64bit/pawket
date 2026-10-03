@@ -22,7 +22,9 @@ import {
   petLook,
 } from "@/lib/game/appearance";
 import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
-import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
+import { toCompanionRecord, type ChainGuild, type PetOnChain } from "@/lib/solana/accounts";
+import { GuildCrest } from "@/components/guilds/guild-crest";
+import Link from "next/link";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { formatUtcDate } from "@/lib/utils/format";
@@ -43,8 +45,11 @@ export function Passport({
   now,
   keepsake,
   canKeep,
+  guild = null,
 }: {
   onChain: PetOnChain;
+  /** The guild the pet is in, read from chain, or null. */
+  guild?: ChainGuild | null;
   now: Date;
   /** The pet's card, where keepsakes are on. */
   keepsake: Keepsake | null;
@@ -94,6 +99,18 @@ export function Passport({
               <Chip label={PERSONALITY_LABEL[pet.personality]} />
               {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
             </Row>
+
+            {guild ? (
+              <Link href={`/guilds/${guild.slug}`} className="pk-guild-tag">
+                <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} size="sm" />
+                <span>
+                  <span className="caption pk-faint" style={{ display: "block" }}>
+                    In a guild
+                  </span>
+                  <span className="title">{guild.name}</span>
+                </span>
+              </Link>
+            ) : null}
 
             <Row gap={2} wrap>
               <OwnerActions owner={pet.owner} address={pet.address} name={pet.name} />

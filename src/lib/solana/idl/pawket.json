@@ -184,6 +184,246 @@
       "args": []
     },
     {
+      "name": "found_guild",
+      "docs": [
+        "A pet founds a guild and is its first member. The slug is the guild's address, so a name is",
+        "one guild; `payer` covers the rent of both accounts."
+      ],
+      "discriminator": [
+        251,
+        141,
+        105,
+        159,
+        238,
+        125,
+        44,
+        36
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "guild",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  117,
+                  105,
+                  108,
+                  100
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "slug"
+              }
+            ]
+          }
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "slug",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "motto",
+          "type": "string"
+        },
+        {
+          "name": "crest",
+          "type": "u8"
+        },
+        {
+          "name": "colour",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "join_guild",
+      "docs": [
+        "A pet joins a guild. A pet is in one guild at most: its member account is seeded by the pet."
+      ],
+      "discriminator": [
+        242,
+        159,
+        183,
+        21,
+        140,
+        65,
+        110,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "guild",
+          "writable": true
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "leave_guild",
+      "docs": [
+        "A pet leaves its guild. The member account closes and its rent goes back to whoever paid it.",
+        "The guild stays, with one fewer; a guild with nobody in it is still on the record."
+      ],
+      "discriminator": [
+        32,
+        129,
+        72,
+        117,
+        154,
+        8,
+        115,
+        245
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "pet",
+          "relations": [
+            "member"
+          ]
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "guild",
+          "writable": true,
+          "relations": [
+            "member"
+          ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "relations": [
+            "member"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "perform_care_action",
       "docs": [
         "Feed, play, groom or rest: decay to now, apply the locked deltas, +10 XP, then write the",
@@ -233,6 +473,32 @@
   ],
   "accounts": [
     {
+      "name": "Guild",
+      "discriminator": [
+        74,
+        176,
+        57,
+        164,
+        195,
+        188,
+        156,
+        237
+      ]
+    },
+    {
+      "name": "GuildMember",
+      "discriminator": [
+        255,
+        176,
+        230,
+        246,
+        44,
+        246,
+        114,
+        56
+      ]
+    },
+    {
       "name": "Pet",
       "discriminator": [
         180,
@@ -271,6 +537,45 @@
         33,
         110,
         74
+      ]
+    },
+    {
+      "name": "GuildFounded",
+      "discriminator": [
+        188,
+        24,
+        210,
+        198,
+        34,
+        230,
+        37,
+        123
+      ]
+    },
+    {
+      "name": "GuildJoined",
+      "discriminator": [
+        93,
+        188,
+        153,
+        173,
+        38,
+        251,
+        51,
+        25
+      ]
+    },
+    {
+      "name": "GuildLeft",
+      "discriminator": [
+        32,
+        231,
+        158,
+        167,
+        205,
+        187,
+        26,
+        177
       ]
     },
     {
@@ -333,6 +638,26 @@
       "code": 6003,
       "name": "UnknownWearable",
       "msg": "There is nothing like that to wear."
+    },
+    {
+      "code": 6004,
+      "name": "InvalidGuildSlug",
+      "msg": "A guild's address is 3 to 24 of a-z, 0-9 and inner hyphens."
+    },
+    {
+      "code": 6005,
+      "name": "InvalidGuildName",
+      "msg": "A guild's name is 3 to 32 UTF-8 bytes."
+    },
+    {
+      "code": 6006,
+      "name": "InvalidGuildMotto",
+      "msg": "A guild's motto is at most 80 UTF-8 bytes."
+    },
+    {
+      "code": 6007,
+      "name": "UnknownCrest",
+      "msg": "There is no crest like that."
     }
   ],
   "types": [
@@ -408,6 +733,157 @@
           {
             "name": "streak",
             "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Guild",
+      "docs": [
+        "Fixed-size fields first and the strings last, so every offset but theirs is constant."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "founder",
+            "docs": [
+              "The wallet that founded it."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "founder_pet",
+            "docs": [
+              "The pet that founded it."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "member_count",
+            "type": "u32"
+          },
+          {
+            "name": "crest",
+            "type": "u8"
+          },
+          {
+            "name": "colour",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "slug",
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "motto",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GuildFounded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "guild",
+            "type": "pubkey"
+          },
+          {
+            "name": "founder",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "slug",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GuildJoined",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "guild",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GuildLeft",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "guild",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GuildMember",
+      "docs": [
+        "One pet in one guild. The pet first, then the guild, so either is a cheap filter."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "guild",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "payer",
+            "docs": [
+              "Who paid this account's rent, and gets it back when the pet leaves."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "joined_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }

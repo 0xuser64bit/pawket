@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { cosign, SponsorRefusal } from "@/lib/solana/sponsor";
+import { cosign, RENT_KINDS, SponsorRefusal } from "@/lib/solana/sponsor";
 import { actionLimit, mayPayRent, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
 
 /**
- * The sponsor: pays the network fee, and a new pet's rent. It signs first,
+ * The sponsor: pays the network fee, and the rent of a new pet, a new guild
+ * or a pet's place in one. It signs first,
  * as fee payer, and hands the transaction back for the player's wallet to
  * sign and send (see `src/lib/solana/sponsor.ts` for why that order). What
  * it will sign is `checkSponsorable`'s call. GET says whether it is up; POST
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
   const caller = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   try {
     const { transaction } = await cosign(current.signer, body.data.transaction, (kinds) =>
-      (kinds.includes("adopt") ? mayPayRent(caller) : true) && actionLimit(caller),
+      (kinds.some((kind) => RENT_KINDS.includes(kind)) ? mayPayRent(caller) : true) && actionLimit(caller),
     );
     sponsorSpent();
     return NextResponse.json({ transaction });

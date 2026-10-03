@@ -9,8 +9,13 @@
 //! `src/lib/game/math.ts` exactly. A client projects the same function forward for display.
 //! Every number here moves with `src/lib/game/constants.ts`, or neither moves.
 //!
+//! A pet can belong to one guild: a `Guild` PDA (`[b"guild", slug]`) founded by a pet, and a
+//! `GuildMember` PDA (`[b"member", pet]`) per pet in it. A guild is people and their pets, and nothing
+//! else — no token, no treasury, no vote weight, and nothing in it touches a vital, XP or a score.
+//!
 //! There is no store and no token: nothing here moves value except rent, which `payer` covers so a
-//! sponsor can adopt on a player's behalf while the player alone signs for the pet.
+//! sponsor can adopt (or found, or join) on a player's behalf while the player alone signs for the
+//! pet. Leaving a guild hands the member account's rent back to whoever paid it.
 #![allow(clippy::result_large_err)]
 
 use anchor_lang::prelude::*;
@@ -35,6 +40,19 @@ pub const SECONDS_PER_DAY: i64 = 86_400;
 
 pub const PET_SEED: &[u8] = b"pet";
 pub const PASSPORT_SEED: &[u8] = b"passport";
+pub const GUILD_SEED: &[u8] = b"guild";
+pub const MEMBER_SEED: &[u8] = b"member";
+
+/// A guild's slug is its seed: 3 to 24 of `a-z`, `0-9` and `-`, never starting or ending with `-`.
+pub const MIN_SLUG_LEN: usize = 3;
+pub const MAX_SLUG_LEN: usize = 24;
+/// What a guild is called, in UTF-8 bytes.
+pub const MIN_GUILD_NAME_LEN: usize = 3;
+pub const MAX_GUILD_NAME_LEN: usize = 32;
+pub const MAX_MOTTO_LEN: usize = 80;
+/// Glyphs and colours a crest is drawn from: `src/lib/guilds/guild.ts`, in order.
+pub const CREST_COUNT: u8 = 8;
+pub const COLOUR_COUNT: u8 = 6;
 
 #[program]
 pub mod pawket {
@@ -167,6 +185,100 @@ pub mod pawket {
         });
         Ok(())
     }
+
+    /// A pet founds a guild and is its first member. The slug is the guild's address, so a name is
+    /// one guild; `payer` covers the rent of both accounts.
+    pub fn found_guild(
+        ctx: Context<FoundGuild>,
+        slug: String,
+        name: String,
+        motto: String,
+        crest: u8,
+        colour: u8,
+    ) -> Result<()> {
+        require!(valid_slug(&slug), PawketError::InvalidGuildSlug);
+        require!(
+            (MIN_GUILD_NAME_LEN..=MAX_GUILD_NAME_LEN).contains(&name.len()),
+            PawketError::InvalidGuildName
+        );
+        require!(motto.len() <= MAX_MOTTO_LEN, PawketError::InvalidGuildMotto);
+        require!(crest < CREST_COUNT && colour < COLOUR_COUNT, PawketError::UnknownCrest);
+        let now = Clock::get()?.unix_timestamp;
+        let owner = ctx.accounts.owner.key();
+        let pet = ctx.accounts.pet.key();
+        let guild = ctx.accounts.guild.key();
+
+        ctx.accounts.guild.set_inner(Guild {
+            founder: owner,
+            founder_pet: pet,
+            created_at: now,
+            member_count: 1,
+            crest,
+            colour,
+            bump: ctx.bumps.guild,
+            slug: slug.clone(),
+            name,
+            motto,
+        });
+        ctx.accounts.member.set_inner(GuildMember {
+            pet,
+            guild,
+            owner,
+            payer: ctx.accounts.payer.key(),
+            joined_at: now,
+            bump: ctx.bumps.member,
+        });
+        emit!(GuildFounded {
+            guild,
+            founder: owner,
+            pet,
+            slug,
+        });
+        Ok(())
+    }
+
+    /// A pet joins a guild. A pet is in one guild at most: its member account is seeded by the pet.
+    pub fn join_guild(ctx: Context<JoinGuild>) -> Result<()> {
+        let now = Clock::get()?.unix_timestamp;
+        let pet = ctx.accounts.pet.key();
+        let guild_key = ctx.accounts.guild.key();
+        let guild = &mut ctx.accounts.guild;
+        guild.member_count = guild.member_count.saturating_add(1);
+        ctx.accounts.member.set_inner(GuildMember {
+            pet,
+            guild: guild_key,
+            owner: ctx.accounts.owner.key(),
+            payer: ctx.accounts.payer.key(),
+            joined_at: now,
+            bump: ctx.bumps.member,
+        });
+        emit!(GuildJoined {
+            guild: guild_key,
+            pet,
+        });
+        Ok(())
+    }
+
+    /// A pet leaves its guild. The member account closes and its rent goes back to whoever paid it.
+    /// The guild stays, with one fewer; a guild with nobody in it is still on the record.
+    pub fn leave_guild(ctx: Context<LeaveGuild>) -> Result<()> {
+        let guild = &mut ctx.accounts.guild;
+        guild.member_count = guild.member_count.saturating_sub(1);
+        emit!(GuildLeft {
+            guild: guild.key(),
+            pet: ctx.accounts.pet.key(),
+        });
+        Ok(())
+    }
+}
+
+/// `a-z`, `0-9` and inner `-`, 3 to 24 bytes: `slugFor` in `src/lib/guilds/guild.ts`.
+pub fn valid_slug(slug: &str) -> bool {
+    let bytes = slug.as_bytes();
+    (MIN_SLUG_LEN..=MAX_SLUG_LEN).contains(&bytes.len())
+        && bytes.iter().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || *b == b'-')
+        && bytes[0] != b'-'
+        && bytes[bytes.len() - 1] != b'-'
 }
 
 /// Past this, every vital is 0 whatever it started at (100 points at 1.2 an hour is gone in
@@ -316,6 +428,75 @@ pub struct Dress<'info> {
     pub pet: Account<'info, Pet>,
 }
 
+#[derive(Accounts)]
+#[instruction(slug: String)]
+pub struct FoundGuild<'info> {
+    pub owner: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(has_one = owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + Guild::INIT_SPACE,
+        seeds = [GUILD_SEED, slug.as_bytes()],
+        bump
+    )]
+    pub guild: Account<'info, Guild>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + GuildMember::INIT_SPACE,
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump
+    )]
+    pub member: Account<'info, GuildMember>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct JoinGuild<'info> {
+    pub owner: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(has_one = owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(mut)]
+    pub guild: Account<'info, Guild>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + GuildMember::INIT_SPACE,
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump
+    )]
+    pub member: Account<'info, GuildMember>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct LeaveGuild<'info> {
+    pub owner: Signer<'info>,
+    #[account(has_one = owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(
+        mut,
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump = member.bump,
+        has_one = pet,
+        has_one = guild,
+        has_one = payer,
+        close = payer
+    )]
+    pub member: Account<'info, GuildMember>,
+    #[account(mut)]
+    pub guild: Account<'info, Guild>,
+    /// CHECK: whoever paid the member account's rent, which it gets back. Held to `member.payer`.
+    #[account(mut)]
+    pub payer: UncheckedAccount<'info>,
+}
+
 /// Fixed-size fields first and the name last, so every offset but the name's is constant.
 #[account]
 #[derive(InitSpace)]
@@ -357,6 +538,40 @@ pub struct PetPassport {
     pub last_play_day: u32,
     /// Ring of the last cares; slot `care_count % 8` is written next. `at == 0` is empty.
     pub recent: [CareMark; RECENT_CARES],
+    pub bump: u8,
+}
+
+/// Fixed-size fields first and the strings last, so every offset but theirs is constant.
+#[account]
+#[derive(InitSpace)]
+pub struct Guild {
+    /// The wallet that founded it.
+    pub founder: Pubkey,
+    /// The pet that founded it.
+    pub founder_pet: Pubkey,
+    pub created_at: i64,
+    pub member_count: u32,
+    pub crest: u8,
+    pub colour: u8,
+    pub bump: u8,
+    #[max_len(24)]
+    pub slug: String,
+    #[max_len(32)]
+    pub name: String,
+    #[max_len(80)]
+    pub motto: String,
+}
+
+/// One pet in one guild. The pet first, then the guild, so either is a cheap filter.
+#[account]
+#[derive(InitSpace)]
+pub struct GuildMember {
+    pub pet: Pubkey,
+    pub guild: Pubkey,
+    pub owner: Pubkey,
+    /// Who paid this account's rent, and gets it back when the pet leaves.
+    pub payer: Pubkey,
+    pub joined_at: i64,
     pub bump: u8,
 }
 
@@ -422,6 +637,26 @@ pub struct PetDressed {
     pub wearing: u8,
 }
 
+#[event]
+pub struct GuildFounded {
+    pub guild: Pubkey,
+    pub founder: Pubkey,
+    pub pet: Pubkey,
+    pub slug: String,
+}
+
+#[event]
+pub struct GuildJoined {
+    pub guild: Pubkey,
+    pub pet: Pubkey,
+}
+
+#[event]
+pub struct GuildLeft {
+    pub guild: Pubkey,
+    pub pet: Pubkey,
+}
+
 #[error_code]
 pub enum PawketError {
     #[msg("A pet's name is 2 to 24 UTF-8 bytes.")]
@@ -432,4 +667,12 @@ pub enum PawketError {
     CareCooldownActive,
     #[msg("There is nothing like that to wear.")]
     UnknownWearable,
+    #[msg("A guild's address is 3 to 24 of a-z, 0-9 and inner hyphens.")]
+    InvalidGuildSlug,
+    #[msg("A guild's name is 3 to 32 UTF-8 bytes.")]
+    InvalidGuildName,
+    #[msg("A guild's motto is at most 80 UTF-8 bytes.")]
+    InvalidGuildMotto,
+    #[msg("There is no crest like that.")]
+    UnknownCrest,
 }

@@ -82,11 +82,11 @@ export function isInsufficientFunds(error: unknown): boolean {
 }
 
 const MIN_CODE = 6000;
-const MAX_CODE = 6003;
+const MAX_CODE = 6007;
 const isPawketCode = (code: unknown): code is number =>
   typeof code === "number" && Number.isInteger(code) && code >= MIN_CODE && code <= MAX_CODE;
 
-/** Map a program error code (6000–6003) to one sentence that says what did not change. */
+/** Map a program error code (6000–6007) to one sentence that says what did not change. */
 export function pawketErrorMessage(code: number): string {
   switch (code) {
     case 6000:
@@ -97,6 +97,14 @@ export function pawketErrorMessage(code: number): string {
       return "That care is still cooling down. Nothing changed.";
     case 6003:
       return "That is not in the wardrobe. Nothing changed.";
+    case 6004:
+      return "A guild's name needs at least three letters or numbers. No guild was founded.";
+    case 6005:
+      return "A guild's name is 3 to 32 characters. No guild was founded.";
+    case 6006:
+      return "A motto is at most 80 characters. No guild was founded.";
+    case 6007:
+      return "There is no crest like that. No guild was founded.";
     default:
       return "The program refused it. Nothing changed.";
   }
@@ -128,7 +136,7 @@ export function extractProgramErrorCode(error: unknown): number | null {
     return isPawketCode(code) ? code : null;
   }
   // Bare codes are word-boundaried so slot numbers and signatures can't false-positive.
-  const bare = /\b(600[0-3])\b/.exec(message);
+  const bare = /\b(600[0-7])\b/.exec(message);
   return bare ? Number(bare[1]) : null;
 }
 
@@ -138,6 +146,9 @@ export function toUserFacingError(error: unknown): string {
   if (code !== null) return pawketErrorMessage(code);
   if (isInsufficientFunds(error)) {
     return "Not enough SOL for the fee. Nothing was sent.";
+  }
+  if (/already in use/i.test(messageOf(error))) {
+    return "That is already on Solana — a pet in a guild, or a guild with that name. Nothing changed.";
   }
   if (/blockhash not found|block height exceeded/i.test(messageOf(error))) {
     return "That waited too long to be signed and expired. Nothing was sent — try again.";

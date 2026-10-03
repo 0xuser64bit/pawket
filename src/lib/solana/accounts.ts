@@ -23,7 +23,7 @@ import { WEARABLES } from "@/lib/closet/catalog";
 import { XP_PER_CARE_ACTION } from "@/lib/game/constants";
 import { CareActionType, PetPersonality, PetSpecies, type PetStats } from "@/lib/game/enums";
 import type { GuestPet } from "@/lib/guest/pet";
-import { derivePassportPda, parseAddress } from "./pda";
+import { deriveGuildPda, deriveMemberPda, derivePassportPda, parseAddress } from "./pda";
 import {
   CARE_ACTION_VARIANTS,
   PAWKET_ACCOUNTS,
@@ -73,9 +73,37 @@ export interface ChainPassport {
   recent: Array<{ action: CareActionType; at: number }>;
 }
 
+/** A guild, as the program keeps it (`Guild` in `programs/pawket/src/lib.rs`). */
+export interface ChainGuild {
+  address: Address;
+  founder: Address;
+  founderPet: Address;
+  createdAt: number;
+  memberCount: number;
+  /** Index into `CREST_GLYPHS` and `CREST_COLOURS` (`src/lib/guilds/guild.ts`). */
+  crest: number;
+  colour: number;
+  slug: string;
+  name: string;
+  motto: string;
+}
+
+/** One pet's place in a guild. */
+export interface ChainMember {
+  address: Address;
+  pet: Address;
+  guild: Address;
+  owner: Address;
+  /** Who paid this account's rent, and gets it back when the pet leaves. */
+  payer: Address;
+  joinedAt: number;
+}
+
 export interface PetOnChain {
   pet: ChainPet;
   passport: ChainPassport;
+  /** The pet's place in a guild, or null when it is in none. */
+  member: ChainMember | null;
 }
 
 const discriminator = fixDecoderSize(getBytesDecoder(), 8);
@@ -122,14 +150,44 @@ const passportDecoder = getStructDecoder([
   ["bump", getU8Decoder()],
 ]);
 
+const sized = () => addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder());
+
+const guildDecoder = getStructDecoder([
+  ["discriminator", discriminator],
+  ["founder", getAddressDecoder()],
+  ["founderPet", getAddressDecoder()],
+  ["createdAt", getI64Decoder()],
+  ["memberCount", getU32Decoder()],
+  ["crest", getU8Decoder()],
+  ["colour", getU8Decoder()],
+  ["bump", getU8Decoder()],
+  ["slug", sized()],
+  ["name", sized()],
+  ["motto", sized()],
+]);
+
+const memberDecoder = getStructDecoder([
+  ["discriminator", discriminator],
+  ["pet", getAddressDecoder()],
+  ["guild", getAddressDecoder()],
+  ["owner", getAddressDecoder()],
+  ["payer", getAddressDecoder()],
+  ["joinedAt", getI64Decoder()],
+  ["bump", getU8Decoder()],
+]);
+
 /**
  * A name as it is shown. Names are chosen by strangers and shown to everyone
  * in the park, so bidi overrides and control characters are dropped from the
  * drawn copy. The stored name is the PDA seed: never derive from this one.
  */
 export function displayName(name: string): string {
-  const shown = name.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, "").trim();
-  return shown || "A pet";
+  return cleanText(name) || "A pet";
+}
+
+/** A stranger's words with bidi overrides and control characters dropped. */
+export function cleanText(text: string): string {
+  return text.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, "").trim();
 }
 
 function variantOf<T extends string>(table: Record<T, number>, index: number, label: string): T {
@@ -203,6 +261,36 @@ export function decodePassport(address: Address, bytes: Uint8Array): ChainPasspo
   };
 }
 
+/** Decode a `Guild` account. Throws on bytes that are not one. */
+export function decodeGuild(address: Address, bytes: Uint8Array): ChainGuild {
+  if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.guild.discriminator)) {
+    throw new Error(`${address} is not a Pawket guild`);
+  }
+  const raw = guildDecoder.decode(bytes);
+  return {
+    address,
+    founder: raw.founder,
+    founderPet: raw.founderPet,
+    createdAt: Number(raw.createdAt),
+    memberCount: raw.memberCount,
+    crest: raw.crest,
+    colour: raw.colour,
+    slug: raw.slug,
+    name: cleanText(raw.name) || "A guild",
+    // A motto is a stranger's sentence too: shown without control characters.
+    motto: cleanText(raw.motto),
+  };
+}
+
+/** Decode a `GuildMember` account. Throws on bytes that are not one. */
+export function decodeMember(address: Address, bytes: Uint8Array): ChainMember {
+  if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.member.discriminator)) {
+    throw new Error(`${address} is not a Pawket guild member`);
+  }
+  const raw = memberDecoder.decode(bytes);
+  return { address, pet: raw.pet, guild: raw.guild, owner: raw.owner, payer: raw.payer, joinedAt: Number(raw.joinedAt) };
+}
+
 const iso = (seconds: number) => new Date(seconds * 1000).toISOString();
 const isoDay = (day: number) => (day === 0 ? null : iso(day * 86_400).slice(0, 10));
 
@@ -252,17 +340,46 @@ export function wearableSlot(id: string | null): number {
 
 type ReadRpc = Rpc<GetMultipleAccountsApi & GetProgramAccountsApi>;
 
-/** One pet and its Passport, or null when there is no pet at that address. */
+/** One pet, its Passport and its place in a guild, or null when there is no pet at that address. */
 export async function fetchPetOnChain(rpc: Rpc<GetMultipleAccountsApi>, petAddress: string | Address): Promise<PetOnChain | null> {
   const address = parseAddress(petAddress, "pet");
   const passportAddress = (await derivePassportPda(address)).address;
-  const [petAccount, passportAccount] = await fetchEncodedAccounts(rpc, [address, passportAddress]);
+  const memberAddress = (await deriveMemberPda(address)).address;
+  const [petAccount, passportAccount, memberAccount] = await fetchEncodedAccounts(rpc, [address, passportAddress, memberAddress]);
   if (!petAccount.exists || !passportAccount.exists) return null;
   if (petAccount.programAddress !== PAWKET_PROGRAM_ID) return null;
   return {
     pet: decodePet(address, petAccount.data),
     passport: decodePassport(passportAddress, passportAccount.data),
+    member: memberAccount.exists ? decodeMember(memberAddress, memberAccount.data) : null,
   };
+}
+
+/** Accounts at `addresses`, read 100 at a time (getMultipleAccounts' limit). */
+async function readMany(rpc: Rpc<GetMultipleAccountsApi>, addresses: Address[]) {
+  const chunks = [];
+  for (let i = 0; i < addresses.length; i += 100) chunks.push(fetchEncodedAccounts(rpc, addresses.slice(i, i + 100)));
+  return (await Promise.all(chunks)).flat();
+}
+
+/** Every pet's Passport and guild place, for pets already read. */
+async function withRecords(rpc: Rpc<GetMultipleAccountsApi>, pets: ChainPet[]): Promise<PetOnChain[]> {
+  if (pets.length === 0) return [];
+  const passports = await Promise.all(pets.map(async (pet) => (await derivePassportPda(pet.address)).address));
+  const members = await Promise.all(pets.map(async (pet) => (await deriveMemberPda(pet.address)).address));
+  const accounts = await readMany(rpc, [...passports, ...members]);
+  const out: PetOnChain[] = [];
+  pets.forEach((pet, i) => {
+    const passport = accounts[i];
+    const member = accounts[pets.length + i];
+    if (!passport.exists) return;
+    out.push({
+      pet,
+      passport: decodePassport(passports[i], passport.data),
+      member: member.exists ? decodeMember(members[i], member.data) : null,
+    });
+  });
+  return out;
 }
 
 const base58 = getBase58Decoder();
@@ -297,15 +414,74 @@ export async function fetchPetsOnChain(rpc: ReadRpc, owner?: string | Address): 
       // ponytail: an account that does not decode is skipped, not fatal to the list.
     }
   }
-  if (pets.length === 0) return [];
-  const passports = await Promise.all(pets.map(async (pet) => (await derivePassportPda(pet.address)).address));
-  // getMultipleAccounts reads at most 100 at a time.
-  const chunks = [];
-  for (let i = 0; i < passports.length; i += 100) chunks.push(fetchEncodedAccounts(rpc, passports.slice(i, i + 100)));
-  const accountsOf = (await Promise.all(chunks)).flat();
-  const out: PetOnChain[] = [];
-  accountsOf.forEach((account, i) => {
-    if (account.exists) out.push({ pet: pets[i], passport: decodePassport(passports[i], account.data) });
+  return withRecords(rpc, pets);
+}
+
+const accountFilter = (account: { discriminator: readonly number[]; size: number }) => [
+  { dataSize: BigInt(account.size) },
+  {
+    memcmp: {
+      offset: 0n,
+      bytes: base58.decode(Uint8Array.from(account.discriminator)) as Base58EncodedBytes,
+      encoding: "base58" as const,
+    },
+  },
+];
+
+/** Every guild the program keeps. */
+export async function fetchGuilds(rpc: ReadRpc): Promise<ChainGuild[]> {
+  const accounts = await rpc
+    .getProgramAccounts(parseAddress(PAWKET_PROGRAM_ID, "program ID"), { encoding: "base64", filters: accountFilter(PAWKET_ACCOUNTS.guild) })
+    .send();
+  const guilds: ChainGuild[] = [];
+  for (const { pubkey, account } of accounts) {
+    try {
+      guilds.push(decodeGuild(pubkey, Uint8Array.from(base64.encode(account.data[0]))));
+    } catch {
+      // ponytail: an account that does not decode is skipped, not fatal to the list.
+    }
+  }
+  return guilds;
+}
+
+/** The guild at `slug`, or null when no guild has it. */
+export async function fetchGuild(rpc: Rpc<GetMultipleAccountsApi>, slug: string): Promise<ChainGuild | null> {
+  const address = (await deriveGuildPda(slug)).address;
+  const [account] = await fetchEncodedAccounts(rpc, [address]);
+  if (!account.exists || account.programAddress !== PAWKET_PROGRAM_ID) return null;
+  return decodeGuild(address, account.data);
+}
+
+/** The guild at an address (a member's `guild`), or null when none is there. */
+export async function fetchGuildAt(rpc: Rpc<GetMultipleAccountsApi>, guild: string | Address): Promise<ChainGuild | null> {
+  const address = parseAddress(guild, "guild");
+  const [account] = await fetchEncodedAccounts(rpc, [address]);
+  if (!account.exists || account.programAddress !== PAWKET_PROGRAM_ID) return null;
+  return decodeGuild(address, account.data);
+}
+
+/** Every pet in a guild, with its Passport — read from the members' accounts, then the pets'. */
+export async function fetchGuildPets(rpc: ReadRpc, guild: string | Address): Promise<PetOnChain[]> {
+  const filters = [
+    ...accountFilter(PAWKET_ACCOUNTS.member),
+    // The member's guild sits after the discriminator and the pet.
+    { memcmp: { offset: 40n, bytes: parseAddress(guild, "guild") as unknown as Base58EncodedBytes, encoding: "base58" as const } },
+  ];
+  const accounts = await rpc
+    .getProgramAccounts(parseAddress(PAWKET_PROGRAM_ID, "program ID"), { encoding: "base64", filters })
+    .send();
+  const members: ChainMember[] = [];
+  for (const { pubkey, account } of accounts) {
+    try {
+      members.push(decodeMember(pubkey, Uint8Array.from(base64.encode(account.data[0]))));
+    } catch {
+      // ponytail: skipped, as above.
+    }
+  }
+  const petAccounts = await readMany(rpc, members.map((member) => member.pet));
+  const pets: ChainPet[] = [];
+  petAccounts.forEach((account, i) => {
+    if (account.exists && account.programAddress === PAWKET_PROGRAM_ID) pets.push(decodePet(members[i].pet, account.data));
   });
-  return out;
+  return withRecords(rpc, pets);
 }

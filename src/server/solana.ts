@@ -3,7 +3,16 @@ import "server-only";
 import { createSolanaRpc, isAddress } from "@solana/kit";
 import { getPublicEnv } from "@/config/env";
 import { getServerEnv } from "@/config/server-env";
-import { fetchPetOnChain, fetchPetsOnChain, type PetOnChain } from "@/lib/solana/accounts";
+import {
+  fetchGuild,
+  fetchGuildAt,
+  fetchGuildPets,
+  fetchGuilds,
+  fetchPetOnChain,
+  fetchPetsOnChain,
+  type ChainGuild,
+  type PetOnChain,
+} from "@/lib/solana/accounts";
 
 /**
  * Server Components read Solana here: the server's RPC (which may carry a
@@ -42,4 +51,34 @@ export async function readAllPets(): Promise<PetOnChain[]> {
     if (scan === mine) scan = null;
   });
   return pets;
+}
+
+let guildScan: { at: number; guilds: Promise<ChainGuild[]> } | null = null;
+
+/** Every guild the program keeps, shared between callers like the scan of every pet. */
+export async function readGuilds(): Promise<ChainGuild[]> {
+  const now = Date.now();
+  if (guildScan && now - guildScan.at < ALL_PETS_FRESH_MS) return guildScan.guilds;
+  const guilds = fetchGuilds(rpc());
+  const mine = { at: now, guilds };
+  guildScan = mine;
+  guilds.catch(() => {
+    if (guildScan === mine) guildScan = null;
+  });
+  return guilds;
+}
+
+/** The guild at `slug`, or null; throws when Solana does not answer. */
+export async function readGuild(slug: string): Promise<ChainGuild | null> {
+  return fetchGuild(rpc(), slug);
+}
+
+/** The guild a pet's place points at, or null. */
+export async function readGuildAt(address: string): Promise<ChainGuild | null> {
+  return fetchGuildAt(rpc(), address);
+}
+
+/** Every pet in a guild, read live. */
+export async function readGuildPets(guild: string): Promise<PetOnChain[]> {
+  return fetchGuildPets(rpc(), guild);
 }

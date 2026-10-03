@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Icon } from "./icon";
+import { Icon, type IconName } from "./icon";
 import { Meter } from "./game";
 
 /* ------------------------------------------------------------------ Crest */
@@ -13,23 +13,29 @@ import { Meter } from "./game";
 export function Crest({
   name,
   letter,
+  glyph,
   color,
+  on,
   size,
 }: {
   name?: string;
   letter?: string;
-  /** Overrides the fill for a guild with approved branding. */
+  /** The guild's own glyph, drawn instead of its initial. */
+  glyph?: IconName;
+  /** The crest's fill: bloom unless the guild chose another hue. */
   color?: string;
-  size?: "sm";
+  /** Ink and outline on that fill. */
+  on?: string;
+  size?: "sm" | "lg";
 }) {
-  const glyph = (letter ?? name ?? "G").slice(0, 1).toUpperCase();
+  const initial = (letter ?? name ?? "G").slice(0, 1).toUpperCase();
   return (
     <span
-      className={["pk-crest", size === "sm" && "pk-crest--sm"].filter(Boolean).join(" ")}
-      style={color ? { background: color } : undefined}
+      className={["pk-crest", size && `pk-crest--${size}`].filter(Boolean).join(" ")}
+      style={color ? { background: color, color: on, borderColor: on } : undefined}
       aria-hidden="true"
     >
-      {glyph}
+      {glyph ? <Icon name={glyph} size={size === "sm" ? 16 : size === "lg" ? 44 : 26} weight={2.2} /> : initial}
     </span>
   );
 }

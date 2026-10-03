@@ -61,3 +61,30 @@ export async function derivePassportPda(
   });
   return { address: addr, bump };
 }
+
+/** A guild's account: seeded by its slug, so a slug is one guild. */
+export async function deriveGuildPda(
+  slug: string,
+  programId: string | Address = PAWKET_PROGRAM_ID,
+): Promise<DerivedPda> {
+  const programAddress = parseAddress(programId, "program ID");
+  const [addr, bump] = await getProgramDerivedAddress({
+    programAddress,
+    seeds: [utf8Encoder.encode(PAWKET_SEEDS.guild), utf8Encoder.encode(slug)],
+  });
+  return { address: addr, bump };
+}
+
+/** A pet's place in a guild: seeded by the pet, so a pet is in one guild at most. */
+export async function deriveMemberPda(
+  pet: string | Address,
+  programId: string | Address = PAWKET_PROGRAM_ID,
+): Promise<DerivedPda> {
+  const petAddress = parseAddress(pet, "pet");
+  const programAddress = parseAddress(programId, "program ID");
+  const [addr, bump] = await getProgramDerivedAddress({
+    programAddress,
+    seeds: [utf8Encoder.encode(PAWKET_SEEDS.member), getAddressEncoder().encode(petAddress)],
+  });
+  return { address: addr, bump };
+}

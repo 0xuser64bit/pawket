@@ -12,6 +12,7 @@ const SCREENS = [
   "/profile?tab=stickers",
   "/profile?tab=settings",
   "/guilds",
+  "/guilds/new",
   "/pet/missing",
   "/pet/11111111111111111111111111111111",
 ];

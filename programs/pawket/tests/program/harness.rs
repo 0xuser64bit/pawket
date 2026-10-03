@@ -10,7 +10,7 @@ use litesvm::{
     types::{FailedTransactionMetadata, TransactionMetadata},
     LiteSVM,
 };
-use pawket::{CareActionType, PawketError, Pet, PetPassport, PetPersonality, PetSpecies};
+use pawket::{CareActionType, Guild, GuildMember, PawketError, Pet, PetPassport, PetPersonality, PetSpecies};
 use solana_keypair::Keypair;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
@@ -31,6 +31,14 @@ pub fn pet_pda(owner: &Pubkey, name: &str) -> Pubkey {
 
 pub fn passport_pda(pet: &Pubkey) -> Pubkey {
     Pubkey::find_program_address(&[b"passport", pet.as_ref()], &pawket::ID).0
+}
+
+pub fn guild_pda(slug: &str) -> Pubkey {
+    Pubkey::find_program_address(&[b"guild", slug.as_bytes()], &pawket::ID).0
+}
+
+pub fn member_pda(pet: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[b"member", pet.as_ref()], &pawket::ID).0
 }
 
 pub struct Env {
@@ -88,6 +96,18 @@ impl Env {
 
     pub fn passport(&self, pet: &Pubkey) -> PetPassport {
         self.account(&passport_pda(pet))
+    }
+
+    pub fn guild(&self, slug: &str) -> Guild {
+        self.account(&guild_pda(slug))
+    }
+
+    pub fn member(&self, pet: &Pubkey) -> GuildMember {
+        self.account(&member_pda(pet))
+    }
+
+    pub fn exists(&self, address: &Pubkey) -> bool {
+        self.svm.get_account(address).is_some_and(|a| a.lamports > 0)
     }
 
     /// `ixs` with `fee_payer` paying; every keypair in `signers` signs.
@@ -180,6 +200,75 @@ pub fn dress_ix(owner: &Pubkey, pet: &Pubkey, wearing: u8) -> Instruction {
         }
         .to_account_metas(None),
         data: pawket::instruction::Dress { wearing }.data(),
+    }
+}
+
+/// Found `slug` with `pet`, as the owner signs and `payer` pays.
+pub fn found_ix(owner: &Pubkey, payer: &Pubkey, pet: &Pubkey, slug: &str) -> Instruction {
+    found_ix_with(owner, payer, pet, slug, "Sunbeam Club", "Naps first, questions later.", 0, 0)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn found_ix_with(
+    owner: &Pubkey,
+    payer: &Pubkey,
+    pet: &Pubkey,
+    slug: &str,
+    name: &str,
+    motto: &str,
+    crest: u8,
+    colour: u8,
+) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::FoundGuild {
+            owner: *owner,
+            payer: *payer,
+            pet: *pet,
+            guild: guild_pda(slug),
+            member: member_pda(pet),
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::FoundGuild {
+            slug: slug.to_string(),
+            name: name.to_string(),
+            motto: motto.to_string(),
+            crest,
+            colour,
+        }
+        .data(),
+    }
+}
+
+pub fn join_ix(owner: &Pubkey, payer: &Pubkey, pet: &Pubkey, guild: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::JoinGuild {
+            owner: *owner,
+            payer: *payer,
+            pet: *pet,
+            guild: *guild,
+            member: member_pda(pet),
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::JoinGuild {}.data(),
+    }
+}
+
+pub fn leave_ix(owner: &Pubkey, pet: &Pubkey, guild: &Pubkey, payer: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::LeaveGuild {
+            owner: *owner,
+            pet: *pet,
+            member: member_pda(pet),
+            guild: *guild,
+            payer: *payer,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::LeaveGuild {}.data(),
     }
 }
 

@@ -16,7 +16,9 @@ import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
  * adopt and care with an empty wallet. It holds a small devnet float and
  * signs only what this module allows: a transaction whose every instruction
  * is Pawket's, where the sponsor is the fee payer and appears in no
- * instruction except as `adopt_pet`'s rent payer. A compute-budget
+ * instruction except as the rent payer of `adopt_pet`, `found_guild` and
+ * `join_guild`, or as the account `leave_guild` hands that rent back to. A
+ * compute-budget
  * instruction is refused too — a priority fee is the one way a caller could
  * spend the float faster.
  *
@@ -27,22 +29,35 @@ import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
  * message came back unchanged before sending it.
  */
 
-export type SponsoredKind = "adopt" | "care" | "round" | "dress";
+export type SponsoredKind = "adopt" | "care" | "round" | "dress" | "found" | "join" | "leave";
 
 const KIND_OF: Record<keyof typeof PAWKET_DISCRIMINATORS, SponsoredKind> = {
   adoptPet: "adopt",
   performCareAction: "care",
   finishRound: "round",
   dress: "dress",
+  foundGuild: "found",
+  joinGuild: "join",
+  leaveGuild: "leave",
 };
 
-/** Where the sponsor may appear in each instruction's accounts: adopt's `payer`, nowhere else. */
+/**
+ * Where the sponsor may appear in each instruction's accounts: the `payer`
+ * of an adoption, a founding or a join (rent it pays), and `leave_guild`'s
+ * `payer` (rent it gets back). Nowhere else.
+ */
 const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
   adopt: [1],
   care: [],
   round: [],
   dress: [],
+  found: [1],
+  join: [1],
+  leave: [4],
 };
+
+/** The kinds that cost the sponsor rent: the scarce part of its float. */
+export const RENT_KINDS: readonly SponsoredKind[] = ["adopt", "found", "join"];
 
 const MAX_INSTRUCTIONS = 4;
 

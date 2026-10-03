@@ -19,7 +19,14 @@ import {
 import { getTransferSolInstruction } from "@solana-program/system";
 import { beforeAll, describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
-import { getAdoptPetInstruction, getCareInstruction, getDressInstruction } from "./instructions";
+import {
+  getAdoptPetInstruction,
+  getCareInstruction,
+  getDressInstruction,
+  getFoundGuildInstruction,
+  getJoinGuildInstruction,
+  getLeaveGuildInstruction,
+} from "./instructions";
 import { checkSponsorable, cosign, createLimiter, SponsorRefusal } from "./sponsor";
 
 const LIFETIME = {
@@ -28,6 +35,8 @@ const LIFETIME = {
 };
 const PET = "J3nMY26sQZiBod2RCwsUFrh8E5PW56Mhr4ksm8RFQJAp";
 const PASSPORT = "FEJ7fHr3JBuYMDZ67UsWZfaGVo2S4dMizG6T3xp1BQMm";
+const GUILD = "8Vp2LsXSrgjxbNsmWg5pTGsEk3ag8x1wGkzvWbJ4b3Zt";
+const MEMBER = "4fQfsGgDvo3AgpfTDwL3eXLc3WNeTVpZ1b8fwW7cHRnD";
 
 let sponsor: KeyPairSigner;
 let owner: KeyPairSigner;
@@ -123,6 +132,27 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(await built(() => [priority, care()]), sponsor.address)).toMatchObject({
       ok: false,
     });
+  });
+
+  it("pays the rent of a new guild and of a pet's place in one, and takes it back when the pet leaves", async () => {
+    const found = (payer: TransactionSigner) =>
+      getFoundGuildInstruction({ owner, payer, pet: PET, guild: GUILD, member: MEMBER, slug: "sunbeam-club", name: "Sunbeam Club", motto: "", crest: 0, colour: 0 });
+    const join = (payer: TransactionSigner) => getJoinGuildInstruction({ owner, payer, pet: PET, guild: GUILD, member: MEMBER });
+    expect(checkSponsorable(await built((payer) => [found(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["found"] });
+    expect(checkSponsorable(await built((payer) => [join(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["join"] });
+    const leave = await built((payer) => [getLeaveGuildInstruction({ owner, pet: PET, member: MEMBER, guild: GUILD, payer: payer.address })]);
+    expect(checkSponsorable(leave, sponsor.address)).toEqual({ ok: true, kinds: ["leave"] });
+  });
+
+  it("refuses to stand in for a guild's founder, a member, or its pet", async () => {
+    const asFounder = await built((payer) => [
+      getFoundGuildInstruction({ owner: payer, payer, pet: PET, guild: GUILD, member: MEMBER, slug: "sunbeam-club", name: "Sunbeam Club", motto: "", crest: 0, colour: 0 }),
+    ]);
+    expect(checkSponsorable(asFounder, sponsor.address)).toMatchObject({ ok: false });
+    const asMember = await built((payer) => [getJoinGuildInstruction({ owner, payer, pet: payer.address, guild: GUILD, member: MEMBER })]);
+    expect(checkSponsorable(asMember, sponsor.address)).toMatchObject({ ok: false });
+    const asLeaver = await built((payer) => [getLeaveGuildInstruction({ owner: payer, pet: PET, member: MEMBER, guild: GUILD, payer: payer.address })]);
+    expect(checkSponsorable(asLeaver, sponsor.address)).toMatchObject({ ok: false });
   });
 
   it("refuses an instruction it does not know, even on the Pawket program", async () => {

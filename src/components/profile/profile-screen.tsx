@@ -65,10 +65,11 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
 
   const pets = companion.all;
   const onChain = new Set<string>(companion.owned.map((entry) => entry.pet.address));
+  const inGuild = new Set<string>(companion.owned.filter((entry) => entry.member).map((entry) => entry.pet.address));
   const topLevel = Math.max(0, ...pets.map((p) => calculateLevelFromXp(p.xp)));
   const bestRun = Math.max(0, ...pets.map((p) => p.streak.best));
   const rounds = pets.reduce((sum, p) => sum + p.plays, 0);
-  const stickers = new Set(pets.flatMap((p) => badgesFor(p, { onChain: onChain.has(p.id) }))).size;
+  const stickers = new Set(pets.flatMap((p) => badgesFor(p, { onChain: onChain.has(p.id), guild: inGuild.has(p.id) }))).size;
   const since = pets.map((p) => p.createdAt).sort()[0];
   const projected = pet ? projectGuestPet(pet) : null;
   const name = profile.name.trim();
@@ -145,7 +146,7 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
           <Tabs label="What you keep" active={tab} items={TABS} />
           {tab === "pets" ? pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : <EmptyShelf /> : null}
           {tab === "wardrobe" ? pet ? <Wardrobe companion={companion} sender={sender} /> : <EmptyShelf /> : null}
-          {tab === "stickers" ? <StickerBook pets={pets} onChain={onChain} /> : null}
+          {tab === "stickers" ? <StickerBook pets={pets} onChain={onChain} inGuild={inGuild} /> : null}
           {tab === "settings" ? <Settings form={pet ? SPECIES_ART[pet.species] : undefined} /> : null}
         </section>
       </Stack>

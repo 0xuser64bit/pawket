@@ -19,6 +19,7 @@ import {
 import { normalizePetName, parseAddress } from "./pda";
 import {
   CARE_ACTION_VARIANTS,
+  GUILD_LIMITS,
   PAWKET_DISCRIMINATORS,
   PAWKET_PROGRAM_ID,
   PET_PERSONALITY_VARIANTS,
@@ -192,5 +193,101 @@ export function getDressInstruction(input: DressInstructionInput): Instruction {
       new Uint8Array(PAWKET_DISCRIMINATORS.dress),
       encodeVariant(input.wearing, "wearable"),
     ),
+  };
+}
+
+export interface FoundGuildInstructionInput {
+  owner: SignerInput;
+  /** Who pays the rent of the guild and the founder's place in it. Defaults to the owner. */
+  payer?: SignerInput;
+  /** The founding pet, which becomes the first member. */
+  pet: string | Address;
+  guild: string | Address;
+  member: string | Address;
+  slug: string;
+  name: string;
+  motto: string;
+  crest: number;
+  colour: number;
+  programId?: string | Address;
+}
+
+export interface JoinGuildInstructionInput {
+  owner: SignerInput;
+  /** Who pays the rent of the pet's place in the guild. Defaults to the owner. */
+  payer?: SignerInput;
+  pet: string | Address;
+  guild: string | Address;
+  member: string | Address;
+  programId?: string | Address;
+}
+
+export interface LeaveGuildInstructionInput {
+  owner: SignerInput;
+  pet: string | Address;
+  member: string | Address;
+  guild: string | Address;
+  /** Whoever paid the member account's rent, as the member records it: it goes back to them. */
+  payer: string | Address;
+  programId?: string | Address;
+}
+
+/**
+ * Builds `found_guild` (unsigned). The program checks every field again;
+ * these checks only refuse a send that could never land.
+ */
+export function getFoundGuildInstruction(input: FoundGuildInstructionInput): Instruction {
+  const { crest, colour } = input;
+  if (!Number.isInteger(crest) || crest < 0 || crest >= GUILD_LIMITS.crests) throw new Error(`No crest at ${crest}`);
+  if (!Number.isInteger(colour) || colour < 0 || colour >= GUILD_LIMITS.colours) throw new Error(`No colour at ${colour}`);
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      signerMeta(input.payer ?? input.owner, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.READONLY },
+      { address: parseAddress(input.guild, "guild"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.member, "member"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: concatBytes(
+      new Uint8Array(PAWKET_DISCRIMINATORS.foundGuild),
+      encodeAnchorString(input.slug),
+      encodeAnchorString(input.name.trim()),
+      encodeAnchorString(input.motto.trim()),
+      encodeVariant(crest, "crest"),
+      encodeVariant(colour, "colour"),
+    ),
+  };
+}
+
+/** Builds `join_guild` (unsigned). */
+export function getJoinGuildInstruction(input: JoinGuildInstructionInput): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      signerMeta(input.payer ?? input.owner, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.READONLY },
+      { address: parseAddress(input.guild, "guild"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.member, "member"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: new Uint8Array(PAWKET_DISCRIMINATORS.joinGuild),
+  };
+}
+
+/** Builds `leave_guild` (unsigned). */
+export function getLeaveGuildInstruction(input: LeaveGuildInstructionInput): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.READONLY },
+      { address: parseAddress(input.member, "member"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.guild, "guild"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.payer, "payer"), role: AccountRole.WRITABLE },
+    ],
+    data: new Uint8Array(PAWKET_DISCRIMINATORS.leaveGuild),
   };
 }

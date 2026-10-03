@@ -1982,6 +1982,14 @@ li {
   font-size: 15px;
   border-radius: 6px 6px 44% 44%;
 }
+.pk-crest--lg {
+  width: 96px;
+  height: 104px;
+  font-size: 40px;
+  border-width: var(--stroke-shelf);
+  border-radius: var(--radius-md) var(--radius-md) 46% 46%;
+  box-shadow: var(--shadow-sticker);
+}
 .pk-official {
   display: inline-flex;
   align-items: center;
@@ -3640,6 +3648,102 @@ li {
   background: transparent;
   color: var(--ink-faint);
   transform: none;
+}
+
+/* ------------------------------------------------------- guilds
+
+   A guild's page leads with its crest, square-shouldered and in its own
+   colour, beside its name and motto; its pets are a shelf like any other.
+   The founding form picks a glyph and a colour as radios. */
+
+.pk-guild-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+.pk-guild-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--bloom-soft);
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-together {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+}
+.pk-together dd {
+  margin: 2px 0 0;
+}
+.pk-member-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.pk-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.pk-crests {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: var(--space-2);
+}
+.pk-crest-pick {
+  display: grid;
+  place-items: center;
+  height: 48px;
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-sm) var(--radius-sm) 40% 40%;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.pk-crest-pick:has(input:checked) {
+  border-color: var(--bloom-edge);
+  background: var(--bloom-soft);
+  color: var(--bloom-text);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-crest-pick:has(input:focus-visible),
+.pk-colour-pick:has(input:focus-visible),
+.pk-founder:has(input:focus-visible) {
+  outline: var(--stroke-line) solid var(--focus);
+  outline-offset: 2px;
+}
+.pk-colour-pick {
+  display: inline-grid;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.pk-colour-pick:has(input:checked) .pk-swatch {
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--edge);
+}
+.pk-founder {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.pk-founder--on {
+  border-color: var(--edge);
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-sticker-sm);
 }
 
 /* ------------------------------------------------------- rooms (themes)

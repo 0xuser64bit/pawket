@@ -11,19 +11,23 @@ import {
 } from "@solana/kit";
 import { beforeAll, describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
-import { fetchPetOnChain, fetchPetsOnChain, toCompanionRecord, wearableSlot } from "./accounts";
+import { fetchGuild, fetchGuildPets, fetchPetOnChain, fetchPetsOnChain, toCompanionRecord, wearableSlot } from "./accounts";
 import {
   getAdoptPetInstruction,
   getCareInstruction,
   getDressInstruction,
   getFinishRoundInstruction,
+  getFoundGuildInstruction,
+  getJoinGuildInstruction,
+  getLeaveGuildInstruction,
 } from "./instructions";
-import { derivePassportPda, derivePetPda } from "./pda";
+import { deriveGuildPda, deriveMemberPda, derivePassportPda, derivePetPda } from "./pda";
 import { keepsakeTransaction, readKeepsake } from "@/server/keepsake";
 import { MPL_CORE_PROGRAM_ID } from "./core";
 import { sendPawket, sendPrepared } from "./send";
 import { cosign } from "./sponsor";
 import { extractProgramErrorCode } from "./transactions";
+import { TEST_GUILD_NAME } from "@/lib/guilds/delisted";
 
 /**
  * The whole path on devnet, run by `pnpm e2e:devnet` and skipped otherwise:
@@ -119,6 +123,47 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
   it("finds the pet among its owner's", async () => {
     const mine = await fetchPetsOnChain(rpc, owner.address);
     expect(mine.map((entry) => entry.pet.address)).toEqual([pet]);
+  });
+
+  it("founds a guild, a second pet joins it and leaves, and the sponsor has its rent back", async () => {
+    // A guild is one name for good, so the test's is unique and says what it is.
+    const slug = `devnet-check-${Date.now().toString(36)}`;
+    const guild = (await deriveGuildPda(slug)).address;
+    const founderPlace = (await deriveMemberPda(pet)).address;
+    const founded = await send(({ payer }) => [
+      getFoundGuildInstruction({ owner, payer, pet, guild, member: founderPlace, slug, name: TEST_GUILD_NAME, motto: "Made by the devnet test.", crest: 1, colour: 1 }),
+    ]);
+    expect(founded).toMatchObject({ outcome: "confirmed", sponsored: true });
+    expect(await fetchGuild(rpc, slug)).toMatchObject({ slug, name: TEST_GUILD_NAME, memberCount: 1, founderPet: pet });
+
+    // A second pet of the same wallet joins, so leaving can be checked on a pet that is not the founder.
+    const second = (await derivePetPda(owner.address, `${name}2`)).address;
+    const secondPassport = (await derivePassportPda(second)).address;
+    const place = (await deriveMemberPda(second)).address;
+    await send(({ payer }) => [
+      getAdoptPetInstruction({
+        owner,
+        payer,
+        pet: second,
+        passport: secondPassport,
+        name: `${name}2`,
+        species: PetSpecies.LunaCat,
+        personality: PetPersonality.Cozy,
+      }),
+    ]);
+    await send(({ payer }) => [getJoinGuildInstruction({ owner, payer, pet: second, guild, member: place })]);
+    expect((await fetchGuild(rpc, slug))?.memberCount).toBe(2);
+    expect((await fetchGuildPets(rpc, guild)).map((entry) => entry.pet.address).sort()).toEqual([pet, second].sort());
+    expect((await fetchPetOnChain(rpc, second))?.member?.guild).toBe(guild);
+
+    const before = (await rpc.getBalance(sponsor.address).send()).value;
+    const joined = await fetchPetOnChain(rpc, second);
+    await send(() => [getLeaveGuildInstruction({ owner, pet: second, member: place, guild, payer: joined!.member!.payer })]);
+    expect((await fetchGuild(rpc, slug))?.memberCount).toBe(1);
+    expect((await fetchPetOnChain(rpc, second))?.member).toBeNull();
+    // The rent came back to the sponsor, which paid it, less the fee.
+    expect((await rpc.getBalance(sponsor.address).send()).value).toBeGreaterThan(before);
+    expect((await rpc.getBalance(owner.address).send()).value).toBe(0n);
   });
 
   it("keeps the pet's card in the owner's wallet, frozen, once", async () => {

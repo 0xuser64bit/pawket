@@ -24,15 +24,16 @@ import {
   petLook,
 } from "@/lib/game/appearance";
 import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
-import { useGuestPet } from "@/lib/guest/use-guest-pet";
+import { usePets } from "@/lib/guest/use-pets";
 import { formatUtcDate } from "@/lib/utils/format";
 
 /**
- * The record of the one pet in this browser. A link to any other id is a
- * miss, not a second pet.
+ * The record of a pet kept in this browser. An id this browser does not
+ * keep is a plain miss: the pet may live in another browser.
  */
 export function PetScreen({ id }: { id: string }) {
-  const { ready, pet } = useGuestPet();
+  const { ready, pets } = usePets();
+  const pet = pets.find((p) => p.id === id) ?? null;
 
   if (!ready) {
     return (
@@ -43,21 +44,21 @@ export function PetScreen({ id }: { id: string }) {
     );
   }
 
-  if (!pet || pet.id !== id) {
+  if (!pet) {
     return (
       <Screen width="narrow">
         <BackLink label="Inventory" href="/inventory" />
         <EmptyState
           icon="paw"
-          title={pet ? "That is not the pet in this browser" : "No pet in this browser"}
+          title={pets.length ? "That pet is not in this browser" : "No pet in this browser"}
           body={
-            pet
-              ? `${pet.name} is the companion saved here. Pawket keeps one.`
+            pets.length
+              ? "A pet in another browser stays there. Yours here are on the shelf."
               : "Adopting takes three taps, and the pet stays in this browser."
           }
           action={
-            pet ? (
-              <ButtonLink label={`Open ${pet.name}`} href={`/pet/${pet.id}`} icon="paw" />
+            pets.length ? (
+              <ButtonLink label="Your pets" href="/inventory" icon="pocket" />
             ) : (
               <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />
             )

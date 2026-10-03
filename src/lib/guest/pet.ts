@@ -169,6 +169,15 @@ export function createGuestPet(input: AdoptGuestInput): GuestPet {
   };
 }
 
+/**
+ * Whether a name is already used by one of `pets`, ignoring case and the
+ * spaces around it — two pets called Pepper are one too many to tell apart.
+ */
+export function nameTaken(pets: readonly { name: string }[], name: string): boolean {
+  const wanted = name.trim().toLocaleLowerCase();
+  return pets.some((pet) => pet.name.trim().toLocaleLowerCase() === wanted);
+}
+
 export interface ProjectedPet {
   /** Live stats: stored value decayed forward to `now`. Labeled estimate in UI. */
   stats: PetStats;

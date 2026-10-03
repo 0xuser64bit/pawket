@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   Banner,
   Button,
-  ButtonLink,
   Field,
   Icon,
   Mark,
@@ -22,12 +21,12 @@ import {
   SPECIES_ART,
   SPECIES_LABEL,
   SPECIES_SKY,
-  petLook,
 } from "@/lib/game/appearance";
 import { PetPersonality, PetSpecies } from "@/lib/game/enums";
-import { createGuestPet, projectGuestPet, type GuestPet } from "@/lib/guest/pet";
-import { clearGuestPet, saveGuestPet } from "@/lib/guest/storage";
-import { useGuestPet } from "@/lib/guest/use-guest-pet";
+import { choosePet } from "@/lib/companion/use-companion";
+import { createGuestPet, nameTaken, projectGuestPet, type GuestPet } from "@/lib/guest/pet";
+import { savePet } from "@/lib/guest/storage";
+import { usePets } from "@/lib/guest/use-pets";
 import { formatUtcDate } from "@/lib/utils/format";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 
@@ -53,6 +52,13 @@ const NAMES: Record<PetSpecies, string[]> = {
   [PetSpecies.CloudBun]: ["Tuesday", "Mochi", "Clover", "Dumpling", "Puff"],
 };
 
+/** "Pepper will have company." — the pets already here, named. */
+function companyLine(names: string[]): string {
+  if (names.length === 1) return `${names[0]} will have company.`;
+  if (names.length === 2) return `${names[0]} and ${names[1]} will have company.`;
+  return `${names[0]}, ${names[1]} and ${names.length - 2} more will have company.`;
+}
+
 /** Three paws, one per step: the ones behind you filled, the one you are on outlined in sun. */
 function Steps({ step }: { step: 1 | 2 | 3 }) {
   return (
@@ -76,9 +82,9 @@ function Bar({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
 }
 
 /**
- * Three taps to a pet. This browser keeps one companion. If one already
- * lives here, starting over is a separate, explicit choice — adopting does
- * not overwrite them on the way through.
+ * Three taps to a pet. A player keeps as many as they adopt: a new one
+ * joins the others in this browser and comes home, and nobody already here
+ * is touched on the way through.
  *
  * The pets are the page: all three sit large and alive, their eyes follow
  * the pointer, choosing one makes it hop, and the temperament you pick is
@@ -91,8 +97,7 @@ function Bar({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
  */
 export function AdoptFlow() {
   const router = useRouter();
-  const { ready, pet: resident } = useGuestPet();
-  const [replacing, setReplacing] = useState(false);
+  const { ready, pets: residents } = usePets();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [species, setSpecies] = useState<PetSpecies>(PetSpecies.LunaCat);
   const [hop, setHop] = useState(0);
@@ -146,9 +151,15 @@ export function AdoptFlow() {
   }
 
   function commit() {
+    if (nameTaken(residents, name)) {
+      setError(`You already have a pet called ${typed}. Each of yours needs their own name.`);
+      nameInput.current?.focus();
+      return;
+    }
     try {
       const created = createGuestPet({ name, species, personality });
-      const saved = saveGuestPet(created);
+      const saved = savePet(created);
+      if (saved) choosePet(created.id);
       setAdopted(created);
       setStored(saved);
       setError(undefined);
@@ -163,7 +174,9 @@ export function AdoptFlow() {
 
   function retrySave() {
     if (!adopted) return;
-    setStored(saveGuestPet(adopted));
+    const saved = savePet(adopted);
+    if (saved) choosePet(adopted.id);
+    setStored(saved);
   }
 
   if (!ready) {
@@ -171,45 +184,6 @@ export function AdoptFlow() {
       <main id="main" className="pk-adopt">
         <Bar step={1} />
         <Waiting label="Opening adoption" />
-      </main>
-    );
-  }
-
-  // Saving the new pet updates the store immediately. That pet is this
-  // adoption, not a resident we are about to overwrite.
-  const justAdopted = adopted != null && resident?.id === adopted.id;
-  if (resident && !replacing && !justAdopted) {
-    const { level, mood } = projectGuestPet(resident);
-    return (
-      <main id="main" className="pk-adopt pk-adopt--narrow" ref={scope}>
-        <div className="pk-screen__bar pk-adopt__bar">
-          <Mark href="/" size={26} type={18} />
-        </div>
-        <Stack gap={5}>
-          <div className="pk-adopt__portrait" data-eyes>
-            <PetFrame {...petLook(resident, mood)} sky={SPECIES_SKY[resident.species]} size="lg" level={level} />
-          </div>
-          <div>
-            <h1 ref={heading} tabIndex={-1} className="display-m">
-              {resident.name} already lives here.
-            </h1>
-            <p className="body pk-muted" style={{ marginTop: "var(--space-3)" }}>
-              This browser keeps one pet. Starting over removes {resident.name}, their care and
-              their clothes from this browser. It cannot be undone.
-            </p>
-          </div>
-          <ButtonLink label={`Keep ${resident.name}`} href="/home" size="lg" full icon="home" />
-          <Button
-            tone="alarm"
-            size="lg"
-            full
-            label="Remove them and start over"
-            onClick={() => {
-              clearGuestPet();
-              setReplacing(true);
-            }}
-          />
-        </Stack>
       </main>
     );
   }
@@ -222,7 +196,11 @@ export function AdoptFlow() {
           <h1 ref={heading} tabIndex={-1} className="display-l">
             Who is coming home with you?
           </h1>
-          <p className="body-lg pk-muted">Pick one. Their species and their temperament stay with them.</p>
+          <p className="body-lg pk-muted">
+            {residents.length
+              ? `${companyLine(residents.map((r) => r.name))} Pick one more: their species and their temperament stay with them.`
+              : "Pick one. Their species and their temperament stay with them."}
+          </p>
         </div>
 
         <div className="pk-adopt__stage" ref={stage}>

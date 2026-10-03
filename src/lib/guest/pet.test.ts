@@ -12,12 +12,13 @@ import {
   cooldownsFor,
   createGuestPet,
   migrateStoredPet,
+  nameTaken,
   projectGuestPet,
   recordPlay,
   setWearing,
   streakAsOf,
 } from "./pet";
-import { clearGuestPet, loadGuestPet, saveGuestPet } from "./storage";
+import { loadPets, readPet, readPetsSnapshot, removePet, savePet } from "./storage";
 
 const INPUT = {
   name: "Mochi",
@@ -263,26 +264,83 @@ describe("cooldownsFor", () => {
   });
 });
 
-describe("guest storage", () => {
+describe("nameTaken", () => {
+  it("matches a name already used, whatever its case or spaces", () => {
+    const pets = [{ name: "Pepper" }, { name: "Miso" }];
+    expect(nameTaken(pets, "pepper")).toBe(true);
+    expect(nameTaken(pets, "  MISO ")).toBe(true);
+    expect(nameTaken(pets, "Peppers")).toBe(false);
+    expect(nameTaken([], "Pepper")).toBe(false);
+  });
+});
+
+describe("pet storage", () => {
   beforeEach(() => {
     window.localStorage.clear();
   });
 
-  it("round-trips a pet", () => {
+  it("keeps as many pets as are adopted, oldest first", () => {
+    const pepper = createGuestPet({ ...INPUT, name: "Pepper", now: new Date("2026-09-19T12:00:00Z") });
+    const miso = createGuestPet({ ...INPUT, name: "Miso", now: new Date("2026-09-20T12:00:00Z") });
+    expect(savePet(pepper)).toBe(true);
+    expect(savePet(miso)).toBe(true);
+    expect(loadPets().map((p) => p.name)).toEqual(["Pepper", "Miso"]);
+  });
+
+  it("replaces a pet in place when it is saved again", () => {
+    const pepper = createGuestPet({ ...INPUT, name: "Pepper" });
+    const miso = createGuestPet({ ...INPUT, name: "Miso" });
+    savePet(pepper);
+    savePet(miso);
+    savePet({ ...pepper, xp: 40 });
+    expect(loadPets().map((p) => [p.name, p.xp])).toEqual([
+      ["Pepper", 40],
+      ["Miso", 0],
+    ]);
+    expect(readPet(pepper.id)?.xp).toBe(40);
+  });
+
+  it("lets one pet go and keeps the rest", () => {
+    const pepper = createGuestPet({ ...INPUT, name: "Pepper" });
+    const miso = createGuestPet({ ...INPUT, name: "Miso" });
+    savePet(pepper);
+    savePet(miso);
+    removePet(pepper.id);
+    expect(loadPets().map((p) => p.name)).toEqual(["Miso"]);
+    expect(readPet(pepper.id)).toBeNull();
+  });
+
+  it("moves the one pet from before into the list, and only then forgets the old key", () => {
     const pet = createGuestPet(INPUT);
-    saveGuestPet(pet);
-    expect(loadGuestPet()).toEqual(pet);
-  });
-
-  it("returns null and clears corrupt entries", () => {
-    window.localStorage.setItem("pawket.guest-pet.v1", "{broken");
-    expect(loadGuestPet()).toBeNull();
+    window.localStorage.setItem("pawket.guest-pet.v1", JSON.stringify(pet));
+    expect(loadPets()).toEqual([pet]);
     expect(window.localStorage.getItem("pawket.guest-pet.v1")).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem("pawket.pets.v1")!)).toEqual([pet]);
   });
 
-  it("clears on start-over", () => {
-    saveGuestPet(createGuestPet(INPUT));
-    clearGuestPet();
-    expect(loadGuestPet()).toBeNull();
+  it("drops a damaged entry and keeps the others", () => {
+    const pet = createGuestPet(INPUT);
+    window.localStorage.setItem("pawket.pets.v1", JSON.stringify([{ name: 3 }, pet, pet]));
+    expect(loadPets()).toEqual([pet]);
+  });
+
+  it("returns nothing and clears a list that is not JSON", () => {
+    window.localStorage.setItem("pawket.pets.v1", "{broken");
+    expect(loadPets()).toEqual([]);
+    expect(window.localStorage.getItem("pawket.pets.v1")).toBeNull();
+  });
+
+  it("refuses to store an invalid record", () => {
+    expect(savePet({ ...createGuestPet(INPUT), xp: -1 })).toBe(false);
+    expect(loadPets()).toEqual([]);
+  });
+
+  it("hands useSyncExternalStore the same array until something changes", () => {
+    savePet(createGuestPet(INPUT));
+    const first = readPetsSnapshot();
+    expect(readPetsSnapshot()).toBe(first);
+    savePet(createGuestPet({ ...INPUT, name: "Miso" }));
+    expect(readPetsSnapshot()).not.toBe(first);
+    expect(readPetsSnapshot()).toHaveLength(2);
   });
 });

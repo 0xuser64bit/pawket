@@ -21,7 +21,7 @@ import { DAILY_GOAL_REWARD_XP } from "@/lib/game/constants";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { recordPlay, utcDay, type GuestPet } from "@/lib/guest/pet";
-import { readGuestPetSnapshot, saveGuestPet } from "@/lib/guest/storage";
+import { readPet, savePet } from "@/lib/guest/storage";
 import { getFinishRoundInstruction } from "@/lib/solana/instructions";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
 import { keepBest, readBest, type GameId } from "@/lib/play/best";
@@ -75,13 +75,13 @@ export function PlaygroundScreen() {
         setOutcome({ game, score, best: isBest, xpGained: recordPlay(pet, new Date()).xpGained, saved: false, onChain: true });
         return;
       }
-      const current = readGuestPetSnapshot();
+      const current = pet ? readPet(pet.id) : null;
       if (!current) {
         setOutcome({ game, score, best: isBest, xpGained: 0, saved: false, onChain: false });
         return;
       }
       const result = recordPlay(current, new Date());
-      const saved = saveGuestPet(result.pet);
+      const saved = savePet(result.pet);
       setOutcome({ game, score, best: isBest, xpGained: result.xpGained, saved, onChain: false });
     },
     [game, active, pet],

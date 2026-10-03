@@ -20,7 +20,6 @@ import {
   WearableArt,
   Waiting,
 } from "@/components/pk";
-import { CarryCard } from "@/components/home/carry-card";
 import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { getPublicEnv } from "@/config/env";
@@ -29,7 +28,7 @@ import { useCompanion } from "@/lib/companion/use-companion";
 import { SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { calculateLevelFromXp } from "@/lib/game/math";
 import { projectGuestPet, setWearing, type GuestPet } from "@/lib/guest/pet";
-import { readGuestPetSnapshot, saveGuestPet } from "@/lib/guest/storage";
+import { readPet, savePet } from "@/lib/guest/storage";
 import { toCompanionRecord, wearableSlot } from "@/lib/solana/accounts";
 import { getDressInstruction } from "@/lib/solana/instructions";
 import { usePawketSend } from "@/lib/solana/use-send";
@@ -71,9 +70,9 @@ export function InventoryScreen({ tab }: { tab: "pet" | "wardrobe" }) {
       if (result) companion.refresh();
       return;
     }
-    const current = readGuestPetSnapshot();
+    const current = pet ? readPet(pet.id) : null;
     if (!current) return;
-    if (!saveGuestPet(setWearing(current, id))) {
+    if (!savePet(setWearing(current, id))) {
       setNotice("This browser did not store that.");
       return;
     }
@@ -89,7 +88,7 @@ export function InventoryScreen({ tab }: { tab: "pet" | "wardrobe" }) {
         ) : (
           <span className="caption pk-faint">
             {companion.owned.length > 0
-              ? companion.guest
+              ? companion.guests.length
                 ? "On Solana and in this browser"
                 : "Kept on Solana"
               : "Saved in this browser"}
@@ -160,29 +159,26 @@ export function InventoryScreen({ tab }: { tab: "pet" | "wardrobe" }) {
               </Card>
             )}
 
-            {companion.guest ? (
+            {companion.guests.length > 0 ? (
               <Stack gap={3}>
-                <SectionLabel count="1">In this browser</SectionLabel>
+                <SectionLabel count={`${companion.guests.length}`}>In this browser</SectionLabel>
                 <div className="pk-cards">
-                  <BrowserPetCard pet={companion.guest} />
+                  {companion.guests.map((entry) => (
+                    <BrowserPetCard
+                      key={entry.id}
+                      pet={entry}
+                      home={entry.id === pet?.id}
+                      onHome={() => {
+                        companion.choose(entry.id);
+                        router.push("/home");
+                      }}
+                    />
+                  ))}
                 </div>
-                {active && companion.canSign ? (
-                  <CarryCard
-                    pet={companion.guest}
-                    owner={companion.owner}
-                    canSign={companion.canSign}
-                    sender={sender}
-                    onCarried={(address) => {
-                      companion.choose(address);
-                      companion.refresh();
-                      router.push("/home");
-                    }}
-                  />
-                ) : null}
               </Stack>
             ) : null}
 
-            {!companion.guest && companion.owned.length === 0 ? (
+            {companion.guests.length === 0 && companion.owned.length === 0 ? (
               <EmptyState
                 icon="paw"
                 title="The shelf is empty"
@@ -297,18 +293,25 @@ export function InventoryScreen({ tab }: { tab: "pet" | "wardrobe" }) {
   );
 }
 
-function BrowserPetCard({ pet }: { pet: GuestPet }) {
+function BrowserPetCard({ pet, home, onHome }: { pet: GuestPet; home: boolean; onHome: () => void }) {
   const { level, mood } = projectGuestPet(pet);
   return (
-    <Card href={`/pet/${pet.id}`} variant="flush">
-      <div className="pk-card__art">
+    <Card variant="flush">
+      <Link href={`/pet/${pet.id}`} className="pk-card__art" aria-label={`${pet.name}'s record`}>
         <PetFrame {...petLook(pet, mood)} sky={SPECIES_SKY[pet.species]} level={level} size="fluid" still />
-      </div>
+      </Link>
       <div className="pk-card__body">
         <h2 className="title">{pet.name}</h2>
         <p className="caption pk-faint">
           Level {level} · {SPECIES_LABEL[pet.species]}
         </p>
+        <div style={{ marginTop: "var(--space-3)" }}>
+          {home ? (
+            <Chip label="At home" tone="pool" icon="home" />
+          ) : (
+            <Button label="Bring home" icon="home" tone="quiet" size="sm" onClick={onHome} />
+          )}
+        </div>
       </div>
     </Card>
   );

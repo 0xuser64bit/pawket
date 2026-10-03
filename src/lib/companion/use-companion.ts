@@ -5,41 +5,48 @@ import { useConnectedWallet, useIsWalletReady } from "@solana/kit-plugin-wallet/
 import { useRequest } from "@solana/react";
 import type { Address } from "@solana/kit";
 import type { GuestPet } from "@/lib/guest/pet";
-import { useGuestPet } from "@/lib/guest/use-guest-pet";
+import { usePets } from "@/lib/guest/use-pets";
 import { fetchPetsOnChain, toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { rpc, wallet } from "@/lib/solana/browser-client";
 
 /**
- * The pet a screen draws. With a wallet that holds pets on Solana, it is
- * the one in play there; otherwise it is the pet kept in this browser. Both
- * arrive as the same record shape, so every screen draws them with the same
- * functions — only how a care is saved differs.
+ * The pet a screen draws, and every pet the player keeps. A player keeps as
+ * many as they adopt: the connected wallet's pets on Solana, and the pets in
+ * this browser. One of them is at home — the one they chose, else the first
+ * on Solana, else the first adopted here. All of them arrive as the same
+ * record shape, so every screen draws them with the same functions — only
+ * how a care is saved differs.
  */
 export interface CompanionState {
   /**
-   * False until the browser pet, the wallet and the wallet's pets have all
+   * False until the browser pets, the wallet and the wallet's pets have all
    * settled once. After that it stays true: a wallet connected later swaps
    * its pet in when it arrives (`reading` meanwhile), without blanking the screen.
    */
   ready: boolean;
   /** The connected wallet's pets are being read for the first time. */
   reading: boolean;
-  /** What the screen draws: the chain pet in play, else the browser pet. */
+  /** The pet at home: what Home, the playground and the wardrobe draw. */
   pet: GuestPet | null;
-  /** The chain pet in play, when `pet` is one. */
+  /** The chain entry of the pet at home, when it lives on Solana. */
   active: PetOnChain | null;
-  /** The pet kept in this browser, whether or not it is the one drawn. */
+  /** The pet at home, when it lives in this browser. */
   guest: GuestPet | null;
+  /** Every pet in this browser, oldest first. */
+  guests: GuestPet[];
+  /** Every pet the connected wallet keeps on Solana, most recently adopted first. */
+  owned: PetOnChain[];
+  /** Every pet, as records: on Solana first, then this browser's. */
+  all: GuestPet[];
   /** The connected wallet's address, or null. */
   owner: Address | null;
   /** Whether the connected wallet can sign (a read-only wallet cannot). */
   canSign: boolean;
-  /** Every pet the connected wallet holds on Solana, most recently adopted first. */
-  owned: PetOnChain[];
-  /** Solana did not answer; the screen falls back to the browser pet. */
+  /** Solana did not answer; the screen falls back to the browser pets. */
   chainError: unknown;
   refresh: () => void;
-  choose: (address: string) => void;
+  /** Bring a pet home, by its id (a browser id or an address). Remembered on this device. */
+  choose: (id: string) => void;
 }
 
 const ACTIVE_KEY = "pawket.active-pet";
@@ -56,9 +63,10 @@ function readActive(): string | null {
   }
 }
 
-function writeActive(address: string) {
+/** Bring a pet home, from anywhere (adoption has no companion to ask). */
+export function choosePet(id: string) {
   try {
-    window.localStorage.setItem(ACTIVE_KEY, address);
+    window.localStorage.setItem(ACTIVE_KEY, id);
   } catch {
     // Blocked storage: the choice lasts until the page reloads.
   }
@@ -76,7 +84,7 @@ export function useOwnedPets(owner: Address | null) {
 }
 
 export function useCompanion(): CompanionState {
-  const { ready: guestReady, pet: guest } = useGuestPet();
+  const { ready: guestReady, pets: guests } = usePets();
   const walletReady = useIsWalletReady(wallet);
   const connected = useConnectedWallet(wallet);
   const owner = (connected?.account.address as Address | undefined) ?? null;
@@ -91,8 +99,12 @@ export function useCompanion(): CompanionState {
   );
 
   const owned = useMemo(() => pets.data ?? [], [pets.data]);
-  const active = owned.find((entry) => entry.pet.address === chosen) ?? owned[0] ?? null;
-  const record = useMemo(() => (active ? toCompanionRecord(active) : null), [active]);
+  const chosenGuest = guests.find((pet) => pet.id === chosen) ?? null;
+  const active = owned.find((entry) => entry.pet.address === chosen) ?? (chosenGuest ? null : (owned[0] ?? null));
+  const guest = active ? null : (chosenGuest ?? guests[0] ?? null);
+  const records = useMemo(() => owned.map(toCompanionRecord), [owned]);
+  const record = active ? (records.find((r) => r.id === active.pet.address) ?? null) : null;
+  const all = useMemo(() => [...records, ...guests], [records, guests]);
   const chainSettled = !owner || pets.status === "success" || pets.status === "error" || pets.data !== undefined;
   const settled = guestReady && walletReady && chainSettled;
   useEffect(() => {
@@ -105,11 +117,13 @@ export function useCompanion(): CompanionState {
     pet: record ?? guest,
     active,
     guest,
+    guests,
+    owned,
+    all,
     owner,
     canSign: Boolean(connected?.signer),
-    owned,
     chainError: pets.status === "error" ? pets.error : undefined,
     refresh: pets.refresh,
-    choose: writeActive,
+    choose: choosePet,
   };
 }

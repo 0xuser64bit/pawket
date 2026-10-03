@@ -95,8 +95,8 @@ test("a new level is said out loud, and nothing else about the care changes", as
 
   // Five XP short of level two.
   await page.evaluate(() => {
-    const pet = JSON.parse(localStorage.getItem("pawket.guest-pet.v1")!);
-    localStorage.setItem("pawket.guest-pet.v1", JSON.stringify({ ...pet, xp: 95 }));
+    const [pet] = JSON.parse(localStorage.getItem("pawket.pets.v1")!);
+    localStorage.setItem("pawket.pets.v1", JSON.stringify([{ ...pet, xp: 95 }]));
   });
   await page.reload();
   await expect(page.getByText("95 / 100 XP")).toBeVisible();
@@ -105,7 +105,7 @@ test("a new level is said out loud, and nothing else about the care changes", as
   await expect(page.getByText("Level 2", { exact: true })).toBeVisible();
 });
 
-test("a second adoption does not overwrite the pet you have", async ({ page }) => {
+test("a second adoption keeps the first pet, and either can be at home", async ({ page }) => {
   await page.goto("/adopt");
   await page.getByRole("button", { name: /choose the luna cat/i }).click();
   await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
@@ -114,8 +114,18 @@ test("a second adoption does not overwrite the pet you have", async ({ page }) =
   await expect(page.getByText("Today with Pepper")).toBeVisible();
 
   await page.goto("/adopt");
-  await expect(page.getByRole("heading", { name: "Pepper already lives here." })).toBeVisible();
-  await page.getByRole("link", { name: "Keep Pepper" }).click();
+  await expect(page.getByText(/Pepper will have company/)).toBeVisible();
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await expect(page.getByText(/already have a pet called pepper/i)).toBeVisible();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Miso");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await page.getByRole("button", { name: /take them home/i }).click();
+  await expect(page.getByText("Today with Miso")).toBeVisible();
+
+  await page.goto("/inventory");
+  await page.getByRole("button", { name: "Bring home" }).click();
   await expect(page.getByText("Today with Pepper")).toBeVisible();
 });
 

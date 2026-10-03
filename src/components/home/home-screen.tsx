@@ -50,7 +50,7 @@ import {
 import { describeLook } from "@/lib/player/look";
 import { usePlayerLook } from "@/lib/player/use-player-look";
 import { CARE_MOMENT, type RoomCue } from "@/lib/room/moments";
-import { clearGuestPet, readGuestPetSnapshot, saveGuestPet } from "@/lib/guest/storage";
+import { readPet, removePet, savePet } from "@/lib/guest/storage";
 import { getCareInstruction } from "@/lib/solana/instructions";
 import { usePawketSend, type TxState } from "@/lib/solana/use-send";
 import { formatCountdown } from "@/lib/utils/format";
@@ -79,7 +79,8 @@ export function HomeScreen() {
   const [notice, setNotice] = useState<{ tone: "ok" | "stop"; text: string }>();
   const [confirming, setConfirming] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const carried = useRef<Address | null>(null);
+  /** A browser pet on its way onto Solana: its id here, and its address there. */
+  const carried = useRef<{ id: string; address: Address } | null>(null);
   const [cue, setCue] = useState<RoomCue | null>(null);
   const [status, setStatus] = useState<DirectorStatus>({ moment: null, sentence: "" });
   const [roomState, setRoomState] = useState<RoomState>("loading");
@@ -96,9 +97,9 @@ export function HomeScreen() {
 
   // A pet carried onto Solana leaves this browser once the chain copy is the one drawn.
   useEffect(() => {
-    if (carried.current && active?.pet.address === carried.current) {
+    if (carried.current && active?.pet.address === carried.current.address) {
+      removePet(carried.current.id);
       carried.current = null;
-      clearGuestPet();
     }
   }, [active]);
 
@@ -186,14 +187,14 @@ export function HomeScreen() {
       void careOnChain(action);
       return;
     }
-    const current = readGuestPetSnapshot();
+    const current = readPet(pet!.id);
     if (!current) return;
     const result = applyGuestCare(current, action, new Date());
     if (!result.ok) {
       setNotice({ tone: "stop", text: result.message });
       return;
     }
-    if (!saveGuestPet(result.pet)) {
+    if (!savePet(result.pet)) {
       setNotice({
         tone: "stop",
         text: "This browser did not store that. The action did not stick.",
@@ -304,7 +305,7 @@ export function HomeScreen() {
                 canSign={companion.canSign}
                 sender={sender}
                 onCarried={(address) => {
-                  carried.current = address;
+                  carried.current = { id: pet.id, address };
                   companion.choose(address);
                   companion.refresh();
                 }}
@@ -342,21 +343,24 @@ export function HomeScreen() {
                   {confirming ? (
                     <Stack gap={3}>
                       <p className="body-sm">
-                        Remove {pet.name} from this browser? Their care, streak and clothes go too.
-                        This cannot be undone.
+                        Let {pet.name} go from this browser? Their care, streak and clothes go too.
+                        This cannot be undone. Your other pets stay.
                       </p>
                       <Row gap={2} wrap>
                         <Button
                           tone="alarm"
                           size="sm"
-                          label={`Remove ${pet.name}`}
-                          onClick={() => clearGuestPet()}
+                          label={`Let ${pet.name} go`}
+                          onClick={() => {
+                            removePet(pet.id);
+                            setConfirming(false);
+                          }}
                         />
                         <Button tone="quiet" size="sm" label="Keep them" onClick={() => setConfirming(false)} />
                       </Row>
                     </Stack>
                   ) : (
-                    <Button tone="ghost" size="sm" label="Start over" onClick={() => setConfirming(true)} />
+                    <Button tone="ghost" size="sm" label={`Let ${pet.name} go`} onClick={() => setConfirming(true)} />
                   )}
                 </div>
               </Card>

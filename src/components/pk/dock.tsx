@@ -31,7 +31,7 @@ const PLACES: Array<{ key: string; label: string; icon: IconName; href: string }
 export function activePlace(pathname: string): string {
   const place = PLACES.find((p) => pathname === p.href || pathname.startsWith(`${p.href}/`))?.key;
   if (place) return place;
-  if (/^\/pet\/[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(pathname) || pathname === "/pulse") return "park";
+  if (/^\/pet\/[1-9A-HJ-NP-Za-km-z]{32,44}(\/visit)?$/.test(pathname) || pathname === "/pulse") return "park";
   return pathname.startsWith("/pet") || pathname.startsWith("/inventory") || pathname.startsWith("/wallet") ? "profile" : "home";
 }
 

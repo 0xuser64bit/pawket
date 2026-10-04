@@ -29,7 +29,10 @@ export function Guestbook({
   waves,
   recent,
   today,
+  onWaved,
 }: {
+  /** Called once Solana has the wave: a room plays it. */
+  onWaved?: () => void;
   pet: Address;
   owner: Address;
   name: string;
@@ -53,7 +56,10 @@ export function Guestbook({
     const result = await sender.send(`Wave at ${name}`, ({ owner: visitor, payer }) => [
       getWaveInstruction({ visitor, payer, pet, guestbook }),
     ]);
-    if (result?.outcome === "confirmed") router.refresh();
+    if (result?.outcome === "confirmed") {
+      onWaved?.();
+      router.refresh();
+    }
   }
 
   return (

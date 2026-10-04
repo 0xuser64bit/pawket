@@ -16,6 +16,7 @@ Built today:
 (game)/playground          four games, a shared daily round each; on Solana, "Record the round"
 (game)/pet/[id]            an address: the public Passport, from chain (with its guild and guestbook);
                            otherwise the record of a pet in this browser
+(game)/pet/[address]/visit you, in a pet's room on Solana: emotes, and a wave into its guestbook
 (game)/market              looks for SOL at fixed prices: four pieces, two rooms; the closet read from chain
 (game)/pulse               everything the program holds, counted and read live
 (game)/guilds              every guild on Solana, read live (test and delisted ones left out), and the rule

@@ -1,5 +1,6 @@
 import {
   BackLink,
+  ButtonLink,
   Card,
   Chip,
   Columns,
@@ -122,6 +123,7 @@ export function Passport({
 
             <Row gap={2} wrap>
               <OwnerActions owner={pet.owner} address={pet.address} name={pet.name} />
+              <ButtonLink label={`Visit ${pet.name}`} href={`/pet/${pet.address}/visit`} icon="home" tone="quiet" size="sm" />
               <ShareButton name={pet.name} />
             </Row>
             <p className="caption pk-faint" style={{ marginTop: "calc(-1 * var(--space-2))" }}>

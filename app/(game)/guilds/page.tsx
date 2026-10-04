@@ -7,7 +7,6 @@ import { isListed } from "@/lib/guilds/delisted";
 import type { ChainGuild } from "@/lib/solana/accounts";
 import { formatUtcDate } from "@/lib/utils/format";
 import type { CoinStage } from "@/lib/coins/stage";
-import { readCoinStages } from "@/server/coins/meteora";
 import { readGuilds } from "@/server/solana";
 
 export const metadata: Metadata = {
@@ -68,8 +67,8 @@ export default async function GuildsPage() {
     guilds = (await readGuilds())
       .filter(isListed)
       .sort((a, b) => b.memberCount - a.memberCount || a.createdAt - b.createdAt);
-    // Optional, like the coins: the list shows without them if they cannot be read.
-    coins = await readCoinStages(guilds).catch(() => coins);
+    // Optional, like the coins: the list shows without them if they — or Meteora's SDK — cannot be read.
+    coins = await import("@/server/coins/meteora").then(({ readCoinStages }) => readCoinStages(guilds!)).catch(() => coins);
   } catch {
     guilds = null;
   }

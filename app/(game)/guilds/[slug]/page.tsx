@@ -28,7 +28,7 @@ import { toCompanionRecord, type ChainGuild, type PetOnChain } from "@/lib/solan
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { formatUtcDate } from "@/lib/utils/format";
-import { readCoin, readHolderWallets, type CoinState } from "@/server/coins/meteora";
+import type { CoinState } from "@/server/coins/meteora";
 import { readGuild, readGuildPets } from "@/server/solana";
 
 export const dynamic = "force-dynamic";
@@ -62,9 +62,14 @@ export default async function GuildPage({ params }: Props) {
   try {
     guild = isValidSlug(slug) ? await readGuild(slug) : null;
     if (guild) {
-      // The coin is optional and read beside the pets: if it cannot be read, the guild still shows.
-      [pets, coin] = await Promise.all([readGuildPets(guild.address), readCoin(guild).catch(() => null)]);
-      holders = coin ? await readHolderWallets(coin).catch(() => null) : null;
+      // The coin is optional and read beside the pets: if it — or Meteora's SDK — cannot be read, the guild still shows.
+      const found = guild;
+      const coins = import("@/server/coins/meteora").catch(() => null);
+      [pets, coin] = await Promise.all([
+        readGuildPets(found.address),
+        coins.then((module) => module?.readCoin(found) ?? null).catch(() => null),
+      ]);
+      holders = coin ? await coins.then((module) => module?.readHolderWallets(coin!) ?? null).catch(() => null) : null;
     }
   } catch {
     return (

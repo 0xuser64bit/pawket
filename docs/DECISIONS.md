@@ -17,6 +17,42 @@ SBF v2 target — keep their own names.
 (`.keys/backups/`). Commit messages written before this decision still say
 "v5"; history is not rewritten.
 
+## 2026-10: A Market for looks, a guild's gatherings, a pet's guestbook
+
+**Context:** The vision has a Marketplace, guild events and votes, and
+players meeting each other; Pawket had none of them, no way to earn, and a
+shared pet card whose buttons refused everyone but the owner. A database
+(Q2) had been the assumed home for listings and votes.
+**Decision:** One additive devnet upgrade of the program, settled on chain
+with no database:
+- **The Market:** `buy` sends a fixed price (`item_price`: four pieces at
+  0.05 SOL, two rooms at 0.1 SOL) from the buyer to Pawket's treasury and
+  records the item in their `Closet`; `dress_owned` wears a bought piece.
+  Primary sales of looks only — no pet is sold, nothing is resold.
+- **Gatherings:** a guild's founder plans events (`create_event`) that its
+  pets `rsvp` to and `check_in` at, and asks polls (`create_poll`) each
+  wallet with a pet in the guild answers once (`vote`, a ballot seeded by
+  the wallet). No token weight; nothing reaches a pet.
+- **The guestbook:** anyone but its owner `wave`s at a pet once a UTC day,
+  and its Blink offers the wave to everyone who opens the card.
+The sponsor pays the rent of each new account and never a price.
+**Consequence:** Q2 is not needed for the Market or for votes. Pawket has
+its first revenue line (the treasury, shown live on `/pulse`), and a shared
+pet card does something for every visitor. Prices change only with a
+program upgrade. The binary this upgrade replaced is in `.keys/backups/`.
+
+## 2026-10: The Pulse counts everything, from chain
+
+**Context:** Traction and money had to be shown honestly, without a
+database or an analytics vendor that could disagree with the chain.
+**Decision:** `/pulse` counts every account the program keeps — pets,
+cares, guilds, gatherings, coins by stage, closets and what was paid into
+the treasury, waves, Pawket Wallets — read live and answered for thirty
+seconds. On devnet it says plainly that the counts include Pawket's own
+tests.
+**Consequence:** It is the first page to cache or index (Q4) when the
+program holds thousands of accounts.
+
 ## 2026-10: A guild may launch a coin, on Meteora, from Pawket's presets
 
 **Context:** The vision always had guild coins (`VISION.md`, M6), and the

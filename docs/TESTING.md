@@ -4,7 +4,7 @@
 
 | Layer                          | Where                                   | Runner   |
 | ------------------------------ | --------------------------------------- | -------- |
-| The program, every instruction | `programs/pawket/tests/program/`        | cargo + LiteSVM (`pnpm program:test`) |
+| The program, every instruction | `programs/pawket/tests/program/` (incl. `market.rs`, `gatherings.rs`, `guestbook.rs`) | cargo + LiteSVM (`pnpm program:test`) |
 | Program ↔ browser math         | `src/lib/game/lockstep.txt`, replayed by `lockstep.rs` and `lockstep.test.ts` | both |
 | Game math                      | `src/lib/game/*.test.ts`                | Vitest   |
 | Solana PDAs / instruction bytes| `src/lib/solana/*.test.ts`              | Vitest   |

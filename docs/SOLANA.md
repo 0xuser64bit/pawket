@@ -23,6 +23,12 @@ enum variant order, error codes.
 | `Guild`       | `[b"guild", slug]`           | 235  | founder (wallet), founder pet, created, member count, crest glyph, crest colour, bump, slug, name, motto (strings last) |
 | `GuildMember` | `[b"member", pet]`           | 145  | pet, guild, owner, payer (who gets the rent back), joined, bump — seeded by the pet, so one guild per pet |
 | `PawketWallet` | `[b"wallet", owner]`        | 157  | owner, linked device (or the default key), the link's end, daily actions, the UTC day and today's count, all-time actions, deposited, withdrawn, spent (moved onto devices for fees, less what came back), rent payer, created, bump. Its lamports above rent are the balance |
+| `Closet`      | `[b"closet", owner]`         | 83   | owner, a 256-bit set of the Market items it holds, count, lamports paid in all, bump |
+| `GuildEvent`  | `[b"event", guild, id u32]`  | 285  | guild, creator, id, starts, ends, created, going, came, bump, title (48), note (120) |
+| `EventRsvp`   | `[b"rsvp", event, pet]`      | 146  | event, pet, owner, payer, when, came, bump |
+| `GuildPoll`   | `[b"poll", guild, id u32]`   | 309  | guild, creator, id, created, closes, four counts, bump, question (80), up to four options (24 each) |
+| `Ballot`      | `[b"ballot", poll, owner]`   | 146  | poll, owner, pet, payer, option, when, bump — seeded by the wallet, so one vote per person |
+| `Guestbook`   | `[b"guestbook", pet]`        | 365  | pet, waves, the last eight visitors and when, bump |
 
 | Instruction           | Signers              | Effect |
 | --------------------- | -------------------- | ------ |
@@ -40,19 +46,33 @@ enum variant order, error codes.
 | `unlink_device`       | owner or device      | ends the link; when the device signs, everything it holds comes back to the balance (it may pay its own fee and close to zero) |
 | `close_wallet`        | owner                | no device linked; the balance to the owner, the rent to the recorded payer |
 | `care_by_device`, `finish_round_by_device`, `dress_by_device` | device | the same rules and record as the owner's own, for the wallet owner's pets only, inside the link's end and today's limit; then the device's fee is refilled from the balance — by at most one fee (5,000 lamports) and never past its float |
+| `buy`                 | owner, payer         | one Market item at its fixed price (`item_price`: pieces 19–22 at 0.05 SOL, rooms 64–65 at 0.1 SOL), from the owner to `TREASURY` and nowhere else; the closet records it; `payer` covers the closet's rent the first time |
+| `dress_owned`, `dress_owned_by_device` | owner, or device | one of the eighteen, or a Market piece the owner's closet holds |
+| `create_event`        | owner (the guild's founder), payer | an event: a 3–48 byte title, a note to 120, ending after it starts and after now, at most 7 days long, starting within 60 days |
+| `rsvp`                | owner, payer         | a pet in the event's guild is going; one RSVP per pet, until the event ends |
+| `check_in`            | owner                | from 15 minutes before the start until the end, once |
+| `create_poll`         | owner (the founder), payer | a 3–80 byte question, 2–4 options of 1–24 bytes, open 10 minutes to 14 days |
+| `vote`                | owner, payer         | a wallet with a pet in the guild answers once, before it closes |
+| `wave`                | visitor, payer       | anyone but the pet's owner, once a UTC day; the guestbook is made on the first wave (`payer` covers its rent) |
 
 Errors: 6000 `InvalidPetName`, 6001 `NotPetOwner`, 6002
 `CareCooldownActive`, 6003 `UnknownWearable`, 6004 `InvalidGuildSlug`, 6005
 `InvalidGuildName`, 6006 `InvalidGuildMotto`, 6007 `UnknownCrest`, 6008
 `InvalidAmount`, 6009 `InsufficientBalance`, 6010 `InvalidDeviceLink`, 6011
 `NotThisDevice`, 6012 `DeviceExpired`, 6013 `DailyLimitReached`, 6014
-`NoDeviceLinked`, 6015 `DeviceStillLinked`. Each maps
+`NoDeviceLinked`, 6015 `DeviceStillLinked`, 6016 `UnknownItem`, 6017
+`AlreadyOwned`, 6018 `NotInCloset`, 6019 `InvalidEvent`, 6020
+`NotGuildFounder`, 6021 `NotInGuild`, 6022 `EventOver`, 6023
+`NotCheckInTime`, 6024 `AlreadyCheckedIn`, 6025 `InvalidPoll`, 6026
+`PollClosed`, 6027 `UnknownOption`, 6028 `CannotWaveAtOwnPet`, 6029
+`AlreadyWavedToday`. Each maps
 to one sentence in `pawketErrorMessage` that says what did not change; a
 second join (the member account "already in use") has its own sentence.
 Events: `PetAdopted`, `CarePerformed`, `RoundFinished`, `PetDressed`,
 `GuildFounded`, `GuildJoined`, `GuildLeft`, `WalletOpened`,
 `WalletDeposited`, `WalletWithdrew`, `DeviceLinked`, `DeviceUnlinked`,
-`WalletClosed`.
+`WalletClosed`, `ItemBought`, `EventCreated`, `EventRsvped`, `CheckedIn`,
+`PollCreated`, `Voted`, `Waved`.
 
 ### The Pawket Wallet
 
@@ -166,8 +186,9 @@ small float — not the upgrade authority. `checkSponsorable` signs only when:
 - every instruction is one of Pawket's, on Pawket's program, and not one a
   linked device takes (a device pays its own way);
 - the sponsor is the fee payer, and appears in no instruction except as the
-  `payer` of `adopt_pet`, `found_guild` or `join_guild` (rent it pays), or
-  `leave_guild`'s `payer` (rent it gets back);
+  `payer` of `adopt_pet`, `found_guild`, `join_guild`, `buy` (the closet,
+  never the price), `create_event`, `rsvp`, `create_poll`, `vote` or `wave`
+  (rent it pays), or `leave_guild`'s `payer` (rent it gets back);
 - there are no lookup tables and no compute-budget instructions (a priority
   fee is the one way to spend the float faster).
 
@@ -175,7 +196,7 @@ It signs before the player and does not send: the client sends, with
 preflight on, so a transaction that would fail lands nothing and costs the
 float nothing.
 
-Rent — an adoption, a founding, a join or a keepsake — is limited to 20 an hour per caller (an
+Rent — an adoption, a founding, a join, a keepsake, a closet, an event, an RSVP, a poll, a ballot or a guestbook — is limited to 20 an hour per caller (an
 IP for the web app, a wallet for a Blink) and 120 an hour in all, which
 bounds the worst case to under 0.5 SOL an hour; everything else to 240 an
 hour per caller.
@@ -197,6 +218,7 @@ browsers):
 | `/api/actions/adopt` | the adoption card: species, temperament and name as parameters | an `adopt_pet` transaction the sponsor built and signed as fee and rent payer; chains to "Pepper is yours" |
 | `/api/actions/care/<pet>` | the pet's card, read live, with feed, play, brush, rest — and "Adopt your own", for everyone who is not the owner | a care transaction, for the owner only; a care still cooling down is refused with the time left |
 | `/api/actions/guild/<slug>` | the guild's card (its crest large), read live, with one Join | a `join_guild` for the wallet's newest pet on Solana that is in no guild; refused, in one sentence, when there is none or a pet of theirs is in already |
+| `/api/actions/wave/<pet>` | (linked from the pet's card) | a `wave` for any wallet but the owner's, once a UTC day; the sponsor pays the fee, and the guestbook's rent the first time |
 
 `/actions.json` maps the links people already share: `/adopt` →
 `/api/actions/adopt`, `/pet/*` → `/api/actions/care/*`, `/guilds/*` →

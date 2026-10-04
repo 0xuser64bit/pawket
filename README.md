@@ -40,8 +40,17 @@ the network fees, so a wallet with no SOL can play.
    has graduated into its DAMM v2 pool. Read the terms and what can go
    wrong, get a quote, and trade it with a little devnet SOL — or found a
    guild, gather three pets, and launch its coin on a Pawket preset.
-9. Make it yours in Profile: your name, your look (hats, glasses, outfits),
-   the wardrobe, the stickers each record has earned, and eight rooms.
+9. In a guild's page, say your pet is going to its event and check in when
+   it starts, and answer its poll — one vote per wallet. Open someone
+   else's pet and wave: it lands in their guestbook, once a day.
+10. Visit the Market: a halo, a wizard hat, a sun hat, a gold crown and two
+    rooms, for devnet SOL at prices fixed in the program. A purchase goes
+    straight to Pawket's treasury and into your closet on Solana; wear it
+    from the wardrobe, live in it from Settings.
+11. Make it yours in Profile: your name, your look (hats, glasses, outfits),
+    the wardrobe, the stickers each record has earned, and ten rooms.
+12. Open `/pulse` for everything above, counted from the program and read
+    live.
 
 ## What happens on chain
 
@@ -52,6 +61,10 @@ the network fees, so a wallet with no SOL can play.
 | `Guild` PDA `[guild, slug]` | a guild's name, motto, crest, founder and member count. No token, no treasury |
 | `GuildMember` PDA `[member, pet]` | one pet's place in one guild, and who paid its rent |
 | `PawketWallet` PDA `[wallet, owner]` | a balance only its owner fills or empties, the one device linked to it, until when and how many actions a day |
+| `Closet` PDA `[closet, owner]` | what the owner bought in the Market, for good, and what they paid in all |
+| `GuildEvent` / `EventRsvp` PDAs | a guild's events, and which pets said they were going and came |
+| `GuildPoll` / `Ballot` PDAs | a guild's polls, and one ballot per wallet |
+| `Guestbook` PDA `[guestbook, pet]` | every wave a pet has had, and its last eight visitors |
 
 | Instruction | What it does |
 | --- | --- |
@@ -64,6 +77,11 @@ the network fees, so a wallet with no SOL can play.
 | `open_wallet` / `deposit` / `withdraw` / `close_wallet` | the owner's Pawket Wallet: money in from the owner, and out only to the owner |
 | `link_device` / `unlink_device` | the owner links one device (it co-signs) for up to 30 days and 500 actions a day; the owner or the device ends it |
 | `care_by_device` / `finish_round_by_device` / `dress_by_device` | the same care, round and clothes, signed by the linked device with no prompt; its fee refilled from the balance, one fee at a time |
+| `buy` | one Market item at its fixed price, from the buyer to Pawket's treasury and nowhere else, into their closet |
+| `dress_owned` / `dress_owned_by_device` | a piece from the closet goes on; the program checks the closet |
+| `create_event` / `rsvp` / `check_in` | the founder plans; the guild's pets go, and check in when it starts |
+| `create_poll` / `vote` | the founder asks; each wallet with a pet in the guild answers once |
+| `wave` | anyone but the owner waves at a pet, once a UTC day |
 
 | Guild coin (Meteora) | a guild's optional coin: a Dynamic Bonding Curve pool on one of Pawket's two preset configs ([`gentle`](https://explorer.solana.com/address/AyvaZmnBDpDfRDXZqXjHbcJKUq1WPLfGL4hT79miBkLJ?cluster=devnet), [`lively`](https://explorer.solana.com/address/4Sj8NYMxqkXcW1Ep6Cv8n9C3zN6gKqkQXHYmaBQASEwX?cluster=devnet)), graduating into a DAMM v2 pool with all of its liquidity locked for good. One billion coins, no allocations, a 1% fee split between Meteora, the guild's founder and Pawket |
 
@@ -92,9 +110,9 @@ found without an indexer. It cannot be sold or sent; there is no market.
 
 **Blinks.** `/adopt`, every `/pet/<address>` and every `/guilds/<slug>`
 link are also Solana Actions (`/actions.json`): in a Blink-aware client they
-unfurl as an adoption card, the pet's card with its four cares, or the
-guild's card with a way in, and a player can adopt, care or join without
-visiting the site. Pawket pays those fees too.
+unfurl as an adoption card, the pet's card — its four cares for the owner,
+and for everyone else a wave or their own adoption — or the guild's card
+with a way in. Pawket pays those fees too.
 
 ## The places
 
@@ -117,7 +135,9 @@ visiting the site. Pawket pays those fees too.
   book, and settings with eight rooms to live in.
 - **Guilds** — optional, always: pets and their people under a name, a motto
   and a crest, kept on Solana. Found one with a pet on Solana, join or leave
-  any time; Pawket pays the fee. Nothing in a guild touches a pet.
+  any time; Pawket pays the fee. Its founder plans events and asks polls;
+  its pets go, check in and vote — one vote per wallet. Nothing in a guild
+  touches a pet.
 - **A guild's coin** — optional too: once three pets are in a guild, its
   founder may launch a coin on Meteora from Pawket's gentle or lively
   preset. It trades on its bonding curve, graduates into a DAMM v2 pool
@@ -126,7 +146,13 @@ visiting the site. Pawket pays those fees too.
   by the player. Holders' pets wear the guild's crest pin on its page — and
   that is all a coin does.
 - **`/pet/<address>`** — a pet's public Passport, server-rendered from chain,
-  with its guild; its owner can keep the pet's card in their wallet here.
+  with its guild and its guestbook; its owner can keep the pet's card in
+  their wallet here, and anyone else can wave.
+- **Market** — looks for SOL at fixed prices: four pieces for pets and two
+  rooms. A sale goes to Pawket's treasury and into the buyer's closet on
+  Solana; nothing sold changes a vital, XP or a score, and nothing is resold.
+- **Pulse** (`/pulse`) — everything above, counted from the program's
+  accounts and read live.
 
 ## Quickstart
 

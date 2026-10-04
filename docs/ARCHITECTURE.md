@@ -18,16 +18,21 @@ app/                        routes, layouts, route handlers (Server by default)
     profile/                you: name, look, outfits, pets, wardrobe, stickers, settings
     inventory/              redirects to the profile's shelf
     playground/             four games: Catch, Hop, Copy, Pairs; a shared daily round
-    guilds/                 every guild on Solana (Server); new/ founds one; [slug]/ is one
+    guilds/                 every guild on Solana (Server); new/ founds one; [slug]/ is one,
+                            with its gatherings; [slug]/coin/ is its coin on Meteora
+    market/                 looks for SOL at the program's prices; the closet read from chain
+    pulse/                  everything the program holds, counted live (Server)
     pet/[id]/               an address: the public Passport (Server);
                             anything else: the browser pet's record
   api/health/route.ts       build version + active cluster
   api/sponsor/route.ts      signs Pawket transactions first, as fee payer
   api/keepsake/             a pet's card in its owner's wallet (Metaplex Core)
+  api/coins/[slug]/         a guild coin's quote, launch, trade, graduation, fee claim, metadata
+  api/actions/              Solana Actions: adopt, care, wave, join a guild, their icons
 src/components/             UI; "use client" only at interactive leaves
   pk/                       design system
   wallet/                   connect sheet, wallet chip, address line, tx receipt
-  home/ adopt/ pet/ profile/ guilds/ play/
+  home/ adopt/ pet/ profile/ guilds/ play/ market/ coins/
   room3d/                   the 3D room: one R3F Canvas, loaded only by Home
 src/config/                 validated env (public + server-only) + site constants
 src/lib/game/               pure companion math (no React, no Solana) + lockstep.txt
@@ -36,11 +41,13 @@ src/lib/companion/          which pet a screen draws: on Solana, else this brows
 src/lib/closet/             wearable catalog (its order is the on-chain slot)
 src/lib/play/               the four games as pure seeded steps, local bests, sound
 src/lib/guilds/             the rule, slugs and crests, the delisting list
+src/lib/coins/              guild-coin presets, stages and copy (pure); src/server/coins/ speaks Meteora
+src/lib/market/             the connected wallet's closet
 src/lib/player/             the player's look (3D room), localStorage
 src/lib/room/               moments and emotes, as data
 src/lib/solana/             program constants + IDL, PDAs, builders, decoders,
                             the send path, the sponsor's rules, browser rpc/wallet
-src/server/                 server-only: chain reads, the sponsor's key and float
+src/server/                 server-only: chain reads, the sponsor's key and float, the pulse, coins
 src/lib/utils/              formatting + hydration helpers
 e2e/                        Playwright, and a Wallet Standard wallet for tests only
 scripts/3d/                 asset pipeline: source packs → public/3d/ GLBs

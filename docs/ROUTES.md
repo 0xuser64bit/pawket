@@ -14,16 +14,19 @@ Built today:
 (game)/profile             you: name, look, outfits; ?tab=pets|wardrobe|stickers|settings
 (game)/wallet              the Pawket Wallet: open it, link this device, put in, take out, the history read from chain
 (game)/playground          four games, a shared daily round each; on Solana, "Record the round"
-(game)/pet/[id]            an address: the public Passport, from chain (with its guild);
+(game)/pet/[id]            an address: the public Passport, from chain (with its guild and guestbook);
                            otherwise the record of a pet in this browser
+(game)/market              looks for SOL at fixed prices: four pieces, two rooms; the closet read from chain
+(game)/pulse               everything the program holds, counted and read live
 (game)/guilds              every guild on Solana, read live (test and delisted ones left out), and the rule
 (game)/guilds/new          founding a guild: name, motto, crest, the founding pet
-(game)/guilds/[slug]       a guild: its pets read from their accounts, together counts, join or leave, its coin
+(game)/guilds/[slug]       a guild: its pets read from their accounts, together counts, join or leave, its events and polls, its coin
 (game)/guilds/[slug]/coin  a guild's coin: its terms and stage from chain, launch, quote, trade, graduate, claim
 /api/health
 /api/sponsor               GET: is it up. POST { transaction }: signed first, as fee payer
 /api/actions/adopt         Solana Action: adopt straight onto Solana
-/api/actions/care/[pet]    Solana Action: the four cares, owner only
+/api/actions/care/[pet]    Solana Action: the four cares for the owner; a wave or an adoption for anyone else
+/api/actions/wave/[pet]    Solana Action (POST): a wave, any wallet but the owner's, once a UTC day
 /api/actions/icon          a square card for an Action (?pet=)
 /api/keepsake/[pet]        GET: the card's metadata, live. POST { account }: its creation, owner only
 /api/keepsake/collection   the collection's metadata
@@ -34,17 +37,17 @@ Built today:
 (game)/pet/[id]/opengraph-image, /opengraph-image   share cards
 ```
 
-Redirects: `/market` and anything under it go to `/profile`; `/inventory`
+Redirects: anything under `/market` goes to `/market`; `/inventory`
 goes to the profile's shelf (`?tab=wardrobe` to its wardrobe).
 `/guilds/boundary` and `/playground/*` go back to their index.
 `/pet/:id/ownership` goes to `/pet/:id`.
 
 The `(game)` group owns the shell: the label-sized bar (the wallet chip,
 once a wallet is connected, and the room switch) and the floating Dock. The
-dock is Home, Park, Playground, Profile, Guilds. A pet on Solana lights
-Park; a browser pet lights Profile, and so does the Pawket Wallet (reached
-from the wallet chip, Home's line under a pet on Solana, and Settings).
-There is no market slot.
+dock is Home, Park, Playground, Market, Profile, Guilds. A pet on Solana and
+the Pulse light Park; a browser pet lights Profile, and so does the Pawket
+Wallet (reached from the wallet chip, Home's line under a pet on Solana, and
+Settings).
 
 ## 1. Site map (target)
 

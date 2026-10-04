@@ -1,59 +1,80 @@
 # Pawket — Marketplace
 
-**Status:** SPEC (M3). No marketplace exists today; `register_item` / `record_purchase` are explicitly **not** a store (see `program.ts` SAFETY) — no builders, no UI until the program is admin-gated + moves tokens.
+**Status:** BUILT on devnet (2026-10) as the **Market**: primary sales of
+looks at fixed prices, settled by the program itself. No database, no order
+book, no resale. A secondary market and any sale of a pet stay SPEC, behind
+Q1 and Q5 (`OPEN-QUESTIONS.md`).
 
-## 1. Principles
+## 1. Principles (normative)
 
-- **Fixed, understandable SOL prices** for primary adoption + cosmetic drops. No auctions, no offers, no bonding curves in marketplace scope.
-- Pet-first: pet listings rank above cosmetics; guild tokens never appear here (separate Guild Launch tab).
-- Every purchase: explicit sign → simulate → confirm → **receipt + Explorer link**. Timeout = unknown + lookup, never "failed".
-- Fees transparent pre-sign: price, protocol/creator fee (bps), total. Server computes canonical totals (integer lamports).
+- **Looks only.** Everything sold is expression: a piece a pet wears, a room
+  the player lives in. Nothing sold changes a vital, XP, a cooldown, a score
+  or a place in a guild.
+- **Fixed, published prices.** Prices live in the program (`item_price` in
+  `programs/pawket/src/lib.rs`), the same for everyone; only a program
+  upgrade changes them. `MARKET` in `src/lib/solana/program.ts` mirrors them,
+  and `program.test.ts` holds the two together.
+- **Settled on chain, in one signature.** `buy` moves the price from the
+  buyer straight to Pawket's treasury and records the item in the buyer's
+  `Closet` in the same instruction. There is no order, no escrow and no
+  receipt to reconcile: the transaction is the receipt.
+- **Nothing is resold, and nothing is bought back.** A closet is for good.
+- **Adoption stays free.** No pet is sold. A pet asset anyone can sell or
+  send is a separate decision (Q1, Q5).
 
-## 2. Flows
+## 2. What it sells
 
-### Primary adoption (base pet + customizations)
+| Item id | What | Price | Worn or used with |
+| --- | --- | --- | --- |
+| 19 | Halo | 0.05 SOL | `dress_owned` (any of the buyer's pets on Solana) |
+| 20 | Wizard hat | 0.05 SOL | `dress_owned` |
+| 21 | Sun hat | 0.05 SOL | `dress_owned` |
+| 22 | Gold crown | 0.05 SOL | `dress_owned` |
+| 64 | Blossom (a room) | 0.1 SOL | the room picker, on any device of the buyer's wallet |
+| 65 | Aurora (a room) | 0.1 SOL | the room picker |
+
+Pieces are wardrobe slots after the free eighteen, so the catalog
+(`src/lib/closet/catalog.ts`) and the program agree on their numbers. Rooms
+are token blocks in `app/globals.css` with an `item` in `src/config/themes.ts`.
+
+## 3. The flow
 
 ```text
-browse bases → pick species → name/personality → optional cosmetics → quote (fixed price + fees)
- → sign adopt (+ [FUTURE] mint) → confirm → receipt (/marketplace/receipts/[orderId]) → pet appears in Inventory + Home
+/market → pick an item → its price, where the SOL goes, who pays the fee, on Paper
+  → "Buy for 0.05 SOL" → the wallet signs → Solana confirms → the closet is read again
+  → the wardrobe offers the piece / the room picker offers the room
 ```
 
-- Quote is **not** a swap quote: no slippage/impact UI. Show: base price, cosmetic add-ons, feeBps breakdown, total, fee recipient.
-- Chain write reuses `getAdoptPetInstruction` (same lifecycle as E01); DB order mirrors signature/slot for receipts/search.
+- The sponsor pays the network fee and the closet's rent the first time; the
+  buyer pays only the price (`checkSponsorable` lets the sponsor be `buy`'s
+  `payer`, never its `owner`).
+- A pet in this browser cannot wear a bought piece: the closet belongs to a
+  wallet, so the wardrobe says to keep the pet on Solana first.
+- A linked device can put a bought piece on (`dress_owned_by_device`); it can
+  never buy.
 
-### Cosmetic acquisition
+## 4. Money and transparency
 
-- V1: DB entitlement (purchase → `equippedIds` unlock). Label "off-chain entitlement" until on-chain item movement ships.
-- Secondary (later M3.x): fixed-price relist of `tradeable:true` items; seller sets price within floor/ceiling guardrails; escrow design gated by Q5 (treasury-signer vs program escrow).
+- Every sale lands in `PAWKET_TREASURY` (`SEpAw5i…vWfw` on devnet). The
+  treasury's balance and what has been paid in are on `/pulse`, read live.
+- The treasury's key is not on the server; on mainnet it is a multisig
+  (`docs/MAINNET.md`).
+- The treasury also receives Pawket's share of guild-coin fees, and pays the
+  network fees Pawket covers for everyone's pets.
 
-## 3. Data & API (see API-CONTRACTS.md §3)
+## 5. Not built (and why)
 
-- `Listing { kind: pet_adoption|cosmetic, refId, priceLamports, feeBps, seller, status }`; `Order { listingId, buyer, signature?, slot?, status, receiptUrl? }`.
-- `GET /api/marketplace/listings` (paginated, filterable); `POST /api/marketplace/orders` (intent, idempotent) → client signs → `POST .../confirm {signature}` → `GET .../:id` receipt.
-- Price math server-side, exact lamports, tested (no float SOL math in checkout).
+- **Secondary sales** of bought pieces: no escrow design yet (Q5), and
+  nothing should invite speculation on looks.
+- **Selling pets**: the Passport is proof of care; selling it would sell
+  someone else's care.
+- **USDC prices, bundles, packs with hidden odds, auctions**: never planned.
 
-## 4. UI contract
+## 6. Tests
 
-- `listing-card.tsx` (art, name, species/personality or cosmetic slot, price, fee note) → `[listingId]` detail (full breakdown + policy + creator) → `checkout-sheet.tsx` (total, recipient, simulate status, sign CTA, disabled-while-sending) → `receipt-view.tsx` (status, signature, Explorer link, "View in Inventory").
-- No-wallet: full browse; checkout gates with connect CTA + install guidance.
-- Failure copy reuses `toUserFacingError` + order-state copy (`failed` preserves input + safe retry; `unknown` offers signature lookup + poll).
-
-## 5. Fees & treasury (v1)
-
-- Single `feeBps` per listing (e.g., 500 = 5% — value set at launch config, published). Split: creator share + Pawket treasury share (shares published per drop).
-- Fee recipient wallets published on listing detail; treasury inflows indexed (see `INDEXER.md`).
-- No hidden spreads; no "gas estimation" markup — network fee is Solana's, shown separately.
-
-## 6. Non-goals / guards
-
-- No `register_item`/`record_purchase` wiring until program fix (admin-gate + token movement) + audit note.
-- No Jupiter routing, no USDC checkout v1 (SOL first; USDC adds quote-asset complexity — defer to M6 quote-asset work).
-- No rarity-gated power, no lootboxes, no "packs" with hidden odds (would need odds disclosure + legal review).
-- Marketplace never lists guild tokens; launch swaps live only under Guild → Launch tab.
-
-## 7. Agent DoD (E05)
-
-- Devnet purchase completes with receipt + working Explorer link (manual check noted in PR).
-- Contract tests: fee math exact, idempotent order creation, unavailable-listing rejection.
-- E2E: marketplace renders wallet-free; checkout CTA disabled without wallet (no signing in e2e).
-- Copy audit: no "NFT" unless NFT wiring exists; no "on-chain item" for DB entitlements.
+`programs/pawket/tests/program/market.rs` (purchase into the treasury and
+nowhere else, nothing bought twice, only what is sold, wearing from the
+closet, a device dressing from it, the closet's layout), `program.test.ts`
+(prices and item ids against the program), `sponsor.test.ts` (the sponsor
+pays the closet, never the price), and `devnet.test.ts` (a purchase and a
+wear against the deployed program).

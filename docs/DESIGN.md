@@ -300,14 +300,17 @@ shapes, one outline, the palette — never a grid of identical pockets:
 ## What is real
 
 Adoption, the room, care, the profile, the wardrobe, the playground, photos,
-keeping a pet on Solana, the Passport, the Park and guilds on Solana are the
-product. A
+keeping a pet on Solana, the Passport with its guestbook, the Park, the
+Pulse, guilds on Solana with their events, polls and optional coin, and the
+Market are the product. A
 pet starts in this browser; kept on Solana, every care is a signed record.
 A wearable is drawn on the pet, flat or in 3D — never a change to a vital. A care plays its moment in
 the room only after the care is saved (or, on Solana, confirmed); an emote
 changes nothing on the record and says so. A guild is a crest, a name, a motto and the
-pets in it — no token, no treasury, no swap — and the two lists of what it
-can and can never do. There is no market and no lobby.
+pets in it, its gatherings, and the two lists of what it can and can never
+do; its coin, if it launches one, lives on its own page and on Paper. The
+Market sells looks at fixed prices, on Paper too: a price is never a
+Playroom figure. There is no lobby.
 
 The wallet layer follows the system's own rules: connecting is offered only
 where it does something (keeping a pet on Solana, finding the pets a wallet
@@ -318,8 +321,8 @@ signature, a timeout is "Still waiting" and never "failed", and a failure
 names what did not change.
 
 Call a pet "on Solana" only when it was read from chain. Do not put a
-simulated price back on a screen to fill a dock slot. The dock is Home, Park,
-Playground, Profile, Guilds.
+simulated price on a screen: every price shown is the program's. The dock
+is Home, Park, Playground, Market, Profile, Guilds.
 
 ## The pets
 

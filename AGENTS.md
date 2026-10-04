@@ -35,17 +35,24 @@ the device). One record shape for all of them. Home is the room across the
 whole width with a deck beneath it (care, Say, Today, Photo, Look). Profile
 (the dock slot Inventory had) is the player: their name, their 3D look with
 hats, glasses and saved outfits, and what they keep — pets, the wardrobe
-(18 pieces, five earned by stickers; on Solana a signed `dress`), stickers
-read from each record (`src/lib/game/badges.ts`), and settings, including
-eight rooms (`src/config/themes.ts`). The playground is four solo games
+(18 free pieces, five earned by stickers, and the Market's four; on Solana a
+signed `dress` or `dress_owned`), stickers read from each record
+(`src/lib/game/badges.ts`), and settings, including ten rooms
+(`src/config/themes.ts`, two of them the Market's). The playground is four solo games
 (Catch, Hop, Copy, Pairs) with a daily round everyone shares; on Solana a
 finished round is kept when the player presses "Record the round".
-`/pet/<address>` is the public Passport, server-rendered from chain; `/park`
-is every pet the program keeps, read live. Guilds are on chain: a pet founds
+`/pet/<address>` is the public Passport, server-rendered from chain, with its
+guestbook: anyone but the owner waves (`wave`), once a UTC day, from the page
+or the pet's Blink. `/park` is every pet the program keeps, read live, and
+`/pulse` counts everything the program holds — pets, guilds, coins, Market
+sales — read live, nothing added by hand. Guilds are on chain: a pet founds
 or joins one (`found_guild`, `join_guild`, `leave_guild`; one guild per pet,
 rent paid by the sponsor and returned on leave), discovery and each guild's
 page are read live, and `src/lib/guilds/boundary.ts` is the rule every guild
-lives inside: nothing in it touches a pet. A guild of three pets may launch one
+lives inside: nothing in it touches a pet. Its founder plans events its pets
+RSVP to and check in at, and asks polls each wallet with a pet in it answers
+once (`create_event`, `rsvp`, `check_in`, `create_poll`, `vote`; the sponsor
+pays the rent). A guild of three pets may launch one
 optional coin on Meteora (`src/lib/coins/`, `src/server/coins/`): a Dynamic
 Bonding Curve on one of Pawket's presets that graduates into a DAMM v2 pool
 with its liquidity locked for good. The server builds every coin transaction
@@ -60,7 +67,13 @@ clothes for the owner's pets with no prompt, until the end date and inside
 the daily limit the owner set. The device pays its own fee and the balance
 refills it by at most that fee per action; the sponsor never signs a
 device's action. Its history is read from Solana (`src/lib/wallet/history.ts`).
-There is no market. A pet on Solana can have a keepsake: a card in its owner's wallet, a
+The Market (`/market`) sells looks for SOL at prices fixed in the program
+(`item_price`): four pieces for pets and two rooms. `buy` sends the price
+from the owner straight to Pawket's treasury and records the item in the
+owner's `Closet` on Solana for good; the sponsor pays only the fee and the
+closet's rent. A bought piece goes on with `dress_owned` (the program checks
+the closet). Nothing sold changes a vital, XP, a cooldown or a score, and
+there is no resale or secondary market. A pet on Solana can have a keepsake: a card in its owner's wallet, a
 Metaplex Core asset in Pawket's collection, frozen for good, that points at
 the pet (`src/lib/solana/core.ts`, `src/server/keepsake.ts`). The pet stays
 the program's account; the card cannot be sold or sent. Do not put a
@@ -115,7 +128,10 @@ One home per fact. If two files disagree, the left column wins.
 | Routes                            | `app/`                              |
 | Design system (tokens, components)| `app/globals.css` + `src/components/pk/` |
 | Guest companion record            | `src/lib/guest/`                    |
-| Wearables (expression only)       | `src/lib/closet/catalog.ts`         |
+| Wearables (expression only)       | `src/lib/closet/catalog.ts` (the last four are the Market's) |
+| The Market: items, prices, treasury | `programs/pawket/src/lib.rs` (`item_price`) ↔ `MARKET` in `src/lib/solana/program.ts` |
+| What a wallet bought              | its `Closet` on chain, read with `useCloset` (`src/lib/market/use-closet.ts`) |
+| Pawket's counts                   | `src/server/pulse.ts` (read from chain, never stored) |
 | Playground games (pure, seeded)   | `src/lib/play/`                     |
 | Guild boundary copy               | `src/lib/guilds/boundary.ts`        |
 | Guild coin presets, terms, configs| `src/lib/coins/presets.ts` (held to Meteora's validation by `src/server/coins/curve.test.ts`) |

@@ -123,7 +123,9 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
       <ScreenBar>
         <div>
           <h1 className="display-l">Park</h1>
-          <p className="caption pk-faint">Every pet kept on Solana, read live</p>
+          <p className="caption pk-faint">
+            Every pet kept on Solana, read live · <Link href="/pulse">Pawket&apos;s pulse</Link>
+          </p>
         </div>
         <Chip label={`${pets.length} ${pets.length === 1 ? "pet" : "pets"}`} tone="pool" icon="users" />
       </ScreenBar>

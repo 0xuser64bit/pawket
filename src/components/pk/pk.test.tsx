@@ -175,6 +175,7 @@ describe("Dock", () => {
     expect(activePlace("/profile")).toBe("profile");
     expect(activePlace("/pet/PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74")).toBe("park");
     expect(activePlace("/park")).toBe("park");
+    expect(activePlace("/pulse")).toBe("park");
     expect(activePlace("/home")).toBe("home");
     expect(activePlace("/market")).toBe("market");
   });

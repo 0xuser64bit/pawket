@@ -338,6 +338,9 @@ async function LiveStrip() {
           </div>
         ))}
       </dl>
+      <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
+        Guilds, coins, the Market and the rest, counted the same way: <Link href="/pulse">Pawket&apos;s pulse</Link>.
+      </p>
     </Paper>
   );
 }

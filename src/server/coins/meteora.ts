@@ -392,7 +392,8 @@ export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: b
     amountUsed: big(quote.includedFeeInputAmount).toString(),
     amountOut: quote.outputAmount.toString(),
     minimumOut: (quote.minimumAmountOut ?? quote.outputAmount).toString(),
-    fee: big(quote.tradingFee).toString(),
+    // The whole 1%: the pool's share and Meteora's are reported apart.
+    fee: (big(quote.tradingFee) + big(quote.protocolFee) + big(quote.referralFee)).toString(),
     priceImpact: before > 0 ? Math.abs((after - before) / before) * 100 : 0,
     slippageBps,
     quotedAt,

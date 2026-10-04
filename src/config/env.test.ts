@@ -64,3 +64,13 @@ describe("getPublicEnv", () => {
     expect(() => getPublicEnv()).toThrow();
   });
 });
+
+describe("guildReportUrl", () => {
+  it("opens a prefilled issue that names the guild and says what Pawket can and cannot do", async () => {
+    const { guildReportUrl } = await import("./site");
+    const url = new URL(guildReportUrl({ slug: "sunbeam-club", name: "Sunbeam Club" }, "https://pawket-pets.vercel.app/guilds/sunbeam-club"));
+    expect(url.pathname).toBe("/0xuser64bit/pawket/issues/new");
+    expect(url.searchParams.get("title")).toBe("Report: Sunbeam Club (sunbeam-club)");
+    expect(url.searchParams.get("body")).toContain("cannot remove it from Solana");
+  });
+});

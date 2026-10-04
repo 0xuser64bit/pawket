@@ -21,6 +21,7 @@ import { GuildGatherings } from "@/components/guilds/gatherings";
 import { ShareButton } from "@/components/pet/share-button";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
+import { guildReportUrl } from "@/config/site";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
 import { DELISTED_SLUGS } from "@/lib/guilds/delisted";
@@ -230,6 +231,13 @@ export default async function GuildPage({ params }: Props) {
             <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
               Each pet joins and leaves with its owner&apos;s signature. Pawket cannot add a pet, remove one or
               change the guild.
+            </p>
+            <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
+              Something wrong here — impersonation, a scam link, abuse?{" "}
+              <a href={guildReportUrl(guild, `${getPublicEnv().appUrl}/guilds/${guild.slug}`)} target="_blank" rel="noreferrer">
+                Report {guild.name}
+              </a>
+              . Pawket can stop promoting a guild; it cannot remove one from Solana.
             </p>
           </Paper>
         </div>

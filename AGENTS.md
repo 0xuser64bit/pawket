@@ -96,6 +96,7 @@ simulated price, treasury, member count or lobby on a screen, and call a pet
 | Touching marketplace      | `docs/MARKETPLACE.md` + `docs/API-CONTRACTS.md`             |
 | Touching guilds/launches  | `docs/GUILDS.md` + `docs/METEORA-INTEGRATION.md` + `docs/SAFETY-ECONOMY.md` |
 | Touching indexer/API      | `docs/INDEXER.md` + `docs/API-CONTRACTS.md` + `docs/ROUTES.md` |
+| Preparing mainnet (v1)    | `docs/MAINNET.md`                                           |
 | Adding tests              | `docs/TESTING.md`                                           |
 | Declaring work done       | `docs/WORKFLOW.md` (Definition of Done)                     |
 | Questioning a decision    | `docs/DECISIONS.md` (history) + `docs/OPEN-QUESTIONS.md` (pending) |

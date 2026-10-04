@@ -7,6 +7,7 @@ import { isListed } from "@/lib/guilds/delisted";
 import { toCompanionRecord } from "@/lib/solana/accounts";
 import { createPatientRpc } from "@/lib/solana/rpc";
 import { MARKET, PAWKET_ACCOUNTS, PAWKET_PROGRAM_ID } from "@/lib/solana/program";
+import { shared } from "./cache";
 import { readAllPets, readGuilds } from "./solana";
 
 /**
@@ -19,7 +20,8 @@ export interface Pulse {
   pets: { kept: number; outToday: number; cares: number; rounds: number; bestRun: number; owners: number };
   guilds: { listed: number; pets: number; events: number; going: number; came: number; polls: number; votes: number };
   coins: { launched: number; onCurve: number; graduating: number; graduated: number } | null;
-  market: { closets: number; sold: number; paid: bigint; treasury: bigint };
+  /** Lamports as decimal strings: the pulse is cached as plain JSON. */
+  market: { closets: number; sold: number; paid: string; treasury: string };
   guestbook: { books: number; waves: number };
   wallets: { opened: number; deviceActions: number };
   readAt: number;
@@ -55,10 +57,13 @@ const u64 = (bytes: Uint8Array, at: number) => new DataView(bytes.buffer, bytes.
 
 let cached: { at: number; pulse: Promise<Pulse> } | null = null;
 
+/** Thirty seconds of the Data Cache across instances, and the same in this process. */
+const measured = shared(() => measure(), "pulse", 30);
+
 export function readPulse(): Promise<Pulse> {
   const now = Date.now();
   if (cached && now - cached.at < 30_000) return cached.pulse;
-  const pulse = measure();
+  const pulse = measured();
   const mine = { at: now, pulse };
   cached = mine;
   pulse.catch(() => {
@@ -119,8 +124,8 @@ async function measure(): Promise<Pulse> {
       closets: closets.length,
       // Closet: discriminator 8, owner 32, items 32, count u16, spent u64.
       sold: closets.reduce((sum, bytes) => sum + u16(bytes, 72), 0),
-      paid: closets.reduce((sum, bytes) => sum + u64(bytes, 74), 0n),
-      treasury: treasury.value,
+      paid: closets.reduce((sum, bytes) => sum + u64(bytes, 74), 0n).toString(),
+      treasury: treasury.value.toString(),
     },
     guestbook: {
       books: books.length,

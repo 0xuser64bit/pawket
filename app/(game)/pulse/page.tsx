@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const n = (value: number) => value.toLocaleString("en-US");
-const sol = (lamports: bigint) => `${formatUnits(lamports, 9, 3)} SOL`;
+const sol = (lamports: string) => `${formatUnits(lamports, 9, 3)} SOL`;
 
 /**
  * Pawket's pulse: every figure counted from the program's accounts, read

@@ -21,6 +21,7 @@ import {
   type PetOnChain,
 } from "@/lib/solana/accounts";
 import { createPatientRpc } from "@/lib/solana/rpc";
+import { shared } from "./cache";
 
 /**
  * Server Components read Solana here: the server's RPC (which may carry a
@@ -42,9 +43,12 @@ export async function readOwnedPets(owner: string): Promise<PetOnChain[]> {
   return (await fetchPetsOnChain(rpc(), owner)).sort((a, b) => b.pet.birthTimestamp - a.pet.birthTimestamp);
 }
 
-/** How long one scan of every pet answers for. */
+/** How long one scan of every pet answers for, in this process. */
 export const ALL_PETS_FRESH_MS = 8_000;
 let scan: { at: number; pets: Promise<PetOnChain[]> } | null = null;
+/** And across instances: twenty seconds of the Data Cache, then read again. */
+const scanAllPets = shared(() => fetchPetsOnChain(rpc()), "all-pets", 20);
+const scanGuilds = shared(() => fetchGuilds(rpc()), "all-guilds", 20);
 
 /**
  * Every pet the program keeps. A scan is the heaviest read Pawket makes
@@ -57,7 +61,7 @@ let scan: { at: number; pets: Promise<PetOnChain[]> } | null = null;
 export async function readAllPets(): Promise<PetOnChain[]> {
   const now = Date.now();
   if (scan && now - scan.at < ALL_PETS_FRESH_MS) return scan.pets;
-  const pets = fetchPetsOnChain(rpc());
+  const pets = scanAllPets();
   const mine = { at: now, pets };
   scan = mine;
   pets.catch(() => {
@@ -72,7 +76,7 @@ let guildScan: { at: number; guilds: Promise<ChainGuild[]> } | null = null;
 export async function readGuilds(): Promise<ChainGuild[]> {
   const now = Date.now();
   if (guildScan && now - guildScan.at < ALL_PETS_FRESH_MS) return guildScan.guilds;
-  const guilds = fetchGuilds(rpc());
+  const guilds = scanGuilds();
   const mine = { at: now, guilds };
   guildScan = mine;
   guilds.catch(() => {

@@ -99,19 +99,24 @@ export function usePawketSend() {
     [run],
   );
 
-  /** A transaction Pawket's server builds at `path` for this wallet (POST { account }), signed here and sent. */
+  /**
+   * A transaction Pawket's server builds at `path` for this wallet (POST
+   * { account, ...fields }), signed here and sent. `sponsored` says who pays
+   * its fee: Pawket for a keepsake, the player for anything in a coin.
+   */
   const sendFromServer = useCallback(
-    (label: string, path: string): Promise<SendResult | null> =>
+    (label: string, path: string, fields: Record<string, unknown> = {}, { sponsored = true } = {}): Promise<SendResult | null> =>
       run(label, (owner, onStage) =>
         sendPrepared({
           rpc,
           owner,
           onStage,
+          sponsored,
           prepare: async () => {
             const response = await fetch(path, {
               method: "POST",
               headers: { "content-type": "application/json" },
-              body: JSON.stringify({ account: owner.address }),
+              body: JSON.stringify({ ...fields, account: owner.address }),
             });
             const body = (await response.json().catch(() => ({}))) as { transaction?: string; message?: string };
             if (!response.ok || !body.transaction) {

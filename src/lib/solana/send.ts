@@ -188,26 +188,33 @@ export async function sendAsDevice({
 }
 
 /**
- * A transaction Pawket's server built and signed first — a keepsake, whose
- * card signs its own creation. The wallet signs as the owner, the message is
- * checked to be the one the server signed, and it goes the same way.
+ * A transaction Pawket's server built — a keepsake, whose card signs its own
+ * creation, and every guild-coin transaction, which Meteora's SDK builds and
+ * any key it makes signs first. The wallet signs as the owner. When another
+ * key has signed already, the message is checked to be the one it signed; a
+ * wallet may add its own guard to one nobody else has signed yet. Then it
+ * goes the same way.
  */
 export async function sendPrepared({
   rpc,
   owner,
   prepare,
   onStage,
+  sponsored = true,
 }: Pick<SendOptions, "rpc" | "owner" | "onStage"> & {
   /** Fetches the server's transaction, as base64. */
   prepare: () => Promise<string>;
+  /** Whether Pawket's sponsor pays its fee (a keepsake) or the owner does (a coin). */
+  sponsored?: boolean;
 }): Promise<SendResult> {
   onStage?.("signing");
   const prepared = decode(await prepare());
   const signed = await walletSigns(owner, prepared);
-  if (!same(signed.messageBytes, prepared.messageBytes)) {
+  const signedBefore = Object.entries(prepared.signatures).some(([address, signature]) => address !== owner.address && signature);
+  if (signedBefore && !same(signed.messageBytes, prepared.messageBytes)) {
     throw new Error("Your wallet changed the transaction, so Pawket's signature no longer fits it. Nothing was sent.");
   }
-  return land(rpc, signed, onStage, true);
+  return land(rpc, signed, onStage, sponsored);
 }
 
 /** Sends with preflight on — one that would fail lands nothing — and waits for Solana. */

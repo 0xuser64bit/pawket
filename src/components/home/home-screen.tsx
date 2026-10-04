@@ -18,6 +18,7 @@ import {
   Waiting,
 } from "@/components/pk";
 import { CarryCard } from "@/components/home/carry-card";
+import { RemindMe } from "@/components/home/remind-me";
 import { CARE_ICON, Deck, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
 import { PhotoDialog } from "@/components/home/photo";
@@ -528,6 +529,7 @@ function GoalsCard({ name, today }: { name: string; today: TodayGoals }) {
           ? `All of it, today. ${name} is well looked after.`
           : "Any one of these keeps the streak. A day with all five is a good day."}
       </p>
+      <RemindMe name={name} />
     </Card>
   );
 }

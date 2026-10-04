@@ -4009,6 +4009,20 @@ li {
   gap: var(--space-3);
 }
 
+.pk-time {
+  padding: var(--space-1) var(--space-2);
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  color: var(--ink);
+  font: inherit;
+  font-family: var(--font-mono);
+}
+.pk-time:focus-visible {
+  outline: var(--stroke-line) solid var(--focus);
+  outline-offset: 2px;
+}
+
 /* ------------------------------------------------------- the Market
 
    A room for sale is drawn as itself: a swatch in its own tokens, the

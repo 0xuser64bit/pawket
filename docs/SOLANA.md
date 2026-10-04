@@ -307,7 +307,7 @@ first deploy; upgrades are signed by the deploy wallet. An upgrade larger
 than the program account needs `solana program extend <id> <bytes>` first
 (the guild upgrade of 2026-10-03 extended it by 120,000 bytes, the Pawket
 Wallet upgrade of 2026-10-04 by 60,000 — the binary before it is
-`target/backups/pawket-v3-devnet-2026-10-04.so`); dump the
+`.keys/backups/`, named by the date it was replaced); dump the
 deployed binary with `solana program dump` before any upgrade, so it can be
 put back. Upgrades only ever add: an existing instruction, account layout or
 error code does not change. `pnpm dlx tsx scripts/seed-guilds.mts` founds

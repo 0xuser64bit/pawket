@@ -88,7 +88,7 @@ docs/                       the docs you are reading
 Expo / React Native / expo-router shell, `app.json`, Expo assets: existed
 only for the mobile-first direction. The Hono + Prisma backend from
 pre-reset history is intentionally not restored. The Anchor program was
-restored as v2 (see `docs/DECISIONS.md`), without its store instructions. The
+restored and deployed to devnet (see `docs/DECISIONS.md`), without its store instructions. The
 companion persists in the browser, not in a database. The simulated market
 and guild-swap screens were removed in the same pass — see `docs/DECISIONS.md`.
 Git history preserves the old surfaces for reference.

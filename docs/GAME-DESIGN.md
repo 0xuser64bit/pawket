@@ -102,7 +102,7 @@ Cosmetics change look/mood-display only. Forbidden fields: `statModifier`, `xpBo
 | Date | Change | Reason |
 | --- | --- | --- |
 | 2026-09 | Initial 72 / deltas / 30m / decay table | Pre-reset shared package + program lockstep |
-| 2026-10 | Decay computed in exact integers (same values, no float edge); decay, streak and the daily round enforced on chain | Program v2: the browser record and the program must agree to the point |
+| 2026-10 | Decay computed in exact integers (same values, no float edge); decay, streak and the daily round enforced on chain | The program on devnet: the browser record and the program must agree to the point |
 | 2026-10 | `WEARABLE_COUNT` 6 → 18 (appended; the first six keep their slots). No change to vitals, XP, cooldowns or decay | The wardrobe grew; looks only |
 
 Agents: any rebalance edits `constants.ts` + program + `math.test.ts` exact values together, with a deploy-plan note and a new row here.

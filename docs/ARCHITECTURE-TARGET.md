@@ -1,6 +1,6 @@
 # Pawket — Target Architecture
 
-**Status:** SPEC (target), written before program v2. The left column below is the M0 foundation as it was then, not the product now: `docs/ARCHITECTURE.md` is what is built, and wins wherever the two disagree.
+**Status:** SPEC (target), written before the program was deployed. The left column below is the M0 foundation as it was then, not the product now: `docs/ARCHITECTURE.md` is what is built, and wins wherever the two disagree.
 
 ## 1. Current vs target
 

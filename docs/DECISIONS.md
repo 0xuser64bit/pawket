@@ -3,6 +3,20 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: Everything before mainnet is v0
+
+**Context:** Devnet upgrades had started to be counted (v2, v3, v4…) for a
+product nobody outside the team has used yet. A number like that promises a
+history Pawket does not have.
+**Decision:** The program, the app and the docs are v0 for the whole of
+devnet and the hackathon, however often the program is upgraded there. A
+devnet upgrade is named by what it adds and the date it landed. Mainnet is
+v1. Versions of other projects — Kit v8, Tailwind v4, Meteora's DAMM v2, the
+SBF v2 target — keep their own names.
+**Consequence:** A backup of a replaced devnet binary is named by date
+(`.keys/backups/`). Commit messages written before this decision still say
+"v5"; history is not rewritten.
+
 ## 2026-10: A guild may launch a coin, on Meteora, from Pawket's presets
 
 **Context:** The vision always had guild coins (`VISION.md`, M6), and the
@@ -71,8 +85,8 @@ else still asks. A device key is the one key Pawket makes for a player —
 AGENTS.md's custody rule now says exactly what it can and cannot do. A key
 that leaked can at worst spend the daily limit's fees and the float, and
 the owner can unlink it from anywhere. Clearing site data loses only the
-float (0.001 SOL). Program v4 on devnet, binary before it kept in
-`target/backups/`.
+float (0.001 SOL). An additive devnet upgrade; the binary before it is
+kept in `.keys/backups/`.
 
 ## 2026-10: The room crosses between 3D and flat, and a page waits in the middle
 
@@ -198,7 +212,7 @@ record nobody can edit. The pet lived only in `localStorage`; the program
 from before the reset was never deployed (its program ID held no account on
 devnet) and its keypair was gone. A player on devnet also needs SOL before
 they can sign anything, which stops most people at the door.
-**Decision:** Program v2 on Anchor 1.2, deployed to devnet as
+**Decision:** The program on Anchor 1.2, deployed to devnet as
 `PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74` (a new ID, ground for the
 prefix). Decay, cooldowns, XP, the UTC streak and the daily round bonus are
 enforced on chain with the browser's integer math, held together by

@@ -99,6 +99,8 @@ export function CoinDesk({ guild, coin, thresholds, cluster }: CoinDeskProps) {
 
       {isCreator && BigInt(coin.fees.founderUnclaimed) > 0n ? <FounderFees guild={guild} coin={coin} sender={sender} onDone={done} /> : null}
 
+      {coin.stage === "damm" && owner ? <PoolFees guild={guild} coin={coin} owner={owner} sender={sender} onDone={done} /> : null}
+
       <TxReceipt tx={sender.tx} cluster={cluster} />
 
       {connecting ? (
@@ -541,6 +543,62 @@ function FounderFees({ guild, coin, sender, onDone }: { guild: CoinDeskProps["gu
       <Receipt rows={[{ k: "Waiting to be claimed", v: sol(coin.fees.founderUnclaimed, 6) }]} />
       <div style={{ marginTop: "var(--space-3)" }}>
         <Button label="Claim it to this wallet" tone="paper" size="sm" disabled={sender.busy} onClick={() => void claim()} />
+      </div>
+    </Paper>
+  );
+}
+
+/**
+ * After graduation the liquidity is locked for good, half in the founder's
+ * position and half in Pawket's; both can only claim what it earns. A wallet
+ * holding a position sees what is waiting, read from the pool.
+ */
+function PoolFees({
+  guild,
+  coin,
+  owner,
+  sender,
+  onDone,
+}: {
+  guild: CoinDeskProps["guild"];
+  coin: CoinState;
+  owner: Address;
+  sender: PawketSender;
+  onDone: () => void;
+}) {
+  const read = useCallback(async () => {
+    const response = await fetch(`/api/coins/${guild.slug}/position?account=${owner}`, { cache: "no-store" });
+    return response.ok ? ((await response.json()) as { positions: number; feeSol: string; feeCoin: string } | null) : null;
+  }, [guild.slug, owner]);
+  const fees = useRequest(read);
+  if (!fees.data || fees.data.positions === 0) return null;
+  const { feeSol, feeCoin } = fees.data;
+  const waiting = BigInt(feeSol) > 0n || BigInt(feeCoin) > 0n;
+
+  async function claim() {
+    const result = await sender.sendFromServer(
+      `Claim ${guild.name}'s pool fees`,
+      `/api/coins/${guild.slug}/claim`,
+      { from: "pool" },
+      { sponsored: false },
+    );
+    if (result?.outcome === "confirmed") {
+      fees.refresh();
+      onDone();
+    }
+  }
+
+  return (
+    <Paper title="Your locked liquidity" meta="DAMM v2">
+      <Receipt
+        rows={[
+          { k: "Earned in SOL", v: sol(feeSol, 6) },
+          { k: `Earned in ${coin.symbol}`, v: formatUnits(feeCoin, COIN_TERMS.decimals, 2) },
+          { k: "The liquidity itself", v: "Locked for good", tone: "ok" },
+        ]}
+      />
+      <div style={{ marginTop: "var(--space-3)" }}>
+        <Button label="Claim it to this wallet" tone="paper" size="sm" disabled={!waiting || sender.busy} onClick={() => void claim()} />
       </div>
     </Paper>
   );

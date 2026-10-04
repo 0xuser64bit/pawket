@@ -16,7 +16,7 @@ import {
   type PoolConfig,
   type VirtualPool,
 } from "@meteora-ag/dynamic-bonding-curve-sdk";
-import { CpAmm, derivePoolAuthority, getTokenProgram } from "@meteora-ag/cp-amm-sdk";
+import { CpAmm, derivePoolAuthority, getTokenProgram, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
 import { getPublicEnv } from "@/config/env";
 import { getServerEnv } from "@/config/server-env";
 import { COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type PresetId } from "@/lib/coins/presets";
@@ -542,4 +542,52 @@ export async function claimTransaction(guild: ChainGuild, founder: string): Prom
     maxQuoteAmount: U64_MAX,
   });
   return forPlayer(transaction, creator);
+}
+
+/**
+ * A wallet's positions in the coin's graduated pool — the founder's and
+ * Pawket's halves of the locked liquidity — and the fees they have earned
+ * and not yet claimed, in SOL and in the coin. Null before graduation.
+ */
+export async function readPositionFees(guild: ChainGuild, wallet: string): Promise<{ positions: number; feeSol: string; feeCoin: string } | null> {
+  const coin = await liveCoin(guild);
+  if (!coin?.graduated) return null;
+  const { address, pool } = coin.graduated;
+  const positions = await damm().getUserPositionByPool(address, new PublicKey(wallet));
+  let feeSol = 0n;
+  let feeCoin = 0n;
+  for (const { positionState } of positions) {
+    const fees = getUnClaimLpFee(pool, positionState);
+    feeCoin += big(fees.feeTokenA);
+    feeSol += big(fees.feeTokenB);
+  }
+  return { positions: positions.length, feeSol: feeSol.toString(), feeCoin: feeCoin.toString() };
+}
+
+/** What a wallet's locked positions in the graduated pool have earned, claimed to that wallet. The liquidity stays locked. */
+export async function positionFeeTransaction(guild: ChainGuild, wallet: string): Promise<string> {
+  const coin = await liveCoin(guild);
+  if (!coin?.graduated) throw new CoinRefusal("This coin has not graduated: its fees are on the curve. Nothing was sent.", 409);
+  const { address, pool } = coin.graduated;
+  const owner = new PublicKey(wallet);
+  const positions = await damm().getUserPositionByPool(address, owner);
+  if (positions.length === 0) throw new CoinRefusal("This wallet holds no position in the pool. Nothing was sent.", 403);
+  const [first, ...rest] = await Promise.all(
+    positions.map(({ position, positionNftAccount }) =>
+      damm().claimPositionFee({
+        owner,
+        position,
+        pool: address,
+        positionNftAccount,
+        tokenAMint: pool.tokenAMint,
+        tokenBMint: pool.tokenBMint,
+        tokenAVault: pool.tokenAVault,
+        tokenBVault: pool.tokenBVault,
+        tokenAProgram: getTokenProgram(pool.tokenAFlag),
+        tokenBProgram: getTokenProgram(pool.tokenBFlag),
+      }),
+    ),
+  );
+  for (const other of rest) first.add(...other.instructions);
+  return forPlayer(first, owner);
 }

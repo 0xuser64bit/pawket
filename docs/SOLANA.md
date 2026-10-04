@@ -297,7 +297,8 @@ web3.js v1 in `src/server/coins/` and `scripts/`):
 | `POST /api/coins/<slug>/launch` | `createPoolWithFirstBuy`, founder only, three pets in the guild; the mint signs here |
 | `POST /api/coins/<slug>/trade` | `swap2` on the curve (partial fill: a buy that fills it takes only what graduation needs) or `swap` in the DAMM v2 pool, at no worse than the quote's `minimumOut` |
 | `POST /api/coins/<slug>/graduate` | `migrateToDammV2` once the curve is full; the two position NFT keys sign here. Devnet only needs it — Meteora's keepers migrate on mainnet |
-| `POST /api/coins/<slug>/claim` | `claimCreatorTradingFee` for the wallet that launched it |
+| `POST /api/coins/<slug>/claim` | `claimCreatorTradingFee` for the wallet that launched it; with `from: "pool"`, `claimPositionFee` for what the wallet's locked positions in the graduated pool earned |
+| `GET /api/coins/<slug>/position?account=` | a wallet's positions in the graduated pool and their unclaimed fees (`getUnClaimLpFee`) |
 | `GET /api/coins/<slug>/metadata` | the token's metadata JSON (the URI the mint carries), with the crest card as its image |
 
 Every transaction comes back as base64 for `sendPrepared` with
@@ -312,7 +313,10 @@ and holding the right mints is `damm`; a delisted guild's coin is
 Holders are read from the coin's token accounts (less the pools' vaults) for
 the page's counts and the crest pins. `pnpm e2e:coins` walks a coin's whole
 life on devnet: launch with a first buy, buys to the threshold, graduation,
-a sale in the DAMM v2 pool, the founder's claim.
+a sale in the DAMM v2 pool, the founder's claim. Pawket's own side —
+partner trading fees, launch fees and its locked positions' LP fees — is
+collected into the treasury by `scripts/claim-coin-fees.mts`, signed by the
+treasury's key, which never sits on the server.
 
 ## Devnet workflow
 

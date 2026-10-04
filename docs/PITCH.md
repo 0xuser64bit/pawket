@@ -138,5 +138,10 @@ config.
   to the threshold, graduates, sells in the DAMM v2 pool and claims the
   founder's fees — every transaction built by the server and signed only by
   the player.
+- **Revenue, collected on chain:** `scripts/claim-coin-fees.mts` claims
+  Pawket's partner trading fees, launch fees and its locked positions' LP
+  fees into the treasury; on devnet the first run moved it from 0.05 to
+  0.15 SOL. Founders claim theirs from the coin's page, on the curve and in
+  the graduated pool.
 - **Mainnet-ready presets:** mainnet thresholds are ≥ 10 SOL so Meteora's
   keepers migrate them; they ship after legal review.

@@ -4,16 +4,29 @@ import { Icon, PetArt, SectionLabel } from "@/components/pk";
 import { BADGES, badgesFor } from "@/lib/game/badges";
 import { petLook } from "@/lib/game/appearance";
 import type { GuestPet } from "@/lib/guest/pet";
+import type { SocialRecord } from "@/lib/companion/use-social";
 
 /**
  * The sticker book: every sticker a pet's record can earn, and which of your
  * pets have earned it. Each is read from the record, so a sticker cannot be
  * bought and is never lost; one not yet earned says how.
  */
-export function StickerBook({ pets, onChain, inGuild }: { pets: GuestPet[]; onChain: Set<string>; inGuild: Set<string> }) {
+export function StickerBook({
+  pets,
+  onChain,
+  inGuild,
+  social,
+}: {
+  pets: GuestPet[];
+  onChain: Set<string>;
+  inGuild: Set<string>;
+  /** Waves and gatherings, for pets on Solana. */
+  social?: Map<string, SocialRecord>;
+}) {
   const earnedBy = new Map<string, GuestPet[]>();
   for (const pet of pets) {
-    for (const id of badgesFor(pet, { onChain: onChain.has(pet.id), guild: inGuild.has(pet.id) })) {
+    const others = social?.get(pet.id);
+    for (const id of badgesFor(pet, { onChain: onChain.has(pet.id), guild: inGuild.has(pet.id), waves: others?.waves, gatherings: others?.gatherings })) {
       earnedBy.set(id, [...(earnedBy.get(id) ?? []), pet]);
     }
   }
@@ -21,8 +34,8 @@ export function StickerBook({ pets, onChain, inGuild }: { pets: GuestPet[]; onCh
     <div className="pk-stack" style={{ gap: "var(--space-4)" }}>
       <SectionLabel count={`${earnedBy.size} / ${BADGES.length}`}>Stickers</SectionLabel>
       <p className="body-sm pk-muted">
-        Earned by care, by showing up and by playing — read from each pet&apos;s record, so they cannot be bought
-        and are never lost. They change nothing about a pet but its pride.
+        Earned by care, by showing up, by playing and by being visited — read from each pet&apos;s record, so they
+        cannot be bought and are never lost. They change nothing about a pet but its pride.
       </p>
       <ul className="pk-stickers">
         {BADGES.map((badge) => {

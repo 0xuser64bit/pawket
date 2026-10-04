@@ -7,6 +7,7 @@ import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { SPECIES_ART, SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { badgesFor } from "@/lib/game/badges";
+import { useSocialRecords } from "@/lib/companion/use-social";
 import { calculateLevelFromXp } from "@/lib/game/math";
 import { projectGuestPet } from "@/lib/guest/pet";
 import { describeLook } from "@/lib/player/look";
@@ -45,6 +46,8 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
   const [roomState, setRoomState] = useState<RoomState>("loading");
   const [connecting, setConnecting] = useState(false);
   const [nameNotice, setNameNotice] = useState<string>();
+  // Hooks run before the early return below: what others did with these pets on Solana.
+  const social = useSocialRecords(companion.owned.map((entry) => entry.pet.address));
 
   // The page is drawn once the pets are read, after the browser has looked for
   // #look or #shelf; land on it then.
@@ -69,7 +72,11 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
   const topLevel = Math.max(0, ...pets.map((p) => calculateLevelFromXp(p.xp)));
   const bestRun = Math.max(0, ...pets.map((p) => p.streak.best));
   const rounds = pets.reduce((sum, p) => sum + p.plays, 0);
-  const stickers = new Set(pets.flatMap((p) => badgesFor(p, { onChain: onChain.has(p.id), guild: inGuild.has(p.id) }))).size;
+  const stickers = new Set(
+    pets.flatMap((p) =>
+      badgesFor(p, { onChain: onChain.has(p.id), guild: inGuild.has(p.id), waves: social.data?.get(p.id)?.waves, gatherings: social.data?.get(p.id)?.gatherings }),
+    ),
+  ).size;
   const since = pets.map((p) => p.createdAt).sort()[0];
   const projected = pet ? projectGuestPet(pet) : null;
   const name = profile.name.trim();
@@ -151,7 +158,7 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
           <div key={tab} className="pk-swap-in">
             {tab === "pets" ? pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : <EmptyShelf /> : null}
             {tab === "wardrobe" ? pet ? <Wardrobe companion={companion} sender={sender} /> : <EmptyShelf /> : null}
-            {tab === "stickers" ? <StickerBook pets={pets} onChain={onChain} inGuild={inGuild} /> : null}
+            {tab === "stickers" ? <StickerBook pets={pets} onChain={onChain} inGuild={inGuild} social={social.data} /> : null}
             {tab === "settings" ? <Settings form={pet ? SPECIES_ART[pet.species] : undefined} /> : null}
           </div>
         </section>

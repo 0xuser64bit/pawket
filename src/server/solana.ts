@@ -12,6 +12,7 @@ import {
   fetchGuildPolls,
   fetchGuilds,
   fetchPetOnChain,
+  fetchPetRsvps,
   fetchPetsOnChain,
   type ChainEvent,
   type ChainGuestbook,
@@ -104,4 +105,9 @@ export async function readGatherings(guild: string): Promise<{ events: ChainEven
 /** Who waved at a pet, or null before anyone has. */
 export async function readGuestbook(pet: string): Promise<ChainGuestbook | null> {
   return fetchGuestbook(rpc(), pet);
+}
+
+/** How many guild events a pet checked in at, read from its RSVPs. */
+export async function readGatheringsCame(pet: string): Promise<number> {
+  return (await fetchPetRsvps(rpc(), pet)).filter((rsvp) => rsvp.came).length;
 }

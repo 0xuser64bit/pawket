@@ -5,7 +5,7 @@ import { Passport } from "@/components/pet/passport";
 import { PetScreen } from "@/components/pet/pet-screen";
 import { SPECIES_LABEL } from "@/lib/game/appearance";
 import { readKeepsake } from "@/server/keepsake";
-import { readGuestbook, readGuildAt, readPet } from "@/server/solana";
+import { readGatheringsCame, readGuestbook, readGuildAt, readPet } from "@/server/solana";
 import { sponsorState } from "@/server/sponsor";
 
 export const dynamic = "force-dynamic";
@@ -55,11 +55,12 @@ export default async function PetPage({ params }: Props) {
       </Screen>
     );
   }
-  const [keepsake, sponsor, guild, guestbook] = await Promise.all([
+  const [keepsake, sponsor, guild, guestbook, gatherings] = await Promise.all([
     readKeepsake(onChain.pet.address).catch(() => null),
     sponsorState().catch(() => null),
     onChain.member ? readGuildAt(onChain.member.guild).catch(() => null) : null,
     readGuestbook(onChain.pet.address).catch(() => null),
+    readGatheringsCame(onChain.pet.address).catch(() => 0),
   ]);
   return (
     <Passport
@@ -69,6 +70,7 @@ export default async function PetPage({ params }: Props) {
       canKeep={Boolean(sponsor?.available)}
       guild={guild}
       guestbook={guestbook}
+      gatherings={gatherings}
     />
   );
 }

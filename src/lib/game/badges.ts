@@ -21,6 +21,10 @@ export interface BadgeContext {
   onChain?: boolean;
   /** The pet belongs to a guild. */
   guild?: boolean;
+  /** Waves in the pet's guestbook on Solana. */
+  waves?: number;
+  /** Guild events the pet checked in at, on Solana. */
+  gatherings?: number;
 }
 
 export type BadgeTone = "sun" | "sprout" | "pool" | "bloom";
@@ -61,6 +65,9 @@ export const BADGES: readonly Badge[] = [
   { id: "inseparable", name: "Inseparable", how: "Reach level 10.", icon: "crown", tone: "sprout", earned: (r) => level(r) >= 10 },
   { id: "on-the-record", name: "On the record", how: "Keep them on Solana.", icon: "shield", tone: "pool", earned: (_, c) => c.onChain === true },
   { id: "guild-pet", name: "In a guild", how: "Join a guild on Solana. Optional, always.", icon: "guild", tone: "bloom", earned: (_, c) => c.guild === true },
+  { id: "visited", name: "Visited", how: "Someone waves at them, on Solana.", icon: "paw", tone: "pool", earned: (_, c) => (c.waves ?? 0) >= 1 },
+  { id: "popular", name: "Popular", how: "Ten waves in their guestbook.", icon: "heart", tone: "pool", earned: (_, c) => (c.waves ?? 0) >= 10 },
+  { id: "gathering", name: "Went to a gathering", how: "Check in at a guild's event.", icon: "guild", tone: "bloom", earned: (_, c) => (c.gatherings ?? 0) >= 1 },
 ];
 
 /** The ids of the stickers this record has earned, in `BADGES` order. */

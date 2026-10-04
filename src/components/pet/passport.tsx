@@ -49,7 +49,10 @@ export function Passport({
   canKeep,
   guild = null,
   guestbook = null,
+  gatherings = 0,
 }: {
+  /** Guild events the pet checked in at. */
+  gatherings?: number;
   onChain: PetOnChain;
   /** Who waved at the pet, or null before anyone has. */
   guestbook?: ChainGuestbook | null;
@@ -152,7 +155,11 @@ export function Passport({
               </p>
             </Card>
 
-            <StickerStrip name={pet.name} record={record} context={{ onChain: true, guild: Boolean(onChain.member) }} />
+            <StickerStrip
+              name={pet.name}
+              record={record}
+              context={{ onChain: true, guild: Boolean(onChain.member), waves: guestbook?.waves ?? 0, gatherings }}
+            />
 
             <Guestbook
               pet={pet.address}

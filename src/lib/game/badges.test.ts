@@ -26,7 +26,13 @@ describe("badges", () => {
       streak: { best: 7 },
       plays: 10,
     };
-    expect(badgesFor(everything, { onChain: true, guild: true })).toEqual(BADGES.map((badge) => badge.id));
+    expect(badgesFor(everything, { onChain: true, guild: true, waves: 10, gatherings: 1 })).toEqual(BADGES.map((badge) => badge.id));
+  });
+
+  it("reads what others did with a pet on Solana: waves, and the gatherings it came to", () => {
+    expect(badgesFor(NEW, { onChain: true, waves: 1 })).toEqual(["on-the-record", "visited"]);
+    expect(badgesFor(NEW, { onChain: true, waves: 10, gatherings: 2 })).toEqual(["on-the-record", "visited", "popular", "gathering"]);
+    expect(badgesFor(NEW, { waves: 0, gatherings: 0 })).toEqual([]);
   });
 
   it("names what one care just earned, and nothing already had", () => {

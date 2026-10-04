@@ -42,14 +42,15 @@ const readPet = vi.fn(async () => ({
 vi.mock("@/server/solana", () => ({ readPet }));
 
 describe("a pet's Action", () => {
-  it("offers the four cares to the owner and adoption to everyone else", async () => {
+  it("offers the four cares to the owner, and a wave and adoption to everyone else", async () => {
     const { GET } = await import("./[pet]/route");
     const card = await (await GET(new Request(`http://localhost:3000/api/actions/care/${PET}`), { params: Promise.resolve({ pet: PET }) })).json();
     expect(card).toMatchObject({ type: "action", label: "Care" });
     expect(card.description).toMatch(/Only Pepper's owner can care for them/);
-    expect(card.description).toMatch(/Anyone can adopt their own/);
+    expect(card.description).toMatch(/Anyone else can wave/);
     const labels = card.links.actions.map((action: { label: string }) => action.label);
-    expect(labels).toEqual(["Feed", "Play", "Brush", "Rest", "Adopt your own"]);
+    expect(labels).toEqual(["Feed", "Play", "Brush", "Rest", "Wave at Pepper", "Adopt your own"]);
+    expect(card.links.actions[4].href).toBe(`/api/actions/wave/${PET}`);
     const adopt = card.links.actions.at(-1);
     expect(adopt.href).toBe("/api/actions/adopt?species={species}&personality={personality}&name={name}");
     expect(adopt.parameters.map((p: { name: string }) => p.name)).toEqual(["species", "personality", "name"]);

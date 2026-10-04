@@ -22,13 +22,14 @@ import {
   petLook,
 } from "@/lib/game/appearance";
 import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
-import { toCompanionRecord, type ChainGuild, type PetOnChain } from "@/lib/solana/accounts";
+import { toCompanionRecord, type ChainGuestbook, type ChainGuild, type PetOnChain } from "@/lib/solana/accounts";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import Link from "next/link";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { formatUtcDate } from "@/lib/utils/format";
 import type { Keepsake } from "@/server/keepsake";
+import { Guestbook } from "./guestbook";
 import { KeepsakeCard } from "./keepsake";
 import { OwnerActions } from "./owner-actions";
 import { ShareButton } from "./share-button";
@@ -47,8 +48,11 @@ export function Passport({
   keepsake,
   canKeep,
   guild = null,
+  guestbook = null,
 }: {
   onChain: PetOnChain;
+  /** Who waved at the pet, or null before anyone has. */
+  guestbook?: ChainGuestbook | null;
   /** The guild the pet is in, read from chain, or null. */
   guild?: ChainGuild | null;
   now: Date;
@@ -149,6 +153,15 @@ export function Passport({
             </Card>
 
             <StickerStrip name={pet.name} record={record} context={{ onChain: true, guild: Boolean(onChain.member) }} />
+
+            <Guestbook
+              pet={pet.address}
+              owner={pet.owner}
+              name={pet.name}
+              waves={guestbook?.waves ?? 0}
+              recent={guestbook?.recent ?? []}
+              today={Math.floor(now.getTime() / 86_400_000)}
+            />
 
             <Card>
               <h2 className="title">Last cares</h2>

@@ -32,7 +32,7 @@ export async function GET(request: Request, { params }: Props) {
     type: "action",
     icon: absolute(request, `/api/actions/icon?pet=${pet}`),
     title: `${record.name} · ${MOOD_LABEL[projected.mood]}`,
-    description: `Level ${projected.level}, ${streak === 0 ? "no run today yet" : `a ${streak}-day run`}. Only ${record.name}'s owner can care for them, and each care rests 30 minutes. Anyone can adopt their own, kept on Solana from the first day. Pawket pays the fee either way.`,
+    description: `Level ${projected.level}, ${streak === 0 ? "no run today yet" : `a ${streak}-day run`}. Only ${record.name}'s owner can care for them, and each care rests 30 minutes. Anyone else can wave — once a day, into ${record.name}'s guestbook on Solana — or adopt their own. Pawket pays the fee either way.`,
     label: "Care",
     links: {
       actions: [
@@ -41,6 +41,7 @@ export async function GET(request: Request, { params }: Props) {
           label: CARE_ACTION_LABEL[action],
           href: `/api/actions/care/${pet}?action=${action}`,
         })),
+        { type: "transaction", label: `Wave at ${record.name}`, href: `/api/actions/wave/${pet}` },
         adoptLinkedAction("Adopt your own"),
       ],
     },

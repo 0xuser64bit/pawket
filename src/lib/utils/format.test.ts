@@ -79,3 +79,24 @@ describe("formatAgo", () => {
     expect(formatAgo(3 * 86_400 + 5)).toBe("3 days ago");
   });
 });
+
+describe("parseUnits / formatUnits", () => {
+  it("reads a coin's six places and a SOL amount's nine, and nothing past them", async () => {
+    const { parseUnits } = await import("./format");
+    expect(parseUnits("1.5", 6)).toBe(1_500_000n);
+    expect(parseUnits("1,000", 6)).toBe(1_000_000_000n);
+    expect(parseUnits(".000001", 6)).toBe(1n);
+    expect(parseUnits("0.0000001", 6)).toBeNull();
+    expect(parseUnits("0", 6)).toBeNull();
+    expect(parseUnits("1e5", 6)).toBeNull();
+    expect(parseUnits("0.1", 9)).toBe(100_000_000n);
+  });
+
+  it("groups thousands and drops trailing zeros", async () => {
+    const { formatUnits } = await import("./format");
+    expect(formatUnits(1_234_567_890n, 6, 2)).toBe("1,234.56");
+    expect(formatUnits("1000000000", 9)).toBe("1");
+    expect(formatUnits(1_500_000n, 6)).toBe("1.5");
+    expect(formatUnits(999n, 6, 2)).toBe("0");
+  });
+});

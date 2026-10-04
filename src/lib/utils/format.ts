@@ -50,16 +50,38 @@ export function formatCountdown(totalSeconds: number): string {
 
 /** Parse a user-typed SOL amount to lamports. Returns null when invalid. */
 export function parseSolToLamports(input: string): bigint | null {
-  const trimmed = input.trim();
+  return parseUnits(input, 9);
+}
+
+/**
+ * Parse a user-typed amount of a token with `decimals` places (SOL is 9, a
+ * guild coin 6) into its smallest units. Null when it is not a positive
+ * amount with at most that many places, or would not fit a u64.
+ */
+export function parseUnits(input: string, decimals: number): bigint | null {
+  const trimmed = input.trim().replace(/,/g, "");
   if (!trimmed) return null;
-  if (!/^(?:\d+(?:\.\d{1,9})?|\.\d{1,9})$/.test(trimmed)) return null;
+  if (!new RegExp(`^(?:\\d+(?:\\.\\d{1,${decimals}})?|\\.\\d{1,${decimals}})$`).test(trimmed)) return null;
   const dotted = trimmed.startsWith(".") ? `0${trimmed}` : trimmed;
   const [whole, frac = ""] = dotted.split(".");
-  const amount =
-    BigInt(whole) * LAMPORTS_PER_SOL +
-    BigInt((frac + "000000000").slice(0, 9));
+  const amount = BigInt(whole) * 10n ** BigInt(decimals) + BigInt(frac.padEnd(decimals, "0"));
   if (amount <= 0n || amount > MAX_LAMPORTS) return null;
   return amount;
+}
+
+/**
+ * Smallest units as a figure a person reads: thousands grouped, at most
+ * `places` decimals, trailing zeros dropped. `formatUnits(1234567890n, 6, 2)`
+ * is "1,234.56".
+ */
+export function formatUnits(units: bigint | string, decimals: number, places = decimals): string {
+  const value = typeof units === "string" ? BigInt(units) : units;
+  const sign = value < 0n ? "-" : "";
+  const magnitude = value < 0n ? -value : value;
+  const scale = 10n ** BigInt(decimals);
+  const whole = (magnitude / scale).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const frac = (magnitude % scale).toString().padStart(decimals, "0").slice(0, places).replace(/0+$/, "");
+  return `${sign}${whole}${frac ? `.${frac}` : ""}`;
 }
 
 /** How long ago, for a feed: 40 → "just now", 600 → "10 min ago", 7200 → "2 h ago", 3 days → "3 days ago". */

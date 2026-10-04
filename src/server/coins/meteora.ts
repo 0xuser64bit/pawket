@@ -102,13 +102,13 @@ function readConfig(address: PublicKey): Promise<PoolConfig | null> {
   return config;
 }
 
-const holderReads = new Map<string, { at: number; value: Promise<CoinState["holders"]> }>();
+const holderReads = new Map<string, { at: number; value: Promise<Map<string, bigint> | null> }>();
 /**
- * Every token account of the coin, less the pools' own vaults: how many
- * wallets hold it, and how concentrated it is. A scan, so it answers for
- * 15 seconds; null when the RPC will not run it.
+ * Every wallet holding the coin, and how much: its token accounts, less the
+ * pools' own vaults. A scan, so it answers for 15 seconds; null when the RPC
+ * will not run it.
  */
-function readHolders(mint: PublicKey): Promise<CoinState["holders"]> {
+function holderWallets(mint: PublicKey): Promise<Map<string, bigint> | null> {
   const key = mint.toBase58();
   const cached = holderReads.get(key);
   if (cached && Date.now() - cached.at < 15_000) return cached.value;
@@ -124,13 +124,31 @@ function readHolders(mint: PublicKey): Promise<CoinState["holders"]> {
       const amount = account.data.readBigUInt64LE(32);
       if (amount > 0n) byOwner.set(owner.toBase58(), (byOwner.get(owner.toBase58()) ?? 0n) + amount);
     }
-    const amounts = [...byOwner.values()].sort((a, b) => (b > a ? 1 : b < a ? -1 : 0));
-    const total = amounts.reduce((sum, amount) => sum + amount, 0n);
-    const topTen = amounts.slice(0, 10).reduce((sum, amount) => sum + amount, 0n);
-    return { count: amounts.length, topTenPercent: total === 0n ? 0 : Number((topTen * 10_000n) / total) / 100 };
+    return byOwner;
   })().catch(() => null);
   holderReads.set(key, { at: Date.now(), value });
   return value;
+}
+
+/** How many wallets hold the coin, and how much of what they hold the largest ten have. */
+async function readHolders(mint: PublicKey): Promise<CoinState["holders"]> {
+  const wallets = await holderWallets(mint);
+  if (!wallets) return null;
+  const amounts = [...wallets.values()].sort((a, b) => (b > a ? 1 : b < a ? -1 : 0));
+  const total = amounts.reduce((sum, amount) => sum + amount, 0n);
+  const topTen = amounts.slice(0, 10).reduce((sum, amount) => sum + amount, 0n);
+  return { count: amounts.length, topTenPercent: total === 0n ? 0 : Number((topTen * 10_000n) / total) / 100 };
+}
+
+/**
+ * The wallets that hold any of a launched coin: whose pets wear the guild's
+ * crest pin on its page. Cosmetic, and gone when they sell. Null when the
+ * holders could not be read, which shows no pins rather than wrong ones.
+ */
+export async function readHolderWallets(coin: CoinState): Promise<Set<string> | null> {
+  if (coin.stage === "none" || coin.stage === "suspended") return null;
+  const wallets = await holderWallets(new PublicKey(coin.mint));
+  return wallets ? new Set(wallets.keys()) : null;
 }
 
 const big = (value: BN | bigint | number) => BigInt(value.toString());
@@ -217,6 +235,65 @@ async function liveCoin(guild: ChainGuild): Promise<LiveCoin | null> {
 /** The guild's coin as a screen draws it, or null where coins are off. */
 export async function readCoin(guild: ChainGuild): Promise<CoinState | null> {
   return (await liveCoin(guild))?.state ?? null;
+}
+
+/**
+ * Every listed guild's coin stage, for the list of guilds: one read of all
+ * their curves, and one of the graduated pools, however many guilds there
+ * are. Empty where coins are off.
+ */
+export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, CoinStage>> {
+  const stages = new Map<string, CoinStage>();
+  const cluster = getPublicEnv().solanaCluster;
+  const offered = COIN_PRESETS.flatMap((preset) => {
+    const config = presetConfig(cluster, preset.id);
+    return config ? [new PublicKey(config)] : [];
+  });
+  if (offered.length === 0 || !getServerEnv().sponsorKeypair) return stages;
+
+  const candidates = guilds.flatMap((guild) => {
+    const mint = coinKeypair(guild.slug)!.publicKey;
+    return offered.map((config) => ({ guild, mint, config, pool: deriveDbcPoolAddress(WRAPPED_SOL, mint, config) }));
+  });
+  const accounts = (await Promise.all(chunks(candidates, 100).map((chunk) => rpc().getMultipleAccountsInfo(chunk.map((c) => c.pool))))).flat();
+  const coder = dbc().state.getProgram().coder;
+  const launched: Array<{ slug: string; listed: boolean; raised: bigint; threshold: bigint; migrated: boolean; damm: PublicKey | null }> = [];
+  for (const [i, account] of accounts.entries()) {
+    if (!account) continue;
+    const { guild, mint, config } = candidates[i];
+    const pool = coder.accounts.decode<VirtualPool>("virtualPool", account.data).poolState;
+    const settings = await readConfig(config);
+    if (!settings) continue;
+    const migrated = pool.isMigrated === 1;
+    launched.push({
+      slug: guild.slug,
+      listed: !DELISTED_SLUGS.has(guild.slug),
+      raised: big(pool.quoteReserve),
+      threshold: big(settings.migrationQuoteThreshold),
+      migrated,
+      damm: migrated ? deriveDammV2PoolAddress(DAMM_V2_MIGRATION_FEE_ADDRESS[settings.migrationFeeOption], mint, WRAPPED_SOL) : null,
+    });
+  }
+  const graduated = launched.filter((coin) => coin.damm);
+  const dammAccounts = graduated.length ? await rpc().getMultipleAccountsInfo(graduated.map((coin) => coin.damm!)) : [];
+  const verified = new Set(graduated.filter((_, i) => dammAccounts[i] !== null).map((coin) => coin.slug));
+  for (const coin of launched) {
+    stages.set(
+      coin.slug,
+      coinStage({
+        listed: coin.listed,
+        curve: { raised: coin.raised, threshold: coin.threshold, migrated: coin.migrated },
+        graduated: coin.migrated ? { verified: verified.has(coin.slug) } : null,
+      }),
+    );
+  }
+  return stages;
+}
+
+function chunks<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
 }
 
 export type TradeSide = "buy" | "sell";

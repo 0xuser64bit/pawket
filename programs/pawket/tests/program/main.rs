@@ -8,7 +8,10 @@ mod harness;
 
 mod adopt;
 mod care;
+mod gatherings;
+mod guestbook;
 mod guild;
 mod lockstep;
+mod market;
 mod round_and_dress;
 mod wallet;

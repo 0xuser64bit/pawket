@@ -10,7 +10,10 @@ use litesvm::{
     types::{FailedTransactionMetadata, TransactionMetadata},
     LiteSVM,
 };
-use pawket::{CareActionType, Guild, GuildMember, PawketError, PawketWallet, Pet, PetPassport, PetPersonality, PetSpecies};
+use pawket::{
+    Ballot, CareActionType, Closet, EventRsvp, Guestbook, Guild, GuildEvent, GuildMember, GuildPoll, PawketError, PawketWallet, Pet,
+    PetPassport, PetPersonality, PetSpecies,
+};
 use solana_keypair::Keypair;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
@@ -43,6 +46,30 @@ pub fn member_pda(pet: &Pubkey) -> Pubkey {
 
 pub fn wallet_pda(owner: &Pubkey) -> Pubkey {
     Pubkey::find_program_address(&[b"wallet", owner.as_ref()], &pawket::ID).0
+}
+
+pub fn closet_pda(owner: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[b"closet", owner.as_ref()], &pawket::ID).0
+}
+
+pub fn event_pda(guild: &Pubkey, id: u32) -> Pubkey {
+    Pubkey::find_program_address(&[b"event", guild.as_ref(), &id.to_le_bytes()], &pawket::ID).0
+}
+
+pub fn rsvp_pda(event: &Pubkey, pet: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[b"rsvp", event.as_ref(), pet.as_ref()], &pawket::ID).0
+}
+
+pub fn poll_pda(guild: &Pubkey, id: u32) -> Pubkey {
+    Pubkey::find_program_address(&[b"poll", guild.as_ref(), &id.to_le_bytes()], &pawket::ID).0
+}
+
+pub fn ballot_pda(poll: &Pubkey, owner: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[b"ballot", poll.as_ref(), owner.as_ref()], &pawket::ID).0
+}
+
+pub fn guestbook_pda(pet: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[b"guestbook", pet.as_ref()], &pawket::ID).0
 }
 
 pub struct Env {
@@ -112,6 +139,30 @@ impl Env {
 
     pub fn wallet(&self, owner: &Pubkey) -> PawketWallet {
         self.account(&wallet_pda(owner))
+    }
+
+    pub fn closet(&self, owner: &Pubkey) -> Closet {
+        self.account(&closet_pda(owner))
+    }
+
+    pub fn event(&self, address: &Pubkey) -> GuildEvent {
+        self.account(address)
+    }
+
+    pub fn rsvp(&self, address: &Pubkey) -> EventRsvp {
+        self.account(address)
+    }
+
+    pub fn poll(&self, address: &Pubkey) -> GuildPoll {
+        self.account(address)
+    }
+
+    pub fn ballot(&self, address: &Pubkey) -> Ballot {
+        self.account(address)
+    }
+
+    pub fn guestbook(&self, pet: &Pubkey) -> Guestbook {
+        self.account(&guestbook_pda(pet))
     }
 
     /// A Pawket Wallet's balance: its lamports above rent.
@@ -407,6 +458,176 @@ pub fn dress_by_device_ix(device: &Pubkey, owner: &Pubkey, pet: &Pubkey, wearing
         }
         .to_account_metas(None),
         data: pawket::instruction::DressByDevice { wearing }.data(),
+    }
+}
+
+pub fn buy_ix(owner: &Pubkey, payer: &Pubkey, item: u8) -> Instruction {
+    buy_ix_to(owner, payer, item, &pawket::TREASURY)
+}
+
+pub fn buy_ix_to(owner: &Pubkey, payer: &Pubkey, item: u8, treasury: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::Buy {
+            owner: *owner,
+            payer: *payer,
+            closet: closet_pda(owner),
+            treasury: *treasury,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::Buy { item }.data(),
+    }
+}
+
+pub fn dress_owned_ix(owner: &Pubkey, pet: &Pubkey, wearing: u8) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::DressOwned {
+            owner: *owner,
+            pet: *pet,
+            closet: closet_pda(owner),
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::DressOwned { wearing }.data(),
+    }
+}
+
+pub fn dress_owned_by_device_ix(device: &Pubkey, owner: &Pubkey, pet: &Pubkey, wearing: u8) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::DressOwnedByDevice {
+            device: *device,
+            wallet: wallet_pda(owner),
+            pet: *pet,
+            closet: closet_pda(owner),
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::DressOwnedByDevice { wearing }.data(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn create_event_ix(
+    owner: &Pubkey,
+    payer: &Pubkey,
+    guild: &Pubkey,
+    id: u32,
+    title: &str,
+    note: &str,
+    starts_at: i64,
+    ends_at: i64,
+) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::CreateEvent {
+            owner: *owner,
+            payer: *payer,
+            guild: *guild,
+            event: event_pda(guild, id),
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::CreateEvent {
+            id,
+            title: title.to_string(),
+            note: note.to_string(),
+            starts_at,
+            ends_at,
+        }
+        .data(),
+    }
+}
+
+pub fn rsvp_ix(owner: &Pubkey, payer: &Pubkey, pet: &Pubkey, event: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::Rsvp {
+            owner: *owner,
+            payer: *payer,
+            pet: *pet,
+            member: member_pda(pet),
+            event: *event,
+            rsvp: rsvp_pda(event, pet),
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::Rsvp {}.data(),
+    }
+}
+
+pub fn check_in_ix(owner: &Pubkey, pet: &Pubkey, event: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::CheckIn {
+            owner: *owner,
+            pet: *pet,
+            event: *event,
+            rsvp: rsvp_pda(event, pet),
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::CheckIn {}.data(),
+    }
+}
+
+pub fn create_poll_ix(
+    owner: &Pubkey,
+    payer: &Pubkey,
+    guild: &Pubkey,
+    id: u32,
+    question: &str,
+    options: &[&str],
+    closes_at: i64,
+) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::CreatePoll {
+            owner: *owner,
+            payer: *payer,
+            guild: *guild,
+            poll: poll_pda(guild, id),
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::CreatePoll {
+            id,
+            question: question.to_string(),
+            options: options.iter().map(|o| o.to_string()).collect(),
+            closes_at,
+        }
+        .data(),
+    }
+}
+
+pub fn vote_ix(owner: &Pubkey, payer: &Pubkey, pet: &Pubkey, poll: &Pubkey, option: u8) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::Vote {
+            owner: *owner,
+            payer: *payer,
+            pet: *pet,
+            member: member_pda(pet),
+            poll: *poll,
+            ballot: ballot_pda(poll, owner),
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::Vote { option }.data(),
+    }
+}
+
+pub fn wave_ix(visitor: &Pubkey, payer: &Pubkey, pet: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::Wave {
+            visitor: *visitor,
+            payer: *payer,
+            pet: *pet,
+            guestbook: guestbook_pda(pet),
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: pawket::instruction::Wave {}.data(),
     }
 }
 

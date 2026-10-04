@@ -20,9 +20,20 @@
 //! signing each one, and nothing else. It pays its own fees, and each action it takes refills it
 //! from the balance by at most that fee, so the balance pays for those actions and for nothing else.
 //!
-//! There is no store and no token: nothing here moves value except rent, which `payer` covers so a
-//! sponsor can adopt (or found, or join) on a player's behalf while the player alone signs for the
-//! pet, and a player's own Pawket Wallet. Leaving a guild hands the member account's rent back to
+//! The Market sells looks for SOL at prices fixed here (`item_price`): a sale goes from the owner
+//! straight to Pawket's treasury, and the owner's `Closet` (`[b"closet", owner]`) records it for
+//! good. A piece from the Market is worn with `dress_owned`; nothing bought changes a vital, XP, a
+//! cooldown or a score.
+//!
+//! A guild's founder can plan events (`GuildEvent`, `[b"event", guild, id]`) that its pets RSVP to
+//! and check in at (`EventRsvp`, `[b"rsvp", event, pet]`), and open polls (`GuildPoll`,
+//! `[b"poll", guild, id]`) that each wallet with a pet in the guild answers once (`Ballot`,
+//! `[b"ballot", poll, owner]`). Anyone but its owner can wave at a pet, once a UTC day; its
+//! `Guestbook` (`[b"guestbook", pet]`) keeps the last eight.
+//!
+//! Nothing here moves value except rent, which `payer` covers so a sponsor can adopt (or found, or
+//! join, or open a closet, an event, a poll, a guestbook) on a player's behalf while the player
+//! alone signs, a player's own Pawket Wallet, and a Market sale, which goes only to the treasury. Leaving a guild hands the member account's rent back to
 //! whoever paid it.
 #![allow(clippy::result_large_err)]
 
@@ -71,6 +82,44 @@ pub const MAX_DAILY_ACTIONS: u16 = 500;
 pub const DEVICE_FLOAT_LAMPORTS: u64 = 1_000_000;
 /// One signature's fee. A device's action is refilled by at most this much.
 pub const FEE_PER_SIGNATURE: u64 = 5_000;
+
+pub const CLOSET_SEED: &[u8] = b"closet";
+pub const EVENT_SEED: &[u8] = b"event";
+pub const RSVP_SEED: &[u8] = b"rsvp";
+pub const POLL_SEED: &[u8] = b"poll";
+pub const BALLOT_SEED: &[u8] = b"ballot";
+pub const GUESTBOOK_SEED: &[u8] = b"guestbook";
+
+/// Where every Market sale goes: Pawket's treasury.
+pub const TREASURY: Pubkey = pubkey!("SEpAw5iTAXf4j5YUsgpLD8UTKLCT6xqUAkecnvJvWfw");
+/// The Market's wardrobe: pieces after the eighteen (slots 19–22), worn with `dress_owned`.
+pub const MARKET_WEARABLE_COUNT: u8 = 4;
+/// The Market's rooms, as item ids from 64. The app draws them; the Closet records them.
+pub const FIRST_ROOM_ITEM: u8 = 64;
+pub const MARKET_ROOM_COUNT: u8 = 2;
+pub const WEARABLE_PRICE_LAMPORTS: u64 = 50_000_000;
+pub const ROOM_PRICE_LAMPORTS: u64 = 100_000_000;
+
+/// An event's title and note, in UTF-8 bytes, and how far ahead and how long it may run.
+pub const MIN_EVENT_TITLE_LEN: usize = 3;
+pub const MAX_EVENT_TITLE_LEN: usize = 48;
+pub const MAX_EVENT_NOTE_LEN: usize = 120;
+pub const MAX_EVENT_SECONDS: i64 = 7 * SECONDS_PER_DAY;
+pub const MAX_EVENT_LEAD_SECONDS: i64 = 60 * SECONDS_PER_DAY;
+/// A pet can check in this long before its event starts.
+pub const CHECK_IN_EARLY_SECONDS: i64 = 15 * 60;
+
+/// A poll's question and options, in UTF-8 bytes, and how long it stays open.
+pub const MIN_POLL_QUESTION_LEN: usize = 3;
+pub const MAX_POLL_QUESTION_LEN: usize = 80;
+pub const MAX_POLL_OPTION_LEN: usize = 24;
+pub const MIN_POLL_OPTIONS: usize = 2;
+pub const MAX_POLL_OPTIONS: usize = 4;
+pub const MIN_POLL_SECONDS: i64 = 10 * 60;
+pub const MAX_POLL_SECONDS: i64 = 14 * SECONDS_PER_DAY;
+
+/// How many visitors a guestbook keeps, newest overwriting oldest.
+pub const RECENT_WAVES: usize = 8;
 
 #[program]
 pub mod pawket {
@@ -405,6 +454,217 @@ pub mod pawket {
         act(&mut ctx.accounts.wallet, &ctx.accounts.device, now)?;
         dress_pet(&mut ctx.accounts.pet, wearing)
     }
+
+    /// Buy one thing in the Market at its fixed price, paid by the owner straight into Pawket's
+    /// treasury; the owner's Closet records it for good. `payer` covers the Closet's rent the first
+    /// time — the owner, or a sponsor.
+    pub fn buy(ctx: Context<Buy>, item: u8) -> Result<()> {
+        let price = item_price(item).ok_or(PawketError::UnknownItem)?;
+        let owner = ctx.accounts.owner.key();
+        let closet = &mut ctx.accounts.closet;
+        if closet.owner == Pubkey::default() {
+            closet.owner = owner;
+            closet.bump = ctx.bumps.closet;
+        }
+        require!(!closet.has(item), PawketError::AlreadyOwned);
+        system_program::transfer(
+            CpiContext::new(
+                system_program::ID,
+                system_program::Transfer {
+                    from: ctx.accounts.owner.to_account_info(),
+                    to: ctx.accounts.treasury.to_account_info(),
+                },
+            ),
+            price,
+        )?;
+        let closet = &mut ctx.accounts.closet;
+        closet.add(item);
+        closet.count = closet.count.saturating_add(1);
+        closet.spent = closet.spent.saturating_add(price);
+        emit!(ItemBought { owner, item, price });
+        Ok(())
+    }
+
+    /// Put on anything the owner may wear: one of the eighteen, or a Market piece their Closet
+    /// holds. 0 takes it off. Looks only, like `dress`.
+    pub fn dress_owned(ctx: Context<DressOwned>, wearing: u8) -> Result<()> {
+        may_wear(&ctx.accounts.closet, wearing)?;
+        put_on(&mut ctx.accounts.pet, wearing)
+    }
+
+    /// `dress_owned`, signed by the owner's linked device.
+    pub fn dress_owned_by_device(ctx: Context<DressOwnedByDevice>, wearing: u8) -> Result<()> {
+        let now = Clock::get()?.unix_timestamp;
+        act(&mut ctx.accounts.wallet, &ctx.accounts.device, now)?;
+        may_wear(&ctx.accounts.closet, wearing)?;
+        put_on(&mut ctx.accounts.pet, wearing)
+    }
+
+    /// A guild's founder plans an event: a title, a line about it, when it starts and ends. `id` is
+    /// the founder's to choose (the app uses the start time), so a guild's events need no counter.
+    pub fn create_event(
+        ctx: Context<CreateEvent>,
+        id: u32,
+        title: String,
+        note: String,
+        starts_at: i64,
+        ends_at: i64,
+    ) -> Result<()> {
+        let now = Clock::get()?.unix_timestamp;
+        require!(
+            (MIN_EVENT_TITLE_LEN..=MAX_EVENT_TITLE_LEN).contains(&title.len())
+                && note.len() <= MAX_EVENT_NOTE_LEN
+                && ends_at > starts_at
+                && ends_at > now
+                && ends_at - starts_at <= MAX_EVENT_SECONDS
+                && starts_at <= now + MAX_EVENT_LEAD_SECONDS,
+            PawketError::InvalidEvent
+        );
+        let guild = ctx.accounts.guild.key();
+        let event = ctx.accounts.event.key();
+        ctx.accounts.event.set_inner(GuildEvent {
+            guild,
+            creator: ctx.accounts.owner.key(),
+            id,
+            starts_at,
+            ends_at,
+            created_at: now,
+            going: 0,
+            came: 0,
+            bump: ctx.bumps.event,
+            title,
+            note,
+        });
+        emit!(EventCreated { guild, event, starts_at });
+        Ok(())
+    }
+
+    /// A pet in the guild is going to its event. One RSVP per pet per event, until it ends.
+    pub fn rsvp(ctx: Context<Rsvp>) -> Result<()> {
+        let now = Clock::get()?.unix_timestamp;
+        let event = &mut ctx.accounts.event;
+        require!(now < event.ends_at, PawketError::EventOver);
+        event.going = event.going.saturating_add(1);
+        let event_key = event.key();
+        let pet = ctx.accounts.pet.key();
+        ctx.accounts.rsvp.set_inner(EventRsvp {
+            event: event_key,
+            pet,
+            owner: ctx.accounts.owner.key(),
+            payer: ctx.accounts.payer.key(),
+            at: now,
+            came: false,
+            bump: ctx.bumps.rsvp,
+        });
+        emit!(EventRsvped { event: event_key, pet });
+        Ok(())
+    }
+
+    /// At the event — from fifteen minutes before it starts until it ends — a pet that said it was
+    /// going checks in, once.
+    pub fn check_in(ctx: Context<CheckIn>) -> Result<()> {
+        let now = Clock::get()?.unix_timestamp;
+        let event = &mut ctx.accounts.event;
+        require!(
+            now >= event.starts_at - CHECK_IN_EARLY_SECONDS && now <= event.ends_at,
+            PawketError::NotCheckInTime
+        );
+        let rsvp = &mut ctx.accounts.rsvp;
+        require!(!rsvp.came, PawketError::AlreadyCheckedIn);
+        rsvp.came = true;
+        event.came = event.came.saturating_add(1);
+        emit!(CheckedIn {
+            event: event.key(),
+            pet: rsvp.pet,
+        });
+        Ok(())
+    }
+
+    /// A guild's founder asks the guild something: two to four options, open from ten minutes to
+    /// fourteen days. Each wallet with a pet in the guild answers once; no weight, no token.
+    pub fn create_poll(
+        ctx: Context<CreatePoll>,
+        id: u32,
+        question: String,
+        options: Vec<String>,
+        closes_at: i64,
+    ) -> Result<()> {
+        let now = Clock::get()?.unix_timestamp;
+        require!(
+            (MIN_POLL_QUESTION_LEN..=MAX_POLL_QUESTION_LEN).contains(&question.len())
+                && (MIN_POLL_OPTIONS..=MAX_POLL_OPTIONS).contains(&options.len())
+                && options.iter().all(|option| (1..=MAX_POLL_OPTION_LEN).contains(&option.len()))
+                && closes_at >= now + MIN_POLL_SECONDS
+                && closes_at <= now + MAX_POLL_SECONDS,
+            PawketError::InvalidPoll
+        );
+        let guild = ctx.accounts.guild.key();
+        let poll = ctx.accounts.poll.key();
+        ctx.accounts.poll.set_inner(GuildPoll {
+            guild,
+            creator: ctx.accounts.owner.key(),
+            id,
+            created_at: now,
+            closes_at,
+            votes: [0; MAX_POLL_OPTIONS],
+            bump: ctx.bumps.poll,
+            question,
+            options,
+        });
+        emit!(PollCreated { guild, poll, closes_at });
+        Ok(())
+    }
+
+    /// A wallet with a pet in the guild answers its poll: one ballot per wallet, before it closes.
+    pub fn vote(ctx: Context<Vote>, option: u8) -> Result<()> {
+        let now = Clock::get()?.unix_timestamp;
+        let poll = &mut ctx.accounts.poll;
+        require!(now < poll.closes_at, PawketError::PollClosed);
+        require!(usize::from(option) < poll.options.len(), PawketError::UnknownOption);
+        poll.votes[usize::from(option)] = poll.votes[usize::from(option)].saturating_add(1);
+        let poll_key = poll.key();
+        let owner = ctx.accounts.owner.key();
+        ctx.accounts.ballot.set_inner(Ballot {
+            poll: poll_key,
+            owner,
+            pet: ctx.accounts.pet.key(),
+            payer: ctx.accounts.payer.key(),
+            option,
+            at: now,
+            bump: ctx.bumps.ballot,
+        });
+        emit!(Voted { poll: poll_key, owner, option });
+        Ok(())
+    }
+
+    /// Anyone but its owner waves at a pet, once a UTC day. Its guestbook counts every wave and
+    /// keeps the last eight visitors. A wave changes nothing about the pet.
+    pub fn wave(ctx: Context<Wave>) -> Result<()> {
+        let now = Clock::get()?.unix_timestamp;
+        let visitor = ctx.accounts.visitor.key();
+        let pet = &ctx.accounts.pet;
+        require!(visitor != pet.owner, PawketError::CannotWaveAtOwnPet);
+        let pet_key = pet.key();
+        let book = &mut ctx.accounts.guestbook;
+        if book.pet == Pubkey::default() {
+            book.pet = pet_key;
+            book.bump = ctx.bumps.guestbook;
+        }
+        let today = utc_day(now);
+        require!(
+            !book.recent.iter().any(|mark| mark.at != 0 && mark.visitor == visitor && utc_day(mark.at) == today),
+            PawketError::AlreadyWavedToday
+        );
+        let slot = book.waves as usize % RECENT_WAVES;
+        book.recent[slot] = WaveMark { visitor, at: now };
+        book.waves = book.waves.saturating_add(1);
+        emit!(Waved {
+            pet: pet_key,
+            visitor,
+            waves: book.waves,
+        });
+        Ok(())
+    }
 }
 
 /// Feed, play, groom or rest: decay to now, apply the locked deltas, +10 XP, then write the
@@ -461,12 +721,34 @@ fn round(pet: &mut Account<Pet>, passport: &mut Account<PetPassport>, now: i64) 
 /// Put something on, or take it off with 0. Looks only: nothing else on the pet changes.
 fn dress_pet(pet: &mut Account<Pet>, wearing: u8) -> Result<()> {
     require!(wearing <= WEARABLE_COUNT, PawketError::UnknownWearable);
+    put_on(pet, wearing)
+}
+
+fn put_on(pet: &mut Account<Pet>, wearing: u8) -> Result<()> {
     pet.wearing = wearing;
     emit!(PetDressed {
         pet: pet.key(),
         wearing,
     });
     Ok(())
+}
+
+/// One of the eighteen, or a Market piece the Closet holds.
+fn may_wear(closet: &Closet, wearing: u8) -> Result<()> {
+    require!(wearing <= WEARABLE_COUNT + MARKET_WEARABLE_COUNT, PawketError::UnknownWearable);
+    require!(wearing <= WEARABLE_COUNT || closet.has(wearing), PawketError::NotInCloset);
+    Ok(())
+}
+
+/// What an item costs in the Market, in lamports, or None where nothing is sold.
+pub fn item_price(item: u8) -> Option<u64> {
+    if (WEARABLE_COUNT + 1..=WEARABLE_COUNT + MARKET_WEARABLE_COUNT).contains(&item) {
+        Some(WEARABLE_PRICE_LAMPORTS)
+    } else if (FIRST_ROOM_ITEM..FIRST_ROOM_ITEM + MARKET_ROOM_COUNT).contains(&item) {
+        Some(ROOM_PRICE_LAMPORTS)
+    } else {
+        None
+    }
 }
 
 /// Lamports in a Pawket Wallet above the rent that keeps it alive: its balance.
@@ -615,6 +897,17 @@ impl PetPassport {
         };
         self.best_streak = self.best_streak.max(self.streak);
         self.last_active_day = day;
+    }
+}
+
+impl Closet {
+    /// Whether the Closet holds `item`: one bit per item id.
+    pub fn has(&self, item: u8) -> bool {
+        self.items[usize::from(item / 8)] & (1 << (item % 8)) != 0
+    }
+
+    fn add(&mut self, item: u8) {
+        self.items[usize::from(item / 8)] |= 1 << (item % 8);
     }
 }
 
@@ -857,6 +1150,173 @@ pub struct DressByDevice<'info> {
     pub pet: Account<'info, Pet>,
 }
 
+#[derive(Accounts)]
+pub struct Buy<'info> {
+    #[account(mut)]
+    pub owner: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + Closet::INIT_SPACE,
+        seeds = [CLOSET_SEED, owner.key().as_ref()],
+        bump
+    )]
+    pub closet: Account<'info, Closet>,
+    #[account(mut, address = TREASURY)]
+    pub treasury: SystemAccount<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct DressOwned<'info> {
+    pub owner: Signer<'info>,
+    #[account(mut, has_one = owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(seeds = [CLOSET_SEED, owner.key().as_ref()], bump = closet.bump)]
+    pub closet: Account<'info, Closet>,
+}
+
+#[derive(Accounts)]
+pub struct DressOwnedByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(mut, constraint = pet.owner == wallet.owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(seeds = [CLOSET_SEED, wallet.owner.as_ref()], bump = closet.bump)]
+    pub closet: Account<'info, Closet>,
+}
+
+#[derive(Accounts)]
+#[instruction(id: u32)]
+pub struct CreateEvent<'info> {
+    pub owner: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(constraint = guild.founder == owner.key() @ PawketError::NotGuildFounder)]
+    pub guild: Account<'info, Guild>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + GuildEvent::INIT_SPACE,
+        seeds = [EVENT_SEED, guild.key().as_ref(), &id.to_le_bytes()],
+        bump
+    )]
+    pub event: Account<'info, GuildEvent>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct Rsvp<'info> {
+    pub owner: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(has_one = owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump = member.bump,
+        constraint = member.guild == event.guild @ PawketError::NotInGuild
+    )]
+    pub member: Account<'info, GuildMember>,
+    #[account(mut)]
+    pub event: Account<'info, GuildEvent>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + EventRsvp::INIT_SPACE,
+        seeds = [RSVP_SEED, event.key().as_ref(), pet.key().as_ref()],
+        bump
+    )]
+    pub rsvp: Account<'info, EventRsvp>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CheckIn<'info> {
+    pub owner: Signer<'info>,
+    #[account(has_one = owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(mut)]
+    pub event: Account<'info, GuildEvent>,
+    #[account(
+        mut,
+        seeds = [RSVP_SEED, event.key().as_ref(), pet.key().as_ref()],
+        bump = rsvp.bump
+    )]
+    pub rsvp: Account<'info, EventRsvp>,
+}
+
+#[derive(Accounts)]
+#[instruction(id: u32)]
+pub struct CreatePoll<'info> {
+    pub owner: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(constraint = guild.founder == owner.key() @ PawketError::NotGuildFounder)]
+    pub guild: Account<'info, Guild>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + GuildPoll::INIT_SPACE,
+        seeds = [POLL_SEED, guild.key().as_ref(), &id.to_le_bytes()],
+        bump
+    )]
+    pub poll: Account<'info, GuildPoll>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct Vote<'info> {
+    pub owner: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(has_one = owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump = member.bump,
+        constraint = member.guild == poll.guild @ PawketError::NotInGuild
+    )]
+    pub member: Account<'info, GuildMember>,
+    #[account(mut)]
+    pub poll: Account<'info, GuildPoll>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + Ballot::INIT_SPACE,
+        seeds = [BALLOT_SEED, poll.key().as_ref(), owner.key().as_ref()],
+        bump
+    )]
+    pub ballot: Account<'info, Ballot>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct Wave<'info> {
+    pub visitor: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub pet: Account<'info, Pet>,
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + Guestbook::INIT_SPACE,
+        seeds = [GUESTBOOK_SEED, pet.key().as_ref()],
+        bump
+    )]
+    pub guestbook: Account<'info, Guestbook>,
+    pub system_program: Program<'info, System>,
+}
+
 /// Fixed-size fields first and the name last, so every offset but the name's is constant.
 #[account]
 #[derive(InitSpace)]
@@ -959,6 +1419,96 @@ pub struct PawketWallet {
     pub rent_payer: Pubkey,
     pub created_at: i64,
     pub bump: u8,
+}
+
+/// What an owner has bought in the Market: one bit per item id, for good.
+#[account]
+#[derive(InitSpace)]
+pub struct Closet {
+    pub owner: Pubkey,
+    pub items: [u8; 32],
+    pub count: u16,
+    /// Lamports paid into the treasury, in all.
+    pub spent: u64,
+    pub bump: u8,
+}
+
+/// A guild's event. The guild first, so a guild's events are one cheap filter; strings last.
+#[account]
+#[derive(InitSpace)]
+pub struct GuildEvent {
+    pub guild: Pubkey,
+    pub creator: Pubkey,
+    pub id: u32,
+    pub starts_at: i64,
+    pub ends_at: i64,
+    pub created_at: i64,
+    pub going: u32,
+    pub came: u32,
+    pub bump: u8,
+    #[max_len(48)]
+    pub title: String,
+    #[max_len(120)]
+    pub note: String,
+}
+
+/// One pet going to one event, and whether it came.
+#[account]
+#[derive(InitSpace)]
+pub struct EventRsvp {
+    pub event: Pubkey,
+    pub pet: Pubkey,
+    pub owner: Pubkey,
+    pub payer: Pubkey,
+    pub at: i64,
+    pub came: bool,
+    pub bump: u8,
+}
+
+/// A guild's poll: up to four options, a count each. The guild first; strings last.
+#[account]
+#[derive(InitSpace)]
+pub struct GuildPoll {
+    pub guild: Pubkey,
+    pub creator: Pubkey,
+    pub id: u32,
+    pub created_at: i64,
+    pub closes_at: i64,
+    pub votes: [u32; 4],
+    pub bump: u8,
+    #[max_len(80)]
+    pub question: String,
+    #[max_len(4, 24)]
+    pub options: Vec<String>,
+}
+
+/// One wallet's answer to one poll.
+#[account]
+#[derive(InitSpace)]
+pub struct Ballot {
+    pub poll: Pubkey,
+    pub owner: Pubkey,
+    pub pet: Pubkey,
+    pub payer: Pubkey,
+    pub option: u8,
+    pub at: i64,
+    pub bump: u8,
+}
+
+/// Who waved at a pet: every wave counted, the last eight kept.
+#[account]
+#[derive(InitSpace)]
+pub struct Guestbook {
+    pub pet: Pubkey,
+    pub waves: u32,
+    pub recent: [WaveMark; RECENT_WAVES],
+    pub bump: u8,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Default, PartialEq, Eq, InitSpace, Debug)]
+pub struct WaveMark {
+    pub visitor: Pubkey,
+    pub at: i64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Default, PartialEq, Eq, InitSpace, Debug)]
@@ -1082,6 +1632,53 @@ pub struct WalletClosed {
     pub returned: u64,
 }
 
+#[event]
+pub struct ItemBought {
+    pub owner: Pubkey,
+    pub item: u8,
+    pub price: u64,
+}
+
+#[event]
+pub struct EventCreated {
+    pub guild: Pubkey,
+    pub event: Pubkey,
+    pub starts_at: i64,
+}
+
+#[event]
+pub struct EventRsvped {
+    pub event: Pubkey,
+    pub pet: Pubkey,
+}
+
+#[event]
+pub struct CheckedIn {
+    pub event: Pubkey,
+    pub pet: Pubkey,
+}
+
+#[event]
+pub struct PollCreated {
+    pub guild: Pubkey,
+    pub poll: Pubkey,
+    pub closes_at: i64,
+}
+
+#[event]
+pub struct Voted {
+    pub poll: Pubkey,
+    pub owner: Pubkey,
+    pub option: u8,
+}
+
+#[event]
+pub struct Waved {
+    pub pet: Pubkey,
+    pub visitor: Pubkey,
+    pub waves: u32,
+}
+
 #[error_code]
 pub enum PawketError {
     #[msg("A pet's name is 2 to 24 UTF-8 bytes.")]
@@ -1116,4 +1713,32 @@ pub enum PawketError {
     NoDeviceLinked,
     #[msg("Unlink the device before closing the Pawket Wallet.")]
     DeviceStillLinked,
+    #[msg("The Market sells nothing like that.")]
+    UnknownItem,
+    #[msg("Your closet holds that already.")]
+    AlreadyOwned,
+    #[msg("That piece is not in your closet.")]
+    NotInCloset,
+    #[msg("An event has a 3 to 48 byte title, ends after it starts and after now, runs at most 7 days, and starts within 60.")]
+    InvalidEvent,
+    #[msg("Only the guild's founder can do that.")]
+    NotGuildFounder,
+    #[msg("That pet is not in this guild.")]
+    NotInGuild,
+    #[msg("That event is over.")]
+    EventOver,
+    #[msg("Check-in opens 15 minutes before the event and closes when it ends.")]
+    NotCheckInTime,
+    #[msg("That pet has checked in already.")]
+    AlreadyCheckedIn,
+    #[msg("A poll asks 3 to 80 bytes, offers 2 to 4 options of 1 to 24, and stays open 10 minutes to 14 days.")]
+    InvalidPoll,
+    #[msg("That poll is closed.")]
+    PollClosed,
+    #[msg("That poll has no such option.")]
+    UnknownOption,
+    #[msg("Wave at someone else's pet.")]
+    CannotWaveAtOwnPet,
+    #[msg("You waved at this pet today already.")]
+    AlreadyWavedToday,
 }

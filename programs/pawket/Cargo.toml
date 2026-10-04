@@ -21,7 +21,7 @@ custom-heap = []
 custom-panic = []
 
 [dependencies]
-anchor-lang = "=1.2.0"
+anchor-lang = { version = "=1.2.0", features = ["init-if-needed"] }
 
 [dev-dependencies]
 # The set Anchor 1.2's LiteSVM template pins.

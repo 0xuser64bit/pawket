@@ -111,6 +111,74 @@
       ]
     },
     {
+      "name": "buy",
+      "docs": [
+        "Buy one thing in the Market at its fixed price, paid by the owner straight into Pawket's",
+        "treasury; the owner's Closet records it for good. `payer` covers the Closet's rent the first",
+        "time — the owner, or a sponsor."
+      ],
+      "discriminator": [
+        102,
+        6,
+        61,
+        18,
+        1,
+        218,
+        235,
+        234
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "closet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  108,
+                  111,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "address": "SEpAw5iTAXf4j5YUsgpLD8UTKLCT6xqUAkecnvJvWfw"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "item",
+          "type": "u8"
+        }
+      ]
+    },
+    {
       "name": "care_by_device",
       "docs": [
         "A care, signed by the owner's linked device: the same rules and the same record as one the",
@@ -183,6 +251,65 @@
       ]
     },
     {
+      "name": "check_in",
+      "docs": [
+        "At the event — from fifteen minutes before it starts until it ends — a pet that said it was",
+        "going checks in, once."
+      ],
+      "discriminator": [
+        209,
+        253,
+        4,
+        217,
+        250,
+        241,
+        207,
+        50
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "event",
+          "writable": true
+        },
+        {
+          "name": "rsvp",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  115,
+                  118,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "event"
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "close_wallet",
       "docs": [
         "The Pawket Wallet closes: its balance goes to its owner, its rent to whoever paid it. A",
@@ -239,6 +366,169 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "create_event",
+      "docs": [
+        "A guild's founder plans an event: a title, a line about it, when it starts and ends. `id` is",
+        "the founder's to choose (the app uses the start time), so a guild's events need no counter."
+      ],
+      "discriminator": [
+        49,
+        219,
+        29,
+        203,
+        22,
+        98,
+        100,
+        87
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "guild"
+        },
+        {
+          "name": "event",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  118,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guild"
+              },
+              {
+                "kind": "arg",
+                "path": "id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "id",
+          "type": "u32"
+        },
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "note",
+          "type": "string"
+        },
+        {
+          "name": "starts_at",
+          "type": "i64"
+        },
+        {
+          "name": "ends_at",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "create_poll",
+      "docs": [
+        "A guild's founder asks the guild something: two to four options, open from ten minutes to",
+        "fourteen days. Each wallet with a pet in the guild answers once; no weight, no token."
+      ],
+      "discriminator": [
+        182,
+        171,
+        112,
+        238,
+        6,
+        219,
+        14,
+        110
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "guild"
+        },
+        {
+          "name": "poll",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  108,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guild"
+              },
+              {
+                "kind": "arg",
+                "path": "id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "id",
+          "type": "u32"
+        },
+        {
+          "name": "question",
+          "type": "string"
+        },
+        {
+          "name": "options",
+          "type": {
+            "vec": "string"
+          }
+        },
+        {
+          "name": "closes_at",
+          "type": "i64"
+        }
+      ]
     },
     {
       "name": "deposit",
@@ -385,6 +675,147 @@
         {
           "name": "pet",
           "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "wearing",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "dress_owned",
+      "docs": [
+        "Put on anything the owner may wear: one of the eighteen, or a Market piece their Closet",
+        "holds. 0 takes it off. Looks only, like `dress`."
+      ],
+      "discriminator": [
+        149,
+        84,
+        132,
+        118,
+        14,
+        67,
+        69,
+        195
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "pet",
+          "writable": true
+        },
+        {
+          "name": "closet",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  108,
+                  111,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "wearing",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "dress_owned_by_device",
+      "docs": [
+        "`dress_owned`, signed by the owner's linked device."
+      ],
+      "discriminator": [
+        27,
+        170,
+        211,
+        215,
+        172,
+        224,
+        211,
+        8
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pet",
+          "writable": true
+        },
+        {
+          "name": "closet",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  108,
+                  111,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -907,6 +1338,95 @@
       ]
     },
     {
+      "name": "rsvp",
+      "docs": [
+        "A pet in the guild is going to its event. One RSVP per pet per event, until it ends."
+      ],
+      "discriminator": [
+        134,
+        164,
+        221,
+        33,
+        183,
+        12,
+        73,
+        32
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "member",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event",
+          "writable": true
+        },
+        {
+          "name": "rsvp",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  115,
+                  118,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "event"
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "unlink_device",
       "docs": [
         "The device stops acting for the owner. The owner or the device itself may say so; when the",
@@ -957,6 +1477,164 @@
         {
           "name": "device",
           "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "vote",
+      "docs": [
+        "A wallet with a pet in the guild answers its poll: one ballot per wallet, before it closes."
+      ],
+      "discriminator": [
+        227,
+        110,
+        155,
+        23,
+        136,
+        126,
+        172,
+        25
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "pet"
+          ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "member",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "poll",
+          "writable": true
+        },
+        {
+          "name": "ballot",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  108,
+                  108,
+                  111,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "poll"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "option",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "wave",
+      "docs": [
+        "Anyone but its owner waves at a pet, once a UTC day. Its guestbook counts every wave and",
+        "keeps the last eight visitors. A wave changes nothing about the pet."
+      ],
+      "discriminator": [
+        225,
+        175,
+        48,
+        85,
+        221,
+        5,
+        244,
+        230
+      ],
+      "accounts": [
+        {
+          "name": "visitor",
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "guestbook",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  117,
+                  101,
+                  115,
+                  116,
+                  98,
+                  111,
+                  111,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
         },
         {
           "name": "system_program",
@@ -1024,6 +1702,58 @@
   ],
   "accounts": [
     {
+      "name": "Ballot",
+      "discriminator": [
+        3,
+        232,
+        121,
+        204,
+        232,
+        137,
+        138,
+        164
+      ]
+    },
+    {
+      "name": "Closet",
+      "discriminator": [
+        58,
+        79,
+        142,
+        213,
+        43,
+        92,
+        178,
+        238
+      ]
+    },
+    {
+      "name": "EventRsvp",
+      "discriminator": [
+        16,
+        57,
+        171,
+        182,
+        186,
+        29,
+        16,
+        226
+      ]
+    },
+    {
+      "name": "Guestbook",
+      "discriminator": [
+        24,
+        45,
+        253,
+        91,
+        214,
+        23,
+        198,
+        188
+      ]
+    },
+    {
       "name": "Guild",
       "discriminator": [
         74,
@@ -1037,6 +1767,19 @@
       ]
     },
     {
+      "name": "GuildEvent",
+      "discriminator": [
+        247,
+        127,
+        149,
+        223,
+        57,
+        6,
+        65,
+        113
+      ]
+    },
+    {
       "name": "GuildMember",
       "discriminator": [
         255,
@@ -1047,6 +1790,19 @@
         246,
         114,
         56
+      ]
+    },
+    {
+      "name": "GuildPoll",
+      "discriminator": [
+        26,
+        56,
+        142,
+        38,
+        138,
+        216,
+        3,
+        65
       ]
     },
     {
@@ -1104,6 +1860,19 @@
       ]
     },
     {
+      "name": "CheckedIn",
+      "discriminator": [
+        211,
+        80,
+        198,
+        244,
+        196,
+        84,
+        212,
+        150
+      ]
+    },
+    {
       "name": "DeviceLinked",
       "discriminator": [
         111,
@@ -1127,6 +1896,32 @@
         205,
         134,
         245
+      ]
+    },
+    {
+      "name": "EventCreated",
+      "discriminator": [
+        59,
+        186,
+        199,
+        175,
+        242,
+        25,
+        238,
+        94
+      ]
+    },
+    {
+      "name": "EventRsvped",
+      "discriminator": [
+        59,
+        157,
+        92,
+        203,
+        170,
+        143,
+        50,
+        30
       ]
     },
     {
@@ -1169,6 +1964,19 @@
       ]
     },
     {
+      "name": "ItemBought",
+      "discriminator": [
+        164,
+        239,
+        51,
+        167,
+        116,
+        135,
+        31,
+        189
+      ]
+    },
+    {
       "name": "PetAdopted",
       "discriminator": [
         171,
@@ -1195,6 +2003,19 @@
       ]
     },
     {
+      "name": "PollCreated",
+      "discriminator": [
+        137,
+        85,
+        250,
+        148,
+        2,
+        9,
+        178,
+        39
+      ]
+    },
+    {
       "name": "RoundFinished",
       "discriminator": [
         219,
@@ -1205,6 +2026,19 @@
         115,
         234,
         93
+      ]
+    },
+    {
+      "name": "Voted",
+      "discriminator": [
+        189,
+        74,
+        101,
+        127,
+        109,
+        214,
+        95,
+        130
       ]
     },
     {
@@ -1257,6 +2091,19 @@
         4,
         225,
         254
+      ]
+    },
+    {
+      "name": "Waved",
+      "discriminator": [
+        183,
+        137,
+        155,
+        146,
+        169,
+        51,
+        117,
+        10
       ]
     }
   ],
@@ -1340,9 +2187,118 @@
       "code": 6015,
       "name": "DeviceStillLinked",
       "msg": "Unlink the device before closing the Pawket Wallet."
+    },
+    {
+      "code": 6016,
+      "name": "UnknownItem",
+      "msg": "The Market sells nothing like that."
+    },
+    {
+      "code": 6017,
+      "name": "AlreadyOwned",
+      "msg": "Your closet holds that already."
+    },
+    {
+      "code": 6018,
+      "name": "NotInCloset",
+      "msg": "That piece is not in your closet."
+    },
+    {
+      "code": 6019,
+      "name": "InvalidEvent",
+      "msg": "An event has a 3 to 48 byte title, ends after it starts and after now, runs at most 7 days, and starts within 60."
+    },
+    {
+      "code": 6020,
+      "name": "NotGuildFounder",
+      "msg": "Only the guild's founder can do that."
+    },
+    {
+      "code": 6021,
+      "name": "NotInGuild",
+      "msg": "That pet is not in this guild."
+    },
+    {
+      "code": 6022,
+      "name": "EventOver",
+      "msg": "That event is over."
+    },
+    {
+      "code": 6023,
+      "name": "NotCheckInTime",
+      "msg": "Check-in opens 15 minutes before the event and closes when it ends."
+    },
+    {
+      "code": 6024,
+      "name": "AlreadyCheckedIn",
+      "msg": "That pet has checked in already."
+    },
+    {
+      "code": 6025,
+      "name": "InvalidPoll",
+      "msg": "A poll asks 3 to 80 bytes, offers 2 to 4 options of 1 to 24, and stays open 10 minutes to 14 days."
+    },
+    {
+      "code": 6026,
+      "name": "PollClosed",
+      "msg": "That poll is closed."
+    },
+    {
+      "code": 6027,
+      "name": "UnknownOption",
+      "msg": "That poll has no such option."
+    },
+    {
+      "code": 6028,
+      "name": "CannotWaveAtOwnPet",
+      "msg": "Wave at someone else's pet."
+    },
+    {
+      "code": 6029,
+      "name": "AlreadyWavedToday",
+      "msg": "You waved at this pet today already."
     }
   ],
   "types": [
+    {
+      "name": "Ballot",
+      "docs": [
+        "One wallet's answer to one poll."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "poll",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "payer",
+            "type": "pubkey"
+          },
+          {
+            "name": "option",
+            "type": "u8"
+          },
+          {
+            "name": "at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "CareActionType",
       "type": {
@@ -1420,6 +2376,61 @@
       }
     },
     {
+      "name": "CheckedIn",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "event",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Closet",
+      "docs": [
+        "What an owner has bought in the Market: one bit per item id, for good."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "items",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "count",
+            "type": "u16"
+          },
+          {
+            "name": "spent",
+            "docs": [
+              "Lamports paid into the treasury, in all."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "DeviceLinked",
       "type": {
         "kind": "struct",
@@ -1459,6 +2470,117 @@
           {
             "name": "returned",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EventCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "guild",
+            "type": "pubkey"
+          },
+          {
+            "name": "event",
+            "type": "pubkey"
+          },
+          {
+            "name": "starts_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EventRsvp",
+      "docs": [
+        "One pet going to one event, and whether it came."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "event",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "payer",
+            "type": "pubkey"
+          },
+          {
+            "name": "at",
+            "type": "i64"
+          },
+          {
+            "name": "came",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EventRsvped",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "event",
+            "type": "pubkey"
+          },
+          {
+            "name": "pet",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Guestbook",
+      "docs": [
+        "Who waved at a pet: every wave counted, the last eight kept."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "waves",
+            "type": "u32"
+          },
+          {
+            "name": "recent",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "WaveMark"
+                  }
+                },
+                8
+              ]
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }
@@ -1515,6 +2637,61 @@
           },
           {
             "name": "motto",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GuildEvent",
+      "docs": [
+        "A guild's event. The guild first, so a guild's events are one cheap filter; strings last."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "guild",
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "u32"
+          },
+          {
+            "name": "starts_at",
+            "type": "i64"
+          },
+          {
+            "name": "ends_at",
+            "type": "i64"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "going",
+            "type": "u32"
+          },
+          {
+            "name": "came",
+            "type": "u32"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "note",
             "type": "string"
           }
         ]
@@ -1610,6 +2787,80 @@
           {
             "name": "bump",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GuildPoll",
+      "docs": [
+        "A guild's poll: up to four options, a count each. The guild first; strings last."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "guild",
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "u32"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "closes_at",
+            "type": "i64"
+          },
+          {
+            "name": "votes",
+            "type": {
+              "array": [
+                "u32",
+                4
+              ]
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "question",
+            "type": "string"
+          },
+          {
+            "name": "options",
+            "type": {
+              "vec": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ItemBought",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "item",
+            "type": "u8"
+          },
+          {
+            "name": "price",
+            "type": "u64"
           }
         ]
       }
@@ -1949,6 +3200,26 @@
       }
     },
     {
+      "name": "PollCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "guild",
+            "type": "pubkey"
+          },
+          {
+            "name": "poll",
+            "type": "pubkey"
+          },
+          {
+            "name": "closes_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "RoundFinished",
       "type": {
         "kind": "struct",
@@ -1964,6 +3235,26 @@
           {
             "name": "plays",
             "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Voted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "poll",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "option",
+            "type": "u8"
           }
         ]
       }
@@ -2028,6 +3319,42 @@
           {
             "name": "amount",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WaveMark",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "visitor",
+            "type": "pubkey"
+          },
+          {
+            "name": "at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Waved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pet",
+            "type": "pubkey"
+          },
+          {
+            "name": "visitor",
+            "type": "pubkey"
+          },
+          {
+            "name": "waves",
+            "type": "u32"
           }
         ]
       }

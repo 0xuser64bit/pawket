@@ -11,9 +11,31 @@ import {
 import { beforeAll, describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { getTransferSolInstruction } from "@solana-program/system";
-import { fetchGuild, fetchGuildPets, fetchPetOnChain, fetchPetsOnChain, fetchWallet, toCompanionRecord, wearableSlot } from "./accounts";
+import {
+  fetchBallot,
+  fetchCloset,
+  fetchGuestbook,
+  fetchGuild,
+  fetchGuildEvents,
+  fetchGuildPets,
+  fetchGuildPolls,
+  fetchPetOnChain,
+  fetchPetRsvps,
+  fetchPetsOnChain,
+  fetchWallet,
+  toCompanionRecord,
+  wearableSlot,
+} from "./accounts";
 import {
   getAdoptPetInstruction,
+  getBuyInstruction,
+  getCheckInInstruction,
+  getCreateEventInstruction,
+  getCreatePollInstruction,
+  getDressOwnedInstruction,
+  getRsvpInstruction,
+  getVoteInstruction,
+  getWaveInstruction,
   getCareByDeviceInstruction,
   getCareInstruction,
   getCloseWalletInstruction,
@@ -28,8 +50,20 @@ import {
   getUnlinkDeviceInstruction,
   getWithdrawInstruction,
 } from "./instructions";
-import { deriveGuildPda, deriveMemberPda, derivePassportPda, derivePetPda, deriveWalletPda } from "./pda";
-import { WALLET_LIMITS } from "./program";
+import {
+  deriveBallotPda,
+  deriveClosetPda,
+  deriveEventPda,
+  deriveGuestbookPda,
+  deriveGuildPda,
+  deriveMemberPda,
+  derivePassportPda,
+  derivePetPda,
+  derivePollPda,
+  deriveRsvpPda,
+  deriveWalletPda,
+} from "./pda";
+import { MARKET, WALLET_LIMITS } from "./program";
 import { fetchWalletHistory } from "@/lib/wallet/history";
 import { keepsakeTransaction, readKeepsake } from "@/server/keepsake";
 import { MPL_CORE_PROGRAM_ID } from "./core";
@@ -55,6 +89,8 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
   let owner: KeyPairSigner;
   let pet: Awaited<ReturnType<typeof derivePetPda>>["address"];
   let passport: typeof pet;
+  /** The guild the test founds, for its events and polls further on. */
+  let testGuild: typeof pet;
   // A pet adopted here is a real pet on devnet, so it gets a pet's name.
   const NAMES = ["Biscuit", "Mochi", "Clover", "Juniper", "Waffles", "Pickle", "Noodle", "Sprout"];
   const name = NAMES[Math.floor(Math.random() * NAMES.length)];
@@ -141,6 +177,7 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     // A guild is one name for good, so the test's is unique and says what it is.
     const slug = `devnet-check-${Date.now().toString(36)}`;
     const guild = (await deriveGuildPda(slug)).address;
+    testGuild = guild;
     const founderPlace = (await deriveMemberPda(pet)).address;
     const founded = await send(({ payer }) => [
       getFoundGuildInstruction({ owner, payer, pet, guild, member: founderPlace, slug, name: TEST_GUILD_NAME, motto: "Made by the devnet test.", crest: 1, colour: 1 }),
@@ -261,4 +298,65 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     expect(history.entries[2]).toMatchObject({ amount: 3_000_000n, change: -3_000_000n });
   });
 
+
+  it("buys a Market piece into the treasury, wears it, and a visitor with no SOL waves", async () => {
+    // A purchase is the player's own SOL: the sponsor hands the owner some, as a faucet would.
+    await sendPawket({
+      rpc,
+      owner: sponsor,
+      sponsor: null,
+      instructions: () => [getTransferSolInstruction({ source: sponsor, destination: owner.address, amount: 60_000_000n })],
+    });
+    const closet = (await deriveClosetPda(owner.address)).address;
+    const treasuryBefore = (await rpc.getBalance(MARKET.treasury as typeof pet).send()).value;
+    const bought = await send(({ payer }) => [getBuyInstruction({ owner, payer, closet, item: 19 })]);
+    expect(bought).toMatchObject({ outcome: "confirmed", sponsored: true });
+    expect((await rpc.getBalance(MARKET.treasury as typeof pet).send()).value - treasuryBefore).toBe(MARKET.wearablePrice);
+    expect((await fetchCloset(rpc, owner.address))?.items).toEqual([19]);
+
+    await send(() => [getDressOwnedInstruction({ owner, pet, closet, wearing: 19 })]);
+    expect(toCompanionRecord((await fetchPetOnChain(rpc, pet))!).wearing).toBe("halo");
+
+    const visitor = await generateKeyPairSigner();
+    const guestbook = (await deriveGuestbookPda(pet)).address;
+    const waved = await sendPawket({
+      rpc,
+      owner: visitor,
+      sponsor: sponsor.address,
+      instructions: ({ owner: signer, payer }) => [getWaveInstruction({ visitor: signer, payer, pet, guestbook })],
+      cosign: async (wire: string) => (await cosign(sponsor, wire)).transaction,
+    });
+    expect(waved).toMatchObject({ outcome: "confirmed", sponsored: true });
+    const book = await fetchGuestbook(rpc, pet);
+    expect(book).toMatchObject({ pet, waves: 1 });
+    expect(book?.recent[0].visitor).toBe(visitor.address);
+    expect((await rpc.getBalance(visitor.address).send()).value).toBe(0n);
+  });
+
+  it("plans an event its pet checks in at, and asks a poll each wallet answers once", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const startsAt = now + 60;
+    const event = (await deriveEventPda(testGuild, startsAt)).address;
+    const member = (await deriveMemberPda(pet)).address;
+    const rsvp = (await deriveRsvpPda(event, pet)).address;
+    await send(({ payer }) => [
+      getCreateEventInstruction({ owner, payer, guild: testGuild, event, id: startsAt, title: "Devnet nap", note: "Made by the devnet test.", startsAt, endsAt: now + 3_600 }),
+      getRsvpInstruction({ owner, payer, pet, member, event, rsvp }),
+    ]);
+    // Check-in opens fifteen minutes before the start, so it is open already.
+    await send(() => [getCheckInInstruction({ owner, pet, event, rsvp })]);
+    const [planned] = await fetchGuildEvents(rpc, testGuild);
+    expect(planned).toMatchObject({ title: "Devnet nap", going: 1, came: 1 });
+    expect((await fetchPetRsvps(rpc, pet)).map((entry) => entry.came)).toEqual([true]);
+
+    const poll = (await derivePollPda(testGuild, now)).address;
+    const ballot = (await deriveBallotPda(poll, owner.address)).address;
+    await send(({ payer }) => [
+      getCreatePollInstruction({ owner, payer, guild: testGuild, poll, id: now, question: "Where next?", options: ["Window", "Rug"], closesAt: now + 3_600 }),
+      getVoteInstruction({ owner, payer, pet, member, poll, ballot, option: 1 }),
+    ]);
+    const [asked] = await fetchGuildPolls(rpc, testGuild);
+    expect(asked).toMatchObject({ question: "Where next?", options: ["Window", "Rug"], votes: [0, 1] });
+    expect((await fetchBallot(rpc, poll, owner.address))?.option).toBe(1);
+  });
 });

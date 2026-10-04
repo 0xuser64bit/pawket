@@ -1,94 +1,119 @@
 # Pawket — Meteora Integration (DBC → DAMM v2)
 
-**Status:** SPEC (M6). No Meteora code exists today. This is the highest-risk surface (real money, third-party protocol, irreversible txs) — agents implement exactly this shape, no improvisation. DLMM is **deferred** (see §6).
-
-Recommended lifecycle (product truth):
+**Status:** BUILT on devnet (2026-10). A guild with three pets may launch one
+optional coin on a Pawket preset; it trades on Meteora's Dynamic Bonding
+Curve, graduates into a DAMM v2 pool with its liquidity locked for good, and
+trades there. The mechanics — accounts, routes, stages — are in
+`docs/SOLANA.md` ("Guild coins"); the decision is in `docs/DECISIONS.md`.
+This file is the contract every coin surface holds to, and what remains
+before mainnet. DLMM is **deferred** (§6).
 
 ```text
-Approved guild → DBC launch → participation → graduation threshold → DAMM v2 liquidity → ongoing utility
+A guild of three pets → founder launches on a preset → DBC curve → threshold raised
+  → graduation (keepers on mainnet; a button on devnet) → DAMM v2 pool, liquidity locked → trades there
 ```
 
-Players never need to understand the pool transition; the app presents one continuous guild experience with three explicit routing states.
+Players never need to understand the pool transition: the coin's page shows
+one stage at a time (`LaunchStage`) and offers only what that stage allows.
 
-## 1. Design constraints (normative)
+## 1. Constraints (normative — all hold today)
 
-1. **Constrained presets only.** Creators pick 1 of 2–3 reviewed DBC presets (`lib/meteora/presets.ts`); raw curve/fee/threshold editing is banned in v1.
-2. **Quote asset SOL or USDC only** v1. No custom quotes.
-3. **Server-assisted quotes** (`GET /api/guilds/:slug/quotes`) via DBC/DAMM SDKs; client never computes curves. Quotes expire ≤15s; tx freezes the quote at sign.
-4. **Simulate first, preflight on.** Failing simulation blocks send; surface program logs plainly.
-5. **Explicit sign per swap.** No auto-trading, no recurring buys, no "approve all".
-6. **Verified routing only.** DAMM v2 route activates after the indexer verifies mint + pool + migration tx (see `INDEXER.md`). Unverified pools are never quoted or sent to.
-7. **Full disclosure pre-sign.** Supply, allocation, vesting, fees, curve, threshold, pool destination, risk acknowledgment — all visible before the wallet opens.
+1. **Presets only.** A founder picks `gentle` or `lively`
+   (`src/lib/coins/presets.ts`); raw curve, fee or threshold parameters are
+   never taken from a request. Each preset is one config account on chain,
+   made by `scripts/coin-presets.mts`, and `curve.test.ts` holds it to
+   Meteora's own validation and to the terms the page publishes.
+2. **SOL is the only quote asset.**
+3. **Server-assisted quotes.** `GET /api/coins/<slug>/quote` quotes with
+   Meteora's math (`swapQuote2` partial fill on the curve, `CpAmm.getQuote`
+   in the pool); the client never computes a curve. A quote is shown with
+   its age and must be taken again after 20 seconds.
+4. **Preflight on.** Every coin transaction is sent with preflight; one that
+   would fail lands nothing.
+5. **Explicit sign per trade.** No auto-trading, no "approve all", no linked
+   device: a Pawket Wallet's device can never sign a coin transaction.
+6. **Verified routing only.** The DAMM v2 route is used only when the pool
+   exists at `deriveDammV2PoolAddress(config for the preset's fee option,
+   mint, wSOL)` and holds those mints. Anything else is `pending`.
+7. **Disclosure before signing.** The terms (supply, fee split, threshold,
+   locked liquidity, launch fee) are on the page before anyone signs, and
+   what can go wrong (`COIN_RISKS`) must be read once per coin, per device,
+   before the first trade or launch.
+8. **The player pays.** Pawket's sponsor pays for pets, never for coins:
+   `checkSponsorable` refuses any instruction that is not Pawket's.
+9. **No promise of value.** `copy.test.ts` holds every coin surface to the
+   banned-phrase list; a meter toward graduation is "community
+   participation", never a price path.
 
-## 2. Preset registry (spec)
+## 2. The presets
 
-```ts
-// src/lib/meteora/presets.ts [FUTURE] — values illustrative, finalized at legal/ops review
-interface DbcPreset {
-  presetId: "pawket-standard-sol" | "pawket-standard-usdc" | "pawket-small-creator";
-  quoteMint: "SOL" | "USDC";
-  curve: { segments: Array<{ supplyThreshold: string; priceNote: string }>; graduationThreshold: string };
-  fees: { launchBps: number; tradingBps: number; creatorShareBps: number; treasuryShareBps: number };
-  graduation: { threshold: string; migrationDest: "dammv2-fullrange-compounding" };
-  limits?: { maxBuyLamports?: string; maxTxPerWallet?: number }; // where DBC supports it
-  dammv2: { strategy: "fullrange-compounding"; lockTerms: string; feeRecipientPolicy: string };
-}
-```
+| | Gentle | Lively |
+| --- | --- | --- |
+| Price along the curve | rises 3× | rises 10× |
+| Market cap start → graduation (devnet) | 2 → 6 SOL | 1 → 10 SOL |
+| Market cap start → graduation (mainnet) | 10 → 30 SOL | 5 → 50 SOL |
+| Supply | 1,000,000,000, immutable | same |
+| Allocations / vesting | none | none |
+| Trading fee | 1% (0.2% Meteora, 0.4% founder, 0.4% Pawket) | same |
+| Launch fee | 0.01 SOL to Pawket (a tenth to Meteora) | same |
+| Graduated pool | DAMM v2, 1% fee, 100% of liquidity permanently locked (half founder, half Pawket) | same |
 
-- Each preset has a human-readable card (who it's for, example price path in plain language, fee example on 1 SOL) + machine config hash. Launch pages pin the hash; any config change = new hash + republication.
-- `LaunchConfig` row (see `DOMAIN-MODEL.md`) stores `presetId + mint + dbcPool + dammv2Pool + lifecycleStatus + publishedAt`. Unpublished = `noindex`, unquotable.
+Mainnet thresholds are above the 10 SOL Meteora's keepers migrate at.
+Devnet's are a fifth, so a rehearsal graduates on faucet SOL.
 
-## 3. DBC launch phase (client + server)
+## 3. Stages (`src/lib/coins/stage.ts`)
 
-**Server:** quote via DBC SDK (`amountIn → estimatedOut, priceImpactBps, feeLamports, minOut(slippage)`); validate preset match + wallet limits + route liveness; return expiring quote.
-**Client (`quote-ticket.tsx`):** side toggle (buy/sell where supported) → amount input → quote display (estimated out, impact, fees, min-received, expiry countdown) → risk checkbox (first buy per guild, persisted) → Sign CTA (disabled while quoting/sending/stale) → `sendTransaction` → `TransactionStatus` + Explorer link.
-**Progress display:** raised vs threshold as **community info** ("412 / 800 SOL to graduation"), never value language ("going to the moon" banned; see copy list in `SAFETY-ECONOMY.md`).
-
-## 4. Migration & DAMM v2 phase (three-state router)
-
-```ts
-type LaunchStage = "dbc-active" | "migration-pending" | "dammv2-active" | "ended" | "suspended";
-```
-
-| Stage | Quotes | Sends | UI |
+| Stage | Quotes | Trades | Page |
 | --- | --- | --- | --- |
-| `dbc-active` | DBC SDK | DBC route | progress + buy/sell ticket |
-| `migration-pending` | **409 ROUTE_PAUSED** | **blocked** | banner "Migration in progress — trading paused. Your tokens are unaffected." + auto-refresh on verification |
-| `dammv2-active` | DAMM v2 SDK (verified pool only) | DAMM v2 route | "Active liquidity" badge + same ticket, route label shown |
-| `ended` | none | blocked | per-config outcome (no implied refund) |
-| `suspended` | none | blocked | policy banner, factual record kept |
+| `none` | — | — | the founder's launch panel, or "no coin" |
+| `dbc` | curve | curve | progress toward graduation (bloom segments), the ticket |
+| `pending` | refused: "paused" | refused | "Graduating"; on devnet a button anyone may press |
+| `damm` | verified pool | verified pool | "Active liquidity · DAMM v2", the ticket |
+| `suspended` | refused | refused | Pawket stopped offering trades; nothing changed on chain |
 
-- Prefer **full-range compounding** DAMM v2 config v1 (minimizes active management vs concentrated bins).
-- Pre-launch publication must name: position owner, lock/vest terms, fee recipients, withdrawal conditions. Post-migration, position + first fee accruals are indexed before "active" shows.
+## 4. Failure handling
 
-## 5. Failure handling (extends SAFETY-ECONOMY.md table)
+- **Index lag after graduation.** A migrated curve whose pool is not yet
+  readable at the derived address is `pending`: trading pauses rather than
+  routing anywhere unverified.
+- **Price moved since the quote.** The trade carries the quote's
+  `minimumOut`; Solana refuses a worse fill and only the network fee is
+  spent. The receipt names what did not change.
+- **Client timeout after sending.** "Still waiting", never "failed", with
+  the signature to look up (`TxReceipt`).
+- **A buy larger than the curve has left.** Partial fill: it takes what
+  graduation needs and returns the rest in the same transaction.
+- **Guild delisted.** `suspended`: trades stop here; holdings are untouched.
 
-- **Indexing lags graduation:** force `migration-pending`, pause route UI, reconcile on verified slot, then activate. Never send to the stale DBC route "because the button was already open" — quotes expire and the router re-checks stage at sign time.
-- **Client timeout after confirm:** `unknown` + signature lookup + poll `GET /api/tx/:signature`; never "failed".
-- **Pool init fails:** incident state, no route attempts, audit trail, prepublished recovery.
-- **Bot/concentration spike:** review + configured limits; no improvised price intervention.
+## 5. Before mainnet
+
+- Legal review of the coin copy, the disclosure and the asset-model row
+  (Q6). Until it is signed, `COIN_CONFIGS` has no mainnet entry and the
+  coin page says coins are off there.
+- `pnpm dlx tsx scripts/coin-presets.mts mainnet-beta` with a multisig as
+  the treasury (`docs/MAINNET.md`), and the treasury's partner-fee claims
+  run from a script, never from the server.
+- A paid RPC: the holder count is a token-program scan.
 
 ## 6. DLMM: later, not launch scope
 
-DLMM (concentrated bins, dynamic fees) fits future treasury-managed liquidity **only** with a named operator + rebalancing runbook + monitoring. Gating criteria: DBC→DAMM v2 stable across ≥2 launches, operator assigned, treasury policy amended, human approval. Agents: do not add DLMM SDKs, routes, or UI in M6.
+DLMM (concentrated bins, dynamic fees) fits treasury-managed liquidity
+**only** with a named operator, a rebalancing runbook and monitoring. Gating
+criteria: DBC → DAMM v2 stable across launches, an operator assigned, the
+treasury policy amended, human approval.
 
-## 7. Files agents create (E08–E10)
+## 7. Files
 
 ```text
-src/lib/meteora/presets.ts + presets.test.ts      // preset registry, fee math exact, unknown preset rejected
-src/lib/meteora/launch-state.ts + .test.ts        // stage machine (5 states + lag case)
-src/components/guilds/quote-ticket.tsx            // quote → disclose → sign → status (uses TransactionStatus)
-src/components/guilds/launch-progress.tsx         // community-info progress, no value language
-src/components/guilds/risk-disclosure.tsx         // first-buy gate, accessible afterward
-src/server/meteora/quotes.ts                      // SDK-backed quoting (no secrets to client)
-src/server/indexer/migration.ts                   // verification job (see INDEXER.md)
+src/lib/coins/presets.ts       presets, terms, config addresses, the fee split (pure)
+src/lib/coins/stage.ts         the stage machine (pure)
+src/lib/coins/copy.ts          what can go wrong, what a coin does and never does, banned phrases
+src/server/coins/curve.ts      a preset as DBC config parameters (shared with the script)
+src/server/coins/meteora.ts    reads, quotes and transactions — the one module on Meteora's SDKs
+src/server/coins/routes.ts     what the coin routes share
+app/api/coins/[slug]/*         quote, launch, trade, graduate, claim, metadata
+app/(game)/guilds/[slug]/coin  the coin's page; src/components/coins/coin-desk.tsx its controls
+scripts/coin-presets.mts       makes the preset configs on a cluster
+scripts/seed-coins.mts         the starter guilds' coins, through the routes
+src/server/coins/devnet.test.ts  a coin's whole life on devnet (pnpm e2e:coins)
 ```
-
-SDK/API choices + RPC/indexer provider finalize in Q3/Q4 before code (see `OPEN-QUESTIONS.md`).
-
-## 8. Agent DoD (E08/E09)
-
-- Devnet pilot: buy → Explorer link; migration drill (simulated lag) shows pending, blocks sends, activates on verification.
-- Unit tests mock SDKs (no network in Vitest); quote-render + stage-machine + preset-validation tests green.
-- Copy audit passes banned-phrase grep (see `AGENT-GUIDE.md`).
-- No raw curve math in components (review grep: `curve|bonding|slope` outside `lib/meteora/` fails).

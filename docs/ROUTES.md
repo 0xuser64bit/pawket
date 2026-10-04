@@ -18,7 +18,8 @@ Built today:
                            otherwise the record of a pet in this browser
 (game)/guilds              every guild on Solana, read live (test and delisted ones left out), and the rule
 (game)/guilds/new          founding a guild: name, motto, crest, the founding pet
-(game)/guilds/[slug]       a guild: its pets read from their accounts, together counts, join or leave
+(game)/guilds/[slug]       a guild: its pets read from their accounts, together counts, join or leave, its coin
+(game)/guilds/[slug]/coin  a guild's coin: its terms and stage from chain, launch, quote, trade, graduate, claim
 /api/health
 /api/sponsor               GET: is it up. POST { transaction }: signed first, as fee payer
 /api/actions/adopt         Solana Action: adopt straight onto Solana
@@ -26,6 +27,9 @@ Built today:
 /api/actions/icon          a square card for an Action (?pet=)
 /api/keepsake/[pet]        GET: the card's metadata, live. POST { account }: its creation, owner only
 /api/keepsake/collection   the collection's metadata
+/api/coins/[slug]/quote    GET: a quote on the curve or in the verified DAMM v2 pool
+/api/coins/[slug]/{launch,trade,graduate,claim}   POST { account, ... }: a transaction for the player to sign
+/api/coins/[slug]/metadata the coin's token metadata
 /actions.json              /adopt and /pet/* unfurl as those Actions
 (game)/pet/[id]/opengraph-image, /opengraph-image   share cards
 ```

@@ -12,6 +12,8 @@
 | Account decoding (hand-laid bytes) | `src/lib/solana/accounts.test.ts`   | Vitest   |
 | What the sponsor signs         | `src/lib/solana/sponsor.test.ts`        | Vitest (node) |
 | The whole path on devnet       | `src/lib/solana/devnet.test.ts`         | `pnpm e2e:devnet` (skipped otherwise) |
+| A guild coin's life on devnet  | `src/server/coins/devnet.test.ts`       | `pnpm e2e:coins` (skipped otherwise) |
+| Coin presets ↔ Meteora's validation, stages, copy | `src/server/coins/curve.test.ts`, `src/lib/coins/*.test.ts` | Vitest |
 | The path through the screens   | `e2e/chain.spec.ts` + `e2e/test-wallet.ts` | `PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts` |
 | Env / cluster / format / errors| colocated `*.test.ts`                   | Vitest   |
 | Presentational components      | `src/components/*.test.tsx`             | Vitest + Testing Library |

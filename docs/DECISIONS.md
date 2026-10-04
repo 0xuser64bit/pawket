@@ -3,6 +3,39 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: A guild may launch a coin, on Meteora, from Pawket's presets
+
+**Context:** The vision always had guild coins (`VISION.md`, M6), and the
+Colosseum Crypto World's Fair runs a Meteora DBC track. Guilds already live
+on Solana; what a coin needed was a launch path that cannot be bent into a
+pump: no free-form curves, no allocations, no liquidity anyone can pull,
+and nothing a coin can do to a pet.
+**Decision:** A guild with at least three pets may launch one coin, by its
+founder, on one of two presets — gentle (the price rises 3× along the
+curve) or lively (10×) — each a Meteora Dynamic Bonding Curve config
+account Pawket made once (`scripts/coin-presets.mts`): one billion coins,
+fixed, immutable authority, no vesting, 1% fee (a fifth to Meteora, the
+rest halved between the founder and Pawket's treasury), and graduation
+into a DAMM v2 pool with all of its liquidity permanently locked, half in
+the founder's position and half in Pawket's. A coin's mint key derives
+from the sponsor's secret and the guild's slug, as a keepsake's does, so a
+guild has one coin at one address and nobody else can make one there.
+Quotes, launches, trades, graduation and the founder's fee claim are built
+on the server with Meteora's SDKs and signed only in the player's wallet;
+the player pays every fee — the sponsor pays for pets, never for coins.
+Stages (none, curve, graduating, graduated, suspended) are read from chain
+on each request; the graduated pool is trusted only at the address the
+preset derives. Holders' pets wear the guild's crest pin on its page, and
+nothing else. Meteora's SDKs (web3.js v1, Anchor) are confined to
+`src/server/coins/` and `scripts/` by a lint rule.
+**Consequence:** M6 ships on devnet without a database or an indexer, and
+the order changed for the hackathon: coins before guild events and votes.
+Mainnet waits on a legal review of the coin copy (Q6) and on presets made
+there (`docs/MAINNET.md`). On devnet, graduation is a button anyone may
+press (Meteora's keepers do it on mainnet). Rotating the sponsor key moves
+where new coins are looked for, as it does keepsakes. The starter guilds
+show a coin at every stage (`scripts/seed-coins.mts`).
+
 ## 2026-10: With 3D chosen, the room waits with the paw, not the flat room
 
 **Context:** The flat room held the frame while the 3D one built, so every

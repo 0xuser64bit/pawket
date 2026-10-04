@@ -2,7 +2,10 @@
 
 Stack: `@solana/kit` v8 + `@solana/kit-plugin-wallet` + `@solana/react` +
 `@solana-program/system`, and an Anchor 1.2 program. `@solana/web3.js` v1 and
-`@solana/wallet-adapter-*` are legacy — do not introduce them.
+`@solana/wallet-adapter-*` are legacy — do not introduce them. The one
+exception is Meteora's SDKs, which are built on web3.js v1 and Anchor: they
+run on the server only, in `src/server/coins/` (and the scripts that set
+Pawket's presets up), and a lint rule refuses them anywhere else.
 
 ## The program
 
@@ -235,6 +238,59 @@ collection's authority would have to move with it.
 The collection was made once with
 `pnpm dlx tsx scripts/keepsake-collection.mts https://pawket-pets.vercel.app`;
 its own key signs only its creation and is not kept.
+
+## Guild coins (Meteora DBC → DAMM v2)
+
+A guild may launch one optional coin. Pawket is Meteora's *partner*: it made
+one Dynamic Bonding Curve config account per preset (`COIN_CONFIGS` in
+`src/lib/coins/presets.ts`, made by `scripts/coin-presets.mts` with the
+deploy wallet paying), and every coin on a preset is a pool on that config.
+
+| Preset | Price along the curve | Graduates (devnet / mainnet) |
+| --- | --- | --- |
+| `gentle` | rises 3× | about 2.2 SOL / 11 SOL raised |
+| `lively` | rises 10× | about 2.4 SOL / 12 SOL raised |
+
+Both: 1,000,000,000 coins, 6 decimals, SPL token, immutable authority, no
+locked vesting, a flat 1% fee (`creatorTradingFeePercentage` 50, so after
+Meteora's 20% the founder and Pawket's treasury halve it), a 0.01 SOL
+launch fee to the partner, migration to DAMM v2 (`FixedBps100`) with 100% of
+the liquidity permanently locked — 50% in the creator's position, 50% in
+the partner's. The treasury (`PAWKET_TREASURY`, `.keys/treasury.json`) is
+the fee claimer and leftover receiver; its key is never on the server.
+
+**One coin per guild.** The mint's key is
+`HMAC-SHA256(sponsor secret, "pawket guild coin <slug>")`, so the coin is
+found with one read (the pool is `deriveDbcPoolAddress(wSOL, mint, config)`
+for each preset), only Pawket's server can make it, and a second launch
+fails at preflight. Coins are off where the sponsor's key is not set.
+
+**The server builds, the player signs** (`src/server/coins/meteora.ts`,
+the one module that imports Meteora's SDKs — a lint rule keeps them and
+web3.js v1 in `src/server/coins/` and `scripts/`):
+
+| Route | What it builds |
+| --- | --- |
+| `GET /api/coins/<slug>/quote?side&amount&slippage` | a quote: on the curve (`swapQuote2`, partial fill) or in the verified pool (`CpAmm.getQuote`) |
+| `POST /api/coins/<slug>/launch` | `createPoolWithFirstBuy`, founder only, three pets in the guild; the mint signs here |
+| `POST /api/coins/<slug>/trade` | `swap2` on the curve (partial fill: a buy that fills it takes only what graduation needs) or `swap` in the DAMM v2 pool, at no worse than the quote's `minimumOut` |
+| `POST /api/coins/<slug>/graduate` | `migrateToDammV2` once the curve is full; the two position NFT keys sign here. Devnet only needs it — Meteora's keepers migrate on mainnet |
+| `POST /api/coins/<slug>/claim` | `claimCreatorTradingFee` for the wallet that launched it |
+| `GET /api/coins/<slug>/metadata` | the token's metadata JSON (the URI the mint carries), with the crest card as its image |
+
+Every transaction comes back as base64 for `sendPrepared` with
+`sponsored: false`: the player is the fee payer and signs in their wallet,
+with preflight on. **Stages** are decided on the server from chain
+(`coinStage` in `src/lib/coins/stage.ts`): a curve below its threshold is
+`dbc`; full, or migrated but its pool not found where the preset derives
+(`deriveDammV2PoolAddress(DAMM_V2_MIGRATION_FEE_ADDRESS[option], mint,
+wSOL)`), is `pending`, and trading pauses; migrated with that pool present
+and holding the right mints is `damm`; a delisted guild's coin is
+`suspended` — Pawket stops offering trades and changes nothing on chain.
+Holders are read from the coin's token accounts (less the pools' vaults) for
+the page's counts and the crest pins. `pnpm e2e:coins` walks a coin's whole
+life on devnet: launch with a first buy, buys to the threshold, graduation,
+a sale in the DAMM v2 pool, the founder's claim.
 
 ## Devnet workflow
 

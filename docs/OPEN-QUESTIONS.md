@@ -61,3 +61,5 @@
 | 2026-10 | Q7 | Browser pet first; a Wallet Standard wallet is the identity on Solana; a server sponsor pays devnet fees. No embedded wallet, no session. | program v2 — see DECISIONS |
 | 2026-10 | Q2 (guilds only) | Social guilds need no database: membership is a program account per pet. Q2 stays open for anything else (listings, votes, events). | guilds on chain — see DECISIONS |
 | 2026-10 | Q8 | Four solo games; each game's daily round is one seed per UTC day, shared by everyone. Still no netcode. | playground — see DECISIONS |
+| 2026-10 | Q3 (devnet) | DBC SDK 1.5.13 + DAMM v2 SDK 1.5.1, server-side only; two presets (gentle 3×, lively 10×), SOL quote, 1% fee split Meteora/founder/Pawket, 100% liquidity locked. Mainnet presets wait on Q6. | guild coins — see DECISIONS |
+| 2026-10 | Q4 (coins) | No indexer: stages, holders and the graduated pool are read from chain on each request, and the pool is trusted only at its derived address. | guild coins — see DECISIONS |

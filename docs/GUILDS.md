@@ -1,6 +1,6 @@
 # Pawket — Guilds (optional community layer)
 
-**Status:** Social guilds SHIP, on Solana, with **zero token mechanics** (2026-10, `DECISIONS.md`). Everything below §4's membership — events, votes, badges as their own items, moderation queues, and all of M6 — is still SPEC. Building token UI before M5 exits violates the product hierarchy (pets > guilds, play > protocol).
+**Status:** Social guilds SHIP on Solana (2026-10). A guild of three pets may launch one optional coin on Meteora from Pawket's presets (devnet; `METEORA-INTEGRATION.md`). Events, votes, badges as their own items and moderation queues are still SPEC. The product hierarchy holds: pets > guilds > coins, and a coin is traded only on its own page.
 
 ## 0. What ships
 
@@ -8,7 +8,8 @@
 - A pet joins one guild at a time (`join_guild`) and leaves when its owner likes (`leave_guild`; the rent goes back to whoever paid it). Pawket's sponsor pays the fee and the rent.
 - `/guilds` lists every guild read live (most members first), `/guilds/[slug]` shows its pets read from their own accounts and what they have done together counted from their Passports, `/guilds/new` founds one, and a pet's Passport names its guild. The sticker book has *In a guild*.
 - `src/lib/guilds/boundary.ts` is what a guild can and can never do; `src/lib/guilds/delisted.ts` stops Pawket promoting a guild without pretending to remove it. There is no review before founding.
-- Starter guilds on devnet: Sunbeam Club, Muddy Paws, Cloud Nine (`scripts/seed-guilds.mts`).
+- Starter guilds on devnet: Sunbeam Club, Muddy Paws, Cloud Nine (`scripts/seed-guilds.mts`), each with a coin at a different stage (`scripts/seed-coins.mts`).
+- A guild's coin (`/guilds/[slug]/coin`): launched by the founder once three pets are in the guild, on the gentle or lively preset; holders' pets wear the crest pin on the guild's page, and nothing else. See `METEORA-INTEGRATION.md`.
 
 ## 1. What a guild is
 

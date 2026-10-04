@@ -45,7 +45,13 @@ is every pet the program keeps, read live. Guilds are on chain: a pet founds
 or joins one (`found_guild`, `join_guild`, `leave_guild`; one guild per pet,
 rent paid by the sponsor and returned on leave), discovery and each guild's
 page are read live, and `src/lib/guilds/boundary.ts` is the rule every guild
-lives inside: no token, nothing to buy or swap, nothing that touches a pet.
+lives inside: nothing in it touches a pet. A guild of three pets may launch one
+optional coin on Meteora (`src/lib/coins/`, `src/server/coins/`): a Dynamic
+Bonding Curve on one of Pawket's presets that graduates into a DAMM v2 pool
+with its liquidity locked for good. The server builds every coin transaction
+with Meteora's SDKs, the player signs and pays (the sponsor never does), a
+coin is traded only on its own page, and holding one only pins the guild's
+crest on its pets there.
 A player can keep a Pawket Wallet (`/wallet`): a `PawketWallet` PDA whose
 balance only its owner fills or empties (withdrawals go only back to the
 owner), and one linked device — a non-extractable WebCrypto key made and kept
@@ -112,6 +118,10 @@ One home per fact. If two files disagree, the left column wins.
 | Wearables (expression only)       | `src/lib/closet/catalog.ts`         |
 | Playground games (pure, seeded)   | `src/lib/play/`                     |
 | Guild boundary copy               | `src/lib/guilds/boundary.ts`        |
+| Guild coin presets, terms, configs| `src/lib/coins/presets.ts` (held to Meteora's validation by `src/server/coins/curve.test.ts`) |
+| A coin's stage                    | `src/lib/coins/stage.ts` (decided on the server, never in a client) |
+| What Pawket says about a coin     | `src/lib/coins/copy.ts` (banned phrases tested) |
+| Meteora reads, quotes, transactions | `src/server/coins/meteora.ts` (the only module on Meteora's SDKs) |
 | Guild rules (slug, crest, limits) | `src/lib/guilds/guild.ts` (held to `GUILD_LIMITS` in `program.ts`) |
 | Delisted guilds (product surface) | `src/lib/guilds/delisted.ts`        |
 | Stickers (read from a record)     | `src/lib/game/badges.ts`            |
@@ -191,6 +201,11 @@ PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts   # the same path through the real sc
   "card", shown only once it is read from chain. "Pawket pays the fee" only
   while `sponsorState()` says it does.
 - **Devnet default.** Never target mainnet in code; cluster comes from env.
+- **Meteora stays behind one door.** Meteora's SDKs, web3.js v1 and Anchor's
+  client are imported only in `src/server/coins/` and `scripts/` (a lint
+  rule refuses them anywhere else); every other Solana call is Kit. A coin
+  is described, never sold: no surface promises it value, and its page
+  carries what can go wrong (`src/lib/coins/copy.ts`).
 
 <!-- BEGIN:nextjs-agent-rules -->
 

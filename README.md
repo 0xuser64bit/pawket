@@ -36,7 +36,11 @@ the network fees, so a wallet with no SOL can play.
 7. Open Guilds and join Sunbeam Club, Muddy Paws or Cloud Nine with a pet on
    Solana — or found your own. A guild's link is a Blink too: it opens as
    the guild's card, and a pet joins from the wallet.
-8. Make it yours in Profile: your name, your look (hats, glasses, outfits),
+8. Open a guild's coin: Sunbeam Club's is on its bonding curve, Cloud Nine's
+   has graduated into its DAMM v2 pool. Read the terms and what can go
+   wrong, get a quote, and trade it with a little devnet SOL — or found a
+   guild, gather three pets, and launch its coin on a Pawket preset.
+9. Make it yours in Profile: your name, your look (hats, glasses, outfits),
    the wardrobe, the stickers each record has earned, and eight rooms.
 
 ## What happens on chain
@@ -60,6 +64,8 @@ the network fees, so a wallet with no SOL can play.
 | `open_wallet` / `deposit` / `withdraw` / `close_wallet` | the owner's Pawket Wallet: money in from the owner, and out only to the owner |
 | `link_device` / `unlink_device` | the owner links one device (it co-signs) for up to 30 days and 500 actions a day; the owner or the device ends it |
 | `care_by_device` / `finish_round_by_device` / `dress_by_device` | the same care, round and clothes, signed by the linked device with no prompt; its fee refilled from the balance, one fee at a time |
+
+| Guild coin (Meteora) | a guild's optional coin: a Dynamic Bonding Curve pool on one of Pawket's two preset configs ([`gentle`](https://explorer.solana.com/address/AyvaZmnBDpDfRDXZqXjHbcJKUq1WPLfGL4hT79miBkLJ?cluster=devnet), [`lively`](https://explorer.solana.com/address/4Sj8NYMxqkXcW1Ep6Cv8n9C3zN6gKqkQXHYmaBQASEwX?cluster=devnet)), graduating into a DAMM v2 pool with all of its liquidity locked for good. One billion coins, no allocations, a 1% fee split between Meteora, the guild's founder and Pawket |
 
 | Keepsake (Metaplex Core) | a card for the pet in its owner's wallet, in Pawket's collection [`5t7dq…PfEC9`](https://explorer.solana.com/address/5t7dqAEwdcG6C38XtHsMXbtwWyWZQFDqkjPy7JWPfEC9?cluster=devnet): frozen for good (`PermanentFreezeDelegate`), with the pet's address, species and personality as attributes |
 
@@ -111,8 +117,14 @@ visiting the site. Pawket pays those fees too.
   book, and settings with eight rooms to live in.
 - **Guilds** — optional, always: pets and their people under a name, a motto
   and a crest, kept on Solana. Found one with a pet on Solana, join or leave
-  any time; Pawket pays the fee. No token, nothing to buy, nothing that
-  touches a pet.
+  any time; Pawket pays the fee. Nothing in a guild touches a pet.
+- **A guild's coin** — optional too: once three pets are in a guild, its
+  founder may launch a coin on Meteora from Pawket's gentle or lively
+  preset. It trades on its bonding curve, graduates into a DAMM v2 pool
+  with its liquidity locked for good, and trades there. Every coin
+  transaction is quoted and built by Pawket's server and signed and paid
+  by the player. Holders' pets wear the guild's crest pin on its page — and
+  that is all a coin does.
 - **`/pet/<address>`** — a pet's public Passport, server-rendered from chain,
   with its guild; its owner can keep the pet's card in their wallet here.
 
@@ -149,6 +161,7 @@ pnpm e2e:devnet     # a 0-SOL wallet adopts and cares against the deployed progr
 | `pnpm program:build` | `anchor build --arch v2`, IDL copied to `src/lib/solana/idl/` |
 | `pnpm program:test`  | build + LiteSVM tests, including the lockstep replay |
 | `pnpm e2e:devnet`  | the whole path against devnet through the sponsor code |
+| `pnpm e2e:coins`   | a guild coin's life on devnet: launch, curve, graduation into DAMM v2, a sale, the founder's claim |
 | `pnpm assets:3d`   | rebuild `public/3d/` from the source packs (see `docs/ROOM-3D.md`) |
 
 ## Structure

@@ -1,7 +1,8 @@
 /**
  * Founds Pawket's starter guilds on a cluster, so discovery is never an empty
- * page: three guilds, each founded by a pet and joined by another, every pet
- * fed once. Run it again and it does only what is missing.
+ * page: three guilds, each founded by a pet and joined by two more — the
+ * three pets a guild needs before it may launch a coin — every pet fed
+ * once. Run it again and it does only what is missing.
  *
  *   pnpm dlx tsx scripts/seed-guilds.mts
  *
@@ -65,6 +66,7 @@ const GUILDS = [
     colour: colour("sun"),
     founder: { name: "Saffron", species: PetSpecies.LunaCat, personality: PetPersonality.Cozy },
     member: { name: "Marmalade", species: PetSpecies.LunaCat, personality: PetPersonality.Curious },
+    friend: { name: "Nib", species: PetSpecies.LunaCat, personality: PetPersonality.Mischief },
   },
   {
     slug: "muddy-paws",
@@ -74,6 +76,7 @@ const GUILDS = [
     colour: colour("copper"),
     founder: { name: "Biscuit", species: PetSpecies.MossPup, personality: PetPersonality.Brave },
     member: { name: "Waffles", species: PetSpecies.MossPup, personality: PetPersonality.Mischief },
+    friend: { name: "Juniper", species: PetSpecies.MossPup, personality: PetPersonality.Curious },
   },
   {
     slug: "cloud-nine",
@@ -83,6 +86,7 @@ const GUILDS = [
     colour: colour("pool"),
     founder: { name: "Mochi", species: PetSpecies.CloudBun, personality: PetPersonality.Cozy },
     member: { name: "Clover", species: PetSpecies.CloudBun, personality: PetPersonality.Brave },
+    friend: { name: "Dumpling", species: PetSpecies.CloudBun, personality: PetPersonality.Curious },
   },
 ];
 
@@ -105,7 +109,7 @@ async function pet(seed: Seed) {
 
 for (const guild of GUILDS) {
   const founder = await pet(guild.founder);
-  const member = await pet(guild.member);
+  const members = [await pet(guild.member), await pet(guild.friend)];
   const address = (await deriveGuildPda(guild.slug)).address;
   if (!(await fetchGuild(rpc, guild.slug))) {
     const place = (await deriveMemberPda(founder)).address;
@@ -124,9 +128,10 @@ for (const guild of GUILDS) {
       }),
     ]);
   }
-  if (!(await fetchPetOnChain(rpc, member))?.member) {
+  for (const [i, member] of members.entries()) {
+    if ((await fetchPetOnChain(rpc, member))?.member) continue;
     const place = (await deriveMemberPda(member)).address;
-    await send(`${guild.member.name} joins ${guild.name}`, ({ owner: signer, payer }) => [
+    await send(`${[guild.member, guild.friend][i].name} joins ${guild.name}`, ({ owner: signer, payer }) => [
       getJoinGuildInstruction({ owner: signer, payer, pet: member, guild: address, member: place }),
     ]);
   }

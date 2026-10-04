@@ -2,6 +2,8 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 import { getPublicEnv } from "@/config/env";
+import { PERSONALITY_LABEL, SPECIES_LABEL } from "@/lib/game/appearance";
+import { PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { CLUSTER_CAIP2 } from "@/lib/solana/cluster";
 
 /**
@@ -45,5 +47,40 @@ export async function postedAccount(request: Request): Promise<string | null> {
 
 export function caller(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+}
+
+/**
+ * Adopting a pet straight onto Solana: the adoption card's one button, and
+ * the way in on every card someone shares — most people who see a pet's
+ * card are not its owner, and this is what they can do.
+ */
+export function adoptLinkedAction(label = "Adopt") {
+  return {
+    type: "transaction" as const,
+    label,
+    href: "/api/actions/adopt?species={species}&personality={personality}&name={name}",
+    parameters: [
+      {
+        type: "select" as const,
+        name: "species",
+        label: "Who is coming home?",
+        required: true,
+        options: Object.values(PetSpecies).map((value) => ({ label: SPECIES_LABEL[value], value })),
+      },
+      {
+        type: "select" as const,
+        name: "personality",
+        label: "How would you describe them?",
+        required: true,
+        options: Object.values(PetPersonality).map((value) => ({ label: PERSONALITY_LABEL[value], value })),
+      },
+      {
+        type: "text" as const,
+        name: "name",
+        label: "Their name, 2 to 24 characters",
+        required: true,
+      },
+    ],
+  };
 }
 

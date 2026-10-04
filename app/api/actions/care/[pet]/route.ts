@@ -5,7 +5,7 @@ import { validateCareCooldown } from "@/lib/game/math";
 import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
 import { toCompanionRecord } from "@/lib/solana/accounts";
 import { getCareInstruction } from "@/lib/solana/instructions";
-import { absolute, actionError, actionJson, caller, postedAccount, preflight } from "@/server/actions";
+import { absolute, actionError, actionJson, adoptLinkedAction, caller, postedAccount, preflight } from "@/server/actions";
 import { actionLimit, sponsoredForPlayer, sponsorState } from "@/server/sponsor";
 import { readPet } from "@/server/solana";
 
@@ -32,14 +32,17 @@ export async function GET(request: Request, { params }: Props) {
     type: "action",
     icon: absolute(request, `/api/actions/icon?pet=${pet}`),
     title: `${record.name} · ${MOOD_LABEL[projected.mood]}`,
-    description: `Level ${projected.level}, ${streak === 0 ? "no run today yet" : `a ${streak}-day run`}. Only ${record.name}'s owner can care for them; each care rests 30 minutes, and Pawket pays the fee.`,
+    description: `Level ${projected.level}, ${streak === 0 ? "no run today yet" : `a ${streak}-day run`}. Only ${record.name}'s owner can care for them, and each care rests 30 minutes. Anyone can adopt their own, kept on Solana from the first day. Pawket pays the fee either way.`,
     label: "Care",
     links: {
-      actions: Object.values(CareActionType).map((action) => ({
-        type: "transaction",
-        label: CARE_ACTION_LABEL[action],
-        href: `/api/actions/care/${pet}?action=${action}`,
-      })),
+      actions: [
+        ...Object.values(CareActionType).map((action) => ({
+          type: "transaction",
+          label: CARE_ACTION_LABEL[action],
+          href: `/api/actions/care/${pet}?action=${action}`,
+        })),
+        adoptLinkedAction("Adopt your own"),
+      ],
     },
   });
 }

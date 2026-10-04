@@ -1,10 +1,9 @@
 import { isAddress, type Address } from "@solana/kit";
-import { PERSONALITY_LABEL, SPECIES_LABEL } from "@/lib/game/appearance";
 import { PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { fetchPetOnChain } from "@/lib/solana/accounts";
 import { getAdoptPetInstruction } from "@/lib/solana/instructions";
 import { derivePassportPda, derivePetPda, normalizePetName } from "@/lib/solana/pda";
-import { absolute, actionError, actionJson, caller, postedAccount, preflight } from "@/server/actions";
+import { absolute, actionError, actionJson, adoptLinkedAction, caller, postedAccount, preflight } from "@/server/actions";
 import { actionLimit, mayPayRent, sponsoredForPlayer, sponsorRpc, sponsorState } from "@/server/sponsor";
 
 /**
@@ -27,37 +26,7 @@ export async function GET(request: Request) {
     description:
       "A luna cat, a moss pup or a cloud bun, kept on Solana devnet from the first day: every care a signed record anyone can check. Pawket pays the network fee; nothing is for sale.",
     label: "Adopt",
-    links: {
-      actions: [
-        {
-          type: "transaction",
-          label: "Adopt",
-          href: "/api/actions/adopt?species={species}&personality={personality}&name={name}",
-          parameters: [
-            {
-              type: "select",
-              name: "species",
-              label: "Who is coming home?",
-              required: true,
-              options: SPECIES.map((value) => ({ label: SPECIES_LABEL[value], value })),
-            },
-            {
-              type: "select",
-              name: "personality",
-              label: "How would you describe them?",
-              required: true,
-              options: PERSONALITIES.map((value) => ({ label: PERSONALITY_LABEL[value], value })),
-            },
-            {
-              type: "text",
-              name: "name",
-              label: "Their name, 2 to 24 characters",
-              required: true,
-            },
-          ],
-        },
-      ],
-    },
+    links: { actions: [adoptLinkedAction()] },
   });
 }
 

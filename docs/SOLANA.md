@@ -192,7 +192,7 @@ browsers):
 | Action | GET | POST `{ account }` |
 | --- | --- | --- |
 | `/api/actions/adopt` | the adoption card: species, temperament and name as parameters | an `adopt_pet` transaction the sponsor built and signed as fee and rent payer; chains to "Pepper is yours" |
-| `/api/actions/care/<pet>` | the pet's card, read live, with feed, play, brush, rest | a care transaction, for the owner only; a care still cooling down is refused with the time left |
+| `/api/actions/care/<pet>` | the pet's card, read live, with feed, play, brush, rest — and "Adopt your own", for everyone who is not the owner | a care transaction, for the owner only; a care still cooling down is refused with the time left |
 | `/api/actions/guild/<slug>` | the guild's card (its crest large), read live, with one Join | a `join_guild` for the wallet's newest pet on Solana that is in no guild; refused, in one sentence, when there is none or a pet of theirs is in already |
 
 `/actions.json` maps the links people already share: `/adopt` →

@@ -32,7 +32,7 @@ the network fees, so a wallet with no SOL can play.
 5. Open "Their record" — the public Passport anyone can read — and keep the
    pet's card in your wallet from there.
 6. Share the Passport link: in a Blink-aware client it opens as the pet's
-   card, with its four cares.
+   card, with its four cares for you and "Adopt your own" for everyone else.
 7. Open Guilds and join Sunbeam Club, Muddy Paws or Cloud Nine with a pet on
    Solana — or found your own. A guild's link is a Blink too: it opens as
    the guild's card, and a pet joins from the wallet.

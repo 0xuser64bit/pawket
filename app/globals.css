@@ -4027,6 +4027,33 @@ li {
   border: var(--stroke-line) solid var(--edge-soft);
 }
 
+/* A guild's gatherings: each event and poll a quiet block, its actions a row
+   of small buttons, the founder's forms folded away until opened. */
+.pk-gathering {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: var(--stroke-hair) solid var(--edge-soft);
+}
+.pk-founder-desk > summary {
+  cursor: pointer;
+  list-style-position: outside;
+}
+
+.pk-market-try {
+  display: grid;
+  place-items: center;
+  height: 168px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-paper);
+  background: var(--ground);
+}
+.pk-market-try > svg {
+  height: 150px;
+  width: auto;
+}
+
 /* ------------------------------------------------------- guild coins
 
    A coin's facts and its quotes are Paper: the corner falls to 4px, the

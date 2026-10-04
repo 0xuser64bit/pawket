@@ -17,6 +17,7 @@ import {
 } from "@/components/pk";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { GuildMembership } from "@/components/guilds/membership";
+import { GuildGatherings } from "@/components/guilds/gatherings";
 import { ShareButton } from "@/components/pet/share-button";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
@@ -29,7 +30,7 @@ import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { formatUtcDate } from "@/lib/utils/format";
 import type { CoinState } from "@/server/coins/meteora";
-import { readGuild, readGuildPets } from "@/server/solana";
+import { readGatherings, readGuild, readGuildPets } from "@/server/solana";
 
 export const dynamic = "force-dynamic";
 
@@ -59,15 +60,17 @@ export default async function GuildPage({ params }: Props) {
   let pets: PetOnChain[] = [];
   let coin: CoinState | null = null;
   let holders: Set<string> | null = null;
+  let gatherings: Awaited<ReturnType<typeof readGatherings>> = { events: [], polls: [] };
   try {
     guild = isValidSlug(slug) ? await readGuild(slug) : null;
     if (guild) {
       // The coin is optional and read beside the pets: if it — or Meteora's SDK — cannot be read, the guild still shows.
       const found = guild;
       const coins = import("@/server/coins/meteora").catch(() => null);
-      [pets, coin] = await Promise.all([
+      [pets, coin, gatherings] = await Promise.all([
         readGuildPets(found.address),
         coins.then((module) => module?.readCoin(found) ?? null).catch(() => null),
+        readGatherings(found.address).catch(() => gatherings),
       ]);
       holders = coin ? await coins.then((module) => module?.readHolderWallets(coin!) ?? null).catch(() => null) : null;
     }
@@ -203,6 +206,9 @@ export default async function GuildPage({ params }: Props) {
             </p>
           </Card>
           {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name }} />}
+          {delisted ? null : (
+            <GuildGatherings guild={{ address: guild.address, name: guild.name, founder: guild.founder }} events={gatherings.events} polls={gatherings.polls} />
+          )}
           {coin ? <CoinCard guildName={guild.name} slug={guild.slug} coin={coin} /> : null}
           <Paper title="On the record" meta={`Solana ${cluster}`}>
             <div className="pk-receipt">

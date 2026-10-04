@@ -4,13 +4,19 @@ import { isAddress } from "@solana/kit";
 import { getPublicEnv } from "@/config/env";
 import { getServerEnv } from "@/config/server-env";
 import {
+  fetchGuestbook,
   fetchGuild,
   fetchGuildAt,
+  fetchGuildEvents,
   fetchGuildPets,
+  fetchGuildPolls,
   fetchGuilds,
   fetchPetOnChain,
   fetchPetsOnChain,
+  type ChainEvent,
+  type ChainGuestbook,
   type ChainGuild,
+  type ChainPoll,
   type PetOnChain,
 } from "@/lib/solana/accounts";
 import { createPatientRpc } from "@/lib/solana/rpc";
@@ -87,4 +93,15 @@ export async function readGuildAt(address: string): Promise<ChainGuild | null> {
 /** Every pet in a guild, read live. */
 export async function readGuildPets(guild: string): Promise<PetOnChain[]> {
   return fetchGuildPets(rpc(), guild);
+}
+
+/** A guild's events and polls, read live: soonest event first, newest poll first. */
+export async function readGatherings(guild: string): Promise<{ events: ChainEvent[]; polls: ChainPoll[] }> {
+  const [events, polls] = await Promise.all([fetchGuildEvents(rpc(), guild), fetchGuildPolls(rpc(), guild)]);
+  return { events, polls };
+}
+
+/** Who waved at a pet, or null before anyone has. */
+export async function readGuestbook(pet: string): Promise<ChainGuestbook | null> {
+  return fetchGuestbook(rpc(), pet);
 }

@@ -24,6 +24,7 @@ export function CarryCard({
   owner,
   canSign,
   sender,
+  fresh = false,
   onCarried,
 }: {
   pet: GuestPet;
@@ -31,6 +32,8 @@ export function CarryCard({
   canSign: boolean;
   /** Home's sender, so the receipt outlives this card once the pet is on Solana. */
   sender: PawketSender;
+  /** Offered on the day of adoption, when the record there starting today loses nothing. */
+  fresh?: boolean;
   /** Called once Solana confirms the pet, with its address. The caller retires the browser copy. */
   onCarried: (address: Address) => void;
 }) {
@@ -73,8 +76,10 @@ export function CarryCard({
         {owner && canSign ? (
           <>
             <p className="body-sm">
-              {pet.name}&apos;s record there starts today, at level 1 with a fresh streak — the chain can only
-              keep what it sees. Once Solana confirms it, the copy in this browser is replaced.
+              {fresh
+                ? `${pet.name} arrived today, so nothing is lost: their record there starts today too.`
+                : `${pet.name}'s record there starts today, at level 1 with a fresh streak — the chain can only keep what it sees.`}{" "}
+              Once Solana confirms it, the copy in this browser is replaced.
             </p>
             {taken ? (
               <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>

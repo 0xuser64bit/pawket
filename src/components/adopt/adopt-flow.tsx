@@ -22,11 +22,16 @@ import {
   SPECIES_LABEL,
   SPECIES_SKY,
 } from "@/lib/game/appearance";
+import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
+import type { Address } from "@solana/kit";
+import { CarryCard } from "@/components/home/carry-card";
 import { PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { choosePet } from "@/lib/companion/use-companion";
 import { createGuestPet, nameTaken, projectGuestPet, type GuestPet } from "@/lib/guest/pet";
-import { savePet } from "@/lib/guest/storage";
+import { removePet, savePet } from "@/lib/guest/storage";
 import { usePets } from "@/lib/guest/use-pets";
+import { wallet } from "@/lib/solana/browser-client";
+import { usePawketSend } from "@/lib/solana/use-send";
 import { formatUtcDate } from "@/lib/utils/format";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 
@@ -111,6 +116,9 @@ export function AdoptFlow() {
   const scope = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const shown = useRef(step);
+  const sender = usePawketSend();
+  const connected = useConnectedWallet(wallet);
+  const owner = (connected?.account.address as Address | undefined) ?? null;
   useEyesFollow(scope);
 
   // On a phone the three are a row you swipe: the one you land on is the one
@@ -389,6 +397,20 @@ export function AdoptFlow() {
               body="Care, the wardrobe and the playground all work from here. Clearing this browser's data is how you would lose them."
             />
             <Button label="Take them home" size="lg" full icon="home" onClick={() => router.push("/home")} />
+            {adopted ? (
+              <CarryCard
+                pet={adopted}
+                owner={owner}
+                canSign={Boolean(connected?.signer)}
+                sender={sender}
+                fresh
+                onCarried={(address) => {
+                  removePet(adopted.id);
+                  choosePet(address);
+                  router.push("/home");
+                }}
+              />
+            ) : null}
           </>
         ) : (
           <>

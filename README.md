@@ -2,7 +2,7 @@
 
 Pawket is a living companion on Solana. Adopt a luna cat, a moss pup or a
 cloud bun in the browser — no wallet, no token — and care for it: feed,
-play, brush, rest, three little games, something to wear. Its face is its
+play, brush, rest, four little games, something to wear. Its face is its
 record: the temperament you chose is the face it wears when all is well,
 and a need (hungry, lonely, tired, scruffy) shows on it until you meet it.
 When you want a record nobody can edit or erase, keep it on Solana: every
@@ -69,7 +69,7 @@ uses to draw them. One scripted life (`src/lib/game/lockstep.txt`) is
 replayed against the program and against the browser's record; both land on
 every number.
 
-**Fees.** `/api/sponsor` checks a transaction — only Pawket's four
+**Fees.** `/api/sponsor` checks a transaction — only Pawket's
 instructions, the sponsor as fee payer and rent payer and nothing else, no
 lookup tables, no priority fees — and signs it first; the wallet then signs
 as the owner (a transaction that already carries a signature is one wallets

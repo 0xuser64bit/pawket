@@ -1,6 +1,6 @@
 # Pawket — Vision & Product Requirements (PRD)
 
-**Status:** SPEC — planned, not built. The foundation (shell, wallet, SOL send, game-math stubs) is the only thing wired today. Nothing below should be presented in UI as live until its epic lands.
+**Status:** the product's north star. What ships today is in `PRODUCT.md`, and where each milestone stands is in `ROADMAP.md`. Nothing below is presented in UI as live until it is built and, where it lives on Solana, read from chain.
 **Sources:** founder brief (Sep 2026) + `docs/PRODUCT.md` (current truth) + `docs/ARCHITECTURE.md`.
 **Companion docs:** `ROADMAP.md` (sequencing) → `EPICS.md` (epic cards) → `TASKS.md` (atomic agent tasks).
 

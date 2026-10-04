@@ -1,11 +1,11 @@
 # Pawket — Target Architecture
 
-**Status:** SPEC (target). Current foundation is the M0 subset; everything marked `[FUTURE]` is planned. See `docs/ARCHITECTURE.md` for the built subset — this file extends it, never contradicts it.
+**Status:** SPEC (target), written before program v2. The left column below is the M0 foundation as it was then, not the product now: `docs/ARCHITECTURE.md` is what is built, and wins wherever the two disagree.
 
 ## 1. Current vs target
 
 ```text
-TODAY (M0, built)                          TARGET (M3–M6, planned)
+M0 FOUNDATION (2026-09, historical)        TARGET (M3–M6, planned)
 ─────────────────                          ──────────────────────
 Next.js 16 App Router, React 19, TS strict (same, keep)
 Tailwind v4, no component lib              (same until product UI demands one)

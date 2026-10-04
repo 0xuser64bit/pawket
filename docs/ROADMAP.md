@@ -109,6 +109,6 @@ Parallelizable after M1: avatar art + Home UI (M2) can proceed alongside marketp
 
 ## What agents should do now
 
-1. Implement M1 first. Everything else is spec until M1 exits.
-2. When picking up any M3+ task, read its epic + `OPEN-QUESTIONS.md` — if its blocking question is unresolved, do the **schema/interface** task only, not the integration.
+1. M0–M2 are done; M4 and M5 are done in part (see the status line). Read `PRODUCT.md` for what ships before building on it.
+2. When picking up an M3+ task, read its epic and `OPEN-QUESTIONS.md`. If its blocking question is unresolved, do the **schema/interface** task only, not the integration.
 3. Keep `docs/DECISIONS.md` history intact; new choices go in `OPEN-QUESTIONS.md` until a human approves.

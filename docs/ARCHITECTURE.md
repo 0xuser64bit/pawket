@@ -34,7 +34,7 @@ src/lib/game/               pure companion math (no React, no Solana) + lockstep
 src/lib/guest/              the browser pet's record, migration, localStorage
 src/lib/companion/          which pet a screen draws: on Solana, else this browser
 src/lib/closet/             wearable catalog (its order is the on-chain slot)
-src/lib/play/               the three games as pure seeded steps, local bests, sound
+src/lib/play/               the four games as pure seeded steps, local bests, sound
 src/lib/guilds/             the rule, slugs and crests, the delisting list
 src/lib/player/             the player's look (3D room), localStorage
 src/lib/room/               moments and emotes, as data

@@ -86,6 +86,28 @@ test("a guild's coin states its terms and what can go wrong, and asks a wallet o
   await expect(page.getByText(/guaranteed|to the moon|passive income/i)).toHaveCount(0);
 });
 
+test("the Market states its fixed prices and where the SOL goes, and asks a wallet only to buy", async ({ page }) => {
+  await page.goto("/market");
+  await expect(page.getByRole("heading", { name: "Market" })).toBeVisible();
+  await expect(page.getByText(/looks only, never power/i)).toBeVisible();
+  for (const piece of ["Halo", "Wizard hat", "Sun hat", "Gold crown", "Blossom", "Aurora"]) {
+    await expect(page.getByText(piece, { exact: true }).first()).toBeVisible();
+  }
+  await expect(page.getByText("Where the SOL goes")).toBeVisible();
+  await page.getByRole("button", { name: /Halo/ }).click();
+  await expect(page.getByText(/changes no vital, XP, cooldown or score/i)).toBeVisible();
+  // No wallet yet: the one action is connecting, never a purchase.
+  await expect(page.getByRole("button", { name: /^Buy for/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Connect a wallet" })).toBeVisible();
+});
+
+test("the pulse is counted from the program, or says plainly that Solana did not answer", async ({ page }) => {
+  await page.goto("/pulse");
+  await expect(page.getByRole("heading", { name: "Pulse" })).toBeVisible();
+  await expect(page.getByText(/kept on solana|solana did not answer/i).first()).toBeVisible();
+  await expect(page.getByText(/counted from pawket's program on solana, read live/i)).toBeVisible();
+});
+
 test("a guild nobody founded is a plain miss", async ({ page }) => {
   await page.goto("/guilds/no-such-guild-here");
   await expect(page.getByText(/no guild has that name|solana did not answer/i)).toBeVisible();

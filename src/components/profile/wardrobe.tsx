@@ -1,25 +1,37 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { Button, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt } from "@/components/pk";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { getPublicEnv } from "@/config/env";
-import { WEARABLES, findWearable, isUnlocked } from "@/lib/closet/catalog";
+import { MARKET_WEARABLES, WEARABLES, findWearable, isUnlocked, wearableItem } from "@/lib/closet/catalog";
 import { BADGES, badgesFor } from "@/lib/game/badges";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, setWearing } from "@/lib/guest/pet";
 import { readPet, savePet } from "@/lib/guest/storage";
 import { wearableSlot } from "@/lib/solana/accounts";
-import { getDressByDeviceInstruction, getDressInstruction } from "@/lib/solana/instructions";
+import { useCloset } from "@/lib/market/use-closet";
+import {
+  getDressByDeviceInstruction,
+  getDressInstruction,
+  getDressOwnedByDeviceInstruction,
+  getDressOwnedInstruction,
+} from "@/lib/solana/instructions";
+import { deriveClosetPda } from "@/lib/solana/pda";
+import { WEARABLE_COUNT } from "@/lib/solana/program";
+import { formatUnits } from "@/lib/utils/format";
 import type { PawketSender } from "@/lib/solana/use-send";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 
 /**
  * The dressing room: any of your pets in the mirror, trying on whatever the
- * pointer or focus rests on before a tap wears it. Clothes are free and
- * change nothing but looks; on Solana, putting one on is a signed record.
+ * pointer or focus rests on before a tap wears it. Clothes change nothing
+ * but looks; on Solana, putting one on is a signed record. The eighteen are
+ * free; the Market's four are worn by a pet on Solana once its owner's
+ * closet holds them — the program checks the closet, not this screen.
  */
 export function Wardrobe({ companion, sender }: { companion: CompanionState; sender: PawketSender }) {
   const cluster = getPublicEnv().solanaCluster;
@@ -31,23 +43,35 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
   /** A piece being tried on in the mirror (null: nothing on), before it is worn. */
   const [trying, setTrying] = useState<string | null | undefined>(undefined);
   const room = useRef<HTMLDivElement>(null);
+  const closet = useCloset(companion.owner);
+  const bought = new Set(closet.data?.items ?? []);
   useEyesFollow(room);
   if (!pet) return null;
   const shown = trying !== undefined ? trying : pet.wearing;
   const stickers = badgesFor(pet, { onChain: chain !== null, guild: Boolean(chain?.member) });
-  const open = WEARABLES.filter((item) => isUnlocked(item, stickers)).length;
+  const free = WEARABLES.filter((item) => !item.price);
+  const open = free.filter((item) => isUnlocked(item, stickers)).length;
 
   async function wear(id: string) {
     if (!pet) return;
     if (chain) {
       const next = setWearing(pet, id).wearing;
       const item = findWearable(next ?? id);
+      const slot = wearableSlot(next);
+      // A Market piece goes on with `dress_owned`, which reads the owner's closet; the eighteen with `dress`.
+      const closetAddress = slot > WEARABLE_COUNT ? (await deriveClosetPda(chain.pet.owner)).address : null;
       const result = await sender.act(
         next ? `Put the ${item?.name.toLowerCase()} on ${pet.name}` : `Take the ${item?.name.toLowerCase()} off ${pet.name}`,
         {
-          byOwner: ({ owner }) => [getDressInstruction({ owner, pet: chain.pet.address, wearing: wearableSlot(next) })],
+          byOwner: ({ owner }) => [
+            closetAddress
+              ? getDressOwnedInstruction({ owner, pet: chain.pet.address, closet: closetAddress, wearing: slot })
+              : getDressInstruction({ owner, pet: chain.pet.address, wearing: slot }),
+          ],
           byDevice: ({ device, wallet }) => [
-            getDressByDeviceInstruction({ device, wallet, pet: chain.pet.address, wearing: wearableSlot(next) }),
+            closetAddress
+              ? getDressOwnedByDeviceInstruction({ device, wallet, pet: chain.pet.address, closet: closetAddress, wearing: slot })
+              : getDressByDeviceInstruction({ device, wallet, pet: chain.pet.address, wearing: slot }),
           ],
         },
       );
@@ -103,14 +127,14 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
           }
           second={
             <Stack gap={3}>
-              <SectionLabel count={`${open} / ${WEARABLES.length}`}>Free to wear</SectionLabel>
+              <SectionLabel count={`${open} / ${free.length}`}>Free to wear</SectionLabel>
               <p className="body-sm pk-muted">
                 One at a time. Point at a piece to try it on; tap it to wear it. It changes how {pet.name} looks,
                 never a vital, a cooldown or a score. A few are earned by {pet.name}&apos;s stickers, never bought.
                 {chain ? " On Solana, changing it is a signed record." : ""}
               </p>
               <div className="pk-tiles" onPointerLeave={() => setTrying(undefined)}>
-                {WEARABLES.map((item) => {
+                {free.map((item) => {
                   const on = pet.wearing === item.id;
                   const earned = isUnlocked(item, stickers);
                   const badge = BADGES.find((b) => b.id === item.earnedBy);
@@ -148,6 +172,60 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
                         equipped={on}
                       />
                     </button>
+                  );
+                })}
+              </div>
+              <SectionLabel count={`${MARKET_WEARABLES.filter((item) => bought.has(wearableItem(item.id))).length} / ${MARKET_WEARABLES.length}`}>
+                From the Market
+              </SectionLabel>
+              <p className="body-sm pk-muted">
+                Bought once with SOL, worn by any of your pets on Solana. Looks only, like the rest.
+              </p>
+              <div className="pk-tiles" onPointerLeave={() => setTrying(undefined)}>
+                {MARKET_WEARABLES.map((item) => {
+                  const on = pet.wearing === item.id;
+                  const owned = bought.has(wearableItem(item.id));
+                  const tile = (kind: string, price?: string) => (
+                    <ItemTile
+                      name={item.name}
+                      kind={kind}
+                      rarity="foil"
+                      price={price}
+                      art={<WearableArt id={item.id} className="pk-tile__piece" />}
+                      equipped={on}
+                    />
+                  );
+                  if (owned && chain) {
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="pk-tile-hit"
+                        aria-pressed={on}
+                        disabled={sender.busy}
+                        onPointerEnter={() => setTrying(on ? undefined : item.id)}
+                        onFocus={() => setTrying(on ? undefined : item.id)}
+                        onBlur={() => setTrying(undefined)}
+                        onClick={() => {
+                          setTrying(undefined);
+                          void wear(item.id);
+                        }}
+                      >
+                        {tile(on ? "Wearing" : "Yours")}
+                      </button>
+                    );
+                  }
+                  return (
+                    <Link
+                      key={item.id}
+                      href="/market"
+                      className="pk-tile-hit"
+                      onPointerEnter={() => setTrying(item.id)}
+                      onFocus={() => setTrying(item.id)}
+                      onBlur={() => setTrying(undefined)}
+                    >
+                      {owned ? tile(`Keep ${pet.name} on Solana to wear it`) : tile("In the Market", `${formatUnits(item.price!, 9)} SOL`)}
+                    </Link>
                   );
                 })}
               </div>

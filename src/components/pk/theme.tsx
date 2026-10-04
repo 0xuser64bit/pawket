@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
-import { THEMES, THEME_KEY, isThemeId, type ThemeChoice, type ThemeId } from "@/config/themes";
+import { THEMES, THEME_KEY, isThemeId, roomOpen, type ThemeChoice, type ThemeId } from "@/config/themes";
 import { Icon } from "./icon";
 import { PetArt, type PetForm } from "./pet-art";
 
@@ -102,12 +103,23 @@ function Swatch({ id, form = "cat" }: { id: ThemeId; form?: PetForm }) {
   );
 }
 
+const NOTHING_OWNED: ReadonlySet<number> = new Set();
+
 /**
  * Every room, as a radio group of drawn previews — native radios, so the
  * arrow keys move the pick and Tab leaves the group. "Follow my device" is
- * the first choice and the default.
+ * the first choice and the default. A Market room the closet (`owned`, item
+ * ids) does not hold yet is a way to the Market, never a free pick.
  */
-export function ThemePicker({ form, name = "pawket-theme" }: { form?: PetForm; name?: string }) {
+export function ThemePicker({
+  form,
+  name = "pawket-theme",
+  owned = NOTHING_OWNED,
+}: {
+  form?: PetForm;
+  name?: string;
+  owned?: ReadonlySet<number>;
+}) {
   const choice = useThemeChoice();
   return (
     <div className="pk-themes" role="radiogroup" aria-label="Rooms">
@@ -122,24 +134,36 @@ export function ThemePicker({ form, name = "pawket-theme" }: { form?: PetForm; n
           <span className="caption pk-muted">Daylight, or Lamplight when the device is dark.</span>
         </span>
       </label>
-      {THEMES.map((theme) => (
-        <label key={theme.id} className="pk-theme">
-          <input
-            type="radio"
-            name={name}
-            className="pk-sr"
-            checked={choice === theme.id}
-            onChange={() => setTheme(theme.id)}
-          />
-          <span className="pk-theme__art">
-            <Swatch id={theme.id} form={form} />
-          </span>
-          <span className="pk-theme__words">
-            <span className="title">{theme.name}</span>
-            <span className="caption pk-muted">{theme.line}</span>
-          </span>
-        </label>
-      ))}
+      {THEMES.map((theme) =>
+        roomOpen(theme.id, owned) ? (
+          <label key={theme.id} className="pk-theme">
+            <input
+              type="radio"
+              name={name}
+              className="pk-sr"
+              checked={choice === theme.id}
+              onChange={() => setTheme(theme.id)}
+            />
+            <span className="pk-theme__art">
+              <Swatch id={theme.id} form={form} />
+            </span>
+            <span className="pk-theme__words">
+              <span className="title">{theme.name}</span>
+              <span className="caption pk-muted">{theme.line}</span>
+            </span>
+          </label>
+        ) : (
+          <Link key={theme.id} href="/market" className="pk-theme pk-theme--market">
+            <span className="pk-theme__art">
+              <Swatch id={theme.id} form={form} />
+            </span>
+            <span className="pk-theme__words">
+              <span className="title">{theme.name}</span>
+              <span className="caption pk-muted">{theme.line} In the Market.</span>
+            </span>
+          </Link>
+        ),
+      )}
     </div>
   );
 }
@@ -148,7 +172,7 @@ export function ThemePicker({ form, name = "pawket-theme" }: { form?: PetForm; n
  * The shell's room switch: names the room you are in, and opens every room
  * as a list. A native popover, so Escape and a tap outside close it.
  */
-export function ThemeMenu() {
+export function ThemeMenu({ owned = NOTHING_OWNED }: { owned?: ReadonlySet<number> }) {
   const choice = useThemeChoice();
   const scheme = useTheme();
   const id = useId();
@@ -173,7 +197,7 @@ export function ThemeMenu() {
           <span className="caption pk-faint">Saved on this device</span>
         </div>
         <div className="pk-menu__list">
-          {[{ id: "system" as const, name: "Follow my device" }, ...THEMES].map((theme) => {
+          {[{ id: "system" as const, name: "Follow my device" }, ...THEMES.filter((room) => roomOpen(room.id, owned) || choice === room.id)].map((theme) => {
             const on = choice === theme.id;
             return (
               <button

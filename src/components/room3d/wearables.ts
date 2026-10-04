@@ -365,6 +365,63 @@ Object.assign(FIT, {
     g.position.set(0, 1.43, 0.04);
     return g;
   },
+  // The Market's pieces: the same hand as the rest, a little grander.
+  halo: () => {
+    const ring = part(new TorusGeometry(0.34, 0.045, 10, 40), "trim-foil");
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(0, 1.86, 0.04);
+    return ring;
+  },
+  "wizard-hat": () => {
+    const g = new Group();
+    const brim = part(new CylinderGeometry(0.62, 0.62, 0.05, 32), "pool-edge");
+    g.add(brim);
+    const cone = part(new ConeGeometry(0.38, 0.92, 28), "pool");
+    cone.position.y = 0.48;
+    cone.rotation.z = -0.08;
+    g.add(cone);
+    const shine = part(star(0.1, 0.045, 0.03), "trim-foil", false);
+    shine.position.set(0.02, 0.42, 0.33);
+    g.add(shine);
+    g.position.set(0, 1.42, 0.04);
+    g.rotation.z = -0.1;
+    return g;
+  },
+  "sun-hat": () => {
+    const g = new Group();
+    const brim = part(new CylinderGeometry(0.86, 0.86, 0.045, 36), "pet-cream");
+    g.add(brim);
+    const crown = dome(0.44, 0.7, "pet-cream");
+    g.add(crown);
+    const ribbon = part(new CylinderGeometry(0.445, 0.445, 0.1, 32, 1, true), "pet-blush", false);
+    (ribbon.material as { side: typeof DoubleSide }).side = DoubleSide;
+    ribbon.position.y = 0.07;
+    g.add(ribbon);
+    g.position.set(0, 1.42, 0.04);
+    g.rotation.z = 0.06;
+    return g;
+  },
+  "gold-crown": () => {
+    const g = new Group();
+    const geometry = new CylinderGeometry(0.36, 0.38, 0.34, 20, 1, true);
+    const pos = geometry.getAttribute("position");
+    for (let i = 0; i < pos.count; i++) {
+      if (pos.getY(i) > 0) {
+        const a = Math.atan2(pos.getZ(i), pos.getX(i));
+        const k = Math.round(((a + Math.PI) / (Math.PI * 2)) * 10);
+        pos.setY(i, 0.17 + (k % 2 ? -0.12 : 0.08));
+      }
+    }
+    geometry.computeVertexNormals();
+    const band = part(geometry, "trim-foil");
+    (band.material as { side: typeof DoubleSide }).side = DoubleSide;
+    g.add(band);
+    const gem = part(new SphereGeometry(0.06, 12, 10), "pet-blush");
+    gem.position.set(0, 0.0, 0.37);
+    g.add(gem);
+    g.position.set(0, 1.55, 0.02);
+    return g;
+  },
   "leaf-sprout": () => {
     const g = new Group();
     const stem = part(new CylinderGeometry(0.02, 0.026, 0.26, 8), "sprout-edge");

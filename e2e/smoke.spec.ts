@@ -17,10 +17,9 @@ test("landing leads with the pet and closes with the rules", async ({ page }) =>
 test("the dock reaches the places that exist", async ({ page }) => {
   await page.goto("/home");
   const dock = page.getByRole("navigation", { name: "Pawket" });
-  for (const place of ["Home", "Park", "Playground", "Profile", "Guilds"]) {
+  for (const place of ["Home", "Park", "Playground", "Market", "Profile", "Guilds"]) {
     await expect(dock.getByRole("link", { name: place })).toBeVisible();
   }
-  await expect(dock.getByRole("link", { name: "Market" })).toHaveCount(0);
 });
 
 test("the park is read from Solana, or says plainly that it could not be", async ({ page }) => {

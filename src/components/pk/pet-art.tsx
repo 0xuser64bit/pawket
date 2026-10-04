@@ -560,6 +560,50 @@ function worn(id: string | null | undefined, form: PetForm, p: PetPaint, layer: 
         </g>
       );
     }
+    case "halo": {
+      // Floats above the head: a ring of foil with an ink keyline either side.
+      const y = f.top - 15;
+      return (
+        <g fill="none" className="pk-pet-halo">
+          <ellipse cx="60" cy={y} rx="18" ry="5.4" strokeWidth="7.6" />
+          <ellipse cx="60" cy={y} rx="18" ry="5.4" stroke={p.foil} strokeWidth="4.2" />
+        </g>
+      );
+    }
+    case "wizard-hat": {
+      const t = f.top + 2;
+      return (
+        <g>
+          <path d={`M37 ${t + 6}Q60 ${t + 13} 83 ${t + 6}Q60 ${t + 0.5} 37 ${t + 6}z`} fill={p.poolEdge} />
+          <path d={`M47 ${t + 5}C52 ${t - 10} 58 ${t - 24} 69 ${t - 33}C67 ${t - 20} 70 ${t - 6} 74 ${t + 5}z`} fill={p.pool} />
+          <path d={`M59 ${t - 9}l1.6-3.4 1.6 3.4 3.6.4-2.7 2.4.8 3.6-3.3-1.9-3.3 1.9.8-3.6-2.7-2.4z`} fill={p.foil} strokeWidth="1.4" />
+          <circle cx="66" cy={t - 22} r="1.8" fill={p.foil} stroke="none" />
+        </g>
+      );
+    }
+    case "sun-hat": {
+      const t = f.top + 2;
+      return (
+        <g>
+          <ellipse cx="60" cy={t + 5} rx="31" ry="6.6" fill={p.cream} />
+          <path d={`M44 ${t + 5}C44 ${t - 13} 76 ${t - 13} 76 ${t + 5}z`} fill={p.cream} />
+          <path d={`M44.4 ${t - 1.6}H75.6V${t + 3.4}H44.4z`} fill={p.blush} strokeWidth="2" />
+          <path d={`M50 ${t + 9}c6 1.4 14 1.4 20 0`} strokeWidth="1.6" fill="none" />
+        </g>
+      );
+    }
+    case "gold-crown": {
+      const t = f.top + (form === "dog" ? -1 : 1);
+      return (
+        <g className="pk-pet-crown">
+          <path d={`M44 ${t + 4}l-2.4-16 9.4 7.8L60 ${t - 14}l9 9.8 9.4-7.8-2.4 16c-10.6 2.8-21.4 2.8-32 0z`} fill={p.foil} />
+          <path d={`M45.4 ${t}c9.6 2 19.6 2 29.2 0`} strokeWidth="2" fill="none" />
+          <circle cx="60" cy={t - 4} r="2.6" fill={p.blush} strokeWidth="1.6" />
+          <circle cx="50" cy={t - 2.6} r="1.8" fill={p.pool} strokeWidth="1.4" />
+          <circle cx="70" cy={t - 2.6} r="1.8" fill={p.pool} strokeWidth="1.4" />
+        </g>
+      );
+    }
     case "leaf-sprout": {
       const t = f.top;
       return (
@@ -587,6 +631,10 @@ const ON_HEAD = new Set([
   "strawberry-hat",
   "flower-crown",
   "leaf-sprout",
+  "halo",
+  "wizard-hat",
+  "sun-hat",
+  "gold-crown",
 ]);
 
 /* ---------------------------------------------------------------- PetArt */
@@ -750,6 +798,45 @@ export function WearableArt({ id, className }: { id: string; className?: string 
           <path d="M40 27c3 9 3 18 .6 26l10.4-1.4c1.2-8.6-.6-16.8-4.4-25.4z" fill={p.pool} />
           <path d="M43.2 37l7-1M43.6 44l7.4-1M17 24.6v7.4M26 26.6v7.4M35 26.6v7.4" stroke={p.surface} strokeWidth="2.4" />
           <path d="M42 53l-1.6 5M46 52.4l-.4 5.2M50 51.6l.8 5" strokeWidth="2.2" />
+        </>
+      );
+      break;
+    case "halo":
+      art = (
+        <g fill="none">
+          <ellipse cx="32" cy="26" rx="22" ry="8" strokeWidth="9" />
+          <ellipse cx="32" cy="26" rx="22" ry="8" stroke={p.foil} strokeWidth="5" />
+          <path d="M22 46c4 4 16 4 20 0" strokeWidth="2.4" />
+        </g>
+      );
+      break;
+    case "wizard-hat":
+      art = (
+        <>
+          <path d="M6 52Q32 60 58 52Q32 45 6 52z" fill={p.poolEdge} />
+          <path d="M18 51C23 36 30 20 44 8C41 24 44 38 48 51z" fill={p.pool} />
+          <path d="M30 34l2-4.2 2 4.2 4.4.6-3.2 3 1 4.4-4.2-2.4-4.2 2.4 1-4.4-3.2-3z" fill={p.foil} strokeWidth="1.6" />
+          <circle cx="40" cy="20" r="2.2" fill={p.foil} stroke="none" />
+        </>
+      );
+      break;
+    case "sun-hat":
+      art = (
+        <>
+          <ellipse cx="32" cy="42" rx="28" ry="8" fill={p.cream} />
+          <path d="M16 42C16 18 48 18 48 42z" fill={p.cream} />
+          <path d="M16.6 33H47.4V39H16.6z" fill={p.blush} strokeWidth="2.2" />
+        </>
+      );
+      break;
+    case "gold-crown":
+      art = (
+        <>
+          <path d="M11 47l-3.4-29 13.6 11.4L32 11l10.8 18.4 13.6-11.4L53 47c-14 4-28 4-42 0z" fill={p.foil} />
+          <path d="M13 41c12.6 3 25.4 3 38 0" strokeWidth="2.2" />
+          <circle cx="32" cy="33" r="4" fill={p.blush} strokeWidth="2" />
+          <circle cx="19" cy="36" r="2.6" fill={p.pool} strokeWidth="1.6" />
+          <circle cx="45" cy="36" r="2.6" fill={p.pool} strokeWidth="1.6" />
         </>
       );
       break;

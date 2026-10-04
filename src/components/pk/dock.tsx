@@ -10,13 +10,14 @@ import { Icon, type IconName } from "./icon";
  * scrolls, simply at the bottom when it does not. On a phone only the lit
  * slot shows its name; wider, every slot is named.
  *
- * Market is not a place. Nothing is for sale. The Park is where pets kept
- * on Solana are seen by everyone.
+ * The Park is where pets kept on Solana are seen by everyone. The Market
+ * sells looks — pieces and rooms, never power — and comes after play.
  */
 const PLACES: Array<{ key: string; label: string; icon: IconName; href: string }> = [
   { key: "home", label: "Home", icon: "home", href: "/home" },
   { key: "park", label: "Park", icon: "users", href: "/park" },
   { key: "playground", label: "Playground", icon: "ball", href: "/playground" },
+  { key: "market", label: "Market", icon: "market", href: "/market" },
   { key: "profile", label: "Profile", icon: "person", href: "/profile" },
   { key: "guilds", label: "Guilds", icon: "guild", href: "/guilds" },
 ];

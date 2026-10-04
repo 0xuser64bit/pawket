@@ -625,6 +625,134 @@
   --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
 }
 
+/* Blossom (from the Market): cherry blossom, petal pink and plum. */
+:root[data-theme="blossom"],
+[data-theme-preview="blossom"] {
+  color-scheme: light;
+
+  --ground: #fbecef;
+  --surface: #fffafb;
+  --surface-sunk: #f2d6dd;
+  --surface-ink: #3b1f2a;
+  --paper: #f7f7f4;
+  --paper-sunk: #ecece7;
+  --rule: #85816f;
+  --ink: #3b1f2a;
+  --ink-soft: #663c4c;
+  --ink-faint: #6f4455;
+  --ink-inverse: #fff8fa;
+  --edge: #3b1f2a;
+  --edge-soft: #eccad4;
+  --sun: #ff8c5a;
+  --sun-edge: #b34e1d;
+  --sun-text: #983f12;
+  --sun-soft: #ffe0d0;
+  --sprout: #63b655;
+  --sprout-edge: #3a7a31;
+  --sprout-text: #2a6624;
+  --sprout-soft: #dcefd3;
+  --pool: #8aa8f0;
+  --pool-edge: #3a63ad;
+  --pool-text: #2c4f96;
+  --pool-soft: #e0e6fb;
+  --bloom: #b8407a;
+  --bloom-edge: #7c2650;
+  --bloom-text: #8e2c5c;
+  --bloom-soft: #f9dde9;
+  --alarm: #d13a1f;
+  --alarm-edge: #8f2412;
+  --alarm-text: #9f2913;
+  --alarm-soft: #fbdcd4;
+  --on-sun: #3b1f2a;
+  --on-sprout: #2a1e14;
+  --on-pool: #2a1e14;
+  --on-bloom: #fff8ec;
+  --on-alarm: #fff8ec;
+  --focus: #1e2c6c;
+  --focus-contrast: #fffafb;
+  --trim-cloth: #8c7a60;
+  --trim-copper: #a45f2a;
+  --trim-glass: #2d8296;
+  --trim-foil: #95761a;
+  --pet-blush: #ff9f8f;
+  --pet-cream: #fff3e2;
+  --pet-cocoa: #6b3d1f;
+  --pet-cloud: #fbf8f4;
+  --pet-cloud-shade: #c7d3f2;
+  --pk-day: 1;
+  --pk-night: 0;
+
+  --shadow-sticker: 3px 3px 0 #3b1f2a;
+  --shadow-sticker-sm: 2px 2px 0 #3b1f2a;
+  --shadow-sticker-lift: 4px 4px 0 #3b1f2a;
+  --shadow-lift: 0 20px 44px -16px rgba(59, 31, 42, 0.35);
+  --shadow-well: inset 0 2px 0 rgba(59, 31, 42, 0.12);
+}
+
+/* Aurora (from the Market): a green-lit night, for staying up late. */
+:root[data-theme="aurora"],
+[data-theme-preview="aurora"] {
+  color-scheme: dark;
+
+  --ground: #0d1f22;
+  --surface: #15302f;
+  --surface-sunk: #081416;
+  --surface-ink: #dcfff6;
+  --paper: #16181f;
+  --paper-sunk: #0f1116;
+  --rule: #737a8c;
+  --ink: #ecfffa;
+  --ink-soft: #b3dcd2;
+  --ink-faint: #93c2b7;
+  --ink-inverse: #0d1f22;
+  --edge: #d9fff5;
+  --edge-soft: #24504a;
+  --sun: #ffa05c;
+  --sun-edge: #a8530f;
+  --sun-text: #ffb784;
+  --sun-soft: #3a2a2a;
+  --sprout: #7fcf72;
+  --sprout-edge: #2f6427;
+  --sprout-text: #9ddc91;
+  --sprout-soft: #1f3326;
+  --pool: #9dbcff;
+  --pool-edge: #2f538f;
+  --pool-text: #b5ccff;
+  --pool-soft: #202c4d;
+  --bloom: #ea74ad;
+  --bloom-edge: #8a2d5a;
+  --bloom-text: #f497c3;
+  --bloom-soft: #3a2038;
+  --alarm: #ff6b52;
+  --alarm-edge: #932412;
+  --alarm-text: #ff957e;
+  --alarm-soft: #3d1b1f;
+  --on-sun: #0d1f22;
+  --on-sprout: #0d1f22;
+  --on-pool: #0d1f22;
+  --on-bloom: #0d1f22;
+  --on-alarm: #0d1f22;
+  --focus: #ffd27a;
+  --focus-contrast: #0d1f22;
+  --trim-cloth: #c0ab8b;
+  --trim-copper: #d08a4e;
+  --trim-glass: #63c0d4;
+  --trim-foil: #d8b43e;
+  --pet-blush: #f2907f;
+  --pet-cream: #f6e6cc;
+  --pet-cocoa: #8a5530;
+  --pet-cloud: #efe9f2;
+  --pet-cloud-shade: #b3c1ea;
+  --pk-day: 0;
+  --pk-night: 1;
+
+  --shadow-sticker: 3px 3px 0 #020a0b;
+  --shadow-sticker-sm: 2px 2px 0 #020a0b;
+  --shadow-sticker-lift: 4px 4px 0 #020a0b;
+  --shadow-lift: 0 20px 44px -16px rgba(0, 0, 0, 0.72);
+  --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
 /* Starlight: a navy night with a gold moon. */
 :root[data-theme="starlight"],
 [data-theme-preview="starlight"] {
@@ -3881,6 +4009,24 @@ li {
   gap: var(--space-3);
 }
 
+/* ------------------------------------------------------- the Market
+
+   A room for sale is drawn as itself: a swatch in its own tokens, the
+   ground with a card on it, like the room picker's. */
+
+.pk-market-room {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 64px;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(var(--surface), var(--surface)) 22% 30% / 56% 40% no-repeat,
+    radial-gradient(circle at 74% 26%, var(--sun) 0 9%, transparent 10%),
+    var(--ground);
+  border: var(--stroke-line) solid var(--edge-soft);
+}
+
 /* ------------------------------------------------------- guild coins
 
    A coin's facts and its quotes are Paper: the corner falls to 4px, the
@@ -4131,6 +4277,16 @@ details > .pk-risks {
     transform: translateY(-1px);
     box-shadow: var(--shadow-sticker-sm);
   }
+}
+/* A Market room the closet does not hold yet: a dashed way to the Market, like a piece not yet earned. */
+.pk-theme--market {
+  border-style: dashed;
+  color: inherit;
+  text-decoration: none;
+}
+.pk-theme--market:focus-visible {
+  outline: var(--stroke-line) solid var(--focus);
+  outline-offset: 2px;
 }
 .pk-theme__art {
   display: flex;

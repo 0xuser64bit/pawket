@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Banner, ButtonLink, Card, Chip, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
+import { Banner, ButtonLink, Card, Chip, LaunchStage, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { GUILD_CAN, GUILD_CANNOT } from "@/lib/guilds/boundary";
 import { isListed } from "@/lib/guilds/delisted";
 import type { ChainGuild } from "@/lib/solana/accounts";
 import { formatUtcDate } from "@/lib/utils/format";
+import type { CoinStage } from "@/lib/coins/stage";
+import { readCoinStages } from "@/server/coins/meteora";
 import { readGuilds } from "@/server/solana";
 
 export const metadata: Metadata = {
@@ -29,7 +31,7 @@ function Bounds({ items, mark, color }: { items: string[]; mark: string; color: 
   );
 }
 
-function GuildCard({ guild }: { guild: ChainGuild }) {
+function GuildCard({ guild, coin }: { guild: ChainGuild; coin?: CoinStage }) {
   return (
     <div className="pk-guild">
       <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} />
@@ -47,6 +49,7 @@ function GuildCard({ guild }: { guild: ChainGuild }) {
             {guild.memberCount} {guild.memberCount === 1 ? "pet" : "pets"}{" "}
             <span className="pk-nowrap">· since {formatUtcDate(new Date(guild.createdAt * 1000).toISOString())}</span>
           </span>
+          {coin && coin !== "none" ? <LaunchStage stage={coin} /> : null}
         </div>
       </div>
     </div>
@@ -60,10 +63,13 @@ function GuildCard({ guild }: { guild: ChainGuild }) {
  */
 export default async function GuildsPage() {
   let guilds: ChainGuild[] | null = null;
+  let coins = new Map<string, CoinStage>();
   try {
     guilds = (await readGuilds())
       .filter(isListed)
       .sort((a, b) => b.memberCount - a.memberCount || a.createdAt - b.createdAt);
+    // Optional, like the coins: the list shows without them if they cannot be read.
+    coins = await readCoinStages(guilds).catch(() => coins);
   } catch {
     guilds = null;
   }
@@ -83,8 +89,8 @@ export default async function GuildsPage() {
           <p className="body" style={{ maxWidth: "62ch" }}>
             Pets and the people who keep them, gathered under a name, a motto and a crest. Joining one is optional —
             and so is staying. A pet is in one guild at a time; it joins with its owner&apos;s signature, Pawket
-            pays the fee, and the guild is a record on Solana that anyone can read. Nothing in a guild can be bought,
-            and nothing in it changes a pet.
+            pays the fee, and the guild is a record on Solana that anyone can read. A guild may launch a coin of its
+            own, optional like the guild; nothing in a guild changes a pet.
           </p>
           <div style={{ marginTop: "var(--space-4)" }}>
             <ButtonLink label="Found a guild" href="/guilds/new" tone="bloom" icon="guild" />
@@ -111,7 +117,7 @@ export default async function GuildsPage() {
             </SectionLabel>
             <div className="pk-rows">
               {guilds.map((guild) => (
-                <GuildCard key={guild.address} guild={guild} />
+                <GuildCard key={guild.address} guild={guild} coin={coins.get(guild.slug)} />
               ))}
             </div>
           </Stack>
@@ -136,7 +142,7 @@ export default async function GuildsPage() {
           <Banner
             tone="info"
             title="A guild never touches your pet"
-            body="No stat increase, no faster care, no XP multiplier, no matchmaking priority, no token. Leaving changes nothing about the pet."
+            body="No stat increase, no faster care, no XP multiplier, no matchmaking priority — and a guild's coin, if it has one, changes none of that either. Leaving changes nothing about the pet."
           />
         </Stack>
       </Stack>

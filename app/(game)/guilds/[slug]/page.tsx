@@ -3,9 +3,11 @@ import Link from "next/link";
 import {
   BackLink,
   Banner,
+  ButtonLink,
   Card,
   Chip,
   EmptyState,
+  LaunchStage,
   Paper,
   PetFrame,
   Presence,
@@ -26,6 +28,7 @@ import { toCompanionRecord, type ChainGuild, type PetOnChain } from "@/lib/solan
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { formatUtcDate } from "@/lib/utils/format";
+import { readCoin, readHolderWallets, type CoinState } from "@/server/coins/meteora";
 import { readGuild, readGuildPets } from "@/server/solana";
 
 export const dynamic = "force-dynamic";
@@ -54,9 +57,15 @@ export default async function GuildPage({ params }: Props) {
   const { slug } = await params;
   let guild: ChainGuild | null = null;
   let pets: PetOnChain[] = [];
+  let coin: CoinState | null = null;
+  let holders: Set<string> | null = null;
   try {
     guild = isValidSlug(slug) ? await readGuild(slug) : null;
-    if (guild) pets = await readGuildPets(guild.address);
+    if (guild) {
+      // The coin is optional and read beside the pets: if it cannot be read, the guild still shows.
+      [pets, coin] = await Promise.all([readGuildPets(guild.address), readCoin(guild).catch(() => null)]);
+      holders = coin ? await readHolderWallets(coin).catch(() => null) : null;
+    }
   } catch {
     return (
       <Screen width="narrow">
@@ -137,7 +146,15 @@ export default async function GuildPage({ params }: Props) {
                       <PetFrame {...petLook(record, mood)} sky={SPECIES_SKY[record.species]} level={level} size="fluid" still />
                     </Link>
                     <div className="pk-card__body">
-                      <h3 className="title">{entry.pet.name}</h3>
+                      <h3 className="title">
+                        {entry.pet.name}
+                        {holders?.has(entry.pet.owner) ? (
+                          <span className="pk-coin-pin" title={`Wears ${guild.name}'s crest pin: its owner holds the coin`}>
+                            <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} size="sm" />
+                            <span className="pk-sr">, wears the crest pin</span>
+                          </span>
+                        ) : null}
+                      </h3>
                       <p className="caption pk-faint">
                         Level {level}
                         {entry.pet.address === guild.founderPet ? " · founder" : ""}
@@ -181,6 +198,7 @@ export default async function GuildPage({ params }: Props) {
             </p>
           </Card>
           {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name }} />}
+          {coin ? <CoinCard guildName={guild.name} slug={guild.slug} coin={coin} /> : null}
           <Paper title="On the record" meta={`Solana ${cluster}`}>
             <div className="pk-receipt">
               <Fact k="Guild" value={guild.address} cluster={cluster} />
@@ -215,5 +233,31 @@ function Fact({ k, value, cluster }: { k: string; value: string; cluster: Return
       <span className="pk-receipt__k">{k}</span>
       <AddressLine value={value} label={k.toLowerCase()} href={explorerAddressUrl(value, cluster)} />
     </div>
+  );
+}
+
+const COIN_LINE: Record<CoinState["stage"], (guild: string) => string> = {
+  none: (guild) => `${guild} has no coin. Its founder can launch one, optional like the guild, and it never touches a pet.`,
+  dbc: () => "On its bonding curve on Meteora. Holders' pets wear the crest pin here; nothing else changes.",
+  pending: () => "Raised its threshold and graduating into its DAMM v2 pool. Trading is paused until then.",
+  damm: () => "Graduated: it trades in its DAMM v2 pool, its liquidity locked for good.",
+  suspended: () => "Pawket stopped offering trades in it. What anyone holds is untouched on Solana.",
+};
+
+/** The guild's coin, in a line, with the way to its page — the only place a coin is traded. */
+function CoinCard({ guildName, slug, coin }: { guildName: string; slug: string; coin: CoinState }) {
+  return (
+    <Card>
+      <h2 className="title">{coin.stage === "none" ? "A coin, if it wants one" : coin.name}</h2>
+      <div style={{ marginTop: "var(--space-2)" }}>
+        <LaunchStage stage={coin.stage} />
+      </div>
+      <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
+        {COIN_LINE[coin.stage](guildName)}
+      </p>
+      <div style={{ marginTop: "var(--space-4)" }}>
+        <ButtonLink label={coin.stage === "none" ? "How a coin works" : "Open the coin"} href={`/guilds/${slug}/coin`} tone="quiet" size="sm" after="right" />
+      </div>
+    </Card>
   );
 }

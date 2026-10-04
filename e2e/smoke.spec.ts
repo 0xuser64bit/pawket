@@ -58,13 +58,13 @@ test("an empty room asks you to adopt and does not pretend to care", async ({ pa
   await expect(page.getByRole("button", { name: "Feed" })).toHaveCount(0);
 });
 
-test("guilds are optional, read from Solana, and sell nothing", async ({ page }) => {
+test("guilds are optional, read from Solana, and trade nothing outside a coin's own page", async ({ page }) => {
   await page.goto("/guilds");
   await expect(page.getByRole("heading", { name: "Guilds" })).toBeVisible();
   await expect(page.getByText(/optional, always/i)).toBeVisible();
   await expect(page.getByText(/raise a pet/i)).toBeVisible();
   await expect(page.getByRole("button", { name: /buy|swap|pay/i })).toHaveCount(0);
-  await expect(page.getByText(/token/i).first()).toBeVisible();
+  await expect(page.getByText(/coin/i).first()).toBeVisible();
 
   // Founding asks for a pet on Solana, and a wallet only once there is something to sign.
   await page.getByRole("link", { name: "Found a guild" }).click();
@@ -72,6 +72,19 @@ test("guilds are optional, read from Solana, and sell nothing", async ({ page })
   await expect(page.getByText("/guilds/sunbeam-club")).toBeVisible();
   await expect(page.getByRole("button", { name: "Connect a wallet" })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Found Sunbeam Club/ })).toBeDisabled();
+});
+
+test("a guild's coin states its terms and what can go wrong, and asks a wallet only to trade", async ({ page }) => {
+  await page.goto("/guilds/sunbeam-club/coin");
+  const read = page.getByText(/solana did not answer|guild coins are off here/i);
+  if (await read.isVisible().catch(() => false)) return;
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(/coin/i);
+  await expect(page.getByText("The terms")).toBeVisible();
+  await expect(page.getByText("What can go wrong")).toBeVisible();
+  await expect(page.getByText(/never changes a pet's vitals/i)).toBeVisible();
+  // Nothing signs here without a wallet, and nothing is offered as a promise.
+  await expect(page.getByRole("button", { name: /^sign/i })).toHaveCount(0);
+  await expect(page.getByText(/guaranteed|to the moon|passive income/i)).toHaveCount(0);
 });
 
 test("a guild nobody founded is a plain miss", async ({ page }) => {

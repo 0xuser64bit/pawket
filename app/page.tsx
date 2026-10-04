@@ -45,7 +45,7 @@ const ASSETS = [
   ["Its keepsake card", "A frozen card in your wallet that points at the pet", "No", "No — it cannot be sold or sent"],
   ["Clothes", "Expression: eighteen looks, five of them earned by caring", "No", "No — the wardrobe is free"],
   ["A guild", "A crest and a place among other pets, kept on Solana", "No — joining is optional", "No — joining and leaving are free"],
-  ["Guild token", "None exists. A guild is its pets, not a coin", "No", "Not in this version"],
+  ["A guild's coin", "Optional: a guild may launch one on Meteora. Holders' pets wear its crest pin", "No — and it never touches a pet", "Yes: it trades, and can fall to nothing"],
   ["A Pawket Wallet", "A balance for the fees of a device you link, so care asks nothing each time", "No — it is optional", "No — it holds your SOL and gives it back"],
   ["SOL", "Network fees on devnet, which Pawket covers while it can", "No", "Yes, elsewhere"],
 ];
@@ -239,7 +239,7 @@ export default function LandingPage() {
               <Banner
                 tone="guild"
                 title="Guilds, optional, always"
-                body="A pet can join a guild on Solana — a crest, a motto, other pets — and leave whenever its owner likes. Joining adds people to the game. It adds nothing to a pet — no stat, no speed, no XP — and there is no token."
+                body="A pet can join a guild on Solana — a crest, a motto, other pets — and leave whenever its owner likes. Joining adds people to the game. It adds nothing to a pet — no stat, no speed, no XP — and neither does a guild's coin, which is optional and launched by the guild's founder."
                 action={<ButtonLink label="See the guilds" href="/guilds" tone="ghost" size="sm" after="right" />}
               />
             </Stack>
@@ -303,7 +303,7 @@ export default function LandingPage() {
         <p className="body-sm pk-faint">
           Pawket is a game you play in this browser. The pet you adopt is saved here, and clearing
           this browser&apos;s data removes them — unless you keep them on Solana, where the program
-          holds the record. Guild tokens are not for sale.
+          holds the record. A guild&apos;s coin is optional, never touches a pet, and is promised no value by anyone.
         </p>
       </footer>
     </>

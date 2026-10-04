@@ -182,7 +182,7 @@ export function FoundGuild() {
           {sponsor.data?.available
             ? "Pawket pays the fee and the rent. Your wallet signs as the pet's owner."
             : "It costs a small network fee and rent in devnet SOL."}{" "}
-          A guild has no token and nothing to sell, and it never changes a pet.
+          A guild starts with no coin, and it never changes a pet.
         </p>
       </div>
       <TxReceipt tx={sender.tx} cluster={cluster} />

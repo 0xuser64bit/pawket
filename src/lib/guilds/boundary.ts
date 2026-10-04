@@ -1,7 +1,8 @@
 /**
  * The rule a guild lives inside. These lists are the product: what a guild
- * is, and what it can never be, whoever founds it. Nothing here is a price,
- * a token or a treasury — a guild has none of them.
+ * is, and what it can never be, whoever founds it. A guild may launch one
+ * optional coin on Pawket's presets (`src/lib/coins/`) — and a coin, like
+ * the guild, never reaches a pet.
  */
 
 export const GUILD_CAN = [
@@ -10,6 +11,7 @@ export const GUILD_CAN = [
   "Count what its pets do together: cares, levels, days in a row",
   "Be joined and left freely, at any time, with Pawket paying the fee",
   "Hold one guild per pet, so a crest means something",
+  "Launch one optional coin on Meteora, from Pawket's presets, once three pets are in it",
 ];
 
 export const GUILD_CANNOT = [
@@ -17,5 +19,6 @@ export const GUILD_CANNOT = [
   "Multiply XP or change how a pet grows",
   "Give matchmaking priority or any edge in a game",
   "Be required to adopt, play, progress or keep a pet",
-  "Sell, swap or price anything, or promise a return",
+  "Sell or price a pet, or make a coin decide who belongs",
+  "Promise a coin any value or return",
 ];

@@ -2,8 +2,9 @@ import { GUILD_LIMITS } from "@/lib/solana/program";
 
 /**
  * A guild, as the program keeps it and a screen draws it. A guild is a
- * name, a motto, a crest and the pets in it — nothing to buy, hold or swap,
- * and nothing that reaches a vital, XP or a score (`boundary.ts`).
+ * name, a motto, a crest and the pets in it — and, if its founder launches
+ * one, an optional coin — with nothing that reaches a vital, XP or a score
+ * (`boundary.ts`).
  *
  * The crest's glyph and colour are indexes the program checks against
  * `GUILD_LIMITS`; these lists name them, in order. The colours are hues

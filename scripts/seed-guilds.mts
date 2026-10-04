@@ -2,7 +2,8 @@
  * Founds Pawket's starter guilds on a cluster, so discovery is never an empty
  * page: three guilds, each founded by a pet and joined by two more — the
  * three pets a guild needs before it may launch a coin — every pet fed
- * once. Run it again and it does only what is missing.
+ * once, and an event planned and a question asked in each. Run it again
+ * and it does only what is missing.
  *
  *   pnpm dlx tsx scripts/seed-guilds.mts
  *
@@ -14,14 +15,16 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createKeyPairSignerFromBytes, createSolanaRpc } from "@solana/kit";
 import { CareActionType, PetPersonality, PetSpecies } from "../src/lib/game/enums";
 import { CREST_COLOURS, CREST_GLYPHS } from "../src/lib/guilds/guild";
-import { fetchGuild, fetchPetOnChain } from "../src/lib/solana/accounts";
+import { fetchGuild, fetchGuildEvents, fetchGuildPolls, fetchPetOnChain } from "../src/lib/solana/accounts";
 import {
   getAdoptPetInstruction,
   getCareInstruction,
+  getCreateEventInstruction,
+  getCreatePollInstruction,
   getFoundGuildInstruction,
   getJoinGuildInstruction,
 } from "../src/lib/solana/instructions";
-import { deriveGuildPda, deriveMemberPda, derivePassportPda, derivePetPda } from "../src/lib/solana/pda";
+import { deriveEventPda, deriveGuildPda, deriveMemberPda, derivePassportPda, derivePetPda, derivePollPda } from "../src/lib/solana/pda";
 import { sendPawket } from "../src/lib/solana/send";
 import { cosign } from "../src/lib/solana/sponsor";
 
@@ -67,6 +70,8 @@ const GUILDS = [
     founder: { name: "Saffron", species: PetSpecies.LunaCat, personality: PetPersonality.Cozy },
     member: { name: "Marmalade", species: PetSpecies.LunaCat, personality: PetPersonality.Curious },
     friend: { name: "Nib", species: PetSpecies.LunaCat, personality: PetPersonality.Mischief },
+    event: { title: "Sunday nap in the sun", note: "By the big window. Bring a blanket." },
+    poll: { question: "Where should we nap next?", options: ["The big window", "The warm rug", "Under the stairs"] },
   },
   {
     slug: "muddy-paws",
@@ -77,6 +82,8 @@ const GUILDS = [
     founder: { name: "Biscuit", species: PetSpecies.MossPup, personality: PetPersonality.Brave },
     member: { name: "Waffles", species: PetSpecies.MossPup, personality: PetPersonality.Mischief },
     friend: { name: "Juniper", species: PetSpecies.MossPup, personality: PetPersonality.Curious },
+    event: { title: "Puddle walk", note: "Boots optional. Every puddle counts." },
+    poll: { question: "Best walk of the week?", options: ["The park loop", "The river path", "Round the block"] },
   },
   {
     slug: "cloud-nine",
@@ -87,6 +94,8 @@ const GUILDS = [
     founder: { name: "Mochi", species: PetSpecies.CloudBun, personality: PetPersonality.Cozy },
     member: { name: "Clover", species: PetSpecies.CloudBun, personality: PetPersonality.Brave },
     friend: { name: "Dumpling", species: PetSpecies.CloudBun, personality: PetPersonality.Curious },
+    event: { title: "Quiet hour", note: "Soft voices, softer paws." },
+    poll: { question: "What should our next cushion be?", options: ["Cloud grey", "Lavender", "Sunny yellow"] },
   },
 ];
 
@@ -133,6 +142,21 @@ for (const guild of GUILDS) {
     const place = (await deriveMemberPda(member)).address;
     await send(`${[guild.member, guild.friend][i].name} joins ${guild.name}`, ({ owner: signer, payer }) => [
       getJoinGuildInstruction({ owner: signer, payer, pet: member, guild: address, member: place }),
+    ]);
+  }
+  const now = Math.floor(Date.now() / 1000);
+  if (!(await fetchGuildEvents(rpc, address)).some((event) => event.endsAt > now)) {
+    // Within the hour, for six hours: something to go to and check in at.
+    const startsAt = now + 30 * 60;
+    const event = (await deriveEventPda(address, startsAt)).address;
+    await send(`plan ${guild.event.title}`, ({ owner: signer, payer }) => [
+      getCreateEventInstruction({ owner: signer, payer, guild: address, event, id: startsAt, ...guild.event, startsAt, endsAt: startsAt + 6 * 3600 }),
+    ]);
+  }
+  if ((await fetchGuildPolls(rpc, address)).length === 0) {
+    const poll = (await derivePollPda(address, now)).address;
+    await send(`ask ${guild.poll.question}`, ({ owner: signer, payer }) => [
+      getCreatePollInstruction({ owner: signer, payer, guild: address, poll, id: now, ...guild.poll, closesAt: now + 7 * 86_400 }),
     ]);
   }
   console.log(`${guild.name}: ${(await fetchGuild(rpc, guild.slug))?.memberCount} pets at /guilds/${guild.slug}`);

@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
 import type { Address } from "@solana/kit";
-import { Banner, Button, Card, ItemTile, Paper, Receipt, Row, SectionLabel, Stack, WearableArt, setTheme, useThemeChoice } from "@/components/pk";
+import { Banner, Button, Card, ItemTile, Paper, PetArt, Receipt, Row, SectionLabel, Stack, WearableArt, setTheme, useThemeChoice } from "@/components/pk";
 import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { AddressLine } from "@/components/wallet/address";
@@ -35,6 +35,8 @@ interface Item {
   line: string;
   kind: "piece" | "room";
   art: React.ReactNode;
+  /** The catalog id of a piece, to try it on. */
+  piece?: string;
   room?: ThemeId;
 }
 
@@ -43,6 +45,7 @@ const PIECES: Item[] = MARKET_WEARABLES.map((piece) => ({
   name: piece.name,
   line: "For any of your pets on Solana.",
   kind: "piece",
+  piece: piece.id,
   art: <WearableArt id={piece.id} className="pk-tile__piece" />,
 }));
 
@@ -128,6 +131,10 @@ export function MarketScreen() {
 
       {picked ? (
         <Paper title={picked.name} meta={owned.has(picked.id) ? "In your closet" : "Fixed price"}>
+          {/* What it looks like, before anything is signed: a pet wearing the piece, or the room itself. */}
+          <div className="pk-market-try" data-theme-preview={picked.room} aria-hidden="true">
+            <PetArt form="cat" temper="curious" feeling="happy" pose="full" wearing={picked.piece} seed={picked.name} />
+          </div>
           <Receipt
             rows={[
               { k: "What it is", v: picked.kind === "room" ? "A room, for every device of this wallet" : "A piece, for any of your pets on Solana" },

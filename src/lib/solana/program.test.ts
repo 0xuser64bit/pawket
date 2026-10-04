@@ -7,6 +7,15 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import {
   getAdoptPetInstruction,
+  getBuyInstruction,
+  getCheckInInstruction,
+  getCreateEventInstruction,
+  getCreatePollInstruction,
+  getDressOwnedByDeviceInstruction,
+  getDressOwnedInstruction,
+  getRsvpInstruction,
+  getVoteInstruction,
+  getWaveInstruction,
   getCareByDeviceInstruction,
   getCareInstruction,
   getCloseWalletInstruction,
@@ -25,7 +34,9 @@ import {
 } from "./instructions";
 import {
   CARE_ACTION_VARIANTS,
+  GATHERING_LIMITS,
   GUILD_LIMITS,
+  MARKET,
   PAWKET_ACCOUNTS,
   PAWKET_DISCRIMINATORS,
   PAWKET_ERROR_CODES,
@@ -88,6 +99,15 @@ const BUILT: Record<string, Instruction> = {
   care_by_device: getCareByDeviceInstruction({ device: A, wallet: A, pet: A, passport: A, action: CareActionType.Rest }),
   finish_round_by_device: getFinishRoundByDeviceInstruction({ device: A, wallet: A, pet: A, passport: A }),
   dress_by_device: getDressByDeviceInstruction({ device: A, wallet: A, pet: A, wearing: 18 }),
+  buy: getBuyInstruction({ owner: A, payer: A, closet: A, item: 19 }),
+  dress_owned: getDressOwnedInstruction({ owner: A, pet: A, closet: A, wearing: 19 }),
+  dress_owned_by_device: getDressOwnedByDeviceInstruction({ device: A, wallet: A, pet: A, closet: A, wearing: 22 }),
+  create_event: getCreateEventInstruction({ owner: A, payer: A, guild: A, event: A, id: 7, title: "Sunday nap", note: "By the window.", startsAt: 1_790_848_800, endsAt: 1_790_856_000 }),
+  rsvp: getRsvpInstruction({ owner: A, payer: A, pet: A, member: A, event: A, rsvp: A }),
+  check_in: getCheckInInstruction({ owner: A, pet: A, event: A, rsvp: A }),
+  create_poll: getCreatePollInstruction({ owner: A, payer: A, guild: A, poll: A, id: 7, question: "Which rug?", options: ["Red", "Blue"], closesAt: 1_790_848_800 }),
+  vote: getVoteInstruction({ owner: A, payer: A, pet: A, member: A, poll: A, ballot: A, option: 1 }),
+  wave: getWaveInstruction({ visitor: A, payer: A, pet: A, guestbook: A }),
 };
 
 describe("program.ts against the IDL", () => {
@@ -122,6 +142,12 @@ describe("program.ts against the IDL", () => {
     expect(PAWKET_ACCOUNTS.guild.discriminator).toEqual(byName.Guild);
     expect(PAWKET_ACCOUNTS.member.discriminator).toEqual(byName.GuildMember);
     expect(PAWKET_ACCOUNTS.wallet.discriminator).toEqual(byName.PawketWallet);
+    expect(PAWKET_ACCOUNTS.closet.discriminator).toEqual(byName.Closet);
+    expect(PAWKET_ACCOUNTS.event.discriminator).toEqual(byName.GuildEvent);
+    expect(PAWKET_ACCOUNTS.rsvp.discriminator).toEqual(byName.EventRsvp);
+    expect(PAWKET_ACCOUNTS.poll.discriminator).toEqual(byName.GuildPoll);
+    expect(PAWKET_ACCOUNTS.ballot.discriminator).toEqual(byName.Ballot);
+    expect(PAWKET_ACCOUNTS.guestbook.discriminator).toEqual(byName.Guestbook);
     expect(Object.keys(PAWKET_ACCOUNTS)).toHaveLength(idl.accounts.length);
   });
 
@@ -185,7 +211,28 @@ describe("program.ts against the IDL", () => {
     );
   });
 
-  it("numbers the whole wardrobe and nothing past it", () => {
-    expect(WEARABLE_COUNT).toBe(WEARABLES.length);
+  it("numbers the whole wardrobe and nothing past it: the free eighteen, then the Market's", () => {
+    expect(WEARABLE_COUNT + MARKET.wearables).toBe(WEARABLES.length);
+    expect(WEARABLES.slice(0, WEARABLE_COUNT).every((item) => !item.price)).toBe(true);
+    expect(WEARABLES.slice(WEARABLE_COUNT).every((item) => item.price === MARKET.wearablePrice)).toBe(true);
+  });
+
+  it("holds the Market and a guild's gatherings to the program's numbers", () => {
+    const source = readFileSync(path.join(process.cwd(), "programs/pawket/src/lib.rs"), "utf8");
+    const constant = (name: string) => source.match(new RegExp(`pub const ${name}: [\\w&\\[\\]]+ = ([^;]+);`))?.[1].replaceAll("_", "");
+    expect(Number(constant("MARKET_WEARABLE_COUNT"))).toBe(MARKET.wearables);
+    expect(Number(constant("FIRST_ROOM_ITEM"))).toBe(MARKET.firstRoom);
+    expect(Number(constant("MARKET_ROOM_COUNT"))).toBe(MARKET.rooms);
+    expect(BigInt(constant("WEARABLE_PRICE_LAMPORTS")!)).toBe(MARKET.wearablePrice);
+    expect(BigInt(constant("ROOM_PRICE_LAMPORTS")!)).toBe(MARKET.roomPrice);
+    expect(source).toContain(`pubkey!("${MARKET.treasury}")`);
+    expect(Number(constant("MAX_EVENT_TITLE_LEN"))).toBe(GATHERING_LIMITS.maxTitle);
+    expect(Number(constant("MAX_EVENT_NOTE_LEN"))).toBe(GATHERING_LIMITS.maxNote);
+    expect(Number(constant("MAX_POLL_QUESTION_LEN"))).toBe(GATHERING_LIMITS.maxQuestion);
+    expect(Number(constant("MAX_POLL_OPTION_LEN"))).toBe(GATHERING_LIMITS.maxOption);
+    expect(Number(constant("MAX_POLL_OPTIONS"))).toBe(GATHERING_LIMITS.maxOptions);
+    // A poll's options go on the wire as a u32-counted list of strings.
+    const poll = Array.from(BUILT.create_poll.data ?? []);
+    expect(poll.slice(8, 12)).toEqual([7, 0, 0, 0]);
   });
 });

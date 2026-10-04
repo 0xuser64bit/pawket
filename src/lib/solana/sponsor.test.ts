@@ -21,6 +21,15 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import {
   getAdoptPetInstruction,
+  getBuyInstruction,
+  getCheckInInstruction,
+  getCreateEventInstruction,
+  getCreatePollInstruction,
+  getDressOwnedByDeviceInstruction,
+  getDressOwnedInstruction,
+  getRsvpInstruction,
+  getVoteInstruction,
+  getWaveInstruction,
   getCareByDeviceInstruction,
   getCareInstruction,
   getCloseWalletInstruction,
@@ -201,6 +210,40 @@ describe("checkSponsorable", () => {
       ok: false,
       reason: "A linked device pays its own fees, from your Pawket Wallet.",
     });
+  });
+
+  it("pays the fee and the closet's rent for a purchase, never its price, and never wears a bought piece for a device", async () => {
+    const CLOSET = "7preVB3hcxXBLoAxefPgUfB9Hd62GsLkN9PTqG763MVc";
+    const buy = await built((payer) => [getBuyInstruction({ owner, payer, closet: CLOSET, item: 19 })]);
+    expect(checkSponsorable(buy, sponsor.address)).toEqual({ ok: true, kinds: ["buy"] });
+    // The sponsor as the buyer would be paying the price: a part it does not take.
+    const asBuyer = await built((payer) => [getBuyInstruction({ owner: payer, payer, closet: CLOSET, item: 19 })]);
+    expect(checkSponsorable(asBuyer, sponsor.address)).toMatchObject({ ok: false });
+    const wear = await built(() => [getDressOwnedInstruction({ owner, pet: PET, closet: CLOSET, wearing: 19 })]);
+    expect(checkSponsorable(wear, sponsor.address)).toEqual({ ok: true, kinds: ["dress-owned"] });
+    const device = createNoopSigner(DEVICE as KeyPairSigner["address"]);
+    const byDevice = await built(() => [getDressOwnedByDeviceInstruction({ device, wallet: WALLET, pet: PET, closet: CLOSET, wearing: 19 })]);
+    expect(checkSponsorable(byDevice, sponsor.address)).toMatchObject({ ok: false });
+  });
+
+  it("pays the rent of a guild's events, RSVPs, polls and ballots, and of a guestbook, and stands in for nobody", async () => {
+    const EVENT = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
+    const event = (payer: TransactionSigner, who: TransactionSigner = owner) =>
+      getCreateEventInstruction({ owner: who, payer, guild: GUILD, event: EVENT, id: 1, title: "Sunday nap", note: "", startsAt: 1, endsAt: 2 });
+    const rsvp = (payer: TransactionSigner) => getRsvpInstruction({ owner, payer, pet: PET, member: MEMBER, event: EVENT, rsvp: WALLET });
+    const poll = (payer: TransactionSigner) =>
+      getCreatePollInstruction({ owner, payer, guild: GUILD, poll: EVENT, id: 1, question: "Which rug?", options: ["Red", "Blue"], closesAt: 9 });
+    const vote = (payer: TransactionSigner, who: TransactionSigner = owner) =>
+      getVoteInstruction({ owner: who, payer, pet: PET, member: MEMBER, poll: EVENT, ballot: WALLET, option: 1 });
+    const wave = (payer: TransactionSigner, who: TransactionSigner = owner) => getWaveInstruction({ visitor: who, payer, pet: PET, guestbook: WALLET });
+    const kinds = await built((payer) => [event(payer), rsvp(payer), poll(payer), vote(payer)]);
+    expect(checkSponsorable(kinds, sponsor.address)).toEqual({ ok: true, kinds: ["event", "rsvp", "poll", "vote"] });
+    const checkIn = await built(() => [getCheckInInstruction({ owner, pet: PET, event: EVENT, rsvp: WALLET }), getWaveInstruction({ visitor: owner, payer: owner, pet: PET, guestbook: WALLET })]);
+    expect(checkSponsorable(checkIn, sponsor.address)).toEqual({ ok: true, kinds: ["check-in", "wave"] });
+    expect(checkSponsorable(await built((payer) => [wave(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["wave"] });
+    for (const asSomeone of [(p: TransactionSigner) => event(p, p), (p: TransactionSigner) => vote(p, p), (p: TransactionSigner) => wave(p, p)]) {
+      expect(checkSponsorable(await built((payer) => [asSomeone(payer)]), sponsor.address)).toMatchObject({ ok: false });
+    }
   });
 
   it("refuses an instruction it does not know, even on the Pawket program", async () => {

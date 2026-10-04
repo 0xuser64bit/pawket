@@ -10,6 +10,12 @@
  * pet's record has the sticker it names. That is the wardrobe's rule, not
  * the program's — a sticker is read from the record, and a piece is still
  * only looks.
+ *
+ * The last four are the Market's: bought once for a fixed price in SOL
+ * (`MARKET` in `src/lib/solana/program.ts`), recorded in the owner's closet
+ * on chain, and worn by any of that wallet's pets on Solana with
+ * `dress_owned` — the program checks the closet. Bought or free, a piece is
+ * only looks.
  */
 export interface Wearable {
   id: string;
@@ -34,9 +40,15 @@ export interface Wearable {
     | "strawberry"
     | "bell"
     | "flower"
-    | "sprout";
+    | "sprout"
+    | "halo"
+    | "wizard"
+    | "sunhat"
+    | "goldcrown";
   /** The sticker (`src/lib/game/badges.ts`) that earns it, for a piece that is earned. */
   earnedBy?: string;
+  /** Its fixed price in the Market, in lamports, for a piece that is bought. */
+  price?: bigint;
 }
 
 export const WEARABLES: readonly Wearable[] = [
@@ -58,6 +70,11 @@ export const WEARABLES: readonly Wearable[] = [
   { id: "bell-collar", name: "Bell collar", kind: "Collar", icon: "bell", earnedBy: "three-days" },
   { id: "flower-crown", name: "Flower crown", kind: "Crown", icon: "flower", earnedBy: "best-friends" },
   { id: "leaf-sprout", name: "Leaf sprout", kind: "Sprout", icon: "sprout", earnedBy: "all-four" },
+  // The Market's, from slot 19: their price is the program's (`WEARABLE_PRICE_LAMPORTS`).
+  { id: "halo", name: "Halo", kind: "Halo", icon: "halo", price: 50_000_000n },
+  { id: "wizard-hat", name: "Wizard hat", kind: "Hat", icon: "wizard", price: 50_000_000n },
+  { id: "sun-hat", name: "Sun hat", kind: "Hat", icon: "sunhat", price: 50_000_000n },
+  { id: "gold-crown", name: "Gold crown", kind: "Crown", icon: "goldcrown", price: 50_000_000n },
 ];
 
 const WEARABLE_IDS = new Set(WEARABLES.map((item) => item.id));
@@ -74,4 +91,12 @@ export function findWearable(id: string | null | undefined): Wearable | undefine
 /** Whether a piece is open to a pet whose record has earned `stickers` (ids from `badgesFor`). */
 export function isUnlocked(item: Wearable, stickers: readonly string[]): boolean {
   return !item.earnedBy || stickers.includes(item.earnedBy);
+}
+
+/** The Market's pieces: bought once, worn by any of the buyer's pets on Solana. */
+export const MARKET_WEARABLES = WEARABLES.filter((item) => item.price !== undefined);
+
+/** A piece's place on chain, from 1 in catalog order: also its item id in the Market. */
+export function wearableItem(id: string): number {
+  return WEARABLES.findIndex((item) => item.id === id) + 1;
 }

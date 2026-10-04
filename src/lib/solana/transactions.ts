@@ -82,11 +82,11 @@ export function isInsufficientFunds(error: unknown): boolean {
 }
 
 const MIN_CODE = 6000;
-const MAX_CODE = 6015;
+const MAX_CODE = 6029;
 const isPawketCode = (code: unknown): code is number =>
   typeof code === "number" && Number.isInteger(code) && code >= MIN_CODE && code <= MAX_CODE;
 
-/** Map a program error code (6000–6015) to one sentence that says what did not change. */
+/** Map a program error code (6000–6029) to one sentence that says what did not change. */
 export function pawketErrorMessage(code: number): string {
   switch (code) {
     case 6000:
@@ -121,6 +121,34 @@ export function pawketErrorMessage(code: number): string {
       return "No device is linked to your Pawket Wallet. Nothing changed.";
     case 6015:
       return "Unlink the device before closing your Pawket Wallet. Nothing moved.";
+    case 6016:
+      return "The Market sells nothing like that. Nothing was bought.";
+    case 6017:
+      return "Your closet holds that already. Nothing was bought, and nothing was charged.";
+    case 6018:
+      return "That piece is not in your closet yet. Nothing changed.";
+    case 6019:
+      return "An event needs a 3 to 48 character title, and to end after it starts, within 7 days and within 60 days from now. No event was planned.";
+    case 6020:
+      return "Only the guild's founder can do that. Nothing changed.";
+    case 6021:
+      return "That pet is not in this guild. Nothing changed.";
+    case 6022:
+      return "That event is over. Nothing changed.";
+    case 6023:
+      return "Check-in opens 15 minutes before the event and closes when it ends. Nothing changed.";
+    case 6024:
+      return "That pet has checked in already. Nothing changed.";
+    case 6025:
+      return "A poll asks 3 to 80 characters, with 2 to 4 options of up to 24, open 10 minutes to 14 days. No poll was opened.";
+    case 6026:
+      return "That poll has closed. No vote was counted.";
+    case 6027:
+      return "That poll has no such option. No vote was counted.";
+    case 6028:
+      return "That is your own pet — wave at someone else's. Nothing changed.";
+    case 6029:
+      return "You waved at this pet today already. It is in their guestbook.";
     default:
       return "The program refused it. Nothing changed.";
   }

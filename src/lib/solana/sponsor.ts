@@ -16,11 +16,11 @@ import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
  * adopt and care with an empty wallet. It holds a small devnet float and
  * signs only what this module allows: a transaction whose every instruction
  * is Pawket's, where the sponsor is the fee payer and appears in no
- * instruction except as the rent payer of `adopt_pet`, `found_guild` and
- * `join_guild`, or as the account `leave_guild` hands that rent back to. A
- * compute-budget
- * instruction is refused too — a priority fee is the one way a caller could
- * spend the float faster.
+ * instruction except as the rent payer of `adopt_pet`, `found_guild`,
+ * `join_guild`, `buy` (the closet, never the price), `create_event`, `rsvp`,
+ * `create_poll`, `vote` and `wave`, or as the account `leave_guild` hands
+ * that rent back to. A compute-budget instruction is refused too — a
+ * priority fee is the one way a caller could spend the float faster.
  *
  * It pays the fee for looking after a Pawket Wallet — opening it (the owner
  * pays its rent), depositing, withdrawing, linking or unlinking a device,
@@ -49,7 +49,15 @@ export type SponsoredKind =
   | "withdraw"
   | "link"
   | "unlink"
-  | "close-wallet";
+  | "close-wallet"
+  | "buy"
+  | "dress-owned"
+  | "event"
+  | "rsvp"
+  | "check-in"
+  | "poll"
+  | "vote"
+  | "wave";
 
 /** Each instruction's kind; `null` is one the sponsor never signs for (a device's own action). */
 const KIND_OF: Record<keyof typeof PAWKET_DISCRIMINATORS, SponsoredKind | null> = {
@@ -69,6 +77,15 @@ const KIND_OF: Record<keyof typeof PAWKET_DISCRIMINATORS, SponsoredKind | null> 
   careByDevice: null,
   finishRoundByDevice: null,
   dressByDevice: null,
+  buy: "buy",
+  dressOwned: "dress-owned",
+  dressOwnedByDevice: null,
+  createEvent: "event",
+  rsvp: "rsvp",
+  checkIn: "check-in",
+  createPoll: "poll",
+  vote: "vote",
+  wave: "wave",
 };
 
 /**
@@ -90,10 +107,19 @@ const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
   link: [],
   unlink: [],
   "close-wallet": [],
+  // The payer of each: the closet's, the event's, the RSVP's, the poll's, the ballot's and the guestbook's rent.
+  buy: [1],
+  "dress-owned": [],
+  event: [1],
+  rsvp: [1],
+  "check-in": [],
+  poll: [1],
+  vote: [1],
+  wave: [1],
 };
 
 /** The kinds that cost the sponsor rent: the scarce part of its float. */
-export const RENT_KINDS: readonly SponsoredKind[] = ["adopt", "found", "join"];
+export const RENT_KINDS: readonly SponsoredKind[] = ["adopt", "found", "join", "buy", "event", "rsvp", "poll", "vote", "wave"];
 
 const MAX_INSTRUCTIONS = 4;
 

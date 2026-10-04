@@ -5,6 +5,7 @@ import {
   getAddressDecoder,
   getArrayDecoder,
   getBase58Decoder,
+  getBooleanDecoder,
   getBase64Encoder,
   getBytesDecoder,
   getI64Decoder,
@@ -24,7 +25,16 @@ import { WEARABLES } from "@/lib/closet/catalog";
 import { XP_PER_CARE_ACTION } from "@/lib/game/constants";
 import { CareActionType, PetPersonality, PetSpecies, type PetStats } from "@/lib/game/enums";
 import type { GuestPet } from "@/lib/guest/pet";
-import { deriveGuildPda, deriveMemberPda, derivePassportPda, deriveWalletPda, parseAddress } from "./pda";
+import {
+  deriveBallotPda,
+  deriveClosetPda,
+  deriveGuestbookPda,
+  deriveGuildPda,
+  deriveMemberPda,
+  derivePassportPda,
+  deriveWalletPda,
+  parseAddress,
+} from "./pda";
 import {
   CARE_ACTION_VARIANTS,
   PAWKET_ACCOUNTS,
@@ -32,6 +42,7 @@ import {
   PET_PERSONALITY_VARIANTS,
   PET_SPECIES_VARIANTS,
   RECENT_CARES,
+  RECENT_WAVES,
 } from "./program";
 
 /**
@@ -561,4 +572,285 @@ export async function fetchGuildPets(rpc: ReadRpc, guild: string | Address): Pro
     if (account.exists && account.programAddress === PAWKET_PROGRAM_ID) pets.push(decodePet(members[i].pet, account.data));
   });
   return withRecords(rpc, pets);
+}
+
+/* ------------------------------------------------------------ the Market */
+
+/** What an owner bought in the Market, as the program keeps it (`Closet`). */
+export interface ChainCloset {
+  address: Address;
+  owner: Address;
+  /** Every item id the closet holds. */
+  items: number[];
+  count: number;
+  /** Lamports paid into the treasury, in all. */
+  spent: bigint;
+}
+
+const closetDecoder = getStructDecoder([
+  ["discriminator", discriminator],
+  ["owner", getAddressDecoder()],
+  ["items", fixDecoderSize(getBytesDecoder(), 32)],
+  ["count", getU16Decoder()],
+  ["spent", getU64Decoder()],
+  ["bump", getU8Decoder()],
+]);
+
+/** Decode a `Closet`. Throws on bytes that are not one. */
+export function decodeCloset(address: Address, bytes: Uint8Array): ChainCloset {
+  if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.closet.discriminator)) throw new Error(`${address} is not a Pawket closet`);
+  const raw = closetDecoder.decode(bytes);
+  const items: number[] = [];
+  raw.items.forEach((byte, index) => {
+    for (let bit = 0; bit < 8; bit++) if (byte & (1 << bit)) items.push(index * 8 + bit);
+  });
+  return { address, owner: raw.owner, items, count: raw.count, spent: raw.spent };
+}
+
+/** The closet `owner` keeps, or null before their first purchase. */
+export async function fetchCloset(rpc: Rpc<GetMultipleAccountsApi>, owner: string | Address): Promise<ChainCloset | null> {
+  const address = (await deriveClosetPda(owner)).address;
+  const [account] = await fetchEncodedAccounts(rpc, [address]);
+  if (!account.exists || account.programAddress !== PAWKET_PROGRAM_ID) return null;
+  return decodeCloset(address, account.data);
+}
+
+/* ------------------------------------------------- a guild's events and polls */
+
+/** A guild's event (`GuildEvent`). Times are Unix seconds. */
+export interface ChainEvent {
+  address: Address;
+  guild: Address;
+  creator: Address;
+  id: number;
+  startsAt: number;
+  endsAt: number;
+  createdAt: number;
+  going: number;
+  came: number;
+  title: string;
+  note: string;
+}
+
+/** One pet going to one event (`EventRsvp`). */
+export interface ChainRsvp {
+  address: Address;
+  event: Address;
+  pet: Address;
+  owner: Address;
+  payer: Address;
+  at: number;
+  came: boolean;
+}
+
+/** A guild's poll (`GuildPoll`): a count for each option. */
+export interface ChainPoll {
+  address: Address;
+  guild: Address;
+  creator: Address;
+  id: number;
+  createdAt: number;
+  closesAt: number;
+  votes: number[];
+  question: string;
+  options: string[];
+}
+
+/** One wallet's answer to one poll (`Ballot`). */
+export interface ChainBallot {
+  address: Address;
+  poll: Address;
+  owner: Address;
+  pet: Address;
+  option: number;
+  at: number;
+}
+
+const eventDecoder = getStructDecoder([
+  ["discriminator", discriminator],
+  ["guild", getAddressDecoder()],
+  ["creator", getAddressDecoder()],
+  ["id", getU32Decoder()],
+  ["startsAt", getI64Decoder()],
+  ["endsAt", getI64Decoder()],
+  ["createdAt", getI64Decoder()],
+  ["going", getU32Decoder()],
+  ["came", getU32Decoder()],
+  ["bump", getU8Decoder()],
+  ["title", sized()],
+  ["note", sized()],
+]);
+
+const rsvpDecoder = getStructDecoder([
+  ["discriminator", discriminator],
+  ["event", getAddressDecoder()],
+  ["pet", getAddressDecoder()],
+  ["owner", getAddressDecoder()],
+  ["payer", getAddressDecoder()],
+  ["at", getI64Decoder()],
+  ["came", getBooleanDecoder()],
+  ["bump", getU8Decoder()],
+]);
+
+const pollDecoder = getStructDecoder([
+  ["discriminator", discriminator],
+  ["guild", getAddressDecoder()],
+  ["creator", getAddressDecoder()],
+  ["id", getU32Decoder()],
+  ["createdAt", getI64Decoder()],
+  ["closesAt", getI64Decoder()],
+  ["votes", getArrayDecoder(getU32Decoder(), { size: 4 })],
+  ["bump", getU8Decoder()],
+  ["question", sized()],
+  ["options", getArrayDecoder(sized(), { size: getU32Decoder() })],
+]);
+
+const ballotDecoder = getStructDecoder([
+  ["discriminator", discriminator],
+  ["poll", getAddressDecoder()],
+  ["owner", getAddressDecoder()],
+  ["pet", getAddressDecoder()],
+  ["payer", getAddressDecoder()],
+  ["option", getU8Decoder()],
+  ["at", getI64Decoder()],
+  ["bump", getU8Decoder()],
+]);
+
+/** Decode a `GuildEvent`. Its title and note are the founder's words: shown without control characters. */
+export function decodeEvent(address: Address, bytes: Uint8Array): ChainEvent {
+  if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.event.discriminator)) throw new Error(`${address} is not a Pawket event`);
+  const raw = eventDecoder.decode(bytes);
+  return {
+    address,
+    guild: raw.guild,
+    creator: raw.creator,
+    id: raw.id,
+    startsAt: Number(raw.startsAt),
+    endsAt: Number(raw.endsAt),
+    createdAt: Number(raw.createdAt),
+    going: raw.going,
+    came: raw.came,
+    title: cleanText(raw.title) || "An event",
+    note: cleanText(raw.note),
+  };
+}
+
+export function decodeRsvp(address: Address, bytes: Uint8Array): ChainRsvp {
+  if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.rsvp.discriminator)) throw new Error(`${address} is not a Pawket RSVP`);
+  const raw = rsvpDecoder.decode(bytes);
+  return { address, event: raw.event, pet: raw.pet, owner: raw.owner, payer: raw.payer, at: Number(raw.at), came: raw.came };
+}
+
+/** Decode a `GuildPoll`. Its question and options are the founder's words, cleaned like a motto. */
+export function decodePoll(address: Address, bytes: Uint8Array): ChainPoll {
+  if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.poll.discriminator)) throw new Error(`${address} is not a Pawket poll`);
+  const raw = pollDecoder.decode(bytes);
+  const options = raw.options.map((option) => cleanText(option) || "…");
+  return {
+    address,
+    guild: raw.guild,
+    creator: raw.creator,
+    id: raw.id,
+    createdAt: Number(raw.createdAt),
+    closesAt: Number(raw.closesAt),
+    votes: raw.votes.slice(0, options.length),
+    question: cleanText(raw.question) || "A question",
+    options,
+  };
+}
+
+export function decodeBallot(address: Address, bytes: Uint8Array): ChainBallot {
+  if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.ballot.discriminator)) throw new Error(`${address} is not a Pawket ballot`);
+  const raw = ballotDecoder.decode(bytes);
+  return { address, poll: raw.poll, owner: raw.owner, pet: raw.pet, option: raw.option, at: Number(raw.at) };
+}
+
+/** Accounts of one kind whose 32 bytes at `offset` are `key`, decoded, skipping any that do not decode. */
+async function scan<T>(
+  rpc: ReadRpc,
+  account: { discriminator: readonly number[]; size: number },
+  offset: bigint,
+  key: string | Address,
+  decode: (address: Address, bytes: Uint8Array) => T,
+): Promise<T[]> {
+  const filters = [
+    ...accountFilter(account),
+    { memcmp: { offset, bytes: parseAddress(key, "key") as unknown as Base58EncodedBytes, encoding: "base58" as const } },
+  ];
+  const accounts = await rpc.getProgramAccounts(parseAddress(PAWKET_PROGRAM_ID, "program ID"), { encoding: "base64", filters }).send();
+  const out: T[] = [];
+  for (const { pubkey, account: found } of accounts) {
+    try {
+      out.push(decode(pubkey, Uint8Array.from(base64.encode(found.data[0]))));
+    } catch {
+      // ponytail: an account that does not decode is skipped, not fatal to the list.
+    }
+  }
+  return out;
+}
+
+/** Every event a guild has planned, soonest first. */
+export async function fetchGuildEvents(rpc: ReadRpc, guild: string | Address): Promise<ChainEvent[]> {
+  return (await scan(rpc, PAWKET_ACCOUNTS.event, 8n, guild, decodeEvent)).sort((a, b) => a.startsAt - b.startsAt);
+}
+
+/** Every RSVP to an event. */
+export function fetchEventRsvps(rpc: ReadRpc, event: string | Address): Promise<ChainRsvp[]> {
+  return scan(rpc, PAWKET_ACCOUNTS.rsvp, 8n, event, decodeRsvp);
+}
+
+/** Every event a pet said it was going to, and whether it came: its stickers read these. */
+export function fetchPetRsvps(rpc: ReadRpc, pet: string | Address): Promise<ChainRsvp[]> {
+  return scan(rpc, PAWKET_ACCOUNTS.rsvp, 40n, pet, decodeRsvp);
+}
+
+/** Every poll a guild has asked, newest first. */
+export async function fetchGuildPolls(rpc: ReadRpc, guild: string | Address): Promise<ChainPoll[]> {
+  return (await scan(rpc, PAWKET_ACCOUNTS.poll, 8n, guild, decodePoll)).sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** A wallet's ballot in a poll, or null when it has not voted. */
+export async function fetchBallot(rpc: Rpc<GetMultipleAccountsApi>, poll: string | Address, owner: string | Address): Promise<ChainBallot | null> {
+  const address = (await deriveBallotPda(poll, owner)).address;
+  const [account] = await fetchEncodedAccounts(rpc, [address]);
+  if (!account.exists || account.programAddress !== PAWKET_PROGRAM_ID) return null;
+  return decodeBallot(address, account.data);
+}
+
+/* ------------------------------------------------------------- the guestbook */
+
+/** Who waved at a pet (`Guestbook`): every wave counted, the last eight, newest first. */
+export interface ChainGuestbook {
+  address: Address;
+  pet: Address;
+  waves: number;
+  recent: Array<{ visitor: Address; at: number }>;
+}
+
+const guestbookDecoder = getStructDecoder([
+  ["discriminator", discriminator],
+  ["pet", getAddressDecoder()],
+  ["waves", getU32Decoder()],
+  ["recent", getArrayDecoder(getStructDecoder([["visitor", getAddressDecoder()], ["at", getI64Decoder()]]), { size: RECENT_WAVES })],
+  ["bump", getU8Decoder()],
+]);
+
+export function decodeGuestbook(address: Address, bytes: Uint8Array): ChainGuestbook {
+  if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.guestbook.discriminator)) throw new Error(`${address} is not a Pawket guestbook`);
+  const raw = guestbookDecoder.decode(bytes);
+  // The ring is written at waves % 8: once full, the oldest is there.
+  const start = raw.waves >= RECENT_WAVES ? raw.waves % RECENT_WAVES : 0;
+  const recent = Array.from({ length: RECENT_WAVES }, (_, i) => raw.recent[(start + i) % RECENT_WAVES])
+    .filter((mark) => mark.at !== 0n)
+    .map((mark) => ({ visitor: mark.visitor, at: Number(mark.at) }))
+    .reverse();
+  return { address, pet: raw.pet, waves: raw.waves, recent };
+}
+
+/** A pet's guestbook, or null before anyone has waved. */
+export async function fetchGuestbook(rpc: Rpc<GetMultipleAccountsApi>, pet: string | Address): Promise<ChainGuestbook | null> {
+  const address = (await deriveGuestbookPda(pet)).address;
+  const [account] = await fetchEncodedAccounts(rpc, [address]);
+  if (!account.exists || account.programAddress !== PAWKET_PROGRAM_ID) return null;
+  return decodeGuestbook(address, account.data);
 }

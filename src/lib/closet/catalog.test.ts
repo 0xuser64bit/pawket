@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BADGES } from "@/lib/game/badges";
-import { WEARABLES, findWearable, isUnlocked, isWearableId } from "./catalog";
+import { MARKET_WEARABLES, WEARABLES, findWearable, isUnlocked, isWearableId, wearableItem } from "./catalog";
 
 const POWER_KEYS = /stat|xp|cooldown|boost|power|weight|priority|speed/i;
 
@@ -10,7 +10,7 @@ describe("wearable catalog", () => {
     const ids = WEARABLES.map((item) => item.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const item of WEARABLES) {
-      expect(Object.keys(item).filter((key) => key !== "earnedBy").sort()).toEqual(["icon", "id", "kind", "name"]);
+      expect(Object.keys(item).filter((key) => key !== "earnedBy" && key !== "price").sort()).toEqual(["icon", "id", "kind", "name"]);
       for (const key of Object.keys(item)) {
         expect(key).not.toMatch(POWER_KEYS);
       }
@@ -35,6 +35,16 @@ describe("wearable catalog", () => {
       "rain-cape",
       "nap-ribbon",
     ]);
+  });
+
+  it("sells the Market's four after the eighteen, each a look and never earned", () => {
+    expect(MARKET_WEARABLES.map((item) => item.id)).toEqual(["halo", "wizard-hat", "sun-hat", "gold-crown"]);
+    expect(MARKET_WEARABLES.map((item) => wearableItem(item.id))).toEqual([19, 20, 21, 22]);
+    for (const item of MARKET_WEARABLES) {
+      expect(item.earnedBy).toBeUndefined();
+      expect(item.price).toBe(50_000_000n);
+    }
+    expect(WEARABLES.slice(0, 18).some((item) => item.price)).toBe(false);
   });
 
   it("looks up only known ids", () => {

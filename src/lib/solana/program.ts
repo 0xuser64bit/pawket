@@ -17,11 +17,13 @@ import {
  *    to their Pawket Wallet, inside its end date and daily limit.
  * 3. Names are 2–24 UTF-8 bytes, trimmed by the client before derivation.
  * 4. Nothing in the program moves value except rent, which `payer` covers on
- *    adoption, founding, joining and opening a Pawket Wallet — the owner, or
- *    the sponsor in `app/api/sponsor` — and which leaving or closing hands
- *    back to that payer; and a player's own Pawket Wallet, which only its
- *    owner fills or empties, and which refills a linked device by at most
- *    one fee per action it takes.
+ *    adoption, founding, joining, opening a Pawket Wallet, a closet, an
+ *    event, an RSVP, a poll, a ballot or a guestbook — the owner, or the
+ *    sponsor in `app/api/sponsor` — and which leaving or closing hands back
+ *    to that payer; a player's own Pawket Wallet, which only its owner fills
+ *    or empties, and which refills a linked device by at most one fee per
+ *    action it takes; and a Market sale, which goes from the owner to
+ *    `PAWKET_TREASURY` and nowhere else.
  */
 
 /** Must match `declare_id!` in `programs/pawket/src/lib.rs`. */
@@ -33,13 +35,53 @@ export const PAWKET_SEEDS = {
   guild: "guild",
   member: "member",
   wallet: "wallet",
+  closet: "closet",
+  event: "event",
+  rsvp: "rsvp",
+  poll: "poll",
+  ballot: "ballot",
+  guestbook: "guestbook",
 } as const;
 
 export const MAX_NAME_BYTES = 24;
 export const MIN_NAME_BYTES = 2;
 
-/** The program's `WEARABLE_COUNT`: wearables are numbered from 1 in catalog order. */
+/** The program's `WEARABLE_COUNT`: the free wardrobe, numbered from 1 in catalog order. */
 export const WEARABLE_COUNT = 18;
+
+/**
+ * The program's Market (`item_price`): the pieces after the eighteen (worn
+ * with `dress_owned`), rooms from item 64, their prices in lamports, and
+ * where every sale goes.
+ */
+export const MARKET = {
+  wearables: 4,
+  firstRoom: 64,
+  rooms: 2,
+  wearablePrice: 50_000_000n,
+  roomPrice: 100_000_000n,
+  treasury: "SEpAw5iTAXf4j5YUsgpLD8UTKLCT6xqUAkecnvJvWfw",
+} as const;
+
+/** The program's limits on a guild's events and polls, in UTF-8 bytes and seconds. */
+export const GATHERING_LIMITS = {
+  minTitle: 3,
+  maxTitle: 48,
+  maxNote: 120,
+  maxEventSeconds: 7 * 86_400,
+  maxEventLeadSeconds: 60 * 86_400,
+  checkInEarlySeconds: 15 * 60,
+  minQuestion: 3,
+  maxQuestion: 80,
+  maxOption: 24,
+  minOptions: 2,
+  maxOptions: 4,
+  minPollSeconds: 10 * 60,
+  maxPollSeconds: 14 * 86_400,
+} as const;
+
+/** Visitors a guestbook keeps, newest overwriting oldest. */
+export const RECENT_WAVES = 8;
 
 /** Cares the Passport keeps, newest overwriting oldest. */
 export const RECENT_CARES = 8;
@@ -86,6 +128,15 @@ export const PAWKET_DISCRIMINATORS = {
   careByDevice: [254, 225, 207, 10, 39, 224, 20, 95],
   finishRoundByDevice: [34, 205, 191, 224, 189, 124, 153, 227],
   dressByDevice: [10, 67, 181, 210, 10, 49, 167, 98],
+  buy: [102, 6, 61, 18, 1, 218, 235, 234],
+  dressOwned: [149, 84, 132, 118, 14, 67, 69, 195],
+  dressOwnedByDevice: [27, 170, 211, 215, 172, 224, 211, 8],
+  createEvent: [49, 219, 29, 203, 22, 98, 100, 87],
+  rsvp: [134, 164, 221, 33, 183, 12, 73, 32],
+  checkIn: [209, 253, 4, 217, 250, 241, 207, 50],
+  createPoll: [182, 171, 112, 238, 6, 219, 14, 110],
+  vote: [227, 110, 155, 23, 136, 126, 172, 25],
+  wave: [225, 175, 48, 85, 221, 5, 244, 230],
 } as const;
 
 /** Anchor 8-byte account discriminators, and each account's size on chain. */
@@ -95,6 +146,12 @@ export const PAWKET_ACCOUNTS = {
   guild: { discriminator: [74, 176, 57, 164, 195, 188, 156, 237], size: 235 },
   member: { discriminator: [255, 176, 230, 246, 44, 246, 114, 56], size: 145 },
   wallet: { discriminator: [249, 205, 13, 235, 241, 145, 240, 173], size: 157 },
+  closet: { discriminator: [58, 79, 142, 213, 43, 92, 178, 238], size: 83 },
+  event: { discriminator: [247, 127, 149, 223, 57, 6, 65, 113], size: 285 },
+  rsvp: { discriminator: [16, 57, 171, 182, 186, 29, 16, 226], size: 146 },
+  poll: { discriminator: [26, 56, 142, 38, 138, 216, 3, 65], size: 309 },
+  ballot: { discriminator: [3, 232, 121, 204, 232, 137, 138, 164], size: 146 },
+  guestbook: { discriminator: [24, 45, 253, 91, 214, 23, 198, 188], size: 365 },
 } as const;
 
 /** Borsh variant indexes. Only this module translates string enums to bytes. */
@@ -118,7 +175,7 @@ export const CARE_ACTION_VARIANTS: Record<CareActionType, number> = {
   [CareActionType.Rest]: 3,
 };
 
-/** Anchor custom errors 6000–6015, mapped to one-sentence UX copy in `transactions.ts`. */
+/** Anchor custom errors 6000–6029, mapped to one-sentence UX copy in `transactions.ts`. */
 export const PAWKET_ERROR_CODES = {
   6000: "INVALID_PET_NAME",
   6001: "NOT_PET_OWNER",
@@ -136,6 +193,20 @@ export const PAWKET_ERROR_CODES = {
   6013: "DAILY_LIMIT_REACHED",
   6014: "NO_DEVICE_LINKED",
   6015: "DEVICE_STILL_LINKED",
+  6016: "UNKNOWN_ITEM",
+  6017: "ALREADY_OWNED",
+  6018: "NOT_IN_CLOSET",
+  6019: "INVALID_EVENT",
+  6020: "NOT_GUILD_FOUNDER",
+  6021: "NOT_IN_GUILD",
+  6022: "EVENT_OVER",
+  6023: "NOT_CHECK_IN_TIME",
+  6024: "ALREADY_CHECKED_IN",
+  6025: "INVALID_POLL",
+  6026: "POLL_CLOSED",
+  6027: "UNKNOWN_OPTION",
+  6028: "CANNOT_WAVE_AT_OWN_PET",
+  6029: "ALREADY_WAVED_TODAY",
 } as const;
 
 export type PawketErrorCode =

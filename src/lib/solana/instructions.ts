@@ -22,7 +22,9 @@ import {
 import { normalizePetName, parseAddress } from "./pda";
 import {
   CARE_ACTION_VARIANTS,
+  GATHERING_LIMITS,
   GUILD_LIMITS,
+  MARKET,
   WALLET_LIMITS,
   PAWKET_DISCRIMINATORS,
   PAWKET_PROGRAM_ID,
@@ -471,5 +473,279 @@ export function getDressByDeviceInstruction(input: DeviceInstructionInput & { we
       { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
     ],
     data: concatBytes(PAWKET_DISCRIMINATORS.dressByDevice, u8.encode(input.wearing)),
+  };
+}
+
+/* ------------------------------------------------------------- the Market */
+
+/** Whether the program sells `item` (`item_price` in `programs/pawket/src/lib.rs`). */
+export function isMarketItem(item: number): boolean {
+  return (
+    (item > WEARABLE_COUNT && item <= WEARABLE_COUNT + MARKET.wearables) ||
+    (item >= MARKET.firstRoom && item < MARKET.firstRoom + MARKET.rooms)
+  );
+}
+
+/** What `item` costs in the Market, in lamports, or null where nothing is sold. */
+export function marketPrice(item: number): bigint | null {
+  if (!isMarketItem(item)) return null;
+  return item <= WEARABLE_COUNT + MARKET.wearables ? MARKET.wearablePrice : MARKET.roomPrice;
+}
+
+/**
+ * `buy`: one Market item at its fixed price, from the owner straight to the
+ * treasury. The payer covers the closet's rent the first time.
+ */
+export function getBuyInstruction(input: {
+  owner: SignerInput;
+  payer?: SignerInput;
+  /** The owner's closet (`deriveClosetPda`). */
+  closet: string | Address;
+  item: number;
+  programId?: string | Address;
+}): Instruction {
+  if (!isMarketItem(input.item)) throw new Error(`The Market sells nothing at ${input.item}`);
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.WRITABLE_SIGNER, "owner"),
+      signerMeta(input.payer ?? input.owner, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.closet, "closet"), role: AccountRole.WRITABLE },
+      { address: parseAddress(MARKET.treasury, "treasury"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: concatBytes(PAWKET_DISCRIMINATORS.buy, u8.encode(input.item)),
+  };
+}
+
+function wearableSlotFor(wearing: number): number {
+  if (!Number.isInteger(wearing) || wearing < 0 || wearing > WEARABLE_COUNT + MARKET.wearables) {
+    throw new Error(`Nothing to wear at ${wearing}`);
+  }
+  return wearing;
+}
+
+/** `dress_owned`: one of the eighteen, or a Market piece the owner's closet holds. */
+export function getDressOwnedInstruction(input: {
+  owner: SignerInput;
+  pet: string | Address;
+  closet: string | Address;
+  wearing: number;
+  programId?: string | Address;
+}): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.closet, "closet"), role: AccountRole.READONLY },
+    ],
+    data: concatBytes(PAWKET_DISCRIMINATORS.dressOwned, u8.encode(wearableSlotFor(input.wearing))),
+  };
+}
+
+/** `dress_owned_by_device`: the same, signed by the owner's linked device. */
+export function getDressOwnedByDeviceInstruction(
+  input: DeviceInstructionInput & { closet: string | Address; wearing: number },
+): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.device, AccountRole.WRITABLE_SIGNER, "device"),
+      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.closet, "closet"), role: AccountRole.READONLY },
+    ],
+    data: concatBytes(PAWKET_DISCRIMINATORS.dressOwnedByDevice, u8.encode(wearableSlotFor(input.wearing))),
+  };
+}
+
+/* ------------------------------------------------- a guild's events and polls */
+
+const utf8Length = (value: string) => utf8.encode(value).length;
+
+/** `create_event`: the founder plans an event. The program checks every field again. */
+export function getCreateEventInstruction(input: {
+  owner: SignerInput;
+  payer?: SignerInput;
+  guild: string | Address;
+  /** `deriveEventPda(guild, id)`. */
+  event: string | Address;
+  id: number;
+  title: string;
+  note: string;
+  startsAt: number;
+  endsAt: number;
+  programId?: string | Address;
+}): Instruction {
+  const title = input.title.trim();
+  const note = input.note.trim();
+  if (utf8Length(title) < GATHERING_LIMITS.minTitle || utf8Length(title) > GATHERING_LIMITS.maxTitle) {
+    throw new Error("An event's title is 3 to 48 bytes");
+  }
+  if (utf8Length(note) > GATHERING_LIMITS.maxNote) throw new Error("An event's note is at most 120 bytes");
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      signerMeta(input.payer ?? input.owner, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.guild, "guild"), role: AccountRole.READONLY },
+      { address: parseAddress(input.event, "event"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: concatBytes(
+      PAWKET_DISCRIMINATORS.createEvent,
+      u32.encode(input.id),
+      encodeAnchorString(title),
+      encodeAnchorString(note),
+      i64.encode(BigInt(input.startsAt)),
+      i64.encode(BigInt(input.endsAt)),
+    ),
+  };
+}
+
+/** `rsvp`: a pet in the guild is going. */
+export function getRsvpInstruction(input: {
+  owner: SignerInput;
+  payer?: SignerInput;
+  pet: string | Address;
+  /** The pet's place in the guild (`deriveMemberPda`). */
+  member: string | Address;
+  event: string | Address;
+  /** `deriveRsvpPda(event, pet)`. */
+  rsvp: string | Address;
+  programId?: string | Address;
+}): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      signerMeta(input.payer ?? input.owner, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.READONLY },
+      { address: parseAddress(input.member, "member"), role: AccountRole.READONLY },
+      { address: parseAddress(input.event, "event"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.rsvp, "rsvp"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: new Uint8Array(PAWKET_DISCRIMINATORS.rsvp),
+  };
+}
+
+/** `check_in`: a pet that said it was going is at the event. */
+export function getCheckInInstruction(input: {
+  owner: SignerInput;
+  pet: string | Address;
+  event: string | Address;
+  rsvp: string | Address;
+  programId?: string | Address;
+}): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.READONLY },
+      { address: parseAddress(input.event, "event"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.rsvp, "rsvp"), role: AccountRole.WRITABLE },
+    ],
+    data: new Uint8Array(PAWKET_DISCRIMINATORS.checkIn),
+  };
+}
+
+/** `create_poll`: the founder asks the guild something, with two to four options. */
+export function getCreatePollInstruction(input: {
+  owner: SignerInput;
+  payer?: SignerInput;
+  guild: string | Address;
+  /** `derivePollPda(guild, id)`. */
+  poll: string | Address;
+  id: number;
+  question: string;
+  options: string[];
+  closesAt: number;
+  programId?: string | Address;
+}): Instruction {
+  const question = input.question.trim();
+  const options = input.options.map((option) => option.trim());
+  if (utf8Length(question) < GATHERING_LIMITS.minQuestion || utf8Length(question) > GATHERING_LIMITS.maxQuestion) {
+    throw new Error("A poll's question is 3 to 80 bytes");
+  }
+  if (
+    options.length < GATHERING_LIMITS.minOptions ||
+    options.length > GATHERING_LIMITS.maxOptions ||
+    options.some((option) => utf8Length(option) < 1 || utf8Length(option) > GATHERING_LIMITS.maxOption)
+  ) {
+    throw new Error("A poll has 2 to 4 options of 1 to 24 bytes");
+  }
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      signerMeta(input.payer ?? input.owner, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.guild, "guild"), role: AccountRole.READONLY },
+      { address: parseAddress(input.poll, "poll"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: concatBytes(
+      PAWKET_DISCRIMINATORS.createPoll,
+      u32.encode(input.id),
+      encodeAnchorString(question),
+      u32.encode(options.length),
+      ...options.map(encodeAnchorString),
+      i64.encode(BigInt(input.closesAt)),
+    ),
+  };
+}
+
+/** `vote`: one ballot per wallet, for a wallet with a pet in the guild. */
+export function getVoteInstruction(input: {
+  owner: SignerInput;
+  payer?: SignerInput;
+  pet: string | Address;
+  member: string | Address;
+  poll: string | Address;
+  /** `deriveBallotPda(poll, owner)`. */
+  ballot: string | Address;
+  option: number;
+  programId?: string | Address;
+}): Instruction {
+  if (!Number.isInteger(input.option) || input.option < 0 || input.option >= GATHERING_LIMITS.maxOptions) {
+    throw new Error(`No option ${input.option}`);
+  }
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.READONLY_SIGNER, "owner"),
+      signerMeta(input.payer ?? input.owner, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.READONLY },
+      { address: parseAddress(input.member, "member"), role: AccountRole.READONLY },
+      { address: parseAddress(input.poll, "poll"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.ballot, "ballot"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: concatBytes(PAWKET_DISCRIMINATORS.vote, u8.encode(input.option)),
+  };
+}
+
+/* ------------------------------------------------------------- the guestbook */
+
+/** `wave`: anyone but its owner waves at a pet, once a UTC day. The payer covers the guestbook's rent the first time. */
+export function getWaveInstruction(input: {
+  visitor: SignerInput;
+  payer?: SignerInput;
+  pet: string | Address;
+  /** `deriveGuestbookPda(pet)`. */
+  guestbook: string | Address;
+  programId?: string | Address;
+}): Instruction {
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.visitor, AccountRole.READONLY_SIGNER, "visitor"),
+      signerMeta(input.payer ?? input.visitor, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.pet, "pet"), role: AccountRole.READONLY },
+      { address: parseAddress(input.guestbook, "guestbook"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: new Uint8Array(PAWKET_DISCRIMINATORS.wave),
   };
 }

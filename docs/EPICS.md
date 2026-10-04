@@ -1,6 +1,6 @@
 # Pawket — Epics (agent work packets)
 
-Each epic is sized for 3–8 agent turns. Epic = goal + scope + non-goals + files + tests + Definition of Done. Atomic steps live in `TASKS.md`. Read `AGENT-GUIDE.md` before starting any epic.
+**Status (2026-10-05):** E01–E03 done; E05 shipped as the Market (fixed-price looks, settled on chain, no database); E06 done in part (four games, daily round, Park, Passport, guestbook, visits); E07 done on chain (guilds, events, polls; moderation is delisting plus a report link); E08–E10 shipped on devnet as guild coins without a database or indexer; E04 not needed so far; E11–E12 in part (`/pulse`, coin disclosures). Each epic is sized for 3–8 agent turns. Epic = goal + scope + non-goals + files + tests + Definition of Done. Atomic steps live in `TASKS.md`. Read `AGENT-GUIDE.md` before starting any epic.
 
 **Epic index**
 

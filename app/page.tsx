@@ -43,7 +43,7 @@ const ASSETS = [
   ["Your pets", "Identity, appearance, care, progress — as many as you adopt", "No — they start in this browser", "No"],
   ["Its record on Solana", "Every care, the streak and the level, kept where nobody can edit them", "No — keeping it there is your choice", "No"],
   ["Its keepsake card", "A frozen card in your wallet that points at the pet", "No", "No — it cannot be sold or sent"],
-  ["Clothes", "Expression: eighteen looks, five of them earned by caring", "No", "No — the wardrobe is free"],
+  ["Clothes and rooms", "Expression: eighteen free looks, five earned by caring; four more and two rooms in the Market", "No", "Free, or a fixed price in the Market — never resold, never power"],
   ["A guild", "A crest and a place among other pets, kept on Solana", "No — joining is optional", "No — joining and leaving are free"],
   ["A guild's coin", "Optional: a guild may launch one on Meteora. Holders' pets wear its crest pin", "No — and it never touches a pet", "Yes: it trades, and can fall to nothing"],
   ["A Pawket Wallet", "A balance for the fees of a device you link, so care asks nothing each time", "No — it is optional", "No — it holds your SOL and gives it back"],

@@ -9,10 +9,23 @@ When you want a record nobody can edit or erase, keep it on Solana: every
 care becomes a signed transaction, the streak and the level live in
 accounts only your wallet can write to, and anyone can look the pet up.
 
-**Live:** https://pawket-pets.vercel.app — on Solana devnet, and Pawket pays
-the network fees, so a wallet with no SOL can play.
+Around the pet: guilds on chain with events and one-vote-per-wallet polls,
+a guestbook anyone can wave into (from the page or the pet's Blink), a
+Market of looks at prices fixed in the program, a device key that cares
+with no popups, a frozen Metaplex Core keepsake card — and, for a guild that
+wants one, an optional coin on **Meteora's Dynamic Bonding Curve** that
+graduates into **DAMM v2** with its liquidity locked for good. Nothing money
+can buy changes a pet.
 
-**Program:** [`PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`](https://explorer.solana.com/address/PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74?cluster=devnet) (devnet)
+**Live:** https://pawket-pets.vercel.app — on Solana devnet, and Pawket pays
+the network fees, so a wallet with no SOL can play. Everything it holds,
+counted live: [`/pulse`](https://pawket-pets.vercel.app/pulse).
+
+**Program:** [`PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`](https://explorer.solana.com/address/PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74?cluster=devnet) (devnet, v0 — mainnet will be v1)
+
+**For judges:** the pitch, a three-minute demo script and the Meteora DBC
+write-up are in [`docs/PITCH.md`](docs/PITCH.md); the mainnet plan is
+[`docs/MAINNET.md`](docs/MAINNET.md).
 
 ## Try it
 

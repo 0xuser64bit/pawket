@@ -1,11 +1,13 @@
 "use client";
 
 import { useConnect, useWallets } from "@solana/kit-plugin-wallet/react";
-import { SolanaMobileWalletAdapterWalletName } from "@solana-mobile/wallet-standard-mobile";
 import { Button, Sheet, Stack } from "@/components/pk";
 import { wallet } from "@/lib/solana/browser-client";
 import { isUserRejection, mobileWalletProblem } from "@/lib/solana/transactions";
 import { useSponsor } from "@/lib/solana/use-send";
+
+/** The name Mobile Wallet Adapter registers under (its SolanaMobileWalletAdapterWalletName), kept here so the sheet does not pull the adapter into every bundle. */
+const PHONE_WALLETS = "Mobile Wallet Adapter";
 
 const INSTALL = [
   { name: "Phantom", href: "https://phantom.com/download" },
@@ -51,7 +53,7 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
                 {/* eslint-disable-next-line @next/next/no-img-element -- a wallet's own data-URI mark */}
                 <img src={option.icon} alt="" />
                 {/* Mobile Wallet Adapter is how, not what: the player knows their wallet app by its own name. */}
-                <span>{option.name === SolanaMobileWalletAdapterWalletName ? "A wallet app on this phone" : option.name}</span>
+                <span>{option.name === PHONE_WALLETS ? "A wallet app on this phone" : option.name}</span>
               </button>
             ))}
           </Stack>

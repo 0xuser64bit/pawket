@@ -3,7 +3,6 @@
 import { createClient } from "@solana/kit";
 import { walletWithoutSigner } from "@solana/kit-plugin-wallet";
 import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
-import { createDefaultAuthorizationCache, createDefaultChainSelector, registerMwa } from "@solana-mobile/wallet-standard-mobile";
 import { getPublicEnv } from "@/config/env";
 import { APP_NAME } from "@/config/site";
 import { useMounted } from "@/lib/utils/use-mounted";
@@ -35,21 +34,28 @@ export const rpc = createPatientRpc(browserRpcUrl());
  * (Seed Vault, Phantom, Solflare…) answer through Mobile Wallet Adapter, which
  * registers as one more Wallet Standard wallet, so connecting and signing go
  * the same way as an extension's. Registered once per page, in the browser
- * only; elsewhere it would find no wallet app to open. It shows no modal of
- * its own when none is installed: the connect sheet says so.
+ * only, and only Android downloads it; elsewhere it would find no wallet app
+ * to open. A wallet remembered from last time reconnects once it registers.
+ * It shows no modal of its own when none is installed: the connect sheet
+ * says so.
  */
 function registerPhoneWallets(): void {
   if (typeof window === "undefined" || !/android/i.test(navigator.userAgent)) return;
   const page = window as { pawketMwa?: true };
   if (page.pawketMwa) return;
   page.pawketMwa = true;
-  registerMwa({
-    appIdentity: { name: APP_NAME, uri: window.location.origin, icon: "/icon" },
-    authorizationCache: createDefaultAuthorizationCache(),
-    chains: [CLUSTER_CHAINS[env.solanaCluster]],
-    chainSelector: createDefaultChainSelector(),
-    onWalletNotFound: async () => {},
-  });
+  void import("@solana-mobile/wallet-standard-mobile").then(
+    ({ createDefaultAuthorizationCache, createDefaultChainSelector, registerMwa }) =>
+      registerMwa({
+        appIdentity: { name: APP_NAME, uri: window.location.origin, icon: "/icon" },
+        authorizationCache: createDefaultAuthorizationCache(),
+        chains: [CLUSTER_CHAINS[env.solanaCluster]],
+        chainSelector: createDefaultChainSelector(),
+        onWalletNotFound: async () => {},
+      }),
+    // Not loaded (offline): the next page tries again.
+    () => delete page.pawketMwa,
+  );
 }
 registerPhoneWallets();
 

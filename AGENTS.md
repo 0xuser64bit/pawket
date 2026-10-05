@@ -17,7 +17,8 @@ rest) with decay, cooldowns, XP, a UTC streak and a care log, in a room
 drawn in 3D — the player and the pet in one scene (`src/components/room3d/`,
 `docs/ROOM-3D.md`), with the flat SVG room wherever 3D cannot draw.
 
-"Keep Pepper on Solana" carries that pet into the program in
+"Keep Pepper on Solana" (the badge on its face in Home's pet bar, or the
+last step of adoption) carries that pet into the program in
 `programs/pawket/` (devnet `PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`): a
 `Pet` PDA holds vitals, XP, cooldowns and what it wears; its `PetPassport`
 holds the streak, counts and the last eight cares. Decay, cooldowns, XP,

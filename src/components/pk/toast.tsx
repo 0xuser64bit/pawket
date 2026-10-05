@@ -12,7 +12,8 @@ import { Icon } from "./icon";
  */
 export interface Toast {
   id: string;
-  tone: "wait" | "done" | "risk";
+  /** Waiting, done, refused — or a note: a word worth knowing, with nothing wrong. */
+  tone: "wait" | "done" | "risk" | "note";
   title: string;
   body?: ReactNode;
   /** Milliseconds until it goes by itself; without one it stays until dismissed. */
@@ -58,7 +59,11 @@ export function Toasts() {
       {shown.map((toast) => (
         <div key={toast.id} className={`pk-toast pk-toast--${toast.tone}`} role={toast.tone === "risk" ? "alert" : "status"}>
           <span className="pk-toast__mark" aria-hidden="true">
-            {toast.tone === "wait" ? <span className="pk-spinner" /> : <Icon name={toast.tone === "done" ? "check" : "alert"} size={14} weight={2.4} />}
+            {toast.tone === "wait" ? (
+              <span className="pk-spinner" />
+            ) : (
+              <Icon name={toast.tone === "done" ? "check" : toast.tone === "note" ? "spark" : "alert"} size={14} weight={2.4} />
+            )}
           </span>
           <div className="pk-toast__words">
             <p className="pk-toast__title">{toast.title}</p>

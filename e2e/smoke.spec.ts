@@ -135,7 +135,9 @@ test("adopting a pet needs no wallet and makes Home real", async ({ page }) => {
 
   await page.getByRole("button", { name: /take them home/i }).click();
   await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
-  await expect(page.getByText("Pepper lives in this browser")).toBeVisible();
+  await expect(page.getByText("In this browser", { exact: true })).toBeVisible();
+  // Keeping it on Solana is on its face in the pet bar, not a card under the room.
+  await expect(page.getByRole("button", { name: "Keep Pepper on Solana" })).toBeVisible();
   await expect(page.getByRole("img", { name: "Fullness 72 / 100" })).toBeVisible();
 
   await page.getByRole("button", { name: "Feed" }).click();
@@ -211,7 +213,7 @@ test("the wardrobe is worn on the pet, and the record keeps the care", async ({ 
   await page.getByRole("button", { name: "Brush" }).click();
   await expect(page.getByText(/Brushed\. \+10 XP/)).toBeVisible();
 
-  await page.getByRole("link", { name: "Their record" }).click();
+  await page.getByRole("link", { name: "Nib's record" }).click();
   await expect(page.getByRole("heading", { name: "Nib", exact: true })).toBeVisible();
   await expect(page.getByText("Brushed").first()).toBeVisible();
 

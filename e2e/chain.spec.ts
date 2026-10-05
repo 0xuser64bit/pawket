@@ -42,23 +42,23 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await page.getByRole("button", { name: /take them home/i }).click();
   await expect(page.getByText("In this browser", { exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: "Connect a wallet" }).click();
+  await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await expect(page.getByRole("button", { name: /wallet .+…/i })).toBeVisible();
 
-  await page.getByRole("button", { name: `Record ${name}` }).click();
+  await page.getByRole("button", { name: `Keep ${name} on Solana` }).click();
+  await page.getByRole("dialog").getByRole("button", { name: `Keep ${name}`, exact: true }).click();
   await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText(`${name} lives on Solana`)).toBeVisible();
-  // The carry's receipt outlives the card that asked for it.
-  await expect(page.getByText(`Record ${name} on Solana`)).toBeVisible();
+  // The toast outlives the sheet that asked for it.
+  await expect(page.getByText(`Keep ${name} on Solana`).first()).toBeVisible();
 
   await page.getByRole("button", { name: "Feed" }).click();
   await expect(page.getByText(`Feed ${name}`)).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText(/^Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText("Paid by Pawket")).toBeVisible();
+  await expect(page.getByText(/Pawket paid the fee/).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
 
-  await page.getByRole("link", { name: "Their record" }).click();
+  await page.getByRole("link", { name: `${name}'s record` }).click();
   await page.waitForURL(/\/pet\/[1-9A-HJ-NP-Za-km-z]{32,44}$/);
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("On the record")).toBeVisible();
@@ -68,7 +68,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   // The keepsake: a card in the owner's wallet, made by the server, signed here.
   await page.getByRole("button", { name: `Keep ${name}'s card` }).click();
   await expect(page.getByText(/^Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText("Paid by Pawket")).toBeVisible();
+  await expect(page.getByText(/Pawket paid the fee/).first()).toBeVisible();
   // Read again from chain, the record now lists it.
   await expect(page.getByText("Keepsake", { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("button", { name: `Keep ${name}'s card` })).toHaveCount(0);
@@ -87,9 +87,10 @@ test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) 
   await page.getByRole("textbox", { name: "Pet name" }).fill(name);
   await page.getByRole("button", { name: /that’s the one/i }).click();
   await page.getByRole("button", { name: /take them home/i }).click();
-  await page.getByRole("button", { name: "Connect a wallet" }).click();
+  await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
-  await page.getByRole("button", { name: `Record ${name}` }).click();
+  await page.getByRole("button", { name: `Keep ${name} on Solana` }).click();
+  await page.getByRole("dialog").getByRole("button", { name: `Keep ${name}`, exact: true }).click();
   await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
 
   await page.goto("/guilds/new");
@@ -145,9 +146,10 @@ test("a Pawket Wallet links this browser, and a care on Solana asks the wallet n
   await page.getByRole("textbox", { name: "Pet name" }).fill(name);
   await page.getByRole("button", { name: /that’s the one/i }).click();
   await page.getByRole("button", { name: /take them home/i }).click();
-  await page.getByRole("button", { name: "Connect a wallet" }).click();
+  await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
-  await page.getByRole("button", { name: `Record ${name}` }).click();
+  await page.getByRole("button", { name: `Keep ${name} on Solana` }).click();
+  await page.getByRole("dialog").getByRole("button", { name: `Keep ${name}`, exact: true }).click();
   await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText("Each care asks your wallet.")).toBeVisible();
 

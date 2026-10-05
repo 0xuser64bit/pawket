@@ -17,7 +17,8 @@ import {
   Stack,
   Waiting,
 } from "@/components/pk";
-import { CarryCard } from "@/components/home/carry-card";
+import { KeepSheet } from "@/components/home/keep-sheet";
+import { showToast } from "@/components/pk/toast";
 import { RemindMe } from "@/components/home/remind-me";
 import { CARE_ICON, Deck, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
@@ -27,7 +28,6 @@ import { Room, preloadRoom3D, useRoomMode, type RoomState } from "@/components/h
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { RoomView } from "@/components/room3d/room-3d";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
-import { getPublicEnv } from "@/config/env";
 import { WEARABLES, findWearable } from "@/lib/closet/catalog";
 import { newlyEarned, type BadgeContext } from "@/lib/game/badges";
 import { useCompanion } from "@/lib/companion/use-companion";
@@ -78,10 +78,11 @@ export function HomeScreen() {
   const look = usePlayerLook();
   const profile = usePlayerProfile();
   const sender = usePawketSend();
-  const cluster = getPublicEnv().solanaCluster;
   const [now, setNow] = useState(() => new Date());
   const [said, setSaid] = useState<{ pet: string; tone: "ok" | "stop"; text: string }>();
   const [connecting, setConnecting] = useState(false);
+  /** The browser pet whose "keep it on Solana" sheet is open. */
+  const [keeping, setKeeping] = useState<GuestPet | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [shot, setShot] = useState<string | null>(null);
   const roomView = useRef<RoomView>(null);
@@ -216,6 +217,24 @@ export function HomeScreen() {
     }
     const day = result.pet.streak.lastDay === utcDay(new Date()) ? ` Day ${result.pet.streak.count}.` : "";
     const level = levelUp(current.xp, result.pet.xp);
+    // A level in this browser is a level Solana has not seen: worth a word, once, at the moment it counts.
+    if (level) {
+      showToast({
+        id: `keep-${current.id}`,
+        tone: "note",
+        title: `${current.name} is level ${level}!`,
+        ttl: 14_000,
+        body: (
+          <>
+            Levels here live in this browser. Kept on Solana, {current.name} would start over at level 1 — the sooner,
+            the less to redo.{" "}
+            <button type="button" className="pk-linkish" onClick={() => setKeeping(readPet(current.id) ?? current)}>
+              Keep {current.name} on Solana
+            </button>
+          </>
+        ),
+      });
+    }
     setNotice({
       tone: "ok",
       text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${level ? ` ${current.name} is level ${level} now.` : ""}${earnedLine(current, result.pet)}`,
@@ -265,7 +284,13 @@ export function HomeScreen() {
             {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
           </Row>
         </div>
-        <PetSwitcher pets={companion.all} home={pet.id} onChoose={companion.choose} />
+        <PetSwitcher
+          pets={companion.all}
+          home={pet.id}
+          onChoose={companion.choose}
+          kept={new Set(companion.owned.map((entry) => entry.pet.address))}
+          onKeep={setKeeping}
+        />
       </ScreenBar>
 
       <Stack gap={3}>
@@ -342,24 +367,23 @@ export function HomeScreen() {
 
         <ChainTrouble error={companion.chainError} onRetry={companion.refresh} />
 
-        <div className="pk-home__more">
-          <GoalsCard name={pet.name} today={today} />
-          {!onChain ? (
-            <CarryCard
-              pet={pet}
-              owner={companion.owner}
-              canSign={companion.canSign}
-              sender={sender}
-              onCarried={(address) => {
-                carried.current = { id: pet.id, address };
-                companion.choose(address);
-                companion.refresh();
-              }}
-            />
-          ) : null}
-          <RecordCard pet={pet} onChain={onChain} cluster={cluster} others={companion.all.length - 1} />
-        </div>
+        <TodayStrip name={pet.name} today={today} />
+        <HomeFoot pet={pet} onChain={onChain} others={companion.all.length - 1} />
       </Stack>
+      {keeping ? (
+        <KeepSheet
+          pet={keeping}
+          owner={companion.owner}
+          canSign={companion.canSign}
+          sender={sender}
+          onDismiss={() => setKeeping(null)}
+          onCarried={(address) => {
+            carried.current = { id: keeping.id, address };
+            companion.choose(address);
+            companion.refresh();
+          }}
+        />
+      ) : null}
       {shot ? (
         <PhotoDialog
           shot={shot}
@@ -472,17 +496,22 @@ const GOALS: Array<{ action: CareActionType; label: string }> = [
   { action: CareActionType.Rest, label: "A rest" },
 ];
 
-/** Today's round of care as a checklist. Guidance only: it changes no rule and grants nothing new. */
-function GoalsCard({ name, today }: { name: string; today: TodayGoals }) {
+/**
+ * Today's round in one band: the five things that make a good day, ticked as
+ * they happen. Guidance only: it changes no rule and grants nothing new.
+ */
+function TodayStrip({ name, today }: { name: string; today: TodayGoals }) {
   return (
-    <Card>
-      <div className="pk-spread">
-        <h2 className="title">Today&apos;s round</h2>
+    <section className="pk-today" aria-labelledby="pk-today-title">
+      <div className="pk-today__head">
+        <h2 id="pk-today-title" className="title">
+          Today&apos;s round
+        </h2>
         <span className="amount-sm pk-faint">
           {today.done} / {today.of}
         </span>
       </div>
-      <ul className="pk-goals">
+      <ul className="pk-today__goals">
         {GOALS.map((goal) => (
           <li key={goal.action} className={today.cares[goal.action] ? "pk-goal pk-goal--done" : "pk-goal"}>
             <span className="pk-goal__mark" aria-hidden="true">
@@ -496,17 +525,14 @@ function GoalsCard({ name, today }: { name: string; today: TodayGoals }) {
           <span className="pk-goal__mark" aria-hidden="true">
             <Icon name={today.round ? "check" : "ball"} size={14} />
           </span>
-          {today.round ? <span>A round in the playground</span> : <Link href="/playground">A round in the playground</Link>}
+          {today.round ? <span>A round</span> : <Link href="/playground">A round</Link>}
           <span className="pk-sr">{today.round ? ", done" : ", not yet"}</span>
         </li>
       </ul>
-      <p className="caption pk-faint pk-foot">
-        {today.done === today.of
-          ? `All of it, today. ${name} is well looked after.`
-          : "Any one of these keeps the streak. A day with all five is a good day."}
+      <p className="caption pk-faint pk-today__line">
+        {today.done === today.of ? `All of it, today. ${name} is well looked after.` : "Any one keeps the streak; all five make a good day."}
       </p>
-      <RemindMe name={name} />
-    </Card>
+    </section>
   );
 }
 
@@ -559,9 +585,13 @@ function TodayCard({
       </div>
       <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
         {onChain
-          ? "An estimate. Each care is +10 XP once Solana confirms it, then that care rests for 30 minutes."
-          : "An estimate. Each care is +10 XP, then that care rests for 30 minutes."}
+          ? "An estimate of time away. Each care is +10 XP once Solana confirms it, then that care rests for 30 minutes."
+          : "An estimate of time away. Each care is +10 XP, then that care rests for 30 minutes."}{" "}
+        There is no death — only a pet that misses you.
       </p>
+      <div style={{ marginTop: "var(--space-4)" }}>
+        <RemindMe name={pet.name} />
+      </div>
     </Card>
   );
 }
@@ -579,53 +609,28 @@ function Vital({ label, value }: { label: string; value: number }) {
   );
 }
 
-/** Where the pet's record lives, the way to it, and — in this browser — letting a pet go. */
-function RecordCard({
-  pet,
-  onChain,
-  cluster,
-  others,
-}: {
-  pet: GuestPet;
-  onChain: boolean;
-  cluster: ReturnType<typeof getPublicEnv>["solanaCluster"];
-  others: number;
-}) {
+/** The way to the pet's record and to the rest of the family, and — in this browser — letting a pet go. */
+function HomeFoot({ pet, onChain, others }: { pet: GuestPet; onChain: boolean; others: number }) {
   const [confirming, setConfirming] = useState(false);
   return (
-    <Card variant="quiet">
-      <div className="pk-spread">
-        <h2 className="title">{onChain ? `${pet.name} lives on Solana` : `${pet.name} lives in this browser`}</h2>
-        <ButtonLink label="Their record" href={`/pet/${pet.id}`} tone="ghost" size="sm" after="right" />
-      </div>
-      <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-        {onChain
-          ? `Every care is signed by your wallet and kept on Solana ${cluster}, where anyone can check it. The vitals are an estimate of time away, worked out the same way the program does.`
-          : "Saved here, and nowhere else. The vitals are an estimate of time away."}{" "}
-        There is no death — only a pet that misses you.
-      </p>
-      <Row gap={2} wrap className="pk-foot">
-        {others > 0 ? (
-          <ButtonLink label={`All ${others + 1} of your pets`} href="/profile#shelf" tone="quiet" size="sm" icon="pocket" />
-        ) : (
-          <ButtonLink label="Adopt another" href="/adopt" tone="quiet" size="sm" icon="plus" />
-        )}
-        {onChain ? null : confirming ? null : (
-          <Button tone="ghost" size="sm" label={`Let ${pet.name} go`} onClick={() => setConfirming(true)} />
-        )}
+    <div className="pk-home__foot">
+      <Row gap={1} wrap>
+        <ButtonLink label={`${pet.name}'s record`} href={`/pet/${pet.id}`} tone="ghost" size="sm" after="right" />
+        {others > 0 ? <ButtonLink label={`All ${others + 1} of your pets`} href="/profile#shelf" tone="ghost" size="sm" /> : null}
+        {onChain || confirming ? null : <Button tone="ghost" size="sm" label={`Let ${pet.name} go`} onClick={() => setConfirming(true)} />}
       </Row>
       {!onChain && confirming ? (
-        <Stack gap={3} style={{ marginTop: "var(--space-4)" }}>
+        <Card variant="quiet">
           <p className="body-sm">
             Let {pet.name} go from this browser? Their care, streak and clothes go too. This cannot be undone.
             {others > 0 ? " Your other pets stay." : ""}
           </p>
-          <Row gap={2} wrap>
+          <Row gap={2} wrap style={{ marginTop: "var(--space-3)" }}>
             <Button tone="alarm" size="sm" label={`Let ${pet.name} go`} onClick={() => removePet(pet.id)} />
             <Button tone="quiet" size="sm" label="Keep them" onClick={() => setConfirming(false)} />
           </Row>
-        </Stack>
+        </Card>
       ) : null}
-    </Card>
+    </div>
   );
 }

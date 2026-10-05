@@ -3454,6 +3454,72 @@ li {
 .pk-home__notice {
   text-align: center;
 }
+/* Under the day: the way to the record and the family, in quiet words. */
+.pk-home__foot {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-2) 0 0;
+  border-top: var(--stroke-hair) solid var(--edge-soft);
+  margin-top: var(--space-2);
+}
+/* A button that reads as a link inside a line of words. */
+.pk-linkish {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+/* Keeping a pet on Solana: its face, the level it has here, and the level 1
+   it starts at there — the trade, drawn, before the wallet opens. */
+.pk-keep {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--pool-soft);
+}
+.pk-keep__face {
+  display: grid;
+  place-items: end center;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  flex: none;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+}
+.pk-keep__face svg {
+  width: 116%;
+  height: 116%;
+  margin-bottom: -18%;
+}
+.pk-keep__then {
+  display: grid;
+}
+.pk-keep__arrow {
+  color: var(--pool-text);
+  font-weight: 700;
+}
+.pk-keep__note {
+  padding-left: var(--space-3);
+  border-left: var(--stroke-shelf) solid var(--sun);
+}
+.pk-adopt__keep {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--stroke-line) dashed var(--edge-soft);
+  border-radius: var(--radius-lg);
+}
 .pk-home__more {
   display: grid;
   gap: var(--space-4);
@@ -3751,13 +3817,51 @@ li {
   }
 }
 
-/* Today's round, as a checklist. */
-.pk-goals {
-  list-style: none;
+/* Today's round, in one band under the room: the title and the count, then
+   five goals as small pills that fill in as they happen. No card around it:
+   it is a line of the room's day, not a thing to open. */
+.pk-today {
   display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-2) 0;
+}
+@media (min-width: 1024px) {
+  .pk-today {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--space-6);
+  }
+  .pk-today__line {
+    grid-column: 2;
+  }
+}
+.pk-today__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+.pk-today__goals {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
-  margin: var(--space-3) 0 0;
+  margin: 0;
   padding: 0;
+}
+.pk-today__goals .pk-goal {
+  gap: var(--space-2);
+  padding: 3px var(--space-3) 3px 3px;
+  border: var(--stroke-hair) solid var(--edge-soft);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: 13px;
+}
+.pk-today__goals .pk-goal__mark {
+  width: 22px;
+  height: 22px;
+}
+.pk-today__goals .pk-goal--done {
+  border-color: var(--sprout-edge);
 }
 .pk-goal {
   display: flex;
@@ -3817,6 +3921,53 @@ li {
   --pk-keep: 0 0 0 3px var(--surface), 0 0 0 5px var(--sun);
   border-color: var(--edge);
   box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--sun);
+}
+/* Where each pet lives, on its corner: a small pool check for one on Solana,
+   and for one in this browser a pool button that keeps it there — the one
+   way onto Solana from Home, sitting on the pet it is about. */
+.pk-switch__slot {
+  position: relative;
+  display: inline-grid;
+}
+.pk-switch__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: var(--stroke-line) solid var(--surface);
+  border-radius: var(--radius-pill);
+  background: var(--pool);
+  color: var(--on-pool);
+}
+.pk-switch__badge--kept {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+.pk-switch__badge--keep {
+  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--pool-edge);
+  transition: transform var(--dur-press) var(--ease-press);
+}
+.pk-switch__badge--keep::after {
+  /* A 28px target around a small mark, clear of the middle of the face. */
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+@media (hover: hover) {
+  .pk-switch__badge--keep:hover {
+    transform: scale(1.12);
+  }
+}
+.pk-switch__badge--keep:focus-visible {
+  outline: var(--stroke-line) solid var(--focus);
+  outline-offset: 2px;
 }
 /* The last circle adopts another: a plus, centred, on the dashed edge an
    empty pocket has. The face rule above enlarges and lowers a pet to sit
@@ -6317,6 +6468,10 @@ details > .pk-risks {
 .pk-toast--done .pk-toast__mark {
   background: var(--sprout-soft);
   color: var(--sprout-text);
+}
+.pk-toast--note .pk-toast__mark {
+  background: var(--sun-soft);
+  color: var(--sun-text);
 }
 .pk-toast--risk {
   border-color: var(--alarm-text);

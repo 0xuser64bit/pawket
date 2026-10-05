@@ -12,7 +12,6 @@ import {
   PetFrame,
   Receipt,
   Stack,
-  WalletState,
   Waiting,
 } from "@/components/pk";
 import {
@@ -24,7 +23,7 @@ import {
 } from "@/lib/game/appearance";
 import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import type { Address } from "@solana/kit";
-import { CarryCard } from "@/components/home/carry-card";
+import { KeepSheet } from "@/components/home/keep-sheet";
 import { PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { choosePet } from "@/lib/companion/use-companion";
 import { createGuestPet, nameTaken, projectGuestPet, type GuestPet } from "@/lib/guest/pet";
@@ -111,6 +110,7 @@ export function AdoptFlow() {
   const [error, setError] = useState<string>();
   const [adopted, setAdopted] = useState<GuestPet>();
   const [stored, setStored] = useState(true);
+  const [keeping, setKeeping] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const scope = useRef<HTMLDivElement>(null);
@@ -391,19 +391,23 @@ export function AdoptFlow() {
                 ]}
               />
             </Paper>
-            <WalletState
-              mode="guest"
-              title="Saved in this browser"
-              body="Care, the wardrobe and the playground all work from here. Clearing this browser's data is how you would lose them."
-            />
             <Button label="Take them home" size="lg" full icon="home" onClick={() => router.push("/home")} />
             {adopted ? (
-              <CarryCard
+              <div className="pk-adopt__keep">
+                <p className="body-sm pk-muted">
+                  {kept} lives in this browser. Today is the best day to keep them on Solana too: they are brand new, so
+                  nothing starts over.
+                </p>
+                <Button label={`Keep ${kept} on Solana`} icon="keep" tone="quiet" size="sm" onClick={() => setKeeping(true)} />
+              </div>
+            ) : null}
+            {adopted && keeping ? (
+              <KeepSheet
                 pet={adopted}
                 owner={owner}
                 canSign={Boolean(connected?.signer)}
                 sender={sender}
-                fresh
+                onDismiss={() => setKeeping(false)}
                 onCarried={(address) => {
                   removePet(adopted.id);
                   choosePet(address);

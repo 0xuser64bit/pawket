@@ -32,10 +32,13 @@ write-up are in [`docs/PITCH.md`](docs/PITCH.md); the mainnet plan is
 1. Open the live app and adopt — no wallet, no sign-up, and as many pets as
    you like. Feed, play, brush and rest in the room; the pet's needs fall
    while you are away, and its face (and the deck) says what it wants.
-2. To keep the pet on Solana, connect a wallet set to devnet (in Phantom,
-   turn on testnet mode and pick Solana Devnet). It needs no SOL.
-3. Press "Record Pepper" and approve. Every care after that is a signed
-   transaction, with its signature and an Explorer link on screen.
+2. To keep the pet on Solana, connect a wallet set to devnet ("Connect", top
+   right; in Phantom, turn on testnet mode and pick Solana Devnet). It needs
+   no SOL.
+3. Tap the small badge on Pepper's face in the pet bar, then "Keep Pepper",
+   and approve. Its record on Solana starts today, at level 1 — the sheet
+   says so first. Every care after that is a signed transaction; a toast
+   says when Solana has it, with the Explorer a tap away.
 4. Tired of approving each one? Open the Pawket Wallet (from the wallet
    chip) and link this browser — one approval, no SOL needed while Pawket
    pays the fees. From then on care, rounds, clothes, guilds, gatherings
@@ -133,8 +136,9 @@ with a way in. Pawket pays those fees too.
   (or a drawn room where 3D cannot draw), with a deck floating beneath it —
   the level as a ring, the four vitals minimized, the four cares (the one
   the pet wants in sun), and Say, Today, Photo and Look. Faces in the bar
-  bring any of your pets home. Today's round is a checklist; Photo prints
-  the room as a picture to save or share.
+  bring any of your pets home, and a badge on a browser pet's face keeps it
+  on Solana. Today's round is a row of five goals under the deck; Photo
+  prints the room as a picture to save or share.
 - **Park** — every pet the program keeps, read live: a drawn park where the
   pets out today wander on the lawn, what just happened, and everyone.
 - **Playground** — four games with any of your pets in them: Catch, Hop,

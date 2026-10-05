@@ -80,7 +80,7 @@ Devnet's are a fifth, so a rehearsal graduates on faucet SOL.
   `minimumOut`; Solana refuses a worse fill and only the network fee is
   spent. The receipt names what did not change.
 - **Client timeout after sending.** "Still waiting", never "failed", with
-  the signature to look up (`TxReceipt`).
+  the signature to look up (the send's toast).
 - **A buy larger than the curve has left.** Partial fill: it takes what
   graduation needs and returns the rest in the same transaction.
 - **Guild delisted.** `suspended`: trades stop here; holdings are untouched.

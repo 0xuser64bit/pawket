@@ -291,8 +291,13 @@ shapes, one outline, the palette — never a grid of identical pockets:
 - **Pairs**. Twelve cards on the table, the paw on their backs and the
   wardrobe on their faces, turning over in 3D on the press curve.
 - **Guilds** (`src/components/guilds/`). A crest is square-shouldered and in
-  its guild's colour (bloom unless it chose another hue), never a pocket;
-  a guild's page leads with its crest beside its name and motto.
+  its guild's colour (bloom unless it chose another hue), never a pocket.
+  A guild's page is its introduction, then what it is for: the head holds
+  the crest beside the name and motto, the facts and the way in for your
+  pets (join, leave) in one place; below it, what is on — each event a card
+  with its date as a calendar leaf, each poll its answers as bars that are
+  the count — and beside that the pets as a list, what they did together,
+  the coin in a line and the record folded away.
 - **The front door** (`app/page.tsx`). The three pets on a hill, eyes on
   the visitor; what is on Solana right now, counted from the program; a day
   with them, drawn; the one ink band beside a real Passport read from chain.

@@ -207,7 +207,8 @@ PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts   # the same path through the real sc
   `program.test.ts` holds them to the IDL.
 - **No silent sends.** Every send needs explicit user action, simulation
   first (preflight on, here or at the sponsor), and a visible signature +
-  Explorer link after (`TxReceipt`). Go through `send.ts`; never a second path.
+  Explorer link after (the send's toast, `src/components/wallet/tx-toast.tsx`,
+  pushed by `usePawketSend`). Go through `send.ts`; never a second path.
 - **No optimistic adopt/care state.** Wait for confirmation, then reload from
   the source of truth.
 - **No `NEXT_PUBLIC_` secrets.** Server-only config has no such prefix and is

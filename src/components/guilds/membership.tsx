@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button, Card, PetArt, Stack, Waiting } from "@/components/pk";
+import Link from "next/link";
+import { Button, PetArt, Waiting } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { petLook } from "@/lib/game/appearance";
@@ -12,10 +13,11 @@ import { deriveMemberPda } from "@/lib/solana/pda";
 import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
 
 /**
- * Your pets and this guild: each pet on Solana that could join, one that is
- * in it and could leave, one that is in another guild. Joining and leaving
- * are signed by the pet's owner; Pawket pays the fee while it can. The page
- * is read again from Solana once a send is confirmed.
+ * Your pets and this guild, in the guild's head: each pet on Solana with
+ * the one thing it can do here — join, leave, or nothing while it is in
+ * another guild. Joining and leaving are signed by the pet's owner (or the
+ * browser linked to them, with no pop-up); Pawket pays the fee while it
+ * can. The page is read again from Solana once a send is confirmed.
  */
 export function GuildMembership({ guild }: { guild: { address: string; name: string } }) {
   const companion = useCompanion();
@@ -50,51 +52,45 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
   if (!companion.ready) return <Waiting label="Reading your pets" inline />;
 
   return (
-    <Card>
-      <h2 className="title">Your pets and {guild.name}</h2>
+    <div className="pk-join">
       {!companion.owner ? (
         <>
-          <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-            A guild is kept on Solana, so a pet joins it from the wallet that keeps it. Connecting signs nothing.
-          </p>
-          <div style={{ marginTop: "var(--space-4)" }}>
-            <Button label="Connect a wallet" icon="wallet" tone="quiet" size="sm" onClick={() => setConnecting(true)} />
-          </div>
+          <Button label="Connect to join" icon="wallet" tone="bloom" size="sm" onClick={() => setConnecting(true)} />
+          <p className="caption pk-faint">A pet joins from the wallet that keeps it on Solana. Connecting signs nothing.</p>
         </>
       ) : companion.owned.length === 0 ? (
-        <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-          This wallet keeps no pet on Solana yet. Keep one there from Home — the pets in this browser can follow — and
-          it can join.
+        <p className="caption pk-faint">
+          This wallet keeps no pet on Solana yet. <Link href="/home">Keep one there from Home</Link>, and it can join.
         </p>
       ) : (
-        <Stack gap={3} style={{ marginTop: "var(--space-4)" }}>
-          {companion.owned.map((entry) => {
-            const here = entry.member?.guild === guild.address;
-            const elsewhere = entry.member !== null && !here;
-            return (
-              <div key={entry.pet.address} className="pk-member-row">
-                <span className="pk-avatar" aria-hidden="true">
-                  <PetArt {...petLook(toCompanionRecord(entry))} still />
-                </span>
-                <span className="pk-fill">
-                  <span className="title">{entry.pet.name}</span>
-                  <span className="caption pk-faint" style={{ display: "block" }}>
-                    {here ? `In ${guild.name}` : elsewhere ? "In another guild" : "In no guild"}
+        <>
+          <div className="pk-join__pets">
+            {companion.owned.map((entry) => {
+              const here = entry.member?.guild === guild.address;
+              const elsewhere = entry.member !== null && !here;
+              return (
+                <div key={entry.pet.address} className={here ? "pk-join__pet pk-join__pet--in" : "pk-join__pet"}>
+                  <span className="pk-avatar" aria-hidden="true">
+                    <PetArt {...petLook(toCompanionRecord(entry))} still />
                   </span>
-                </span>
-                {here ? (
-                  <Button label="Leave" tone="quiet" size="sm" disabled={sender.busy} onClick={() => void leave(entry)} />
-                ) : elsewhere ? null : (
-                  <Button label="Join" tone="bloom" size="sm" icon="guild" disabled={sender.busy || !companion.canSign} onClick={() => void join(entry)} />
-                )}
-              </div>
-            );
-          })}
+                  <span className="body-sm">
+                    <b>{entry.pet.name}</b>
+                    {here ? " is in" : elsewhere ? " · in another guild" : ""}
+                  </span>
+                  {here ? (
+                    <Button label="Leave" tone="ghost" size="sm" disabled={sender.busy} onClick={() => void leave(entry)} />
+                  ) : elsewhere ? null : (
+                    <Button label="Join" tone="bloom" size="sm" icon="guild" disabled={sender.busy || !companion.canSign} onClick={() => void join(entry)} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
           <p className="caption pk-faint">
-            One guild per pet. {sponsor.data?.available ? "Pawket pays the fee and the small rent, and gets the rent back if the pet leaves." : "It costs a small network fee and rent in devnet SOL; leaving gives the rent back."}{" "}
-            Joining changes nothing about a pet.
+            One guild per pet; joining changes nothing about it.{" "}
+            {sponsor.data?.available ? "Pawket pays the fee and the rent." : "It costs a little devnet SOL; leaving gives the rent back."}
           </p>
-        </Stack>
+        </>
       )}
       {connecting ? (
         <WalletSheet
@@ -102,6 +98,6 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
           onDismiss={() => setConnecting(false)}
         />
       ) : null}
-    </Card>
+    </div>
   );
 }

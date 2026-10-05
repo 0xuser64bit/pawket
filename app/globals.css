@@ -4268,20 +4268,6 @@ li {
   text-decoration: none;
   box-shadow: var(--shadow-sticker-sm);
 }
-.pk-together {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
-  margin: var(--space-4) 0 0;
-}
-.pk-together dd {
-  margin: 2px 0 0;
-}
-.pk-member-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
 
 .pk-time {
   padding: var(--space-1) var(--space-2);
@@ -4315,18 +4301,223 @@ li {
   border: var(--stroke-line) solid var(--edge-soft);
 }
 
-/* A guild's gatherings: each event and poll a quiet block, its actions a row
-   of small buttons, the founder's forms folded away until opened. */
-.pk-gathering {
-  display: flex;
-  flex-direction: column;
+/* A guild's page: the head is its introduction — crest, name, motto, facts,
+   and the way in for your pets, all in one place. Below it, what is on is
+   the page; the pets, what they did together, the coin and the record sit
+   in the column beside it. */
+.pk-guild-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4) var(--space-5);
+}
+@media (max-width: 560px) {
+  /* A phone keeps the crest beside the name, smaller, so the way in is in view. */
+  .pk-guild-hero {
+    column-gap: var(--space-3);
+  }
+  .pk-guild-hero > .pk-crest--lg {
+    width: 56px;
+    height: 62px;
+    font-size: 24px;
+    border-width: var(--stroke-line);
+  }
+  .pk-guild-hero > .pk-crest--lg svg {
+    width: 26px;
+    height: 26px;
+  }
+  .pk-guild-hero .display-l {
+    font-size: 34px;
+    line-height: 38px;
+  }
+}
+.pk-guild-hero__join {
+  margin-top: var(--space-4);
+}
+.pk-join {
+  display: grid;
+  justify-items: start;
   gap: var(--space-2);
+}
+.pk-join__pets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.pk-join__pet {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-1);
+  padding-right: var(--space-2);
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+}
+.pk-join__pet .pk-avatar {
+  width: 32px;
+  height: 32px;
+}
+.pk-join__pet--in {
+  border-color: var(--bloom-edge);
+  background: var(--bloom-soft);
+}
+.pk-guild-side {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-pet-rows {
+  list-style: none;
+  display: grid;
+  margin: 0;
+  padding: 0;
+}
+.pk-pet-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: var(--stroke-hair) solid var(--edge-soft);
+  color: inherit;
+  text-decoration: none;
+}
+.pk-pet-rows li:last-child .pk-pet-row {
+  border-bottom: 0;
+}
+.pk-pet-row .pk-fill {
+  display: grid;
+}
+@media (hover: hover) {
+  .pk-pet-row:hover .title {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+.pk-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0;
   padding-top: var(--space-3);
   border-top: var(--stroke-hair) solid var(--edge-soft);
 }
-.pk-founder-desk > summary {
+.pk-stat-row dd {
+  margin: 2px 0 0;
+}
+/* What is on: each event a card with its date as a calendar leaf, each poll
+   its answers as bars that are the count, never a percentage. */
+.pk-whats-on {
+  display: grid;
+  gap: var(--space-4);
+}
+.pk-whats-on__empty {
+  padding: var(--space-5);
+  border: var(--stroke-line) dashed var(--edge-soft);
+  border-radius: var(--radius-lg);
+}
+.pk-event,
+.pk-poll {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-event {
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-4);
+  align-items: start;
+}
+.pk-event--live {
+  border-color: var(--pool-edge);
+  box-shadow: 3px 3px 0 var(--pool-edge);
+}
+.pk-event__date {
+  display: grid;
+  justify-items: center;
+  width: 56px;
+  padding: var(--space-1) 0 var(--space-2);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--bloom-soft);
+  line-height: 1;
+}
+.pk-event__month {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bloom-text);
+}
+.pk-event__day {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 26px;
+}
+.pk-event__weekday {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.pk-event__body {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.pk-poll__options {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+}
+.pk-poll__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  overflow: hidden;
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+}
+.pk-poll__option--vote {
   cursor: pointer;
-  list-style-position: outside;
+}
+@media (hover: hover) {
+  .pk-poll__option--vote:hover:not(:disabled) {
+    border-color: var(--bloom-edge);
+  }
+}
+.pk-poll__option--mine {
+  border-color: var(--bloom-edge);
+}
+.pk-poll__bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--bloom-soft);
+}
+.pk-poll__label,
+.pk-poll__option .amount-sm {
+  position: relative;
+}
+.pk-poll__label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 /* The item, tried on: your pet wearing it, or sitting in the room, large,

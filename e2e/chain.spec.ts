@@ -100,11 +100,13 @@ test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) 
   await page.waitForURL(/\/guilds\/devnet-check-/, { timeout: 120_000 });
   await expect(page.getByRole("heading", { name: guild, exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("1 pet", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
-  await expect(page.getByText(`In ${guild}`)).toBeVisible();
+  // The founder's pet is in the guild's list, and the guild's head says it is in.
+  const row = page.getByRole("link", { name: new RegExp(`^${name}`) });
+  await expect(row).toBeVisible();
+  await expect(page.getByText(`${name} is in`)).toBeVisible();
 
   // The pet's own record names its guild.
-  await page.getByRole("link", { name: `${name}'s record` }).click();
+  await row.click();
   await expect(page.getByText("In a guild")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("link", { name: new RegExp(guild) })).toBeVisible();
 });

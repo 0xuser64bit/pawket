@@ -1,20 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  BackLink,
-  Banner,
-  ButtonLink,
-  Card,
-  Chip,
-  EmptyState,
-  LaunchStage,
-  Paper,
-  PetFrame,
-  Presence,
-  Row,
-  Screen,
-  Stack,
-} from "@/components/pk";
+import { BackLink, Banner, ButtonLink, Card, Chip, LaunchStage, PetArt, Presence, Row, Screen, Stack } from "@/components/pk";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { GuildMembership } from "@/components/guilds/membership";
 import { GuildGatherings } from "@/components/guilds/gatherings";
@@ -50,10 +36,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 const since = (seconds: number) => formatUtcDate(new Date(seconds * 1000).toISOString());
 
 /**
- * A guild, as anyone can see it: its crest, its name and motto, the pets in
- * it — read live from their own accounts — and what they have done
- * together, counted. Then, for a visitor with pets on Solana, the way in or
- * out; then, on Paper, what it is on chain.
+ * A guild, as anyone can see it. The head is the introduction: its crest,
+ * name and motto, how many and since when, and — for a visitor with pets on
+ * Solana — the way in or out, right there. Then the page is what the guild
+ * is for: what is on (events and polls, read live), with the pets in it,
+ * what they have done together and its coin to the side, and what it is on
+ * chain folded away.
  */
 export default async function GuildPage({ params }: Props) {
   const { slug } = await params;
@@ -106,28 +94,28 @@ export default async function GuildPage({ params }: Props) {
   return (
     <Screen>
       <BackLink label="Guilds" href="/guilds" />
-      <Stack gap={5}>
-        <div className="pk-guild-head">
+      <Stack gap={6}>
+        {/* Who they are, who is in it, and the way in: the guild's whole introduction, in one place. */}
+        <header className="pk-guild-hero">
           <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} size="lg" />
-          <div>
+          <div className="pk-guild-hero__words">
             <h1 className="display-l" style={{ overflowWrap: "anywhere" }}>
               {guild.name}
             </h1>
             {guild.motto ? <p className="body-lg pk-muted">{guild.motto}</p> : null}
-            <Row gap={2} wrap style={{ marginTop: "var(--space-3)" }}>
+            <Row gap={2} wrap style={{ marginTop: "var(--space-3)", alignItems: "center" }}>
               <Chip label={`${guild.memberCount} ${guild.memberCount === 1 ? "pet" : "pets"}`} tone="pool" icon="users" />
               <Chip label={`Since ${since(guild.createdAt)}`} />
               <Chip label="Optional" tone="bloom" icon="guild" />
+              <ShareButton name={guild.name} label="Share" />
             </Row>
-            <Row gap={3} wrap style={{ marginTop: "var(--space-3)", alignItems: "center" }}>
-              <ShareButton name={guild.name} label={`Share ${guild.name}`} />
-              <span className="caption pk-faint">
-                Shared, this link is also a Solana Action: in a Blink-aware wallet it opens as {guild.name}&apos;s card, and a pet
-                joins from there.
-              </span>
-            </Row>
+            {delisted ? null : (
+              <div className="pk-guild-hero__join">
+                <GuildMembership guild={{ address: guild.address, name: guild.name }} />
+              </div>
+            )}
           </div>
-        </div>
+        </header>
 
         {delisted ? (
           <Banner
@@ -137,114 +125,122 @@ export default async function GuildPage({ params }: Props) {
           />
         ) : null}
 
-        <Stack gap={4}>
-          <div className="pk-spread">
-            <h2 className="display-s">The pets</h2>
-            {outToday > 0 ? <Presence name={`${outToday} out today`} /> : <span className="caption pk-faint">Nobody out yet today</span>}
+        <div className="pk-columns">
+          <div className="pk-columns__first">
+            {delisted ? null : (
+              <GuildGatherings guild={{ address: guild.address, name: guild.name, founder: guild.founder }} events={gatherings.events} polls={gatherings.polls} />
+            )}
           </div>
-          {records.length === 0 ? (
-            <EmptyState icon="paw" title="Nobody here yet" body="A guild with nobody in it is still on the record. The next pet to join is its first." />
-          ) : (
-            <div className="pk-cards">
-              {records.map(({ entry, record }) => {
-                const { level, mood } = projectGuestPet(record, now);
-                const out = streakAsOf(record.streak, now).activeToday;
-                return (
-                  <Card key={entry.pet.address} variant="flush">
-                    <Link href={`/pet/${entry.pet.address}`} className="pk-card__art" aria-label={`${entry.pet.name}'s record`}>
-                      <PetFrame {...petLook(record, mood)} sky={SPECIES_SKY[record.species]} level={level} size="fluid" still />
-                    </Link>
-                    <div className="pk-card__body">
-                      <h3 className="title">
-                        {entry.pet.name}
-                        {holders?.has(entry.pet.owner) ? (
-                          <span className="pk-coin-pin" title={`Wears ${guild.name}'s crest pin: its owner holds the coin`}>
-                            <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} size="sm" />
-                            <span className="pk-sr">, wears the crest pin</span>
-                          </span>
-                        ) : null}
-                      </h3>
-                      <p className="caption pk-faint">
-                        Level {level}
-                        {entry.pet.address === guild.founderPet ? " · founder" : ""}
-                      </p>
-                      {out ? (
-                        <div style={{ marginTop: "var(--space-2)" }}>
-                          <Presence name="Out today" />
-                        </div>
-                      ) : null}
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </Stack>
 
-        {/* What the guild has done together, joining it, and its facts: one row of equal cards under the shelf. */}
-        <div className="pk-guild-facts">
-          <Card>
-            <h2 className="title">Together</h2>
-            <dl className="pk-together">
-              <div>
-                <dt className="label pk-faint">Cares given</dt>
-                <dd className="amount">{cares}</dd>
+          <aside className="pk-columns__second" aria-label={`About ${guild.name}`}>
+            <section className="pk-guild-side" aria-labelledby="pk-guild-pets">
+              <div className="pk-spread">
+                <h2 id="pk-guild-pets" className="title">
+                  The pets
+                </h2>
+                {outToday > 0 ? <Presence name={`${outToday} out today`} /> : <span className="caption pk-faint">Nobody out yet today</span>}
               </div>
-              <div>
-                <dt className="label pk-faint">Longest run</dt>
-                <dd>
-                  <span className="amount">{bestRun}</span> <span className="caption pk-faint">{bestRun === 1 ? "day" : "days"}</span>
-                </dd>
-              </div>
-              <div>
-                <dt className="label pk-faint">Out today</dt>
-                <dd className="amount">{outToday}</dd>
-              </div>
-            </dl>
-            <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
-              Counted from each pet&apos;s own Passport. A guild keeps no score of its own, and none of this
-              changes a pet.
-            </p>
-          </Card>
-          {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name }} />}
-          {delisted ? null : (
-            <GuildGatherings guild={{ address: guild.address, name: guild.name, founder: guild.founder }} events={gatherings.events} polls={gatherings.polls} />
-          )}
-          {coin ? <CoinCard guildName={guild.name} slug={guild.slug} coin={coin} /> : null}
-          <Paper title="On the record" meta={`Solana ${cluster}`}>
-            <div className="pk-receipt">
-              <Fact k="Guild" value={guild.address} cluster={cluster} />
-              <Fact k="Founded by" value={guild.founder} cluster={cluster} />
-              <Fact k="Program" value={PAWKET_PROGRAM_ID} cluster={cluster} />
-              <div className="pk-receipt__row">
-                <span className="pk-receipt__k">Address</span>
-                <span className="pk-receipt__v">{guild.slug}</span>
-              </div>
-              <div className="pk-receipt__row">
-                <span className="pk-receipt__k">Founded</span>
-                <span className="pk-receipt__v">
-                  {since(guild.createdAt)}
-                  {founder ? ` by ${founder.pet.name}` : ""}
-                </span>
-              </div>
-            </div>
-            <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
-              Each pet joins and leaves with its owner&apos;s signature. Pawket cannot add a pet, remove one or
-              change the guild.
-            </p>
-            <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
-              Something wrong here — impersonation, a scam link, abuse?{" "}
-              <a href={guildReportUrl(guild, `${getPublicEnv().appUrl}/guilds/${guild.slug}`)} target="_blank" rel="noreferrer">
-                Report {guild.name}
-              </a>
-              . Pawket can stop promoting a guild; it cannot remove one from Solana.
-            </p>
-          </Paper>
+              {records.length === 0 ? (
+                <p className="body-sm pk-muted">Nobody here yet. A guild with nobody in it is still on the record; the next pet to join is its first.</p>
+              ) : (
+                <ul className="pk-pet-rows">
+                  {records.map(({ entry, record }) => {
+                    const { level, mood } = projectGuestPet(record, now);
+                    const out = streakAsOf(record.streak, now).activeToday;
+                    return (
+                      <li key={entry.pet.address}>
+                        <Link href={`/pet/${entry.pet.address}`} className="pk-pet-row">
+                          <span className={`pk-avatar ${SKY_CLASS[SPECIES_SKY[record.species]]}`} aria-hidden="true">
+                            <PetArt {...petLook(record, mood)} still />
+                          </span>
+                          <span className="pk-fill">
+                            <span className="title">
+                              {entry.pet.name}
+                              {holders?.has(entry.pet.owner) ? (
+                                <span className="pk-coin-pin" title={`Wears ${guild.name}'s crest pin: its owner holds the coin`}>
+                                  <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} size="sm" />
+                                  <span className="pk-sr">, wears the crest pin</span>
+                                </span>
+                              ) : null}
+                            </span>
+                            <span className="caption pk-faint">
+                              Level {level}
+                              {entry.pet.address === guild.founderPet ? " · founder" : ""}
+                            </span>
+                          </span>
+                          {out ? <span className="pk-presence__dot" title="Out today" aria-label="Out today" /> : null}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <dl className="pk-stat-row" aria-label="Together">
+                <div>
+                  <dt className="label pk-faint">Cares given</dt>
+                  <dd className="amount">{cares}</dd>
+                </div>
+                <div>
+                  <dt className="label pk-faint">Longest run</dt>
+                  <dd className="amount">
+                    {bestRun}
+                    <span className="caption pk-faint"> {bestRun === 1 ? "day" : "days"}</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="label pk-faint">Out today</dt>
+                  <dd className="amount">{outToday}</dd>
+                </div>
+              </dl>
+              <p className="caption pk-faint">Counted from each pet&apos;s own Passport. A guild keeps no score, and none of it changes a pet.</p>
+            </section>
+
+            {coin ? <CoinCard guildName={guild.name} slug={guild.slug} coin={coin} /> : null}
+
+            <details className="pk-fold">
+              <summary>
+                <span className="title">On the record</span>
+                <span className="caption pk-faint">Solana {cluster}</span>
+              </summary>
+              <Stack gap={3}>
+                <div className="pk-receipt">
+                  <Fact k="Guild" value={guild.address} cluster={cluster} />
+                  <Fact k="Founded by" value={guild.founder} cluster={cluster} />
+                  <Fact k="Program" value={PAWKET_PROGRAM_ID} cluster={cluster} />
+                  <div className="pk-receipt__row">
+                    <span className="pk-receipt__k">Address</span>
+                    <span className="pk-receipt__v">{guild.slug}</span>
+                  </div>
+                  <div className="pk-receipt__row">
+                    <span className="pk-receipt__k">Founded</span>
+                    <span className="pk-receipt__v">
+                      {since(guild.createdAt)}
+                      {founder ? ` by ${founder.pet.name}` : ""}
+                    </span>
+                  </div>
+                </div>
+                <p className="body-sm pk-muted">
+                  Each pet joins and leaves with its owner&apos;s signature. Pawket cannot add a pet, remove one or change the
+                  guild. Shared, this page&apos;s link is also a Solana Action: in a Blink-aware wallet it opens as{" "}
+                  {guild.name}&apos;s card, and a pet joins from there.
+                </p>
+                <p className="caption pk-faint">
+                  Something wrong here — impersonation, a scam link, abuse?{" "}
+                  <a href={guildReportUrl(guild, `${getPublicEnv().appUrl}/guilds/${guild.slug}`)} target="_blank" rel="noreferrer">
+                    Report {guild.name}
+                  </a>
+                  . Pawket can stop promoting a guild; it cannot remove one from Solana.
+                </p>
+              </Stack>
+            </details>
+          </aside>
         </div>
       </Stack>
     </Screen>
   );
 }
+
+const SKY_CLASS = { warm: "pk-sky--warm", cool: "pk-sky", plain: "pk-sky--plain" } as const;
 
 function Fact({ k, value, cluster }: { k: string; value: string; cluster: ReturnType<typeof getPublicEnv>["solanaCluster"] }) {
   return (
@@ -266,17 +262,17 @@ const COIN_LINE: Record<CoinState["stage"], (guild: string) => string> = {
 /** The guild's coin, in a line, with the way to its page — the only place a coin is traded. */
 function CoinCard({ guildName, slug, coin }: { guildName: string; slug: string; coin: CoinState }) {
   return (
-    <Card>
-      <h2 className="title">{coin.stage === "none" ? "A coin, if it wants one" : coin.name}</h2>
+    <Card variant="quiet">
+      <div className="pk-spread">
+        <h2 className="title">{coin.stage === "none" ? "A coin, if it wants one" : coin.name}</h2>
+        <ButtonLink label={coin.stage === "none" ? "How it works" : "Open"} href={`/guilds/${slug}/coin`} tone="ghost" size="sm" after="right" />
+      </div>
       <div style={{ marginTop: "var(--space-2)" }}>
         <LaunchStage stage={coin.stage} />
       </div>
-      <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
+      <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
         {COIN_LINE[coin.stage](guildName)}
       </p>
-      <div style={{ marginTop: "var(--space-4)" }}>
-        <ButtonLink label={coin.stage === "none" ? "How a coin works" : "Open the coin"} href={`/guilds/${slug}/coin`} tone="quiet" size="sm" after="right" />
-      </div>
     </Card>
   );
 }

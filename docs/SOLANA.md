@@ -169,7 +169,8 @@ are none, and says Pawket is on devnet.
 first, as fee payer → the wallet signs as owner → the message is checked to
 be the one that was built → send with preflight on → confirm (`confirmed`,
 30s timeout, then "unknown", never "failed") → reload from chain →
-`TxReceipt` shows the signature, a copy control and an Explorer link. When
+the send's toast (`tx-toast.tsx`, pushed by `usePawketSend`) says who paid
+and links the signature on the Explorer. When
 the player pays, the wallet is fee payer and signs alone. No optimistic
 adopt/care state. The cooldown is checked before the wallet opens, with the
 program's own rule.

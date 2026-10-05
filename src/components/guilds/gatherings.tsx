@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { useRequest } from "@solana/react";
 import { fetchEncodedAccounts, type Address } from "@solana/kit";
-import { Button, Card, Chip, Field, Row, Stack } from "@/components/pk";
+import { Button, Chip, Field, Row, Stack } from "@/components/pk";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { fetchPetRsvps, type ChainEvent, type ChainPoll, type ChainRsvp } from "@/lib/solana/accounts";
 import { rpc } from "@/lib/solana/browser-client";
@@ -107,40 +107,55 @@ export function GuildGatherings({
 
   const upcoming = events.filter((event) => event.endsAt > now);
   const past = events.filter((event) => event.endsAt <= now).slice(-3).reverse();
+  const open = polls.filter((poll) => now < poll.closesAt);
+  const closed = polls.filter((poll) => now >= poll.closesAt).slice(-2).reverse();
 
   return (
-    <Card>
-      <h2 className="title">Gatherings</h2>
-      <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-        Events {guild.name}&apos;s founder plans and its pets go to, and questions each wallet answers once. Kept on
-        Solana; {sponsor.data?.available ? "Pawket pays the fee and the rent" : "each costs a little devnet SOL"}. None of
-        it changes a pet.
-      </p>
+    <section className="pk-whats-on" aria-labelledby="pk-whats-on">
+      <div className="pk-spread">
+        <h2 id="pk-whats-on" className="display-s">
+          What&apos;s on
+        </h2>
+        <span className="caption pk-faint">
+          Kept on Solana · {sponsor.data?.available ? "Pawket pays the fee" : "a little devnet SOL each"}
+        </span>
+      </div>
 
-      <Stack gap={4} className="pk-foot">
-        {upcoming.length === 0 && polls.length === 0 ? (
-          <p className="body-sm pk-faint">Nothing planned yet{founder ? " — plan the first one below" : ""}.</p>
-        ) : null}
+      {upcoming.length === 0 && open.length === 0 ? (
+        <div className="pk-whats-on__empty">
+          <p className="body-sm pk-muted">
+            Nothing planned yet.{" "}
+            {founder ? "Plan the first event, or ask the guild something, below." : `When ${guild.name}'s founder plans an event or asks a question, it is here.`}
+          </p>
+        </div>
+      ) : null}
 
-        {upcoming.map((event) => {
-          const open = now >= event.startsAt - GATHERING_LIMITS.checkInEarlySeconds && now <= event.endsAt;
-          return (
-            <div key={event.address} className="pk-gathering">
+      {upcoming.map((event) => {
+        const live = now >= event.startsAt - GATHERING_LIMITS.checkInEarlySeconds && now <= event.endsAt;
+        const day = new Date(event.startsAt * 1000);
+        return (
+          <article key={event.address} className={live ? "pk-event pk-event--live" : "pk-event"}>
+            <div className="pk-event__date" aria-hidden="true">
+              <span className="pk-event__month">{MONTHS[day.getUTCMonth()]}</span>
+              <span className="pk-event__day">{day.getUTCDate()}</span>
+              <span className="pk-event__weekday">{WEEKDAYS[day.getUTCDay()]}</span>
+            </div>
+            <div className="pk-event__body">
               <div className="pk-spread">
-                <span className="title">{event.title}</span>
-                <Chip label={open ? "On now" : when(event.startsAt)} tone={open ? "pool" : undefined} icon="clock" />
+                <h3 className="title">{event.title}</h3>
+                {live ? <Chip label="On now" tone="pool" icon="clock" /> : null}
               </div>
               {event.note ? <p className="body-sm pk-muted">{event.note}</p> : null}
-              <span className="caption pk-faint">
-                {event.going} going · {event.came} came · until {when(event.endsAt)}
-              </span>
+              <p className="caption pk-faint">
+                {when(event.startsAt)} until {when(event.endsAt)} · {event.going} going · {event.came} came
+              </p>
               {mine.length ? (
                 <Row gap={2} wrap>
                   {mine.map((entry) => {
                     const said = rsvps.find((rsvp) => rsvp.event === event.address && rsvp.pet === entry.pet.address);
                     if (said?.came) return <Chip key={entry.pet.address} label={`${entry.pet.name} came`} tone="pool" icon="check" />;
                     if (said) {
-                      return open ? (
+                      return live ? (
                         <Button
                           key={entry.pet.address}
                           label={`Check ${entry.pet.name} in`}
@@ -150,7 +165,7 @@ export function GuildGatherings({
                           onClick={() => void checkIn(event, entry.pet.address)}
                         />
                       ) : (
-                        <Chip key={entry.pet.address} label={`${entry.pet.name} is going`} tone="bloom" />
+                        <Chip key={entry.pet.address} label={`${entry.pet.name} is going`} tone="bloom" icon="check" />
                       );
                     }
                     return (
@@ -167,50 +182,67 @@ export function GuildGatherings({
                 </Row>
               ) : null}
             </div>
-          );
-        })}
+          </article>
+        );
+      })}
 
-        {polls.map((poll) => {
-          const closed = now >= poll.closesAt;
-          const mineVote = voted.get(poll.address);
-          const total = poll.votes.reduce((sum, count) => sum + count, 0);
-          return (
-            <div key={poll.address} className="pk-gathering">
-              <div className="pk-spread">
-                <span className="title">{poll.question}</span>
-                <Chip label={closed ? "Closed" : `Until ${when(poll.closesAt)}`} icon="vote" />
-              </div>
-              <div className="pk-receipt">
-                {poll.options.map((option, i) => (
-                  <div key={option + i} className="pk-receipt__row">
-                    <span className="pk-receipt__k">
-                      {option}
-                      {mineVote === i ? " · your vote" : ""}
-                    </span>
-                    {mine.length && mineVote === undefined && !closed ? (
-                      <Button label={`Vote · ${poll.votes[i]}`} tone="quiet" size="sm" disabled={sender.busy || !companion.canSign} onClick={() => void vote(poll, i)} />
-                    ) : (
-                      <span className="pk-receipt__v">{poll.votes[i]}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <span className="caption pk-faint">
-                {total} {total === 1 ? "vote" : "votes"}, one per wallet with a pet in {guild.name}.
-              </span>
+      {[...open, ...closed].map((poll) => {
+        const shut = now >= poll.closesAt;
+        const mineVote = voted.get(poll.address);
+        const total = poll.votes.reduce((sum, count) => sum + count, 0);
+        const most = Math.max(1, ...poll.votes);
+        const canVote = mine.length > 0 && mineVote === undefined && !shut;
+        return (
+          <article key={poll.address} className="pk-poll">
+            <div className="pk-spread">
+              <h3 className="title">{poll.question}</h3>
+              <Chip label={shut ? "Closed" : `Until ${when(poll.closesAt)}`} icon="vote" />
             </div>
-          );
-        })}
+            <ul className="pk-poll__options">
+              {poll.options.map((option, i) => {
+                const fill = (
+                  <>
+                    <span className="pk-poll__bar" style={{ width: `${(poll.votes[i] / most) * 100}%` }} aria-hidden="true" />
+                    <span className="pk-poll__label">
+                      {option}
+                      {mineVote === i ? <span className="caption pk-faint"> · your vote</span> : null}
+                    </span>
+                    <span className="amount-sm">{poll.votes[i]}</span>
+                  </>
+                );
+                return (
+                  <li key={option + i}>
+                    {canVote ? (
+                      <button
+                        type="button"
+                        className="pk-poll__option pk-poll__option--vote"
+                        disabled={sender.busy || !companion.canSign}
+                        aria-label={`Vote ${option}, ${poll.votes[i]} so far`}
+                        onClick={() => void vote(poll, i)}
+                      >
+                        {fill}
+                      </button>
+                    ) : (
+                      <div className={mineVote === i ? "pk-poll__option pk-poll__option--mine" : "pk-poll__option"}>{fill}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="caption pk-faint">
+              {total} {total === 1 ? "vote" : "votes"}, one per wallet with a pet in {guild.name}
+              {canVote ? ". Tap an answer to vote." : "."}
+            </p>
+          </article>
+        );
+      })}
 
-        {past.length ? (
-          <p className="caption pk-faint">
-            Before: {past.map((event) => `${event.title} (${event.came} came)`).join(" · ")}
-          </p>
-        ) : null}
+      {past.length ? (
+        <p className="caption pk-faint">Before: {past.map((event) => `${event.title} (${event.came} came)`).join(" · ")}</p>
+      ) : null}
 
-        {founder ? <FounderDesk guild={guild} sender={sender} onDone={done} /> : null}
-      </Stack>
-    </Card>
+      {founder ? <FounderDesk guild={guild} sender={sender} onDone={done} /> : null}
+    </section>
   );
 }
 
@@ -274,9 +306,12 @@ function FounderDesk({
 
   return (
     <Stack gap={3}>
-      <details className="pk-founder-desk">
-        <summary className="label">Plan an event</summary>
-        <Stack gap={3} style={{ marginTop: "var(--space-3)" }}>
+      <details className="pk-fold">
+        <summary>
+          <span className="title">Plan an event</span>
+          <span className="caption pk-faint">Only you, the founder, see this</span>
+        </summary>
+        <Stack gap={3}>
           <Field label="What it is" icon="star" placeholder="Sunday nap in the sun" maxLength={GATHERING_LIMITS.maxTitle} value={title} onChange={(e) => setTitle(e.target.value)} />
           <Field label="A line about it" icon="chat" placeholder="By the big window. Bring a blanket." maxLength={GATHERING_LIMITS.maxNote} value={note} onChange={(e) => setNote(e.target.value)} />
           <label className="pk-field">
@@ -298,9 +333,12 @@ function FounderDesk({
           </div>
         </Stack>
       </details>
-      <details className="pk-founder-desk">
-        <summary className="label">Ask {guild.name}</summary>
-        <Stack gap={3} style={{ marginTop: "var(--space-3)" }}>
+      <details className="pk-fold">
+        <summary>
+          <span className="title">Ask {guild.name} something</span>
+          <span className="caption pk-faint">A poll, one answer per wallet</span>
+        </summary>
+        <Stack gap={3}>
           <Field label="The question" icon="vote" placeholder="Where should we nap next?" maxLength={GATHERING_LIMITS.maxQuestion} value={question} onChange={(e) => setQuestion(e.target.value)} />
           {options.map((option, i) => (
             <Field

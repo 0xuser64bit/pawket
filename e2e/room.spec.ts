@@ -91,13 +91,15 @@ test("you can wear a hat and glasses, and match your pet's", async ({ page }) =>
   await page.goto("/profile?tab=wardrobe#shelf");
   await page.getByRole("button", { name: /Knit beanie/ }).click();
   await expect(page.getByRole("button", { name: /Knit beanie/ })).toHaveAttribute("aria-pressed", "true");
+  await page.locator("summary", { hasText: "How you look" }).click();
   await page.getByRole("tab", { name: "Extras" }).click();
   await page.getByRole("radiogroup", { name: "On your nose" }).getByRole("radio", { name: "Heart glasses" }).click();
   await page.getByRole("button", { name: "Match Pepper" }).click();
   await expect(page.getByText("Matching Pepper.")).toBeVisible();
-  await expect(page.getByText(/pool beanie, heart glasses\./)).toBeVisible();
+  await expect(page.getByText(/pool beanie, heart glasses$/)).toBeVisible();
   await page.reload();
-  await expect(page.getByText(/pool beanie, heart glasses\./)).toBeVisible();
+  // The fold is closed again, and its summary says how you look.
+  await expect(page.getByText(/pool beanie, heart glasses$/)).toBeVisible();
 });
 
 test("an empty room still draws you, and asks for no pet it does not have", async ({ page }) => {
@@ -131,7 +133,7 @@ test.describe("without WebGL", () => {
     await page.getByRole("button", { name: "Feed" }).click();
     await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
     // And the look says plainly where it is worn.
-    await page.goto("/profile");
+    await page.goto("/profile#look");
     await expect(page.getByText(/the flat room shows your top colour/i)).toBeVisible();
   });
 });
@@ -151,7 +153,7 @@ test.describe("with reduced motion", () => {
 test("nothing scrolls sideways on a small phone with the look open", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await adopt(page);
-  await page.goto("/profile");
+  await page.goto("/profile#look");
   for (const part of ["Body", "Hair", "Clothes", "Shoes", "Extras"]) {
     await page.getByRole("tab", { name: part }).click();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

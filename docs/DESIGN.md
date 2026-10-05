@@ -210,6 +210,18 @@ on a desktop, bands at `space-9`).
 The vertical order on every game screen is the same: the thing itself, then
 what you can do to it, then anything that explains it.
 
+Every screen has one main thing and says so with its skeleton, not with
+more boxes. The head introduces it — a title, a line of facts, and the one
+action that matters there (Found a guild; Join; Connect) — and the page
+below it is the main thing at full weight: the room, the shelves, what is
+on, the coin and its ticket, the record. What is beside it is quieter (a
+list, not cards; a strip of counts, not a box each). What explains it —
+the rules, the terms, what can go wrong, the addresses on chain — folds
+away in a `.pk-fold`, its summary a title and a line of what is inside,
+open on a tap; a page never opens with a fold, and the main thing is never
+in one. Unrelated things are never set in a grid of equal-height cards:
+a card is as tall as what it holds.
+
 ## The room in 3D
 
 Home's room is drawn in 3D where a device can draw it (`docs/ROOM-3D.md`).

@@ -5,7 +5,6 @@ import {
   ButtonLink,
   Card,
   Chip,
-  Columns,
   EmptyState,
   Icon,
   PetArt,
@@ -41,24 +40,6 @@ export const dynamic = "force-dynamic";
  * nothing ranked by money because nothing here has a price. Who was out
  * today comes first; then everyone, most cared-for first.
  */
-/** The adoption as a Solana Action: the /adopt link unfurls as an adoption card in a Blink-aware client. */
-function AdoptAnywhere() {
-  const url = new URL("/adopt", getPublicEnv().appUrl).toString();
-  return (
-    <Card variant="quiet">
-      <h2 className="title">Adopt from anywhere</h2>
-      <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)", maxWidth: "60ch" }}>
-        The adoption page is also a Solana Action. Posted where a Blink-aware wallet is reading — X, with
-        Phantom — the link opens as an adoption card, and the pet is adopted straight onto Solana. Pawket
-        pays the fee.
-      </p>
-      <div style={{ marginTop: "var(--space-4)" }}>
-        <AdoptLink url={url} />
-      </div>
-    </Card>
-  );
-}
-
 const CARE_ICON: Record<CareActionType, IconName> = {
   [CareActionType.Feed]: "bowl",
   [CareActionType.Play]: "ball",
@@ -66,8 +47,8 @@ const CARE_ICON: Record<CareActionType, IconName> = {
   [CareActionType.Rest]: "clock",
 };
 
-/** The park shows this many of everyone at first: the most cared for. The rest are a tap away. */
-const FIRST_LOOK = 16;
+/** The park shows this many of everyone at first — three rows of six — the most cared for. The rest are a tap away. */
+const FIRST_LOOK = 18;
 
 export default async function ParkPage({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
   const all = (await searchParams).all === "1";
@@ -141,6 +122,26 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
         <Stack gap={6}>
           <div>
             <ParkScene pets={scene} />
+            <div className="pk-parkstrip">
+              <dl className="pk-parkstrip__facts">
+                <div>
+                  <dt className="label pk-faint">Pets kept</dt>
+                  <dd className="pk-parkfact__n">{pets.length}</dd>
+                </div>
+                <div>
+                  <dt className="label pk-faint">Out today</dt>
+                  <dd className="pk-parkfact__n">{outToday.length}</dd>
+                </div>
+                <div>
+                  <dt className="label pk-faint">Cares recorded</dt>
+                  <dd className="pk-parkfact__n">{cares}</dd>
+                </div>
+              </dl>
+              <div className="pk-parkstrip__share">
+                <AdoptLink url={new URL("/adopt", getPublicEnv().appUrl).toString()} />
+                <span className="caption pk-faint">Posted where a Blink-aware wallet reads, it adopts straight onto Solana.</span>
+              </div>
+            </div>
             <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
               {outToday.length > 0
                 ? `${outToday.length} out today, in UTC, name tags in blue. Tap one for their record.`
@@ -148,70 +149,42 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
             </p>
           </div>
 
-          <Columns
-            first={
-              lately.length > 0 ? (
-                <Card>
-                  <SectionLabel>Lately</SectionLabel>
-                  <ul className="pk-feed">
-                    {lately.map((mark) => {
-                      const look = looks.get(mark.pet.address);
-                      return (
-                        <li key={`${mark.pet.address}-${mark.at}-${mark.action}`}>
-                          <Link href={`/pet/${mark.pet.address}`} className="pk-feed__row">
-                            <span className="pk-avatar" aria-hidden="true">
-                              {look ? <PetArt {...look} still /> : null}
-                            </span>
-                            <span className="body-sm pk-feed__what">{CARE_SEEN[mark.action](mark.pet.name)}</span>
-                            <span className="pk-feed__icon" aria-hidden="true">
-                              <Icon name={CARE_ICON[mark.action]} size={16} />
-                            </span>
-                            <span className="caption pk-faint">{formatAgo(now.getTime() / 1000 - mark.at)}</span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
-                    Each line is a transaction signed by the pet&apos;s owner.
-                  </p>
-                </Card>
-              ) : (
-                <Card variant="quiet">
-                  <SectionLabel>Lately</SectionLabel>
-                  <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
-                    No cares recorded yet. Each one shows here once it is signed.
-                  </p>
-                </Card>
-              )
-            }
-            second={
-              <>
-                <div className="pk-parkfacts" role="list">
-                  <div className="pk-parkfact" role="listitem">
-                    <span className="pk-parkfact__n">{pets.length}</span>
-                    <span className="label pk-faint">Pets kept</span>
-                  </div>
-                  <div className="pk-parkfact" role="listitem">
-                    <span className="pk-parkfact__n">{outToday.length}</span>
-                    <span className="label pk-faint">Out today</span>
-                  </div>
-                  <div className="pk-parkfact" role="listitem">
-                    <span className="pk-parkfact__n">{cares}</span>
-                    <span className="label pk-faint">Cares recorded</span>
-                  </div>
-                </div>
-                <AdoptAnywhere />
-              </>
-            }
-          />
+          {lately.length > 0 ? (
+            <section aria-labelledby="pk-lately">
+              <SectionLabel>
+                <span id="pk-lately">Lately</span>
+              </SectionLabel>
+              <ul className="pk-feed pk-feed--wide">
+                {lately.map((mark) => {
+                  const look = looks.get(mark.pet.address);
+                  return (
+                    <li key={`${mark.pet.address}-${mark.at}-${mark.action}`}>
+                      <Link href={`/pet/${mark.pet.address}`} className="pk-feed__row">
+                        <span className="pk-avatar" aria-hidden="true">
+                          {look ? <PetArt {...look} still /> : null}
+                        </span>
+                        <span className="body-sm pk-feed__what">{CARE_SEEN[mark.action](mark.pet.name)}</span>
+                        <span className="pk-feed__icon" aria-hidden="true">
+                          <Icon name={CARE_ICON[mark.action]} size={16} />
+                        </span>
+                        <span className="caption pk-faint">{formatAgo(now.getTime() / 1000 - mark.at)}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="caption pk-faint" style={{ marginTop: "var(--space-2)" }}>
+                Each line is a transaction signed by the pet&apos;s owner.
+              </p>
+            </section>
+          ) : null}
 
           <Stack gap={3}>
             <span id="everyone" className="pk-anchor" />
             <SectionLabel count={all || shown.length <= FIRST_LOOK ? `${pets.length}` : `${FIRST_LOOK} of ${pets.length}`}>
               Everyone
             </SectionLabel>
-            <div className="pk-cards">
+            <div className="pk-cards pk-cards--dense">
               {(all ? shown : shown.slice(0, FIRST_LOOK)).map(({ entry, record, projected, streak, out }) => (
                 <Card key={entry.pet.address} href={`/pet/${entry.pet.address}`} variant="flush">
                   <div className="pk-card__art">

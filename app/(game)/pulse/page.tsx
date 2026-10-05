@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Banner, Paper, Receipt, Screen, ScreenBar, Chip } from "@/components/pk";
+import { Banner, Paper, Receipt, Screen, ScreenBar, Chip, Stack } from "@/components/pk";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
@@ -36,7 +36,10 @@ export default async function PulsePage() {
       <ScreenBar>
         <div>
           <h1 className="display-l">Pulse</h1>
-          <p className="caption pk-faint">Counted from Pawket&apos;s program on Solana, read live.</p>
+          <p className="caption pk-faint" style={{ maxWidth: "60ch" }}>
+            Counted from Pawket&apos;s program on Solana, read live: nothing estimated, nothing added by hand.
+            {cluster === "devnet" ? " On devnet the counts include Pawket's own test runs and the starter guilds it seeded." : ""}
+          </p>
         </div>
         <Chip label={`Solana ${cluster}`} tone="paper" />
       </ScreenBar>
@@ -44,14 +47,22 @@ export default async function PulsePage() {
       {!pulse ? (
         <Banner tone="wait" title="Solana did not answer" body="Nothing here is stored anywhere but on chain, and the chain did not answer just now. Reload to ask again." />
       ) : (
-        <div className="pk-guild-facts">
-          {cluster === "devnet" ? (
-            <Banner
-              tone="info"
-              title="Devnet, and honest about it"
-              body="These counts include the runs of Pawket's own tests and the starter guilds it seeded. Nothing is estimated or added by hand."
-            />
-          ) : null}
+        <Stack gap={5}>
+          <dl className="pk-headline" aria-label="Pawket on Solana, counted">
+            {[
+              ["Pets kept", pulse.pets.kept],
+              ["Cares recorded", pulse.pets.cares],
+              ["Guilds", pulse.guilds.listed],
+              ["Coins launched", pulse.coins?.launched ?? null],
+              ["Looks sold", pulse.market.sold],
+            ].map(([label, value]) => (
+              <div key={label as string}>
+                <dt className="label pk-faint">{label}</dt>
+                <dd className="pk-headline__n">{value === null ? "—" : n(value as number)}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="pk-paper-grid">
           <Paper title="Pets" meta="Pet + Passport accounts">
             <Receipt
               rows={[
@@ -101,7 +112,7 @@ export default async function PulsePage() {
                 { k: "Paid into the treasury", v: sol(pulse.market.paid) },
                 { k: "Treasury holds now", v: sol(pulse.market.treasury) },
                 { k: "Pawket Wallets opened", v: n(pulse.wallets.opened) },
-                { k: "Cares signed by a linked device", v: n(pulse.wallets.deviceActions) },
+                { k: "Done by a linked browser", v: n(pulse.wallets.deviceActions) },
               ]}
               note="The treasury also receives Pawket's share of guild-coin fees, claimed from Meteora. It pays the network fees Pawket covers for everyone's pets."
             />
@@ -116,7 +127,8 @@ export default async function PulsePage() {
               </div>
             </div>
           </Paper>
-        </div>
+          </div>
+        </Stack>
       )}
     </Screen>
   );

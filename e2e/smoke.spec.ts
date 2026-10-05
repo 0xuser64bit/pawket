@@ -53,7 +53,7 @@ test("a wallet is offered, never asked for: the front door has none, the shell h
   await expect(room).not.toHaveText(before ?? "");
   await expect(page.getByRole("menu")).toHaveCount(0);
 
-  await expect(page.getByRole("heading", { name: "Already keep a pet on Solana?" })).toBeVisible();
+  await expect(page.getByText(/Already keep a pet on Solana\?/)).toBeVisible();
   await page.getByRole("button", { name: "Connect a wallet" }).click();
   const sheet = page.getByRole("dialog", { name: "Connect a wallet" });
   await expect(sheet).toBeVisible();
@@ -72,6 +72,8 @@ test("guilds are optional, read from Solana, and trade nothing outside a coin's 
   await page.goto("/guilds");
   await expect(page.getByRole("heading", { name: "Guilds" })).toBeVisible();
   await expect(page.getByText(/optional, always/i)).toBeVisible();
+  // The rule every guild lives inside is a fold away.
+  await page.getByText("The rule every guild lives inside").click();
   await expect(page.getByText(/raise a pet/i)).toBeVisible();
   await expect(page.getByRole("button", { name: /buy|swap|pay/i })).toHaveCount(0);
   await expect(page.getByText(/coin/i).first()).toBeVisible();
@@ -243,6 +245,7 @@ test("the profile names you, counts what you have done, and keeps three outfits"
   await page.getByRole("textbox", { name: "Your name" }).fill("Arth");
   await expect(page.getByRole("heading", { name: "Arth", exact: true })).toBeVisible();
 
+  await page.locator("summary", { hasText: "How you look" }).click();
   await page.getByRole("button", { name: "Keep this look" }).first().click();
   await expect(page.getByText("Kept as outfit 1.")).toBeVisible();
   await page.getByRole("tab", { name: "Clothes" }).click();

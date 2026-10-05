@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Banner, ButtonLink, Card, Chip, LaunchStage, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
+import { Banner, ButtonLink, Card, LaunchStage, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { GUILD_CAN, GUILD_CANNOT } from "@/lib/guilds/boundary";
 import { isListed } from "@/lib/guilds/delisted";
@@ -57,8 +57,9 @@ function GuildCard({ guild, coin }: { guild: ChainGuild; coin?: CoinStage }) {
 
 /**
  * Guilds: pets and their people, gathered under a name and a crest, kept on
- * Solana where anyone can read who is in one. Optional, said first. Read
- * live from the program; the rule every guild lives inside comes last.
+ * Solana where anyone can read who is in one. Optional, said first, in the
+ * bar beside the way to found one; then the page is the guilds, read live
+ * from the program, and the rule every guild lives inside folds away.
  */
 export default async function GuildsPage() {
   let guilds: ChainGuild[] | null = null;
@@ -78,24 +79,15 @@ export default async function GuildsPage() {
       <ScreenBar>
         <div>
           <h1 className="display-l">Guilds</h1>
-          <p className="caption pk-faint">Optional, always. Kept on Solana.</p>
+          <p className="caption pk-faint" style={{ maxWidth: "56ch" }}>
+            Pets and their people under a crest, kept on Solana. Optional, always: free to join, free to leave, and
+            nothing in a guild changes a pet.
+          </p>
         </div>
-        <Chip label={guilds ? `${guilds.length} ${guilds.length === 1 ? "guild" : "guilds"}` : "Guilds"} tone="bloom" icon="guild" />
+        <ButtonLink label="Found a guild" href="/guilds/new" tone="bloom" icon="guild" size="sm" />
       </ScreenBar>
 
       <Stack gap={6}>
-        <Card variant="quiet">
-          <p className="body" style={{ maxWidth: "62ch" }}>
-            Pets and the people who keep them, gathered under a name, a motto and a crest. Joining one is optional —
-            and so is staying. A pet is in one guild at a time; it joins with its owner&apos;s signature, Pawket
-            pays the fee, and the guild is a record on Solana that anyone can read. A guild may launch a coin of its
-            own, optional like the guild; nothing in a guild changes a pet.
-          </p>
-          <div style={{ marginTop: "var(--space-4)" }}>
-            <ButtonLink label="Found a guild" href="/guilds/new" tone="bloom" icon="guild" />
-          </div>
-        </Card>
-
         {guilds === null ? (
           <Banner
             tone="wait"
@@ -122,28 +114,33 @@ export default async function GuildsPage() {
           </Stack>
         )}
 
-        <Stack gap={3}>
-          <SectionLabel>The rule every guild lives inside</SectionLabel>
-          <div className="pk-rows">
-            <Card>
-              <h2 className="title" style={{ marginBottom: "var(--space-3)", color: "var(--pool-text)" }}>
-                A guild can
-              </h2>
-              <Bounds items={GUILD_CAN} mark="✓" color="var(--pool-text)" />
-            </Card>
-            <Card>
-              <h2 className="title" style={{ marginBottom: "var(--space-3)", color: "var(--alarm-text)" }}>
-                It can never
-              </h2>
-              <Bounds items={GUILD_CANNOT} mark="✕" color="var(--alarm-text)" />
-            </Card>
-          </div>
-          <Banner
-            tone="info"
-            title="A guild never touches your pet"
-            body="No stat increase, no faster care, no XP multiplier, no matchmaking priority — and a guild's coin, if it has one, changes none of that either. Leaving changes nothing about the pet."
-          />
-        </Stack>
+        <details className="pk-fold">
+          <summary>
+            <span className="title">The rule every guild lives inside</span>
+            <span className="caption pk-faint">What a guild can do, and what it never can</span>
+          </summary>
+          <Stack gap={4}>
+            <div className="pk-rows">
+              <div>
+                <h2 className="title" style={{ marginBottom: "var(--space-3)", color: "var(--pool-text)" }}>
+                  A guild can
+                </h2>
+                <Bounds items={GUILD_CAN} mark="✓" color="var(--pool-text)" />
+              </div>
+              <div>
+                <h2 className="title" style={{ marginBottom: "var(--space-3)", color: "var(--alarm-text)" }}>
+                  It can never
+                </h2>
+                <Bounds items={GUILD_CANNOT} mark="✕" color="var(--alarm-text)" />
+              </div>
+            </div>
+            <p className="body-sm pk-muted">
+              A pet joins with its owner&apos;s signature and Pawket pays the fee. No stat increase, no faster care, no XP
+              multiplier, no matchmaking priority — and a guild&apos;s coin, if it has one, changes none of that either.
+              Leaving changes nothing about the pet.
+            </p>
+          </Stack>
+        </details>
       </Stack>
     </Screen>
   );

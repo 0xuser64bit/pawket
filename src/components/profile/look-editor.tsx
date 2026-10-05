@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Button, Card, Choice, Row, Stack } from "@/components/pk";
+import { Button, Choice, Row, Stack } from "@/components/pk";
 import { clothHex } from "@/components/room3d/palette";
 import { findWearable } from "@/lib/closet/catalog";
 import {
@@ -77,9 +77,12 @@ export function LookEditor({
   look,
   shown,
   twin,
+  open = false,
 }: {
   look: PlayerLook;
   shown: boolean;
+  /** Open from the start: the player came here to change it. */
+  open?: boolean;
   /** The pet at home, whose hat or glasses the player can match. */
   twin?: { name: string; wearing: string | null };
 }) {
@@ -131,19 +134,21 @@ export function LookEditor({
   }
 
   return (
-    <Card>
+    <details className="pk-fold" open={open}>
+      <summary>
+        <span className="title">How you look</span>
+        <span key={lookSummary(look)} className="caption pk-faint pk-swap">
+          {lookSummary(look)}
+        </span>
+      </summary>
       <div className="pk-spread">
-        <h2 className="title">How you look</h2>
+        <p className="body-sm pk-muted">
+          {shown
+            ? "Saved on this device. It changes how you look, nothing else."
+            : "You wear it in the 3D room; the flat room shows your top colour."}
+        </p>
         <Button label="Surprise me" icon="spark" tone="quiet" size="sm" onClick={surprise} />
       </div>
-      <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-        <span key={lookSummary(look)} className="pk-swap">
-          {lookSummary(look)}.
-        </span>{" "}
-        {shown
-          ? "Saved on this device. It changes how you look, nothing else."
-          : "You wear it in the 3D room; the flat room shows your top colour."}
-      </p>
       <div className="pk-look">
         {/* Four facets, one at a time, so the room stays in view above. */}
         <div role="tablist" aria-label="Parts of your look" className="pk-look__tabs">
@@ -275,6 +280,6 @@ export function LookEditor({
           </span>
         ) : null}
       </p>
-    </Card>
+    </details>
   );
 }

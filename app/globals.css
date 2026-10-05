@@ -2761,6 +2761,19 @@ li {
     --pk-cards-gap: var(--space-5);
   }
 }
+/* A crowd — everyone in the park — is six to a row on a desktop, three on a
+   phone held wide: faces to scan, not portraits to study. */
+.pk-cards--dense {
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(calc((100% - var(--pk-cards-gap)) / 2), max(140px, calc((100% - 5 * var(--pk-cards-gap)) / 6))), 1fr)
+  );
+}
+@media (min-width: 1024px) {
+  .pk-cards--dense {
+    --pk-cards-gap: var(--space-4);
+  }
+}
 /* An empty pocket on the shelf: dashed where a card would be outlined, and
    never lifted. It takes the whole row on a phone, where half a row is too
    narrow to read in. */
@@ -4299,6 +4312,18 @@ li {
     radial-gradient(circle at 74% 26%, var(--sun) 0 9%, transparent 10%),
     var(--ground);
   border: var(--stroke-line) solid var(--edge-soft);
+}
+
+/* A pet's record: its ID card — portrait, name, guild, what you can do —
+   stays in view beside the record on a desktop, and comes first on a phone. */
+.pk-passport-id {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+.pk-passport-id .pk-portrait {
+  justify-self: stretch;
+  margin-bottom: var(--space-2);
 }
 
 /* A guild's page: the head is its introduction — crest, name, motto, facts,
@@ -6119,29 +6144,73 @@ details > .pk-risks {
   }
 }
 
-.pk-parkfacts {
+/* The pulse's headline: five counts as large mono figures in one band, then
+   the statements behind them in columns that keep their own heights. */
+.pk-headline {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-5);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker);
 }
-@media (min-width: 1024px) {
-  .pk-columns__second .pk-parkfacts {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .pk-columns__second .pk-parkfact {
-    grid-template-columns: auto 1fr;
-    align-items: baseline;
-    gap: var(--space-3);
-  }
+.pk-headline dd {
+  margin: 4px 0 0;
 }
-.pk-parkfact {
-  display: grid;
-  gap: 2px;
-  padding: var(--space-4);
+.pk-headline__n {
+  font-family: var(--font-mono);
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1.1;
+}
+.pk-paper-grid {
+  columns: 2 340px;
+  column-gap: var(--space-5);
+}
+.pk-paper-grid > * {
+  break-inside: avoid;
+  margin-bottom: var(--space-5);
+}
+
+/* Under the park: its three counts in one strip, and the adoption link that
+   travels as a Blink beside them. */
+.pk-parkstrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-5);
   border: var(--stroke-line) solid var(--edge);
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-sticker-sm);
+}
+.pk-parkstrip__facts {
+  display: flex;
+  gap: var(--space-6);
+  margin: 0;
+}
+.pk-parkstrip__facts dd {
+  margin: 2px 0 0;
+}
+.pk-parkstrip__share {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  max-width: 36ch;
+}
+@media (max-width: 560px) {
+  .pk-parkstrip__facts {
+    gap: var(--space-4);
+  }
+}
+.pk-feed--wide {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  column-gap: var(--space-6);
 }
 .pk-parkfact__n {
   font-family: var(--font-mono);

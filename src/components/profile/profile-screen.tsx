@@ -46,6 +46,8 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
   const [roomState, setRoomState] = useState<RoomState>("loading");
   const [connecting, setConnecting] = useState(false);
   const [nameNotice, setNameNotice] = useState<string>();
+  // Came to change how you look (Home's Look, #look): the editor starts open.
+  const [lookOpen] = useState(() => typeof window !== "undefined" && window.location.hash === "#look");
   // Hooks run before the early return below: what others did with these pets on Solana.
   const social = useSocialRecords(companion.owned.map((entry) => entry.pet.address));
 
@@ -138,6 +140,7 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
         <section id="look" className="pk-anchor">
           <LookEditor
             look={look}
+            open={lookOpen}
             shown={roomState === "live" || roomState === "loading"}
             twin={pet ? { name: pet.name, wearing: pet.wearing } : undefined}
           />

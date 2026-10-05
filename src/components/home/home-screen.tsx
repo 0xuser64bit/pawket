@@ -54,7 +54,6 @@ import {
   type TodayGoals,
 } from "@/lib/guest/pet";
 import { readPet, removePet, savePet } from "@/lib/guest/storage";
-import { lookSummary } from "@/components/profile/look-editor";
 import { describeLook } from "@/lib/player/look";
 import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
@@ -141,37 +140,20 @@ export function HomeScreen() {
             stage
           />
           <RoomLine sentence="" mode={mode} state={roomState} onMode={setMode} />
-          <div className="pk-home__more">
-            <Card>
-              <h2 className="title">The window is open</h2>
-              <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-                Nobody lives here yet. Adopting takes three taps, and the pet starts out in this browser.
-              </p>
-              <div className="pk-foot">
-                <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />
-              </div>
-            </Card>
-            {companion.owner ? null : (
-              <Card variant="quiet">
-                <h2 className="title">Already keep a pet on Solana?</h2>
-                <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-                  Connect the wallet that keeps it, and it comes home here.
-                </p>
-                <div className="pk-foot">
-                  <Button label="Connect a wallet" icon="wallet" tone="quiet" size="sm" onClick={() => setConnecting(true)} />
-                </div>
-              </Card>
-            )}
-            <Card>
-              <h2 className="title">How you look</h2>
-              <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-                {lookSummary(look)}. Saved on this device, and yours to change.
-              </p>
-              <div className="pk-foot">
-                <ButtonLink label="Change your look" href="/profile#look" tone="quiet" size="sm" icon="person" />
-              </div>
-            </Card>
-          </div>
+          <Card>
+            <h2 className="title">The window is open</h2>
+            <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
+              Nobody lives here yet. Adopting takes three taps, and the pet starts out in this browser.
+              {companion.owner ? "" : " Already keep a pet on Solana? Connect the wallet that keeps it, and it comes home here."}
+            </p>
+            <Row gap={2} wrap className="pk-foot">
+              <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />
+              {companion.owner ? null : (
+                <Button label="Connect a wallet" icon="wallet" tone="quiet" onClick={() => setConnecting(true)} />
+              )}
+              <ButtonLink label="Change your look" href="/profile#look" tone="ghost" size="sm" />
+            </Row>
+          </Card>
           <ChainTrouble error={companion.chainError} onRetry={companion.refresh} />
         </Stack>
         {connecting ? (

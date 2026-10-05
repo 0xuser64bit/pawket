@@ -469,7 +469,7 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
   // Read again whenever the wallet moves; the rent first, since it is never the balance.
   const version = `${wallet.address}:${wallet.actions}:${wallet.deposited}:${wallet.withdrawn}:${wallet.device}`;
   const first = useCallback(
-    () => fetchWalletHistory(rpc, wallet.address, { rent: rent.data }),
+    () => fetchWalletHistory(rpc, wallet.address, { rent: rent.data, limit: 6 }),
     [wallet.address, version, rent.data], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const page = useRequest(rent.data === undefined ? null : first);

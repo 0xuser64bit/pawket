@@ -71,6 +71,13 @@ describe("transaction errors", () => {
     expect(extractProgramErrorCode(Object.assign(new Error("refused"), { programError: 42 }))).toBeNull();
   });
 
+  it("says a dropped connection sent nothing, in words", () => {
+    expect(toUserFacingError(new TypeError("Failed to fetch"))).toMatch(/could not reach Solana.*Nothing was sent/);
+    expect(toUserFacingError(new Error("wrapped", { cause: new TypeError("NetworkError when attempting to fetch resource.") }))).toMatch(
+      /could not reach Solana/,
+    );
+  });
+
   it("tells an expired signature from a refusal", () => {
     expect(toUserFacingError(new Error("Transaction simulation failed: Blockhash not found"))).toMatch(/expired/);
   });

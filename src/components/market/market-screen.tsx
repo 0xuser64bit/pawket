@@ -5,7 +5,6 @@ import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
 import type { Address } from "@solana/kit";
 import { Banner, Button, Card, ItemTile, Paper, PetArt, Receipt, Row, SectionLabel, Stack, WearableArt, setTheme, useThemeChoice } from "@/components/pk";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
@@ -176,7 +175,6 @@ export function MarketScreen() {
         </Card>
       )}
 
-      <TxReceipt tx={sender.tx} cluster={cluster} />
 
       <Paper title="Where the SOL goes" meta={`Solana ${cluster}`}>
         <div className="pk-receipt">

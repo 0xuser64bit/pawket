@@ -27,7 +27,6 @@ import { Room, preloadRoom3D, useRoomMode, type RoomState } from "@/components/h
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { RoomView } from "@/components/room3d/room-3d";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { getPublicEnv } from "@/config/env";
 import { WEARABLES, findWearable } from "@/lib/closet/catalog";
 import { newlyEarned, type BadgeContext } from "@/lib/game/badges";
@@ -314,7 +313,6 @@ export function HomeScreen() {
           ) : null}
         </p>
         <RoomLine sentence={status.sentence} mode={mode} state={roomState} onMode={setMode} />
-        {onChain && sender.tx.stage !== "idle" ? <TxReceipt tx={sender.tx} cluster={cluster} /> : null}
         {onChain ? <NoPrompt state={sender.pawketWallet} now={now} /> : null}
 
         <div id="pk-deck-panel" className="pk-deck__panel">

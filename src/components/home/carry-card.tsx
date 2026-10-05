@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button, Card, Stack } from "@/components/pk";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { getPublicEnv } from "@/config/env";
 import type { GuestPet } from "@/lib/guest/pet";
@@ -95,7 +94,6 @@ export function CarryCard({
                 onClick={() => void carry()}
               />
             </div>
-            <TxReceipt tx={sender.tx} cluster={cluster} />
           </>
         ) : owner ? (
           <p className="body-sm pk-muted">This wallet can only be read, not signed with. Connect one that signs.</p>

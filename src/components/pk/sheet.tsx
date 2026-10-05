@@ -41,7 +41,8 @@ export function Sheet({
     const layer = scrim.current;
     if (!layer?.parentElement) return;
     const behind = Array.from(layer.parentElement.children).filter(
-      (el): el is HTMLElement => el !== layer && el instanceof HTMLElement && !el.inert,
+      // Toasts stay awake: a send made from a sheet says how it went over it.
+      (el): el is HTMLElement => el !== layer && el instanceof HTMLElement && !el.inert && !el.hasAttribute("data-toasts"),
     );
     for (const el of behind) el.inert = true;
     const root = document.documentElement;

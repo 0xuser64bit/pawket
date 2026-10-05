@@ -3,9 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Banner, Button, Card, Field, Icon, PetArt, Stack, Waiting } from "@/components/pk";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
-import { getPublicEnv } from "@/config/env";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { petLook } from "@/lib/game/appearance";
 import { CREST_COLOURS, CREST_GLYPHS, guildProblems, slugFor } from "@/lib/guilds/guild";
@@ -29,7 +27,6 @@ export function FoundGuild() {
   const sender = usePawketSend();
   const sponsor = useSponsor();
   const router = useRouter();
-  const cluster = getPublicEnv().solanaCluster;
   const [name, setName] = useState("");
   const [motto, setMotto] = useState("");
   const [crest, setCrest] = useState(0);
@@ -185,7 +182,6 @@ export function FoundGuild() {
           A guild starts with no coin, and it never changes a pet.
         </p>
       </div>
-      <TxReceipt tx={sender.tx} cluster={cluster} />
       {connecting ? (
         <WalletSheet
           why="Connect the wallet that keeps the pet that will found the guild. It signs only the founding."

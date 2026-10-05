@@ -5,8 +5,6 @@ import { useCallback, useMemo, useState } from "react";
 import { useRequest } from "@solana/react";
 import { fetchEncodedAccounts, type Address } from "@solana/kit";
 import { Button, Card, Chip, Field, Row, Stack } from "@/components/pk";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
-import { getPublicEnv } from "@/config/env";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { fetchPetRsvps, type ChainEvent, type ChainPoll, type ChainRsvp } from "@/lib/solana/accounts";
 import { rpc } from "@/lib/solana/browser-client";
@@ -53,7 +51,6 @@ export function GuildGatherings({
   const sender = usePawketSend();
   const sponsor = useSponsor();
   const router = useRouter();
-  const cluster = getPublicEnv().solanaCluster;
   // The page's moment: events open and close against it until the page is read again.
   const [now] = useState(() => Math.floor(Date.now() / 1000));
   const owner = companion.owner;
@@ -212,7 +209,6 @@ export function GuildGatherings({
         ) : null}
 
         {founder ? <FounderDesk guild={guild} sender={sender} onDone={done} /> : null}
-        <TxReceipt tx={sender.tx} cluster={cluster} />
       </Stack>
     </Card>
   );

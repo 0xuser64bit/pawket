@@ -54,7 +54,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
 
   await page.getByRole("button", { name: "Feed" }).click();
   await expect(page.getByText(`Feed ${name}`)).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText("Recorded on Solana")).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/^Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText("Paid by Pawket")).toBeVisible();
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
 
@@ -67,7 +67,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
 
   // The keepsake: a card in the owner's wallet, made by the server, signed here.
   await page.getByRole("button", { name: `Keep ${name}'s card` }).click();
-  await expect(page.getByText("Recorded on Solana")).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/^Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText("Paid by Pawket")).toBeVisible();
   // Read again from chain, the record now lists it.
   await expect(page.getByText("Keepsake", { exact: true })).toBeVisible({ timeout: 30_000 });
@@ -164,8 +164,8 @@ test("a Pawket Wallet links this browser, and a care on Solana asks the wallet n
   await expect(page.getByText("Signed by this browser, with no pop-up.")).toBeVisible({ timeout: 60_000 });
   const before = await signedByWallet(page);
   await page.getByRole("button", { name: "Feed" }).click();
-  await expect(page.getByText("Recorded on Solana")).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText("From your Pawket Wallet")).toBeVisible();
+  await expect(page.getByText(/^Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/Recorded on Solana, no pop-up/)).toBeVisible();
   expect(await signedByWallet(page)).toBe(before);
 
   // The history says so, read from Solana.

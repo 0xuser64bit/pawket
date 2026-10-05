@@ -6,7 +6,6 @@ import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import type { Address } from "@solana/kit";
 import { Button, Card } from "@/components/pk";
 import { AddressLine } from "@/components/wallet/address";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { getPublicEnv } from "@/config/env";
 import { wallet } from "@/lib/solana/browser-client";
@@ -103,7 +102,6 @@ export function Guestbook({
         {sponsor.data?.available ? "Pawket pays the fee." : "It costs a little devnet SOL."} A wave changes nothing about{" "}
         {name}.
       </p>
-      <TxReceipt tx={sender.tx} cluster={cluster} />
       {connecting ? (
         <WalletSheet why={`Connect any wallet to wave at ${name}. It signs only the wave.`} onDismiss={() => setConnecting(false)} />
       ) : null}

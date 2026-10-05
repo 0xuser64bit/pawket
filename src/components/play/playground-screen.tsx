@@ -18,7 +18,6 @@ import {
   WearableArt,
 } from "@/components/pk";
 import { PetSwitcher } from "@/components/home/pet-switcher";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { getPublicEnv } from "@/config/env";
 import { DAILY_GOAL_REWARD_XP } from "@/lib/game/constants";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
@@ -413,7 +412,6 @@ function Result({
             <Button label="Record the round" icon="spark" tone="sun" disabled={sender.busy} onClick={onRecord} />
           </div>
         ) : null}
-        {outcome.onChain ? <TxReceipt tx={sender.tx} cluster={getPublicEnv().solanaCluster} /> : null}
         <Row gap={2} wrap>
           <Button label="Play again" icon="ball" tone="pool" disabled={sender.busy} onClick={outcome.daily ? onAgain : onPractice} />
           {outcome.daily ? (

@@ -21,7 +21,6 @@ import {
   Waiting,
 } from "@/components/pk";
 import { AddressLine } from "@/components/wallet/address";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { getPublicEnv } from "@/config/env";
 import { findWearable } from "@/lib/closet/catalog";
@@ -264,7 +263,6 @@ function SetUp({ owner }: { owner: Address }) {
         <div>
           <Button label="Link this browser" icon="bolt" tone="sun" disabled={sender.busy || !sponsor.data} onClick={() => void open()} />
         </div>
-        <TxReceipt tx={sender.tx} cluster={cluster} />
       </Stack>
     </Card>
   );
@@ -317,7 +315,6 @@ function Opened({ state, owner }: { state: PawketWalletState; owner: Address }) 
 function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Address; now: number }) {
   const wallet = state.wallet!;
   const sender = usePawketSend();
-  const cluster = getPublicEnv().solanaCluster;
   const [days, setDays] = useState<number>(30);
   const [daily, setDaily] = useState<number>(wallet.dailyActions || 100);
   const [problem, setProblem] = useState<string>();
@@ -427,7 +424,6 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
           </>
         )}
         {problem ? <Banner tone="risk" title="Nothing was linked" body={problem} /> : null}
-        <TxReceipt tx={sender.tx} cluster={cluster} />
       </Stack>
     </Card>
   );
@@ -437,7 +433,6 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
 function MoveMoney({ state, owner }: { state: PawketWalletState; owner: Address }) {
   const wallet = state.wallet!;
   const sender = usePawketSend();
-  const cluster = getPublicEnv().solanaCluster;
   const [way, setWay] = useState<"in" | "out">("in");
   const [amount, setAmount] = useState("0.01");
   const lamports = parseSolToLamports(amount);
@@ -493,7 +488,6 @@ function MoveMoney({ state, owner }: { state: PawketWalletState; owner: Address 
             <Button label="All of it" tone="ghost" size="sm" onClick={() => setAmount(formatSol(state.balance))} />
           ) : null}
         </Row>
-        <TxReceipt tx={sender.tx} cluster={cluster} />
       </Stack>
     </Card>
   );
@@ -626,7 +620,6 @@ export function describe(entry: WalletEntry, names: Map<string, string>): string
 function CloseWallet({ state, owner }: { state: PawketWalletState; owner: Address }) {
   const wallet = state.wallet!;
   const sender = usePawketSend();
-  const cluster = getPublicEnv().solanaCluster;
   const [asking, setAsking] = useState(false);
   const here = state.device && wallet.device === state.device.address ? state.device : null;
 
@@ -671,7 +664,6 @@ function CloseWallet({ state, owner }: { state: PawketWalletState; owner: Addres
             <Button label="Close it" tone="alarm" size="sm" disabled={sender.busy} onClick={() => void close()} />
             <Button label="Keep it" tone="quiet" size="sm" onClick={() => setAsking(false)} />
           </Row>
-          <TxReceipt tx={sender.tx} cluster={cluster} />
         </Stack>
       ) : null}
     </Card>

@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { Button, Card } from "@/components/pk";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { getPublicEnv } from "@/config/env";
 import { wallet } from "@/lib/solana/browser-client";
 import { usePawketSend } from "@/lib/solana/use-send";
@@ -19,8 +18,7 @@ export function KeepsakeCard({ owner, pet, name, made }: { owner: string; pet: s
   const router = useRouter();
   const cluster = getPublicEnv().solanaCluster;
   if (connected?.account.address !== owner) return null;
-  // Made: only the receipt of the send that made it, if it was just now.
-  if (made) return <TxReceipt tx={sender.tx} cluster={cluster} />;
+  if (made) return null;
 
   async function keep() {
     const result = await sender.sendFromServer(`Keep ${name}'s card`, `/api/keepsake/${pet}`);
@@ -44,7 +42,6 @@ export function KeepsakeCard({ owner, pet, name, made }: { owner: string; pet: s
           onClick={() => void keep()}
         />
       </div>
-      <TxReceipt tx={sender.tx} cluster={cluster} />
     </Card>
   );
 }

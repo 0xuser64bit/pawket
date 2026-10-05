@@ -4,11 +4,14 @@ import { useCallback, useState } from "react";
 import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
 import { createNoopSigner, type Address, type KeyPairSigner, type TransactionSigner } from "@solana/kit";
+import { dismissToast, showToast } from "@/components/pk/toast";
+import { txToast } from "@/components/wallet/tx-toast";
+import { getPublicEnv } from "@/config/env";
 import { refreshPawketWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
 import { rpc, wallet } from "./browser-client";
 import { asDeviceInstruction } from "./instructions";
 import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
-import { isActiveStage, toUserFacingError, type TransactionStage } from "./transactions";
+import { isActiveStage, isUserRejection, toUserFacingError, type TransactionStage } from "./transactions";
 
 export interface SponsorStatus {
   available: boolean;
@@ -51,6 +54,8 @@ async function fetchSponsor(signal?: AbortSignal): Promise<SponsorStatus> {
   }
 }
 
+let sends = 0;
+
 /** Whether Pawket is covering fees right now, for the sentence beside a send. */
 export function useSponsor() {
   return useRequest(fetchSponsor);
@@ -76,22 +81,28 @@ export function usePawketSend() {
       go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void) => Promise<SendResult>,
       fallback?: DeviceFallback,
     ) => {
+      // Each send is one toast, kept up to date to the end — even after the screen that sent it is gone.
+      const id = `send-${++sends}`;
+      let state: TxState = { stage: "signing", label, by, fallback };
+      const show = (next: Partial<TxState>) => {
+        state = { ...state, ...next };
+        setTx(state);
+        const toast = txToast(id, state, getPublicEnv().solanaCluster);
+        if (toast) showToast(toast);
+      };
       if (!signer) {
-        setTx({ stage: "failed", label, by, error: "This wallet cannot sign. Nothing was sent." });
+        show({ stage: "failed", error: "This wallet cannot sign. Nothing was sent." });
         return null;
       }
-      setTx({ stage: "signing", label, by, fallback });
+      show({});
       try {
-        const result = await go(signer, (stage) => setTx((current) => ({ ...current, stage })));
-        setTx((current) => ({ ...current, stage: result.outcome, signature: result.signature, sponsored: result.sponsored }));
+        const result = await go(signer, (stage) => show({ stage }));
+        show({ stage: result.outcome, signature: result.signature, sponsored: result.sponsored });
         return result;
       } catch (error) {
-        setTx((current) => ({
-          ...current,
-          stage: "failed",
-          error: toUserFacingError(error),
-          signature: (error as { signature?: string }).signature,
-        }));
+        show({ stage: "failed", error: toUserFacingError(error), signature: (error as { signature?: string }).signature });
+        // Saying no in the wallet sent nothing and changed nothing: nothing to report.
+        if (isUserRejection(error)) dismissToast(id);
         return null;
       } finally {
         if (by === "device" && owner) void refreshPawketWallet(owner);

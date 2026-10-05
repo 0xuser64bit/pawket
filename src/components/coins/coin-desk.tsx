@@ -6,7 +6,6 @@ import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
 import type { Address } from "@solana/kit";
 import { Banner, Button, Card, Choice, Field, LaunchProgress, Paper, Receipt, Row, Stack, type ReceiptRow } from "@/components/pk";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import type { SolanaCluster } from "@/config/env";
 import { COIN_RISKS } from "@/lib/coins/copy";
@@ -101,7 +100,6 @@ export function CoinDesk({ guild, coin, thresholds, cluster }: CoinDeskProps) {
 
       {coin.stage === "damm" && owner ? <PoolFees guild={guild} coin={coin} owner={owner} sender={sender} onDone={done} /> : null}
 
-      <TxReceipt tx={sender.tx} cluster={cluster} />
 
       {connecting ? (
         <WalletSheet

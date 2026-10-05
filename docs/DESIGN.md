@@ -314,11 +314,14 @@ Playroom figure. There is no lobby.
 
 The wallet layer follows the system's own rules: connecting is offered only
 where it does something (keeping a pet on Solana, finding the pets a wallet
-keeps) and never in the shell; the connect sheet, the address chip and every
-receipt are Paper; an address always sits beside a copy control; waiting is
-the neutral `wait` banner, a confirmation is a `done` banner with its
-signature, a timeout is "Still waiting" and never "failed", and a failure
-names what did not change.
+keeps) and never in the shell; the connect sheet and the address chip are
+Paper; an address always sits beside a copy control. A send is a toast
+(`src/components/pk/toast.tsx`), one per send, in the corner and over the
+page — never a block in it: waiting is a spinner and says what it waits
+for, a record is a check, "Recorded on Solana" and who paid, with the
+Explorer a tap away, and goes by itself; a timeout is "Still waiting" and
+never "failed"; a failure names what did not change and stays until it is
+read. Declining in the wallet sends nothing and shows nothing.
 
 Call a pet "on Solana" only when it was read from chain. Do not put a
 simulated price on a screen: every price shown is the program's. The dock

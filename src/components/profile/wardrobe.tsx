@@ -4,8 +4,6 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt } from "@/components/pk";
 import { PetSwitcher } from "@/components/home/pet-switcher";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
-import { getPublicEnv } from "@/config/env";
 import { MARKET_WEARABLES, WEARABLES, findWearable, isUnlocked, wearableItem } from "@/lib/closet/catalog";
 import { BADGES, badgesFor } from "@/lib/game/badges";
 import type { CompanionState } from "@/lib/companion/use-companion";
@@ -32,7 +30,6 @@ import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
  * closet holds them — the program checks the closet, not this screen.
  */
 export function Wardrobe({ companion, sender }: { companion: CompanionState; sender: PawketSender }) {
-  const cluster = getPublicEnv().solanaCluster;
   const [chosen, setChosen] = useState<string | null>(null);
   const pet = companion.all.find((p) => p.id === chosen) ?? companion.pet;
   const chain = companion.owned.find((entry) => entry.pet.address === pet?.id) ?? null;
@@ -231,7 +228,6 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
                   />
                 </div>
               ) : null}
-              {chain ? <TxReceipt tx={sender.tx} cluster={cluster} /> : null}
               <p role="status" className="body-sm" style={{ color: "var(--alarm-text)" }}>
                 {notice}
               </p>

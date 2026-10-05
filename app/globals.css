@@ -6208,6 +6208,132 @@ details > .pk-risks {
   animation-timing-function: var(--ease-swap);
 }
 
+/* Toasts: what a send is doing, in the corner and over the page — never in
+   it. A sticker card like any other, small: the mark says wait, done or
+   refused; the words say what; a toast that is done goes by itself. Above
+   the shell bar on a phone, where the dock is not; top right where there is
+   room. */
+.pk-toasts {
+  position: fixed;
+  z-index: 40;
+  top: max(var(--space-3), env(safe-area-inset-top));
+  left: max(var(--gutter), env(safe-area-inset-left));
+  right: max(var(--gutter), env(safe-area-inset-right));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+@media (min-width: 720px) {
+  .pk-toasts {
+    left: auto;
+    width: 380px;
+    top: calc(var(--space-10) + var(--space-2));
+  }
+}
+.pk-toast {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  background: var(--surface);
+  color: var(--ink);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sticker);
+  animation: pk-toast-in var(--dur-sheet) var(--ease-press);
+}
+.pk-toast__mark {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunk);
+  color: var(--ink-soft);
+}
+.pk-toast--done .pk-toast__mark {
+  background: var(--sprout-soft);
+  color: var(--sprout-text);
+}
+.pk-toast--risk {
+  border-color: var(--alarm-text);
+}
+.pk-toast--risk .pk-toast__mark {
+  background: var(--alarm-soft);
+  color: var(--alarm-text);
+}
+.pk-toast__title {
+  font-family: var(--font-text);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.pk-toast__body {
+  margin-top: 2px;
+  font-family: var(--font-text);
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+.pk-toast__body a {
+  color: var(--ink);
+  font-weight: 600;
+}
+.pk-toast__close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -2px -2px 0 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .pk-toast__close:hover {
+    background: var(--surface-sunk);
+    color: var(--ink);
+  }
+}
+.pk-toast__close:focus-visible {
+  outline: var(--stroke-line) solid var(--focus);
+  outline-offset: 1px;
+}
+.pk-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: pk-turn 0.8s linear infinite;
+}
+@keyframes pk-turn {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@keyframes pk-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pk-spinner {
+    animation-duration: 2.4s;
+  }
+}
+
 /* A fold: detail a screen keeps closed until asked for — a quiet card whose
    summary is one row, the title and a line beside it, and a chevron that
    turns. Never the thing a screen is for: that stays open, above it. */

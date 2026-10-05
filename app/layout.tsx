@@ -4,6 +4,7 @@ import { fontClassNames } from "@/config/fonts";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/config/site";
 import { THEME_SCRIPT } from "@/config/themes";
 import { BootSplash } from "@/components/pk/boot-splash";
+import { Toasts } from "@/components/pk/toast";
 import "./globals.css";
 import Providers from "./providers";
 
@@ -53,6 +54,7 @@ export default function RootLayout({
       <body>
         <BootSplash />
         <Providers>{children}</Providers>
+        <Toasts />
       </body>
     </html>
   );

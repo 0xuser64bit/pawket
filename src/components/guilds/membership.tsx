@@ -3,9 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, PetArt, Stack, Waiting } from "@/components/pk";
-import { TxReceipt } from "@/components/wallet/tx-receipt";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
-import { getPublicEnv } from "@/config/env";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { petLook } from "@/lib/game/appearance";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
@@ -25,7 +23,6 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
   const sponsor = useSponsor();
   const router = useRouter();
   const [connecting, setConnecting] = useState(false);
-  const cluster = getPublicEnv().solanaCluster;
 
   async function join(entry: PetOnChain) {
     const member = (await deriveMemberPda(entry.pet.address)).address;
@@ -97,7 +94,6 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
             One guild per pet. {sponsor.data?.available ? "Pawket pays the fee and the small rent, and gets the rent back if the pet leaves." : "It costs a small network fee and rent in devnet SOL; leaving gives the rent back."}{" "}
             Joining changes nothing about a pet.
           </p>
-          <TxReceipt tx={sender.tx} cluster={cluster} />
         </Stack>
       )}
       {connecting ? (

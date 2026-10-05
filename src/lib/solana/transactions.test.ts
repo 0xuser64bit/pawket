@@ -80,6 +80,20 @@ describe("transaction errors", () => {
 
   it("tells an expired signature from a refusal", () => {
     expect(toUserFacingError(new Error("Transaction simulation failed: Blockhash not found"))).toMatch(/expired/);
+    const cause = getSolanaErrorFromTransactionError("BlockhashNotFound");
+    // Production Kit errors carry codes, with developer text stripped out.
+    Object.defineProperty(cause, "message", { value: "Solana error #7050008" });
+    const failed = new SolanaError(SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE, {
+      cause,
+    } as never);
+    expect(toUserFacingError(failed)).toMatch(/expired.*Nothing was sent/);
+  });
+
+  it("keeps an unrecognized preflight refusal readable in production", () => {
+    const failed = new SolanaError(SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE, {} as never);
+    Object.defineProperty(failed, "message", { value: "Solana error #-32002; Decode this error by running …" });
+    expect(toUserFacingError(failed)).toMatch(/refused.*before it was sent.*Nothing changed/);
+    expect(toUserFacingError(failed)).not.toMatch(/Decode/);
   });
 
   it("says what did not change", () => {

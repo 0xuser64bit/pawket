@@ -1,6 +1,9 @@
 import {
   isSolanaError,
+  SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED,
   SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM,
+  SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
+  SOLANA_ERROR__TRANSACTION_ERROR__BLOCKHASH_NOT_FOUND,
   SOLANA_ERROR__TRANSACTION_ERROR__INSUFFICIENT_FUNDS_FOR_FEE,
   type Signature,
 } from "@solana/kit";
@@ -26,8 +29,8 @@ import { PAWKET_ERROR_CODES } from "./program";
  *    disabled while sending.
  *
  * Rules: the fee payer is the sponsor while it is up, else the owner.
- * Retry sends only on network drop with the same signed transaction —
- * a new blockhash means a new signature, so the user signs again.
+ * A lost send reply is resolved by looking up the existing signature.
+ * A new transaction always needs a new explicit action and signature.
  * Optimistic UI for adopt/care is forbidden.
  */
 
@@ -231,8 +234,14 @@ export function toUserFacingError(error: unknown): string {
   if (/already in use/i.test(messageOf(error))) {
     return "That is already on Solana — a pet in a guild, or a guild with that name. Nothing changed.";
   }
-  if (/blockhash not found|block height exceeded/i.test(messageOf(error))) {
+  if (errorChain(error).some((e) =>
+    isSolanaError(e, SOLANA_ERROR__TRANSACTION_ERROR__BLOCKHASH_NOT_FOUND) ||
+    isSolanaError(e, SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED),
+  ) || /blockhash not found|block height exceeded/i.test(messageOf(error))) {
     return "That waited too long to be signed and expired. Nothing was sent — try again.";
+  }
+  if (errorChain(error).some((e) => isSolanaError(e, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE))) {
+    return "Solana refused this transaction before it was sent. Nothing changed — try again.";
   }
   // The connection dropped before anything was signed or sent: a phone in a tunnel, not a refusal.
   if (/failed to fetch|networkerror|network request failed|load failed|err_internet_disconnected/i.test(messageOf(error))) {

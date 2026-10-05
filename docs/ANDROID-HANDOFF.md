@@ -26,6 +26,10 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 - Popup renderer recovery: both the main view and temporary link catcher
   handle renderer loss. Fresh Android lint + 6 JVM tests green. `.kotlin/`
   compiler caches ignored.
+- Slow approval audit: expired preflight errors now map by Kit code, even
+  when production strips developer text. Unknown preflight errors get a
+  readable refusal. Regression first failed, then 22 send/confirmation
+  tests, typecheck and lint passed.
 - Shared send interruption fixed: `send.ts` looks up a known signature when
   the broadcast reply is lost; `transactions.ts` tolerates failed status
   replies until the bounded deadline. The unknown toast advises checking the

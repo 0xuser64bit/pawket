@@ -6,6 +6,7 @@ import { createNoopSigner, type Address, type KeyPairSigner, type TransactionSig
 import { dismissToast, showToast } from "@/components/pk/toast";
 import { txToast } from "@/components/wallet/tx-toast";
 import { getPublicEnv } from "@/config/env";
+import { haptic } from "@/lib/native/android";
 import { refreshPawketWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
 import { rpc, useConnected } from "./browser-client";
 import { asDeviceInstruction } from "./instructions";
@@ -97,11 +98,14 @@ export function usePawketSend() {
       try {
         const result = await go(signer, (stage) => show({ stage }));
         show({ stage: result.outcome, signature: result.signature, sponsored: result.sponsored });
+        // Felt when Solana has it, never before: "unknown" is still waiting.
+        if (result.outcome === "confirmed") haptic("done");
         return result;
       } catch (error) {
         show({ stage: "failed", error: toUserFacingError(error), signature: (error as { signature?: string }).signature });
         // Saying no in the wallet sent nothing and changed nothing: nothing to report.
         if (isUserRejection(error)) dismissToast(id);
+        else haptic("refuse");
         return null;
       } finally {
         if (by === "device" && owner) void refreshPawketWallet(owner);

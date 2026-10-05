@@ -54,6 +54,7 @@ import {
   type TodayGoals,
 } from "@/lib/guest/pet";
 import { readPet, removePet, savePet } from "@/lib/guest/storage";
+import { haptic } from "@/lib/native/android";
 import { describeLook } from "@/lib/player/look";
 import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
@@ -188,6 +189,7 @@ export function HomeScreen() {
     const result = applyGuestCare(current, action, new Date());
     if (!result.ok) {
       setNotice({ tone: "stop", text: result.message });
+      haptic("refuse");
       return;
     }
     if (!savePet(result.pet)) {
@@ -224,6 +226,7 @@ export function HomeScreen() {
     // Only now, with the care saved, does the room show it — and a new
     // level is the one thing worth a cheer.
     ask(level ? "cheer" : CARE_MOMENT[action]);
+    haptic(level ? "cheer" : "done");
   }
 
   async function careOnChain(action: CareActionType) {
@@ -232,6 +235,7 @@ export function HomeScreen() {
     const check = applyGuestCare(pet, action, new Date());
     if (!check.ok) {
       setNotice({ tone: "stop", text: check.message });
+      haptic("refuse");
       return;
     }
     setNotice(undefined);

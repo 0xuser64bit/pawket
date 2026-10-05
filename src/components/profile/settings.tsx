@@ -6,6 +6,7 @@ import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";
 import { useRoomMode } from "@/components/home/room";
 import { useSound } from "@/lib/play/sound";
+import { useAndroidApp, useHaptics } from "@/lib/native/android";
 import type { PetForm } from "@/components/pk";
 
 /**
@@ -18,6 +19,8 @@ export function Settings({ form }: { form?: PetForm }) {
   const [sound, setSound] = useSound();
   const connected = useConnected();
   const closet = useCloset((connected?.account.address as Address | undefined) ?? null);
+  const inApp = useAndroidApp();
+  const [haptics, setHaptics] = useHaptics();
   return (
     <div className="pk-stack" style={{ gap: "var(--space-5)" }}>
       <Card>
@@ -56,6 +59,16 @@ export function Settings({ form }: { form?: PetForm }) {
             aria-pressed={sound}
             onClick={() => setSound(!sound)}
           />
+          {inApp ? (
+            <Button
+              label={haptics ? "Haptics on" : "Haptics off"}
+              icon="spark"
+              tone="quiet"
+              size="sm"
+              aria-pressed={haptics}
+              onClick={() => setHaptics(!haptics)}
+            />
+          ) : null}
         </Row>
         <p className="caption pk-faint" style={{ marginTop: "var(--space-4)" }}>
           Your name, your look, your outfits, your room and the pets in this browser are saved on this device and

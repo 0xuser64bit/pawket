@@ -6,6 +6,7 @@ import { Button, ButtonLink, Card, Chip, PetFrame, Row, SectionLabel, Stack } fr
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
+import { useHere } from "@/lib/native/android";
 
 /**
  * Every pet the player keeps, on Solana first, then in this browser: each
@@ -14,6 +15,7 @@ import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
  */
 export function PetsShelf({ companion, onConnect }: { companion: CompanionState; onConnect: () => void }) {
   const router = useRouter();
+  const { here } = useHere();
   const home = companion.pet?.id;
   const onChain = new Set<string>(companion.owned.map((entry) => entry.pet.address));
 
@@ -31,7 +33,7 @@ export function PetsShelf({ companion, onConnect }: { companion: CompanionState;
         ))}
         <Link href="/adopt" className="pk-slot pk-slot--link">
           <span className="title">Adopt another</span>
-          <span className="caption pk-faint">Three taps. They start in this browser, beside the others.</span>
+          <span className="caption pk-faint">Three taps. They start in {here}, beside the others.</span>
         </Link>
       </div>
       {companion.owner ? null : (
@@ -50,6 +52,7 @@ export function PetsShelf({ companion, onConnect }: { companion: CompanionState;
 }
 
 function PetCard({ pet, onChain, home, onHome }: { pet: GuestPet; onChain: boolean; home: boolean; onHome: () => void }) {
+  const { here } = useHere();
   const { level, mood } = projectGuestPet(pet);
   return (
     <Card variant="flush">
@@ -67,7 +70,7 @@ function PetCard({ pet, onChain, home, onHome }: { pet: GuestPet; onChain: boole
           ) : (
             <Button label="Bring home" icon="home" tone="quiet" size="sm" onClick={onHome} />
           )}
-          <Chip label={onChain ? "On Solana" : "In this browser"} tone={onChain ? "pool" : undefined} />
+          <Chip label={onChain ? "On Solana" : `In ${here}`} tone={onChain ? "pool" : undefined} />
         </Row>
       </div>
     </Card>
@@ -76,11 +79,12 @@ function PetCard({ pet, onChain, home, onHome }: { pet: GuestPet; onChain: boole
 
 /** An empty shelf: one action, and what it does. */
 export function EmptyShelf() {
+  const { here } = useHere();
   return (
     <Card>
       <h2 className="title">The shelf is empty</h2>
       <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-        Adopting takes three taps. The pet starts out in this browser, and can move onto Solana when you like.
+        Adopting takes three taps. The pet starts out in {here}, and can move onto Solana when you like.
       </p>
       <div style={{ marginTop: "var(--space-4)" }}>
         <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />

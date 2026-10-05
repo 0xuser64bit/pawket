@@ -28,7 +28,7 @@ import { getFinishRoundInstruction } from "@/lib/solana/instructions";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
 import { dailySeed, keepBest, keepDaily, readBest, readDaily, type GameId } from "@/lib/play/best";
 import { useSound } from "@/lib/play/sound";
-import { inAndroidApp, shareLink } from "@/lib/native/android";
+import { inAndroidApp, shareLink, useHere } from "@/lib/native/android";
 import { CatchGame } from "./catch-game";
 import { CopyGame } from "./copy-game";
 import { HopGame } from "./hop-game";
@@ -361,6 +361,7 @@ function Result({
   onOther: () => void;
 }) {
   const [shared, setShared] = useState<string>();
+  const { Here } = useHere();
   const recorded = sender.tx.stage === "confirmed";
   const line = outcome.onChain
     ? recorded
@@ -374,7 +375,7 @@ function Result({
       ? outcome.xpGained > 0
         ? `+${outcome.xpGained} XP for playing today.`
         : "You already earned today's play bonus."
-      : "Finished, but this browser did not store the bonus.";
+      : `Finished, but ${Here.toLowerCase()} did not store the bonus.`;
 
   async function share() {
     const url = new URL("/playground", getPublicEnv().appUrl).toString();

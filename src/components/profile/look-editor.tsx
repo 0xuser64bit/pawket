@@ -22,6 +22,7 @@ import {
 } from "@/lib/player/look";
 import { OUTFIT_SLOTS, saveProfile, usePlayerProfile, withOutfit } from "@/lib/player/profile";
 import { saveLook } from "@/lib/player/storage";
+import { useHere } from "@/lib/native/android";
 
 const words = <T extends string>(values: readonly T[], names: Record<T, string>) =>
   values.map((value) => ({ value, label: names[value] }));
@@ -65,7 +66,6 @@ function OutfitDots({ look }: { look: PlayerLook }) {
   );
 }
 
-const SAVE_FAILED = "This browser did not store that. Your look is as it was.";
 
 /**
  * How the player looks in the room, in full: the four parts as tabs, three
@@ -88,6 +88,8 @@ export function LookEditor({
 }) {
   const [part, setPart] = useState<(typeof PARTS)[number]["key"]>("body");
   const [notice, setNotice] = useState<string>();
+  const { Here } = useHere();
+  const SAVE_FAILED = `${Here} did not store that. Your look is as it was.`;
   const profile = usePlayerProfile();
   const tabsId = useId();
 

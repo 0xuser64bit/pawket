@@ -13,6 +13,7 @@ import { rpc } from "@/lib/solana/browser-client";
 import { getAdoptPetInstruction } from "@/lib/solana/instructions";
 import { derivePassportPda, derivePetPda } from "@/lib/solana/pda";
 import { useSponsor, type PawketSender } from "@/lib/solana/use-send";
+import { useHere } from "@/lib/native/android";
 
 /**
  * Keeping the pet in this browser on Solana, from the badge on its face in
@@ -40,6 +41,7 @@ export function KeepSheet({
 }) {
   const [connecting, setConnecting] = useState(false);
   const [taken, setTaken] = useState(false);
+  const { here } = useHere();
   const sponsor = useSponsor();
   const cluster = getPublicEnv().solanaCluster;
   const level = calculateLevelFromXp(pet.xp);
@@ -108,7 +110,7 @@ export function KeepSheet({
             <PetArt {...petLook(pet, projectGuestPet(pet).mood)} still />
           </span>
           <div className="pk-keep__then">
-            <span className="caption pk-faint">In this browser</span>
+            <span className="caption pk-faint">In {here}</span>
             <span className="title">Level {level}</span>
           </div>
           <span className="pk-keep__arrow" aria-hidden="true">→</span>
@@ -119,7 +121,7 @@ export function KeepSheet({
         </div>
         <p className="body-sm">
           A record nobody can edit or erase: every care from now on, the streak and the level, kept on Solana where
-          anyone can look it up — long after this browser.{" "}
+          anyone can look it up — long after {here}.{" "}
           {sponsor.data?.available ? "Pawket pays the fee." : "It costs a small network fee in devnet SOL."}
         </p>
         <p className="body-sm pk-keep__note">

@@ -32,6 +32,7 @@ import { useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend } from "@/lib/solana/use-send";
 import { formatUtcDate } from "@/lib/utils/format";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
+import { useHere } from "@/lib/native/android";
 
 const SPECIES = [PetSpecies.LunaCat, PetSpecies.MossPup, PetSpecies.CloudBun];
 
@@ -117,6 +118,7 @@ export function AdoptFlow() {
   const shown = useRef(step);
   const sender = usePawketSend();
   const connected = useConnected();
+  const { here, Here } = useHere();
   const owner = (connected?.account.address as Address | undefined) ?? null;
   useEyesFollow(scope);
 
@@ -253,7 +255,7 @@ export function AdoptFlow() {
 
         <div className="pk-adopt__go">
           <Button label={`Choose the ${SPECIES_LABEL[species].toLowerCase()}`} size="lg" full icon="paw" onClick={() => setStep(2)} />
-          <p className="caption pk-faint">Free, and it starts in this browser. Clothes come later, and they change only how they look.</p>
+          <p className="caption pk-faint">Free, and it starts in {here}. Clothes come later, and they change only how they look.</p>
         </div>
       </main>
     );
@@ -386,7 +388,7 @@ export function AdoptFlow() {
                   { k: "Species", v: SPECIES_LABEL[species] },
                   { k: "Temperament", v: PERSONALITY_LABEL[personality] },
                   { k: "Adopted", v: adopted ? formatUtcDate(adopted.createdAt) : "Today" },
-                  { k: "Kept", v: "In this browser" },
+                  { k: "Kept", v: `In ${here}` },
                 ]}
               />
             </Paper>
@@ -394,7 +396,7 @@ export function AdoptFlow() {
             {adopted ? (
               <div className="pk-adopt__keep">
                 <p className="body-sm pk-muted">
-                  {kept} lives in this browser. Today is the best day to keep them on Solana too: they are brand new, so
+                  {kept} lives in {here}. Today is the best day to keep them on Solana too: they are brand new, so
                   nothing starts over.
                 </p>
                 <Button label={`Keep ${kept} on Solana`} icon="keep" tone="quiet" size="sm" onClick={() => setKeeping(true)} />
@@ -420,7 +422,7 @@ export function AdoptFlow() {
             <Banner
               tone="risk"
               title="Not stored"
-              body="This browser refused to keep them. Retry, or they disappear when you leave this tab."
+              body={`${Here} refused to keep them. Retry, or they disappear when you leave ${here === "this app" ? "Pawket" : "this tab"}.`}
             />
             <Button label="Try saving again" size="lg" full onClick={retrySave} />
           </>

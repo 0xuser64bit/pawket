@@ -41,6 +41,7 @@ import { forgetDevice } from "@/lib/wallet/device";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { fetchWalletHistory, type WalletEntry } from "@/lib/wallet/history";
 import { refreshPawketWallet, rentOfWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
+import { useHere } from "@/lib/native/android";
 
 /**
  * The Pawket Wallet: one approval, then no pop-ups. The player's own wallet
@@ -80,6 +81,7 @@ export function PawketWalletScreen() {
   const ready = mounted && walletReady;
   const connected = useConnectedWallet(walletClient);
   const owner = (connected?.account.address as Address | undefined) ?? null;
+  const { here, Here } = useHere();
   const state = usePawketWallet(owner);
   const [connecting, setConnecting] = useState(false);
 
@@ -90,7 +92,7 @@ export function PawketWalletScreen() {
           <h1 className="display-l">Pawket Wallet</h1>
           <p className="caption pk-faint">One approval, then no pop-ups. Yours, on Solana {getPublicEnv().solanaCluster}.</p>
         </div>
-        {state?.linked ? <Chip label="This browser is linked" tone="sprout" icon="check" /> : null}
+        {state?.linked ? <Chip label={`${Here} is linked`} tone="sprout" icon="check" /> : null}
       </ScreenBar>
 
       {!ready ? (
@@ -100,7 +102,7 @@ export function PawketWalletScreen() {
           <Card>
             <h2 className="title">Stop the pop-ups</h2>
             <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-              Connect the wallet that keeps your pets. It approves once, and then this browser signs for them with no
+              Connect the wallet that keeps your pets. It approves once, and then {here} signs for them with no
               pop-up. Connecting signs nothing.
             </p>
             <div className="pk-foot">
@@ -139,6 +141,7 @@ export function PawketWalletScreen() {
 
 /** The rule every device lives inside. The program holds it to every line. */
 function Rules() {
+  const { here } = useHere();
   const can = [
     "Care for, play with and dress your pets on Solana, and keep a new one there",
     "Found, join and leave guilds, go to their events, check in and vote",
@@ -149,7 +152,7 @@ function Rules() {
     "Spend your SOL: a Market look or a guild coin always asks your wallet",
     "Move your balance anywhere: only your wallet withdraws, and only to itself",
     "Act for a pet that is not yours, once its link runs out, or past today's limit",
-    "Be read: its key is made in this browser and cannot be exported — by Pawket either",
+    `Be read: its key is made in ${here} and cannot be exported — by Pawket either`,
   ];
   return (
     <details className="pk-fold">
@@ -197,6 +200,7 @@ function Rules() {
 function SetUp() {
   const { link, problem, busy } = useLinkBrowser();
   const sponsor = useSponsor();
+  const { here } = useHere();
   const rent = useRequest(rentOfWallet);
   const cluster = getPublicEnv().solanaCluster;
   const sponsored = Boolean(sponsor.data?.available);
@@ -210,17 +214,17 @@ function SetUp() {
     <Card>
       <h2 className="title">Stop the pop-ups</h2>
       <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-        Your wallet approves once. After that, this browser signs what your pets do on Solana — care, rounds,
+        Your wallet approves once. After that, {here} signs what your pets do on Solana — care, rounds,
         outfits, guilds, gatherings and waves — with no pop-up. Anything that spends SOL still asks your wallet.
       </p>
       <Stack gap={4} style={{ marginTop: "var(--space-4)" }}>
-        <Choice label="Link this browser for" options={DAYS} value={days} onPick={setDays} />
+        <Choice label={`Link ${here} for`} options={DAYS} value={days} onPick={setDays} />
         <Choice label="At most" options={DAILY} value={daily} onPick={setDaily} />
         <Choice label="Put in" options={sponsored ? PUT : PUT.slice(1)} value={sponsored ? put : Math.max(put, PUT[1].value)} onPick={setPut} />
         <p className="caption pk-faint" style={{ marginTop: "calc(-1 * var(--space-2))" }}>
           {sponsored
-            ? "Pawket pays the fees, so nothing is needed. A balance keeps this browser signing if it ever stops; it comes back to you whenever you like."
-            : "Pawket is not paying fees right now, so this browser pays its own from what you put in — one fee an action, and the rest back whenever you like."}
+            ? `Pawket pays the fees, so nothing is needed. A balance keeps ${here} signing if it ever stops; it comes back to you whenever you like.`
+            : `Pawket is not paying fees right now, so ${here} pays its own from what you put in — one fee an action, and the rest back whenever you like.`}
         </p>
         <Paper title="What this approval does" meta={`Solana ${cluster}`}>
           <Receipt
@@ -237,7 +241,7 @@ function SetUp() {
         </Paper>
         {problem ? <Banner tone="risk" title="Nothing was linked" body={problem} /> : null}
         <div>
-          <Button label="Link this browser" icon="bolt" tone="sun" disabled={busy || !sponsor.data} onClick={() => void link({ days, daily, deposit })} />
+          <Button label={`Link ${here}`} icon="bolt" tone="sun" disabled={busy || !sponsor.data} onClick={() => void link({ days, daily, deposit })} />
         </div>
       </Stack>
     </Card>
@@ -294,6 +298,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
   const [days, setDays] = useState<number>(30);
   const [daily, setDaily] = useState<number>(wallet.dailyActions || 100);
   const linking = useLinkBrowser();
+  const { here: place, Here: Place } = useHere();
   const link = () => linking.link({ days, daily });
   const problem = linking.problem;
   const here = state.device && wallet.device === state.device.address;
@@ -306,7 +311,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
     if (!state.device) return;
     // The device lets go of itself: it signs, and what it holds comes home. No prompt.
     const device = state.device;
-    const result = await sender.asDevice("Unlink this browser", device, () => [
+    const result = await sender.asDevice(`Unlink ${place}`, device, () => [
       getUnlinkDeviceInstruction({ authority: device, wallet: wallet.address, device, deviceSigns: true }),
     ]);
     if (result?.outcome === "confirmed") {
@@ -333,7 +338,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
   return (
     <Card>
       <div className="pk-spread">
-        <h2 className="title">This browser</h2>
+        <h2 className="title">{Place}</h2>
         {here && !expired ? <Chip label="Linked" tone="sprout" icon="check" /> : <Chip label={expired ? "Link ran out" : "Not linked"} />}
       </div>
       <Stack gap={4} style={{ marginTop: "var(--space-3)" }}>
@@ -358,7 +363,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               />
             ) : null}
             <Row gap={2} wrap>
-              <Button label="Unlink this browser" tone="quiet" size="sm" disabled={sender.busy} onClick={() => void unlinkHere()} />
+              <Button label={`Unlink ${place}`} tone="quiet" size="sm" disabled={sender.busy} onClick={() => void unlinkHere()} />
             </Row>
             <details className="pk-wallet-more">
               <summary className="body-sm">Change how long, or how much a day</summary>
@@ -381,7 +386,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
             </p>
             {limits}
             <Row gap={2} wrap>
-              <Button label={expired ? "Link it again" : "Link this browser"} icon="bolt" tone="sun" disabled={sender.busy || linking.busy} onClick={() => void link()} />
+              <Button label={expired ? "Link it again" : `Link ${place}`} icon="bolt" tone="sun" disabled={sender.busy || linking.busy} onClick={() => void link()} />
               {elsewhere ? <Button label="Unlink the other device" tone="ghost" size="sm" disabled={sender.busy} onClick={() => void unlinkElsewhere()} /> : null}
             </Row>
           </>

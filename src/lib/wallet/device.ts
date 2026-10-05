@@ -1,4 +1,5 @@
 import { createSignerFromKeyPair, generateKeyPair, type KeyPairSigner } from "@solana/kit";
+import { inAndroidApp } from "@/lib/native/android";
 
 /**
  * This device's key for a Pawket Wallet. It is made here, by the browser's
@@ -54,14 +55,20 @@ export async function loadDevice(owner: string): Promise<KeyPairSigner | null> {
  * words, when this browser cannot make or keep one.
  */
 export async function makeDevice(owner: string): Promise<KeyPairSigner> {
-  if (typeof indexedDB === "undefined") throw new Error("This browser cannot keep a device key. Nothing was linked.");
+  const here = inAndroidApp() ? "This app" : "This browser";
+  if (typeof indexedDB === "undefined") throw new Error(`${here} cannot keep a device key. Nothing was linked.`);
   let pair: CryptoKeyPair;
   try {
     pair = await generateKeyPair();
   } catch {
-    throw new Error("This browser cannot make an Ed25519 key, so it cannot be linked. Nothing was linked.");
+    // In the app the key is made by Android System WebView, which gained Ed25519 in a later version than some phones run.
+    throw new Error(
+      inAndroidApp()
+        ? "This phone's Android System WebView is too old to make the key. Update it from the Play Store, then link again. Nothing was linked."
+        : "This browser cannot make an Ed25519 key, so it cannot be linked. Nothing was linked.",
+    );
   }
-  if (pair.privateKey.extractable) throw new Error("This browser made a key that could be read. Nothing was linked.");
+  if (pair.privateKey.extractable) throw new Error(`${here} made a key that could be read. Nothing was linked.`);
   await run("readwrite", (store) => store.put(pair, owner));
   return createSignerFromKeyPair(pair);
 }

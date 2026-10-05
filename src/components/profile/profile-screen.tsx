@@ -20,6 +20,7 @@ import { EmptyShelf, PetsShelf } from "./pets-shelf";
 import { Settings } from "./settings";
 import { StickerBook } from "./sticker-book";
 import { Wardrobe } from "./wardrobe";
+import { useHere } from "@/lib/native/android";
 
 export type ProfileTab = "pets" | "wardrobe" | "stickers" | "settings";
 
@@ -46,6 +47,7 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
   const [roomState, setRoomState] = useState<RoomState>("loading");
   const [connecting, setConnecting] = useState(false);
   const [nameNotice, setNameNotice] = useState<string>();
+  const { here, Here } = useHere();
   // Came to change how you look (Home's Look, #look): the editor starts open.
   const [lookOpen] = useState(() => typeof window !== "undefined" && window.location.hash === "#look");
   // Hooks run before the early return below: what others did with these pets on Solana.
@@ -123,7 +125,7 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
             placeholder="What should your pets call you?"
             value={profile.name}
             onChange={(event) =>
-              setNameNotice(saveProfile({ ...profile, name: event.target.value }) ? undefined : "This browser did not store that.")
+              setNameNotice(saveProfile({ ...profile, name: event.target.value }) ? undefined : `${Here} did not store that.`)
             }
             error={nameNotice}
             className="pk-plate__name"
@@ -152,9 +154,9 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
             <span className="caption pk-faint">
               {companion.owned.length > 0
                 ? companion.guests.length > 0
-                  ? "On Solana and in this browser"
+                  ? `On Solana and in ${here}`
                   : "Kept on Solana"
-                : "Saved in this browser"}
+                : `Saved in ${here}`}
             </span>
           </div>
           <Tabs label="What you keep" active={tab} items={TABS} />

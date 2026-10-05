@@ -6,8 +6,8 @@ import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";
 import { useRoomMode } from "@/components/home/room";
 import { useSound } from "@/lib/play/sound";
-import { useAndroidApp, useHaptics } from "@/lib/native/android";
 import type { PetForm } from "@/components/pk";
+import { useAndroidApp, useHaptics, useHere } from "@/lib/native/android";
 
 /**
  * The room you live in and how this device plays: the rooms, 3D or flat,
@@ -19,6 +19,7 @@ export function Settings({ form }: { form?: PetForm }) {
   const [sound, setSound] = useSound();
   const connected = useConnected();
   const closet = useCloset((connected?.account.address as Address | undefined) ?? null);
+  const { here } = useHere();
   const inApp = useAndroidApp();
   const [haptics, setHaptics] = useHaptics();
   return (
@@ -33,7 +34,7 @@ export function Settings({ form }: { form?: PetForm }) {
       <Card>
         <h2 className="title">Pawket Wallet</h2>
         <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-          Link this browser once, and what your pets do on Solana stops asking your wallet each time. Pawket pays
+          Link {here} once, and what your pets do on Solana stops asking your wallet each time. Pawket pays
           the fees; anything that spends SOL still asks.
         </p>
         <div style={{ marginTop: "var(--space-4)" }}>
@@ -71,8 +72,10 @@ export function Settings({ form }: { form?: PetForm }) {
           ) : null}
         </Row>
         <p className="caption pk-faint" style={{ marginTop: "var(--space-4)" }}>
-          Your name, your look, your outfits, your room and the pets in this browser are saved on this device and
-          nowhere else. Pets on Solana are read from your wallet&apos;s accounts each time.
+          Your name, your look, your outfits, your room and the pets in {here} are saved on this device and
+          nowhere else.
+          {inApp ? " Uninstalling Pawket or clearing its storage takes them with it, and a browser on this phone keeps its own." : ""}{" "}
+          Pets on Solana are read from your wallet&apos;s accounts each time.
         </p>
       </Card>
     </div>

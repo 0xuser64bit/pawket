@@ -54,7 +54,7 @@ import {
   type TodayGoals,
 } from "@/lib/guest/pet";
 import { readPet, removePet, savePet } from "@/lib/guest/storage";
-import { haptic } from "@/lib/native/android";
+import { haptic, useHere } from "@/lib/native/android";
 import { describeLook } from "@/lib/player/look";
 import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
@@ -74,6 +74,7 @@ import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
  */
 export function HomeScreen() {
   const companion = useCompanion();
+  const { here, Here } = useHere();
   const { ready, pet, active } = companion;
   const look = usePlayerLook();
   const profile = usePlayerProfile();
@@ -144,7 +145,7 @@ export function HomeScreen() {
           <Card>
             <h2 className="title">The window is open</h2>
             <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-              Nobody lives here yet. Adopting takes three taps, and the pet starts out in this browser.
+              Nobody lives here yet. Adopting takes three taps, and the pet starts out in {here}.
               {companion.owner ? "" : " Already keep a pet on Solana? Connect the wallet that keeps it, and it comes home here."}
             </p>
             <Row gap={2} wrap className="pk-foot">
@@ -195,7 +196,7 @@ export function HomeScreen() {
     if (!savePet(result.pet)) {
       setNotice({
         tone: "stop",
-        text: "This browser did not store that. The action did not stick.",
+        text: `${Here} did not store that. The action did not stick.`,
       });
       return;
     }
@@ -210,7 +211,7 @@ export function HomeScreen() {
         ttl: 14_000,
         body: (
           <>
-            Levels here live in this browser. Kept on Solana, {current.name} would start over at level 1 — the sooner,
+            Levels here live in {here}. Kept on Solana, {current.name} would start over at level 1 — the sooner,
             the less to redo.{" "}
             <button type="button" className="pk-linkish" onClick={() => setKeeping(readPet(current.id) ?? current)}>
               Keep {current.name} on Solana
@@ -266,7 +267,7 @@ export function HomeScreen() {
             <span className="caption pk-faint">
               {PERSONALITY_LABEL[pet.personality]} · {SPECIES_LABEL[pet.species]}
             </span>
-            <Chip label={onChain ? "On Solana" : "In this browser"} tone={onChain ? "pool" : undefined} />
+            <Chip label={onChain ? "On Solana" : `In ${here}`} tone={onChain ? "pool" : undefined} />
             {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
           </Row>
         </div>
@@ -437,21 +438,22 @@ function RoomLine({
  * way to change it.
  */
 function NoPrompt({ state, now }: { state: PawketWalletState | null; now: Date }) {
+  const { here, Here } = useHere();
   const why = deviceFallback(state, now.getTime() / 1000);
   const line: ReactNode =
     why === null ? (
       <>
-        Signed by this browser, with no pop-up. <Link href="/wallet">Your Pawket Wallet</Link>
+        Signed by {here}, with no pop-up. <Link href="/wallet">Your Pawket Wallet</Link>
       </>
     ) : why === "expired" ? (
       <>
-        This browser&apos;s link ran out, so your wallet asks again. <Link href="/wallet">Link it again</Link>
+        {Here}&apos;s link ran out, so your wallet asks again. <Link href="/wallet">Link it again</Link>
       </>
     ) : why === "limit" ? (
-      <>This browser has done all it may today; your wallet signs until midnight UTC.</>
+      <>{Here} has done all it may today; your wallet signs until midnight UTC.</>
     ) : (
       <>
-        Each care asks your wallet. <Link href="/wallet">Link this browser</Link> and it stops asking.
+        Each care asks your wallet. <Link href="/wallet">Link {here}</Link> and it stops asking.
       </>
     );
   return (
@@ -464,12 +466,13 @@ function NoPrompt({ state, now }: { state: PawketWalletState | null; now: Date }
 
 /** Solana did not answer: say what is shown instead, and offer to ask again. */
 function ChainTrouble({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+  const { here } = useHere();
   if (!error) return null;
   return (
     <Banner
       tone="wait"
       title="Solana did not answer"
-      body="Your pets there are unchanged; this screen could not read them just now. What you see is this browser's."
+      body={`Your pets there are unchanged; this screen could not read them just now. What you see is ${here}'s.`}
       action={<Button label="Try again" tone="quiet" size="sm" onClick={onRetry} />}
     />
   );
@@ -597,6 +600,7 @@ function Vital({ label, value }: { label: string; value: number }) {
 
 /** The way to the pet's record and to the rest of the family, and — in this browser — letting a pet go. */
 function HomeFoot({ pet, onChain, others }: { pet: GuestPet; onChain: boolean; others: number }) {
+  const { here } = useHere();
   const [confirming, setConfirming] = useState(false);
   return (
     <div className="pk-home__foot">
@@ -608,7 +612,7 @@ function HomeFoot({ pet, onChain, others }: { pet: GuestPet; onChain: boolean; o
       {!onChain && confirming ? (
         <Card variant="quiet">
           <p className="body-sm">
-            Let {pet.name} go from this browser? Their care, streak and clothes go too. This cannot be undone.
+            Let {pet.name} go from {here}? Their care, streak and clothes go too. This cannot be undone.
             {others > 0 ? " Your other pets stay." : ""}
           </p>
           <Row gap={2} wrap style={{ marginTop: "var(--space-3)" }}>

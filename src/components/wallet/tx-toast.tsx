@@ -3,6 +3,11 @@ import type { Toast } from "@/components/pk/toast";
 import type { SolanaCluster } from "@/config/env";
 import { explorerTxUrl } from "@/lib/solana/cluster";
 import type { TxState } from "@/lib/solana/use-send";
+import { inAndroidApp } from "@/lib/native/android";
+
+/** Where a linked device key lives, said as the player sees it: this app, or this browser. Toasts are made at run time, never on the server. */
+const here = () => (inAndroidApp() ? "this app" : "this browser");
+const Here = () => (inAndroidApp() ? "This app" : "This browser");
 
 /** Asked once a visit: how to stop the pop-ups is worth saying, not worth repeating. */
 let nudged = false;
@@ -31,7 +36,7 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
         id,
         tone: "wait",
         title,
-        body: tx.by === "device" ? "Signing in this browser." : "Approve it in your wallet. Nothing is sent until you do.",
+        body: tx.by === "device" ? `Signing in ${here()}.` : "Approve it in your wallet. Nothing is sent until you do.",
       };
     case "sending":
       return { id, tone: "wait", title, body: "On its way to Solana." };
@@ -91,11 +96,11 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
 }
 
 function nudge(why: NonNullable<TxState["fallback"]>) {
-  if (why === "limit") return <> This browser has used today&apos;s limit, so your wallet asked.</>;
+  if (why === "limit") return <> {Here()} has used today&apos;s limit, so your wallet asked.</>;
   return (
     <>
       {" "}
-      {why === "expired" ? "This browser's link ran out, so your wallet asked. " : "Your wallet asked because this browser is not linked. "}
+      {why === "expired" ? `${Here()}'s link ran out, so your wallet asked. ` : `Your wallet asked because ${here()} is not linked. `}
       <Link href="/wallet">{why === "expired" ? "Link it again" : "Stop the pop-ups"}</Link>
     </>
   );

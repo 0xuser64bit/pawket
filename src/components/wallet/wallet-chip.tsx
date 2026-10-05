@@ -14,6 +14,7 @@ import { useMounted } from "@/lib/utils/use-mounted";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { AddressLine } from "./address";
 import { WalletSheet } from "./wallet-sheet";
+import { useHere } from "@/lib/native/android";
 
 /**
  * The wallet, in the shell, just before the room switch and drawn the same
@@ -29,6 +30,7 @@ export function WalletChip() {
   // Which sheet is open: choosing a wallet, or the wallet you are. Connecting from the first never opens the second.
   const [open, setOpen] = useState<"connect" | "panel" | null>(null);
   const linking = useLinkBrowser();
+  const { Here } = useHere();
   // Nothing until the wallet has had its chance to reconnect: never a "Connect" that turns into an address.
   if (!mounted || !ready) return <span className="pk-shell-btn pk-shell-btn--hold" aria-hidden="true" />;
 
@@ -53,7 +55,7 @@ export function WalletChip() {
       <button
         type="button"
         className="pk-btn pk-btn--quiet pk-btn--sm pk-shell-btn"
-        aria-label={`Your wallet, ${truncateAddress(address)}${signsHere ? ". This browser signs with no pop-up" : ""}`}
+        aria-label={`Your wallet, ${truncateAddress(address)}${signsHere ? `. ${Here} signs with no pop-up` : ""}`}
         onClick={() => setOpen("panel")}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- a wallet's own data-URI mark */}
@@ -88,6 +90,7 @@ function WalletPanel({
 }) {
   const disconnect = useDisconnect(wallet);
   const cluster = getPublicEnv().solanaCluster;
+  const { here, Here } = useHere();
   const state = linking.state;
   const why = deviceFallback(state);
   const linkedWallet = state?.wallet;
@@ -131,7 +134,7 @@ function WalletPanel({
             <p className="body-sm pk-muted pk-fill">Reading your Pawket Wallet…</p>
           ) : why === null ? (
             <div className="pk-fill">
-              <p className="title">No pop-ups in this browser</p>
+              <p className="title">No pop-ups in {here}</p>
               <p className="caption pk-muted">
                 It signs for your pets until {formatUtcDate(new Date(linkedWallet!.deviceExpiresAt * 1000))} —{" "}
                 {linkedWallet!.actionsToday} of {linkedWallet!.dailyActions} today. Anything that spends SOL still asks.{" "}
@@ -152,9 +155,9 @@ function WalletPanel({
             </div>
           ) : (
             <div className="pk-fill">
-              <p className="title">{why === "expired" ? "This browser's link ran out" : "Stop the pop-ups"}</p>
+              <p className="title">{why === "expired" ? `${Here}'s link ran out` : "Stop the pop-ups"}</p>
               <p className="caption pk-muted">
-                One approval{state.wallet ? "" : ", no SOL"}, and this browser signs what your pets do — care, rounds,
+                One approval{state.wallet ? "" : ", no SOL"}, and {here} signs what your pets do — care, rounds,
                 outfits, guilds, waves. Anything that spends SOL still asks your wallet.
               </p>
               <div style={{ marginTop: "var(--space-3)" }}>
@@ -162,7 +165,7 @@ function WalletPanel({
                   tone="sun"
                   size="sm"
                   icon="bolt"
-                  label={why === "expired" ? "Link it again" : "Link this browser"}
+                  label={why === "expired" ? "Link it again" : `Link ${here}`}
                   disabled={linking.busy}
                   onClick={() => void linking.link()}
                 />

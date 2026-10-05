@@ -21,6 +21,7 @@ import { WEARABLE_COUNT } from "@/lib/solana/program";
 import { formatUnits } from "@/lib/utils/format";
 import type { PawketSender } from "@/lib/solana/use-send";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
+import { useHere } from "@/lib/native/android";
 
 /**
  * The dressing room: any of your pets in the mirror, trying on whatever the
@@ -35,6 +36,7 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
   const chain = companion.owned.find((entry) => entry.pet.address === pet?.id) ?? null;
   const worn = findWearable(pet?.wearing);
   const [notice, setNotice] = useState<string>();
+  const { Here } = useHere();
   /** A piece being tried on in the mirror (null: nothing on), before it is worn. */
   const [trying, setTrying] = useState<string | null | undefined>(undefined);
   const room = useRef<HTMLDivElement>(null);
@@ -68,7 +70,7 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
     }
     const current = readPet(pet.id);
     if (!current) return;
-    setNotice(savePet(setWearing(current, id)) ? undefined : "This browser did not store that.");
+    setNotice(savePet(setWearing(current, id)) ? undefined : `${Here} did not store that.`);
   }
 
   return (

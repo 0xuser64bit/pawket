@@ -7,6 +7,7 @@ import { WALLET_LIMITS } from "@/lib/solana/program";
 import { usePawketSend } from "@/lib/solana/use-send";
 import { loadDevice, makeDevice } from "./device";
 import { refreshPawketWallet } from "./pawket-wallet";
+import { inAndroidApp } from "@/lib/native/android";
 
 /** A link's end: a few minutes inside the program's 30 days, so a clock running ahead is not refused. */
 export const linkEnds = (days: number) => Math.floor(Date.now() / 1000) + Math.min(days * 86_400, WALLET_LIMITS.maxDeviceSeconds) - 600;
@@ -29,12 +30,12 @@ export function useLinkBrowser() {
     try {
       device = state.device ?? (await loadDevice(owner)) ?? (await makeDevice(owner));
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "This browser cannot keep a device key. Nothing was linked.");
+      setProblem(error instanceof Error ? error.message : `${inAndroidApp() ? "This app" : "This browser"} cannot keep a device key. Nothing was linked.`);
       return null;
     }
     const opening = !state.wallet;
     const wallet = state.wallet?.address ?? (await deriveWalletPda(owner)).address;
-    const result = await sender.send("Link this browser", ({ owner: signer, payer }) => [
+    const result = await sender.send(inAndroidApp() ? "Link this app" : "Link this browser", ({ owner: signer, payer }) => [
       ...(opening ? [getOpenWalletInstruction({ owner: signer, payer, wallet })] : []),
       ...(deposit > 0n ? [getDepositInstruction({ owner: signer, wallet, amount: deposit })] : []),
       getLinkDeviceInstruction({ owner: signer, wallet, device, expiresAt: linkEnds(days), dailyActions: daily }),

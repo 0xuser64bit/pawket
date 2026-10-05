@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Icon, PetArt } from "@/components/pk";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
+import { useHere } from "@/lib/native/android";
 
 const SKY_CLASS = { warm: "pk-sky--warm", cool: "pk-sky", plain: "pk-sky--plain" } as const;
 const NONE: ReadonlySet<string> = new Set();
@@ -39,6 +40,7 @@ export function PetSwitcher({
   /** Offer to keep a browser pet on Solana, from its face. */
   onKeep?: (pet: GuestPet) => void;
 }) {
+  const { here } = useHere();
   return (
     <div className="pk-switch" role="group" aria-label={label}>
       {pets.map((pet) => {
@@ -50,7 +52,7 @@ export function PetSwitcher({
               type="button"
               className={["pk-switch__pet", SKY_CLASS[SPECIES_SKY[pet.species]], on && "pk-switch__pet--on"].filter(Boolean).join(" ")}
               aria-pressed={on}
-              aria-label={`${on ? chosenLabel(pet) : chooseLabel(pet)}${onKeep ? (onChain ? ", on Solana" : ", in this browser") : ""}`}
+              aria-label={`${on ? chosenLabel(pet) : chooseLabel(pet)}${onKeep ? (onChain ? ", on Solana" : `, in ${here}`) : ""}`}
               title={pet.name}
               onClick={() => onChoose(pet.id)}
             >

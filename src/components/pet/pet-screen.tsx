@@ -27,6 +27,7 @@ import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
 import { usePets } from "@/lib/guest/use-pets";
 import { formatUtcDate } from "@/lib/utils/format";
 import { StickerStrip } from "./sticker-strip";
+import { useHere } from "@/lib/native/android";
 
 /**
  * The record of a pet kept in this browser. An id this browser does not
@@ -34,6 +35,7 @@ import { StickerStrip } from "./sticker-strip";
  */
 export function PetScreen({ id }: { id: string }) {
   const { ready, pets } = usePets();
+  const { here } = useHere();
   const pet = pets.find((p) => p.id === id) ?? null;
 
   if (!ready) {
@@ -51,11 +53,11 @@ export function PetScreen({ id }: { id: string }) {
         <BackLink label="Profile" href="/profile#shelf" />
         <EmptyState
           icon="paw"
-          title={pets.length ? "That pet is not in this browser" : "No pet in this browser"}
+          title={pets.length ? `That pet is not in ${here}` : `No pet in ${here}`}
           body={
             pets.length
               ? "A pet in another browser stays there. Yours here are on the shelf."
-              : "Adopting takes three taps, and the pet stays in this browser."
+              : `Adopting takes three taps, and the pet stays in ${here}.`
           }
           action={
             pets.length ? (

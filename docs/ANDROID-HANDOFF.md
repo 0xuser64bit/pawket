@@ -6,13 +6,17 @@ Read the brief, `AGENTS.md`, then this, before touching anything.
 
 ## Current objective and checkpoint
 
-- Checkpoint identifier: `A0-audit`
+- Checkpoint identifier: `A1-first-gate`
 - Overall state: in progress
-- Current task: initial audit done; no product code changed yet.
-- Next concrete action: commit this handoff and the brief on branch
-  `android`, then register Mobile Wallet Adapter in the web app
-  (`src/lib/solana/browser-client.ts`) and generate `android/` from the
-  webshell template.
+- Current task: web side of the native bridge (`src/lib/native/`): photo
+  share/save, link share, calendar reminder, haptics, back for sheets, the
+  room's colours for the system bars; "in this app" copy where the web says
+  "in this browser".
+- Next concrete action: write `src/lib/native/android.ts` against the
+  requests `android/app/src/main/java/app/pawket/android/PawketBridge.kt`
+  accepts, then wire `photo.tsx`, `share-button.tsx`, `playground-screen.tsx`
+  (share), `remind-me.tsx`, `sheet.tsx` (back), haptics in `home-screen.tsx`
+  and `use-send.ts`.
 - Immediate caution for the next agent: the work lives in the sibling
   worktree `/Users/user64bit/Code/pawket-android` (branch `android`), not
   in `/Users/user64bit/Code/pawket` (branch `main`, other work continues
@@ -24,10 +28,28 @@ Read the brief, `AGENTS.md`, then this, before touching anything.
 - Repository: `pawket` (private, GitHub `origin`). Baseline: `main` at
   `43881c6` ("feat(rpc): browsers can read and send through the server's
   provider…"). Branch `android` was cut from it as a worktree.
-- Latest task commit: none yet.
+- Task commits so far (branch `android`): the brief and handoff; MWA
+  registration (`7282080`); the generated webshell (`d16ffd1`); Pawket's
+  branding (`86edb95`); the shell's behaviour and bridge (`cd5691d`).
 - Task-owned files: `docs/ANDROID-HANDOFF.md`, `docs/ANDROID-BUILD-BRIEF.md`
   (copied from the owner's untracked file in the main checkout; identical
-  bytes — leave the untracked original alone).
+  bytes — leave the untracked original alone), `android/`, the MWA lines in
+  `src/lib/solana/browser-client.ts`, `transactions.ts`, `wallet-sheet.tsx`,
+  `package.json`/`pnpm-lock.yaml`.
+- Release key (not in the repo): `/Users/user64bit/Code/pawket/.keys/android/pawket-release.jks`
+  (PKCS12, alias `pawket`, RSA 4096, 10,000 days, cert SHA-256
+  `A2:EF:F8:EE:78:3B:3E:F2:00:96:D5:EC:C6:1D:EF:F8:5A:13:37:56:8F:59:68:4A:03:67:DE:F0:72:B2:61:21`).
+  Its password is only in this Mac's login Keychain, service
+  `pawket-android-release-keystore`. The owner must back up both (see
+  Artifacts); losing either means the app can never be updated.
+- Emulator: AVD `pawket36` (Pixel 7 profile, `android-36.1` Google APIs
+  arm64, System WebView 134.0.6998.135 — too old for WebCrypto Ed25519).
+  Official MWA test wallet installed from the CLI's catalog
+  (`fakewallet-v1-release.apk`, SHA-256 `550055…46e9`, matches).
+- Local server for device tests: `pnpm build && pnpm start -p 3000` in the
+  worktree, `adb reverse tcp:3000 tcp:3000`, debug APK built with
+  `-PSOLANA_MOBILE_URL=http://localhost:3000/home`. DevTools over
+  `adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>`.
 - Unrelated changes to preserve: none in the main checkout at baseline
   (clean but for the untracked brief). Branch `room-3d` exists; untouched.
 - Toolchain (this machine, Apple M4, macOS): Node + pnpm 10 (repo pins
@@ -45,9 +67,9 @@ Read the brief, `AGENTS.md`, then this, before touching anything.
 | Requirement | State | Source/artifact | Verification evidence | Remaining work |
 | --- | --- | --- | --- | --- |
 | Audit current product + official requirements | in progress | this file | code read, terms PDF read | finish capability map as features land |
-| Architecture choice + Android source in repo | not started | `android/` (planned) | — | generate from webshell template |
-| MWA registration in the web client | not started | `src/lib/solana/browser-client.ts` | — | — |
-| First gate: sponsored send signed through MWA in the APK | not started | — | — | emulator + mock MWA wallet, then a real wallet |
+| Architecture choice + Android source in repo | implemented; verified on emulator | `android/` | debug APK loads Pawket, 3D room draws | release APK |
+| MWA registration in the web client | implemented; verified on emulator | `src/lib/solana/browser-client.ts` (`registerPhoneWallets`) | connect, decline, authorize with fakewallet in the debug APK | a real wallet app (Phantom/Solflare/Seed Vault) on hardware |
+| First gate: sponsored send signed through MWA in the APK | verified on emulator (mock wallet) | `send.ts` unchanged | adopt `5fhwzMUH…wsDYZ` and care `4YwcFakT…4AjQF` on devnet: sponsor fee payer + owner signature, preflight, confirmed, record reloaded, toast with Explorer link | repeat with a real wallet on hardware |
 | Every signing flow on Android (matrix below) | not started | — | — | — |
 | Photo share/save natively | not started | — | — | — |
 | Haptics | not started | — | — | — |
@@ -128,7 +150,12 @@ message bytes are unchanged.
 
 | Check | Command or procedure | Environment/device/wallet | Result | Evidence or failure |
 | --- | --- | --- | --- | --- |
-| — | — | — | — | nothing run yet |
+| WebView capability probe | CDP `Runtime.evaluate` in the debug app | emulator API 36.1, WebView 134 | UA has `wv` and `Solana Mobile Web Shell`; secure context; bridge injected; MWA registered; WebGL2 yes; `navigator.share` absent; Ed25519 `generateKey` NotSupportedError | scratchpad `cdp.mjs` |
+| MWA connect: decline | tap the phone wallet, DECLINE in fakewallet | emulator, fakewallet | Pawket: "You declined in your wallet. Nothing changed." The wallet stays on "Session active" until the player backs out (MWA 0.6.0 closes its session only on success) | screenshots |
+| MWA connect: authorize | AUTHORIZE in fakewallet | emulator, fakewallet | returns to Pawket on its own; chip `Gde5…VqmB`; `pawket.wallet` and MWA cache persisted | — |
+| Sponsored adopt via MWA | adopt Pixel in /adopt, Keep on Solana, approve | emulator, fakewallet, local server on devnet | finalized `5fhwzMUHngriJALGHCGdsBN5xmHCkCaGCqVfRvgbiGtE9pkTX9gmzNxtws3KbDV4q8ZS8ckGjjpTZ6pYj1ZwsDYZ`: 2 signers, fee payer = sponsor `HoayYx…LPuS`, `AdoptPet`; Home shows On Solana, the browser copy removed | devnet RPC `getTransaction` |
+| Confirmed care via MWA | Feed, approve | same | toast: approve → sent, waiting → "Recorded on Solana, Pawket paid the fee" + Explorer link; moment and sticker after confirmation only | `4YwcFakTK3uva5FzzwxfSQmdyZx4mtis1662p1TQXkdZvsRwnDS2NUjcpNyVMMDodcK2gm5vahAgEwu17Wq4AjQF` |
+| Keyboard avoidance | type a name on /adopt | emulator | page resizes, field stays above the keyboard; back closes the keyboard first | screenshot |
 
 ## Unfinished implementation and blockers
 

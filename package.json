@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Pawket — a living companion kept in the browser",
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@10.34.6",
   "engines": {
     "node": ">=20"
   },
@@ -64,22 +64,5 @@
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vitest": "5.0.1"
-  },
-  "pnpm": {
-    "overrides": {
-      "rpc-websockets": "9.3.3"
-    },
-    "ignoredOptionalDependencies": [
-      "@react-native-async-storage/async-storage"
-    ],
-    "packageExtensions": {
-      "@solana-mobile/mobile-wallet-adapter-protocol@2.3.0": {
-        "peerDependenciesMeta": {
-          "react-native": {
-            "optional": true
-          }
-        }
-      }
-    }
   }
 }

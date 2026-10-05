@@ -11,8 +11,12 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 - Overall state: in progress
 - Current task: finish the release audit, transaction interruption handling,
   native failure handling, and the submission package; then run the release gates.
-- Next concrete action: verify frozen dependency installation, run the full
-  web/program/Android gates, and exercise the updated APK on the emulator.
+- Next concrete action: run `pnpm verify` and Android lint/release tests,
+  then exercise the updated APK and prepare screenshots/demo/pitch materials.
+- Reproducible dependency setup: settings moved to `pnpm-workspace.yaml`
+  and pnpm pinned to 10.34.6 (10.0.0 cannot read these workspace settings).
+  `corepack pnpm install --frozen-lockfile` passed without changing any
+  dependency or the lockfile. Fresh `pnpm program:test`: 57 passed; IDL unchanged.
 - Native failure audit: photo insertion/publication/cleanup failures return
   a failure instead of crashing; shares use unique temporary files; binary
   bridge messages are ignored; external intent URLs become fresh, restricted

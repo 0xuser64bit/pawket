@@ -1,0 +1,14 @@
+packages:
+  - "."
+
+overrides:
+  rpc-websockets: 9.3.3
+
+ignoredOptionalDependencies:
+  - "@react-native-async-storage/async-storage"
+
+packageExtensions:
+  "@solana-mobile/mobile-wallet-adapter-protocol@2.3.0":
+    peerDependenciesMeta:
+      react-native:
+        optional: true

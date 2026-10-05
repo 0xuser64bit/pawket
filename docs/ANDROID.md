@@ -119,7 +119,10 @@ everything meanwhile.
 
 Prerequisites: JDK 17 or later (21 is what is used), the Android SDK with
 `platforms;android-37.0` and `build-tools;37.0.0`, and Node with pnpm for
-the web app. Pinned in the project: Gradle 9.7.1 (wrapper, checksum
+the web app (`corepack pnpm` selects the version pinned in `package.json`).
+Dependency overrides and the MWA optional-peer workaround live in
+`pnpm-workspace.yaml`, which the pinned package manager reads. Pinned in
+the project: Gradle 9.7.1 (wrapper, checksum
 verified), Android Gradle Plugin 9.3.2, Kotlin 2.4.10, Compose BOM
 2026.08.00, `androidx.webkit` 1.17.1, `androidx.core` 1.19.0,
 `core-splashscreen` 1.2.0; minSdk 29, target and compile SDK 37.

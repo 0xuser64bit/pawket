@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useBackCloses } from "@/lib/native/android";
 
 /**
  * A decision that costs money arrives as a Paper sheet over a dimmed
@@ -13,8 +14,9 @@ import { createPortal } from "react-dom";
  * title in words, no warning to give.
  *
  * It is a modal in behaviour as well as looks: it renders into the body, so
- * everything behind it goes inert; focus moves into it; and Escape or a tap
- * on the dimmed room leaves by the same door as Cancel.
+ * everything behind it goes inert; focus moves into it; and Escape, a tap
+ * on the dimmed room, or the phone's back gesture in the Android app leaves
+ * by the same door as Cancel.
  */
 export function Sheet({
   title,
@@ -39,6 +41,7 @@ export function Sheet({
   );
   const scrim = useRef<HTMLDivElement>(null);
   const sheet = useRef<HTMLElement>(null);
+  useBackCloses(onDismiss);
 
   useEffect(() => {
     if (!mounted) return;

@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Daylight's tokens (app/globals.css), for what Android draws before the page does.
+     values-night holds Lamplight's. The mark's own inks never change with the room. -->
 <resources>
-    <color name="launcher_icon_background">#3DDC84</color>
-    <color name="splash_background">#3DDC84</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="pawket_ground">#F6EFE2</color>
+    <color name="pawket_surface">#FFFBF3</color>
+    <color name="pawket_ink">#2A1E14</color>
+    <color name="pawket_ink_faint">#6F5F4A</color>
+    <color name="pawket_sun">#FF8A3D</color>
+    <color name="pawket_sun_soft">#FFE4CD</color>
+    <color name="pawket_on_sun">#2A1E14</color>
+
+    <color name="mark_ink">#2A1E14</color>
+    <color name="mark_sun">#FF8A3D</color>
+    <color name="mark_shelf">#B8500F</color>
+    <color name="mark_paper">#FFE4CD</color>
 </resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lamplight: the same room after dark (app/globals.css). -->
+<resources>
+    <color name="pawket_ground">#17120E</color>
+    <color name="pawket_surface">#241D16</color>
+    <color name="pawket_ink">#F6EBDA</color>
+    <color name="pawket_ink_faint">#A08F7C</color>
+    <color name="pawket_sun">#FF9A52</color>
+    <color name="pawket_sun_soft">#3A2317</color>
+    <color name="pawket_on_sun">#1A130D</color>
+</resources>

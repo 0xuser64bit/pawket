@@ -10,11 +10,13 @@ import {
   getTransactionDecoder,
   isTransactionModifyingSigner,
   isTransactionPartialSigner,
+  isSolanaError,
   partiallySignTransactionMessageWithSigners,
   pipe,
   setTransactionMessageFeePayer,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
+  SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
   type Address,
   type GetLatestBlockhashApi,
   type GetSignatureStatusesApi,
@@ -196,7 +198,13 @@ async function land(
   onStage?.("sending");
   const wire = getBase64EncodedWireTransaction(signed);
   const signature = getSignatureFromTransaction(signed);
-  await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" }).send();
+  try {
+    await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" }).send();
+  } catch (error) {
+    // A preflight refusal is definitive. A lost broadcast reply is not:
+    // Solana may already have it. Look up the signature, never send a new one.
+    if (isSolanaError(error, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE)) throw error;
+  }
 
   onStage?.("confirming");
   let outcome: ConfirmationOutcome;

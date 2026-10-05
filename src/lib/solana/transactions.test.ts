@@ -152,4 +152,21 @@ describe("waitForConfirmation", () => {
     const client = stubRpc([null]);
     await expect(waitForConfirmation(client, "sig", 10)).resolves.toBe("unknown");
   });
+
+  it("keeps looking up the same signature after a dropped status reply", async () => {
+    let calls = 0;
+    const client = { rpc: { getSignatureStatuses: () => ({ send: async () => {
+      if (++calls === 1) throw new TypeError("Failed to fetch");
+      return { value: [{ confirmationStatus: "confirmed", err: null }] };
+    } }) } };
+    await expect(waitForConfirmation(client, "sig")).resolves.toBe("confirmed");
+    expect(calls).toBe(2);
+  });
+
+  it("a connection that stays down is unknown, never a failed transaction", async () => {
+    const client = { rpc: { getSignatureStatuses: () => ({ send: async () => {
+      throw new TypeError("Failed to fetch");
+    } }) } };
+    await expect(waitForConfirmation(client, "sig", 0)).resolves.toBe("unknown");
+  });
 });

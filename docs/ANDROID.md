@@ -49,6 +49,10 @@ sponsor still signs first as fee payer, the wallet signs as owner, the
 message is checked to be the one built, and it is sent with preflight on.
 A wallet that declines, closes or cannot be found reads as one sentence
 that says nothing was sent (`mobileWalletProblem` in `transactions.ts`).
+If a broadcast reply or confirmation lookup is lost, the shared send path
+looks up the existing signature. It never resends or builds a replacement;
+an unresolved outcome keeps its Explorer receipt and says to check before
+trying again. Only a confirmed record triggers the care moment and haptic.
 
 **The bridge.** `WebViewCompat.addWebMessageListener` injects
 `window.PawketAndroid` into Pawket's origin only; requests from any other

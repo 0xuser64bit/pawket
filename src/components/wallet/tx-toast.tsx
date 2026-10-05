@@ -41,7 +41,7 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
     case "sending":
       return { id, tone: "wait", title, body: "On its way to Solana." };
     case "confirming":
-      return { id, tone: "wait", title, body: "Sent. Waiting for Solana to confirm it." };
+      return { id, tone: "wait", title, body: "Waiting for Solana to confirm it." };
     case "confirmed": {
       const paid = tx.by === "device" ? "no pop-up" : tx.sponsored ? "Pawket paid the fee" : "you paid the fee";
       const hint = tx.fallback && !nudged ? nudge(tx.fallback) : null;
@@ -66,7 +66,7 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
         title: "Still waiting",
         body: (
           <>
-            {title}: signed and sent, not seen yet. Nothing changes here until Solana confirms it.{look}
+            {title}: signed, confirmation unknown. Check its receipt before trying again. Nothing changes here until Solana confirms it.{look}
           </>
         ),
       };

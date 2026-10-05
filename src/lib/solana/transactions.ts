@@ -253,7 +253,7 @@ interface ConfirmationRpc {
   rpc: {
     getSignatureStatuses: (
       signatures: readonly Signature[],
-    ) => { send: () => Promise<{ value: unknown }> };
+    ) => { send: (options?: { abortSignal?: AbortSignal }) => Promise<{ value: unknown }> };
   };
 }
 
@@ -275,7 +275,10 @@ export async function waitForConfirmation(
   for (;;) {
     const { value } = await client.rpc
       .getSignatureStatuses([signature as Signature])
-      .send();
+      .send({ abortSignal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) })
+      // A missing reply says nothing about the transaction. Keep looking up
+      // this signature until the deadline; the recorded status below is decisive.
+      .catch(() => ({ value: null }));
     const status = (Array.isArray(value) ? value[0] : null) as {
       confirmationStatus?: string;
       err?: unknown;

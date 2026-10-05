@@ -7,15 +7,21 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 
 ## Current objective and checkpoint
 
-- Checkpoint identifier: `A2-features-verified-locally`
+- Checkpoint identifier: `A3-release-audit`
 - Overall state: in progress
-- Current task: release gate — `pnpm program:test` (required by the owner's
-  push rule), then fast-forward `main` to `android` and push (Vercel deploys
-  production from `main`), then verify production and the release APK.
-- Next concrete action: when `pnpm program:test` is green, run
-  `pnpm verify` once more, `git -C /Users/user64bit/Code/pawket merge --ff-only android`
-  (the main checkout must be clean), `git push origin main`, wait for the
-  Vercel deploy, then `curl https://pawket-pets.vercel.app/.well-known/assetlinks.json`.
+- Current task: finish the release audit, transaction interruption handling,
+  native failure handling, and the submission package; then run the release gates.
+- Next concrete action: harden `PawketBridge.kt` storage/intent failures and
+  optional bridge calls, then run Android tests and the full release gates.
+- Shared send interruption fixed: `send.ts` looks up a known signature when
+  the broadcast reply is lost; `transactions.ts` tolerates failed status
+  replies until the bounded deadline. The unknown toast advises checking the
+  receipt before retry. Regression checks: 21 passed across `send.test.ts`
+  and `transactions.test.ts`; typecheck passed.
+- Reconciled Claude's final session: `program:test` completed successfully
+  after checkpoint A2 (57 tests; original scratchpad log ends `exit=0`).
+  Market/owner-paid/coin checks happened after A2 but need their receipts
+  recovered or repeated before those rows can be marked verified.
 - Immediate caution for the next agent: the work lives in the sibling
   worktree `/Users/user64bit/Code/pawket-android` (branch `android`), not
   in `/Users/user64bit/Code/pawket` (branch `main`). Its `.env` is a symlink

@@ -137,7 +137,43 @@ export const PAWKET_DISCRIMINATORS = {
   createPoll: [182, 171, 112, 238, 6, 219, 14, 110],
   vote: [227, 110, 155, 23, 136, 126, 172, 25],
   wave: [225, 175, 48, 85, 221, 5, 244, 230],
+  adoptPetByDevice: [199, 69, 64, 219, 74, 193, 42, 154],
+  foundGuildByDevice: [171, 76, 208, 79, 212, 231, 149, 101],
+  joinGuildByDevice: [19, 229, 151, 50, 203, 115, 249, 143],
+  leaveGuildByDevice: [101, 182, 35, 198, 122, 92, 19, 215],
+  createEventByDevice: [146, 126, 209, 238, 114, 7, 180, 181],
+  rsvpByDevice: [165, 218, 28, 216, 244, 210, 167, 162],
+  checkInByDevice: [177, 77, 184, 79, 173, 33, 113, 248],
+  createPollByDevice: [239, 171, 242, 247, 40, 167, 59, 36],
+  voteByDevice: [130, 220, 233, 16, 25, 255, 183, 223],
+  waveByDevice: [59, 133, 219, 166, 15, 126, 96, 176],
 } as const;
+
+export type PawketInstructionName = keyof typeof PAWKET_DISCRIMINATORS;
+
+/**
+ * What a linked device may sign: each instruction its owner signs that has a
+ * `*_by_device` twin. A twin takes the same arguments and the same accounts,
+ * with the device and the owner's Pawket Wallet where the owner was
+ * (`asDeviceInstruction`). Nothing that moves money is here — not a sale, not
+ * the Pawket Wallet's own balance, not a coin.
+ */
+export const DEVICE_VARIANTS = {
+  adoptPet: "adoptPetByDevice",
+  performCareAction: "careByDevice",
+  finishRound: "finishRoundByDevice",
+  dress: "dressByDevice",
+  dressOwned: "dressOwnedByDevice",
+  foundGuild: "foundGuildByDevice",
+  joinGuild: "joinGuildByDevice",
+  leaveGuild: "leaveGuildByDevice",
+  createEvent: "createEventByDevice",
+  rsvp: "rsvpByDevice",
+  checkIn: "checkInByDevice",
+  createPoll: "createPollByDevice",
+  vote: "voteByDevice",
+  wave: "waveByDevice",
+} as const satisfies Partial<Record<PawketInstructionName, PawketInstructionName>>;
 
 /** Anchor 8-byte account discriminators, and each account's size on chain. */
 export const PAWKET_ACCOUNTS = {

@@ -15,12 +15,10 @@ import {
   setTransactionMessageFeePayer,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
-  signTransactionMessageWithSigners,
   type Address,
   type GetLatestBlockhashApi,
   type GetSignatureStatusesApi,
   type Instruction,
-  type KeyPairSigner,
   type ReadonlyUint8Array,
   type Rpc,
   type SendTransactionApi,
@@ -42,8 +40,9 @@ import { waitForConfirmation, type ConfirmationOutcome, type TransactionStage } 
  * last, once the wallet has. Either way the transaction goes to the RPC with
  * preflight on, so one that would fail lands nothing.
  *
- * An action a linked device takes (`sendAsDevice`) is the third shape: the
- * device pays and signs alone, on this device, with no prompt.
+ * A linked device acting for its owner goes the same way, with the device as
+ * `owner`: it signs on this device with no prompt, the sponsor paying as for
+ * the owner — or, with no sponsor, the device paying from its own float.
  */
 
 export type SendRpc = Rpc<GetLatestBlockhashApi & SendTransactionApi & GetSignatureStatusesApi>;
@@ -155,36 +154,6 @@ export async function sendPawket({
   }
 
   return land(rpc, signed, onStage, sponsor !== null);
-}
-
-/**
- * An action a linked device takes for its owner — a care, a round, clothes.
- * The device is the fee payer and the only signer, and it signs here, with
- * no prompt; the program holds it to its owner's pets, its end date and its
- * daily limit, and refills its fee from the owner's Pawket Wallet. Preflight
- * on, like every send: one the program would refuse lands nothing and costs
- * nothing.
- */
-export async function sendAsDevice({
-  rpc,
-  device,
-  instructions,
-  onStage,
-}: {
-  rpc: SendRpc;
-  device: KeyPairSigner;
-  instructions: Instruction[];
-  onStage?: (stage: TransactionStage) => void;
-}): Promise<SendResult> {
-  onStage?.("signing");
-  const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
-  const message = pipe(
-    createTransactionMessage({ version: "legacy" }),
-    (m) => setTransactionMessageFeePayerSigner(device, m),
-    (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
-    (m) => appendTransactionMessageInstructions(instructions, m),
-  );
-  return land(rpc, await signTransactionMessageWithSigners(message), onStage, false);
 }
 
 /**

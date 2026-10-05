@@ -14,11 +14,30 @@ import { CARE_ACTION_VARIANTS, PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "
  * Where a Pawket Wallet's lamports went, read from Solana itself: every
  * transaction that touched the wallet account, newest first — each one a
  * deposit, a withdrawal, a device linked or let go, or something a linked
- * device did for a pet — with how the balance moved and who paid the fee.
+ * device did for its owner — with how the balance moved and who paid the fee.
  * Nothing here is kept by Pawket; the chain is the statement.
  */
 
-export type WalletEntryKind = "open" | "deposit" | "withdraw" | "link" | "unlink" | "close" | "care" | "round" | "dress";
+export type WalletEntryKind =
+  | "open"
+  | "deposit"
+  | "withdraw"
+  | "link"
+  | "unlink"
+  | "close"
+  | "care"
+  | "round"
+  | "dress"
+  | "adopt"
+  | "found"
+  | "join"
+  | "leave"
+  | "event"
+  | "rsvp"
+  | "check-in"
+  | "poll"
+  | "vote"
+  | "wave";
 
 export interface WalletEntry {
   signature: string;
@@ -53,7 +72,20 @@ const KIND: Partial<Record<keyof typeof PAWKET_DISCRIMINATORS, WalletEntryKind>>
   careByDevice: "care",
   finishRoundByDevice: "round",
   dressByDevice: "dress",
+  dressOwnedByDevice: "dress",
+  adoptPetByDevice: "adopt",
+  foundGuildByDevice: "found",
+  joinGuildByDevice: "join",
+  leaveGuildByDevice: "leave",
+  createEventByDevice: "event",
+  rsvpByDevice: "rsvp",
+  checkInByDevice: "check-in",
+  createPollByDevice: "poll",
+  voteByDevice: "vote",
+  waveByDevice: "wave",
 };
+/** Where the pet is in a device's twin: after the device and the wallet, and after a payer where rent is paid. */
+const PET_AT: Partial<Record<WalletEntryKind, number>> = { care: 2, round: 2, dress: 2, leave: 2, "check-in": 2, adopt: 3, found: 3, join: 3, rsvp: 3, vote: 3, wave: 3 };
 const ACTION_OF = Object.fromEntries(Object.entries(CARE_ACTION_VARIANTS).map(([action, index]) => [index, action])) as Record<
   number,
   CareActionType
@@ -105,7 +137,7 @@ export function entryFrom(signature: string, tx: ReadTransaction, wallet: Addres
     entry.kinds.push(kind);
     if (kind === "care") entry.action = ACTION_OF[data[8]];
     if (kind === "dress") entry.wearing = data[8] === 0 ? null : (WEARABLES[data[8] - 1]?.id ?? null);
-    if (kind === "care" || kind === "round" || kind === "dress") entry.pet = accountKeys[ix.accounts[2]] as Address;
+    if (PET_AT[kind] !== undefined) entry.pet = accountKeys[ix.accounts[PET_AT[kind]]] as Address;
     if ((kind === "deposit" || kind === "withdraw") && data.length >= 16) entry.amount = u64At(data, 8);
     if (kind === "link") {
       const device = ix.accounts[2];

@@ -25,12 +25,11 @@ import {
   getCheckInInstruction,
   getCreateEventInstruction,
   getCreatePollInstruction,
-  getDressOwnedByDeviceInstruction,
+  asDeviceInstruction,
   getDressOwnedInstruction,
   getRsvpInstruction,
   getVoteInstruction,
   getWaveInstruction,
-  getCareByDeviceInstruction,
   getCareInstruction,
   getCloseWalletInstruction,
   getDepositInstruction,
@@ -188,31 +187,54 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(leaving, sponsor.address)).toEqual({ ok: true, kinds: ["withdraw", "unlink", "close-wallet"] });
   });
 
-  it("never pays a wallet's rent, never takes its money, and never stands in for its device", async () => {
-    // The owner pays a Pawket Wallet's rent; the sponsor as payer is refused.
+  it("pays a wallet's rent, never takes its money, and never stands in for its device", async () => {
+    // The rent comes back to the sponsor when the wallet closes (`close = rent_payer`).
     const rent = await built((payer) => [getOpenWalletInstruction({ owner, payer, wallet: WALLET })]);
-    expect(checkSponsorable(rent, sponsor.address)).toMatchObject({ ok: false });
-    // A withdrawal to the sponsor, or a close that hands it the rent, is a part it does not take.
+    expect(checkSponsorable(rent, sponsor.address)).toEqual({ ok: true, kinds: ["open-wallet"] });
+    // Closing hands the sponsor back the rent it paid (the program holds it to `rent_payer`).
+    const asRentPayer = await built((payer) => [getCloseWalletInstruction({ owner, wallet: WALLET, rentPayer: payer.address })]);
+    expect(checkSponsorable(asRentPayer, sponsor.address)).toEqual({ ok: true, kinds: ["close-wallet"] });
+    // A withdrawal to the sponsor, or the sponsor as the wallet's owner, is a part it does not take.
     const asOwner = await built((payer) => [getWithdrawInstruction({ owner: payer, wallet: WALLET, amount: 1n })]);
     expect(checkSponsorable(asOwner, sponsor.address)).toMatchObject({ ok: false });
-    const asRentPayer = await built((payer) => [getCloseWalletInstruction({ owner, wallet: WALLET, rentPayer: payer.address })]);
-    expect(checkSponsorable(asRentPayer, sponsor.address)).toMatchObject({ ok: false });
+    const closesAsOwner = await built((payer) => [getCloseWalletInstruction({ owner: payer, wallet: WALLET, rentPayer: payer.address })]);
+    expect(checkSponsorable(closesAsOwner, sponsor.address)).toMatchObject({ ok: false });
     const asDevice = await built((payer) => [getLinkDeviceInstruction({ owner, wallet: WALLET, device: payer, expiresAt: 1, dailyActions: 1 })]);
     expect(checkSponsorable(asDevice, sponsor.address)).toMatchObject({ ok: false });
   });
 
-  it("never signs for an action a linked device takes: a device pays its own way", async () => {
+  it("pays for a linked device's action as for its owner's, one account later, and stands in for no device", async () => {
     const device = createNoopSigner(DEVICE as KeyPairSigner["address"]);
-    const byDevice = await built(() => [
-      getCareByDeviceInstruction({ device, wallet: WALLET, pet: PET, passport: PASSPORT, action: CareActionType.Feed }),
+    const linked = { device, wallet: WALLET };
+    const byDevice = await built((payer) => [
+      asDeviceInstruction(getCareInstruction({ owner: owner.address, pet: PET, passport: PASSPORT, action: CareActionType.Feed }), linked),
+      asDeviceInstruction(getJoinGuildInstruction({ owner: owner.address, payer, pet: PET, guild: GUILD, member: MEMBER }), linked),
+      asDeviceInstruction(getWaveInstruction({ visitor: owner.address, payer, pet: PET, guestbook: WALLET }), linked),
     ]);
-    expect(checkSponsorable(byDevice, sponsor.address)).toEqual({
-      ok: false,
-      reason: "A linked device pays its own fees, from your Pawket Wallet.",
-    });
+    expect(checkSponsorable(byDevice, sponsor.address)).toEqual({ ok: true, kinds: ["care", "join", "wave"] });
+    const leave = await built((payer) => [
+      asDeviceInstruction(getLeaveGuildInstruction({ owner: owner.address, pet: PET, member: MEMBER, guild: GUILD, payer: payer.address }), linked),
+    ]);
+    expect(checkSponsorable(leave, sponsor.address)).toEqual({ ok: true, kinds: ["leave"] });
+    // The sponsor as the device, or as the owner's wallet account, is a part it does not take.
+    const asTheDevice = await built((payer) => [
+      asDeviceInstruction(getCareInstruction({ owner: owner.address, pet: PET, passport: PASSPORT, action: CareActionType.Feed }), { device: payer, wallet: WALLET }),
+    ]);
+    expect(checkSponsorable(asTheDevice, sponsor.address)).toMatchObject({ ok: false });
+    const asTheWallet = await built((payer) => [
+      asDeviceInstruction(getCareInstruction({ owner: owner.address, pet: PET, passport: PASSPORT, action: CareActionType.Feed }), { device, wallet: payer.address }),
+    ]);
+    expect(checkSponsorable(asTheWallet, sponsor.address)).toMatchObject({ ok: false });
   });
 
-  it("pays the fee and the closet's rent for a purchase, never its price, and never wears a bought piece for a device", async () => {
+  it("knows no device twin for money: a sale cannot be signed by a device", () => {
+    const sale = getBuyInstruction({ owner, closet: WALLET, item: 19 });
+    expect(() => asDeviceInstruction(sale, { device: DEVICE, wallet: WALLET })).toThrow(/cannot sign/);
+    const deposit = getDepositInstruction({ owner, wallet: WALLET, amount: 1n });
+    expect(() => asDeviceInstruction(deposit, { device: DEVICE, wallet: WALLET })).toThrow(/cannot sign/);
+  });
+
+  it("pays the fee and the closet's rent for a purchase, never its price, and the fee to wear what was bought", async () => {
     const CLOSET = "7preVB3hcxXBLoAxefPgUfB9Hd62GsLkN9PTqG763MVc";
     const buy = await built((payer) => [getBuyInstruction({ owner, payer, closet: CLOSET, item: 19 })]);
     expect(checkSponsorable(buy, sponsor.address)).toEqual({ ok: true, kinds: ["buy"] });
@@ -222,8 +244,10 @@ describe("checkSponsorable", () => {
     const wear = await built(() => [getDressOwnedInstruction({ owner, pet: PET, closet: CLOSET, wearing: 19 })]);
     expect(checkSponsorable(wear, sponsor.address)).toEqual({ ok: true, kinds: ["dress-owned"] });
     const device = createNoopSigner(DEVICE as KeyPairSigner["address"]);
-    const byDevice = await built(() => [getDressOwnedByDeviceInstruction({ device, wallet: WALLET, pet: PET, closet: CLOSET, wearing: 19 })]);
-    expect(checkSponsorable(byDevice, sponsor.address)).toMatchObject({ ok: false });
+    const byDevice = await built(() => [
+      asDeviceInstruction(getDressOwnedInstruction({ owner: owner.address, pet: PET, closet: CLOSET, wearing: 19 }), { device, wallet: WALLET }),
+    ]);
+    expect(checkSponsorable(byDevice, sponsor.address)).toEqual({ ok: true, kinds: ["dress-owned"] });
   });
 
   it("pays the rent of a guild's events, RSVPs, polls and ballots, and of a guestbook, and stands in for nobody", async () => {

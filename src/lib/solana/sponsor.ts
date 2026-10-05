@@ -9,7 +9,7 @@ import {
   type ReadonlyUint8Array,
   type Transaction,
 } from "@solana/kit";
-import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
+import { DEVICE_VARIANTS, PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID, type PawketInstructionName } from "./program";
 
 /**
  * The sponsor pays network fees, and rent for a new pet, so a player can
@@ -17,17 +17,19 @@ import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
  * signs only what this module allows: a transaction whose every instruction
  * is Pawket's, where the sponsor is the fee payer and appears in no
  * instruction except as the rent payer of `adopt_pet`, `found_guild`,
- * `join_guild`, `buy` (the closet, never the price), `create_event`, `rsvp`,
- * `create_poll`, `vote` and `wave`, or as the account `leave_guild` hands
- * that rent back to. A compute-budget instruction is refused too — a
- * priority fee is the one way a caller could spend the float faster.
+ * `join_guild`, `open_wallet`, `buy` (the closet, never the price),
+ * `create_event`, `rsvp`, `create_poll`, `vote` and `wave`, or as the account
+ * `leave_guild` hands that rent back to. A compute-budget instruction is
+ * refused too — a priority fee is the one way a caller could spend the float
+ * faster.
  *
- * It pays the fee for looking after a Pawket Wallet — opening it (the owner
- * pays its rent), depositing, withdrawing, linking or unlinking a device,
- * closing it — and appears in none of those instructions. It never signs for
- * an action a linked device takes: a device pays its own fees, and the
- * player's Pawket Wallet refills it, so a key that acts with no prompt
- * never spends Pawket's float.
+ * A linked device's action (`*_by_device`) is sponsored as its owner's would
+ * be: the same kind, with the device and the Pawket Wallet where the owner
+ * was, so the sponsor's one allowed place is one account later. The owner's
+ * daily limit on the device bounds how often. It pays the fee for looking
+ * after a Pawket Wallet too, and its rent — which `close_wallet` hands back
+ * to whoever paid it (the sponsor may stand there to take it back), so
+ * opening and closing cannot drain the float.
  *
  * The sponsor signs first and the wallet second. A wallet rewrites a
  * transaction that carries no signature yet (Phantom adds priority fees and
@@ -59,8 +61,10 @@ export type SponsoredKind =
   | "vote"
   | "wave";
 
-/** Each instruction's kind; `null` is one the sponsor never signs for (a device's own action). */
-const KIND_OF: Record<keyof typeof PAWKET_DISCRIMINATORS, SponsoredKind | null> = {
+type DeviceName = (typeof DEVICE_VARIANTS)[keyof typeof DEVICE_VARIANTS];
+
+/** Each instruction's kind. A device's twin is its owner instruction's kind (`kindOf`). */
+const KIND_OF: Record<Exclude<PawketInstructionName, DeviceName>, SponsoredKind> = {
   adoptPet: "adopt",
   performCareAction: "care",
   finishRound: "round",
@@ -74,12 +78,8 @@ const KIND_OF: Record<keyof typeof PAWKET_DISCRIMINATORS, SponsoredKind | null> 
   linkDevice: "link",
   unlinkDevice: "unlink",
   closeWallet: "close-wallet",
-  careByDevice: null,
-  finishRoundByDevice: null,
-  dressByDevice: null,
   buy: "buy",
   dressOwned: "dress-owned",
-  dressOwnedByDevice: null,
   createEvent: "event",
   rsvp: "rsvp",
   checkIn: "check-in",
@@ -87,6 +87,10 @@ const KIND_OF: Record<keyof typeof PAWKET_DISCRIMINATORS, SponsoredKind | null> 
   vote: "vote",
   wave: "wave",
 };
+
+const OWNER_OF = new Map<string, keyof typeof KIND_OF>(
+  Object.entries(DEVICE_VARIANTS).map(([owner, device]) => [device, owner as keyof typeof KIND_OF]),
+);
 
 /**
  * Where the sponsor may appear in each instruction's accounts: the `payer`
@@ -101,12 +105,13 @@ const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
   found: [1],
   join: [1],
   leave: [4],
-  "open-wallet": [],
+  "open-wallet": [1],
   deposit: [],
   withdraw: [],
   link: [],
   unlink: [],
-  "close-wallet": [],
+  // The rent it paid for the wallet, back to it.
+  "close-wallet": [2],
   // The payer of each: the closet's, the event's, the RSVP's, the poll's, the ballot's and the guestbook's rent.
   buy: [1],
   "dress-owned": [],
@@ -119,7 +124,7 @@ const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
 };
 
 /** The kinds that cost the sponsor rent: the scarce part of its float. */
-export const RENT_KINDS: readonly SponsoredKind[] = ["adopt", "found", "join", "buy", "event", "rsvp", "poll", "vote", "wave"];
+export const RENT_KINDS: readonly SponsoredKind[] = ["adopt", "found", "join", "open-wallet", "buy", "event", "rsvp", "poll", "vote", "wave"];
 
 const MAX_INSTRUCTIONS = 4;
 
@@ -127,13 +132,17 @@ export type SponsorCheck =
   | { ok: true; kinds: SponsoredKind[] }
   | { ok: false; reason: string };
 
-/** The instruction's kind, `"device"` for an action a linked device takes, or null for none of Pawket's. */
-function kindOf(data: ReadonlyUint8Array | undefined): SponsoredKind | "device" | null {
+/**
+ * The instruction's kind, and how many accounts later than its owner's the
+ * sponsor's place is: 1 for a device's twin, which has the device and the
+ * Pawket Wallet where the owner was. Null for none of Pawket's.
+ */
+function kindOf(data: ReadonlyUint8Array | undefined): { kind: SponsoredKind; shift: number } | null {
   if (!data || data.length < 8) return null;
   for (const [name, discriminator] of Object.entries(PAWKET_DISCRIMINATORS)) {
-    if (discriminator.every((byte, i) => data[i] === byte)) {
-      return KIND_OF[name as keyof typeof PAWKET_DISCRIMINATORS] ?? "device";
-    }
+    if (!discriminator.every((byte, i) => data[i] === byte)) continue;
+    const owner = OWNER_OF.get(name);
+    return owner ? { kind: KIND_OF[owner], shift: 1 } : { kind: KIND_OF[name as keyof typeof KIND_OF], shift: 0 };
   }
   return null;
 }
@@ -168,11 +177,11 @@ export function checkSponsorable(
     if (accounts[ix.programAddressIndex] !== programId) {
       return refuse("Only Pawket instructions are sponsored.");
     }
-    const kind = kindOf(ix.data);
-    if (!kind) return refuse("That is not a Pawket instruction.");
-    if (kind === "device") return refuse("A linked device pays its own fees, from your Pawket Wallet.");
+    const found = kindOf(ix.data);
+    if (!found) return refuse("That is not a Pawket instruction.");
+    const { kind, shift } = found;
     const misplaced = (ix.accountIndices ?? []).some(
-      (index, position) => index === 0 && !SPONSOR_SLOTS[kind].includes(position),
+      (index, position) => index === 0 && !SPONSOR_SLOTS[kind].includes(position - shift),
     );
     if (misplaced) return refuse("The sponsor only pays; it takes no other part.");
     kinds.push(kind);

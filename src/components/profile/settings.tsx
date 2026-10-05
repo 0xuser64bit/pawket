@@ -31,8 +31,8 @@ export function Settings({ form }: { form?: PetForm }) {
       <Card>
         <h2 className="title">Pawket Wallet</h2>
         <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-          Link this device once, and caring for your pets on Solana stops asking your wallet each time. Fees come
-          from a balance only you can fill or empty.
+          Link this browser once, and what your pets do on Solana stops asking your wallet each time. Pawket pays
+          the fees; anything that spends SOL still asks.
         </p>
         <div style={{ marginTop: "var(--space-4)" }}>
           <ButtonLink label="Open the Pawket Wallet" href="/wallet" icon="bolt" tone="quiet" size="sm" />

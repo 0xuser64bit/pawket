@@ -146,11 +146,13 @@ fn a_link_is_signed_by_the_device_and_kept_within_bounds() {
     let bad = env.send(&[link_ix(&owner.pubkey(), &owner.pubkey(), now + DAY, 10)], &owner, &[]);
     expect_pawket(&bad, PawketError::InvalidDeviceLink);
 
-    // A device is handed its float from the balance, so the balance must hold it.
+    // A balance that cannot hand over the whole float hands over none: the link still stands.
     let poor = env.player();
-    ok(env.send(&[open_wallet_ix(&poor.pubkey(), &poor.pubkey())], &poor, &[]));
-    let bad = env.send(&[link_ix(&poor.pubkey(), &device.pubkey(), now + DAY, 10)], &poor, &[&device]);
-    expect_pawket(&bad, PawketError::InsufficientBalance);
+    let poor_device = env.broke();
+    ok(env.send(&[open_wallet_ix(&poor.pubkey(), &poor.pubkey()), deposit_ix(&poor.pubkey(), DEVICE_FLOAT_LAMPORTS - 1)], &poor, &[]));
+    ok(env.send(&[link_ix(&poor.pubkey(), &poor_device.pubkey(), now + DAY, 10)], &poor, &[&poor_device]));
+    assert_eq!(env.lamports(&poor_device.pubkey()), 0);
+    assert_eq!(env.balance(&poor.pubkey()), DEVICE_FLOAT_LAMPORTS - 1);
 
     ok(env.send(&[link_ix(&owner.pubkey(), &device.pubkey(), now + MAX_DEVICE_SECONDS, 500)], &owner, &[&device]));
     assert_eq!(env.wallet(&owner.pubkey()).device, device.pubkey());

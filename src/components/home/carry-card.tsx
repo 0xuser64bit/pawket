@@ -50,7 +50,7 @@ export function CarryCard({
       return;
     }
     const passport = (await derivePassportPda(petPda)).address;
-    const result = await sender.send(`Record ${pet.name} on Solana`, ({ owner: signer, payer }) => [
+    const result = await sender.act(`Record ${pet.name} on Solana`, ({ owner: signer, payer }) => [
       getAdoptPetInstruction({
         owner: signer,
         payer,

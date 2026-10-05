@@ -3,10 +3,13 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import {
   createKeyPairSignerFromBytes,
+  createNoopSigner,
   fetchEncodedAccount,
   generateKeyPairSigner,
   getAddressDecoder,
+  type Instruction,
   type KeyPairSigner,
+  type TransactionSigner,
 } from "@solana/kit";
 import { beforeAll, describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
@@ -27,6 +30,7 @@ import {
   wearableSlot,
 } from "./accounts";
 import {
+  asDeviceInstruction,
   getAdoptPetInstruction,
   getBuyInstruction,
   getCheckInInstruction,
@@ -36,7 +40,6 @@ import {
   getRsvpInstruction,
   getVoteInstruction,
   getWaveInstruction,
-  getCareByDeviceInstruction,
   getCareInstruction,
   getCloseWalletInstruction,
   getDepositInstruction,
@@ -68,7 +71,7 @@ import { fetchWalletHistory } from "@/lib/wallet/history";
 import { keepsakeTransaction, readKeepsake } from "@/server/keepsake";
 import { MPL_CORE_PROGRAM_ID } from "./core";
 import { createPatientRpc } from "./rpc";
-import { sendAsDevice, sendPawket, sendPrepared } from "./send";
+import { sendPawket, sendPrepared } from "./send";
 import { cosign } from "./sponsor";
 import { extractProgramErrorCode } from "./transactions";
 import { TEST_GUILD_NAME } from "@/lib/guilds/delisted";
@@ -236,6 +239,87 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     );
     expect(again).toBeInstanceOf(Error);
   });
+  it("links a browser for a wallet with no SOL, and the browser keeps, joins, waves and leaves with no owner signature", async () => {
+    const device = await generateKeyPairSigner();
+    const wallet = (await deriveWalletPda(owner.address)).address;
+    // One approval: the sponsor pays the fee and the wallet's rent, nothing goes in, and the browser signs its link.
+    const linked = await send(({ payer }) => [
+      getOpenWalletInstruction({ owner, payer, wallet }),
+      getLinkDeviceInstruction({ owner, wallet, device, expiresAt: Math.floor(Date.now() / 1000) + 3_600, dailyActions: 20 }),
+    ]);
+    expect(linked).toMatchObject({ outcome: "confirmed", sponsored: true });
+    expect((await rpc.getBalance(device.address).send()).value).toBe(0n);
+
+    // From here on only the browser signs: each action built as the owner's, sent as its twin, the sponsor paying.
+    const forOwner = createNoopSigner(owner.address);
+    const byDevice = (build: (payer: TransactionSigner) => Instruction[]) =>
+      sendPawket({
+        rpc,
+        owner: device,
+        sponsor: sponsor.address,
+        instructions: ({ payer }) => build(payer).map((ix) => asDeviceInstruction(ix, { device, wallet })),
+        cosign: async (wire: string) => (await cosign(sponsor, wire)).transaction,
+      });
+    const third = (await derivePetPda(owner.address, `${name}3`)).address;
+    const thirdPassport = (await derivePassportPda(third)).address;
+    const place = (await deriveMemberPda(third)).address;
+    const kept = await byDevice((payer) => [
+      getAdoptPetInstruction({
+        owner: forOwner,
+        payer,
+        pet: third,
+        passport: thirdPassport,
+        name: `${name}3`,
+        species: PetSpecies.MossPup,
+        personality: PetPersonality.Curious,
+      }),
+    ]);
+    expect(kept).toMatchObject({ outcome: "confirmed", sponsored: true });
+    expect((await fetchPetOnChain(rpc, third))?.pet.owner).toBe(owner.address);
+    await byDevice((payer) => [getJoinGuildInstruction({ owner: forOwner, payer, pet: third, guild: testGuild, member: place })]);
+    expect((await fetchPetOnChain(rpc, third))?.member?.guild).toBe(testGuild);
+
+    // A neighbour's pet, adopted with no SOL of its own, to wave at.
+    const neighbour = await generateKeyPairSigner();
+    const theirs = (await derivePetPda(neighbour.address, "Pickle")).address;
+    const theirPassport = (await derivePassportPda(theirs)).address;
+    await sendPawket({
+      rpc,
+      owner: neighbour,
+      sponsor: sponsor.address,
+      instructions: ({ owner: signer, payer }) => [
+        getAdoptPetInstruction({ owner: signer, payer, pet: theirs, passport: theirPassport, name: "Pickle", species: PetSpecies.LunaCat, personality: PetPersonality.Cozy }),
+      ],
+      cosign: async (wire: string) => (await cosign(sponsor, wire)).transaction,
+    });
+    const guestbook = (await deriveGuestbookPda(theirs)).address;
+    await byDevice((payer) => [getWaveInstruction({ visitor: forOwner, payer, pet: theirs, guestbook })]);
+    expect((await fetchGuestbook(rpc, theirs))?.recent[0].visitor).toBe(owner.address);
+    await byDevice(() => [getLeaveGuildInstruction({ owner: forOwner, pet: third, member: place, guild: testGuild, payer: sponsor.address })]);
+    expect((await fetchPetOnChain(rpc, third))?.member).toBeNull();
+
+    // Nobody but the browser signed, and neither the owner nor the browser paid a lamport.
+    expect((await rpc.getBalance(owner.address).send()).value).toBe(0n);
+    expect((await rpc.getBalance(device.address).send()).value).toBe(0n);
+    expect((await fetchWallet(rpc, owner.address))?.actions).toBe(4);
+
+    // The browser lets itself go; the wallet closes, its rent back to the sponsor that paid it.
+    await sendPawket({
+      rpc,
+      owner: device,
+      sponsor: sponsor.address,
+      instructions: () => [getUnlinkDeviceInstruction({ authority: device, wallet, device, deviceSigns: true })],
+      cosign: async (wire: string) => (await cosign(sponsor, wire)).transaction,
+    });
+    await send(() => [getCloseWalletInstruction({ owner, wallet, rentPayer: sponsor.address })]);
+    expect(await fetchWallet(rpc, owner.address)).toBeNull();
+
+    const rent = await rpc.getMinimumBalanceForRentExemption(157n).send();
+    const history = await fetchWalletHistory(rpc, wallet, { rent });
+    expect(history.entries.map((entry) => entry.kinds.join("+"))).toEqual(["close", "unlink", "leave", "wave", "join", "adopt", "open+link"]);
+    expect(history.entries[3]).toMatchObject({ pet: theirs, feePayer: sponsor.address, change: 0n });
+  });
+
   it("opens a Pawket Wallet whose device cares with no owner signature, and every lamport comes back", async () => {
     // Last, since the owner holds SOL from here on. A player with a little of their own: the sponsor hands the owner some, as a faucet would.
     await sendPawket({
@@ -259,10 +343,11 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
 
     // The device rests the pet: nobody but the device signs, and the balance pays its fee.
     const before = linked!.lamports;
-    const rested = await sendAsDevice({
+    const rested = await sendPawket({
       rpc,
-      device,
-      instructions: [getCareByDeviceInstruction({ device, wallet, pet, passport, action: CareActionType.Rest })],
+      owner: device,
+      sponsor: null,
+      instructions: () => [asDeviceInstruction(getCareInstruction({ owner: owner.address, pet, passport, action: CareActionType.Rest }), { device, wallet })],
     });
     expect(rested.outcome).toBe("confirmed");
     const record = toCompanionRecord((await fetchPetOnChain(rpc, pet))!);
@@ -274,10 +359,11 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
 
     // Some back to the owner; the device lets itself go, paying its own fee, and its float comes home.
     await send(() => [getWithdrawInstruction({ owner, wallet, amount: 3_000_000n })]);
-    await sendAsDevice({
+    await sendPawket({
       rpc,
-      device,
-      instructions: [getUnlinkDeviceInstruction({ authority: device, wallet, device, deviceSigns: true })],
+      owner: device,
+      sponsor: null,
+      instructions: () => [getUnlinkDeviceInstruction({ authority: device, wallet, device, deviceSigns: true })],
     });
     expect((await rpc.getBalance(device.address).send()).value).toBe(0n);
     expect((await fetchWallet(rpc, owner.address))?.device).toBeNull();
@@ -292,7 +378,8 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     // And the statement says all of it, newest first.
     const rent = await rpc.getMinimumBalanceForRentExemption(157n).send();
     const history = await fetchWalletHistory(rpc, wallet, { rent });
-    expect(history.entries.map((entry) => entry.kinds.join("+"))).toEqual(["close", "unlink", "withdraw", "care", "open+deposit+link"]);
+    // Newest first; this owner's earlier Pawket Wallet, at the same address, comes after.
+    expect(history.entries.slice(0, 5).map((entry) => entry.kinds.join("+"))).toEqual(["close", "unlink", "withdraw", "care", "open+deposit+link"]);
     expect(history.entries[3]).toMatchObject({ action: CareActionType.Rest, pet, change: -WALLET_LIMITS.feePerSignature, feePayer: device.address });
     expect(history.entries[4]).toMatchObject({ amount: 10_000_000n, toDevice: WALLET_LIMITS.deviceFloat, change: 10_000_000n - WALLET_LIMITS.deviceFloat });
     expect(history.entries[2]).toMatchObject({ amount: 3_000_000n, change: -3_000_000n });

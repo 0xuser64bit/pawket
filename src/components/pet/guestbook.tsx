@@ -53,7 +53,7 @@ export function Guestbook({
 
   async function wave() {
     const guestbook = (await deriveGuestbookPda(pet)).address;
-    const result = await sender.send(`Wave at ${name}`, ({ owner: visitor, payer }) => [
+    const result = await sender.act(`Wave at ${name}`, ({ owner: visitor, payer }) => [
       getWaveInstruction({ visitor, payer, pet, guestbook }),
     ]);
     if (result?.outcome === "confirmed") {

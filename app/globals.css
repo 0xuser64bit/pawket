@@ -6208,32 +6208,68 @@ details > .pk-risks {
   animation-timing-function: var(--ease-swap);
 }
 
+/* A fold: detail a screen keeps closed until asked for — a quiet card whose
+   summary is one row, the title and a line beside it, and a chevron that
+   turns. Never the thing a screen is for: that stays open, above it. */
+.pk-fold {
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.pk-fold > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-4) calc(var(--space-5) + 20px) var(--space-4) var(--space-5);
+  position: relative;
+  cursor: pointer;
+  list-style: none;
+  border-radius: inherit;
+}
+.pk-fold > summary::-webkit-details-marker {
+  display: none;
+}
+.pk-fold > summary::after {
+  content: "";
+  position: absolute;
+  right: var(--space-5);
+  top: calc(50% - 6px);
+  width: 8px;
+  height: 8px;
+  border-right: var(--stroke-line) solid var(--ink-soft);
+  border-bottom: var(--stroke-line) solid var(--ink-soft);
+  transform: rotate(45deg);
+  transition: transform var(--dur-press) var(--ease-press);
+}
+.pk-fold[open] > summary::after {
+  transform: translateY(4px) rotate(225deg);
+}
+.pk-fold > summary:focus-visible {
+  outline: var(--stroke-line) solid var(--focus, var(--ink));
+  outline-offset: 2px;
+}
+.pk-fold > :not(summary) {
+  padding: 0 var(--space-5) var(--space-5);
+}
+@media (max-width: 480px) {
+  .pk-fold > summary {
+    padding: var(--space-3) calc(var(--space-4) + 20px) var(--space-3) var(--space-4);
+  }
+  .pk-fold > summary::after {
+    right: var(--space-4);
+  }
+  .pk-fold > :not(summary) {
+    padding: 0 var(--space-4) var(--space-4);
+  }
+}
+
 /* ------------------------------------------------------ the Pawket Wallet
 
    Money is Paper: the balance is a figure on a statement, the history is a
-   ledger read from Solana, and nothing on either moves. What it is comes
-   first, three points across; then the statement beside this device. */
+   ledger read from Solana, and nothing on either moves. The statement sits
+   beside this browser's link. */
 
-.pk-wallet-intro {
-  display: grid;
-  gap: var(--space-3);
-}
-@media (min-width: 720px) {
-  .pk-wallet-intro {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-4);
-  }
-}
-.pk-wallet-intro__icon {
-  display: inline-grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: var(--stroke-line) solid var(--edge);
-  border-radius: var(--radius-pill);
-  background: var(--sun-soft);
-  color: var(--sun-text);
-}
 .pk-wallet-top {
   display: grid;
   gap: var(--space-4);

@@ -3,10 +3,11 @@
 import { useCallback, useState } from "react";
 import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
-import type { Address, Instruction, KeyPairSigner, TransactionSigner } from "@solana/kit";
-import { refreshPawketWallet, usePawketWallet } from "@/lib/wallet/pawket-wallet";
+import { createNoopSigner, type Address, type KeyPairSigner, type TransactionSigner } from "@solana/kit";
+import { refreshPawketWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
 import { rpc, wallet } from "./browser-client";
-import { RelayError, sendAsDevice, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
+import { asDeviceInstruction } from "./instructions";
+import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
 import { isActiveStage, toUserFacingError, type TransactionStage } from "./transactions";
 
 export interface SponsorStatus {
@@ -24,13 +25,21 @@ export interface TxState {
   sponsored?: boolean;
   /** Who signed: the wallet (with a prompt), or this device, linked to the Pawket Wallet (without one). */
   by?: "wallet" | "device";
+  /** Why the wallet signed something this device could have: what would let it next time. */
+  fallback?: DeviceFallback;
   error?: string;
 }
 
-/** An action for a pet the connected wallet keeps, built both ways: for the wallet to sign, and for a linked device. */
-export interface PetAction {
-  byOwner: SendOptions["instructions"];
-  byDevice: (linked: { device: KeyPairSigner; wallet: Address }) => Instruction[];
+/** Why a linked device did not sign: none is linked here, its link ran out, or today's limit is used. */
+export type DeviceFallback = "unlinked" | "expired" | "limit";
+
+/** Why `state`'s device cannot act for its owner now, or null when it can. */
+export function deviceFallback(state: PawketWalletState | null, now = Date.now() / 1000): DeviceFallback | null {
+  const wallet = state?.wallet;
+  if (!wallet || !state?.device || wallet.device !== state.device.address) return "unlinked";
+  if (wallet.deviceExpiresAt <= now) return "expired";
+  if (wallet.actionsToday >= wallet.dailyActions) return "limit";
+  return null;
 }
 
 async function fetchSponsor(signal?: AbortSignal): Promise<SponsorStatus> {
@@ -60,43 +69,69 @@ export function usePawketSend() {
   const [tx, setTx] = useState<TxState>({ stage: "idle" });
 
   const run = useCallback(
-    async (label: string, go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void) => Promise<SendResult>) => {
-      const signer = connected?.signer;
+    async (
+      label: string,
+      signer: TransactionSigner | null | undefined,
+      by: NonNullable<TxState["by"]>,
+      go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void) => Promise<SendResult>,
+      fallback?: DeviceFallback,
+    ) => {
       if (!signer) {
-        setTx({ stage: "failed", label, error: "This wallet cannot sign. Nothing was sent." });
+        setTx({ stage: "failed", label, by, error: "This wallet cannot sign. Nothing was sent." });
         return null;
       }
-      setTx({ stage: "signing", label });
+      setTx({ stage: "signing", label, by, fallback });
       try {
         const result = await go(signer, (stage) => setTx((current) => ({ ...current, stage })));
-        setTx({ stage: result.outcome, label, signature: result.signature, sponsored: result.sponsored });
+        setTx((current) => ({ ...current, stage: result.outcome, signature: result.signature, sponsored: result.sponsored }));
         return result;
       } catch (error) {
-        setTx({
+        setTx((current) => ({
+          ...current,
           stage: "failed",
-          label,
           error: toUserFacingError(error),
           signature: (error as { signature?: string }).signature,
-        });
+        }));
         return null;
+      } finally {
+        if (by === "device" && owner) void refreshPawketWallet(owner);
       }
     },
-    [connected],
+    [owner],
+  );
+
+  /** `instructions`, signed by `signer` — the wallet, or this device — with the sponsor paying while it is up. */
+  const sendAs = useCallback(
+    (
+      label: string,
+      signer: TransactionSigner | null | undefined,
+      by: NonNullable<TxState["by"]>,
+      instructions: SendOptions["instructions"],
+      fallback?: DeviceFallback,
+    ) =>
+      run(
+        label,
+        signer,
+        by,
+        async (owner, onStage) => {
+          const sponsor = await fetchSponsor();
+          return sendPawket({
+            rpc,
+            owner,
+            sponsor: sponsor.available && sponsor.address ? (sponsor.address as Address) : null,
+            instructions,
+            onStage,
+          });
+        },
+        fallback,
+      ),
+    [run],
   );
 
   const send = useCallback(
     (label: string, instructions: SendOptions["instructions"]): Promise<SendResult | null> =>
-      run(label, async (owner, onStage) => {
-        const sponsor = await fetchSponsor();
-        return sendPawket({
-          rpc,
-          owner,
-          sponsor: sponsor.available && sponsor.address ? (sponsor.address as Address) : null,
-          instructions,
-          onStage,
-        });
-      }),
-    [run],
+      sendAs(label, connected?.signer, "wallet", instructions),
+    [sendAs, connected],
   );
 
   /**
@@ -106,7 +141,7 @@ export function usePawketSend() {
    */
   const sendFromServer = useCallback(
     (label: string, path: string, fields: Record<string, unknown> = {}, { sponsored = true } = {}): Promise<SendResult | null> =>
-      run(label, (owner, onStage) =>
+      run(label, connected?.signer, "wallet", (owner, onStage) =>
         sendPrepared({
           rpc,
           owner,
@@ -126,54 +161,41 @@ export function usePawketSend() {
           },
         }),
       ),
-    [run],
+    [run, connected],
   );
 
-  /**
-   * Something this device signs on its own, with no prompt: an action it
-   * takes for its owner, or letting go of its own link. It pays its own fee.
-   * The Pawket Wallet is read again after, whatever happened.
-   */
+  /** Something this device signs on its own, with no prompt: letting go of its own link. */
   const asDevice = useCallback(
-    async (label: string, device: KeyPairSigner, instructions: Instruction[]): Promise<SendResult | null> => {
-      setTx({ stage: "signing", label, by: "device" });
-      try {
-        const result = await sendAsDevice({
-          rpc,
-          device,
-          instructions,
-          onStage: (stage) => setTx((current) => ({ ...current, stage })),
-        });
-        setTx({ stage: result.outcome, label, signature: result.signature, sponsored: false, by: "device" });
-        return result;
-      } catch (error) {
-        setTx({
-          stage: "failed",
-          label,
-          by: "device",
-          error: toUserFacingError(error),
-          signature: (error as { signature?: string }).signature,
-        });
-        return null;
-      } finally {
-        if (owner) void refreshPawketWallet(owner);
-      }
-    },
-    [owner],
+    (label: string, device: KeyPairSigner, instructions: SendOptions["instructions"]): Promise<SendResult | null> =>
+      sendAs(label, device, "device", instructions),
+    [sendAs],
   );
 
   /**
-   * An action for one of the connected wallet's pets. Signed by this device,
-   * with no prompt, while it is linked to the owner's Pawket Wallet and may
-   * act; otherwise by the wallet, as any send.
+   * Anything for the connected wallet's pets that costs no money — care,
+   * rounds, clothes, adoption, guilds, gatherings, waves — built as the owner
+   * would sign it. This device signs it, with no prompt, while it is linked
+   * and may act (`asDeviceInstruction`); otherwise the wallet does, and the
+   * receipt says why. With no sponsor up, the device pays its own fee from its
+   * float, and anything that would need it to pay rent goes to the wallet.
    */
   const act = useCallback(
-    (label: string, action: PetAction): Promise<SendResult | null> => {
-      const linked = pawketWallet?.canAct ? pawketWallet : null;
-      if (!linked?.device || !linked.wallet) return send(label, action.byOwner);
-      return asDevice(label, linked.device, action.byDevice({ device: linked.device, wallet: linked.wallet.address }));
+    async (label: string, instructions: SendOptions["instructions"]): Promise<SendResult | null> => {
+      const fallback = deviceFallback(pawketWallet);
+      const device = pawketWallet?.device;
+      const walletAddress = pawketWallet?.wallet?.address;
+      if (fallback || !owner || !device || !walletAddress) {
+        return sendAs(label, connected?.signer, "wallet", instructions, fallback ?? "unlinked");
+      }
+      const forOwner = createNoopSigner(owner);
+      const twins = (payer: TransactionSigner) =>
+        instructions({ owner: forOwner, payer }).map((ix) => asDeviceInstruction(ix, { device, wallet: walletAddress }));
+      const sponsored = (await fetchSponsor()).available;
+      const paysRent = twins(device).some((ix) => (ix.accounts ?? []).slice(1).some((meta) => meta.address === device.address));
+      if (!sponsored && (!pawketWallet.paysOwnWay || paysRent)) return send(label, instructions);
+      return sendAs(label, device, "device", ({ payer }) => twins(payer));
     },
-    [pawketWallet, send, asDevice],
+    [pawketWallet, owner, connected, send, sendAs],
   );
 
   const reset = useCallback(() => setTx({ stage: "idle" }), []);
@@ -186,7 +208,7 @@ export function usePawketSend() {
     reset,
     busy: isActiveStage(tx.stage),
     /** This device can act for the connected wallet with no prompt. */
-    noPrompt: Boolean(pawketWallet?.canAct),
+    noPrompt: deviceFallback(pawketWallet) === null,
     /** The connected wallet's Pawket Wallet, as every screen sees it. */
     pawketWallet,
   };

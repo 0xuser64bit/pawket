@@ -631,6 +631,21 @@ pub fn wave_ix(visitor: &Pubkey, payer: &Pubkey, pet: &Pubkey) -> Instruction {
     }
 }
 
+/// `ix` as the owner's linked device signs it: the device and the owner's Pawket Wallet take the
+/// owner's place, the rest of the accounts stay as they were, and the arguments stay as they were
+/// behind the device instruction's own discriminator. The web app builds every device action this
+/// way (`asDeviceInstruction`), so each `*ByDevice` struct must keep this order.
+pub fn by_device(ix: Instruction, device: &Pubkey, owner: &Pubkey, discriminator: &[u8]) -> Instruction {
+    use anchor_lang::prelude::AccountMeta;
+    let mut accounts = vec![AccountMeta::new(*device, true), AccountMeta::new(wallet_pda(owner), false)];
+    accounts.extend(ix.accounts.into_iter().skip(1));
+    Instruction {
+        program_id: ix.program_id,
+        accounts,
+        data: [discriminator, &ix.data[8..]].concat(),
+    }
+}
+
 fn care_accounts(owner: &Pubkey, pet: &Pubkey) -> Vec<anchor_lang::prelude::AccountMeta> {
     pawket::accounts::Care {
         owner: *owner,

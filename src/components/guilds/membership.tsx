@@ -29,7 +29,7 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
 
   async function join(entry: PetOnChain) {
     const member = (await deriveMemberPda(entry.pet.address)).address;
-    const result = await sender.send(`${entry.pet.name} joins ${guild.name}`, ({ owner, payer }) => [
+    const result = await sender.act(`${entry.pet.name} joins ${guild.name}`, ({ owner, payer }) => [
       getJoinGuildInstruction({ owner, payer, pet: entry.pet.address, guild: guild.address, member }),
     ]);
     if (result) {
@@ -41,7 +41,7 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
   async function leave(entry: PetOnChain) {
     if (!entry.member) return;
     const { member } = entry;
-    const result = await sender.send(`${entry.pet.name} leaves ${guild.name}`, ({ owner }) => [
+    const result = await sender.act(`${entry.pet.name} leaves ${guild.name}`, ({ owner }) => [
       getLeaveGuildInstruction({ owner, pet: entry.pet.address, member: member.address, guild: member.guild, payer: member.payer }),
     ]);
     if (result) {

@@ -60,9 +60,8 @@ import { describeLook } from "@/lib/player/look";
 import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
 import { CARE_MOMENT, type RoomCue } from "@/lib/room/moments";
-import { getCareByDeviceInstruction, getCareInstruction } from "@/lib/solana/instructions";
-import { WALLET_LIMITS } from "@/lib/solana/program";
-import { usePawketSend } from "@/lib/solana/use-send";
+import { getCareInstruction } from "@/lib/solana/instructions";
+import { deviceFallback, usePawketSend } from "@/lib/solana/use-send";
 import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
 /**
@@ -236,12 +235,9 @@ export function HomeScreen() {
       return;
     }
     setNotice(undefined);
-    const result = await sender.act(`${CARE_ACTION_LABEL[action]} ${pet.name}`, {
-      byOwner: ({ owner }) => [getCareInstruction({ owner, pet: active.pet.address, passport: active.passport.address, action })],
-      byDevice: ({ device, wallet }) => [
-        getCareByDeviceInstruction({ device, wallet, pet: active.pet.address, passport: active.passport.address, action }),
-      ],
-    });
+    const result = await sender.act(`${CARE_ACTION_LABEL[action]} ${pet.name}`, ({ owner }) => [
+      getCareInstruction({ owner, pet: active.pet.address, passport: active.passport.address, action }),
+    ]);
     if (!result) return;
     companion.refresh();
     // Only now, with the care confirmed, does the room show it.
@@ -427,47 +423,29 @@ function RoomLine({
   );
 }
 
-/** Twenty fees: below this a linked device's balance is said to be running low. */
-const LOW_BALANCE = 20n * WALLET_LIMITS.feePerSignature;
-
 /**
- * For a pet on Solana: whether a care will ask the wallet, and why — no
- * Pawket Wallet, this device not linked, its link run out, today's limit
- * used — with the way to change it.
+ * For a pet on Solana: whether what it does will ask the wallet, and why —
+ * this browser not linked, its link run out, today's limit used — with the
+ * way to change it.
  */
 function NoPrompt({ state, now }: { state: PawketWalletState | null; now: Date }) {
-  const wallet = state?.wallet ?? null;
-  const here = Boolean(wallet && state?.device && wallet.device === state.device.address);
-  let line: ReactNode;
-  if (state?.canAct) {
-    line = (
+  const why = deviceFallback(state, now.getTime() / 1000);
+  const line: ReactNode =
+    why === null ? (
       <>
-        Cares here are signed by this device, with no prompt.{" "}
-        {state.balance < LOW_BALANCE ? <Link href="/wallet">Your balance is running low</Link> : <Link href="/wallet">Your Pawket Wallet</Link>}
+        Signed by this browser, with no pop-up. <Link href="/wallet">Your Pawket Wallet</Link>
+      </>
+    ) : why === "expired" ? (
+      <>
+        This browser&apos;s link ran out, so your wallet asks again. <Link href="/wallet">Link it again</Link>
+      </>
+    ) : why === "limit" ? (
+      <>This browser has done all it may today; your wallet signs until midnight UTC.</>
+    ) : (
+      <>
+        Each care asks your wallet. <Link href="/wallet">Link this browser</Link> and it stops asking.
       </>
     );
-  } else if (here && wallet!.deviceExpiresAt * 1000 <= now.getTime()) {
-    line = (
-      <>
-        This device&apos;s link ran out, so each care asks your wallet again. <Link href="/wallet">Link it again</Link>
-      </>
-    );
-  } else if (here && state?.linked && wallet!.actionsToday >= wallet!.dailyActions) {
-    line = <>This device has done all it may today; your wallet signs each care until midnight UTC.</>;
-  } else if (here && state?.linked) {
-    line = (
-      <>
-        This device is low on its fee float, so your wallet signs for now. <Link href="/wallet">Link it again to top it up</Link>
-      </>
-    );
-  } else {
-    line = (
-      <>
-        Each care asks your wallet to approve it.{" "}
-        <Link href="/wallet">{wallet ? "Link this device to your Pawket Wallet" : "Link this device to a Pawket Wallet"}</Link> and it will not.
-      </>
-    );
-  }
   return (
     <p className="caption pk-faint pk-home__noprompt">
       <Icon name="bolt" size={14} />

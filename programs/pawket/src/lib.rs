@@ -16,9 +16,11 @@
 //! A player can keep a Pawket Wallet: a `PawketWallet` PDA (`[b"wallet", owner]`) whose lamports above
 //! rent are a balance only its owner can fill or empty — a withdrawal only ever goes back to the
 //! owner. The owner can link one device key to it, for up to 30 days and a set number of actions a
-//! UTC day; the device may then care for, play with and dress the owner's pets without the owner
-//! signing each one, and nothing else. It pays its own fees, and each action it takes refills it
-//! from the balance by at most that fee, so the balance pays for those actions and for nothing else.
+//! UTC day; the device may then do for the owner's pets what the owner signs for — care, rounds,
+//! clothes, adoption, guilds, gatherings and waves (each `*_by_device`) — without the owner signing
+//! each one, and nothing that moves money. A sponsor may pay its fees and rent as it does the
+//! owner's; when the device pays its own fee, each action refills it from the balance by at most
+//! that fee, so the balance pays for those actions and for nothing else.
 //!
 //! The Market sells looks for SOL at prices fixed here (`item_price`): a sale goes from the owner
 //! straight to Pawket's treasury, and the owner's `Closet` (`[b"closet", owner]`) records it for
@@ -133,55 +135,22 @@ pub mod pawket {
         species: PetSpecies,
         personality: PetPersonality,
     ) -> Result<()> {
-        require!(
-            (MIN_NAME_LEN..=MAX_NAME_LEN).contains(&name.len()),
-            PawketError::InvalidPetName
-        );
-        let now = Clock::get()?.unix_timestamp;
-        let owner = ctx.accounts.owner.key();
-        let pet_key = ctx.accounts.pet.key();
+        let bumps = (ctx.bumps.pet, ctx.bumps.passport);
+        let a = ctx.accounts;
+        adopt(&mut a.pet, &mut a.passport, a.owner.key(), name, species, personality, bumps)
+    }
 
-        ctx.accounts.pet.set_inner(Pet {
-            owner,
-            species,
-            personality,
-            birth_timestamp: now,
-            level: 1,
-            xp: 0,
-            hunger: INITIAL_STAT_VALUE,
-            happiness: INITIAL_STAT_VALUE,
-            energy: INITIAL_STAT_VALUE,
-            hygiene: INITIAL_STAT_VALUE,
-            stats_updated_at: now,
-            last_feed_at: 0,
-            last_play_at: 0,
-            last_groom_at: 0,
-            last_rest_at: 0,
-            wearing: 0,
-            bump: ctx.bumps.pet,
-            name: name.clone(),
-        });
-        ctx.accounts.passport.set_inner(PetPassport {
-            pet: pet_key,
-            owner,
-            event_count: 1,
-            care_count: 0,
-            plays: 0,
-            streak: 0,
-            best_streak: 0,
-            last_active_day: 0,
-            last_play_day: 0,
-            recent: [CareMark::default(); RECENT_CARES],
-            bump: ctx.bumps.passport,
-        });
-        emit!(PetAdopted {
-            owner,
-            pet: pet_key,
-            name,
-            species,
-            personality,
-        });
-        Ok(())
+    /// Adoption signed by the owner's linked device: the pet is the owner's, at the owner's address.
+    pub fn adopt_pet_by_device(
+        ctx: Context<AdoptPetByDevice>,
+        name: String,
+        species: PetSpecies,
+        personality: PetPersonality,
+    ) -> Result<()> {
+        let bumps = (ctx.bumps.pet, ctx.bumps.passport);
+        let a = ctx.accounts;
+        act(&mut a.wallet, &a.device, Clock::get()?.unix_timestamp)?;
+        adopt(&mut a.pet, &mut a.passport, a.wallet.owner, name, species, personality, bumps)
     }
 
     /// Feed, play, groom or rest: decay to now, apply the locked deltas, +10 XP, then write the
@@ -213,79 +182,54 @@ pub mod pawket {
         crest: u8,
         colour: u8,
     ) -> Result<()> {
-        require!(valid_slug(&slug), PawketError::InvalidGuildSlug);
-        require!(
-            (MIN_GUILD_NAME_LEN..=MAX_GUILD_NAME_LEN).contains(&name.len()),
-            PawketError::InvalidGuildName
-        );
-        require!(motto.len() <= MAX_MOTTO_LEN, PawketError::InvalidGuildMotto);
-        require!(crest < CREST_COUNT && colour < COLOUR_COUNT, PawketError::UnknownCrest);
-        let now = Clock::get()?.unix_timestamp;
-        let owner = ctx.accounts.owner.key();
-        let pet = ctx.accounts.pet.key();
-        let guild = ctx.accounts.guild.key();
+        let bumps = (ctx.bumps.guild, ctx.bumps.member);
+        let a = ctx.accounts;
+        let who = Who { owner: a.owner.key(), pet: a.pet.key(), payer: a.payer.key() };
+        found(&mut a.guild, &mut a.member, who, slug, name, motto, crest, colour, bumps)
+    }
 
-        ctx.accounts.guild.set_inner(Guild {
-            founder: owner,
-            founder_pet: pet,
-            created_at: now,
-            member_count: 1,
-            crest,
-            colour,
-            bump: ctx.bumps.guild,
-            slug: slug.clone(),
-            name,
-            motto,
-        });
-        ctx.accounts.member.set_inner(GuildMember {
-            pet,
-            guild,
-            owner,
-            payer: ctx.accounts.payer.key(),
-            joined_at: now,
-            bump: ctx.bumps.member,
-        });
-        emit!(GuildFounded {
-            guild,
-            founder: owner,
-            pet,
-            slug,
-        });
-        Ok(())
+    /// A founding signed by the owner's linked device.
+    pub fn found_guild_by_device(
+        ctx: Context<FoundGuildByDevice>,
+        slug: String,
+        name: String,
+        motto: String,
+        crest: u8,
+        colour: u8,
+    ) -> Result<()> {
+        let bumps = (ctx.bumps.guild, ctx.bumps.member);
+        let a = ctx.accounts;
+        act(&mut a.wallet, &a.device, Clock::get()?.unix_timestamp)?;
+        let who = Who { owner: a.wallet.owner, pet: a.pet.key(), payer: a.payer.key() };
+        found(&mut a.guild, &mut a.member, who, slug, name, motto, crest, colour, bumps)
     }
 
     /// A pet joins a guild. A pet is in one guild at most: its member account is seeded by the pet.
     pub fn join_guild(ctx: Context<JoinGuild>) -> Result<()> {
-        let now = Clock::get()?.unix_timestamp;
-        let pet = ctx.accounts.pet.key();
-        let guild_key = ctx.accounts.guild.key();
-        let guild = &mut ctx.accounts.guild;
-        guild.member_count = guild.member_count.saturating_add(1);
-        ctx.accounts.member.set_inner(GuildMember {
-            pet,
-            guild: guild_key,
-            owner: ctx.accounts.owner.key(),
-            payer: ctx.accounts.payer.key(),
-            joined_at: now,
-            bump: ctx.bumps.member,
-        });
-        emit!(GuildJoined {
-            guild: guild_key,
-            pet,
-        });
-        Ok(())
+        let a = ctx.accounts;
+        let who = Who { owner: a.owner.key(), pet: a.pet.key(), payer: a.payer.key() };
+        join(&mut a.guild, &mut a.member, who, ctx.bumps.member)
+    }
+
+    /// A join signed by the owner's linked device.
+    pub fn join_guild_by_device(ctx: Context<JoinGuildByDevice>) -> Result<()> {
+        let a = ctx.accounts;
+        act(&mut a.wallet, &a.device, Clock::get()?.unix_timestamp)?;
+        let who = Who { owner: a.wallet.owner, pet: a.pet.key(), payer: a.payer.key() };
+        join(&mut a.guild, &mut a.member, who, ctx.bumps.member)
     }
 
     /// A pet leaves its guild. The member account closes and its rent goes back to whoever paid it.
     /// The guild stays, with one fewer; a guild with nobody in it is still on the record.
     pub fn leave_guild(ctx: Context<LeaveGuild>) -> Result<()> {
-        let guild = &mut ctx.accounts.guild;
-        guild.member_count = guild.member_count.saturating_sub(1);
-        emit!(GuildLeft {
-            guild: guild.key(),
-            pet: ctx.accounts.pet.key(),
-        });
-        Ok(())
+        leave(&mut ctx.accounts.guild, ctx.accounts.pet.key())
+    }
+
+    /// Leaving, signed by the owner's linked device. The rent still goes back to whoever paid it.
+    pub fn leave_guild_by_device(ctx: Context<LeaveGuildByDevice>) -> Result<()> {
+        let a = ctx.accounts;
+        act(&mut a.wallet, &a.device, Clock::get()?.unix_timestamp)?;
+        leave(&mut a.guild, a.pet.key())
     }
 
     /// The owner's Pawket Wallet: a balance only they can fill or empty, and room for one linked
@@ -354,9 +298,11 @@ pub mod pawket {
     }
 
     /// Link `device` to act for the owner until `expires_at` (30 days at most), at most
-    /// `daily_actions` times a UTC day: it may care for, play with and dress the owner's pets, and
-    /// nothing else. The device signs too, so only a key that is really there is linked, and it is
-    /// handed its fee float from the balance. One device at a time: linking one replaces the last.
+    /// `daily_actions` times a UTC day: it may do for the owner's pets what the owner signs for —
+    /// care, rounds, clothes, adoption, guilds, gatherings, waves — and nothing that moves money.
+    /// The device signs too, so only a key that is really there is linked, and it is handed its fee
+    /// float from the balance when the balance holds one. One device at a time: linking one
+    /// replaces the last.
     pub fn link_device(ctx: Context<LinkDevice>, expires_at: i64, daily_actions: u16) -> Result<()> {
         let now = Clock::get()?.unix_timestamp;
         require!(
@@ -368,8 +314,10 @@ pub mod pawket {
         );
         let info = ctx.accounts.wallet.to_account_info();
         let device = &ctx.accounts.device;
-        let float = DEVICE_FLOAT_LAMPORTS.saturating_sub(device.lamports());
-        require!(float <= spendable(&info)?, PawketError::InsufficientBalance);
+        // The whole float, or none: a balance that cannot cover it leaves the device to act only
+        // while a sponsor pays its fees, and never with a sliver below its rent.
+        let wanted = DEVICE_FLOAT_LAMPORTS.saturating_sub(device.lamports());
+        let float = if wanted <= spendable(&info)? { wanted } else { 0 };
         if float > 0 {
             info.sub_lamports(float)?;
             device.add_lamports(float)?;
@@ -510,74 +458,52 @@ pub mod pawket {
         starts_at: i64,
         ends_at: i64,
     ) -> Result<()> {
-        let now = Clock::get()?.unix_timestamp;
-        require!(
-            (MIN_EVENT_TITLE_LEN..=MAX_EVENT_TITLE_LEN).contains(&title.len())
-                && note.len() <= MAX_EVENT_NOTE_LEN
-                && ends_at > starts_at
-                && ends_at > now
-                && ends_at - starts_at <= MAX_EVENT_SECONDS
-                && starts_at <= now + MAX_EVENT_LEAD_SECONDS,
-            PawketError::InvalidEvent
-        );
-        let guild = ctx.accounts.guild.key();
-        let event = ctx.accounts.event.key();
-        ctx.accounts.event.set_inner(GuildEvent {
-            guild,
-            creator: ctx.accounts.owner.key(),
-            id,
-            starts_at,
-            ends_at,
-            created_at: now,
-            going: 0,
-            came: 0,
-            bump: ctx.bumps.event,
-            title,
-            note,
-        });
-        emit!(EventCreated { guild, event, starts_at });
-        Ok(())
+        let a = ctx.accounts;
+        let (guild, creator) = (a.guild.key(), a.owner.key());
+        plan(&mut a.event, guild, creator, id, title, note, starts_at, ends_at, ctx.bumps.event)
+    }
+
+    /// An event planned by the founder's linked device.
+    pub fn create_event_by_device(
+        ctx: Context<CreateEventByDevice>,
+        id: u32,
+        title: String,
+        note: String,
+        starts_at: i64,
+        ends_at: i64,
+    ) -> Result<()> {
+        let a = ctx.accounts;
+        act(&mut a.wallet, &a.device, Clock::get()?.unix_timestamp)?;
+        let (guild, creator) = (a.guild.key(), a.wallet.owner);
+        plan(&mut a.event, guild, creator, id, title, note, starts_at, ends_at, ctx.bumps.event)
     }
 
     /// A pet in the guild is going to its event. One RSVP per pet per event, until it ends.
     pub fn rsvp(ctx: Context<Rsvp>) -> Result<()> {
-        let now = Clock::get()?.unix_timestamp;
-        let event = &mut ctx.accounts.event;
-        require!(now < event.ends_at, PawketError::EventOver);
-        event.going = event.going.saturating_add(1);
-        let event_key = event.key();
-        let pet = ctx.accounts.pet.key();
-        ctx.accounts.rsvp.set_inner(EventRsvp {
-            event: event_key,
-            pet,
-            owner: ctx.accounts.owner.key(),
-            payer: ctx.accounts.payer.key(),
-            at: now,
-            came: false,
-            bump: ctx.bumps.rsvp,
-        });
-        emit!(EventRsvped { event: event_key, pet });
-        Ok(())
+        let a = ctx.accounts;
+        let who = Who { owner: a.owner.key(), pet: a.pet.key(), payer: a.payer.key() };
+        going(&mut a.event, &mut a.rsvp, who, ctx.bumps.rsvp)
+    }
+
+    /// An RSVP signed by the owner's linked device.
+    pub fn rsvp_by_device(ctx: Context<RsvpByDevice>) -> Result<()> {
+        let a = ctx.accounts;
+        act(&mut a.wallet, &a.device, Clock::get()?.unix_timestamp)?;
+        let who = Who { owner: a.wallet.owner, pet: a.pet.key(), payer: a.payer.key() };
+        going(&mut a.event, &mut a.rsvp, who, ctx.bumps.rsvp)
     }
 
     /// At the event — from fifteen minutes before it starts until it ends — a pet that said it was
     /// going checks in, once.
     pub fn check_in(ctx: Context<CheckIn>) -> Result<()> {
-        let now = Clock::get()?.unix_timestamp;
-        let event = &mut ctx.accounts.event;
-        require!(
-            now >= event.starts_at - CHECK_IN_EARLY_SECONDS && now <= event.ends_at,
-            PawketError::NotCheckInTime
-        );
-        let rsvp = &mut ctx.accounts.rsvp;
-        require!(!rsvp.came, PawketError::AlreadyCheckedIn);
-        rsvp.came = true;
-        event.came = event.came.saturating_add(1);
-        emit!(CheckedIn {
-            event: event.key(),
-            pet: rsvp.pet,
-        });
-        Ok(())
+        arrive(&mut ctx.accounts.event, &mut ctx.accounts.rsvp)
+    }
+
+    /// A check-in signed by the owner's linked device.
+    pub fn check_in_by_device(ctx: Context<CheckInByDevice>) -> Result<()> {
+        let a = ctx.accounts;
+        act(&mut a.wallet, &a.device, Clock::get()?.unix_timestamp)?;
+        arrive(&mut a.event, &mut a.rsvp)
     }
 
     /// A guild's founder asks the guild something: two to four options, open from ten minutes to
@@ -589,82 +515,363 @@ pub mod pawket {
         options: Vec<String>,
         closes_at: i64,
     ) -> Result<()> {
-        let now = Clock::get()?.unix_timestamp;
-        require!(
-            (MIN_POLL_QUESTION_LEN..=MAX_POLL_QUESTION_LEN).contains(&question.len())
-                && (MIN_POLL_OPTIONS..=MAX_POLL_OPTIONS).contains(&options.len())
-                && options.iter().all(|option| (1..=MAX_POLL_OPTION_LEN).contains(&option.len()))
-                && closes_at >= now + MIN_POLL_SECONDS
-                && closes_at <= now + MAX_POLL_SECONDS,
-            PawketError::InvalidPoll
-        );
-        let guild = ctx.accounts.guild.key();
-        let poll = ctx.accounts.poll.key();
-        ctx.accounts.poll.set_inner(GuildPoll {
-            guild,
-            creator: ctx.accounts.owner.key(),
-            id,
-            created_at: now,
-            closes_at,
-            votes: [0; MAX_POLL_OPTIONS],
-            bump: ctx.bumps.poll,
-            question,
-            options,
-        });
-        emit!(PollCreated { guild, poll, closes_at });
-        Ok(())
+        let a = ctx.accounts;
+        let (guild, creator) = (a.guild.key(), a.owner.key());
+        ask(&mut a.poll, guild, creator, id, question, options, closes_at, ctx.bumps.poll)
+    }
+
+    /// A poll opened by the founder's linked device.
+    pub fn create_poll_by_device(
+        ctx: Context<CreatePollByDevice>,
+        id: u32,
+        question: String,
+        options: Vec<String>,
+        closes_at: i64,
+    ) -> Result<()> {
+        let a = ctx.accounts;
+        act(&mut a.wallet, &a.device, Clock::get()?.unix_timestamp)?;
+        let (guild, creator) = (a.guild.key(), a.wallet.owner);
+        ask(&mut a.poll, guild, creator, id, question, options, closes_at, ctx.bumps.poll)
     }
 
     /// A wallet with a pet in the guild answers its poll: one ballot per wallet, before it closes.
     pub fn vote(ctx: Context<Vote>, option: u8) -> Result<()> {
-        let now = Clock::get()?.unix_timestamp;
-        let poll = &mut ctx.accounts.poll;
-        require!(now < poll.closes_at, PawketError::PollClosed);
-        require!(usize::from(option) < poll.options.len(), PawketError::UnknownOption);
-        poll.votes[usize::from(option)] = poll.votes[usize::from(option)].saturating_add(1);
-        let poll_key = poll.key();
-        let owner = ctx.accounts.owner.key();
-        ctx.accounts.ballot.set_inner(Ballot {
-            poll: poll_key,
-            owner,
-            pet: ctx.accounts.pet.key(),
-            payer: ctx.accounts.payer.key(),
-            option,
-            at: now,
-            bump: ctx.bumps.ballot,
-        });
-        emit!(Voted { poll: poll_key, owner, option });
-        Ok(())
+        let a = ctx.accounts;
+        let who = Who { owner: a.owner.key(), pet: a.pet.key(), payer: a.payer.key() };
+        cast(&mut a.poll, &mut a.ballot, who, option, ctx.bumps.ballot)
+    }
+
+    /// A ballot cast by the owner's linked device: still one per wallet, the owner's.
+    pub fn vote_by_device(ctx: Context<VoteByDevice>, option: u8) -> Result<()> {
+        let a = ctx.accounts;
+        act(&mut a.wallet, &a.device, Clock::get()?.unix_timestamp)?;
+        let who = Who { owner: a.wallet.owner, pet: a.pet.key(), payer: a.payer.key() };
+        cast(&mut a.poll, &mut a.ballot, who, option, ctx.bumps.ballot)
     }
 
     /// Anyone but its owner waves at a pet, once a UTC day. Its guestbook counts every wave and
     /// keeps the last eight visitors. A wave changes nothing about the pet.
     pub fn wave(ctx: Context<Wave>) -> Result<()> {
-        let now = Clock::get()?.unix_timestamp;
-        let visitor = ctx.accounts.visitor.key();
-        let pet = &ctx.accounts.pet;
-        require!(visitor != pet.owner, PawketError::CannotWaveAtOwnPet);
-        let pet_key = pet.key();
-        let book = &mut ctx.accounts.guestbook;
-        if book.pet == Pubkey::default() {
-            book.pet = pet_key;
-            book.bump = ctx.bumps.guestbook;
-        }
-        let today = utc_day(now);
-        require!(
-            !book.recent.iter().any(|mark| mark.at != 0 && mark.visitor == visitor && utc_day(mark.at) == today),
-            PawketError::AlreadyWavedToday
-        );
-        let slot = book.waves as usize % RECENT_WAVES;
-        book.recent[slot] = WaveMark { visitor, at: now };
-        book.waves = book.waves.saturating_add(1);
-        emit!(Waved {
-            pet: pet_key,
-            visitor,
-            waves: book.waves,
-        });
-        Ok(())
+        let a = ctx.accounts;
+        greet(&mut a.guestbook, &a.pet, a.visitor.key(), ctx.bumps.guestbook)
     }
+
+    /// A wave from the visitor's linked device: the visitor is the device's owner.
+    pub fn wave_by_device(ctx: Context<WaveByDevice>) -> Result<()> {
+        let a = ctx.accounts;
+        act(&mut a.wallet, &a.device, Clock::get()?.unix_timestamp)?;
+        greet(&mut a.guestbook, &a.pet, a.wallet.owner, ctx.bumps.guestbook)
+    }
+}
+
+/// Who an action is for: the pet's owner (whoever signed for them), the pet, and who pays any rent.
+struct Who {
+    owner: Pubkey,
+    pet: Pubkey,
+    payer: Pubkey,
+}
+
+/// A new pet for `owner` at 72 across the board, and its Passport.
+fn adopt(
+    pet: &mut Account<Pet>,
+    passport: &mut Account<PetPassport>,
+    owner: Pubkey,
+    name: String,
+    species: PetSpecies,
+    personality: PetPersonality,
+    bumps: (u8, u8),
+) -> Result<()> {
+    require!(
+        (MIN_NAME_LEN..=MAX_NAME_LEN).contains(&name.len()),
+        PawketError::InvalidPetName
+    );
+    let now = Clock::get()?.unix_timestamp;
+    let pet_key = pet.key();
+    pet.set_inner(Pet {
+        owner,
+        species,
+        personality,
+        birth_timestamp: now,
+        level: 1,
+        xp: 0,
+        hunger: INITIAL_STAT_VALUE,
+        happiness: INITIAL_STAT_VALUE,
+        energy: INITIAL_STAT_VALUE,
+        hygiene: INITIAL_STAT_VALUE,
+        stats_updated_at: now,
+        last_feed_at: 0,
+        last_play_at: 0,
+        last_groom_at: 0,
+        last_rest_at: 0,
+        wearing: 0,
+        bump: bumps.0,
+        name: name.clone(),
+    });
+    passport.set_inner(PetPassport {
+        pet: pet_key,
+        owner,
+        event_count: 1,
+        care_count: 0,
+        plays: 0,
+        streak: 0,
+        best_streak: 0,
+        last_active_day: 0,
+        last_play_day: 0,
+        recent: [CareMark::default(); RECENT_CARES],
+        bump: bumps.1,
+    });
+    emit!(PetAdopted {
+        owner,
+        pet: pet_key,
+        name,
+        species,
+        personality,
+    });
+    Ok(())
+}
+
+/// A guild named `slug`, founded by `who.pet`, which becomes its first member.
+#[allow(clippy::too_many_arguments)]
+fn found(
+    guild: &mut Account<Guild>,
+    member: &mut Account<GuildMember>,
+    who: Who,
+    slug: String,
+    name: String,
+    motto: String,
+    crest: u8,
+    colour: u8,
+    bumps: (u8, u8),
+) -> Result<()> {
+    require!(valid_slug(&slug), PawketError::InvalidGuildSlug);
+    require!(
+        (MIN_GUILD_NAME_LEN..=MAX_GUILD_NAME_LEN).contains(&name.len()),
+        PawketError::InvalidGuildName
+    );
+    require!(motto.len() <= MAX_MOTTO_LEN, PawketError::InvalidGuildMotto);
+    require!(crest < CREST_COUNT && colour < COLOUR_COUNT, PawketError::UnknownCrest);
+    let now = Clock::get()?.unix_timestamp;
+    let guild_key = guild.key();
+    guild.set_inner(Guild {
+        founder: who.owner,
+        founder_pet: who.pet,
+        created_at: now,
+        member_count: 1,
+        crest,
+        colour,
+        bump: bumps.0,
+        slug: slug.clone(),
+        name,
+        motto,
+    });
+    member.set_inner(GuildMember {
+        pet: who.pet,
+        guild: guild_key,
+        owner: who.owner,
+        payer: who.payer,
+        joined_at: now,
+        bump: bumps.1,
+    });
+    emit!(GuildFounded {
+        guild: guild_key,
+        founder: who.owner,
+        pet: who.pet,
+        slug,
+    });
+    Ok(())
+}
+
+fn join(guild: &mut Account<Guild>, member: &mut Account<GuildMember>, who: Who, bump: u8) -> Result<()> {
+    let now = Clock::get()?.unix_timestamp;
+    let guild_key = guild.key();
+    guild.member_count = guild.member_count.saturating_add(1);
+    member.set_inner(GuildMember {
+        pet: who.pet,
+        guild: guild_key,
+        owner: who.owner,
+        payer: who.payer,
+        joined_at: now,
+        bump,
+    });
+    emit!(GuildJoined {
+        guild: guild_key,
+        pet: who.pet,
+    });
+    Ok(())
+}
+
+fn leave(guild: &mut Account<Guild>, pet: Pubkey) -> Result<()> {
+    guild.member_count = guild.member_count.saturating_sub(1);
+    emit!(GuildLeft { guild: guild.key(), pet });
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn plan(
+    event: &mut Account<GuildEvent>,
+    guild: Pubkey,
+    creator: Pubkey,
+    id: u32,
+    title: String,
+    note: String,
+    starts_at: i64,
+    ends_at: i64,
+    bump: u8,
+) -> Result<()> {
+    let now = Clock::get()?.unix_timestamp;
+    require!(
+        (MIN_EVENT_TITLE_LEN..=MAX_EVENT_TITLE_LEN).contains(&title.len())
+            && note.len() <= MAX_EVENT_NOTE_LEN
+            && ends_at > starts_at
+            && ends_at > now
+            && ends_at - starts_at <= MAX_EVENT_SECONDS
+            && starts_at <= now + MAX_EVENT_LEAD_SECONDS,
+        PawketError::InvalidEvent
+    );
+    let event_key = event.key();
+    event.set_inner(GuildEvent {
+        guild,
+        creator,
+        id,
+        starts_at,
+        ends_at,
+        created_at: now,
+        going: 0,
+        came: 0,
+        bump,
+        title,
+        note,
+    });
+    emit!(EventCreated {
+        guild,
+        event: event_key,
+        starts_at
+    });
+    Ok(())
+}
+
+fn going(event: &mut Account<GuildEvent>, rsvp: &mut Account<EventRsvp>, who: Who, bump: u8) -> Result<()> {
+    let now = Clock::get()?.unix_timestamp;
+    require!(now < event.ends_at, PawketError::EventOver);
+    event.going = event.going.saturating_add(1);
+    let event_key = event.key();
+    rsvp.set_inner(EventRsvp {
+        event: event_key,
+        pet: who.pet,
+        owner: who.owner,
+        payer: who.payer,
+        at: now,
+        came: false,
+        bump,
+    });
+    emit!(EventRsvped {
+        event: event_key,
+        pet: who.pet
+    });
+    Ok(())
+}
+
+fn arrive(event: &mut Account<GuildEvent>, rsvp: &mut Account<EventRsvp>) -> Result<()> {
+    let now = Clock::get()?.unix_timestamp;
+    require!(
+        now >= event.starts_at - CHECK_IN_EARLY_SECONDS && now <= event.ends_at,
+        PawketError::NotCheckInTime
+    );
+    require!(!rsvp.came, PawketError::AlreadyCheckedIn);
+    rsvp.came = true;
+    event.came = event.came.saturating_add(1);
+    emit!(CheckedIn {
+        event: event.key(),
+        pet: rsvp.pet,
+    });
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn ask(
+    poll: &mut Account<GuildPoll>,
+    guild: Pubkey,
+    creator: Pubkey,
+    id: u32,
+    question: String,
+    options: Vec<String>,
+    closes_at: i64,
+    bump: u8,
+) -> Result<()> {
+    let now = Clock::get()?.unix_timestamp;
+    require!(
+        (MIN_POLL_QUESTION_LEN..=MAX_POLL_QUESTION_LEN).contains(&question.len())
+            && (MIN_POLL_OPTIONS..=MAX_POLL_OPTIONS).contains(&options.len())
+            && options.iter().all(|option| (1..=MAX_POLL_OPTION_LEN).contains(&option.len()))
+            && closes_at >= now + MIN_POLL_SECONDS
+            && closes_at <= now + MAX_POLL_SECONDS,
+        PawketError::InvalidPoll
+    );
+    let poll_key = poll.key();
+    poll.set_inner(GuildPoll {
+        guild,
+        creator,
+        id,
+        created_at: now,
+        closes_at,
+        votes: [0; MAX_POLL_OPTIONS],
+        bump,
+        question,
+        options,
+    });
+    emit!(PollCreated {
+        guild,
+        poll: poll_key,
+        closes_at
+    });
+    Ok(())
+}
+
+fn cast(poll: &mut Account<GuildPoll>, ballot: &mut Account<Ballot>, who: Who, option: u8, bump: u8) -> Result<()> {
+    let now = Clock::get()?.unix_timestamp;
+    require!(now < poll.closes_at, PawketError::PollClosed);
+    require!(usize::from(option) < poll.options.len(), PawketError::UnknownOption);
+    poll.votes[usize::from(option)] = poll.votes[usize::from(option)].saturating_add(1);
+    let poll_key = poll.key();
+    ballot.set_inner(Ballot {
+        poll: poll_key,
+        owner: who.owner,
+        pet: who.pet,
+        payer: who.payer,
+        option,
+        at: now,
+        bump,
+    });
+    emit!(Voted {
+        poll: poll_key,
+        owner: who.owner,
+        option
+    });
+    Ok(())
+}
+
+fn greet(book: &mut Account<Guestbook>, pet: &Account<Pet>, visitor: Pubkey, bump: u8) -> Result<()> {
+    let now = Clock::get()?.unix_timestamp;
+    require!(visitor != pet.owner, PawketError::CannotWaveAtOwnPet);
+    let pet_key = pet.key();
+    if book.pet == Pubkey::default() {
+        book.pet = pet_key;
+        book.bump = bump;
+    }
+    let today = utc_day(now);
+    require!(
+        !book.recent.iter().any(|mark| mark.at != 0 && mark.visitor == visitor && utc_day(mark.at) == today),
+        PawketError::AlreadyWavedToday
+    );
+    let slot = book.waves as usize % RECENT_WAVES;
+    book.recent[slot] = WaveMark { visitor, at: now };
+    book.waves = book.waves.saturating_add(1);
+    emit!(Waved {
+        pet: pet_key,
+        visitor,
+        waves: book.waves,
+    });
+    Ok(())
 }
 
 /// Feed, play, groom or rest: decay to now, apply the locked deltas, +10 XP, then write the
@@ -1193,6 +1400,304 @@ pub struct DressOwnedByDevice<'info> {
     pub pet: Account<'info, Pet>,
     #[account(seeds = [CLOSET_SEED, wallet.owner.as_ref()], bump = closet.bump)]
     pub closet: Account<'info, Closet>,
+}
+
+/// Every `*_by_device` instruction opens the same way: the linked device signs, and the owner's
+/// Pawket Wallet says it may. The rest are the owner's instruction's accounts, in the same order.
+#[derive(Accounts)]
+#[instruction(name: String)]
+pub struct AdoptPetByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + Pet::INIT_SPACE,
+        seeds = [PET_SEED, wallet.owner.as_ref(), name.as_bytes()],
+        bump
+    )]
+    pub pet: Account<'info, Pet>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + PetPassport::INIT_SPACE,
+        seeds = [PASSPORT_SEED, pet.key().as_ref()],
+        bump
+    )]
+    pub passport: Account<'info, PetPassport>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(slug: String)]
+pub struct FoundGuildByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(constraint = pet.owner == wallet.owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + Guild::INIT_SPACE,
+        seeds = [GUILD_SEED, slug.as_bytes()],
+        bump
+    )]
+    pub guild: Account<'info, Guild>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + GuildMember::INIT_SPACE,
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump
+    )]
+    pub member: Account<'info, GuildMember>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct JoinGuildByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(constraint = pet.owner == wallet.owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(mut)]
+    pub guild: Account<'info, Guild>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + GuildMember::INIT_SPACE,
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump
+    )]
+    pub member: Account<'info, GuildMember>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct LeaveGuildByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(constraint = pet.owner == wallet.owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(
+        mut,
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump = member.bump,
+        has_one = pet,
+        has_one = guild,
+        has_one = payer,
+        close = payer
+    )]
+    pub member: Account<'info, GuildMember>,
+    #[account(mut)]
+    pub guild: Account<'info, Guild>,
+    /// CHECK: whoever paid the member account's rent, which it gets back. Held to `member.payer`.
+    #[account(mut)]
+    pub payer: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+#[instruction(id: u32)]
+pub struct CreateEventByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(constraint = guild.founder == wallet.owner @ PawketError::NotGuildFounder)]
+    pub guild: Account<'info, Guild>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + GuildEvent::INIT_SPACE,
+        seeds = [EVENT_SEED, guild.key().as_ref(), &id.to_le_bytes()],
+        bump
+    )]
+    pub event: Account<'info, GuildEvent>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct RsvpByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(constraint = pet.owner == wallet.owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump = member.bump,
+        constraint = member.guild == event.guild @ PawketError::NotInGuild
+    )]
+    pub member: Account<'info, GuildMember>,
+    #[account(mut)]
+    pub event: Account<'info, GuildEvent>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + EventRsvp::INIT_SPACE,
+        seeds = [RSVP_SEED, event.key().as_ref(), pet.key().as_ref()],
+        bump
+    )]
+    pub rsvp: Account<'info, EventRsvp>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CheckInByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(constraint = pet.owner == wallet.owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(mut)]
+    pub event: Account<'info, GuildEvent>,
+    #[account(
+        mut,
+        seeds = [RSVP_SEED, event.key().as_ref(), pet.key().as_ref()],
+        bump = rsvp.bump
+    )]
+    pub rsvp: Account<'info, EventRsvp>,
+}
+
+#[derive(Accounts)]
+#[instruction(id: u32)]
+pub struct CreatePollByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(constraint = guild.founder == wallet.owner @ PawketError::NotGuildFounder)]
+    pub guild: Account<'info, Guild>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + GuildPoll::INIT_SPACE,
+        seeds = [POLL_SEED, guild.key().as_ref(), &id.to_le_bytes()],
+        bump
+    )]
+    pub poll: Account<'info, GuildPoll>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct VoteByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(constraint = pet.owner == wallet.owner @ PawketError::NotPetOwner)]
+    pub pet: Account<'info, Pet>,
+    #[account(
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump = member.bump,
+        constraint = member.guild == poll.guild @ PawketError::NotInGuild
+    )]
+    pub member: Account<'info, GuildMember>,
+    #[account(mut)]
+    pub poll: Account<'info, GuildPoll>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + Ballot::INIT_SPACE,
+        seeds = [BALLOT_SEED, poll.key().as_ref(), wallet.owner.as_ref()],
+        bump
+    )]
+    pub ballot: Account<'info, Ballot>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct WaveByDevice<'info> {
+    #[account(mut)]
+    pub device: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [WALLET_SEED, wallet.owner.as_ref()],
+        bump = wallet.bump,
+        has_one = device @ PawketError::NotThisDevice
+    )]
+    pub wallet: Account<'info, PawketWallet>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub pet: Account<'info, Pet>,
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + Guestbook::INIT_SPACE,
+        seeds = [GUESTBOOK_SEED, pet.key().as_ref()],
+        bump
+    )]
+    pub guestbook: Account<'info, Guestbook>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]

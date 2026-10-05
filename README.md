@@ -37,11 +37,11 @@ write-up are in [`docs/PITCH.md`](docs/PITCH.md); the mainnet plan is
 3. Press "Record Pepper" and approve. Every care after that is a signed
    transaction, with its signature and an Explorer link on screen.
 4. Tired of approving each one? Open the Pawket Wallet (from the wallet
-   chip, or the line under the deck), put in a little devnet SOL and link
-   this device — one approval. From then on care, rounds and clothes are
-   signed here with no prompt, inside the limits you set, and each fee
-   comes from that balance. Withdraw or close it any time; the history of
-   every lamport is read from Solana.
+   chip) and link this browser — one approval, no SOL needed while Pawket
+   pays the fees. From then on care, rounds, clothes, guilds, gatherings
+   and waves are signed here with no pop-up, inside the limits you set;
+   anything that spends SOL still asks your wallet. Withdraw or close it any
+   time; the history of every lamport is read from Solana.
 5. Open "Their record" — the public Passport anyone can read — and keep the
    pet's card in your wallet from there.
 6. Share the Passport link: in a Blink-aware client it opens as the pet's
@@ -89,7 +89,7 @@ write-up are in [`docs/PITCH.md`](docs/PITCH.md); the mainnet plan is
 | `join_guild` / `leave_guild` | a pet joins one guild at a time; leaving returns the rent to whoever paid it |
 | `open_wallet` / `deposit` / `withdraw` / `close_wallet` | the owner's Pawket Wallet: money in from the owner, and out only to the owner |
 | `link_device` / `unlink_device` | the owner links one device (it co-signs) for up to 30 days and 500 actions a day; the owner or the device ends it |
-| `care_by_device` / `finish_round_by_device` / `dress_by_device` | the same care, round and clothes, signed by the linked device with no prompt; its fee refilled from the balance, one fee at a time |
+| `*_by_device` (14) | everything the owner signs for their pets but money — care, rounds, clothes, adoption, guilds, events, check-ins, votes, waves — signed by the linked device with no prompt; the sponsor pays as for the owner, or the device pays its own fee from a float the balance refills |
 | `buy` | one Market item at its fixed price, from the buyer to Pawket's treasury and nowhere else, into their closet |
 | `dress_owned` / `dress_owned_by_device` | a piece from the closet goes on; the program checks the closet |
 | `create_event` / `rsvp` / `check_in` | the founder plans; the guild's pets go, and check in when it starts |

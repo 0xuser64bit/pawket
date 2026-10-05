@@ -39,13 +39,13 @@ enum variant order, error codes.
 | `found_guild`         | owner, payer         | slug 3–24 of `a-z0-9` and inner `-`; name 3–32 bytes; motto ≤ 80 bytes; crest < 8, colour < 6; the founding pet is the first member |
 | `join_guild`          | owner, payer         | a pet takes its member account (one guild at a time); the count goes up |
 | `leave_guild`         | owner                | the member account closes to its recorded `payer`; the count goes down; the guild stays |
-| `open_wallet`         | owner, payer         | the owner's `PawketWallet`; `payer` pays its rent (the owner — the sponsor never pays a wallet's rent) |
+| `open_wallet`         | owner, payer         | the owner's `PawketWallet`; `payer` pays its rent (the owner or the sponsor) and gets it back when it closes |
 | `deposit`             | owner                | lamports from the owner into the wallet (CPI transfer); counted in `deposited` |
 | `withdraw`            | owner                | lamports from the wallet to the owner and nowhere else, never into its rent |
-| `link_device`         | owner, device        | the device acts until `expires_at` (≤ 30 days), at most `daily_actions` (1–500) a UTC day; it signs to show it is there, is not the owner, and is handed its 0.001 SOL fee float from the balance; one device at a time |
+| `link_device`         | owner, device        | the device acts until `expires_at` (≤ 30 days), at most `daily_actions` (1–500) a UTC day; it signs to show it is there, is not the owner, and is handed its 0.001 SOL fee float from the balance — the whole float or, when the balance cannot cover it, none; one device at a time |
 | `unlink_device`       | owner or device      | ends the link; when the device signs, everything it holds comes back to the balance (it may pay its own fee and close to zero) |
 | `close_wallet`        | owner                | no device linked; the balance to the owner, the rent to the recorded payer |
-| `care_by_device`, `finish_round_by_device`, `dress_by_device` | device | the same rules and record as the owner's own, for the wallet owner's pets only, inside the link's end and today's limit; then the device's fee is refilled from the balance — by at most one fee (5,000 lamports) and never past its float |
+| `*_by_device` (14: care, round, dress, dress owned, adopt, found, join, leave, event, RSVP, check-in, poll, vote, wave) | device | the owner instruction's own rules, arguments and record, for the wallet owner and their pets only, inside the link's end and today's limit. Accounts: the device and the Pawket Wallet where the owner was, then the owner instruction's in order (`asDeviceInstruction`). A device that paid its own fee is refilled from the balance — by at most one fee (5,000 lamports) and never past its float |
 | `buy`                 | owner, payer         | one Market item at its fixed price (`item_price`: pieces 19–22 at 0.05 SOL, rooms 64–65 at 0.1 SOL), from the owner to `TREASURY` and nowhere else; the closet records it; `payer` covers the closet's rent the first time |
 | `dress_owned`, `dress_owned_by_device` | owner, or device | one of the eighteen, or a Market piece the owner's closet holds |
 | `create_event`        | owner (the guild's founder), payer | an event: a 3–48 byte title, a note to 120, ending after it starts and after now, at most 7 days long, starting within 60 days |
@@ -85,19 +85,21 @@ scope enforced by the program, not by Pawket:
   owner. Its secret half cannot be read or exported, by Pawket's code either;
   it can only sign. It is linked by the owner's own signature, and the device
   co-signs the link.
-- **What it may sign** is `care_by_device`, `finish_round_by_device` and
-  `dress_by_device` for the wallet owner's pets, before the link's end and
-  under today's limit — and `unlink_device` for itself. Nothing that moves
-  the balance takes a device's signature.
-- **Who pays.** The device is its own fee payer (`sendAsDevice`). It is
-  handed a 0.001 SOL float when linked, and each of its actions refills it
-  from the balance by at most one fee, so the balance pays for those actions
-  and nothing else; a key that leaked could spend no faster than the daily
-  limit allows. The sponsor never signs a device's action
-  (`checkSponsorable` refuses it in words): Pawket's float pays for prompts a
-  person approves, not for a key that acts alone. It does pay the fee to
-  open, fill, link, unlink, withdraw and close — and appears in none of
-  those instructions.
+- **What it may sign** is every instruction the owner signs for their pets
+  except money: care, rounds, clothes, adoption, guilds, events, check-ins,
+  votes and waves — each a `*_by_device` twin (`DEVICE_VARIANTS`), for the
+  wallet owner and their pets only, before the link's end and under today's
+  limit — and `unlink_device` for itself. Nothing that moves the balance, a
+  Market sale or a coin takes a device's signature.
+- **Who pays.** The sponsor, exactly as for the owner: the fee, and the rent
+  where the owner's instruction has a `payer`. So a player with an empty
+  wallet opens a Pawket Wallet (the sponsor pays its rent, back to it on
+  close), links a browser with nothing in it, and is never asked again.
+  With no sponsor, the device is its own fee payer: it is handed a 0.001 SOL
+  float when linked (if the balance holds one), and each action it pays for
+  refills it from the balance by at most one fee, so a key that leaked could
+  spend no faster than the daily limit allows; anything that would need it
+  to pay rent goes to the wallet instead.
 - **The money** is the wallet account's own lamports above rent. Deposits
   come from the owner; a withdrawal and a close go only to the owner; the
   rent goes back to whoever paid it (always the owner — the sponsor never
@@ -106,9 +108,11 @@ scope enforced by the program, not by Pawket:
   transaction that touched the wallet account, decoded into what it was, how
   the balance moved and who paid the fee. Pawket keeps none of it.
 
-`usePawketSend().act` sends an action for a pet the connected wallet keeps:
-by this device, with no prompt, while it may act (linked, under today's
-limit, holding a fee above its rent); otherwise by the wallet, as before.
+`usePawketSend().act` sends anything for the connected wallet's pets that
+costs no money: built as the owner would sign it, then turned into its twin
+and signed by this device with no prompt while it may act (linked, under
+today's limit); otherwise by the wallet, and the receipt says why
+(`deviceFallback`).
 
 A guild is people and their pets and nothing else: no token, no treasury,
 no vote weight, and nothing in it touches a vital, XP or a score. The
@@ -183,12 +187,13 @@ sends nothing.
 place in one, so a wallet with no SOL can play. Its key (`SPONSOR_KEYPAIR`, server-only) is a devnet hot wallet with a
 small float — not the upgrade authority. `checkSponsorable` signs only when:
 
-- every instruction is one of Pawket's, on Pawket's program, and not one a
-  linked device takes (a device pays its own way);
+- every instruction is one of Pawket's, on Pawket's program — a linked
+  device's twin is sponsored as its owner's instruction would be;
 - the sponsor is the fee payer, and appears in no instruction except as the
-  `payer` of `adopt_pet`, `found_guild`, `join_guild`, `buy` (the closet,
-  never the price), `create_event`, `rsvp`, `create_poll`, `vote` or `wave`
-  (rent it pays), or `leave_guild`'s `payer` (rent it gets back);
+  `payer` of `adopt_pet`, `found_guild`, `join_guild`, `open_wallet`, `buy`
+  (the closet, never the price), `create_event`, `rsvp`, `create_poll`,
+  `vote` or `wave` (rent it pays), or `leave_guild`'s `payer` (rent it gets
+  back) — one account later in a device's twin;
 - there are no lookup tables and no compute-budget instructions (a priority
   fee is the one way to spend the float faster).
 

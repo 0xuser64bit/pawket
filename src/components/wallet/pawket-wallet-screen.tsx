@@ -11,7 +11,6 @@ import {
   Chip,
   Choice,
   Field,
-  Icon,
   Paper,
   Receipt,
   Row,
@@ -20,7 +19,6 @@ import {
   SectionLabel,
   Stack,
   Waiting,
-  type IconName,
 } from "@/components/pk";
 import { AddressLine } from "@/components/wallet/address";
 import { TxReceipt } from "@/components/wallet/tx-receipt";
@@ -49,12 +47,13 @@ import { fetchWalletHistory, type WalletEntry } from "@/lib/wallet/history";
 import { refreshPawketWallet, rentOfWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
 /**
- * The Pawket Wallet: care without a prompt for every care. The player's own
- * wallet links this device once; from then on the device signs care, rounds
- * and clothes for their pets on Solana by itself, inside the limits they set,
- * and pays each fee from the balance they put in. Money moves only with the
- * wallet's own approval, and only ever back to it. Everything here is read
- * from Solana — the balance, the link, and every line of the history.
+ * The Pawket Wallet: one approval, then no pop-ups. The player's own wallet
+ * links this browser once; from then on the browser signs whatever their pets
+ * do on Solana — care, rounds, clothes, adoption, guilds, gatherings, waves —
+ * inside the limits they set, while anything that spends SOL still asks the
+ * wallet. Pawket pays the fees while it can; a balance the player puts in
+ * pays them when it does not. Money moves only with the wallet's own approval,
+ * and only ever back to it. Everything here is read from Solana.
  *
  * Money is Paper: statements, not celebrations, and nothing moves on it.
  */
@@ -69,8 +68,12 @@ const DAILY = [
   { value: 100, label: "100 a day" },
   { value: 250, label: "250 a day" },
 ] as const;
-/** The least a first deposit can be: the device's float and a good many fees. */
-const MIN_FIRST = 2_000_000n;
+/** What a player may put in when opening: nothing while Pawket pays the fees. */
+const PUT = [
+  { value: 0, label: "Nothing" },
+  { value: 10_000_000, label: "0.01 SOL" },
+  { value: 50_000_000, label: "0.05 SOL" },
+] as const;
 const sol = (lamports: bigint) => `${formatSol(lamports)} SOL`;
 
 /** A link's end: a few minutes inside the program's 30 days, so a clock running ahead is not refused. */
@@ -91,20 +94,20 @@ export function PawketWalletScreen() {
       <ScreenBar>
         <div>
           <h1 className="display-l">Pawket Wallet</h1>
-          <p className="caption pk-faint">Care without a prompt for every care. Yours, on Solana {getPublicEnv().solanaCluster}.</p>
+          <p className="caption pk-faint">One approval, then no pop-ups. Yours, on Solana {getPublicEnv().solanaCluster}.</p>
         </div>
-        {state?.linked ? <Chip label="This device is linked" tone="sprout" icon="check" /> : null}
+        {state?.linked ? <Chip label="This browser is linked" tone="sprout" icon="check" /> : null}
       </ScreenBar>
 
       {!ready ? (
         <Waiting label="Opening your Pawket Wallet" />
       ) : !owner ? (
-        <Stack gap={5}>
-          <Intro />
+        <Stack gap={4}>
           <Card>
-            <h2 className="title">Connect the wallet that keeps your pets</h2>
+            <h2 className="title">Stop the pop-ups</h2>
             <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-              A Pawket Wallet belongs to a wallet. Connecting signs nothing.
+              Connect the wallet that keeps your pets. It approves once, and then this browser signs for them with no
+              pop-up. Connecting signs nothing.
             </p>
             <div className="pk-foot">
               <Button label="Connect a wallet" icon="wallet" tone="quiet" onClick={() => setConnecting(true)} />
@@ -124,8 +127,7 @@ export function PawketWalletScreen() {
       ) : state.wallet ? (
         <Opened state={state} owner={owner} />
       ) : (
-        <Stack gap={5}>
-          <Intro />
+        <Stack gap={4}>
           <SetUp owner={owner} />
           <Rules />
         </Stack>
@@ -141,60 +143,26 @@ export function PawketWalletScreen() {
   );
 }
 
-/** What it is, in three lines. */
-function Intro() {
-  const points: Array<{ icon: IconName; title: string; body: string }> = [
-    {
-      icon: "bolt",
-      title: "One approval, then no prompts",
-      body: "Your wallet links this device once. After that, caring, playing and dressing your pets on Solana is signed here — no pop-up each time.",
-    },
-    {
-      icon: "wallet",
-      title: "Fees from a balance you fill",
-      body: "Each thing the device does costs one network fee, paid from what you put in. Nothing else can be spent from it.",
-    },
-    {
-      icon: "check",
-      title: "Only ever back to you",
-      body: "Withdraw or close it whenever you like. Money moves only with your wallet's approval, and only to your wallet.",
-    },
-  ];
-  return (
-    <div className="pk-wallet-intro">
-      {points.map((point) => (
-        <Card key={point.title} variant="quiet">
-          <span className="pk-wallet-intro__icon" aria-hidden="true">
-            <Icon name={point.icon} size={18} />
-          </span>
-          <h2 className="title" style={{ marginTop: "var(--space-3)" }}>
-            {point.title}
-          </h2>
-          <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-            {point.body}
-          </p>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
 /** The rule every device lives inside. The program holds it to every line. */
 function Rules() {
   const can = [
-    "Care for, play with and dress your pets on Solana, from this browser only",
-    "Pay its own network fee, refilled from your balance by that fee and no more",
+    "Care for, play with and dress your pets on Solana, and keep a new one there",
+    "Found, join and leave guilds, go to their events, check in and vote",
+    "Wave at other pets",
     "Act until the date you choose — 30 days at most — up to the times a day you choose",
   ];
   const cannot = [
+    "Spend your SOL: a Market look or a guild coin always asks your wallet",
     "Move your balance anywhere: only your wallet withdraws, and only to itself",
-    "Adopt, found or join a guild, or touch a pet that is not yours",
-    "Act once its link runs out, or past today's limit",
+    "Act for a pet that is not yours, once its link runs out, or past today's limit",
     "Be read: its key is made in this browser and cannot be exported — by Pawket either",
   ];
   return (
-    <Stack gap={3}>
-      <SectionLabel>The rule a linked device lives inside</SectionLabel>
+    <details className="pk-fold">
+      <summary>
+        <span className="title">What a linked browser can and cannot do</span>
+        <span className="caption pk-faint">The program holds it to every line</span>
+      </summary>
       <div className="pk-rows">
         <Card>
           <h2 className="title" style={{ marginBottom: "var(--space-3)", color: "var(--pool-text)" }}>
@@ -227,25 +195,25 @@ function Rules() {
           </ul>
         </Card>
       </div>
-    </Stack>
+    </details>
   );
 }
 
-/** Opening one: the first deposit and this device's link, in one approval. */
+/** Opening one and linking this browser, in one approval: nothing to put in while Pawket pays the fees. */
 function SetUp({ owner }: { owner: Address }) {
   const sender = usePawketSend();
   const sponsor = useSponsor();
   const rent = useRequest(rentOfWallet);
   const cluster = getPublicEnv().solanaCluster;
-  const [amount, setAmount] = useState("0.02");
-  const [days, setDays] = useState<number>(7);
+  const sponsored = Boolean(sponsor.data?.available);
+  const [put, setPut] = useState<number>(0);
+  const [days, setDays] = useState<number>(30);
   const [daily, setDaily] = useState<number>(100);
   const [problem, setProblem] = useState<string>();
-  const lamports = parseSolToLamports(amount);
-  const tooLittle = lamports !== null && lamports < MIN_FIRST;
+  // With nobody paying its fees, the browser needs a float of its own before it can sign anything.
+  const deposit = BigInt(sponsored ? put : Math.max(put, PUT[1].value));
 
   async function open() {
-    if (!lamports || tooLittle) return;
     setProblem(undefined);
     let device;
     try {
@@ -255,9 +223,9 @@ function SetUp({ owner }: { owner: Address }) {
       return;
     }
     const wallet = (await deriveWalletPda(owner)).address;
-    const result = await sender.send("Open your Pawket Wallet and link this device", ({ owner: signer }) => [
-      getOpenWalletInstruction({ owner: signer, payer: signer, wallet }),
-      getDepositInstruction({ owner: signer, wallet, amount: lamports }),
+    const result = await sender.send("Link this browser", ({ owner: signer, payer }) => [
+      getOpenWalletInstruction({ owner: signer, payer, wallet }),
+      ...(deposit > 0n ? [getDepositInstruction({ owner: signer, wallet, amount: deposit })] : []),
       getLinkDeviceInstruction({ owner: signer, wallet, device, expiresAt: expiresIn(days), dailyActions: daily }),
     ]);
     if (result) await refreshPawketWallet(owner);
@@ -265,51 +233,36 @@ function SetUp({ owner }: { owner: Address }) {
 
   return (
     <Card>
-      <h2 className="title">Open your Pawket Wallet</h2>
+      <h2 className="title">Stop the pop-ups</h2>
       <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-        One approval opens it, puts in your first balance and links this device.
+        Your wallet approves once. After that, this browser signs what your pets do on Solana — care, rounds,
+        outfits, guilds, gatherings and waves — with no pop-up. Anything that spends SOL still asks your wallet.
       </p>
       <Stack gap={4} style={{ marginTop: "var(--space-4)" }}>
-        <Field
-          label="First deposit"
-          icon="wallet"
-          suffix="SOL"
-          amount
-          inputMode="decimal"
-          value={amount}
-          onChange={(event) => setAmount(event.target.value)}
-          error={
-            lamports === null
-              ? "An amount in SOL, like 0.02."
-              : tooLittle
-                ? `At least ${sol(MIN_FIRST)}: the device keeps ${sol(WALLET_LIMITS.deviceFloat)} for its fees.`
-                : undefined
-          }
-          helper={`About ${lamports ? (lamports / WALLET_LIMITS.feePerSignature).toLocaleString() : 0} actions' worth of fees.`}
-        />
-        <Choice label="Link this device for" options={DAYS} value={days} onPick={setDays} />
+        <Choice label="Link this browser for" options={DAYS} value={days} onPick={setDays} />
         <Choice label="At most" options={DAILY} value={daily} onPick={setDaily} />
+        <Choice label="Put in" options={sponsored ? PUT : PUT.slice(1)} value={sponsored ? put : Math.max(put, PUT[1].value)} onPick={setPut} />
+        <p className="caption pk-faint" style={{ marginTop: "calc(-1 * var(--space-2))" }}>
+          {sponsored
+            ? "Pawket pays the fees, so nothing is needed. A balance keeps this browser signing if it ever stops; it comes back to you whenever you like."
+            : "Pawket is not paying fees right now, so this browser pays its own from what you put in — one fee an action, and the rest back whenever you like."}
+        </p>
         <Paper title="What this approval does" meta={`Solana ${cluster}`}>
           <Receipt
             rows={[
-              { k: "From your wallet", v: lamports ? sol(lamports) : "—" },
-              { k: "Kept as your balance", v: lamports && !tooLittle ? sol(lamports - WALLET_LIMITS.deviceFloat) : "—" },
-              { k: "On this device, for fees", v: sol(WALLET_LIMITS.deviceFloat) },
-              { k: "Rent for the wallet", v: rent.data ? `${sol(rent.data)}, back when you close it` : "Back when you close it" },
-              { k: "Network fee", v: sponsor.data?.available ? "Paid by Pawket" : "Paid by you" },
+              { k: "From your wallet", v: deposit > 0n ? sol(deposit) : "Nothing" },
+              {
+                k: "Rent for the wallet",
+                v: sponsored ? "Paid by Pawket, back to it when you close" : rent.data ? `${sol(rent.data)}, back when you close it` : "Back when you close it",
+              },
+              { k: "Each action's fee", v: sponsored ? "Paid by Pawket" : "From your balance" },
             ]}
-            note="Your wallet approves this once. The device's key is made in this browser and cannot be read or exported."
+            note="The browser's key is made here and cannot be read or exported — by Pawket either."
           />
         </Paper>
         {problem ? <Banner tone="risk" title="Nothing was linked" body={problem} /> : null}
         <div>
-          <Button
-            label="Open it and link this device"
-            icon="bolt"
-            tone="sun"
-            disabled={!lamports || tooLittle || sender.busy}
-            onClick={() => void open()}
-          />
+          <Button label="Link this browser" icon="bolt" tone="sun" disabled={sender.busy || !sponsor.data} onClick={() => void open()} />
         </div>
         <TxReceipt tx={sender.tx} cluster={cluster} />
       </Stack>
@@ -365,7 +318,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
   const wallet = state.wallet!;
   const sender = usePawketSend();
   const cluster = getPublicEnv().solanaCluster;
-  const [days, setDays] = useState<number>(7);
+  const [days, setDays] = useState<number>(30);
   const [daily, setDaily] = useState<number>(wallet.dailyActions || 100);
   const [problem, setProblem] = useState<string>();
   const here = state.device && wallet.device === state.device.address;
@@ -383,7 +336,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
       setProblem(error instanceof Error ? error.message : "This browser cannot keep a device key. Nothing was linked.");
       return;
     }
-    const result = await sender.send(here ? "Link this device again" : "Link this device", ({ owner: signer }) => [
+    const result = await sender.send(here ? "Link this browser again" : "Link this browser", ({ owner: signer }) => [
       getLinkDeviceInstruction({ owner: signer, wallet: wallet.address, device, expiresAt: expiresIn(days), dailyActions: daily }),
     ]);
     if (result) await refreshPawketWallet(owner);
@@ -391,9 +344,10 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
 
   async function unlinkHere() {
     if (!state.device) return;
-    // The device lets go of itself: it signs and pays, and what it holds comes home. No prompt.
-    const result = await sender.asDevice("Unlink this device", state.device, [
-      getUnlinkDeviceInstruction({ authority: state.device, wallet: wallet.address, device: state.device, deviceSigns: true }),
+    // The device lets go of itself: it signs, and what it holds comes home. No prompt.
+    const device = state.device;
+    const result = await sender.asDevice("Unlink this browser", device, () => [
+      getUnlinkDeviceInstruction({ authority: device, wallet: wallet.address, device, deviceSigns: true }),
     ]);
     if (result?.outcome === "confirmed") {
       await forgetDevice(owner);
@@ -419,15 +373,15 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
   return (
     <Card>
       <div className="pk-spread">
-        <h2 className="title">This device</h2>
+        <h2 className="title">This browser</h2>
         {here && !expired ? <Chip label="Linked" tone="sprout" icon="check" /> : <Chip label={expired ? "Link ran out" : "Not linked"} />}
       </div>
       <Stack gap={4} style={{ marginTop: "var(--space-3)" }}>
         {here && !expired ? (
           <>
             <p className="body-sm">
-              Caring, playing and dressing your pets on Solana is signed here, with no prompt — until {until}, up to{" "}
-              {wallet.dailyActions} times a day.
+              What your pets do on Solana is signed here, with no pop-up — until {until}, up to {wallet.dailyActions} times
+              a day. Anything that spends SOL still asks your wallet.
             </p>
             <Receipt
               rows={[
@@ -440,11 +394,11 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               <Banner
                 tone="wait"
                 title="Today's limit is reached"
-                body="Until midnight UTC your wallet signs each care again, as before. Nothing else changed."
+                body="Until midnight UTC your wallet signs again, as before. Nothing else changed."
               />
             ) : null}
             <Row gap={2} wrap>
-              <Button label="Unlink this device" tone="quiet" size="sm" disabled={sender.busy} onClick={() => void unlinkHere()} />
+              <Button label="Unlink this browser" tone="quiet" size="sm" disabled={sender.busy} onClick={() => void unlinkHere()} />
             </Row>
             <details className="pk-wallet-more">
               <summary className="body-sm">Change how long, or how much a day</summary>
@@ -460,25 +414,16 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
           <>
             <p className="body-sm pk-muted">
               {expired
-                ? `Its link ran out on ${until}. Your wallet signs each care again until you link it once more.`
+                ? `Its link ran out on ${until}. Your wallet signs again until you link it once more.`
                 : elsewhere
-                  ? `Another device (${truncateAddress(wallet.device!)}) is linked. Linking this one takes its place; the other keeps what it holds for fees until it unlinks itself.`
-                  : "Link it, and caring for your pets on Solana stops asking your wallet every time."}
+                  ? `Another browser (${truncateAddress(wallet.device!)}) is linked. Linking this one takes its place; the other keeps what it holds for fees until it unlinks itself.`
+                  : "Link it, and what your pets do on Solana stops asking your wallet every time."}
             </p>
             {limits}
             <Row gap={2} wrap>
-              <Button
-                label={expired ? "Link it again" : "Link this device"}
-                icon="bolt"
-                tone="sun"
-                disabled={sender.busy || state.balance + state.deviceLamports < WALLET_LIMITS.deviceFloat}
-                onClick={() => void link()}
-              />
+              <Button label={expired ? "Link it again" : "Link this browser"} icon="bolt" tone="sun" disabled={sender.busy} onClick={() => void link()} />
               {elsewhere ? <Button label="Unlink the other device" tone="ghost" size="sm" disabled={sender.busy} onClick={() => void unlinkElsewhere()} /> : null}
             </Row>
-            {state.balance + state.deviceLamports < WALLET_LIMITS.deviceFloat ? (
-              <p className="body-sm pk-faint">A device keeps {sol(WALLET_LIMITS.deviceFloat)} for its fees: put that much in first.</p>
-            ) : null}
           </>
         )}
         {problem ? <Banner tone="risk" title="Nothing was linked" body={problem} /> : null}
@@ -643,15 +588,35 @@ export function describe(entry: WalletEntry, names: Map<string, string>): string
       case "unlink":
         return entry.change > 0n ? `Unlinked a device, ${sol(entry.change)} back from it` : "Unlinked a device";
       case "close":
-        return "Closed, everything back to you";
+        return "Closed, the balance back to you";
       case "care":
         return entry.action ? `${CARE_DONE_LABEL[entry.action]} ${pet}` : `Cared for ${pet}`;
       case "round":
         return `A round with ${pet}`;
       case "dress": {
         const piece = entry.wearing ? findWearable(entry.wearing) : undefined;
-        return piece ? `Put the ${piece.name.toLowerCase()} on ${pet}` : `Took ${pet}'s things off`;
+        return piece ? `Put the ${piece.name.toLowerCase()} on ${pet}` : `Dressed ${pet}`;
       }
+      case "adopt":
+        return `Kept ${pet} on Solana`;
+      case "found":
+        return `${pet} founded a guild`;
+      case "join":
+        return `${pet} joined a guild`;
+      case "leave":
+        return `${pet} left a guild`;
+      case "event":
+        return "Planned an event";
+      case "rsvp":
+        return `${pet} is going to an event`;
+      case "check-in":
+        return `${pet} checked in`;
+      case "poll":
+        return "Asked a poll";
+      case "vote":
+        return "Voted";
+      case "wave":
+        return `Waved at ${pet}`;
     }
   });
   return words.join(" · ");

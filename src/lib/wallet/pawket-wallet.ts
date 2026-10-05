@@ -26,11 +26,10 @@ export interface PawketWalletState {
   deviceLamports: bigint;
   /** This device is the linked one, and its link has not run out. */
   linked: boolean;
-  /**
-   * This device can act right now, with no prompt: linked, under today's
-   * limit, and holding enough for a fee without dipping under its rent.
-   */
+  /** This device can act right now, with no prompt: linked and under today's limit. */
   canAct: boolean;
+  /** It holds enough to pay a fee itself without dipping under its rent, for when no sponsor pays. */
+  paysOwnWay: boolean;
   error?: unknown;
 }
 
@@ -50,11 +49,11 @@ export function rentOfWallet(): Promise<bigint> {
   return walletRent;
 }
 
-/** Whether `wallet` lets `device` act now, given what the device holds. */
+/** Whether `wallet` lets `device` act now, and whether the device could pay its own fee. */
 export function deviceMayAct(wallet: ChainWallet | null, device: Address | null, deviceLamports: bigint, now = Date.now() / 1000) {
   const linked = Boolean(wallet && device && wallet.device === device && wallet.deviceExpiresAt > now);
-  const canAct = linked && wallet!.actionsToday < wallet!.dailyActions && deviceLamports >= DEVICE_MINIMUM;
-  return { linked, canAct };
+  const canAct = linked && wallet!.actionsToday < wallet!.dailyActions;
+  return { linked, canAct, paysOwnWay: deviceLamports >= DEVICE_MINIMUM };
 }
 
 const states = new Map<Address, PawketWalletState>();
@@ -87,7 +86,7 @@ async function read(owner: Address): Promise<void> {
 }
 
 function empty(owner: Address): PawketWalletState {
-  return { owner, status: "loading", wallet: null, balance: 0n, device: null, deviceLamports: 0n, linked: false, canAct: false };
+  return { owner, status: "loading", wallet: null, balance: 0n, device: null, deviceLamports: 0n, linked: false, canAct: false, paysOwnWay: false };
 }
 
 /** Read `owner`'s Pawket Wallet again — after a deposit, a link, an action. Resolves once it is read. */

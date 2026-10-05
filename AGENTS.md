@@ -62,11 +62,15 @@ crest on its pets there.
 A player can keep a Pawket Wallet (`/wallet`): a `PawketWallet` PDA whose
 balance only its owner fills or empties (withdrawals go only back to the
 owner), and one linked device — a non-extractable WebCrypto key made and kept
-in this browser (`src/lib/wallet/device.ts`) — that signs care, rounds and
-clothes for the owner's pets with no prompt, until the end date and inside
-the daily limit the owner set. The device pays its own fee and the balance
-refills it by at most that fee per action; the sponsor never signs a
-device's action. Its history is read from Solana (`src/lib/wallet/history.ts`).
+in this browser (`src/lib/wallet/device.ts`) — that signs with no prompt
+whatever the owner signs for their pets except money: care, rounds, clothes,
+adoption, guilds, gatherings and waves (each a `*_by_device` twin;
+`DEVICE_VARIANTS` in `program.ts` is the list), until the end date and
+inside the daily limit the owner set. `usePawketSend().act` is the one way
+those are sent. The sponsor pays a device's fee and rent as it does the
+owner's; with no sponsor the device pays its own fee from a float the
+balance refills by at most that fee per action. Its history is read from
+Solana (`src/lib/wallet/history.ts`).
 The Market (`/market`) sells looks for SOL at prices fixed in the program
 (`item_price`): four pieces for pets and two rooms. `buy` sends the price
 from the owner straight to Pawket's treasury and records the item in the

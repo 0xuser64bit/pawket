@@ -3,6 +3,36 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: A linked browser signs everything but money, and needs no SOL
+
+**Context:** The Pawket Wallet exists so a player stops seeing a wallet
+pop-up for everything, but its device signed only care, rounds and clothes.
+Joining a guild, going to an event, checking in, voting, waving and keeping
+a second pet still opened the wallet each time — and, with no reason given,
+looked like the Pawket Wallet was not working. Linking also needed SOL:
+the owner paid the wallet's rent and a 0.001 SOL float, so a player on
+devnet with an empty wallet (most of them) could not get rid of the pop-ups
+at all.
+**Decision:** An additive program upgrade gives every instruction the owner
+signs for their pets except money a `*_by_device` twin — adopt, found, join,
+leave, event, RSVP, check-in, poll, vote, wave — with the owner instruction's
+arguments and accounts, the device and the Pawket Wallet in the owner's
+place. The sponsor pays a twin's fee and rent exactly as it would the
+owner's (one account later in `checkSponsorable`), and may pay a Pawket
+Wallet's rent, which `close_wallet` returns to it. `link_device` now hands
+over the whole float or none, so a browser links with an empty balance and
+acts while the sponsor pays. Money — a Market sale, a coin, the balance —
+never has a twin: a key that signs with no prompt never spends SOL.
+This reverses "the sponsor never signs a device's action": a script with a
+keypair wallet could always get sponsored actions without a prompt, so the
+rule bought no safety, only pop-ups; the owner's daily limit bounds a device.
+**Consequence:** One approval, no SOL, then no pop-ups for anything but
+spending. `usePawketSend().act` is the one way to send a pet's action; when
+the wallet has to sign instead, the receipt says why (not linked here, link
+ran out, today's limit). `sendAsDevice` is gone: a device sends through
+`sendPawket` like everyone else. The binary before the upgrade is in
+`.keys/backups/`.
+
 ## 2026-10: Everything before mainnet is v0
 
 **Context:** Devnet upgrades had started to be counted (v2, v3, v4…) for a

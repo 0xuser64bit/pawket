@@ -22,6 +22,7 @@ import {
 import { normalizePetName, parseAddress } from "./pda";
 import {
   CARE_ACTION_VARIANTS,
+  DEVICE_VARIANTS,
   GATHERING_LIMITS,
   GUILD_LIMITS,
   MARKET,
@@ -421,58 +422,31 @@ export function getCloseWalletInstruction(input: WalletInstructionInput & { rent
   };
 }
 
-export interface DeviceInstructionInput {
-  /** The linked device: it signs and pays its own fee. */
-  device: SignerInput;
-  wallet: string | Address;
-  pet: string | Address;
-  programId?: string | Address;
-}
-
-function deviceCareAccounts(input: DeviceInstructionInput & { passport: string | Address }) {
-  return [
-    signerMeta(input.device, AccountRole.WRITABLE_SIGNER, "device"),
-    { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
-    { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
-    { address: parseAddress(input.passport, "passport"), role: AccountRole.WRITABLE },
-  ];
-}
-
-/** `care_by_device`: a care the owner's linked device signs. */
-export function getCareByDeviceInstruction(
-  input: DeviceInstructionInput & { passport: string | Address; action: CareActionType },
+/**
+ * `instruction`, as the owner's linked device signs it: its `*_by_device`
+ * twin (`DEVICE_VARIANTS`), with the device and the owner's Pawket Wallet in
+ * the owner's place and every other account and argument as they were. Build
+ * the owner's instruction for the owner's address, then hand it here. Throws
+ * for anything a device may not sign: whatever moves money.
+ */
+export function asDeviceInstruction(
+  instruction: Instruction,
+  linked: { device: SignerInput; wallet: string | Address },
 ): Instruction {
-  const action = CARE_ACTION_VARIANTS[input.action];
-  if (action === undefined) throw new Error(`Unknown care action: ${input.action}`);
+  const data = instruction.data ?? new Uint8Array();
+  const name = (Object.keys(DEVICE_VARIANTS) as Array<keyof typeof DEVICE_VARIANTS>).find((key) =>
+    PAWKET_DISCRIMINATORS[key].every((byte, i) => data[i] === byte),
+  );
+  if (!name) throw new Error("A linked device cannot sign that. Nothing was sent.");
+  const [, ...rest] = instruction.accounts ?? [];
   return {
-    programAddress: programAddress(input.programId),
-    accounts: deviceCareAccounts(input),
-    data: concatBytes(PAWKET_DISCRIMINATORS.careByDevice, encodeVariant(action, "care action")),
-  };
-}
-
-/** `finish_round_by_device`: a finished round the owner's linked device signs. */
-export function getFinishRoundByDeviceInstruction(input: DeviceInstructionInput & { passport: string | Address }): Instruction {
-  return {
-    programAddress: programAddress(input.programId),
-    accounts: deviceCareAccounts(input),
-    data: new Uint8Array(PAWKET_DISCRIMINATORS.finishRoundByDevice),
-  };
-}
-
-/** `dress_by_device`: dressing the owner's linked device signs. */
-export function getDressByDeviceInstruction(input: DeviceInstructionInput & { wearing: number }): Instruction {
-  if (!Number.isInteger(input.wearing) || input.wearing < 0 || input.wearing > WEARABLE_COUNT) {
-    throw new Error(`Unknown wearable: ${input.wearing}`);
-  }
-  return {
-    programAddress: programAddress(input.programId),
+    programAddress: instruction.programAddress,
     accounts: [
-      signerMeta(input.device, AccountRole.WRITABLE_SIGNER, "device"),
-      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
-      { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
+      signerMeta(linked.device, AccountRole.WRITABLE_SIGNER, "device"),
+      { address: parseAddress(linked.wallet, "wallet"), role: AccountRole.WRITABLE },
+      ...rest,
     ],
-    data: concatBytes(PAWKET_DISCRIMINATORS.dressByDevice, u8.encode(input.wearing)),
+    data: concatBytes(PAWKET_DISCRIMINATORS[DEVICE_VARIANTS[name]], data.slice(8)),
   };
 }
 
@@ -541,22 +515,6 @@ export function getDressOwnedInstruction(input: {
       { address: parseAddress(input.closet, "closet"), role: AccountRole.READONLY },
     ],
     data: concatBytes(PAWKET_DISCRIMINATORS.dressOwned, u8.encode(wearableSlotFor(input.wearing))),
-  };
-}
-
-/** `dress_owned_by_device`: the same, signed by the owner's linked device. */
-export function getDressOwnedByDeviceInstruction(
-  input: DeviceInstructionInput & { closet: string | Address; wearing: number },
-): Instruction {
-  return {
-    programAddress: programAddress(input.programId),
-    accounts: [
-      signerMeta(input.device, AccountRole.WRITABLE_SIGNER, "device"),
-      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
-      { address: parseAddress(input.pet, "pet"), role: AccountRole.WRITABLE },
-      { address: parseAddress(input.closet, "closet"), role: AccountRole.READONLY },
-    ],
-    data: concatBytes(PAWKET_DISCRIMINATORS.dressOwnedByDevice, u8.encode(wearableSlotFor(input.wearing))),
   };
 }
 

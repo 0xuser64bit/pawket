@@ -133,7 +133,7 @@ async function fund(address: string, lamports: bigint) {
 
 const signedByWallet = (page: Page) => page.evaluate(() => (window as unknown as { __testWalletSigned?: number }).__testWalletSigned ?? 0);
 
-test("a Pawket Wallet links this device, and a care on Solana asks the wallet nothing", async ({ page }) => {
+test("a Pawket Wallet links this browser, and a care on Solana asks the wallet nothing", async ({ page }) => {
   test.setTimeout(420_000);
   const wallet = createTestWallet();
   await fund(wallet.address, 50_000_000n);
@@ -149,18 +149,19 @@ test("a Pawket Wallet links this device, and a care on Solana asks the wallet no
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await page.getByRole("button", { name: `Record ${name}` }).click();
   await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText("Each care asks your wallet to approve it.")).toBeVisible();
+  await expect(page.getByText("Each care asks your wallet.")).toBeVisible();
 
-  // One approval opens it, fills it and links this device.
-  await page.getByRole("link", { name: "Link this device to a Pawket Wallet" }).click();
-  await expect(page.getByRole("heading", { name: "Open your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
-  await page.getByRole("button", { name: "Open it and link this device" }).click();
-  await expect(page.getByText("This device is linked")).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText("0.019 SOL", { exact: true })).toBeVisible();
+  // One approval opens it, puts a little in and links this browser.
+  await page.getByRole("link", { name: "Link this browser" }).click();
+  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("radio", { name: "0.01 SOL" }).click();
+  await page.getByRole("button", { name: "Link this browser" }).click();
+  await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText("0.009 SOL", { exact: true })).toBeVisible();
 
   // A care now: signed here, paid from the balance, and the wallet asked nothing.
   await page.getByRole("link", { name: "Home" }).click();
-  await expect(page.getByText("Cares here are signed by this device, with no prompt.")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("Signed by this browser, with no pop-up.")).toBeVisible({ timeout: 60_000 });
   const before = await signedByWallet(page);
   await page.getByRole("button", { name: "Feed" }).click();
   await expect(page.getByText("Recorded on Solana")).toBeVisible({ timeout: 120_000 });
@@ -170,14 +171,14 @@ test("a Pawket Wallet links this device, and a care on Solana asks the wallet no
   // The history says so, read from Solana.
   await page.goto("/wallet");
   await expect(page.getByText(`Fed ${name}`)).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText(/^Opened · Put in 0\.02 SOL · Linked a device, 0\.001 SOL to it for fees$/)).toBeVisible();
+  await expect(page.getByText(/^Opened · Put in 0\.01 SOL · Linked a device, 0\.001 SOL to it for fees$/)).toBeVisible();
 
-  // Letting go of this device asks the wallet nothing either; closing gives everything back.
+  // Letting go of this browser asks the wallet nothing either; closing gives everything back.
   const beforeUnlink = await signedByWallet(page);
-  await page.getByRole("button", { name: "Unlink this device" }).click();
+  await page.getByRole("button", { name: "Unlink this browser" }).click();
   await expect(page.getByText("Not linked", { exact: true })).toBeVisible({ timeout: 120_000 });
   expect(await signedByWallet(page)).toBe(beforeUnlink);
   await page.getByRole("button", { name: "Close my Pawket Wallet" }).click();
   await page.getByRole("button", { name: "Close it", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Open your Pawket Wallet" })).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 120_000 });
 });

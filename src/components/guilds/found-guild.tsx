@@ -57,7 +57,7 @@ export function FoundGuild() {
     }
     const guild = (await deriveGuildPda(slug)).address;
     const member = (await deriveMemberPda(chosen.pet.address)).address;
-    const result = await sender.send(`Found ${name.trim()}`, ({ owner, payer }) => [
+    const result = await sender.act(`Found ${name.trim()}`, ({ owner, payer }) => [
       getFoundGuildInstruction({ owner, payer, pet: chosen.pet.address, guild, member, slug, name, motto, crest, colour }),
     ]);
     if (result?.outcome === "confirmed") {

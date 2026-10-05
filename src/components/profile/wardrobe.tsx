@@ -15,9 +15,7 @@ import { readPet, savePet } from "@/lib/guest/storage";
 import { wearableSlot } from "@/lib/solana/accounts";
 import { useCloset } from "@/lib/market/use-closet";
 import {
-  getDressByDeviceInstruction,
   getDressInstruction,
-  getDressOwnedByDeviceInstruction,
   getDressOwnedInstruction,
 } from "@/lib/solana/instructions";
 import { deriveClosetPda } from "@/lib/solana/pda";
@@ -62,18 +60,11 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
       const closetAddress = slot > WEARABLE_COUNT ? (await deriveClosetPda(chain.pet.owner)).address : null;
       const result = await sender.act(
         next ? `Put the ${item?.name.toLowerCase()} on ${pet.name}` : `Take the ${item?.name.toLowerCase()} off ${pet.name}`,
-        {
-          byOwner: ({ owner }) => [
-            closetAddress
-              ? getDressOwnedInstruction({ owner, pet: chain.pet.address, closet: closetAddress, wearing: slot })
-              : getDressInstruction({ owner, pet: chain.pet.address, wearing: slot }),
-          ],
-          byDevice: ({ device, wallet }) => [
-            closetAddress
-              ? getDressOwnedByDeviceInstruction({ device, wallet, pet: chain.pet.address, closet: closetAddress, wearing: slot })
-              : getDressByDeviceInstruction({ device, wallet, pet: chain.pet.address, wearing: slot }),
-          ],
-        },
+        ({ owner }) => [
+          closetAddress
+            ? getDressOwnedInstruction({ owner, pet: chain.pet.address, closet: closetAddress, wearing: slot })
+            : getDressInstruction({ owner, pet: chain.pet.address, wearing: slot }),
+        ],
       );
       if (result) companion.refresh();
       return;

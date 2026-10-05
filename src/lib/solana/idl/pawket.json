@@ -111,6 +111,137 @@
       ]
     },
     {
+      "name": "adopt_pet_by_device",
+      "docs": [
+        "Adoption signed by the owner's linked device: the pet is the owner's, at the owner's address."
+      ],
+      "discriminator": [
+        199,
+        69,
+        64,
+        219,
+        74,
+        193,
+        42,
+        154
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              },
+              {
+                "kind": "arg",
+                "path": "name"
+              }
+            ]
+          }
+        },
+        {
+          "name": "passport",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  115,
+                  115,
+                  112,
+                  111,
+                  114,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "species",
+          "type": {
+            "defined": {
+              "name": "PetSpecies"
+            }
+          }
+        },
+        {
+          "name": "personality",
+          "type": {
+            "defined": {
+              "name": "PetPersonality"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "buy",
       "docs": [
         "Buy one thing in the Market at its fixed price, paid by the owner straight into Pawket's",
@@ -310,6 +441,89 @@
       "args": []
     },
     {
+      "name": "check_in_by_device",
+      "docs": [
+        "A check-in signed by the owner's linked device."
+      ],
+      "discriminator": [
+        177,
+        77,
+        184,
+        79,
+        173,
+        33,
+        113,
+        248
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "event",
+          "writable": true
+        },
+        {
+          "name": "rsvp",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  115,
+                  118,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "event"
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "close_wallet",
       "docs": [
         "The Pawket Wallet closes: its balance goes to its owner, its rent to whoever paid it. A",
@@ -451,6 +665,116 @@
       ]
     },
     {
+      "name": "create_event_by_device",
+      "docs": [
+        "An event planned by the founder's linked device."
+      ],
+      "discriminator": [
+        146,
+        126,
+        209,
+        238,
+        114,
+        7,
+        180,
+        181
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "guild"
+        },
+        {
+          "name": "event",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  118,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guild"
+              },
+              {
+                "kind": "arg",
+                "path": "id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "id",
+          "type": "u32"
+        },
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "note",
+          "type": "string"
+        },
+        {
+          "name": "starts_at",
+          "type": "i64"
+        },
+        {
+          "name": "ends_at",
+          "type": "i64"
+        }
+      ]
+    },
+    {
       "name": "create_poll",
       "docs": [
         "A guild's founder asks the guild something: two to four options, open from ten minutes to",
@@ -470,6 +794,113 @@
         {
           "name": "owner",
           "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "guild"
+        },
+        {
+          "name": "poll",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  108,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guild"
+              },
+              {
+                "kind": "arg",
+                "path": "id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "id",
+          "type": "u32"
+        },
+        {
+          "name": "question",
+          "type": "string"
+        },
+        {
+          "name": "options",
+          "type": {
+            "vec": "string"
+          }
+        },
+        {
+          "name": "closes_at",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "create_poll_by_device",
+      "docs": [
+        "A poll opened by the founder's linked device."
+      ],
+      "discriminator": [
+        239,
+        171,
+        242,
+        247,
+        40,
+        167,
+        59,
+        36
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
         },
         {
           "name": "payer",
@@ -1031,6 +1462,135 @@
       ]
     },
     {
+      "name": "found_guild_by_device",
+      "docs": [
+        "A founding signed by the owner's linked device."
+      ],
+      "discriminator": [
+        171,
+        76,
+        208,
+        79,
+        212,
+        231,
+        149,
+        101
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "guild",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  117,
+                  105,
+                  108,
+                  100
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "slug"
+              }
+            ]
+          }
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "slug",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "motto",
+          "type": "string"
+        },
+        {
+          "name": "crest",
+          "type": "u8"
+        },
+        {
+          "name": "colour",
+          "type": "u8"
+        }
+      ]
+    },
+    {
       "name": "join_guild",
       "docs": [
         "A pet joins a guild. A pet is in one guild at most: its member account is seeded by the pet."
@@ -1052,6 +1612,96 @@
           "relations": [
             "pet"
           ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "guild",
+          "writable": true
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "join_guild_by_device",
+      "docs": [
+        "A join signed by the owner's linked device."
+      ],
+      "discriminator": [
+        19,
+        229,
+        151,
+        50,
+        203,
+        115,
+        249,
+        143
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
         },
         {
           "name": "payer",
@@ -1166,12 +1816,108 @@
       "args": []
     },
     {
+      "name": "leave_guild_by_device",
+      "docs": [
+        "Leaving, signed by the owner's linked device. The rent still goes back to whoever paid it."
+      ],
+      "discriminator": [
+        101,
+        182,
+        35,
+        198,
+        122,
+        92,
+        19,
+        215
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pet",
+          "relations": [
+            "member"
+          ]
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "guild",
+          "writable": true,
+          "relations": [
+            "member"
+          ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "relations": [
+            "member"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "link_device",
       "docs": [
         "Link `device` to act for the owner until `expires_at` (30 days at most), at most",
-        "`daily_actions` times a UTC day: it may care for, play with and dress the owner's pets, and",
-        "nothing else. The device signs too, so only a key that is really there is linked, and it is",
-        "handed its fee float from the balance. One device at a time: linking one replaces the last."
+        "`daily_actions` times a UTC day: it may do for the owner's pets what the owner signs for —",
+        "care, rounds, clothes, adoption, guilds, gatherings, waves — and nothing that moves money.",
+        "The device signs too, so only a key that is really there is linked, and it is handed its fee",
+        "float from the balance when the balance holds one. One device at a time: linking one",
+        "replaces the last."
       ],
       "discriminator": [
         36,
@@ -1427,6 +2173,120 @@
       "args": []
     },
     {
+      "name": "rsvp_by_device",
+      "docs": [
+        "An RSVP signed by the owner's linked device."
+      ],
+      "discriminator": [
+        165,
+        218,
+        28,
+        216,
+        244,
+        210,
+        167,
+        162
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "member",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event",
+          "writable": true
+        },
+        {
+          "name": "rsvp",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  115,
+                  118,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "event"
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "unlink_device",
       "docs": [
         "The device stops acting for the owner. The owner or the device itself may say so; when the",
@@ -1582,6 +2442,128 @@
       ]
     },
     {
+      "name": "vote_by_device",
+      "docs": [
+        "A ballot cast by the owner's linked device: still one per wallet, the owner's."
+      ],
+      "discriminator": [
+        130,
+        220,
+        233,
+        16,
+        25,
+        255,
+        183,
+        223
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "member",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "poll",
+          "writable": true
+        },
+        {
+          "name": "ballot",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  108,
+                  108,
+                  111,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "poll"
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "option",
+          "type": "u8"
+        }
+      ]
+    },
+    {
       "name": "wave",
       "docs": [
         "Anyone but its owner waves at a pet, once a UTC day. Its guestbook counts every wave and",
@@ -1601,6 +2583,95 @@
         {
           "name": "visitor",
           "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pet"
+        },
+        {
+          "name": "guestbook",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  117,
+                  101,
+                  115,
+                  116,
+                  98,
+                  111,
+                  111,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "wave_by_device",
+      "docs": [
+        "A wave from the visitor's linked device: the visitor is the device's owner."
+      ],
+      "discriminator": [
+        59,
+        133,
+        219,
+        166,
+        15,
+        126,
+        96,
+        176
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet.owner",
+                "account": "PawketWallet"
+              }
+            ]
+          }
         },
         {
           "name": "payer",

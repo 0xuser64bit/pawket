@@ -11,18 +11,15 @@ import {
   getCheckInInstruction,
   getCreateEventInstruction,
   getCreatePollInstruction,
-  getDressOwnedByDeviceInstruction,
+  asDeviceInstruction,
   getDressOwnedInstruction,
   getRsvpInstruction,
   getVoteInstruction,
   getWaveInstruction,
-  getCareByDeviceInstruction,
   getCareInstruction,
   getCloseWalletInstruction,
   getDepositInstruction,
-  getDressByDeviceInstruction,
   getDressInstruction,
-  getFinishRoundByDeviceInstruction,
   getFinishRoundInstruction,
   getFoundGuildInstruction,
   getJoinGuildInstruction,
@@ -34,6 +31,7 @@ import {
 } from "./instructions";
 import {
   CARE_ACTION_VARIANTS,
+  DEVICE_VARIANTS,
   GATHERING_LIMITS,
   GUILD_LIMITS,
   MARKET,
@@ -96,12 +94,8 @@ const BUILT: Record<string, Instruction> = {
   // As the IDL has it; a device that signs its own unlink is a signer there too (below).
   unlink_device: getUnlinkDeviceInstruction({ authority: A, wallet: A, device: B, deviceSigns: false }),
   close_wallet: getCloseWalletInstruction({ owner: A, wallet: A, rentPayer: A }),
-  care_by_device: getCareByDeviceInstruction({ device: A, wallet: A, pet: A, passport: A, action: CareActionType.Rest }),
-  finish_round_by_device: getFinishRoundByDeviceInstruction({ device: A, wallet: A, pet: A, passport: A }),
-  dress_by_device: getDressByDeviceInstruction({ device: A, wallet: A, pet: A, wearing: 18 }),
   buy: getBuyInstruction({ owner: A, payer: A, closet: A, item: 19 }),
   dress_owned: getDressOwnedInstruction({ owner: A, pet: A, closet: A, wearing: 19 }),
-  dress_owned_by_device: getDressOwnedByDeviceInstruction({ device: A, wallet: A, pet: A, closet: A, wearing: 22 }),
   create_event: getCreateEventInstruction({ owner: A, payer: A, guild: A, event: A, id: 7, title: "Sunday nap", note: "By the window.", startsAt: 1_790_848_800, endsAt: 1_790_856_000 }),
   rsvp: getRsvpInstruction({ owner: A, payer: A, pet: A, member: A, event: A, rsvp: A }),
   check_in: getCheckInInstruction({ owner: A, pet: A, event: A, rsvp: A }),
@@ -109,6 +103,11 @@ const BUILT: Record<string, Instruction> = {
   vote: getVoteInstruction({ owner: A, payer: A, pet: A, member: A, poll: A, ballot: A, option: 1 }),
   wave: getWaveInstruction({ visitor: A, payer: A, pet: A, guestbook: A }),
 };
+// Every device twin, built the one way the app builds it: from its owner's instruction.
+const snake = (camelName: string) => camelName.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+for (const [owner, device] of Object.entries(DEVICE_VARIANTS)) {
+  BUILT[snake(device)] = asDeviceInstruction(BUILT[snake(owner)], { device: A, wallet: A });
+}
 
 describe("program.ts against the IDL", () => {
   it("names the deployed program", () => {
@@ -162,7 +161,7 @@ describe("program.ts against the IDL", () => {
     expect(link.slice(8, 16)).toEqual(Array.from(new Uint8Array(new BigInt64Array([1_790_848_800n]).buffer)));
     expect(link.slice(16)).toEqual([44, 1]);
     expect(Array.from(BUILT.deposit.data ?? []).slice(8)).toEqual([128, 240, 250, 2, 0, 0, 0, 0]);
-    expect(Array.from(BUILT.dress_by_device.data ?? []).slice(8)).toEqual([18]);
+    expect(Array.from(BUILT.dress_by_device.data ?? []).slice(8)).toEqual([0]);
     // The device signs a link, and an unlink it gives its float back on.
     expect(BUILT.link_device.accounts?.[2]).toMatchObject({ address: B, role: AccountRole.WRITABLE_SIGNER });
     expect(getUnlinkDeviceInstruction({ authority: A, wallet: A, device: B, deviceSigns: true }).accounts?.[2]).toMatchObject({
@@ -170,6 +169,20 @@ describe("program.ts against the IDL", () => {
       role: AccountRole.WRITABLE_SIGNER,
     });
     expect(BUILT.unlink_device.accounts?.[2].role).toBe(AccountRole.WRITABLE);
+  });
+
+  it("gives each device twin its owner instruction's arguments and accounts, the owner's place taken by the device and its wallet", () => {
+    const named = (name: string) => idl.instructions.find((ix) => ix.name === name)!;
+    for (const [owner, device] of Object.entries(DEVICE_VARIANTS)) {
+      const mine = named(snake(owner));
+      const twin = named(snake(device));
+      expect(twin.args, device).toEqual(mine.args);
+      expect(twin.accounts.map((a) => a.name), device).toEqual(["device", "wallet", ...mine.accounts.slice(1).map((a) => a.name)]);
+    }
+    // Every `*_by_device` instruction the program has is a twin here; nothing that moves money is.
+    const twins = idl.instructions.filter((ix) => ix.name.endsWith("_by_device")).map((ix) => camel(ix.name)).sort();
+    expect([...Object.values(DEVICE_VARIANTS)].sort()).toEqual(twins);
+    for (const money of ["buy", "deposit", "withdraw", "openWallet", "linkDevice", "closeWallet"]) expect(DEVICE_VARIANTS).not.toHaveProperty(money);
   });
 
   it("holds the Pawket Wallet's limits to the program's", () => {

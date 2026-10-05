@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, Row } from "@/components/pk";
+import { savePicture, sharePicture, useAndroidApp, useBackCloses } from "@/lib/native/android";
 
 /** The tokens a photo is printed in, read from the room the player is in. */
 function ink() {
@@ -78,8 +79,10 @@ export async function printPhoto(shot: string, title: string, line: string): Pro
 
 /**
  * A photo of the two of you, printed, in a dialog: save it as a file, or
- * hand it to the system's share sheet where there is one. Nothing is sent
- * anywhere by taking it.
+ * hand it to the system's share sheet where there is one. In the Android
+ * app, saving puts it in the phone's gallery and sharing opens the phone's
+ * share sheet (`src/lib/native/android.ts`). Nothing is sent anywhere by
+ * taking it, and nothing is uploaded to share it.
  */
 export function PhotoDialog({
   shot,
@@ -98,6 +101,9 @@ export function PhotoDialog({
   const dialog = useRef<HTMLDialogElement>(null);
   const [print, setPrint] = useState<string | null>(null);
   const [said, setSaid] = useState<string>();
+  const [handing, setHanding] = useState(false);
+  const inApp = useAndroidApp();
+  useBackCloses(() => dialog.current?.close());
 
   useEffect(() => {
     const el = dialog.current;
@@ -119,8 +125,21 @@ export function PhotoDialog({
     };
   }, [shot, title, line]);
 
+  /** To the phone: its gallery, or its share sheet. It says what happened, and what did not. */
+  async function toPhone(how: "save" | "share") {
+    if (!print || handing) return;
+    setHanding(true);
+    setSaid(how === "save" ? "Saving…" : undefined);
+    const answer = how === "save" ? await savePicture(print, file) : await sharePicture(print, file, title);
+    setHanding(false);
+    if (answer.ok) setSaid(how === "save" ? "Saved to your gallery, in Pictures › Pawket." : undefined);
+    else if (answer.reason === "no-target") setSaid("Nothing on this phone can take a picture to share. Save it instead.");
+    else setSaid(how === "save" ? "This phone did not save it. Nothing was kept." : "The share sheet did not open. Nothing was sent.");
+  }
+
   async function share() {
     if (!print) return;
+    if (inApp) return toPhone("share");
     try {
       const blob = await (await fetch(print)).blob();
       const photo = new File([blob], `${file}.png`, { type: "image/png" });
@@ -143,12 +162,14 @@ export function PhotoDialog({
         <div className="pk-photo__print pk-photo__print--wait" />
       )}
       <Row gap={2} wrap style={{ marginTop: "var(--space-4)" }}>
-        {print ? (
+        {print && inApp ? (
+          <Button label="Save the photo" size="sm" disabled={handing} onClick={() => void toPhone("save")} />
+        ) : print ? (
           <a href={print} download={`${file}.png`} className="pk-btn pk-btn--sm">
             <span>Save the photo</span>
           </a>
         ) : null}
-        <Button label="Share" tone="quiet" size="sm" icon="out" disabled={!print} onClick={() => void share()} />
+        <Button label="Share" tone="quiet" size="sm" icon="out" disabled={!print || handing} onClick={() => void share()} />
         <Button label="Close" tone="ghost" size="sm" onClick={() => dialog.current?.close()} />
       </Row>
       <p role="status" className="caption pk-faint" style={{ marginTop: said ? "var(--space-2)" : 0 }}>

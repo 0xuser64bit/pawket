@@ -28,6 +28,10 @@ function fold(line: string): string {
   return out.join("\r\n ");
 }
 
+/** The reminder's words, the same in a calendar file and in the Android app's calendar intent. */
+export const reminderTitle = (name: string) => `Look in on ${name}`;
+export const reminderNotes = (name: string, url: string) => `${name} is waiting on Pawket. A care a day keeps the streak: ${url}`;
+
 const stamp = (date: Date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -49,12 +53,12 @@ export function reminderIcs({ name, url, at, days = 30, now = new Date() }: { na
     `DTSTART:${local}`,
     "DURATION:PT10M",
     `RRULE:FREQ=DAILY;COUNT=${days}`,
-    `SUMMARY:${text(`Look in on ${name}`)}`,
-    `DESCRIPTION:${text(`${name} is waiting on Pawket. A care a day keeps the streak: ${url}`)}`,
+    `SUMMARY:${text(reminderTitle(name))}`,
+    `DESCRIPTION:${text(reminderNotes(name, url))}`,
     `URL:${url}`,
     "BEGIN:VALARM",
     "ACTION:DISPLAY",
-    `DESCRIPTION:${text(`Look in on ${name}`)}`,
+    `DESCRIPTION:${text(reminderTitle(name))}`,
     "TRIGGER:PT0M",
     "END:VALARM",
     "END:VEVENT",

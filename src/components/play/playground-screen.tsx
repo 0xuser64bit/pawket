@@ -28,6 +28,7 @@ import { getFinishRoundInstruction } from "@/lib/solana/instructions";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
 import { dailySeed, keepBest, keepDaily, readBest, readDaily, type GameId } from "@/lib/play/best";
 import { useSound } from "@/lib/play/sound";
+import { inAndroidApp, shareLink } from "@/lib/native/android";
 import { CatchGame } from "./catch-game";
 import { CopyGame } from "./copy-game";
 import { HopGame } from "./hop-game";
@@ -378,6 +379,11 @@ function Result({
   async function share() {
     const url = new URL("/playground", getPublicEnv().appUrl).toString();
     const text = `${pet.name} and I played today's ${name} in Pawket (${day}): ${unit(outcome.score)}. Same round for everyone today.`;
+    if (inAndroidApp()) {
+      const answer = await shareLink({ url, text });
+      setShared(answer.ok ? undefined : "The share sheet did not open. Nothing was sent.");
+      return;
+    }
     try {
       if (navigator.share) {
         await navigator.share({ text, url });

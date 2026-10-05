@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pawket's "home" line icon (src/components/pk/icon.tsx), centred in an adaptive icon's 108dp square. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:scaleX="1.8" android:scaleY="1.8" android:translateX="32.4" android:translateY="32.4">
+        <path
+            android:strokeColor="@color/mark_ink"
+            android:strokeWidth="1.8"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M4,11.2 L12,4 L20,11.2 M6.4,9.6 V20 H17.6 V9.6" />
+    </group>
+</vector>

@@ -1,3 +1,5 @@
+import java.net.URI
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -72,6 +74,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "SOLANA_MOBILE_URL", "\"${webShellUrl.escapeForBuildConfig()}\"")
+        // The host whose links open in the app (verified by its /.well-known/assetlinks.json).
+        manifestPlaceholders["pawketHost"] = URI(webShellUrl).host
     }
 
     signingConfigs {

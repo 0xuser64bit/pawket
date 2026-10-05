@@ -53,6 +53,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
@@ -119,6 +122,28 @@ class MainActivity : ComponentActivity() {
         }
         onBackPressedDispatcher.addCallback(this, back)
         setContent { Shell() }
+        if (!failed) offerShortcuts()
+    }
+
+    /** Long-press the icon: home, today's round, the Park — each opens that page of Pawket's, nothing more. */
+    private fun offerShortcuts() {
+        val places =
+            listOf(
+                Triple("home", R.string.shortcut_home_short to R.string.shortcut_home_long, R.mipmap.ic_shortcut_home),
+                Triple("playground", R.string.shortcut_playground_short to R.string.shortcut_playground_long, R.mipmap.ic_shortcut_playground),
+                Triple("park", R.string.shortcut_park_short to R.string.shortcut_park_long, R.mipmap.ic_shortcut_park),
+            )
+        val shortcuts =
+            places.map { (path, labels, icon) ->
+                ShortcutInfoCompat
+                    .Builder(this, path)
+                    .setShortLabel(getString(labels.first))
+                    .setLongLabel(getString(labels.second))
+                    .setIcon(IconCompat.createWithResource(this, icon))
+                    .setIntent(Intent(Intent.ACTION_VIEW, "$origin/$path".toUri(), this, MainActivity::class.java))
+                    .build()
+            }
+        ShortcutManagerCompat.setDynamicShortcuts(this, shortcuts)
     }
 
     @SuppressLint("SetJavaScriptEnabled")

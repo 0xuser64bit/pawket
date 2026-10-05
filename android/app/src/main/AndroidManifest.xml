@@ -30,6 +30,25 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- A shared Passport, guild or place in Pawket opens here when the app is installed,
+                 verified by the site's /.well-known/assetlinks.json (public/.well-known/). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" />
+                <data android:host="${pawketHost}" />
+                <data android:pathPrefix="/pet/" />
+                <data android:pathPrefix="/guilds" />
+                <data android:path="/home" />
+                <data android:path="/adopt" />
+                <data android:path="/park" />
+                <data android:path="/playground" />
+                <data android:path="/pulse" />
+                <data android:path="/market" />
+            </intent-filter>
         </activity>
 
         <!-- Pictures handed to the share sheet: a temporary content URI, read-only, for the one share. -->

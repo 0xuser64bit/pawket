@@ -58,6 +58,12 @@ describe("getPublicEnv", () => {
     expect(() => getPublicEnv()).toThrow(/mainnet-beta.*devnet|devnet.*mainnet-beta/);
   });
 
+  it("refuses a provider key in a public URL: it would reach every browser", () => {
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL = "https://devnet.example-rpc.com/?api-key=not-a-real-key";
+    __resetEnvCacheForTests();
+    expect(() => getPublicEnv()).toThrow(/SOLANA_RPC_URL/);
+  });
+
   it("rejects a malformed program ID at startup, not deep in PDA code", () => {
     process.env.NEXT_PUBLIC_PAWKET_PROGRAM_ID = "not-an-address!!";
     __resetEnvCacheForTests();

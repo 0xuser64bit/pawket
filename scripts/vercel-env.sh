@@ -4,7 +4,8 @@
 #   scripts/vercel-env.sh https://<production host>
 # Public values are written as they are; the sponsor key goes from
 # .keys/sponsor.json straight to Vercel, marked sensitive, and is never
-# printed. Re-running replaces each value.
+# printed — and so does SOLANA_RPC_URL (a provider URL with its key) when it
+# is set here. Re-running replaces each value.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 host="${1:?usage: scripts/vercel-env.sh https://<production host>}"
@@ -25,3 +26,4 @@ put NEXT_PUBLIC_SOLANA_CLUSTER devnet
 put NEXT_PUBLIC_SOLANA_RPC_URL "${NEXT_PUBLIC_SOLANA_RPC_URL:-https://api.devnet.solana.com}"
 put NEXT_PUBLIC_PAWKET_PROGRAM_ID "$program"
 put SPONSOR_KEYPAIR "$(cat .keys/sponsor.json)" sensitive
+if [ -n "${SOLANA_RPC_URL:-}" ]; then put SOLANA_RPC_URL "$SOLANA_RPC_URL" sensitive; fi

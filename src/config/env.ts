@@ -62,6 +62,16 @@ const publicEnvSchema = z
         message: "Not a valid Solana address.",
       });
     }
+    // A provider key in a public URL is in every browser that loads the app.
+    for (const [path, url] of [["solanaRpcUrl", env.solanaRpcUrl], ["solanaWsUrl", env.solanaWsUrl]] as const) {
+      if (url && /api[-_]?key=/i.test(url)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [path],
+          message: "This URL carries a provider key, and NEXT_PUBLIC_ values reach every browser. Put it in SOLANA_RPC_URL (server-only).",
+        });
+      }
+    }
     for (const known of KNOWN_RPC_HOSTS) {
       if (
         env.solanaCluster !== known.cluster &&

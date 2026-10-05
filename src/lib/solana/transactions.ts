@@ -68,8 +68,43 @@ function messageOf(error: unknown): string {
     .join(" | ");
 }
 
+/**
+ * The code Mobile Wallet Adapter put on its error, anywhere in the chain: a
+ * name like "ERROR_WALLET_NOT_FOUND" for the adapter's own, a number for the
+ * wallet's answer (-1 not authorized, -3 not signed).
+ */
+export function mobileWalletErrorCode(error: unknown): string | number | null {
+  for (const e of errorChain(error)) {
+    const { name, code } = (e ?? {}) as { name?: unknown; code?: unknown };
+    if (name !== "SolanaMobileWalletAdapterError" && name !== "SolanaMobileWalletAdapterProtocolError") continue;
+    if (typeof code === "string" || typeof code === "number") return code;
+  }
+  return null;
+}
+
+/** A wallet app on the phone said no: it declined to authorize or to sign, or the player cancelled before it opened. */
+const MOBILE_REFUSALS = new Set<string | number>([-1, -3, "ERROR_ASSOCIATION_CANCELLED"]);
+
 export function isUserRejection(error: unknown): boolean {
+  const code = mobileWalletErrorCode(error);
+  if (code !== null && MOBILE_REFUSALS.has(code)) return true;
   return /user rejected|rejected by user|declined|user denied|cancell?ed by user/i.test(messageOf(error));
+}
+
+/** What went wrong reaching a wallet app on the phone, in a sentence, or null when it was not that. */
+export function mobileWalletProblem(error: unknown): string | null {
+  switch (mobileWalletErrorCode(error)) {
+    case "ERROR_WALLET_NOT_FOUND":
+      return "No wallet app on this phone answered. Install one — Phantom, Solflare or Backpack — then try again.";
+    case "ERROR_SESSION_CLOSED":
+      return "Your wallet closed before it answered.";
+    case "ERROR_SESSION_TIMEOUT":
+      return "Your wallet did not answer in time.";
+    case "ERROR_LOOPBACK_ACCESS_BLOCKED":
+      return "This browser is not letting Pawket reach your wallet app. Allow local network access for this site, then try again.";
+    default:
+      return null;
+  }
 }
 
 export function isInsufficientFunds(error: unknown): boolean {
@@ -186,6 +221,8 @@ export function extractProgramErrorCode(error: unknown): number | null {
 
 export function toUserFacingError(error: unknown): string {
   if (isUserRejection(error)) return "You declined the signature. Nothing was sent.";
+  const mobile = mobileWalletProblem(error);
+  if (mobile) return `${mobile} Nothing was sent.`;
   const code = extractProgramErrorCode(error);
   if (code !== null) return pawketErrorMessage(code);
   if (isInsufficientFunds(error)) {

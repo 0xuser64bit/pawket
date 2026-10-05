@@ -2,7 +2,7 @@
   "name": "pawket",
   "version": "0.1.0",
   "private": true,
-  "description": "Pawket \u2014 a living companion kept in the browser",
+  "description": "Pawket — a living companion kept in the browser",
   "packageManager": "pnpm@10.0.0",
   "engines": {
     "node": ">=20"
@@ -27,6 +27,7 @@
     "@meteora-ag/cp-amm-sdk": "1.5.1",
     "@meteora-ag/dynamic-bonding-curve-sdk": "1.5.13",
     "@react-three/fiber": "9.8.1",
+    "@solana-mobile/wallet-standard-mobile": "0.6.0",
     "@solana-program/system": "0.14.1",
     "@solana/kit": "8.3.0",
     "@solana/kit-plugin-wallet": "0.20.0",
@@ -67,6 +68,18 @@
   "pnpm": {
     "overrides": {
       "rpc-websockets": "9.3.3"
+    },
+    "ignoredOptionalDependencies": [
+      "@react-native-async-storage/async-storage"
+    ],
+    "packageExtensions": {
+      "@solana-mobile/mobile-wallet-adapter-protocol@2.3.0": {
+        "peerDependenciesMeta": {
+          "react-native": {
+            "optional": true
+          }
+        }
+      }
     }
   }
 }

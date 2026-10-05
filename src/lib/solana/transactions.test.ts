@@ -9,6 +9,8 @@ import {
   isActiveStage,
   isInsufficientFunds,
   isUserRejection,
+  mobileWalletErrorCode,
+  mobileWalletProblem,
   pawketErrorMessage,
   toUserFacingError,
   waitForConfirmation,
@@ -18,6 +20,26 @@ describe("transaction errors", () => {
   it("detects user rejection", () => {
     expect(isUserRejection(new Error("User rejected the request"))).toBe(true);
     expect(isUserRejection(new Error("boom"))).toBe(false);
+  });
+
+  // Mobile Wallet Adapter wraps its own error as the cause of a plain one.
+  const mwa = (name: string, code: string | number, message = "wallet said so") =>
+    new Error(message, { cause: Object.assign(new Error(message), { name, code }) });
+
+  it("reads a phone wallet's refusal by its code, whatever its words", () => {
+    expect(isUserRejection(mwa("SolanaMobileWalletAdapterProtocolError", -3, "transaction not signed"))).toBe(true);
+    expect(isUserRejection(mwa("SolanaMobileWalletAdapterProtocolError", -1, "authorization request failed"))).toBe(true);
+    expect(isUserRejection(mwa("SolanaMobileWalletAdapterError", "ERROR_ASSOCIATION_CANCELLED"))).toBe(true);
+    expect(isUserRejection(mwa("SolanaMobileWalletAdapterProtocolError", -2, "invalid payloads"))).toBe(false);
+    expect(mobileWalletErrorCode(mwa("SomethingElse", -3))).toBeNull();
+  });
+
+  it("says what went wrong reaching a phone wallet, and that nothing was sent", () => {
+    expect(toUserFacingError(mwa("SolanaMobileWalletAdapterError", "ERROR_WALLET_NOT_FOUND"))).toMatch(/No wallet app.*Nothing was sent/);
+    expect(toUserFacingError(mwa("SolanaMobileWalletAdapterError", "ERROR_SESSION_CLOSED", "The wallet session dropped unexpectedly (1006: )"))).toBe(
+      "Your wallet closed before it answered. Nothing was sent.",
+    );
+    expect(mobileWalletProblem(new Error("boom"))).toBeNull();
   });
 
   it("maps program codes to one-sentence copy", () => {

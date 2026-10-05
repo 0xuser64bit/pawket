@@ -1,9 +1,10 @@
 "use client";
 
 import { useConnect, useWallets } from "@solana/kit-plugin-wallet/react";
+import { SolanaMobileWalletAdapterWalletName } from "@solana-mobile/wallet-standard-mobile";
 import { Button, Sheet, Stack } from "@/components/pk";
 import { wallet } from "@/lib/solana/browser-client";
-import { isUserRejection } from "@/lib/solana/transactions";
+import { isUserRejection, mobileWalletProblem } from "@/lib/solana/transactions";
 import { useSponsor } from "@/lib/solana/use-send";
 
 const INSTALL = [
@@ -49,7 +50,8 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- a wallet's own data-URI mark */}
                 <img src={option.icon} alt="" />
-                <span>{option.name}</span>
+                {/* Mobile Wallet Adapter is how, not what: the player knows their wallet app by its own name. */}
+                <span>{option.name === SolanaMobileWalletAdapterWalletName ? "A wallet app on this phone" : option.name}</span>
               </button>
             ))}
           </Stack>
@@ -68,7 +70,9 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
         )}
         {connect.isError ? (
           <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
-            {declined ? "You declined in your wallet. Nothing changed." : "That wallet did not connect. Nothing changed."}
+            {declined
+              ? "You declined in your wallet. Nothing changed."
+              : `${mobileWalletProblem(connect.error) ?? "That wallet did not connect."} Nothing changed.`}
           </p>
         ) : null}
         <p className="caption pk-faint">

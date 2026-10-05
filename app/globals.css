@@ -4540,6 +4540,31 @@ li {
   width: auto;
 }
 
+/* The coin now: what a million cost, as the one large figure on its Paper —
+   mono, hue-free, a statement and never a ticker. */
+.pk-coin-now {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+.pk-coin-now__v {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  line-height: 36px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.pk-coin-now + .pk-launch {
+  margin-bottom: var(--space-4);
+}
+@media (min-width: 1024px) {
+  /* The ticket stays in view beside the coin while the page scrolls. */
+  .pk-columns--portrait > .pk-columns__second:has(.pk-ticket) {
+    position: sticky;
+    top: var(--space-4);
+  }
+}
+
 /* ------------------------------------------------------- guild coins
 
    A coin's facts and its quotes are Paper: the corner falls to 4px, the

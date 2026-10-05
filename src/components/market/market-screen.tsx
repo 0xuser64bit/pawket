@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
 import type { Address } from "@solana/kit";
 import { Button, ItemTile, PetArt, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice } from "@/components/pk";
@@ -14,7 +13,7 @@ import { useCompanion } from "@/lib/companion/use-companion";
 import { petLook } from "@/lib/game/appearance";
 import { projectGuestPet } from "@/lib/guest/pet";
 import { useCloset } from "@/lib/market/use-closet";
-import { rpc, wallet } from "@/lib/solana/browser-client";
+import { rpc, useConnected } from "@/lib/solana/browser-client";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { getBuyInstruction, marketPrice } from "@/lib/solana/instructions";
 import { deriveClosetPda } from "@/lib/solana/pda";
@@ -66,7 +65,7 @@ const sol = (lamports: bigint | string) => `${formatUnits(lamports, 9, 4)} SOL`;
 
 export function MarketScreen() {
   const cluster = getPublicEnv().solanaCluster;
-  const connected = useConnectedWallet(wallet);
+  const connected = useConnected();
   const owner = (connected?.account.address as Address | undefined) ?? null;
   const closet = useCloset(owner);
   const choice = useThemeChoice();

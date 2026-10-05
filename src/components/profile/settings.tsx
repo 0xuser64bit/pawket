@@ -1,10 +1,9 @@
 "use client";
 
-import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import type { Address } from "@solana/kit";
 import { Button, ButtonLink, Card, Row, ThemePicker } from "@/components/pk";
 import { useCloset } from "@/lib/market/use-closet";
-import { wallet } from "@/lib/solana/browser-client";
+import { useConnected } from "@/lib/solana/browser-client";
 import { useRoomMode } from "@/components/home/room";
 import { useSound } from "@/lib/play/sound";
 import type { PetForm } from "@/components/pk";
@@ -17,7 +16,7 @@ import type { PetForm } from "@/components/pk";
 export function Settings({ form }: { form?: PetForm }) {
   const [mode, setMode] = useRoomMode();
   const [sound, setSound] = useSound();
-  const connected = useConnectedWallet(wallet);
+  const connected = useConnected();
   const closet = useCloset((connected?.account.address as Address | undefined) ?? null);
   return (
     <div className="pk-stack" style={{ gap: "var(--space-5)" }}>

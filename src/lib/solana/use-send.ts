@@ -1,14 +1,13 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
 import { createNoopSigner, type Address, type KeyPairSigner, type TransactionSigner } from "@solana/kit";
 import { dismissToast, showToast } from "@/components/pk/toast";
 import { txToast } from "@/components/wallet/tx-toast";
 import { getPublicEnv } from "@/config/env";
 import { refreshPawketWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
-import { rpc, wallet } from "./browser-client";
+import { rpc, useConnected } from "./browser-client";
 import { asDeviceInstruction } from "./instructions";
 import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
 import { isActiveStage, isUserRejection, toUserFacingError, type TransactionStage } from "./transactions";
@@ -68,7 +67,7 @@ export function useSponsor() {
  * is what a receipt draws.
  */
 export function usePawketSend() {
-  const connected = useConnectedWallet(wallet);
+  const connected = useConnected();
   const owner = (connected?.account.address as Address | undefined) ?? null;
   const pawketWallet = usePawketWallet(owner);
   const [tx, setTx] = useState<TxState>({ stage: "idle" });

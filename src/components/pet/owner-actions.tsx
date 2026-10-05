@@ -1,14 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { Button } from "@/components/pk";
 import { useCompanion } from "@/lib/companion/use-companion";
-import { wallet } from "@/lib/solana/browser-client";
+import { useConnected } from "@/lib/solana/browser-client";
 
 /** On your own pet's record, the way home. Anyone else sees the record and nothing to press. */
 export function OwnerActions({ owner, address, name }: { owner: string; address: string; name: string }) {
-  const connected = useConnectedWallet(wallet);
+  const connected = useConnected();
   const { choose } = useCompanion();
   const router = useRouter();
   if (connected?.account.address !== owner) return null;

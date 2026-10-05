@@ -91,6 +91,8 @@ test("a guild's coin states its terms and what can go wrong, and asks a wallet o
   await expect(page.getByRole("heading", { level: 1 })).toContainText(/coin/i);
   await expect(page.getByText("The terms")).toBeVisible();
   await expect(page.getByText("What can go wrong")).toBeVisible();
+  // What it does and never does is a fold away, open on a tap.
+  await page.getByText("What it does, and never does").click();
   await expect(page.getByText(/never changes a pet's vitals/i)).toBeVisible();
   // Nothing signs here without a wallet, and nothing is offered as a promise.
   await expect(page.getByRole("button", { name: /^sign/i })).toHaveCount(0);

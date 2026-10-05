@@ -1,10 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { Button, Card } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
-import { wallet } from "@/lib/solana/browser-client";
+import { useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend } from "@/lib/solana/use-send";
 
 /**
@@ -13,7 +12,7 @@ import { usePawketSend } from "@/lib/solana/use-send";
  * confirms it the page reads the record again; the card is never assumed.
  */
 export function KeepsakeCard({ owner, pet, name, made }: { owner: string; pet: string; name: string; made: boolean }) {
-  const connected = useConnectedWallet(wallet);
+  const connected = useConnected();
   const sender = usePawketSend();
   const router = useRouter();
   const cluster = getPublicEnv().solanaCluster;

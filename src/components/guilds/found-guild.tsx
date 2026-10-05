@@ -143,9 +143,11 @@ export function FoundGuild() {
           </>
         ) : free.length === 0 ? (
           <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-            {companion.owned.length === 0
-              ? "This wallet keeps no pet on Solana yet. Keep one there from Home, and it can found a guild."
-              : "Every pet this wallet keeps is in a guild already. A pet is in one at a time."}
+            {companion.chainError
+              ? "Solana did not answer when this page asked for your pets. Reload to ask again."
+              : companion.owned.length === 0
+                ? "This wallet keeps no pet on Solana yet. Keep one there from Home, and it can found a guild."
+                : "Every pet this wallet keeps is in a guild already. A pet is in one at a time."}
           </p>
         ) : (
           <div className="pk-switch" role="radiogroup" aria-label="Founding pet" style={{ marginTop: "var(--space-3)" }}>

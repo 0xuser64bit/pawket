@@ -2,16 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
 import type { Address } from "@solana/kit";
-import { Banner, Button, Card, Choice, Field, LaunchProgress, Paper, Receipt, Row, Stack, type ReceiptRow } from "@/components/pk";
+import { Banner, Button, Card, Choice, Field, Paper, Receipt, Row, Stack, type ReceiptRow } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import type { SolanaCluster } from "@/config/env";
 import { COIN_RISKS } from "@/lib/coins/copy";
 import { COIN_PRESETS, COIN_TERMS, feeSplitBps, type PresetId } from "@/lib/coins/presets";
-import { canTrade, graduationSegments } from "@/lib/coins/stage";
-import { rpc, wallet } from "@/lib/solana/browser-client";
+import { canTrade } from "@/lib/coins/stage";
+import { rpc, useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
 import { formatUnits, parseUnits } from "@/lib/utils/format";
 import type { CoinQuote, CoinState } from "@/server/coins/meteora";
@@ -40,7 +39,7 @@ const SOL = 9;
 const sol = (lamports: bigint | string, places = 4) => `${formatUnits(lamports, SOL, places)} SOL`;
 
 export function CoinDesk({ guild, coin, thresholds, cluster }: CoinDeskProps) {
-  const connected = useConnectedWallet(wallet);
+  const connected = useConnected();
   const owner = (connected?.account.address as Address | undefined) ?? null;
   const sender = usePawketSend();
   const router = useRouter();
@@ -67,15 +66,6 @@ export function CoinDesk({ guild, coin, thresholds, cluster }: CoinDeskProps) {
             body={`It is a social guild, as every guild starts. Its founder can launch a coin once ${COIN_TERMS.minMembers} pets are in it — optional, like the guild.`}
           />
         )
-      ) : null}
-
-      {coin.stage === "dbc" ? (
-        <Paper title="The curve" meta="Meteora DBC">
-          <LaunchProgress
-            value={graduationSegments(BigInt(coin.raised), BigInt(coin.threshold))}
-            readout={`${formatUnits(coin.raised, SOL, 2)} / ${formatUnits(coin.threshold, SOL, 2)} SOL`}
-          />
-        </Paper>
       ) : null}
 
       {coin.stage === "pending" ? <GraduatePanel guild={guild} cluster={cluster} sender={sender} canSign={Boolean(owner)} onConnect={() => setConnecting(true)} onDone={done} /> : null}
@@ -403,7 +393,7 @@ function TradeTicket({
     : [];
 
   return (
-    <Card>
+    <Card className="pk-ticket">
       <h2 className="title">Trade {coin.symbol}</h2>
       <Stack gap={4} className="pk-foot">
         <Choice
@@ -421,9 +411,15 @@ function TradeTicket({
           amount
           inputMode="decimal"
           suffix={side === "buy" ? "SOL" : coin.symbol}
+          placeholder={side === "buy" ? "SOL to spend, like 0.05" : `${coin.symbol} to sell`}
           value={amount}
           onChange={(event) => change(() => setAmount(event.target.value))}
           error={amount.trim() && units === null ? "An amount above nothing." : over ? "More than this wallet holds." : undefined}
+          helper={
+            balances
+              ? `In this wallet: ${sol(balances.lamports)} · ${formatUnits(balances.units, COIN_TERMS.decimals, 2)} ${coin.symbol}`
+              : "Reading this wallet…"
+          }
         />
         <Choice
           label="Accept a price worse by up to"
@@ -436,11 +432,8 @@ function TradeTicket({
           onPick={(next) => change(() => setSlippage(next))}
         />
         {problem ? <Banner tone="risk" title="No quote" body={problem} /> : null}
-        <Paper
-          title={quote ? (stale ? "This quote is old" : `Quoted ${age}s ago`) : "In this wallet"}
-          meta={quote ? `${side === "buy" ? "Buy" : "Sell"} · ${coin.symbol}` : undefined}
-        >
-          {quote ? (
+        {quote ? (
+          <Paper title={stale ? "This quote is old" : `Quoted ${age}s ago`} meta={`${side === "buy" ? "Buy" : "Sell"} · ${coin.symbol}`}>
             <Receipt
               rows={rows}
               note={
@@ -449,15 +442,8 @@ function TradeTicket({
                   : "If the price moves past what you accept before Solana records it, the trade fails and only the network fee is spent."
               }
             />
-          ) : (
-            <Receipt
-              rows={[
-                { k: "SOL", v: balances ? sol(balances.lamports) : "…" },
-                { k: coin.symbol, v: balances ? formatUnits(balances.units, COIN_TERMS.decimals, 2) : "…" },
-              ]}
-            />
-          )}
-        </Paper>
+          </Paper>
+        ) : null}
         <RiskGate agreed={agreed} onAgree={agree} />
         <Row gap={3} wrap>
           <Button

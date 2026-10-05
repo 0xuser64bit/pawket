@@ -58,6 +58,13 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
           <Button label="Connect to join" icon="wallet" tone="bloom" size="sm" onClick={() => setConnecting(true)} />
           <p className="caption pk-faint">A pet joins from the wallet that keeps it on Solana. Connecting signs nothing.</p>
         </>
+      ) : companion.chainError ? (
+        <p className="caption pk-faint">
+          Solana did not answer when this page asked for your pets.{" "}
+          <button type="button" className="pk-linkish" onClick={companion.refresh}>
+            Ask again
+          </button>
+        </p>
       ) : companion.owned.length === 0 ? (
         <p className="caption pk-faint">
           This wallet keeps no pet on Solana yet. <Link href="/home">Keep one there from Home</Link>, and it can join.

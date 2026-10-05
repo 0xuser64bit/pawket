@@ -1,20 +1,5 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
-import {
-  appendTransactionMessageInstruction,
-  createKeyPairSignerFromBytes,
-  createSolanaRpc,
-  createTransactionMessage,
-  getBase64EncodedWireTransaction,
-  getSignatureFromTransaction,
-  pipe,
-  setTransactionMessageFeePayerSigner,
-  setTransactionMessageLifetimeUsingBlockhash,
-  signTransactionMessageWithSigners,
-  type Address,
-} from "@solana/kit";
-import { getTransferSolInstruction } from "@solana-program/system";
+import { fund } from "./devnet";
 import { createTestWallet } from "./test-wallet";
 
 /**
@@ -44,7 +29,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
 
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
-  await expect(page.getByRole("button", { name: /wallet .+…/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Your wallet, .+…/ })).toBeVisible();
 
   await page.getByRole("button", { name: `Keep ${name} on Solana` }).click();
   await page.getByRole("dialog").getByRole("button", { name: `Keep ${name}`, exact: true }).click();
@@ -61,8 +46,13 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await page.getByRole("link", { name: `${name}'s record` }).click();
   await page.waitForURL(/\/pet\/[1-9A-HJ-NP-Za-km-z]{32,44}$/);
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText("On the record")).toBeVisible();
-  await expect(page.getByText("Fed", { exact: true })).toBeVisible();
+  // The record's own Paper, not the sticker of the same name.
+  await expect(page.locator(".receipt-label", { hasText: "On the record" })).toBeVisible();
+  // The page is read on the server, whose node may be a slot behind the one that confirmed the care.
+  await expect(async () => {
+    await page.reload();
+    await expect(page.getByText("Fed", { exact: true })).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 45_000 });
   await expect(page.getByRole("button", { name: `Care for ${name}` })).toBeVisible();
 
   // The keepsake: a card in the owner's wallet, made by the server, signed here.
@@ -107,32 +97,8 @@ test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) 
 
   // The pet's own record names its guild.
   await row.click();
-  await expect(page.getByText("In a guild")).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole("link", { name: new RegExp(guild) })).toBeVisible();
+  await expect(page.getByRole("link", { name: new RegExp(`^In a guild ${guild}`) })).toBeVisible({ timeout: 30_000 });
 });
-
-/** Some devnet SOL for the test wallet, from the sponsor, as a faucet would give it. */
-async function fund(address: string, lamports: bigint) {
-  const raw = process.env.SPONSOR_KEYPAIR ?? readFileSync(path.join(process.cwd(), ".keys/sponsor.json"), "utf8");
-  const sponsor = await createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(raw) as number[]));
-  const rpc = createSolanaRpc(process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com");
-  const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
-  const message = pipe(
-    createTransactionMessage({ version: "legacy" }),
-    (m) => setTransactionMessageFeePayerSigner(sponsor, m),
-    (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
-    (m) => appendTransactionMessageInstruction(getTransferSolInstruction({ source: sponsor, destination: address as Address, amount: lamports }), m),
-  );
-  const signed = await signTransactionMessageWithSigners(message);
-  await rpc.sendTransaction(getBase64EncodedWireTransaction(signed), { encoding: "base64" }).send();
-  const signature = getSignatureFromTransaction(signed);
-  for (let i = 0; i < 60; i++) {
-    const { value } = await rpc.getSignatureStatuses([signature]).send();
-    if (value[0]?.confirmationStatus === "confirmed" || value[0]?.confirmationStatus === "finalized") return;
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  }
-  throw new Error("The test wallet's SOL did not arrive.");
-}
 
 const signedByWallet = (page: Page) => page.evaluate(() => (window as unknown as { __testWalletSigned?: number }).__testWalletSigned ?? 0);
 

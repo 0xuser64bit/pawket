@@ -345,7 +345,7 @@ put back. Upgrades only ever add: an existing instruction, account layout or
 error code does not change. `pnpm dlx tsx scripts/seed-guilds.mts` founds
 the starter guilds and does only what is missing. Then
 `pnpm e2e:devnet` (the path through the sponsor code, ending with a
-keepsake) and `PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts` (the same through
+keepsake) and `PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/chain.spec.ts e2e/coins.spec.ts` (the same through
 the screens, with `e2e/test-wallet.ts`). Top the sponsor up from the deploy wallet with
 `solana transfer <sponsor> 1 --url devnet`.
 

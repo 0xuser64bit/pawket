@@ -2,13 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import type { Address } from "@solana/kit";
 import { Button, Card } from "@/components/pk";
 import { AddressLine } from "@/components/wallet/address";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { getPublicEnv } from "@/config/env";
-import { wallet } from "@/lib/solana/browser-client";
+import { useConnected } from "@/lib/solana/browser-client";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { getWaveInstruction } from "@/lib/solana/instructions";
 import { deriveGuestbookPda } from "@/lib/solana/pda";
@@ -41,7 +40,7 @@ export function Guestbook({
   /** The UTC day the page was read on, counted from the epoch. */
   today: number;
 }) {
-  const connected = useConnectedWallet(wallet);
+  const connected = useConnected();
   const me = (connected?.account.address as Address | undefined) ?? null;
   const sender = usePawketSend();
   const sponsor = useSponsor();

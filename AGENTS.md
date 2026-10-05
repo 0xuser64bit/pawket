@@ -178,7 +178,7 @@ pnpm e2e              # Playwright (needs no wallet; asserts shell, not signing)
 pnpm assets:3d        # rebuild public/3d from the source files in assets/
 pnpm program:test     # anchor build (SBF v2) + the LiteSVM suite, incl. the lockstep replay
 pnpm e2e:devnet       # Vitest against the deployed program: a 0-SOL wallet adopts and cares
-PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts   # the same path through the real screens
+PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/chain.spec.ts e2e/coins.spec.ts   # the same paths, and a coin's trades, through the real screens
 ```
 
 ## Workflow (short version)

@@ -1,0 +1,9 @@
+{
+  "fallbackType": "webview",
+  "generatorApp": "solana-mobile",
+  "host": "pawket-pets.vercel.app",
+  "launcherName": "Pawket",
+  "name": "Pawket",
+  "packageId": "app.pawket.android",
+  "startUrl": "/home"
+}

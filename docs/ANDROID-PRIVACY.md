@@ -40,7 +40,10 @@ devnet, a test network whose records and availability may change.
 
 ## Network requests and service providers
 
-Pawket loads its pages from `pawket-pets.vercel.app`. Its server receives
+Pawket loads its pages from `pawket.world`. Earlier app releases use
+`pawket-pets.vercel.app`, which remains available. Device-local records and
+keys are scoped to each origin and are not copied between them. Pawket's
+server receives
 requests needed to load the app, read Solana, prepare requested transactions
 and provide sponsorship. Those requests can include public wallet addresses,
 pet identifiers, requested actions and transaction messages or signatures.

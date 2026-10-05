@@ -59,7 +59,7 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
         founder: founder.publicKey.toBase58(),
         preset: "gentle",
         firstBuyLamports: BigInt(LAMPORTS_PER_SOL / 10),
-        metadataUri: `https://pawket-pets.vercel.app/api/coins/${slug}/metadata`,
+        metadataUri: `https://pawket.world/api/coins/${slug}/metadata`,
       }),
       founder,
     );

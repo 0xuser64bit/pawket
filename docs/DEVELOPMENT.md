@@ -37,7 +37,7 @@ pnpm dev        # http://localhost:3000
 ## Deployment
 
 Push to `main` deploys to Vercel (project `pawket`, live at
-https://pawket-pets.vercel.app). Production cluster, RPC, program ID and the
+https://pawket.world). Production cluster, RPC, program ID and the
 sponsor key come from Vercel environment variables written by
 `scripts/vercel-env.sh`, never code edits. Preview deployments inherit
 devnet defaults and have no sponsor unless one is added for them.

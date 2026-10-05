@@ -1,12 +1,19 @@
 # Pawket final Android phone check
 
-Use the signed `pawket-0.1.0.apk` from the prepared submission folder.
+Use the signed `pawket-0.1.1.apk` from the prepared submission folder.
 This is the final physical-device pass requested by the owner, after the
 implementation and emulator verification. Use Solana devnet. Record the
 phone model, Android version, System WebView version, wallet/version and
 result. Never share a recovery phrase or private key.
 
 ## Install and begin
+
+This update opens `https://pawket.world/home`. If you already have a guest
+pet in 0.1.0, keep it on Solana using the old app before updating if you want
+it on the new domain. Local storage and device keys belong to the old web
+origin; updating does not copy them to the new one. Connect the same wallet
+to recover pets on Solana, then link this app again. Install the update
+without uninstalling or clearing the old app's data.
 
 1. Install or update the release APK. Its package is `app.pawket.android`.
    The debug “Pawket dev” app is separate; use **Pawket** for this check.

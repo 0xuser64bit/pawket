@@ -2,7 +2,7 @@
  * Creates Pawket's keepsake collection on a cluster, once. The sponsor is its
  * update authority (it signs each keepsake into the collection) and pays.
  *
- *   pnpm dlx tsx scripts/keepsake-collection.mts https://pawket-pets.vercel.app
+ *   pnpm dlx tsx scripts/keepsake-collection.mts https://pawket.world
  *
  * Reads .keys/sponsor.json and prints the collection's address, for
  * `PAWKET_COLLECTION` in src/lib/solana/core.ts. The collection's own key

@@ -61,7 +61,7 @@ describe("in the app", () => {
   it("matches each answer to its own request", async () => {
     app((request) => ({ ok: request.op === "share-link" }));
     const [link, picture] = await Promise.all([
-      shareLink({ url: "https://pawket-pets.vercel.app/pet/abc", title: "Pepper on Pawket" }),
+      shareLink({ url: "https://pawket.world/pet/abc", title: "Pepper on Pawket" }),
       savePicture("data:image/png;base64,AA==", "pawket"),
     ]);
     expect(link.ok).toBe(true);

@@ -3,6 +3,20 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: pawket.world is the official origin
+
+**Context:** The owner purchased `pawket.world` and asked to make it Pawket's
+official domain. Both the apex and `www` were already attached to Vercel.
+**Decision:** Serve the product at `https://pawket.world`, redirect `www` to
+the apex, and use that origin for production metadata and Android 0.1.1 (2).
+Keep the package and release signer. Saved WebView history is restored only
+when it belongs to the current trusted origin.
+**Consequence:** `pawket-pets.vercel.app` continues serving the previous APK
+and existing metadata URIs. Local guest records, settings and non-extractable
+device keys stay scoped to their original origin; they are not exported or
+copied. Players reconnect the same wallet for their pets on Solana and
+approve a new device link. Local development still uses localhost.
+
 ## 2026-10: Pawket on Android is the official webshell around the hosted app
 
 **Context:** Solana Mobile's Clock In asks for a working Android APK that

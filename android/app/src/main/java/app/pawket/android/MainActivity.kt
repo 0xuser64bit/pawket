@@ -115,7 +115,8 @@ class MainActivity : ComponentActivity() {
         if (!failed) {
             webView =
                 makeWebView().also { view ->
-                    if (savedInstanceState == null || view.restoreState(savedInstanceState) == null) {
+                    // An app update may change the trusted origin. Never restore the previous host's page.
+                    if (savedInstanceState == null || savedInstanceState.getString(SAVED_ORIGIN) != origin || view.restoreState(savedInstanceState) == null) {
                         view.loadUrl(launchUrl(intent))
                     }
                 }
@@ -299,6 +300,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+        outState.putString(SAVED_ORIGIN, origin)
         webView?.saveState(outState)
     }
 
@@ -399,6 +401,7 @@ class MainActivity : ComponentActivity() {
         const val TAG = "Pawket"
         const val WEB_SHELL_MARKER = "Solana Mobile Web Shell"
         private const val SPLASH_HOLD_MS = 2_500L
+        private const val SAVED_ORIGIN = "pawket.origin"
 
         /** Asks the page to close its open sheet or dialog; true when it did. */
         private const val BACK_SCRIPT =

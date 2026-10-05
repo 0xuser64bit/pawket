@@ -17,9 +17,9 @@ wants one, an optional coin on **Meteora's Dynamic Bonding Curve** that
 graduates into **DAMM v2** with its liquidity locked for good. Nothing money
 can buy changes a pet.
 
-**Live:** https://pawket-pets.vercel.app — on Solana devnet, and Pawket pays
+**Live:** https://pawket.world — on Solana devnet, and Pawket pays
 the network fees, so a wallet with no SOL can play. Everything it holds,
-counted live: [`/pulse`](https://pawket-pets.vercel.app/pulse).
+counted live: [`/pulse`](https://pawket.world/pulse).
 
 **Program:** [`PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`](https://explorer.solana.com/address/PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74?cluster=devnet) (devnet, v0 — mainnet will be v1)
 

@@ -24,7 +24,7 @@ Living Passport identity: a pet's care history and progression become a persiste
 
 ## Operating Context
 
-Browser-first on devnet: Wallet Standard wallets, one rpc and one wallet client (`browser-client.ts`), explicit-sign sends through `send.ts` with preflight and an Explorer receipt after, state reloaded from chain after confirmation (no optimistic adopt/care state). A server sponsor pays fees and rent for Pawket instructions only. Live at https://pawket-pets.vercel.app (Vercel, from `main`); local loop is `pnpm dev`; Done gate is `pnpm verify` plus `pnpm program:test` when the program changes.
+Browser-first on devnet: Wallet Standard wallets, one rpc and one wallet client (`browser-client.ts`), explicit-sign sends through `send.ts` with preflight and an Explorer receipt after, state reloaded from chain after confirmation (no optimistic adopt/care state). A server sponsor pays fees and rent for Pawket instructions only. Live at https://pawket.world (Vercel, from `main`); local loop is `pnpm dev`; Done gate is `pnpm verify` plus `pnpm program:test` when the program changes.
 
 On Android, the same app runs in Pawket's own app (`android/`, the official Solana Mobile webshell): the wallet apps on the phone sign through Mobile Wallet Adapter, and the share sheet, gallery, calendar, haptics and back gesture are the phone's (`docs/ANDROID.md`). A pet kept there lives in the app, not in Chrome.
 

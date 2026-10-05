@@ -30,6 +30,21 @@ defaults. `getPublicEnv()` is cached and safe in client code.
 `server-only`, so any client-side import fails the build instead of
 leaking. Invalid values fail fast at startup, not mid-transaction.
 
+## Production domain
+
+Pawket's official origin is `https://pawket.world`. Set
+`NEXT_PUBLIC_APP_URL=https://pawket.world` in Vercel's production environment,
+then deploy: Next.js embeds public values at build time. Local development
+keeps `http://localhost:3000`. The Android start URL is held to the same
+official origin by `src/lib/native/assetlinks.test.ts`.
+
+`www.pawket.world` redirects to the apex, preserving paths and queries.
+Keep `pawket-pets.vercel.app` serving the app for the previous APK and
+previously published metadata URLs; redirecting it would take that APK out
+of its trusted origin. Origin-local guest records and non-extractable device
+keys do not move between domains. A pet kept on Solana is read again by
+connecting the same wallet; a device needs a new owner-approved link.
+
 ## Security rules
 
 - A player's keys never exist here: wallets sign, the app never asks for,

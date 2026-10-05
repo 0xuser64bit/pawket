@@ -76,14 +76,14 @@ mainnet configuration or price changed for this release.
 
 ## Reviewer installation and source
 
-Use the signed `pawket-0.1.0.apk` and `SHA256SUMS.txt` in the prepared local
+Use the signed `pawket-0.1.1.apk` and `SHA256SUMS.txt` in the prepared local
 submission folder. Verify the hash, install it on Android 10 or newer,
 open Pawket and start with guest adoption. A devnet-capable MWA wallet is
 needed only for the Solana portion. A current Android System WebView is
 recommended. The emulator proof used the official MWA test wallet, not a
 simulated signer injected into the page.
 
-The APK opens `https://pawket-pets.vercel.app/home`. Server routes and the
+The APK opens `https://pawket.world/home`. Server routes and the
 sponsor stay on that host. Do not place server keys or a wallet recovery
 phrase in the APK, reviewer materials or a source archive.
 

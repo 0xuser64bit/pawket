@@ -29,7 +29,7 @@ assignment: `docs/ANDROID-BUILD-BRIEF.md`.
 ## How it works
 
 **The page.** The APK loads `SOLANA_MOBILE_URL` from `android/gradle.properties`
-(`https://pawket-pets.vercel.app/home`). Only that origin — scheme, host and
+(`https://pawket.world/home`). Only that origin — scheme, host and
 port — loads inside; another site opens in the browser; `solana-wallet:`
 starts the wallet app; `intent:` links are made safe; `file:`, `content:`,
 `data:` and the rest go nowhere. A release build refuses a start URL that is
@@ -146,7 +146,7 @@ adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 # Lint with the configured release domain (localhost is not an App Links domain):
 (cd android && ./gradlew lintDebug lintRelease)
 
-# The signed release, against https://pawket-pets.vercel.app/home:
+# The signed release, against https://pawket.world/home:
 PAWKET_ANDROID_KEYSTORE=/path/to/pawket-release.jks scripts/android-release.sh
 ```
 
@@ -189,6 +189,15 @@ Play, that is a different key, and its fingerprint joins `assetlinks.json`.
 
 ## Known limits
 
+- Release 0.1.1 (2) opens `pawket.world`; 0.1.0 used
+  `pawket-pets.vercel.app`. Install the update with the same package and
+  signer, without clearing data. Guest pets, player settings and device keys
+  remain scoped to their original web origin, so the new origin starts with
+  separate local storage. Keep a guest pet on Solana in the old app before
+  updating if you want to bring it along. Reconnect the same wallet on the
+  new domain to read its pets, and link the device again with owner approval.
+  No device key is exported. The old host and APK remain available; the app
+  never restores the old origin's saved page into the new release.
 - Mobile Wallet Adapter 0.6.0 closes its session only after a request
   succeeds: after a decline, the official test wallet waits on "Session
   active" until the player backs out of it. Consumer-wallet return behavior

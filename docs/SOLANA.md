@@ -264,7 +264,7 @@ Rotating the sponsor key moves where new cards are looked for; the
 collection's authority would have to move with it.
 
 The collection was made once with
-`pnpm dlx tsx scripts/keepsake-collection.mts https://pawket-pets.vercel.app`;
+`pnpm dlx tsx scripts/keepsake-collection.mts https://pawket.world`;
 its own key signs only its creation and is not kept.
 
 ## Guild coins (Meteora DBC → DAMM v2)

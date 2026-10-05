@@ -17,23 +17,25 @@ class BoundaryTest {
 
     @Test
     fun anOriginIsSchemeHostAndAPortThatIsNotTheDefault() {
-        assertEquals("https://pawket-pets.vercel.app", originOf("https", "pawket-pets.vercel.app", -1))
-        assertEquals("https://pawket-pets.vercel.app", originOf("HTTPS", "Pawket-Pets.Vercel.App", 443))
+        assertEquals("https://pawket.world", originOf("https", "pawket.world", -1))
+        assertEquals("https://pawket.world", originOf("HTTPS", "Pawket.World", 443))
         assertEquals("http://localhost:3000", originOf("http", "localhost", 3000))
         assertEquals("http://localhost", originOf("http", "localhost", 80))
     }
 
     @Test
     fun anotherSchemePortOrHostIsAnotherOrigin() {
-        val pawket = originOf("https", "pawket-pets.vercel.app", -1)
-        assert(originOf("http", "pawket-pets.vercel.app", -1) != pawket)
-        assert(originOf("https", "pawket-pets.vercel.app", 8443) != pawket)
-        assert(originOf("https", "pawket-pets.vercel.app.evil.example", -1) != pawket)
+        val pawket = originOf("https", "pawket.world", -1)
+        assert(originOf("http", "pawket.world", -1) != pawket)
+        assert(originOf("https", "pawket.world", 8443) != pawket)
+        assert(originOf("https", "pawket.world.evil.example", -1) != pawket)
+        assert(originOf("https", "www.pawket.world", -1) != pawket)
+        assert(originOf("https", "pawket-pets.vercel.app", -1) != pawket)
     }
 
     @Test
     fun noSchemeOrNoHostIsNoOrigin() {
-        assertEquals("", originOf(null, "pawket-pets.vercel.app", -1))
+        assertEquals("", originOf(null, "pawket.world", -1))
         assertEquals("", originOf("https", null, -1))
         assertEquals("", originOf("https", "", -1))
         assertEquals("", originOf("file", null, -1))
@@ -49,7 +51,7 @@ class BoundaryTest {
         assertNull(PawketBridge.decodePng(dataUrl(png, "image/jpeg")))
         assertNull(PawketBridge.decodePng(dataUrl(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9))))
         assertNull(PawketBridge.decodePng("data:image/png;base64,not base64!"))
-        assertNull(PawketBridge.decodePng("https://pawket-pets.vercel.app/icon"))
+        assertNull(PawketBridge.decodePng("https://pawket.world/icon"))
         assertNull(PawketBridge.decodePng("data:image/png;base64,"))
     }
 

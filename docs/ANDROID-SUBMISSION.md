@@ -128,12 +128,18 @@ Do not edit a rejection or pending state into a successful result.
 | End on Home | “The Android work adds wallet app integration, photos, reminders and reliable return to play. This demonstration is on devnet.” |
 
 `Pawket-Android-Demo.mp4` is an edited silent recording of the installed
-signed release on the emulator: guest Miso, care, official test-wallet
-approval, keeping Miso on Solana, confirmed Rest, the public Passport and
+signed **0.1.0** release on the emulator, before the domain change: guest
+Miso, care, official test-wallet approval, keeping Miso on Solana,
+confirmed Rest, the public Passport and
 native photo sharing. Waiting time is trimmed; successful states come from
 the recorded app and finalized devnet transactions. Separate longer clips
 preserve the adoption and care/photo sequences. No consumer wallet or
 physical-device result is implied.
+
+The current APK is 0.1.1, opening `pawket.world`. Screenshots 11–15 and
+`world-receipts.json` prove its wallet identity, confirmed care, public
+Passport and native sharing. The earlier recordings and pitch retain their
+original provenance; they are not footage of 0.1.1.
 
 Capture hardware at its original portrait resolution. The supplied compact
 videos are 720×1600; screenshots are original 1080×2400. Record the narration

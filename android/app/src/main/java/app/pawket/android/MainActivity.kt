@@ -240,10 +240,14 @@ class MainActivity : ComponentActivity() {
         if (view.url.isNullOrBlank() || view.url == "about:blank") view.loadUrl(startUrl) else view.reload()
     }
 
+    /**
+     * Back at the root goes home and keeps Pawket as it was — the platform's
+     * own rule for a launcher's root since Android 12 — however Pawket was
+     * opened (a link or a shortcut too), so coming back is instant, with the
+     * page, the room and any send in flight still there.
+     */
     private fun leave() {
-        back.isEnabled = false
-        onBackPressedDispatcher.onBackPressed()
-        back.isEnabled = true
+        moveTaskToBack(true)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -376,10 +380,17 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** scheme://host[:port], lowercased, the default port left out: what "the same site" means here. */
-fun Uri.origin(): String {
-    val scheme = scheme?.lowercase() ?: return ""
-    val host = host?.lowercase() ?: return ""
-    val defaultPort = (scheme == "https" && port == 443) || (scheme == "http" && port == 80)
-    return if (port == -1 || defaultPort) "$scheme://$host" else "$scheme://$host:$port"
+/** What "the same site" means here: this URL's origin, as Android parsed it. */
+fun Uri.origin(): String = originOf(scheme, host, port)
+
+/** scheme://host[:port], lowercased, the default port left out; "" when there is no scheme or host. */
+fun originOf(
+    scheme: String?,
+    host: String?,
+    port: Int,
+): String {
+    val s = scheme?.lowercase() ?: return ""
+    val h = host?.lowercase()?.takeIf { it.isNotEmpty() } ?: return ""
+    val defaultPort = (s == "https" && port == 443) || (s == "http" && port == 80)
+    return if (port == -1 || defaultPort) "$s://$h" else "$s://$h:$port"
 }

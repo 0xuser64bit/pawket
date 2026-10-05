@@ -9,7 +9,6 @@ import android.os.Build
 import android.os.Environment
 import android.provider.CalendarContract
 import android.provider.MediaStore
-import android.util.Base64
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.webkit.WebView
@@ -26,6 +25,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
+import java.util.Base64
 
 /**
  * The page's one way to ask the phone for something: `window.PawketAndroid`,
@@ -64,6 +64,8 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
                 return
             }
         val id = request.optString("id").take(40)
+        // The request's name only, never its contents: so a development build shows what the page asked for.
+        if (BuildConfig.DEBUG) Log.d(MainActivity.TAG, "bridge: ${request.optString("op")} ${request.optString("kind")}".trim())
         // A failure says why; a success says nothing more.
         val answer = { ok: Boolean, reason: String? -> reply(replyProxy, id, ok, reason.takeUnless { ok }) }
         when (request.optString("op")) {
@@ -251,7 +253,7 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
             if (!data.startsWith(PNG_DATA_URL)) return null
             val bytes =
                 try {
-                    Base64.decode(data.substring(PNG_DATA_URL.length), Base64.DEFAULT)
+                    Base64.getDecoder().decode(data.substring(PNG_DATA_URL.length))
                 } catch (_: IllegalArgumentException) {
                     return null
                 }

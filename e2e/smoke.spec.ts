@@ -106,10 +106,12 @@ test("the Market states its fixed prices and where the SOL goes, and asks a wall
   }
   await expect(page.getByText("Where the SOL goes")).toBeVisible();
   await page.getByRole("button", { name: /Halo/ }).click();
-  await expect(page.getByText(/changes no vital, XP, cooldown or score/i)).toBeVisible();
+  // The item opens over the shelves, not under them.
+  const sheet = page.getByRole("dialog", { name: "Halo" });
+  await expect(sheet.getByText(/changes no vital, XP, cooldown or score/i)).toBeVisible();
   // No wallet yet: the one action is connecting, never a purchase.
-  await expect(page.getByRole("button", { name: /^Buy for/ })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Connect a wallet" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: /^Buy for/ })).toHaveCount(0);
+  await expect(sheet.getByRole("button", { name: "Connect a wallet" })).toBeVisible();
 });
 
 test("the pulse is counted from the program, or says plainly that Solana did not answer", async ({ page }) => {

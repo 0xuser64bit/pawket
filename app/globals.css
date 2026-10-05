@@ -4329,16 +4329,23 @@ li {
   list-style-position: outside;
 }
 
+/* The item, tried on: your pet wearing it, or sitting in the room, large,
+   on the room's own ground — the one Playroom thing on the sale's Paper. */
 .pk-market-try {
   display: grid;
-  place-items: center;
-  height: 168px;
-  margin-bottom: var(--space-4);
-  border-radius: var(--radius-paper);
-  background: var(--ground);
+  place-items: end center;
+  height: 220px;
+  padding-top: var(--space-4);
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(circle at 80% 22%, var(--sun) 0 22px, transparent 23px),
+    linear-gradient(transparent 72%, var(--surface-sunk) 72%),
+    var(--ground);
+  overflow: hidden;
 }
 .pk-market-try > svg {
-  height: 150px;
+  height: 196px;
   width: auto;
 }
 

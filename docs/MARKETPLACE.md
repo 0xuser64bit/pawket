@@ -40,7 +40,8 @@ are token blocks in `app/globals.css` with an `item` in `src/config/themes.ts`.
 ## 3. The flow
 
 ```text
-/market → pick an item → its price, where the SOL goes, who pays the fee, on Paper
+/market → tap an item → a Paper sheet over the shelves: your own pet wearing it (or sitting
+  in the room), its price, where the SOL goes, who pays the fee
   → "Buy for 0.05 SOL" → the wallet signs → Solana confirms → the closet is read again
   → the wardrobe offers the piece / the room picker offers the room
 ```

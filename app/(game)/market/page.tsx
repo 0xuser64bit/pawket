@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Chip, Screen, ScreenBar } from "@/components/pk";
 import { MarketScreen } from "@/components/market/market-screen";
+import { getPublicEnv } from "@/config/env";
 
 export const metadata: Metadata = {
   title: "Market",
@@ -18,7 +19,10 @@ export default function MarketPage() {
       <ScreenBar>
         <div>
           <h1 className="display-l">Market</h1>
-          <p className="caption pk-faint">Looks only, never power. Kept in your closet on Solana.</p>
+          <p className="caption pk-faint">
+            Looks only, never power. Kept in your closet on Solana.
+            {getPublicEnv().solanaCluster === "devnet" ? " Prices are in devnet SOL, free from a faucet." : ""}
+          </p>
         </div>
         <Chip label="Fixed prices" tone="paper" />
       </ScreenBar>

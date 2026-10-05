@@ -141,6 +141,9 @@ adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 # JVM tests of the shell's checks:
 (cd android && ./gradlew testDebugUnitTest)
 
+# Lint with the configured release domain (localhost is not an App Links domain):
+(cd android && ./gradlew lintDebug lintRelease)
+
 # The signed release, against https://pawket-pets.vercel.app/home:
 PAWKET_ANDROID_KEYSTORE=/path/to/pawket-release.jks scripts/android-release.sh
 ```

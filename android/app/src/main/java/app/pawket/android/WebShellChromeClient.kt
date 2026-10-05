@@ -5,6 +5,7 @@ import android.util.Log
 import android.webkit.ConsoleMessage
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -38,10 +39,16 @@ class WebShellChromeClient(private val activity: MainActivity) : WebChromeClient
         resultMsg: Message,
     ): Boolean {
         if (!isUserGesture) return false
+        val transport = resultMsg.obj as? WebView.WebViewTransport ?: return false
         // A throwaway WebView only to learn where the new window was going; it never loads anything.
         val catcher = WebView(view.context)
         catcher.webViewClient =
             object : WebViewClient() {
+                override fun onRenderProcessGone(caught: WebView, detail: RenderProcessGoneDetail): Boolean {
+                    caught.destroy()
+                    return true
+                }
+
                 override fun shouldOverrideUrlLoading(
                     caught: WebView,
                     request: WebResourceRequest,
@@ -52,7 +59,6 @@ class WebShellChromeClient(private val activity: MainActivity) : WebChromeClient
                     return true
                 }
             }
-        val transport = resultMsg.obj as? WebView.WebViewTransport ?: return false
         transport.webView = catcher
         resultMsg.sendToTarget()
         return true

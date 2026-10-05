@@ -11,8 +11,8 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 - Overall state: in progress
 - Current task: finish the release audit, transaction interruption handling,
   native failure handling, and the submission package; then run the release gates.
-- Next concrete action: run `pnpm verify` and Android lint/release tests,
-  then exercise the updated APK and prepare screenshots/demo/pitch materials.
+- Next concrete action: finish emulator export/coin checks and the submission
+  package; rebuild the release, deploy the gated web changes, and install it.
 - Reproducible dependency setup: settings moved to `pnpm-workspace.yaml`
   and pnpm pinned to 10.34.6 (10.0.0 cannot read these workspace settings).
   `corepack pnpm install --frozen-lockfile` passed without changing any
@@ -23,6 +23,9 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
   VIEW intents; refused external activities and disconnected bridge calls are
   harmless. Android JVM tests and debug build passed; 7 bridge tests and
   typecheck passed. Photo export and wallet intents still need runtime recheck.
+- Popup renderer recovery: both the main view and temporary link catcher
+  handle renderer loss. Fresh Android lint + 6 JVM tests green. `.kotlin/`
+  compiler caches ignored.
 - Shared send interruption fixed: `send.ts` looks up a known signature when
   the broadcast reply is lost; `transactions.ts` tolerates failed status
   replies until the bounded deadline. The unknown toast advises checking the
@@ -30,8 +33,9 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
   and `transactions.test.ts`; typecheck passed.
 - Reconciled Claude's final session: `program:test` completed successfully
   after checkpoint A2 (57 tests; original scratchpad log ends `exit=0`).
-  Market/owner-paid/coin checks happened after A2 but need their receipts
-  recovered or repeated before those rows can be marked verified.
+  Market/owner-paid/prepared keepsake receipts recovered and re-read from
+  devnet (`meta.err = null`): see the verification table. Coin still needs
+  an Android trade.
 - Immediate caution for the next agent: the work lives in the sibling
   worktree `/Users/user64bit/Code/pawket-android` (branch `android`), not
   in `/Users/user64bit/Code/pawket` (branch `main`). Its `.env` is a symlink
@@ -44,7 +48,7 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 - Repository `pawket` (private, GitHub `origin`). Baseline `main` at
   `43881c6`; `origin/main` had not moved at the last check. Branch `android`
   (worktree above) holds every task commit; `git log --oneline 43881c6..android`
-  lists them (17 at this checkpoint).
+  lists the task commits.
 - Task-owned files: `android/`, `src/lib/native/`, `e2e/android.spec.ts`,
   `public/.well-known/assetlinks.json`, `scripts/android-release.sh`,
   `docs/ANDROID*.md`, and the Android lines in `browser-client.ts`,
@@ -78,7 +82,7 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
   Official MWA test wallet installed (`fakewallet-v1-release.apk`, SHA-256
   `550055426683c88aac246bef442bc8a37fe4986dca0b1ef475337dd7be6746e9`,
   matching the CLI's catalog). Its devnet account is
-  `Gde54Dm6X8uhXPEKpNXwzFkv95XVe91PxBfseHTjVqmB` (0 SOL; the sponsor pays).
+  `Gde54Dm6X8uhXPEKpNXwzFkv95XVe91PxBfseHTjVqmB` (funded with devnet SOL for owner-paid tests).
 - Local device testing: in the worktree `pnpm build && pnpm start -p 3000`,
   `adb reverse tcp:3000 tcp:3000`, debug APK built with
   `-PSOLANA_MOBILE_URL=http://localhost:3000/home`. DevTools:
@@ -95,7 +99,7 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 | Architecture + source in the repo | verified on emulator | `android/`, `docs/DECISIONS.md` | debug and release builds; app runs | — |
 | MWA genuinely signs for the existing send path | verified on emulator (test wallet) | `browser-client.ts`, `send.ts` unchanged | see record: connect, decline, adopt, care | a real wallet on hardware |
 | Sponsored path | verified on emulator | — | adopt + care on devnet, sponsor fee payer first | — |
-| Owner-paid, server-prepared, delegated paths | implemented (unchanged code); unverified on Android | `send.ts`, `use-send.ts` | — | owner-paid with sponsor off; keepsake; a Market buy and a coin trade need devnet SOL in the test wallet; device signing needs a WebView with Ed25519 |
+| Owner-paid, server-prepared, delegated paths | partly verified | `send.ts`, `use-send.ts` | Market buy, prepared keepsake, owner-paid Brush through MWA; receipts re-read | coin trade; device signing needs a WebView with Ed25519 |
 | Cancellation, unknown outcomes, no duplicate sends | verified on emulator | `transactions.ts` | decline → "Nothing changed"; network cut → "could not reach Solana… Nothing was sent", wallet never opened | slow confirmation / unknown on hardware |
 | Photo save and share | verified on emulator | `PawketBridge.kt`, `photo.tsx` | MediaStore `Pictures/Pawket/pawket-pixel-2026-10-05.png` (210 KB PNG); share sheet with the print; cancel → no false "Shared" | — |
 | Link share, reminder | implemented; partly verified | `share-button.tsx`, `remind-me.tsx` | reminder intent reached Google Calendar (needs an account to save on the emulator) | link share on device |
@@ -106,7 +110,7 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 | Storage / device-key story | documented; old-WebView path verified | `docs/ANDROID.md` | Ed25519 unsupported on WebView 134 → "update Android System WebView… Nothing was linked" | device-key linking on a WebView with Ed25519 |
 | 3D, games, a11y | partly verified | — | 3D room draws (WebGL2), photo from the 3D room | games' gestures and TalkBack pass on hardware |
 | Network failure | verified on emulator | `MainActivity.kt` | offline cold start → Pawket's screen, retry works | — |
-| Web regression | verified | e2e | `pnpm e2e` 36 passed / 4 skipped (devnet); `e2e/android.spec.ts` 2 passed; unit 323 passed | — |
+| Web regression | verified | e2e | `pnpm verify`: 328 passed / 14 skipped; build/typecheck/lint green. `pnpm e2e`: 38 passed / 4 skipped (devnet) | rerun verify after the expiry-copy correction |
 | Release APK, checksum, reproducible build | implemented; built | `scripts/android-release.sh` | release built and verified (v2 signature, cert above, not debuggable, 1.6 MB) | final build after deploy; record SHA-256 |
 | Submission package | not started | — | — | demo script, pitch, screenshots, store copy, source-access note |
 
@@ -119,7 +123,7 @@ Recorded in `docs/DECISIONS.md` (2026-10 "official webshell") and
   would have mangled the package). Changeable until the first store publish.
 - minSdk 29 (template: 28) so saving to the gallery needs no permission.
 - `@solana-mobile/wallet-standard-mobile` 0.6.0 pulls `react-native` as an
-  auto-installed peer (fixed upstream, unreleased): `package.json` marks the
+  auto-installed peer (fixed upstream, unreleased): `pnpm-workspace.yaml` marks the
   peer optional (`packageExtensions`) and skips the optional async-storage.
   It is imported only on Android (`perf(wallet)` commit), ~47 KB gzip.
 - Back at the root calls `moveTaskToBack`: the platform's own rule, made
@@ -145,6 +149,11 @@ Recorded in `docs/DECISIONS.md` (2026-10 "official webshell") and
 | Network cut mid-send | remove reverse, Play | emulator | "could not reach Solana… Nothing was sent"; no wallet prompt | — |
 | Device key on old WebView | Link this app | emulator, WebView 134 | "…too old to make the key. Update it from the Play Store… Nothing was linked." | — |
 | Shortcuts / links | `dumpsys shortcut`; VIEW intents | emulator | 3 shortcuts; /park opens; `https://evil.example/…` ignored | — |
+| Market via MWA | buy sun hat | emulator test wallet, devnet | sponsor fee payer + owner; Buy; `meta.err = null` | `2DWcZwHeLAq6jCm4m7VBqNL3JsKmueNBzkCLoPoawjy5eutVQ8XDfHChWm3bpzyUZQPTGq1L49v7unVmRm1r3D5F` |
+| Prepared keepsake via MWA | keep Pixel’s card | emulator test wallet, devnet | sponsor + asset signer + owner; CreateV2; `meta.err = null` | `4v9wSHRDgXSwwGBFjFtF9DfJtmkQ2byFFHJWKDbupzCLiVuTkahtpVfRG2G3mt4pqCgtT8VK1KTjmZjLy8vNwEC` |
+| Owner-paid via MWA | Brush, sponsor disabled | emulator test wallet, devnet | sole owner fee payer; PerformCareAction; `meta.err = null` | `57jATYLPmALmazWUuWGxsVUpisioNuuPh8QRLvuNqBUV3u37aXUGg65aWYozuhy5oLEQLdfz38orzqW7XzeBnX4W` |
+| Updated care | Play + wallet approval | emulator test wallet, devnet | finalized; pet XP and sticker reload after confirmation | `5K3cZUBwkSTHwsinsYbTA3cXMquzA1E9J2Sp2bRLNYtoWW4dBDDvhB2W7Ph1cZeVZCF65cDTxRdUKa7ab5Guh4Wm` |
+| Android lint | `./gradlew lintDebug lintRelease` with default release URL | Mac | green; localhost override gives AppLinkUrlError, so only use it for assembleDebug | `android/.local/evidence/android-checks.log` |
 | JVM tests | `./gradlew testDebugUnitTest` | Mac | 6 passed | BoundaryTest |
 | Unit tests | `pnpm test` | Mac | 323 passed, 14 skipped | — |
 | Web e2e | `PLAYWRIGHT_PORT=3000 pnpm e2e` (prod build) | Mac, Chromium | 36 passed, 4 skipped; android.spec 2 passed | — |

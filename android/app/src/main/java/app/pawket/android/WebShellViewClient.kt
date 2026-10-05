@@ -52,18 +52,11 @@ class WebShellViewClient(private val activity: MainActivity) : WebViewClient() {
             } catch (_: Exception) {
                 return
             }
-        intent.addCategory(Intent.CATEGORY_BROWSABLE)
-        intent.component = null
-        intent.selector = null
-        intent.removeFlags(
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
-                Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
-        )
-        if (!activity.launch(intent)) {
-            intent.getStringExtra("browser_fallback_url")?.toUri()?.let(activity::openOutside)
-        }
+        val data = intent.data ?: return
+        if (intent.action != Intent.ACTION_VIEW || data.scheme?.lowercase() !in setOf("https", "http", "solana-wallet", "mailto", "tel", "sms")) return
+        // Rebuild the navigation request: no component, selector, extras or flags from the page.
+        val safe = Intent(Intent.ACTION_VIEW, data).addCategory(Intent.CATEGORY_BROWSABLE)
+        if (!activity.launch(safe)) intent.getStringExtra("browser_fallback_url")?.toUri()?.let(activity::openOutside)
     }
 
     override fun onPageStarted(

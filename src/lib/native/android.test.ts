@@ -38,6 +38,13 @@ describe("outside the app", () => {
 });
 
 describe("in the app", () => {
+  it("a disconnected bridge cannot fail a care or leave a photo waiting", async () => {
+    app();
+    window.PawketAndroid!.postMessage = () => { throw new Error("View destroyed"); };
+    expect(() => haptic("done")).not.toThrow();
+    await expect(savePicture("data:image/png;base64,AA==", "pawket")).resolves.toEqual({ ok: false, reason: "no-answer" });
+  });
+
   it("hands a photo to the share sheet and hears back", async () => {
     const posted = app();
     await expect(sharePicture("data:image/png;base64,AA==", "pawket-pepper", "Pepper and you")).resolves.toEqual({ ok: true });

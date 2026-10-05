@@ -82,7 +82,11 @@ function ask(op: string, fields: Record<string, unknown>): Promise<Answer> {
     // An answer that never comes (an older app) is a no, not a page that waits forever.
     const timer = window.setTimeout(() => done({ ok: false, reason: "no-answer" }), ANSWER_WAIT_MS);
     waiting.set(id, done);
-    app.postMessage(JSON.stringify({ id, op, ...fields }));
+    try {
+      app.postMessage(JSON.stringify({ id, op, ...fields }));
+    } catch {
+      done({ ok: false, reason: "no-answer" });
+    }
   });
 }
 
@@ -150,7 +154,11 @@ export function useHaptics(): [boolean, (on: boolean) => void] {
 export function haptic(kind: "done" | "cheer" | "refuse"): void {
   const app = bridge();
   if (!app || !hapticsOn()) return;
-  app.postMessage(JSON.stringify({ op: "haptic", kind }));
+  try {
+    app.postMessage(JSON.stringify({ op: "haptic", kind }));
+  } catch {
+    // Optional feedback must never turn a saved or confirmed care into a failure.
+  }
 }
 
 /* ----------------------------------------------------------------- back */
@@ -193,7 +201,11 @@ function paintBars(): void {
   const style = getComputedStyle(document.documentElement);
   const ground = style.getPropertyValue("--ground").trim();
   if (!app || !/^#[0-9a-f]{6}$/i.test(ground)) return;
-  app.postMessage(JSON.stringify({ op: "room", ground, dark: style.colorScheme.includes("dark") }));
+  try {
+    app.postMessage(JSON.stringify({ op: "room", ground, dark: style.colorScheme.includes("dark") }));
+  } catch {
+    // A disconnected native view keeps its last bar colour; the page still works.
+  }
 }
 
 /** In the app, the system bars follow the room: a pick (`data-theme`), or the device's light or dark. */

@@ -11,8 +11,14 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 - Overall state: in progress
 - Current task: finish the release audit, transaction interruption handling,
   native failure handling, and the submission package; then run the release gates.
-- Next concrete action: harden `PawketBridge.kt` storage/intent failures and
-  optional bridge calls, then run Android tests and the full release gates.
+- Next concrete action: verify frozen dependency installation, run the full
+  web/program/Android gates, and exercise the updated APK on the emulator.
+- Native failure audit: photo insertion/publication/cleanup failures return
+  a failure instead of crashing; shares use unique temporary files; binary
+  bridge messages are ignored; external intent URLs become fresh, restricted
+  VIEW intents; refused external activities and disconnected bridge calls are
+  harmless. Android JVM tests and debug build passed; 7 bridge tests and
+  typecheck passed. Photo export and wallet intents still need runtime recheck.
 - Shared send interruption fixed: `send.ts` looks up a known signature when
   the broadcast reply is lost; `transactions.ts` tolerates failed status
   replies until the bounded deadline. The unknown toast advises checking the

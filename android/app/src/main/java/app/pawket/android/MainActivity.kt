@@ -203,6 +203,9 @@ class MainActivity : ComponentActivity() {
         } catch (_: ActivityNotFoundException) {
             Log.w(TAG, "Nothing on this phone handles ${intent.data?.scheme ?: intent.action}")
             false
+        } catch (_: SecurityException) {
+            Log.w(TAG, "This phone refused ${intent.data?.scheme ?: intent.action}")
+            false
         }
 
     fun loadInside(url: Uri) {

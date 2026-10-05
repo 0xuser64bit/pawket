@@ -55,6 +55,7 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         replyProxy: JavaScriptReplyProxy,
     ) {
         if (!isMainFrame || sourceOrigin.origin() != activity.origin) return
+        if (message.type != WebMessageCompat.TYPE_STRING) return
         val raw = message.data ?: return
         if (raw.length > MAX_MESSAGE_CHARS) return
         val request =
@@ -88,7 +89,11 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         if (id.isEmpty()) return
         val body = JSONObject().put("id", id).put("ok", ok)
         if (reason != null) body.put("reason", reason)
-        proxy.postMessage(body.toString())
+        try {
+            proxy.postMessage(body.toString())
+        } catch (_: IllegalStateException) {
+            // The page or renderer went away while a picture was being written.
+        }
     }
 
     /** A care kept, a level, a refusal: the system's own feedback, so the phone's touch-feedback setting decides. */
@@ -146,7 +151,7 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
             val dir = File(activity.cacheDir, "shared").apply { mkdirs() }
             val stale = System.currentTimeMillis() - SHARED_KEEP_MS
             dir.listFiles()?.filter { it.lastModified() < stale }?.forEach { it.delete() }
-            val file = File(dir, "$name.png").apply { writeBytes(bytes) }
+            val file = File.createTempFile("pawket-$name-", ".png", dir).apply { writeBytes(bytes) }
             FileProvider.getUriForFile(activity, "${activity.packageName}.pictures", file)
         } catch (error: Exception) {
             Log.w(MainActivity.TAG, "Could not stage a picture to share", error)
@@ -181,14 +186,17 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
                 put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Pawket")
                 put(MediaStore.Images.Media.IS_PENDING, 1)
             }
-        val item = resolver.insert(MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return null
+        var item: Uri? = null
         return try {
+            item = resolver.insert(MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return null
             resolver.openOutputStream(item)?.use { it.write(bytes) } ?: throw IllegalStateException("no stream")
-            resolver.update(item, ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }, null, null)
+            if (resolver.update(item, ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }, null, null) != 1) {
+                throw IllegalStateException("not published")
+            }
             item
         } catch (error: Exception) {
             Log.w(MainActivity.TAG, "Could not save a picture", error)
-            resolver.delete(item, null, null)
+            item?.let { runCatching { resolver.delete(it, null, null) } }
             null
         }
     }

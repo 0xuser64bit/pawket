@@ -70,6 +70,11 @@ field, answered `{ id, ok, reason? }`:
 
 It never carries a key, a transaction, a file path or a URL to load. The
 app's only permission is `INTERNET`.
+Failed photo storage leaves no published partial image and reports failure.
+Each shared photo has its own temporary file, so a later photo cannot replace
+one another app is reading. Native feedback failure cannot undo a saved care.
+External `intent:` links accept only navigation schemes and are rebuilt without
+the page's components, selectors, extras or permission flags.
 
 **The phone.**
 - Back closes the page's newest open sheet or dialog (`useBackCloses`),

@@ -69,7 +69,9 @@ field, answered `{ id, ok, reason? }`:
 | `room` | the room's ground colour and day or night for the status and navigation bars | no |
 
 It never carries a key, a transaction, a file path or a URL to load. The
-app's only permission is `INTERNET`.
+app's only Android capability permission is `INTERNET`. AndroidX also adds
+an app-private signature permission for its internal receiver, with no runtime
+prompt or access to player data.
 Failed photo storage leaves no published partial image and reports failure.
 Each shared photo has its own temporary file, so a later photo cannot replace
 one another app is reading. Native feedback failure cannot undo a saved care.
@@ -151,8 +153,10 @@ PAWKET_ANDROID_KEYSTORE=/path/to/pawket-release.jks scripts/android-release.sh
 A debug build is `app.pawket.android.debug`, named "Pawket dev", installs
 beside the release with its own storage, and lets Chrome DevTools attach
 (`adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>`). A
-release build turns WebView debugging off and never writes the page's
-console to the log.
+release build sets WebView debugging off and never writes the page's
+console to the log. The `userdebug` emulator still exposes DevTools: Chromium
+always enables it on development OS builds. Confirm it is absent on a
+consumer phone; do not mistake that emulator override for APK configuration.
 
 To test signing without a wallet of your own, install the official Mobile
 Wallet Adapter test wallet (`npx solana-mobile device install fakewallet`, or
@@ -187,7 +191,8 @@ Play, that is a different key, and its fingerprint joins `assetlinks.json`.
 
 - Mobile Wallet Adapter 0.6.0 closes its session only after a request
   succeeds: after a decline, the official test wallet waits on "Session
-  active" until the player backs out of it. Real wallets close themselves.
+  active" until the player backs out of it. Consumer-wallet return behavior
+  remains part of the physical-phone check.
 - Pawket needs a connection to open. A page already open keeps working for
   a pet in this app; anything on Solana says it could not reach it and sent
   nothing. There is no offline cache of the site.

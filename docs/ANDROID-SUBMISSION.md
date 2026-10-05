@@ -127,11 +127,20 @@ Do not edit a rejection or pending state into a successful result.
 | Back, background, relaunch | “I return to the same companion. Pets on Solana follow the same wallet; pets in this app stay on this phone.” |
 | End on Home | “The Android work adds wallet app integration, photos, reminders and reliable return to play. This demonstration is on devnet.” |
 
-Capture at the device's original portrait resolution. The supplied emulator
-clips have no narration; record this narration or replace them with a
-complete hardware recording after the final pass. Keep receipt URLs in
-notes so a reviewer can verify the events. Avoid filming wallet recovery
-screens, balances unrelated to the demo or private notifications.
+`Pawket-Android-Demo.mp4` is an edited silent recording of the installed
+signed release on the emulator: guest Miso, care, official test-wallet
+approval, keeping Miso on Solana, confirmed Rest, the public Passport and
+native photo sharing. Waiting time is trimmed; successful states come from
+the recorded app and finalized devnet transactions. Separate longer clips
+preserve the adoption and care/photo sequences. No consumer wallet or
+physical-device result is implied.
+
+Capture hardware at its original portrait resolution. The supplied compact
+videos are 720×1600; screenshots are original 1080×2400. Record the narration
+above or replace the clips with a complete hardware recording after the
+final pass. Keep receipt URLs in notes so a reviewer can verify the events.
+Avoid filming wallet recovery screens, balances unrelated to the demo or
+private notifications.
 
 For reproducible capture with an attached test device:
 
@@ -166,7 +175,7 @@ are the checklist for the actual portal.
 | 512×512 icon | Existing Pawket icon, exported as PNG |
 | Portrait screenshots | Actual Android captures, 1080×2400, consistent aspect ratio |
 | Pitch and demonstration | PPTX, narration script and emulator capture; final hardware pass pending |
-| Short/full copy, permission notes | Above; sole requested permission is INTERNET |
+| Short/full copy, permission notes | Above; only capability permission is INTERNET; AndroidX adds an internal signature permission |
 | Privacy policy | `ANDROID-PRIVACY.md` is a reviewable draft; owner must supply support contact, approve and publish a stable public URL |
 | Support contact / URL | Owner input required; no address invented |
 | Publisher account, identity, legal declarations | Owner-only portal actions |

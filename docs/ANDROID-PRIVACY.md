@@ -66,8 +66,10 @@ Link sharing opens Android's share sheet for the selected public Pawket
 page. A reminder opens the calendar app with a suggested event. You decide
 whether to save it there. Pawket does not read your calendar, contacts,
 location, camera or microphone, and requests no permissions for them.
-Its only requested Android permission is INTERNET. Haptics follow Android's
-touch-feedback setting and can also be turned off in Pawket.
+Its only Android capability permission is INTERNET. AndroidX adds an
+app-private signature permission for an internal receiver, which gives no
+access to phone data and requires no user permission prompt. Haptics follow
+Android's touch-feedback setting and can also be turned off in Pawket.
 
 ## Your choices and deletion
 

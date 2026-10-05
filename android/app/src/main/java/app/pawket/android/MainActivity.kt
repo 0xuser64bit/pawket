@@ -1,408 +1,385 @@
 package app.pawket.android
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Color as AndroidColor
+import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.CookieManager
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import app.pawket.android.ui.theme.WebShellTheme
-import org.json.JSONObject
 
+/**
+ * Pawket on Android: the hosted app in one WebView, and the few things a
+ * phone does better — the wallet apps (Mobile Wallet Adapter, through the
+ * shell's wallet-intent handling), the share sheet, the gallery, the
+ * calendar, haptics and the back gesture. Nothing about a pet, a key or a
+ * transaction lives here: the page and Solana keep all of that.
+ */
 class MainActivity : ComponentActivity() {
+    /** Where Pawket is served from; nothing else loads inside the app. */
+    lateinit var origin: String
+        private set
+    private lateinit var startUrl: String
+    private lateinit var bridge: PawketBridge
+
+    private var webView by mutableStateOf<WebView?>(null)
+    private var painted by mutableStateOf(false)
+    private var failed by mutableStateOf(false)
+    private var progress by mutableFloatStateOf(0f)
+    /** The room the page is in, as it last said: its ground colour and whether it is a dark one. */
+    private var ground by mutableStateOf<Pair<Int, Boolean>?>(null)
+    private var created = 0L
+
+    private val back =
+        object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val view = webView
+                if (view == null || failed) return leave()
+                // An open sheet or dialog closes first, then the page goes back, then Pawket goes to the background.
+                view.evaluateJavascript(BACK_SCRIPT) { handled ->
+                    if (handled == "true") return@evaluateJavascript
+                    if (view.canGoBack()) view.goBack() else leave()
+                }
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        created = SystemClock.uptimeMillis()
+        // The system splash holds until the page has drawn, or for 2.5s at most; then the loader below says what is happening.
+        splash.setKeepOnScreenCondition { !painted && !failed && SystemClock.uptimeMillis() - created < SPLASH_HOLD_MS }
+        applySystemBars(isNight())
+
+        val url = BuildConfig.SOLANA_MOBILE_URL.trim().toUri()
+        if (url.scheme != "https" && !(BuildConfig.DEBUG && url.scheme == "http")) {
+            Log.e(TAG, "Refusing a start URL that is not https: $url")
+            failed = true
+        }
+        startUrl = url.toString()
+        origin = url.origin()
+        bridge = PawketBridge(this)
+
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
-        setContent {
-            WebShellTheme {
-                WebShellScreen()
-            }
-        }
-    }
-}
-
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun WebShellScreen() {
-    val context = LocalContext.current
-    val startUrl = remember { normalizeHttpUrl() }
-    if (startUrl == null) {
-        Log.e(TAG, "SOLANA_MOBILE_URL is not a valid http(s) URL")
-        return
-    }
-    val scopeHost = remember(startUrl) { startUrl.toUri().host.orEmpty() }
-    val refreshIndicatorColor = MaterialTheme.colorScheme.primary.toArgb()
-    val refreshIndicatorBackgroundColor = MaterialTheme.colorScheme.surface.toArgb()
-
-    var progress by remember { mutableFloatStateOf(0f) }
-    var isLoading by remember { mutableStateOf(true) }
-    var isRefreshing by remember { mutableStateOf(false) }
-    var hasError by remember { mutableStateOf(false) }
-    var showSplash by remember { mutableStateOf(true) }
-
-    val webView =
-        remember {
-            WebView(context).apply {
-                layoutParams =
-                    ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                    )
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                settings.databaseEnabled = true
-                settings.loadWithOverviewMode = false
-                settings.useWideViewPort = false
-                settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-                settings.builtInZoomControls = true
-                settings.displayZoomControls = false
-                settings.setSupportZoom(true)
-                settings.javaScriptCanOpenWindowsAutomatically = true
-                settings.setSupportMultipleWindows(true)
-                settings.offscreenPreRaster = true
-
-                val originalUa = settings.userAgentString
-                settings.userAgentString =
-                    appendUserAgentMarker(
-                        baseUserAgent = originalUa,
-                    )
-
-                if (BuildConfig.DEBUG) {
-                    Log.i(TAG, "UA original: $originalUa")
-                    Log.i(TAG, "UA verify:   ${settings.userAgentString}")
-                }
-
-                CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
-
-                webChromeClient =
-                    WebShellChromeClient(
-                        onProgressChanged = { newProgress ->
-                            progress = newProgress / 100f
-                            if (newProgress > 0) showSplash = false
-                            isLoading = newProgress < 100
-                        },
-                        isDebug = BuildConfig.DEBUG,
-                    )
-
-                webViewClient =
-                    object : WebShellViewClient(context, scopeHostProvider = { scopeHost }) {
-                        override fun onPageFinished(
-                            view: WebView,
-                            url: String?,
-                        ) {
-                            super.onPageFinished(view, url)
-                            hasError = false
-                            isRefreshing = false
-                            probeViewportAndMaybePatch(view, BuildConfig.DEBUG)
-                        }
-
-                        override fun onReceivedError(
-                            view: WebView?,
-                            request: WebResourceRequest?,
-                            error: WebResourceError?,
-                        ) {
-                            super.onReceivedError(view, request, error)
-                            if (request?.isForMainFrame == true) {
-                                hasError = true
-                                isRefreshing = false
-                            }
-                        }
+        if (!failed) {
+            webView =
+                makeWebView().also { view ->
+                    if (savedInstanceState == null || view.restoreState(savedInstanceState) == null) {
+                        view.loadUrl(launchUrl(intent))
                     }
-
-                loadUrl(startUrl)
-            }
-        }
-    val swipeRefreshLayout =
-        remember(webView, refreshIndicatorColor, refreshIndicatorBackgroundColor) {
-            SwipeRefreshLayout(context).apply {
-                layoutParams =
-                    ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                    )
-                setColorSchemeColors(
-                    refreshIndicatorColor,
-                )
-                setProgressBackgroundColorSchemeColor(refreshIndicatorBackgroundColor)
-                setOnChildScrollUpCallback { _, _ -> webView.canScrollVertically(-1) }
-                setOnRefreshListener {
-                    hasError = false
-                    isLoading = true
-                    isRefreshing = true
-                    webView.reload()
                 }
-                addView(webView)
+        }
+        onBackPressedDispatcher.addCallback(this, back)
+        setContent { Shell() }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun makeWebView(): WebView =
+        WebView(this).apply {
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            // The room's ground until the page paints over it: never a white flash.
+            setBackgroundColor(getColor(R.color.pawket_ground))
+            settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                allowFileAccess = false
+                allowContentAccess = false
+                mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                javaScriptCanOpenWindowsAutomatically = false
+                setSupportMultipleWindows(true)
+                setSupportZoom(true)
+                builtInZoomControls = true
+                displayZoomControls = false
+                loadWithOverviewMode = false
+                useWideViewPort = false
+                offscreenPreRaster = true
+                textZoom = textZoomFor(resources.configuration)
+                // The marker Mobile Wallet Adapter (>= 0.5.1) reads to treat this WebView as the official shell.
+                userAgentString = "${userAgentString.trim()} $WEB_SHELL_MARKER"
+            }
+            CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
+            webViewClient = WebShellViewClient(this@MainActivity)
+            webChromeClient = WebShellChromeClient(this@MainActivity)
+            bridge.attach(this)
+        }
+
+    /** The page to open: a link into Pawket this app was handed, or home. */
+    private fun launchUrl(intent: Intent?): String {
+        val link = intent?.data
+        return if (link != null && isTrusted(link)) link.toString() else startUrl
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val link = intent.data ?: return
+        if (isTrusted(link)) webView?.loadUrl(link.toString())
+    }
+
+    fun isTrusted(url: Uri): Boolean = url.origin() == origin
+
+    /** Opens a link that is not Pawket's in the app that handles it — the browser, the Explorer, a wallet's site. */
+    fun openOutside(url: Uri) {
+        if (url.scheme != "http" && url.scheme != "https") return
+        launch(Intent(Intent.ACTION_VIEW, url).addCategory(Intent.CATEGORY_BROWSABLE))
+    }
+
+    fun launch(intent: Intent): Boolean =
+        try {
+            startActivity(intent)
+            true
+        } catch (_: ActivityNotFoundException) {
+            Log.w(TAG, "Nothing on this phone handles ${intent.data?.scheme ?: intent.action}")
+            false
+        }
+
+    fun loadInside(url: Uri) {
+        if (isTrusted(url)) webView?.loadUrl(url.toString())
+    }
+
+    fun pageStarted() {
+        failed = false
+    }
+
+    fun pagePainted() {
+        painted = true
+    }
+
+    fun pageFailed() {
+        failed = true
+    }
+
+    fun progressed(percent: Int) {
+        progress = percent / 100f
+    }
+
+    /** The page's room changed: the bars around it take its ground, and its icons the right ink. */
+    fun roomChanged(color: Int, dark: Boolean) {
+        ground = color to dark
+        applySystemBars(dark)
+    }
+
+    private fun applySystemBars(dark: Boolean) {
+        val style =
+            if (dark) {
+                SystemBarStyle.dark(AndroidColor.TRANSPARENT)
+            } else {
+                SystemBarStyle.light(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT)
+            }
+        enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+    }
+
+    private fun isNight() = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
+    /**
+     * The renderer died — out of memory, or killed. The page is all in the
+     * renderer and every record is in storage or on Solana, so a new WebView
+     * opens where the old one was, instead of the app closing with it.
+     */
+    fun rendererGone(view: WebView) {
+        if (view != webView) return
+        val url = view.url?.toUri()?.takeIf(::isTrusted)?.toString() ?: startUrl
+        webView = null
+        (view.parent as? ViewGroup)?.removeView(view)
+        view.destroy()
+        painted = false
+        webView = makeWebView().also { it.loadUrl(url) }
+    }
+
+    private fun retry() {
+        val view = webView ?: return
+        failed = false
+        progress = 0f
+        if (view.url.isNullOrBlank() || view.url == "about:blank") view.loadUrl(startUrl) else view.reload()
+    }
+
+    private fun leave() {
+        back.isEnabled = false
+        onBackPressedDispatcher.onBackPressed()
+        back.isEnabled = true
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        webView?.settings?.textZoom = textZoomFor(newConfig)
+        if (ground == null) applySystemBars(isNight())
+    }
+
+    override fun onResume() {
+        super.onResume()
+        webView?.onResume()
+    }
+
+    override fun onPause() {
+        // Hidden, not stopped: the page's timers and sockets keep running, so a
+        // wallet app answering while Pawket is behind it is still heard.
+        webView?.onPause()
+        CookieManager.getInstance().flush()
+        super.onPause()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        webView?.saveState(outState)
+    }
+
+    override fun onDestroy() {
+        webView?.let { view ->
+            (view.parent as? ViewGroup)?.removeView(view)
+            view.destroy()
+        }
+        webView = null
+        super.onDestroy()
+    }
+
+    @Composable
+    private fun Shell() {
+        val room = ground
+        val background = room?.let { Color(it.first) } ?: colorResource(R.color.pawket_ground)
+        Box(Modifier.fillMaxSize().background(background)) {
+            webView?.let { view ->
+                key(view) {
+                    AndroidView(
+                        factory = { view },
+                        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing),
+                    )
+                }
+            }
+            if (failed) {
+                Offline(onRetry = ::retry)
+            } else if (!painted) {
+                Opening(progress)
             }
         }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            swipeRefreshLayout.removeView(webView)
-            webView.destroy()
-        }
     }
 
-    BackHandler(enabled = webView.canGoBack()) {
-        webView.goBack()
-    }
-
-    WebViewLayer(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.systemBars),
-        swipeRefreshLayout = swipeRefreshLayout,
-        isRefreshing = isRefreshing,
-        isLoading = isLoading,
-        progress = progress,
-        hasError = hasError,
-        showSplash = showSplash,
-        onRetry = {
-            hasError = false
-            isLoading = true
-            isRefreshing = false
-            webView.reload()
-        },
-    )
-}
-
-@Composable
-private fun WebViewLayer(
-    modifier: Modifier,
-    swipeRefreshLayout: SwipeRefreshLayout,
-    isRefreshing: Boolean,
-    isLoading: Boolean,
-    progress: Float,
-    hasError: Boolean,
-    showSplash: Boolean,
-    onRetry: () -> Unit,
-) {
-    Box(modifier = modifier) {
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { swipeRefreshLayout },
-            update = { view ->
-                view.layoutParams =
-                    ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                    )
-                view.isEnabled = !hasError
-                view.isRefreshing = isRefreshing
-            },
-        )
-
-        if (isLoading && !hasError) {
+    @Composable
+    private fun Opening(progress: Float) {
+        Column(
+            Modifier.fillMaxSize().background(colorResource(R.color.pawket_ground)).windowInsetsPadding(WindowInsets.safeDrawing),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Image(painterResource(R.drawable.ic_launcher_foreground), contentDescription = null, modifier = Modifier.size(132.dp))
+            Text(
+                stringResource(R.string.loading),
+                color = colorResource(R.color.pawket_ink_faint),
+                fontSize = 15.sp,
+            )
             LinearProgressIndicator(
                 progress = { progress },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter),
+                modifier = Modifier.padding(top = 20.dp).widthIn(max = 160.dp).fillMaxWidth(),
+                color = colorResource(R.color.pawket_sun),
+                trackColor = colorResource(R.color.pawket_sun_soft),
             )
         }
+    }
 
-        if (hasError) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.96f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "Unable to load page",
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onRetry) {
-                        Text("Retry")
-                    }
-                }
-            }
-        }
-
-        AnimatedVisibility(
-            visible = showSplash,
-            exit = fadeOut(),
+    @Composable
+    private fun Offline(onRetry: () -> Unit) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.pawket_ground))
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = 32.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center,
+            Image(painterResource(R.drawable.ic_launcher_foreground), contentDescription = null, modifier = Modifier.size(112.dp))
+            Text(
+                stringResource(R.string.offline_title),
+                color = colorResource(R.color.pawket_ink),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                stringResource(R.string.offline_body),
+                color = colorResource(R.color.pawket_ink_faint),
+                fontSize = 15.sp,
+                lineHeight = 21.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp).widthIn(max = 360.dp),
+            )
+            Button(
+                onClick = onRetry,
+                shape = RoundedCornerShape(14.dp),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = colorResource(R.color.pawket_sun),
+                        contentColor = colorResource(R.color.pawket_on_sun),
+                    ),
             ) {
-                CircularProgressIndicator()
+                Text(stringResource(R.string.try_again), fontWeight = FontWeight.SemiBold)
             }
         }
     }
-}
 
-private fun probeViewportAndMaybePatch(
-    webView: WebView,
-    isDebug: Boolean,
-) {
-    webView.evaluateJavascript(VIEWPORT_PROBE_AND_PATCH_SCRIPT) { rawResult ->
-        val decoded = decodeJavascriptStringResult(rawResult)
-        val parsed = runCatching { JSONObject(decoded) }.getOrNull()
-        val isBroken = parsed?.optBoolean("broken") == true
-        if (isDebug || isBroken) {
-            Log.i(TAG, "[VP] ${parsed?.toString() ?: decoded}")
-        }
+    companion object {
+        const val TAG = "Pawket"
+        const val WEB_SHELL_MARKER = "Solana Mobile Web Shell"
+        private const val SPLASH_HOLD_MS = 2_500L
+
+        /** Asks the page to close its open sheet or dialog; true when it did. */
+        private const val BACK_SCRIPT =
+            "(function(){try{return typeof window.pawketBack==='function'&&window.pawketBack()===true}catch(e){return false}})()"
+
+        private fun textZoomFor(configuration: Configuration) = (configuration.fontScale * 100).toInt().coerceIn(85, 200)
     }
 }
 
-private fun decodeJavascriptStringResult(rawResult: String?): String {
-    if (rawResult.isNullOrBlank() || rawResult == "null") return ""
-    return runCatching { JSONObject("{\"value\":$rawResult}").getString("value") }
-        .getOrDefault(rawResult)
+/** scheme://host[:port], lowercased, the default port left out: what "the same site" means here. */
+fun Uri.origin(): String {
+    val scheme = scheme?.lowercase() ?: return ""
+    val host = host?.lowercase() ?: return ""
+    val defaultPort = (scheme == "https" && port == 443) || (scheme == "http" && port == 80)
+    return if (port == -1 || defaultPort) "$scheme://$host" else "$scheme://$host:$port"
 }
-
-private fun appendUserAgentMarker(baseUserAgent: String): String {
-    val marker = "Solana Mobile Web Shell"
-    if (marker.isEmpty()) return baseUserAgent.trim()
-    return if (baseUserAgent.contains(marker)) {
-        baseUserAgent.trim()
-    } else {
-        "${baseUserAgent.trim()} $marker".trim()
-    }
-}
-
-private fun normalizeHttpUrl(): String? {
-    val trimmed = BuildConfig.SOLANA_MOBILE_URL.trim()
-    if (trimmed.isEmpty()) return null
-    val withScheme =
-        if ("://" in trimmed) {
-            trimmed
-        } else {
-            "https://$trimmed"
-        }
-    val uri = withScheme.toUri()
-    val scheme = uri.scheme?.lowercase()
-    if (scheme != "http" && scheme != "https") return null
-    if (uri.host.isNullOrBlank()) return null
-    return uri.toString()
-}
-
-private const val TAG = "WebShell"
-
-private val VIEWPORT_PROBE_AND_PATCH_SCRIPT =
-    """
-    (function () {
-      function measureViewport() {
-        var probe = document.createElement('div');
-        probe.style.cssText = 'position:fixed;top:0;left:0;width:0;visibility:hidden;pointer-events:none;';
-        document.documentElement.appendChild(probe);
-        probe.style.height = '100vh';
-        var vh = probe.getBoundingClientRect().height;
-        probe.style.height = '100dvh';
-        var dvh = probe.getBoundingClientRect().height;
-        document.documentElement.removeChild(probe);
-        return {
-          innerHeight: window.innerHeight || 0,
-          visualViewportHeight: window.visualViewport ? window.visualViewport.height : 0,
-          vh: vh,
-          dvh: dvh
-        };
-      }
-
-      function updateViewportVars() {
-        var px = Math.max(window.innerHeight || 0, 1) + 'px';
-        document.documentElement.style.setProperty('--webshell-vh-px', px);
-        document.documentElement.style.setProperty('--webshell-dvh-px', px);
-      }
-
-      function applyFallbackPatch() {
-        updateViewportVars();
-        if (!window.__webshell_viewport_resize_hook__) {
-          window.__webshell_viewport_resize_hook__ = true;
-          window.addEventListener('resize', updateViewportVars);
-          window.addEventListener('orientationchange', updateViewportVars);
-          if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', updateViewportVars);
-          }
-        }
-
-        var style = document.getElementById('__webshell_viewport_patch_style__');
-        if (!style) {
-          style = document.createElement('style');
-          style.id = '__webshell_viewport_patch_style__';
-          style.textContent = [
-            ':root { --webshell-vh-px: 100vh; --webshell-dvh-px: 100vh; }',
-            'html, body, #root, #app { min-height: var(--webshell-dvh-px) !important; height: auto !important; }',
-            '[class~="h-screen"], [class~="h-dvh"], [class*="h-screen"], [class*="h-dvh"] { height: var(--webshell-dvh-px) !important; }',
-            '[class~="min-h-screen"], [class~="min-h-dvh"], [class*="min-h-screen"], [class*="min-h-dvh"] { min-height: var(--webshell-dvh-px) !important; }',
-            '[class~="max-h-screen"], [class~="max-h-dvh"], [class*="max-h-screen"], [class*="max-h-dvh"] { max-height: var(--webshell-dvh-px) !important; }'
-          ].join('\\n');
-          document.documentElement.appendChild(style);
-        }
-
-        var classElements = document.querySelectorAll('[class]');
-        for (var i = 0; i < classElements.length; i++) {
-          var className = classElements[i].className;
-          if (typeof className !== 'string') continue;
-          if (className.indexOf('max-h-[calc(100dvh-1rem)]') !== -1 || className.indexOf('max-h-[calc(100vh-1rem)]') !== -1) {
-            classElements[i].style.maxHeight = 'calc(var(--webshell-dvh-px) - 1rem)';
-          }
-        }
-      }
-
-      var before = measureViewport();
-      var broken = before.innerHeight > 0 && (before.vh <= 1 || before.dvh <= 1);
-      if (broken) {
-        applyFallbackPatch();
-      }
-      var after = measureViewport();
-      return JSON.stringify({
-        broken: broken,
-        patched: broken,
-        before: before,
-        after: after
-      });
-    })();
-    """.trimIndent()

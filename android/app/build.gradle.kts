@@ -63,7 +63,8 @@ android {
 
     defaultConfig {
         applicationId = webShellApplicationId
-        minSdk = 28
+        // 29: pictures save through MediaStore with no storage permission.
+        minSdk = 29
         targetSdk = 37
         versionCode = webShellVersionCode
         versionName = webShellVersionName
@@ -85,8 +86,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Beside the release on one phone, with its own storage, and named so it is never mistaken for it.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("webShellRelease")
             }
@@ -116,6 +123,6 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.androidx.webkit)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

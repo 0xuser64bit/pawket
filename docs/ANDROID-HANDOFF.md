@@ -20,26 +20,30 @@ Reviewer and store materials: `ANDROID-SUBMISSION.md`.
 
 ## Source and working environment
 
-- Worktree: `/Users/user64bit/Code/pawket-android`, branch `android`.
+- Primary checkout: `/Users/user64bit/Code/pawket`, branch `main`.
+  Android worktree: `/Users/user64bit/Code/pawket-android`, branch `android`.
+  The owner requested all Android task commits on both local and GitHub main;
+  both branches are synchronized at this documentation checkpoint.
 - Private repository: `git@github.com:0xuser64bit/pawket.git`.
 - Baseline: `43881c60d4643b9bd19eaf875607bcc2d54a585c`.
 - Reviewed deployed web: `52a4db2`; Vercel deployment
   `8yfwXgqfK897Zq3USdT9KuDB69Dp`, status success. Healthy devnet site at
   `https://pawket-pets.vercel.app/home`; assetlinks serves the release signer.
-- All task source commits are on `android`; `git log 43881c6..android`
-  shows the sequence. This checkpoint accompanies the final documentation
-  commit. Inspect actual status and origin/main before subsequent work.
+- All task source commits are on `main` and `android`;
+  `git log 43881c6..main` shows the sequence. Inspect actual status and
+  origin/main before subsequent work. The hosted code verified above is
+  unchanged by the subsequent documentation commits.
 - Task source boundaries: `android/`, `src/lib/native/`, Android registration
   in `browser-client.ts`, shared sends/lifecycle in `send.ts` and
   `transactions.ts`, native call sites in photo/share/reminder/care/settings,
   bridge e2e coverage, `public/.well-known/assetlinks.json`,
   `scripts/android-release.sh`, pnpm settings and Android documentation.
-- Other work preserved: primary checkout `/Users/user64bit/Code/pawket`
-  remains at its local main baseline with the owner's untracked Android brief.
-  Branch `room-3d` and the primary checkout's server on port 3100 are untouched.
-  The authorized deployment used a normal `android:main` push without
-  changing primary-checkout files. Do not reset or overwrite them to align
-  local main with remote main.
+- Other work preserved: local main was fast-forwarded at the owner's request,
+  without rewriting commits. Its previously untracked Android brief exactly
+  matched the committed copy; the original was backed up under
+  `android/.local/main-sync/` in the Android worktree before the update.
+  Branch `room-3d` and the primary checkout's server process on port 3100 were
+  preserved. Do not reset or overwrite unrelated work.
 - `.env` here is an ignored symlink to `../pawket/.env`. Never print/copy its
   contents. It holds server configuration and the devnet sponsor key.
 - pnpm **10.34.6** pinned in package.json. `pnpm-workspace.yaml` owns the
@@ -197,6 +201,9 @@ specific authorization. These do not prevent installing/testing the APK.
 
 1. `cd /Users/user64bit/Code/pawket-android`; inspect Git status, task commits
    and remote before edits. Preserve the primary checkout and other server.
+   All source is also on `/Users/user64bit/Code/pawket` main. Ignored APK,
+   review materials and evidence remain in the Android worktree; synchronizing
+   Git commits does not move those generated files between checkouts.
 2. Verify the APK hash in the folder and install on the owner's phone:
    `adb install -r android/.local/submission/pawket-0.1.0.apk`, or open the APK
    on the phone. Run the checklist and record versions/results/receipts.

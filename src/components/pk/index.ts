@@ -53,5 +53,5 @@ export {
 export { BackLink, Columns, Grid, Row, Screen, ScreenBar, SectionLabel, Stack } from "./layout";
 export { PawLoader, Waiting } from "./paw-loader";
 export { Dock } from "./dock";
-export { ThemeMenu, ThemePicker, setTheme, useTheme, useThemeChoice, useToken } from "./theme";
+export { ThemeButton, ThemePicker, setTheme, useTheme, useThemeChoice, useToken } from "./theme";
 export { Toasts, showToast, dismissToast, type Toast } from "./toast";

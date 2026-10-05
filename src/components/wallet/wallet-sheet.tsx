@@ -25,10 +25,11 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
 
   return (
     <Sheet
+      register="room"
       title="Connect a wallet"
       meta="Solana devnet"
       onDismiss={onDismiss}
-      foot={<Button tone="paper" label="Not now" full onClick={onDismiss} />}
+      foot={<Button tone="quiet" size="sm" label="Not now" full onClick={onDismiss} />}
     >
       <Stack gap={4}>
         <p className="body-sm">{why}</p>
@@ -38,7 +39,7 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
               <button
                 key={option.name}
                 type="button"
-                className="pk-btn pk-btn--paper pk-btn--full pk-wallet-pick"
+                className="pk-btn pk-btn--quiet pk-btn--full pk-wallet-pick"
                 disabled={connect.isRunning}
                 onClick={() => {
                   connect.dispatchAsync(option).then(onDismiss, () => {
@@ -59,7 +60,7 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
               phone, open Pawket inside the wallet app&apos;s own browser instead.
             </p>
             {INSTALL.map((option) => (
-              <a key={option.name} className="pk-btn pk-btn--paper pk-btn--full" href={option.href} target="_blank" rel="noreferrer">
+              <a key={option.name} className="pk-btn pk-btn--quiet pk-btn--full" href={option.href} target="_blank" rel="noreferrer">
                 {option.name}
               </a>
             ))}

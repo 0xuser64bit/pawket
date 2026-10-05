@@ -38,10 +38,21 @@ test("an address with no pet is a plain miss, not an error", async ({ page }) =>
   ).toBeVisible();
 });
 
-test("a wallet is offered where it does something, and never asked for up front", async ({ page }) => {
+test("a wallet is offered, never asked for: the front door has none, the shell has Connect", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("button", { name: /connect/i })).toHaveCount(0);
   await page.goto("/home");
+  const shell = page.getByRole("banner");
+  await shell.getByRole("button", { name: "Connect", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Connect a wallet" })).toBeVisible();
+  await page.getByRole("button", { name: "Not now" }).click();
+  // A tap on the room's name moves into the next room; no menu opens.
+  const room = shell.getByRole("button", { name: /^Room: / });
+  const before = await room.textContent();
+  await room.click();
+  await expect(room).not.toHaveText(before ?? "");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+
   await expect(page.getByRole("heading", { name: "Already keep a pet on Solana?" })).toBeVisible();
   await page.getByRole("button", { name: "Connect a wallet" }).click();
   const sheet = page.getByRole("dialog", { name: "Connect a wallet" });

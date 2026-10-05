@@ -31,17 +31,14 @@ import { explorerAddressUrl, explorerTxUrl } from "@/lib/solana/cluster";
 import {
   getCloseWalletInstruction,
   getDepositInstruction,
-  getLinkDeviceInstruction,
-  getOpenWalletInstruction,
   getUnlinkDeviceInstruction,
   getWithdrawInstruction,
 } from "@/lib/solana/instructions";
-import { deriveWalletPda } from "@/lib/solana/pda";
-import { WALLET_LIMITS } from "@/lib/solana/program";
 import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
 import { formatAgo, formatSol, formatUtcDate, parseSolToLamports, truncateAddress } from "@/lib/utils/format";
 import { useMounted } from "@/lib/utils/use-mounted";
-import { forgetDevice, loadDevice, makeDevice } from "@/lib/wallet/device";
+import { forgetDevice } from "@/lib/wallet/device";
+import { useLinkBrowser } from "@/lib/wallet/link";
 import { fetchWalletHistory, type WalletEntry } from "@/lib/wallet/history";
 import { refreshPawketWallet, rentOfWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
@@ -75,8 +72,6 @@ const PUT = [
 ] as const;
 const sol = (lamports: bigint) => `${formatSol(lamports)} SOL`;
 
-/** A link's end: a few minutes inside the program's 30 days, so a clock running ahead is not refused. */
-const expiresIn = (days: number) => Math.floor(Date.now() / 1000) + Math.min(days * 86_400, WALLET_LIMITS.maxDeviceSeconds) - 600;
 
 export function PawketWalletScreen() {
   // The wallet is only known in the browser, after hydration.
@@ -127,7 +122,7 @@ export function PawketWalletScreen() {
         <Opened state={state} owner={owner} />
       ) : (
         <Stack gap={4}>
-          <SetUp owner={owner} />
+          <SetUp />
           <Rules />
         </Stack>
       )}
@@ -199,8 +194,8 @@ function Rules() {
 }
 
 /** Opening one and linking this browser, in one approval: nothing to put in while Pawket pays the fees. */
-function SetUp({ owner }: { owner: Address }) {
-  const sender = usePawketSend();
+function SetUp() {
+  const { link, problem, busy } = useLinkBrowser();
   const sponsor = useSponsor();
   const rent = useRequest(rentOfWallet);
   const cluster = getPublicEnv().solanaCluster;
@@ -208,27 +203,8 @@ function SetUp({ owner }: { owner: Address }) {
   const [put, setPut] = useState<number>(0);
   const [days, setDays] = useState<number>(30);
   const [daily, setDaily] = useState<number>(100);
-  const [problem, setProblem] = useState<string>();
   // With nobody paying its fees, the browser needs a float of its own before it can sign anything.
   const deposit = BigInt(sponsored ? put : Math.max(put, PUT[1].value));
-
-  async function open() {
-    setProblem(undefined);
-    let device;
-    try {
-      device = (await loadDevice(owner)) ?? (await makeDevice(owner));
-    } catch (error) {
-      setProblem(error instanceof Error ? error.message : "This browser cannot keep a device key. Nothing was linked.");
-      return;
-    }
-    const wallet = (await deriveWalletPda(owner)).address;
-    const result = await sender.send("Link this browser", ({ owner: signer, payer }) => [
-      getOpenWalletInstruction({ owner: signer, payer, wallet }),
-      ...(deposit > 0n ? [getDepositInstruction({ owner: signer, wallet, amount: deposit })] : []),
-      getLinkDeviceInstruction({ owner: signer, wallet, device, expiresAt: expiresIn(days), dailyActions: daily }),
-    ]);
-    if (result) await refreshPawketWallet(owner);
-  }
 
   return (
     <Card>
@@ -261,7 +237,7 @@ function SetUp({ owner }: { owner: Address }) {
         </Paper>
         {problem ? <Banner tone="risk" title="Nothing was linked" body={problem} /> : null}
         <div>
-          <Button label="Link this browser" icon="bolt" tone="sun" disabled={sender.busy || !sponsor.data} onClick={() => void open()} />
+          <Button label="Link this browser" icon="bolt" tone="sun" disabled={busy || !sponsor.data} onClick={() => void link({ days, daily, deposit })} />
         </div>
       </Stack>
     </Card>
@@ -317,27 +293,14 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
   const sender = usePawketSend();
   const [days, setDays] = useState<number>(30);
   const [daily, setDaily] = useState<number>(wallet.dailyActions || 100);
-  const [problem, setProblem] = useState<string>();
+  const linking = useLinkBrowser();
+  const link = () => linking.link({ days, daily });
+  const problem = linking.problem;
   const here = state.device && wallet.device === state.device.address;
   const elsewhere = wallet.device && !here;
   const expired = here && wallet.deviceExpiresAt <= now;
   const until = formatUtcDate(new Date(wallet.deviceExpiresAt * 1000));
   const left = Math.max(0, wallet.dailyActions - wallet.actionsToday);
-
-  async function link() {
-    setProblem(undefined);
-    let device;
-    try {
-      device = (here ? state.device : null) ?? (await makeDevice(owner));
-    } catch (error) {
-      setProblem(error instanceof Error ? error.message : "This browser cannot keep a device key. Nothing was linked.");
-      return;
-    }
-    const result = await sender.send(here ? "Link this browser again" : "Link this browser", ({ owner: signer }) => [
-      getLinkDeviceInstruction({ owner: signer, wallet: wallet.address, device, expiresAt: expiresIn(days), dailyActions: daily }),
-    ]);
-    if (result) await refreshPawketWallet(owner);
-  }
 
   async function unlinkHere() {
     if (!state.device) return;
@@ -402,7 +365,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               <Stack gap={3} style={{ marginTop: "var(--space-3)" }}>
                 {limits}
                 <div>
-                  <Button label="Link again with these" tone="quiet" size="sm" disabled={sender.busy} onClick={() => void link()} />
+                  <Button label="Link again with these" tone="quiet" size="sm" disabled={sender.busy || linking.busy} onClick={() => void link()} />
                 </div>
               </Stack>
             </details>
@@ -418,7 +381,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
             </p>
             {limits}
             <Row gap={2} wrap>
-              <Button label={expired ? "Link it again" : "Link this browser"} icon="bolt" tone="sun" disabled={sender.busy} onClick={() => void link()} />
+              <Button label={expired ? "Link it again" : "Link this browser"} icon="bolt" tone="sun" disabled={sender.busy || linking.busy} onClick={() => void link()} />
               {elsewhere ? <Button label="Unlink the other device" tone="ghost" size="sm" disabled={sender.busy} onClick={() => void unlinkElsewhere()} /> : null}
             </Row>
           </>

@@ -312,10 +312,15 @@ do; its coin, if it launches one, lives on its own page and on Paper. The
 Market sells looks at fixed prices, on Paper too: a price is never a
 Playroom figure. There is no lobby.
 
-The wallet layer follows the system's own rules: connecting is offered only
-where it does something (keeping a pet on Solana, finding the pets a wallet
-keeps) and never in the shell; the connect sheet and the address chip are
-Paper; an address always sits beside a copy control. A send is a toast
+The wallet layer follows the system's own rules: the shell holds it, quietly,
+just before the room switch and drawn the same way — "Connect" until a
+wallet is connected, then the wallet's own mark and address, with a bolt
+while this browser signs with no pop-up; it is offered in place where it
+does something (finding the pets a wallet keeps) and never asked for up
+front (the front door has none). Choosing a wallet and the wallet you are
+open as Playroom sheets; Paper is for money. An address always sits beside
+a copy control. The room switch names the room and a tap moves into the
+next one; every room, and "Follow my device", is in Settings. A send is a toast
 (`src/components/pk/toast.tsx`), one per send, in the corner and over the
 page — never a block in it: waiting is a spinner and says what it waits
 for, a record is a check, "Recorded on Solana" and who paid, with the

@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import { THEMES, THEME_KEY, isThemeId, roomOpen, type ThemeChoice, type ThemeId } from "@/config/themes";
-import { Icon } from "./icon";
 import { PetArt, type PetForm } from "./pet-art";
 
 const listeners = new Set<() => void>();
@@ -169,56 +168,26 @@ export function ThemePicker({
 }
 
 /**
- * The shell's room switch: names the room you are in, and opens every room
- * as a list. A native popover, so Escape and a tap outside close it.
+ * The shell's room switch: names the room you are in, and a tap moves into
+ * the next one — every free room, and the Market rooms the closet (`owned`)
+ * holds. No menu: the name on the button is the whole story, and "Follow my
+ * device" lives with the other rooms in Settings.
  */
-export function ThemeMenu({ owned = NOTHING_OWNED }: { owned?: ReadonlySet<number> }) {
+export function ThemeButton({ owned = NOTHING_OWNED }: { owned?: ReadonlySet<number> }) {
   const choice = useThemeChoice();
   const scheme = useTheme();
-  const id = useId();
-  // Each switch anchors its own list (the front door has two).
-  const anchor = `--rooms-${id.replace(/[^\w-]/g, "")}`;
   const current = roomInForce(choice, scheme);
+  const open = THEMES.filter((room) => roomOpen(room.id, owned));
+  const next = open[(open.findIndex((room) => room.id === current.id) + 1) % open.length];
   return (
-    <>
-      <button
-        type="button"
-        className="pk-btn pk-btn--quiet pk-btn--sm pk-theme-button"
-        popoverTarget={`${id}-rooms`}
-        aria-label={`Room: ${current.name}. Change the room`}
-        style={{ anchorName: anchor }}
-      >
-        <span className="pk-theme-dot" data-theme-preview={current.id} aria-hidden="true" />
-        <span>{current.name}</span>
-      </button>
-      <div id={`${id}-rooms`} popover="auto" className="pk-menu" style={{ positionAnchor: anchor }}>
-        <div className="pk-spread">
-          <span className="label pk-faint">Rooms</span>
-          <span className="caption pk-faint">Saved on this device</span>
-        </div>
-        <div className="pk-menu__list">
-          {[{ id: "system" as const, name: "Follow my device" }, ...THEMES.filter((room) => roomOpen(room.id, owned) || choice === room.id)].map((theme) => {
-            const on = choice === theme.id;
-            return (
-              <button
-                key={theme.id}
-                type="button"
-                className="pk-menu__item"
-                aria-pressed={on}
-                onClick={() => setTheme(theme.id)}
-              >
-                <span
-                  className="pk-theme-dot"
-                  data-theme-preview={theme.id === "system" ? roomInForce("system", scheme).id : theme.id}
-                  aria-hidden="true"
-                />
-                <span className="pk-fill">{theme.name}</span>
-                {on ? <Icon name="check" size={14} /> : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </>
+    <button
+      type="button"
+      className="pk-btn pk-btn--quiet pk-btn--sm pk-theme-button"
+      aria-label={`Room: ${current.name}. Move to ${next.name}`}
+      onClick={() => setTheme(next.id)}
+    >
+      <span className="pk-theme-dot" data-theme-preview={current.id} aria-hidden="true" />
+      <span>{current.name}</span>
+    </button>
   );
 }

@@ -2320,6 +2320,98 @@ li {
     max-width: calc(1120px + 2 * var(--gutter));
   }
 }
+/* The two shell buttons are one family: the wallet (Connect, or its mark and
+   address) and the room switch beside it. An address keeps its case and its
+   mono; a bolt on it says this browser signs with no pop-up. Until the
+   wallet has had its chance to reconnect, a blank of the same size holds
+   the place, so nothing jumps and "Connect" never flashes for a wallet that
+   is there. */
+.pk-shell-btn {
+  gap: 6px;
+  min-height: 34px;
+}
+.pk-shell-btn--hold {
+  display: inline-block;
+  width: 108px;
+  height: 34px;
+}
+.pk-shell-btn__mark {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex: none;
+}
+.pk-shell-btn__address {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.pk-shell-btn__bolt {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-right: -2px;
+  border-radius: var(--radius-pill);
+  background: var(--sun);
+  color: var(--on-sun);
+}
+.pk-theme-button {
+  min-height: 34px;
+}
+@media (max-width: 400px) {
+  /* A phone keeps the mark, the wallet's own mark and the room's name. */
+  .pk-shell-btn__address {
+    display: none;
+  }
+  .pk-shell-btn--hold {
+    width: 44px;
+  }
+}
+
+/* The wallet you are: its mark and address, then this browser's link — the
+   one thing worth doing here, lit sun when it is on. */
+.pk-wallet-who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.pk-wallet-who > img {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  flex: none;
+}
+.pk-wallet-link {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+.pk-wallet-link--on {
+  border-color: var(--sun-edge);
+  background: var(--sun-soft);
+}
+.pk-wallet-link__icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--sun-text);
+}
+.pk-wallet-link--on .pk-wallet-link__icon {
+  background: var(--sun);
+  color: var(--on-sun);
+}
+
 
 /* The thing and what you can do to it: stacked in that order until there is
    room to set them side by side. */
@@ -2505,6 +2597,37 @@ li {
   }
   .pk-sheet .pk-paper__foot {
     padding-bottom: var(--space-3);
+  }
+}
+/* The Playroom sheet: a card over the dimmed room, its head a title in
+   words and its foot on the card's own ground. */
+.pk-sheet--room {
+  background: var(--surface);
+  border: var(--stroke-line) solid var(--edge);
+  border-bottom: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.pk-sheet--room > .pk-paper__head {
+  color: var(--ink);
+  align-items: baseline;
+  padding: var(--space-5) var(--space-5) var(--space-3);
+  border-bottom: 0;
+  background: transparent;
+}
+.pk-sheet--room > .pk-paper__body {
+  padding: 0 var(--space-5) var(--space-5);
+}
+.pk-sheet--room > .pk-paper__foot {
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface-sunk);
+  border-top: var(--stroke-hair) solid var(--edge-soft);
+}
+@media (min-width: 720px) {
+  .pk-sheet--room {
+    border-bottom: var(--stroke-line) solid var(--edge);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sticker), var(--shadow-lift);
+    overflow: hidden;
   }
 }
 @keyframes pk-rise {
@@ -4229,66 +4352,6 @@ details > .pk-risks {
   box-shadow: 0 0 0 1.5px var(--edge);
 }
 
-.pk-menu {
-  position: fixed;
-  inset: auto;
-  top: calc(var(--space-10) - var(--space-5) + env(safe-area-inset-top));
-  right: max(var(--gutter), env(safe-area-inset-right));
-  margin: 0;
-  width: min(260px, calc(100vw - 2 * var(--gutter)));
-  padding: var(--space-3);
-  background: var(--surface);
-  color: var(--ink);
-  border: var(--stroke-line) solid var(--edge);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sticker);
-}
-@supports (position-anchor: --pk-a) {
-  .pk-menu {
-    top: calc(anchor(bottom) + var(--space-2));
-    right: anchor(right);
-    position-try-fallbacks: flip-block;
-  }
-}
-.pk-menu:popover-open {
-  animation: pk-fade var(--dur-sheet) var(--ease-press);
-}
-.pk-menu__list {
-  display: grid;
-  gap: var(--space-1);
-  margin-top: var(--space-2);
-}
-.pk-menu__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 40px;
-  padding: 0 var(--space-3);
-  border: var(--stroke-line) solid transparent;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--font-text);
-  font-size: 14px;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-}
-.pk-menu__item[aria-pressed="true"] {
-  border-color: var(--edge);
-  background: var(--surface-sunk);
-}
-@media (hover: hover) {
-  .pk-menu__item:not([aria-pressed="true"]):hover {
-    background: var(--surface-sunk);
-  }
-}
-@media (pointer: coarse) {
-  .pk-menu__item {
-    min-height: 44px;
-  }
-}
-
 .pk-themes {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -4652,7 +4715,7 @@ details > .pk-risks {
     inset: -10px;
   }
 }
-/* A wallet in the picker: its own mark, then its name, on Paper. */
+/* A wallet in the picker: its own mark, then its name. */
 .pk-wallet-pick {
   justify-content: flex-start;
 }
@@ -4661,12 +4724,6 @@ details > .pk-risks {
   height: 20px;
   border-radius: 4px;
   flex: none;
-}
-.pk-chip--wallet {
-  font-family: var(--font-mono);
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
 }
 
 /* ---------------------------------------------------------------- the park

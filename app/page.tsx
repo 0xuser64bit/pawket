@@ -12,7 +12,7 @@ import {
   Receipt,
   Row,
   Stack,
-  ThemeMenu,
+  ThemeButton,
   WearableArt,
   type IconName,
 } from "@/components/pk";
@@ -81,7 +81,7 @@ export default function LandingPage() {
         </nav>
         <div className="pk-landing__aside">
           <span className="pk-landing__theme--head">
-            <ThemeMenu />
+            <ThemeButton />
           </span>
           <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />
         </div>
@@ -296,7 +296,7 @@ export default function LandingPage() {
             ))}
           </nav>
           <span className="pk-landing__theme--foot">
-            <ThemeMenu />
+            <ThemeButton />
           </span>
           <NetworkBadge />
         </Stack>

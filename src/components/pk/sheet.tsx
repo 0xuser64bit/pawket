@@ -4,11 +4,13 @@ import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 /**
- * A decision that costs money, or that hands control to a wallet, arrives as
- * a Paper sheet over a dimmed Playroom, anchored to the foot of a phone and
- * centred where there is room, with its controls in the `paper-sunk` foot.
- * The corner radius falling from 20px to 4px is the warning; the copy only
- * confirms it.
+ * A decision that costs money arrives as a Paper sheet over a dimmed
+ * Playroom, anchored to the foot of a phone and centred where there is room,
+ * with its controls in the `paper-sunk` foot. The corner radius falling from
+ * 20px to 4px is the warning; the copy only confirms it. Anything else that
+ * needs the whole screen for a moment — choosing a wallet, the wallet you
+ * are — is the same sheet in the Playroom (`register="room"`): a card, its
+ * title in words, no warning to give.
  *
  * It is a modal in behaviour as well as looks: it renders into the body, so
  * everything behind it goes inert; focus moves into it; and Escape or a tap
@@ -19,11 +21,13 @@ export function Sheet({
   meta,
   foot,
   onDismiss,
+  register = "paper",
   children,
 }: {
   title: string;
-  meta?: string;
+  meta?: ReactNode;
   foot?: ReactNode;
+  register?: "paper" | "room";
   /** Cancel. Escape and the scrim do the same. */
   onDismiss: () => void;
   children: ReactNode;
@@ -68,7 +72,7 @@ export function Sheet({
     >
       <section
         ref={sheet}
-        className="pk-sheet"
+        className={register === "room" ? "pk-sheet pk-sheet--room" : "pk-sheet"}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -78,8 +82,8 @@ export function Sheet({
         }}
       >
         <header className="pk-paper__head">
-          <span className="receipt-label">{title}</span>
-          {meta ? <span className="receipt-label">{meta}</span> : null}
+          {register === "room" ? <h2 className="title">{title}</h2> : <span className="receipt-label">{title}</span>}
+          {meta ? <span className={register === "room" ? "caption pk-faint" : "receipt-label"}>{meta}</span> : null}
         </header>
         <div className="pk-paper__body">{children}</div>
         {foot ? <footer className="pk-paper__foot">{foot}</footer> : null}

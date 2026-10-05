@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Dock, Mark } from "@/components/pk";
-import { RoomMenu } from "@/components/market/room-menu";
+import { RoomButton } from "@/components/market/room-button";
 import { WalletChip } from "@/components/wallet/wallet-chip";
 
 /**
@@ -24,7 +24,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
           <Dock />
           <div className="pk-shell__aside">
             <WalletChip />
-            <RoomMenu />
+            <RoomButton />
           </div>
         </div>
       </header>

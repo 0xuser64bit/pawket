@@ -23,6 +23,8 @@ pnpm dev        # http://localhost:3000
 | `pnpm verify`    | typecheck + lint + test + build            |
 | `pnpm program:test` | anchor build (SBF v2) + LiteSVM tests   |
 | `pnpm e2e:devnet` | the chain path against the deployed program |
+| `cd android && ./gradlew assembleDebug -PSOLANA_MOBILE_URL=http://localhost:3000/home` | the Android app against this checkout (with `adb reverse tcp:3000 tcp:3000`; see `docs/ANDROID.md`) |
+| `scripts/android-release.sh` | the signed release APK, with its package, signer and SHA-256 |
 
 ## Editing rules
 

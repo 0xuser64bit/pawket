@@ -3,6 +3,36 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: Pawket on Android is the official webshell around the hosted app
+
+**Context:** Solana Mobile's Clock In asks for a working Android APK that
+uses Mobile Wallet Adapter and does something real on Solana, and scores a
+bare wrapper of a website poorly. Pawket is a Next.js app whose pages, game
+rules, sponsor and server-prepared transactions are its product; the old
+Expo shell was removed for good reason (`docs/ARCHITECTURE.md`, "What was
+removed and why").
+**Decision:** Generate `android/` with the official `solana-mobile` CLI
+(0.5.0, `webshell init`) around `https://pawket-pets.vercel.app/home`, and
+make it Pawket's: one WebView that survives the phone (configuration
+changes in place, process death, renderer death), Pawket's origin only,
+the wallet's intents launched natively, back that closes sheets first, no
+pull-to-refresh, the room's colours on the bars, launcher shortcuts and
+verified links. Mobile Wallet Adapter (`@solana-mobile/wallet-standard-mobile`
+0.6.0) registers as one more Wallet Standard wallet on Android, so the one
+send path signs on a phone unchanged — sponsor first, the wallet second,
+the message checked. What a phone does better (share sheet, gallery,
+calendar, haptics) goes through one origin-locked bridge of six checked
+requests, never keys or transactions. Rejected: a Trusted Web Activity
+(Chrome's Local Network Access gate on the wallet's socket, Digital Asset
+Links, and no native surface), React Native (the 3D room, the games and
+every screen written again), Capacitor (no wallet advantage over the
+official shell, a plugin framework for six requests).
+**Consequence:** A web deploy changes the app; a shell change needs a new
+APK signed with the same key (`docs/ANDROID.md`). A pet kept in the app lives
+in the app's own storage, apart from Chrome's — the app says "this app", and
+Solana is how a pet goes everywhere. Android's adapter downloads only on
+Android.
+
 ## 2026-10: A linked browser signs everything but money, and needs no SOL
 
 **Context:** The Pawket Wallet exists so a player stops seeing a wallet

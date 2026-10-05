@@ -85,6 +85,15 @@ the program's account; the card cannot be sold or sent. Do not put a
 simulated price, treasury, member count or lobby on a screen, and call a pet
 "on Solana" only when it was read from chain.
 
+Pawket is also an Android app (`android/`, `docs/ANDROID.md`): the official
+Solana Mobile webshell around the hosted app, so the pages, rules and sends
+are these ones. The wallet apps on the phone (Seed Vault, Phantom…) sign
+through Mobile Wallet Adapter, registered in `browser-client.ts` on Android
+only; `send.ts` is unchanged. The phone's share sheet, gallery, calendar,
+haptics, back gesture and bars are reached through one origin-locked bridge
+(`PawketBridge.kt` ↔ `src/lib/native/android.ts`) that never carries a key
+or a transaction. Inside the app a pet is kept "in this app" (`useHere()`).
+
 ## Read first
 
 | If you are…               | Read                                                        |
@@ -98,6 +107,7 @@ simulated price, treasury, member count or lobby on a screen, and call a pet
 | Touching game math        | `docs/GAME-DESIGN.md` (`src/lib/game/` is lockstep)         |
 | Touching pets/NFTs        | `docs/NFT-CUSTOMIZATION.md` + `docs/DOMAIN-MODEL.md`        |
 | Touching the 3D room      | `docs/ROOM-3D.md` + `docs/DESIGN.md` (“The room in 3D”)     |
+| Touching the Android app  | `docs/ANDROID.md` (+ `docs/ANDROID-HANDOFF.md` while it is in progress) |
 | Touching marketplace      | `docs/MARKETPLACE.md` + `docs/API-CONTRACTS.md`             |
 | Touching guilds/launches  | `docs/GUILDS.md` + `docs/METEORA-INTEGRATION.md` + `docs/SAFETY-ECONOMY.md` |
 | Touching indexer/API      | `docs/INDEXER.md` + `docs/API-CONTRACTS.md` + `docs/ROUTES.md` |
@@ -156,6 +166,9 @@ One home per fact. If two files disagree, the left column wins.
 | A Pawket Wallet's history         | `src/lib/wallet/history.ts` (read from chain) |
 | Moments and emotes                | `src/lib/room/moments.ts`           |
 | 3D assets (built, never hand-edited) | `scripts/3d/` → `public/3d/`     |
+| The Android app (shell, origin, version) | `android/` (`android/gradle.properties` holds the URL, id and version) |
+| What the page may ask of the phone | `android/app/src/main/java/app/pawket/android/PawketBridge.kt` ↔ `src/lib/native/android.ts` |
+| Links that open in the app        | `public/.well-known/assetlinks.json` (held to the build by `assetlinks.test.ts`) |
 | Target architecture (M3–M6)       | `docs/ARCHITECTURE-TARGET.md`       |
 | Domain types, state machines      | `docs/DOMAIN-MODEL.md`              |
 | Route IA + Server/Client split    | `docs/ROUTES.md`                    |
@@ -179,6 +192,8 @@ pnpm assets:3d        # rebuild public/3d from the source files in assets/
 pnpm program:test     # anchor build (SBF v2) + the LiteSVM suite, incl. the lockstep replay
 pnpm e2e:devnet       # Vitest against the deployed program: a 0-SOL wallet adopts and cares
 PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/chain.spec.ts e2e/coins.spec.ts   # the same paths, and a coin's trades, through the real screens
+(cd android && ./gradlew testDebugUnitTest)   # the Android shell's own checks (JDK 17+, Android SDK)
+PAWKET_ANDROID_KEYSTORE=… scripts/android-release.sh   # the signed release APK, and what to record (docs/ANDROID.md)
 ```
 
 ## Workflow (short version)
@@ -229,6 +244,14 @@ PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/chain.spec.ts e2e/coins.spec.ts   # the
   rule refuses them anywhere else); every other Solana call is Kit. A coin
   is described, never sold: no surface promises it value, and its page
   carries what can go wrong (`src/lib/coins/copy.ts`).
+- **The Android bridge stays narrow.** `PawketBridge.kt` is injected into
+  Pawket's origin only, answers the main frame only, and takes pictures,
+  links, a reminder, a haptic and colours — never a key, a transaction, a
+  file path or a URL to load. Signing on a phone is the wallet app's, through
+  Mobile Wallet Adapter and `send.ts`. A new request is a review like a new
+  thing the sponsor signs: checked fields, a JVM test, no new permission
+  without a reason in `docs/ANDROID.md`. The release key never enters the
+  repository or the APK.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

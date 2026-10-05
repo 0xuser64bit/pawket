@@ -49,6 +49,8 @@ src/lib/solana/             program constants + IDL, PDAs, builders, decoders,
                             the send path, the sponsor's rules, browser rpc/wallet
 src/server/                 server-only: chain reads, the sponsor's key and float, the pulse, coins
 src/lib/utils/              formatting + hydration helpers
+src/lib/native/             the Android app's bridge, seen from the page (inert in a browser)
+android/                    the Android app: the official webshell around the hosted app (docs/ANDROID.md)
 e2e/                        Playwright, and a Wallet Standard wallet for tests only
 scripts/3d/                 asset pipeline: source packs → public/3d/ GLBs
 scripts/vercel-env.sh       production environment, sponsor key marked sensitive
@@ -93,7 +95,9 @@ docs/                       the docs you are reading
 ## What was removed and why
 
 Expo / React Native / expo-router shell, `app.json`, Expo assets: existed
-only for the mobile-first direction. The Hono + Prisma backend from
+only for the mobile-first direction. The Android app that came later is not
+that shell: it is a WebView around this app (`android/`, `docs/DECISIONS.md`),
+so nothing on screen is written twice. The Hono + Prisma backend from
 pre-reset history is intentionally not restored. The Anchor program was
 restored and deployed to devnet (see `docs/DECISIONS.md`), without its store instructions. The
 companion persists in the browser, not in a database. The simulated market

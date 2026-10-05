@@ -24,6 +24,9 @@
 | 3D room: live room, emote, care moment after save, flat choice, no-WebGL fallback, reduced motion, saved look, empty room, 320px | `e2e/room.spec.ts` | Playwright |
 | Shell, adopt, care, wardrobe, playground, guild boundary, park, passport miss, connect sheet, health | `e2e/smoke.spec.ts` | Playwright |
 | Layout: no sideways scroll at 320/375/768, dock placement | `e2e/layout.spec.ts` | Playwright |
+| The page's half of the Android bridge; the app and the site agree on the package | `src/lib/native/*.test.ts` | Vitest |
+| The Android shell's checks: origin, picture, file name | `android/app/src/test/…/BoundaryTest.kt` | `cd android && ./gradlew testDebugUnitTest` |
+| The Android app on a phone: wallet, sends, bridge, lifecycle | the procedure and record in `docs/ANDROID-HANDOFF.md` | emulator or device, with a Mobile Wallet Adapter wallet |
 
 ```sh
 pnpm test       # Vitest, single run

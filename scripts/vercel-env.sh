@@ -23,7 +23,9 @@ put() {
 program=$(solana-keygen pubkey .keys/pawket-program.json)
 put NEXT_PUBLIC_APP_URL "${host%/}"
 put NEXT_PUBLIC_SOLANA_CLUSTER devnet
-put NEXT_PUBLIC_SOLANA_RPC_URL "${NEXT_PUBLIC_SOLANA_RPC_URL:-https://api.devnet.solana.com}"
+# With a provider for the server, browsers go through Pawket's proxy to it; without one, the public endpoint.
+default_rpc=$([ -n "${SOLANA_RPC_URL:-}" ] && echo /api/rpc || echo https://api.devnet.solana.com)
+put NEXT_PUBLIC_SOLANA_RPC_URL "${NEXT_PUBLIC_SOLANA_RPC_URL:-$default_rpc}"
 put NEXT_PUBLIC_PAWKET_PROGRAM_ID "$program"
 put SPONSOR_KEYPAIR "$(cat .keys/sponsor.json)" sensitive
 if [ -n "${SOLANA_RPC_URL:-}" ]; then put SOLANA_RPC_URL "$SOLANA_RPC_URL" sensitive; fi

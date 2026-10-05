@@ -16,7 +16,7 @@ there first with a safe default or a blank placeholder.
 | ------------------------------- | -------------------------------------- | ---------------------------------- |
 | `NEXT_PUBLIC_APP_URL`           | `http://localhost:3000`                | Canonical origin                   |
 | `NEXT_PUBLIC_SOLANA_CLUSTER`    | `devnet`                               | `devnet`/`testnet`/`mainnet-beta`/`localnet` |
-| `NEXT_PUBLIC_SOLANA_RPC_URL`    | `https://api.devnet.solana.com`        | Custom RPC per environment         |
+| `NEXT_PUBLIC_SOLANA_RPC_URL`    | `https://api.devnet.solana.com`        | The browser's RPC; `/api/rpc` routes browsers through Pawket's proxy to `SOLANA_RPC_URL` (allow-listed calls, Pawket's program only, rate-limited). Never a URL with a key — the app refuses one |
 | `NEXT_PUBLIC_SOLANA_WS_URL`     | (derived from RPC URL)                 | Override only when needed          |
 | `NEXT_PUBLIC_PAWKET_PROGRAM_ID`| `PawkHv…M74` (devnet program)          | Changes only with a program deploy |
 | `SOLANA_RPC_URL`                | (the public RPC URL)                   | Server-only; may carry a provider key |

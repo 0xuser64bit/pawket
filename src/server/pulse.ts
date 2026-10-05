@@ -1,8 +1,7 @@
 import "server-only";
 
 import { address, getBase58Decoder, getBase64Encoder, type Base58EncodedBytes } from "@solana/kit";
-import { getPublicEnv } from "@/config/env";
-import { getServerEnv } from "@/config/server-env";
+import { serverRpcUrl } from "@/config/server-env";
 import { isListed } from "@/lib/guilds/delisted";
 import { toCompanionRecord } from "@/lib/solana/accounts";
 import { createPatientRpc } from "@/lib/solana/rpc";
@@ -29,7 +28,7 @@ export interface Pulse {
 
 const base58 = getBase58Decoder();
 const base64 = getBase64Encoder();
-const rpc = () => createPatientRpc(getServerEnv().solanaRpcUrl ?? getPublicEnv().solanaRpcUrl);
+const rpc = () => createPatientRpc(serverRpcUrl());
 
 /** Every account of one kind, as raw bytes. */
 async function every(account: { discriminator: readonly number[]; size: number }): Promise<Uint8Array[]> {

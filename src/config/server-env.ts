@@ -1,6 +1,8 @@
 import "server-only";
 
 import { z } from "zod";
+import { DEFAULT_RPC_URLS } from "@/lib/solana/cluster";
+import { getPublicEnv } from "./env";
 
 /**
  * Server-only config. This module throws if it ever lands in a client
@@ -33,4 +35,16 @@ export function getServerEnv(): ServerEnv {
     solanaRpcUrl: process.env.SOLANA_RPC_URL,
     sponsorKeypair: process.env.SPONSOR_KEYPAIR,
   });
+}
+
+/**
+ * The RPC the server reads and sends through: its own (which may carry a
+ * provider key), else the public URL — never the browser's proxy path, which
+ * leads back here.
+ */
+export function serverRpcUrl(): string {
+  const own = getServerEnv().solanaRpcUrl;
+  if (own) return own;
+  const { solanaRpcUrl, solanaCluster } = getPublicEnv();
+  return solanaRpcUrl.startsWith("/") ? DEFAULT_RPC_URLS[solanaCluster] : solanaRpcUrl;
 }

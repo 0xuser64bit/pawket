@@ -5,7 +5,7 @@ import { walletWithoutSigner } from "@solana/kit-plugin-wallet";
 import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { getPublicEnv } from "@/config/env";
 import { useMounted } from "@/lib/utils/use-mounted";
-import { CLUSTER_CHAINS } from "./cluster";
+import { CLUSTER_CHAINS, DEFAULT_RPC_URLS } from "./cluster";
 import { createPatientRpc } from "./rpc";
 
 /**
@@ -16,7 +16,17 @@ import { createPatientRpc } from "./rpc";
  */
 const env = getPublicEnv();
 
-export const rpc = createPatientRpc(env.solanaRpcUrl);
+/**
+ * The browser's RPC: the public URL, or — when it is a path, "/api/rpc" —
+ * Pawket's own proxy to the server's provider, on this origin. Never called
+ * while the server renders; there it is only built.
+ */
+function browserRpcUrl(): string {
+  if (!env.solanaRpcUrl.startsWith("/")) return env.solanaRpcUrl;
+  return typeof window === "undefined" ? DEFAULT_RPC_URLS[env.solanaCluster] : new URL(env.solanaRpcUrl, window.location.origin).toString();
+}
+
+export const rpc = createPatientRpc(browserRpcUrl());
 
 export const wallet = createClient().use(
   walletWithoutSigner({ chain: CLUSTER_CHAINS[env.solanaCluster], storageKey: "pawket.wallet" }),

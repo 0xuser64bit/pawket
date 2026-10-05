@@ -18,7 +18,7 @@ import {
 } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { CpAmm, derivePoolAuthority, getTokenProgram, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
 import { getPublicEnv } from "@/config/env";
-import { getServerEnv } from "@/config/server-env";
+import { getServerEnv, serverRpcUrl } from "@/config/server-env";
 import { COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type PresetId } from "@/lib/coins/presets";
 import { coinStage, type CoinStage } from "@/lib/coins/stage";
 import { DELISTED_SLUGS } from "@/lib/guilds/delisted";
@@ -44,7 +44,7 @@ const DAMM_POOL_AUTHORITY = derivePoolAuthority();
 
 let connection: Connection | null = null;
 function rpc(): Connection {
-  connection ??= new Connection(getServerEnv().solanaRpcUrl ?? getPublicEnv().solanaRpcUrl, "confirmed");
+  connection ??= new Connection(serverRpcUrl(), "confirmed");
   return connection;
 }
 const dbc = () => new DynamicBondingCurveClient(rpc(), "confirmed");

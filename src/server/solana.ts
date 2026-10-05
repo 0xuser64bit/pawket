@@ -1,8 +1,7 @@
 import "server-only";
 
 import { isAddress } from "@solana/kit";
-import { getPublicEnv } from "@/config/env";
-import { getServerEnv } from "@/config/server-env";
+import { serverRpcUrl } from "@/config/server-env";
 import {
   fetchGuestbook,
   fetchGuild,
@@ -29,7 +28,7 @@ import { shared } from "./cache";
  * record. The one exception is the scan of every pet: see `readAllPets`.
  */
 function rpc() {
-  return createPatientRpc(getServerEnv().solanaRpcUrl ?? getPublicEnv().solanaRpcUrl);
+  return createPatientRpc(serverRpcUrl());
 }
 
 /** The pet at `id`, null when `id` is not an address or nothing lives there; throws when Solana does not answer. */

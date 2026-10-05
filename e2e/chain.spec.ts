@@ -46,8 +46,8 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await page.getByRole("link", { name: `${name}'s record` }).click();
   await page.waitForURL(/\/pet\/[1-9A-HJ-NP-Za-km-z]{32,44}$/);
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible({ timeout: 30_000 });
-  // The record's own Paper, not the sticker of the same name.
-  await expect(page.locator(".receipt-label", { hasText: "On the record" })).toBeVisible();
+  // The record's own fold, not the sticker of the same name.
+  await expect(page.locator("summary", { hasText: "On the record" })).toBeVisible();
   // The page is read on the server, whose node may be a slot behind the one that confirmed the care.
   await expect(async () => {
     await page.reload();
@@ -60,7 +60,12 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await expect(page.getByText(/^Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText(/Pawket paid the fee/).first()).toBeVisible();
   // Read again from chain, the record now lists it.
-  await expect(page.getByText("Keepsake", { exact: true })).toBeVisible({ timeout: 30_000 });
+  // Read again from the server's node until it has the card; each reload closes the fold, so open it each time.
+  await expect(async () => {
+    await page.reload();
+    await page.locator("summary", { hasText: "On the record" }).click();
+    await expect(page.getByText("Keepsake", { exact: true })).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 45_000 });
   await expect(page.getByRole("button", { name: `Keep ${name}'s card` })).toHaveCount(0);
 });
 

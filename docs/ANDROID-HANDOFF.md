@@ -9,10 +9,10 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 
 - Checkpoint identifier: `A3-release-audit`
 - Overall state: in progress
-- Current task: finish the release audit, transaction interruption handling,
-  native failure handling, and the submission package; then run the release gates.
-- Next concrete action: finish emulator export/coin checks and the submission
-  package; rebuild the release, deploy the gated web changes, and install it.
+- Current task: deploy the gated web source, install the signed release and
+  verify App Links and the production MWA path. Reviewer materials prepared.
+- Next concrete action: commit reviewer documentation and push the authorized
+  main deployment, then capture the release runtime and final demo.
 - Reproducible dependency setup: settings moved to `pnpm-workspace.yaml`
   and pnpm pinned to 10.34.6 (10.0.0 cannot read these workspace settings).
   `corepack pnpm install --frozen-lockfile` passed without changing any
@@ -28,7 +28,7 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
   compiler caches ignored.
 - Broadcast deadline: a send that never replies now aborts after 30 seconds
   and looks up the existing signature. Its regression first failed; final
-  verify is running. No fresh transaction is generated or sent automatically.
+  verify passed: 330 unit tests, typecheck, lint and build green. No fresh transaction is generated or sent automatically.
 - Slow approval audit: expired preflight errors now map by Kit code, even
   when production strips developer text. Unknown preflight errors get a
   readable refusal. Regression first failed, then 22 send/confirmation
@@ -116,9 +116,9 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 | Storage / device-key story | documented; old-WebView path verified | `docs/ANDROID.md` | Ed25519 unsupported on WebView 134 → "update Android System WebView… Nothing was linked" | device-key linking on a WebView with Ed25519 |
 | 3D, games, a11y | partly verified | — | 3D room draws (WebGL2), photo from the 3D room | games' gestures and TalkBack pass on hardware |
 | Network failure | verified on emulator | `MainActivity.kt` | offline cold start → Pawket's screen, retry works | — |
-| Web regression | verified | e2e | `pnpm verify`: 330 passed / 14 skipped; build/typecheck/lint green. `pnpm e2e`: 38 passed / 4 skipped (devnet) | latest source gate running after broadcast timeout correction |
+| Web regression | verified | e2e | `pnpm verify`: 330 passed / 14 skipped; build/typecheck/lint green. `pnpm e2e`: 38 passed / 4 skipped (devnet) | — |
 | Release APK, checksum, reproducible build | implemented; built | `scripts/android-release.sh` | release built and verified (v2 signature, cert above, not debuggable, 1.6 MB) | final build after deploy; record SHA-256 |
-| Submission package | not started | — | — | demo script, pitch, screenshots, store copy, source-access note |
+| Submission package | in progress | `ANDROID-SUBMISSION.md`, `ANDROID-PRIVACY.md`, `android/.local/submission/` | actual screenshots, 6-slide PPTX and store copy prepared | demo recording; owner support contact, policy publication and source-access approval |
 
 ## Decisions and constraints
 
@@ -163,8 +163,8 @@ Recorded in `docs/DECISIONS.md` (2026-10 "official webshell") and
 | Updated care | Play + wallet approval | emulator test wallet, devnet | finalized; pet XP and sticker reload after confirmation | `5K3cZUBwkSTHwsinsYbTA3cXMquzA1E9J2Sp2bRLNYtoWW4dBDDvhB2W7Ph1cZeVZCF65cDTxRdUKa7ab5Guh4Wm` |
 | Android lint | `./gradlew lintDebug lintRelease` with default release URL | Mac | green; localhost override gives AppLinkUrlError, so only use it for assembleDebug | `android/.local/evidence/android-checks.log` |
 | JVM tests | `./gradlew testDebugUnitTest` | Mac | 6 passed | BoundaryTest |
-| Unit tests | `pnpm test` | Mac | 323 passed, 14 skipped | — |
-| Web e2e | `PLAYWRIGHT_PORT=3000 pnpm e2e` (prod build) | Mac, Chromium | 36 passed, 4 skipped; android.spec 2 passed | — |
+| Unit tests | `pnpm test` | Mac | 330 passed, 14 skipped | — |
+| Web e2e | `PLAYWRIGHT_PORT=3000 pnpm e2e` (prod build) | Mac, Chromium | 38 passed, 4 skipped (includes 2 Android bridge checks) | — |
 | Release build | `scripts/android-release.sh` | Mac | `app.pawket.android` 0.1.0 (1), min 29 / target 37, v2-signed by the release cert, not debuggable | — |
 
 ## Unfinished implementation and blockers
@@ -177,7 +177,15 @@ Recorded in `docs/DECISIONS.md` (2026-10 "official webshell") and
 
 - APK: `android/app/build/outputs/apk/release/app-release.apk` (rebuilt for
   the final record after the deploy; not committed).
-- Prepared vs published: nothing published or submitted.
+- Final APK SHA-256: `9be5b00bec4529a239bba42a5ff557a27d3da5f000a10016223fbfc6e5ce2016`.
+  Built with shell source through `e776b80` (native files unchanged since
+  `753d7b2`); deployed web must include `7366a61`.
+- Reviewer copy, demo script, private source-access instructions and store
+  checklist: `ANDROID-SUBMISSION.md`. Privacy draft: `ANDROID-PRIVACY.md`.
+- Prepared vs published: nothing uploaded or submitted to a store/event.
+- The owner has a physical Android phone and requested its real-wallet
+  check at the end. Do not mark device keys or haptic feel verified before it.
+- Support email/URL has been requested; no answer yet, no contact invented.
 
 ## Continuation procedure
 

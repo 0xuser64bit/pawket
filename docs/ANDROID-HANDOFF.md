@@ -26,6 +26,9 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 - Popup renderer recovery: both the main view and temporary link catcher
   handle renderer loss. Fresh Android lint + 6 JVM tests green. `.kotlin/`
   compiler caches ignored.
+- Broadcast deadline: a send that never replies now aborts after 30 seconds
+  and looks up the existing signature. Its regression first failed; final
+  verify is running. No fresh transaction is generated or sent automatically.
 - Slow approval audit: expired preflight errors now map by Kit code, even
   when production strips developer text. Unknown preflight errors get a
   readable refusal. Regression first failed, then 22 send/confirmation
@@ -38,8 +41,7 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 - Reconciled Claude's final session: `program:test` completed successfully
   after checkpoint A2 (57 tests; original scratchpad log ends `exit=0`).
   Market/owner-paid/prepared keepsake receipts recovered and re-read from
-  devnet (`meta.err = null`): see the verification table. Coin still needs
-  an Android trade.
+  devnet (`meta.err = null`): see the verification table. Android coin trade also finalized with the owner as sole fee payer.
 - Immediate caution for the next agent: the work lives in the sibling
   worktree `/Users/user64bit/Code/pawket-android` (branch `android`), not
   in `/Users/user64bit/Code/pawket` (branch `main`). Its `.env` is a symlink
@@ -103,7 +105,7 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 | Architecture + source in the repo | verified on emulator | `android/`, `docs/DECISIONS.md` | debug and release builds; app runs | — |
 | MWA genuinely signs for the existing send path | verified on emulator (test wallet) | `browser-client.ts`, `send.ts` unchanged | see record: connect, decline, adopt, care | a real wallet on hardware |
 | Sponsored path | verified on emulator | — | adopt + care on devnet, sponsor fee payer first | — |
-| Owner-paid, server-prepared, delegated paths | partly verified | `send.ts`, `use-send.ts` | Market buy, prepared keepsake, owner-paid Brush through MWA; receipts re-read | coin trade; device signing needs a WebView with Ed25519 |
+| Owner-paid, server-prepared, delegated paths | partly verified | `send.ts`, `use-send.ts` | Market buy, prepared keepsake, owner-paid Brush through MWA; receipts re-read | device signing needs a WebView with Ed25519 |
 | Cancellation, unknown outcomes, no duplicate sends | verified on emulator | `transactions.ts` | decline → "Nothing changed"; network cut → "could not reach Solana… Nothing was sent", wallet never opened | slow confirmation / unknown on hardware |
 | Photo save and share | verified on emulator | `PawketBridge.kt`, `photo.tsx` | MediaStore `Pictures/Pawket/pawket-pixel-2026-10-05.png` (210 KB PNG); share sheet with the print; cancel → no false "Shared" | — |
 | Link share, reminder | implemented; partly verified | `share-button.tsx`, `remind-me.tsx` | reminder intent reached Google Calendar (needs an account to save on the emulator) | link share on device |
@@ -114,7 +116,7 @@ file is what has actually been done and checked. Read the brief, `AGENTS.md`,
 | Storage / device-key story | documented; old-WebView path verified | `docs/ANDROID.md` | Ed25519 unsupported on WebView 134 → "update Android System WebView… Nothing was linked" | device-key linking on a WebView with Ed25519 |
 | 3D, games, a11y | partly verified | — | 3D room draws (WebGL2), photo from the 3D room | games' gestures and TalkBack pass on hardware |
 | Network failure | verified on emulator | `MainActivity.kt` | offline cold start → Pawket's screen, retry works | — |
-| Web regression | verified | e2e | `pnpm verify`: 328 passed / 14 skipped; build/typecheck/lint green. `pnpm e2e`: 38 passed / 4 skipped (devnet) | rerun verify after the expiry-copy correction |
+| Web regression | verified | e2e | `pnpm verify`: 330 passed / 14 skipped; build/typecheck/lint green. `pnpm e2e`: 38 passed / 4 skipped (devnet) | latest source gate running after broadcast timeout correction |
 | Release APK, checksum, reproducible build | implemented; built | `scripts/android-release.sh` | release built and verified (v2 signature, cert above, not debuggable, 1.6 MB) | final build after deploy; record SHA-256 |
 | Submission package | not started | — | — | demo script, pitch, screenshots, store copy, source-access note |
 
@@ -156,6 +158,8 @@ Recorded in `docs/DECISIONS.md` (2026-10 "official webshell") and
 | Market via MWA | buy sun hat | emulator test wallet, devnet | sponsor fee payer + owner; Buy; `meta.err = null` | `2DWcZwHeLAq6jCm4m7VBqNL3JsKmueNBzkCLoPoawjy5eutVQ8XDfHChWm3bpzyUZQPTGq1L49v7unVmRm1r3D5F` |
 | Prepared keepsake via MWA | keep Pixel’s card | emulator test wallet, devnet | sponsor + asset signer + owner; CreateV2; `meta.err = null` | `4v9wSHRDgXSwwGBFjFtF9DfJtmkQ2byFFHJWKDbupzCLiVuTkahtpVfRG2G3mt4pqCgtT8VK1KTjmZjLy8vNwEC` |
 | Owner-paid via MWA | Brush, sponsor disabled | emulator test wallet, devnet | sole owner fee payer; PerformCareAction; `meta.err = null` | `57jATYLPmALmazWUuWGxsVUpisioNuuPh8QRLvuNqBUV3u37aXUGg65aWYozuhy5oLEQLdfz38orzqW7XzeBnX4W` |
+| Prepared owner-paid coin via MWA | buy 0.001 devnet SOL of SUNBEAM on curve | emulator test wallet | Swap2; sole owner signer/fee payer; legacy wire; `meta.err = null` | `5CCLU2nGbVVJqV9Wj8UpQuddvHUnnzqUQv492zVAbJek9r8PARYGv41iYbPMhhATHGMD8HhrtDB5cc2dnKSYA8vF` |
+| Small screen | 720×1280 emulator, density 320 | 360 CSS pixels | no horizontal overflow; care controls available; 3D and flat toggle work; reset display afterwards | `android/.local/evidence/small-phone.png` |
 | Updated care | Play + wallet approval | emulator test wallet, devnet | finalized; pet XP and sticker reload after confirmation | `5K3cZUBwkSTHwsinsYbTA3cXMquzA1E9J2Sp2bRLNYtoWW4dBDDvhB2W7Ph1cZeVZCF65cDTxRdUKa7ab5Guh4Wm` |
 | Android lint | `./gradlew lintDebug lintRelease` with default release URL | Mac | green; localhost override gives AppLinkUrlError, so only use it for assembleDebug | `android/.local/evidence/android-checks.log` |
 | JVM tests | `./gradlew testDebugUnitTest` | Mac | 6 passed | BoundaryTest |

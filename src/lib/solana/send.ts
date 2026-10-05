@@ -27,7 +27,7 @@ import {
   type Transaction,
   type TransactionSigner,
 } from "@solana/kit";
-import { waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
+import { CONFIRMATION_TIMEOUT_MS, waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
 
 /**
  * The one way the app sends: the lifecycle in `transactions.ts`, end to end.
@@ -199,7 +199,8 @@ async function land(
   const wire = getBase64EncodedWireTransaction(signed);
   const signature = getSignatureFromTransaction(signed);
   try {
-    await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" }).send();
+    await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" })
+      .send({ abortSignal: AbortSignal.timeout(CONFIRMATION_TIMEOUT_MS) });
   } catch (error) {
     // A preflight refusal is definitive. A lost broadcast reply is not:
     // Solana may already have it. Look up the signature, never send a new one.

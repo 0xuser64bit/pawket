@@ -7,10 +7,43 @@ import {
   SolanaError,
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
 } from "@solana/kit";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { CONFIRMATION_TIMEOUT_MS } from "./transactions";
 import { sendPawket, type SendRpc } from "./send";
 
 describe("broadcast uncertainty", () => {
+  it("a broadcast that never replies times out and looks up the signed transaction", async () => {
+    const owner = await generateKeyPairSigner();
+    const timeout = AbortSignal.timeout.bind(AbortSignal);
+    const budgets: number[] = [];
+    const clock = vi.spyOn(AbortSignal, "timeout").mockImplementation((ms) => {
+      budgets.push(ms);
+      return timeout(10);
+    });
+    let sent = 0;
+    const rpc = {
+      getLatestBlockhash: () => ({ send: async () => ({ value: {
+        blockhash: "11111111111111111111111111111111", lastValidBlockHeight: 1n,
+      } }) }),
+      sendTransaction: () => ({ send: ({ abortSignal }: { abortSignal?: AbortSignal } = {}) => {
+        sent++;
+        return new Promise((_resolve, reject) => abortSignal?.addEventListener("abort", () => reject(abortSignal.reason)));
+      } }),
+      getSignatureStatuses: () => ({ send: async () => ({ value: [{ confirmationStatus: "confirmed", err: null }] }) }),
+    } as unknown as SendRpc;
+    try {
+      const outcome = await Promise.race([
+        sendPawket({ rpc, owner, sponsor: null, instructions: () => [] }),
+        new Promise((resolve) => setTimeout(() => resolve("still waiting"), 200)),
+      ]);
+      expect(outcome).toMatchObject({ outcome: "confirmed" });
+      expect(budgets[0]).toBe(CONFIRMATION_TIMEOUT_MS);
+      expect(sent).toBe(1);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
   it("recovers a lost broadcast reply by its signature without sending twice", async () => {
     const owner = await generateKeyPairSigner();
     let sent = 0;

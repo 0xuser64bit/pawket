@@ -40,6 +40,23 @@ test("a sheet stays within a short phone in either room, with its controls reach
   await expect(sheet).toHaveCount(0);
 });
 
+test("address controls have separate touch targets and secondary actions stay tappable", async ({ page }) => {
+  await page.goto("/market");
+  await page.locator("summary", { hasText: "Where the SOL goes" }).click();
+  const copy = page.getByRole("button", { name: "Copy treasury" });
+  const explorer = page.getByRole("link", { name: "Open treasury on the Explorer" });
+  const a = (await copy.boundingBox())!;
+  const b = (await explorer.boundingBox())!;
+  expect(a.width).toBeGreaterThanOrEqual(44);
+  expect(a.height).toBeGreaterThanOrEqual(44);
+  expect(b.x).toBeGreaterThanOrEqual(a.x + a.width);
+  await page.getByRole("button", { name: /Halo/ }).click();
+  for (const name of ["Not now", "Connect a wallet"]) {
+    const target = (await page.getByRole("dialog").getByRole("button", { name }).boundingBox())!;
+    expect(target.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
 async function adopt(page: import("@playwright/test").Page) {
   await page.goto("/adopt");
   await page.getByRole("button", { name: /choose the luna cat/i }).click();

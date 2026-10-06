@@ -125,7 +125,9 @@ a Paper surface: a quote does not count up and a launch meter does not fill on
 load. All of it stops under `prefers-reduced-motion`.
 
 Photos use that same sheet, including its close motion, focus return and
-safe-area footer. Touch controls are at least 44px; editable fields stay at
+safe-area footer. Buttons use the shared control heights: 36px small (44px on
+a phone or touch device), 48px standard, 56px large. Address controls have
+separate 44px touch targets; their invisible hit areas never overlap. Editable fields stay at
 16px or larger on a phone, avoiding focus zoom. Game controls stay beside
 the playing area, and all four games reflow for a phone held sideways.
 
@@ -200,7 +202,7 @@ scaffolding block of `app/globals.css`:
 
 | Width | Shell | Screen |
 | --- | --- | --- |
-| phone, < 720px | Dock spans the column; only the lit slot is named (none below 360px) | one column, full width |
+| phone, < 720px | Six equal dock targets, every icon named underneath; Playground reads “Play” | one column, full width |
 | tablet, 720–1023px | Dock centred, every slot named | one column, at most 680px, so a room or a pocket keeps its proportions |
 | desktop, >= 1024px | Dock centred, every slot named | a place spreads to 1120px and composes in `Columns`; a flow that asks for one decision uses `Screen width="narrow"` (640px) |
 

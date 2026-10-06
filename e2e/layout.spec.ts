@@ -47,14 +47,24 @@ for (const width of [320, 375, 768]) {
 
 test("the dock keeps every place on a small phone, whichever is lit", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
-  for (const path of ["/home", "/park", "/playground", "/profile", "/guilds"]) {
+  let slots: number[] | undefined;
+  for (const path of ["/home", "/park", "/playground", "/market", "/profile", "/guilds"]) {
     await page.goto(path);
     const dock = page.getByRole("navigation", { name: "Pawket" });
     const box = await dock.boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= 320, path).toBe(true);
-    for (const place of ["Home", "Park", "Playground", "Profile", "Guilds"]) {
-      await expect(dock.getByRole("link", { name: place })).toBeInViewport();
+    const positions = [];
+    for (const place of ["Home", "Park", "Playground", "Market", "Profile", "Guilds"]) {
+      const link = dock.getByRole("link", { name: place });
+      await expect(link).toBeInViewport();
+      await expect(link.getByText(place === "Playground" ? "Play" : place, { exact: true })).toBeVisible();
+      const target = (await link.boundingBox())!;
+      expect(target.width).toBeGreaterThanOrEqual(44);
+      expect(target.height).toBeGreaterThanOrEqual(44);
+      positions.push(target.x);
     }
+    if (slots) expect(positions).toEqual(slots);
+    slots = positions;
   }
 });
 

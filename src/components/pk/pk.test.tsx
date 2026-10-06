@@ -3,7 +3,17 @@ import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { activePlace } from "./dock";
-import { Button, Card, Chip, Mark, Meter, PAW, Paper, PawArt, PawLoader, PetFrame, Receipt } from "./index";
+import { Button, Card, Chip, Field, Mark, Meter, PAW, Paper, PawArt, PawLoader, PetFrame, Receipt } from "./index";
+
+describe("Field", () => {
+  it("gives each unnamed field its own description and honours an explicit id", () => {
+    const html = renderToStaticMarkup(<><Field label="First" error="First error" /><Field label="Second" helper="Second help" /><Field label="Third" id="third" error="Third error" /></>);
+    const descriptions = Array.from(html.matchAll(/aria-describedby="([^"]+)"/g), (match) => match[1]);
+    expect(new Set(descriptions).size).toBe(3);
+    for (const id of descriptions) expect(html).toContain(`id="${id}"`);
+    expect(descriptions[2]).toBe("third-error");
+  });
+});
 
 describe("Button", () => {
   it("wears its tone and size, and sun needs no modifier", () => {

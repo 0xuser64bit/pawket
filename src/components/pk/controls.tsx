@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ComponentProps } from "react";
+import { useId, type ComponentProps } from "react";
 import { Icon, type IconName } from "./icon";
 
 /* ------------------------------------------------------------------ Button */
@@ -171,7 +171,9 @@ export function Field({
   helper?: string;
   className?: string;
 } & Omit<ComponentProps<"input">, "className">) {
-  const describedBy = error ? `${rest.id ?? rest.name}-error` : helper ? `${rest.id ?? rest.name}-help` : undefined;
+  const generatedId = useId();
+  const inputId = rest.id ?? generatedId;
+  const describedBy = error ? `${inputId}-error` : helper ? `${inputId}-help` : undefined;
   return (
     <div className={className}>
       <label className={["pk-field", error && "pk-field--error"].filter(Boolean).join(" ")}>
@@ -182,6 +184,7 @@ export function Field({
           aria-describedby={describedBy}
           aria-invalid={error ? true : undefined}
           {...rest}
+          id={inputId}
         />
         {suffix ? <span className="amount-sm pk-faint">{suffix}</span> : null}
       </label>

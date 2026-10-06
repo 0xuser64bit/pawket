@@ -39,7 +39,7 @@ test("the room takes a photo of the two of you, to save or share", async ({ page
   const save = photo.getByRole("link", { name: "Save the photo" });
   await expect(save).toHaveAttribute("download", /^pawket-pepper-\d{4}-\d{2}-\d{2}\.png$/);
   await expect(save).toHaveAttribute("href", /^data:image\/png;base64,/);
-  await photo.getByRole("button", { name: "Close" }).click();
+  await photo.getByRole("button", { name: "Close", exact: true }).click();
   await expect(photo).toHaveCount(0);
 });
 

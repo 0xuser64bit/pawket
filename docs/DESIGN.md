@@ -124,6 +124,11 @@ behind goes inert, and Escape or the dimmed room leave the way Cancel does. Noth
 a Paper surface: a quote does not count up and a launch meter does not fill on
 load. All of it stops under `prefers-reduced-motion`.
 
+Photos use that same sheet, including its close motion, focus return and
+safe-area footer. Touch controls are at least 44px; editable fields stay at
+16px or larger on a phone, avoiding focus zoom. Game controls stay beside
+the playing area, and all four games reflow for a phone held sideways.
+
 **One thing becoming another is seen happening, never cut.** A choice taking
 effect, a tab's panel arriving, a sentence that changed, a page coming in:
 each eases out on `--ease-swap` over `--dur-swap` (240ms) and moves a few

@@ -85,3 +85,18 @@ test("Catch keeps a finger drag and a backgrounded round pauses", async ({ page 
   });
   await expect(page.getByText("Round paused")).toBeVisible();
 });
+
+for (const name of ["Catch", "Hop", "Copy", "Pairs"]) {
+  test(`${name} keeps its controls and playing area reachable in landscape`, async ({ page }) => {
+    await page.setViewportSize({ width: 640, height: 360 });
+    await adopt(page);
+    await page.getByRole("button", { name: new RegExp(`^${name}`) }).tap();
+    await expect(page.getByRole("button", { name: "Pause round" })).toBeInViewport();
+    const area = page.locator(name === "Copy" ? ".pk-paws__paw" : name === "Pairs" ? ".pk-pairs__board" : ".pk-game");
+    await expect(area).toBeInViewport({ ratio: 0.95 });
+    const box = (await area.boundingBox())!;
+    const dock = (await page.getByRole("navigation", { name: "Pawket" }).boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(dock.y);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+  });
+}

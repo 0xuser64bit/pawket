@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Button, Row } from "@/components/pk";
-import { savePicture, sharePicture, useAndroidApp, useBackCloses } from "@/lib/native/android";
+import { useEffect, useState } from "react";
+import { Button, Row, Sheet } from "@/components/pk";
+import { savePicture, sharePicture, useAndroidApp } from "@/lib/native/android";
 
 /** The tokens a photo is printed in, read from the room the player is in. */
 function ink() {
@@ -98,22 +98,10 @@ export function PhotoDialog({
   file: string;
   onClose: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const [print, setPrint] = useState<string | null>(null);
   const [said, setSaid] = useState<string>();
   const [handing, setHanding] = useState(false);
   const inApp = useAndroidApp();
-  useBackCloses(() => dialog.current?.close());
-
-  useEffect(() => {
-    const el = dialog.current;
-    if (!el) return;
-    el.showModal();
-    const closed = () => onClose();
-    el.addEventListener("close", closed);
-    return () => el.removeEventListener("close", closed);
-  }, [onClose]);
-
   useEffect(() => {
     let alive = true;
     printPhoto(shot, title, line).then(
@@ -153,7 +141,29 @@ export function PhotoDialog({
   }
 
   return (
-    <dialog ref={dialog} className="pk-photo" aria-label={`A photo: ${title}`}>
+    <Sheet
+      register="room"
+      title={`A photo: ${title}`}
+      onDismiss={onClose}
+      foot={(dismiss) => (
+        <>
+          <Row gap={2} wrap>
+            {print && inApp ? (
+              <Button label="Save the photo" size="sm" disabled={handing} onClick={() => void toPhone("save")} />
+            ) : print ? (
+              <a href={print} download={`${file}.png`} className="pk-btn pk-btn--sm">
+                <span>Save the photo</span>
+              </a>
+            ) : null}
+            <Button label="Share" tone="quiet" size="sm" icon="out" disabled={!print || handing} onClick={() => void share()} />
+            <Button label="Close" tone="ghost" size="sm" onClick={dismiss} />
+          </Row>
+          <p role="status" className="caption pk-faint" style={{ marginTop: said ? "var(--space-2)" : 0 }}>
+            {said}
+          </p>
+        </>
+      )}
+    >
       {print ? (
         // A data URL made on this device: there is nothing for the image optimiser to fetch.
         // eslint-disable-next-line @next/next/no-img-element
@@ -161,20 +171,6 @@ export function PhotoDialog({
       ) : (
         <div className="pk-photo__print pk-photo__print--wait" />
       )}
-      <Row gap={2} wrap style={{ marginTop: "var(--space-4)" }}>
-        {print && inApp ? (
-          <Button label="Save the photo" size="sm" disabled={handing} onClick={() => void toPhone("save")} />
-        ) : print ? (
-          <a href={print} download={`${file}.png`} className="pk-btn pk-btn--sm">
-            <span>Save the photo</span>
-          </a>
-        ) : null}
-        <Button label="Share" tone="quiet" size="sm" icon="out" disabled={!print || handing} onClick={() => void share()} />
-        <Button label="Close" tone="ghost" size="sm" onClick={() => dialog.current?.close()} />
-      </Row>
-      <p role="status" className="caption pk-faint" style={{ marginTop: said ? "var(--space-2)" : 0 }}>
-        {said}
-      </p>
-    </dialog>
+    </Sheet>
   );
 }

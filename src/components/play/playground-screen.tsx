@@ -103,7 +103,7 @@ export function PlaygroundScreen() {
     return () => document.removeEventListener("visibilitychange", hide);
   }, []);
   useEffect(() => {
-    if (game) field.current?.scrollIntoView({ block: "center", behavior: "instant" });
+    if (game) field.current?.scrollIntoView({ block: "start", behavior: "instant" });
   }, [game]);
 
   const finish = useCallback(
@@ -191,13 +191,13 @@ export function PlaygroundScreen() {
               </Row>
               <p className="body-sm pk-muted">{current.line}</p>
             </div>
-            <Row gap={2} wrap>
-              {!outcome ? <Button label={paused ? "Resume round" : "Pause round"} tone="quiet" size="sm" onClick={() => setPaused(!paused)} /> : null}
-              <Button label="All games" tone="ghost" size="sm" icon="left" disabled={sender.busy} onClick={() => setGame(null)} />
-            </Row>
           </div>
           <div className="pk-play">
             <div ref={field} className="pk-play__field">
+              <Row gap={2} wrap className="pk-play__controls">
+                {!outcome ? <Button label={paused ? "Resume round" : "Pause round"} tone="quiet" size="sm" onClick={() => setPaused(!paused)} /> : null}
+                <Button label="All games" tone="ghost" size="sm" icon="left" disabled={sender.busy} onClick={() => setGame(null)} />
+              </Row>
               <div className="pk-play__stage">
                 <div inert={paused && !outcome}>
                   <Field key={`${current.id}-${seed}-${round}`} game={current.id} pet={pet} seed={seed} paused={paused} onFinish={finish} />

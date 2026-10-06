@@ -128,7 +128,7 @@ Photos use that same sheet, including its close motion, focus return and
 safe-area footer. Buttons use the shared control heights: 36px small (44px on
 a phone or touch device), 48px standard, 56px large. Address controls have
 separate 44px touch targets; their invisible hit areas never overlap. Editable fields stay at
-16px or larger on a phone, avoiding focus zoom. Game controls stay beside
+16px or larger on a phone, with a real 44px input area, avoiding focus zoom. Game controls stay beside
 the playing area, and all four games reflow for a phone held sideways.
 Sheet headings reserve a column for Close; long names wrap without pushing
 it out. Phone footers give Cancel and the main action the same height, and
@@ -136,6 +136,11 @@ the body scrolls independently. The shell, adoption and landing headers
 include the top safe area. Supporting browsers resize content when the
 keyboard opens; native fields and scroll padding keep focused controls clear
 of the dock.
+
+Room settings use two compact previews per row on a phone, with Follow my
+device across the top. A failed server read has Try again, with a disabled
+reading state; it refreshes the records without resetting the player's
+local state. Copy and share failures leave a selectable link or address.
 
 **One thing becoming another is seen happening, never cut.** A choice taking
 effect, a tab's panel arriving, a sentence that changed, a page coming in:

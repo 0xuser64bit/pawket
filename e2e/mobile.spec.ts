@@ -154,6 +154,23 @@ test("a long pet name keeps the sheet heading, close control and footer inside a
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });
 
+test("room settings show two compact choices per row and remember a touch selection", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 650 });
+  await page.goto("/profile?tab=settings#shelf");
+  const rooms = page.getByRole("radiogroup", { name: "Rooms" });
+  const choices = rooms.locator(".pk-theme");
+  const daylight = (await choices.nth(1).boundingBox())!;
+  const lamplight = (await choices.nth(2).boundingBox())!;
+  expect(daylight.y).toBe(lamplight.y);
+  expect(lamplight.x).toBeGreaterThan(daylight.x + daylight.width);
+  expect((await rooms.boundingBox())!.height).toBeLessThan(1100);
+  await rooms.getByText("Lamplight", { exact: true }).tap();
+  await expect(rooms.getByRole("radio", { name: /^Lamplight/ })).toBeChecked();
+  await page.reload();
+  await expect(rooms.getByRole("radio", { name: /^Lamplight/ })).toBeChecked();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});
+
 for (const name of ["Catch", "Hop"]) {
   test(`${name} pauses without losing the round and resumes by touch`, async ({ page }) => {
     await adopt(page);

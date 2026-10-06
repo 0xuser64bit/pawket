@@ -4843,6 +4843,12 @@ details > .pk-risks {
   gap: 2px;
   padding: 0 var(--space-1) var(--space-1);
 }
+@media (max-width: 719px) {
+  .pk-themes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pk-theme:first-child { grid-column: 1 / -1; flex-direction: row; align-items: center; }
+  .pk-theme:first-child .pk-theme__art { flex: 0 0 calc(var(--touch-target) * 2); }
+  .pk-theme__words > .title { font-size: 14px; line-height: 20px; }
+}
 
 /* The drawing: the room's ground, a card on it with the sun and a sprout
    bar, and a pet sitting in front. */

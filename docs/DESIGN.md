@@ -130,6 +130,12 @@ a phone or touch device), 48px standard, 56px large. Address controls have
 separate 44px touch targets; their invisible hit areas never overlap. Editable fields stay at
 16px or larger on a phone, avoiding focus zoom. Game controls stay beside
 the playing area, and all four games reflow for a phone held sideways.
+Sheet headings reserve a column for Close; long names wrap without pushing
+it out. Phone footers give Cancel and the main action the same height, and
+the body scrolls independently. The shell, adoption and landing headers
+include the top safe area. Supporting browsers resize content when the
+keyboard opens; native fields and scroll padding keep focused controls clear
+of the dock.
 
 **One thing becoming another is seen happening, never cut.** A choice taking
 effect, a tab's panel arriving, a sentence that changed, a page coming in:

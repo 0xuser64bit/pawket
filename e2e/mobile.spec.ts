@@ -103,6 +103,29 @@ test("a large pet family scrolls inside its picker, with long names wrapping on 
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });
 
+test("a long pet name keeps the sheet heading, close control and footer inside a short phone", async ({ page }) => {
+  await adopt(page);
+  await page.evaluate(() => {
+    const [pet] = JSON.parse(localStorage.getItem("pawket.pets.v1")!);
+    localStorage.setItem("pawket.pets.v1", JSON.stringify([{ ...pet, name: "MarmaladeMarmaladeMarmala" }]));
+  });
+  await page.setViewportSize({ width: 320, height: 480 });
+  await page.goto("/home");
+  await page.getByRole("button", { name: "Keep MarmaladeMarmaladeMarmala on Solana" }).tap();
+  const sheet = page.getByRole("dialog", { name: "Keep MarmaladeMarmaladeMarmala on Solana" });
+  await expect(sheet.getByRole("button", { name: /Close Keep/ })).toBeInViewport();
+  await expect.poll(async () => {
+    const box = (await sheet.getByRole("button", { name: "Connect a wallet" }).boundingBox())!;
+    return box.y + box.height <= 480;
+  }).toBe(true);
+  const cancel = (await sheet.getByRole("button", { name: "Not now" }).boundingBox())!;
+  const connect = (await sheet.getByRole("button", { name: "Connect a wallet" }).boundingBox())!;
+  expect(cancel.height).toBe(connect.height);
+  expect(connect.x + connect.width).toBeLessThanOrEqual(320);
+  expect(connect.y + connect.height).toBeLessThanOrEqual(480);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});
+
 for (const name of ["Catch", "Hop"]) {
   test(`${name} pauses without losing the round and resumes by touch`, async ({ page }) => {
     await adopt(page);

@@ -873,7 +873,7 @@ html {
   /* a page that scrolls and one that does not keep the same width */
   scrollbar-gutter: stable;
   /* focus and anchors land clear of the floating dock, not under it */
-  scroll-padding-bottom: var(--space-10);
+  scroll-padding-bottom: calc(var(--space-10) + env(safe-area-inset-bottom));
 }
 
 body {
@@ -2310,7 +2310,7 @@ li {
   width: 100%;
   max-width: calc(680px + 2 * var(--gutter));
   margin-inline: auto;
-  padding: var(--space-3) max(var(--gutter), env(safe-area-inset-right)) var(--space-2)
+  padding: calc(var(--space-3) + env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right)) var(--space-2)
     max(var(--gutter), env(safe-area-inset-left));
 }
 .pk-shell__aside {
@@ -2576,7 +2576,7 @@ li {
   flex-direction: column;
   width: 100%;
   max-width: 480px;
-  max-height: calc(100dvh - var(--space-8));
+  max-height: calc(100dvh - max(var(--space-6), env(safe-area-inset-top)));
   background: var(--paper);
   color: var(--ink);
   border: var(--stroke-hair) solid var(--rule);
@@ -2591,6 +2591,17 @@ li {
   overscroll-behavior: contain;
 }
 .pk-sheet > :is(header, footer) { flex-shrink: 0; }
+.pk-sheet > .pk-paper__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--touch-target);
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+.pk-sheet > .pk-paper__head > :not(.pk-sheet__close) {
+  grid-column: 1;
+  overflow-wrap: anywhere;
+}
+.pk-sheet__close { grid-column: 2; grid-row: 1 / span 2; }
 .pk-sheet__close {
   display: grid;
   place-items: center;
@@ -2612,6 +2623,14 @@ li {
 @keyframes pk-sheet-out { to { opacity: 0; transform: translateY(24px); } }
 .pk-sheet .pk-paper__foot {
   padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+}
+@media (max-width: 719px) {
+  .pk-sheet .pk-paper__foot > .pk-spread {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    align-items: stretch;
+    gap: var(--space-2);
+  }
 }
 @media (min-width: 720px) {
   .pk-scrim {
@@ -2636,7 +2655,6 @@ li {
 }
 .pk-sheet--room > .pk-paper__head {
   color: var(--ink);
-  align-items: baseline;
   padding: var(--space-5) var(--space-5) var(--space-3);
   border-bottom: 0;
   background: transparent;
@@ -2944,7 +2962,7 @@ li {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-5);
-  padding-block: var(--space-5);
+  padding-block: calc(var(--space-5) + env(safe-area-inset-top)) var(--space-5);
 }
 .pk-landing__nav {
   display: none;
@@ -5187,7 +5205,7 @@ details > .pk-risks {
   width: 100%;
   max-width: calc(1080px + 2 * var(--gutter));
   margin-inline: auto;
-  padding: var(--space-2) max(var(--gutter), env(safe-area-inset-right)) var(--space-9)
+  padding: calc(var(--space-2) + env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right)) var(--space-9)
     max(var(--gutter), env(safe-area-inset-left));
 }
 .pk-adopt--narrow {

@@ -53,6 +53,7 @@ function LevelRing({ level, into, of }: { level: number; into: number; of: numbe
         ))}
       </svg>
       <span className="pk-ring__n">{level}</span>
+      <span className="pk-ring__label" aria-hidden="true">Level</span>
     </span>
   );
 }
@@ -63,6 +64,7 @@ function MiniVital({ label, icon, value }: { label: string; icon: IconName; valu
   return (
     <span className={["pk-mini", value < 25 && "pk-mini--low"].filter(Boolean).join(" ")} role="img" aria-label={`${label} ${value} / 100`}>
       <Icon name={icon} size={14} />
+      <span className="pk-mini__label" aria-hidden="true">{label}</span>
       <span className="pk-mini__track" aria-hidden="true">
         {Array.from({ length: 5 }, (_, i) => (
           <span key={i} className={i < filled ? "pk-mini__seg pk-mini__seg--on" : "pk-mini__seg"} />
@@ -155,9 +157,8 @@ export function Deck({
               <span className="pk-care__face">
                 <Icon name={CARE_ICON[action]} size={20} />
               </span>
-              <span className={left > 0 ? "pk-care__label pk-care__label--wait" : "pk-care__label"}>
-                {left > 0 ? formatCountdown(left) : label}
-              </span>
+              <span className="pk-care__label">{label}</span>
+              <span className="pk-care__wait" aria-hidden="true">{left > 0 ? formatCountdown(left) : ""}</span>
             </button>
           );
         })}

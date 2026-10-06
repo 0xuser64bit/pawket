@@ -16,8 +16,8 @@ import { useSponsor, type PawketSender } from "@/lib/solana/use-send";
 import { useHere } from "@/lib/native/android";
 
 /**
- * Keeping the pet in this browser on Solana, from the badge on its face in
- * the pet bar. It does one specific thing: a record of every care that
+ * Keeping the pet in this browser on Solana, from Home's labelled control.
+ * It does one specific thing: a record of every care that
  * nobody can edit, which outlives this browser. The chain only knows what it
  * saw, so the record there starts today, at level 1 — said here, with the
  * pet's own level beside it, before the wallet opens rather than after.

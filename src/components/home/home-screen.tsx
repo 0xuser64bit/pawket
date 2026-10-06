@@ -18,7 +18,7 @@ import {
   Waiting,
 } from "@/components/pk";
 import { KeepSheet } from "@/components/home/keep-sheet";
-import { showToast } from "@/components/pk/toast";
+import { dismissToast, showToast } from "@/components/pk/toast";
 import { RemindMe } from "@/components/home/remind-me";
 import { CARE_ICON, Deck, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
@@ -65,7 +65,7 @@ import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
 /**
  * The room you actually live in, and the whole width of the screen: you and
- * the pet at home. Beneath it floats the deck — how the pet is, the four
+ * the pet at home. Beneath it sits the deck — how the pet is, the four
  * cares and three tools — and a tool opens its panel below the deck, so the
  * room stays the largest thing on the screen. The pet is the one the player
  * chose, from any they keep; a care in this browser is saved at once, and a
@@ -80,7 +80,6 @@ export function HomeScreen() {
   const profile = usePlayerProfile();
   const sender = usePawketSend();
   const [now, setNow] = useState(() => new Date());
-  const [said, setSaid] = useState<{ pet: string; tone: "ok" | "stop"; text: string }>();
   const [connecting, setConnecting] = useState(false);
   /** The browser pet whose "keep it on Solana" sheet is open. */
   const [keeping, setKeeping] = useState<GuestPet | null>(null);
@@ -169,9 +168,17 @@ export function HomeScreen() {
   }
 
   const onChain = active !== null;
-  // What was said about one pet is not about the next one home.
-  const notice = said?.pet === pet.id ? said : undefined;
-  const setNotice = (next?: { tone: "ok" | "stop"; text: string }) => setSaid(next && { ...next, pet: pet.id });
+  function setNotice(next?: { tone: "ok" | "stop"; text: string }) {
+    const id = `care-${pet!.id}`;
+    if (!next) return dismissToast(id);
+    showToast({
+      id,
+      tone: next.tone === "stop" ? "risk" : "done",
+      title: next.tone === "stop" ? "Care not saved" : `${pet!.name}'s care ${onChain ? "recorded" : "saved"}`,
+      body: next.text,
+      ttl: next.tone === "stop" ? undefined : 10_000,
+    });
+  }
   const projected = projectGuestPet(pet, now);
   const cooldowns = cooldownsFor(pet, now);
   const streak = streakAsOf(pet.streak, now);
@@ -259,7 +266,7 @@ export function HomeScreen() {
   }
 
   return (
-    <Screen>
+    <Screen className="pk-home-screen">
       <ScreenBar>
         <div>
           <h1 className="display-s">{pet.name}&apos;s room</h1>
@@ -276,7 +283,6 @@ export function HomeScreen() {
           home={pet.id}
           onChoose={companion.choose}
           kept={new Set(companion.owned.map((entry) => entry.pet.address))}
-          onKeep={setKeeping}
         />
       </ScreenBar>
 
@@ -313,21 +319,16 @@ export function HomeScreen() {
           onPanel={setPanel}
           onSnap={roomState === "live" ? () => setShot(roomView.current?.snap() ?? null) : undefined}
         />
-        <p
-          role="status"
-          className="body-sm pk-home__notice"
-          style={{ color: notice?.tone === "stop" ? "var(--alarm-text)" : "var(--sprout-text)" }}
-        >
-          {notice ? (
-            <span key={notice.text} className="pk-swap-in" style={{ display: "inline-block" }}>
-              {notice.text}
-            </span>
-          ) : null}
-        </p>
-        <RoomLine sentence={status.sentence} mode={mode} state={roomState} onMode={setMode} />
+        <RoomLine
+          sentence={status.sentence}
+          mode={mode}
+          state={roomState}
+          onMode={setMode}
+          action={!onChain ? <Button label="Keep on Solana" aria-label={`Keep ${pet.name} on Solana`} tone="quiet" size="sm" icon="keep" onClick={() => setKeeping(pet)} /> : undefined}
+        />
         {onChain ? <NoPrompt state={sender.pawketWallet} now={now} /> : null}
 
-        <div id="pk-deck-panel" className="pk-deck__panel">
+        <div id="pk-deck-panel" className="pk-deck__panel" hidden={panel === null}>
           {panel === "say" ? (
             lookShown ? (
               <EmoteRow petName={pet.name} playing={status.moment} onEmote={ask} />
@@ -407,27 +408,32 @@ function RoomLine({
   mode,
   state,
   onMode,
+  action,
 }: {
   sentence: string;
   mode: "3d" | "flat";
   state: RoomState;
   onMode: (mode: "3d" | "flat") => void;
+  action?: ReactNode;
 }) {
   return (
     <div className="pk-spread pk-home__line">
       <p role="status" className="body-sm pk-muted">
         {sentence}
       </p>
-      {state === "unsupported" || state === "failed" ? null : (
-        <Button
-          label={mode === "3d" ? (state === "loading" ? "Stay flat" : "Flat room") : "3D room"}
-          tone="ghost"
-          size="sm"
-          onClick={() => onMode(mode === "3d" ? "flat" : "3d")}
-          onPointerEnter={mode === "flat" ? preloadRoom3D : undefined}
-          onFocus={mode === "flat" ? preloadRoom3D : undefined}
-        />
-      )}
+      <Row gap={2} wrap>
+        {action}
+        {state === "unsupported" || state === "failed" ? null : (
+          <Button
+            label={mode === "3d" ? (state === "loading" ? "Stay flat" : "Flat room") : "3D room"}
+            tone="ghost"
+            size="sm"
+            onClick={() => onMode(mode === "3d" ? "flat" : "3d")}
+            onPointerEnter={mode === "flat" ? preloadRoom3D : undefined}
+            onFocus={mode === "flat" ? preloadRoom3D : undefined}
+          />
+        )}
+      </Row>
     </div>
   );
 }

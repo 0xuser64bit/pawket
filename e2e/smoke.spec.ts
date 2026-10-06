@@ -142,7 +142,7 @@ test("adopting a pet needs no wallet and makes Home real", async ({ page }) => {
   await page.getByRole("button", { name: /take them home/i }).click();
   await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
   await expect(page.getByText("In this browser", { exact: true })).toBeVisible();
-  // Keeping it on Solana is on its face in the pet bar, not a card under the room.
+  // Keeping it on Solana has a labelled control beside the room's switch.
   await expect(page.getByRole("button", { name: "Keep Pepper on Solana" })).toBeVisible();
   await expect(page.getByRole("img", { name: "Fullness 72 / 100" })).toBeVisible();
 

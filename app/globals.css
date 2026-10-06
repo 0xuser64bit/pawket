@@ -3460,7 +3460,7 @@ li {
 /* ------------------------------------------------------- Home: the stage
 
    The room is the whole width of the screen. The deck floats under it,
-   tucked over the frame's foot (the floor, never the animal): how the pet
+   separate from the frame on a phone, tucked over its foot on desktop: how the pet
    is, the four cares as round buttons, and three tools whose panels open
    below. On a desktop the deck is one row; narrower it stacks. */
 
@@ -3480,9 +3480,10 @@ li {
 .pk-home__line p {
   min-width: 0;
 }
-.pk-home__notice:empty {
-  display: none;
-}
+.pk-home__line p:empty { display: none; }
+.pk-home__line { flex-wrap: wrap; gap: var(--space-3); }
+.pk-home-screen .pk-screen__bar > div:first-child { min-width: 0; }
+.pk-home-screen h1 { overflow-wrap: anywhere; }
 .pk-home__noprompt {
   display: flex;
   align-items: center;
@@ -3498,9 +3499,6 @@ li {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-.pk-home__notice {
-  text-align: center;
 }
 /* Under the day: the way to the record and the family, in quiet words. */
 .pk-home__foot {
@@ -3605,11 +3603,11 @@ li {
   z-index: 2;
   display: grid;
   gap: var(--space-4);
-  margin: calc(-1 * var(--space-5)) var(--space-3) 0;
+  margin: 0;
   padding: var(--space-4);
   background: var(--surface);
   border: var(--stroke-line) solid var(--edge);
-  border-radius: var(--radius-pocket);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sticker);
 }
 @media (min-width: 1024px) {
@@ -3619,7 +3617,7 @@ li {
     gap: 0;
     width: fit-content;
     max-width: calc(100% - 2 * var(--space-5));
-    margin-inline: auto;
+    margin: calc(-1 * var(--space-5)) auto 0;
     padding: var(--space-3) var(--space-4);
   }
   .pk-deck > * + * {
@@ -3629,16 +3627,14 @@ li {
   }
 }
 .pk-deck__status {
-  display: flex;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
 }
 .pk-deck__who {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-width: 0;
+  display: contents;
 }
 .pk-deck__mood {
   display: flex;
@@ -3655,8 +3651,9 @@ li {
 }
 .pk-deck__vitals {
   display: grid;
-  grid-template-columns: repeat(2, max-content);
-  gap: var(--space-1) var(--space-4);
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-4);
 }
 .pk-deck__care {
   display: grid;
@@ -3710,18 +3707,32 @@ li {
   font-size: 19px;
   font-weight: 600;
   color: var(--ink);
+  padding-bottom: var(--space-3);
+}
+.pk-ring__label {
+  position: absolute;
+  inset: auto 0 var(--space-3);
+  font-size: 9px;
+  line-height: 10px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--sprout-text);
 }
 
 /* A vital, minimized: glyph, five segments, the count. */
 .pk-mini {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   color: var(--ink-soft);
 }
+.pk-mini__label { font-size: 12px; line-height: 16px; }
 .pk-mini__track {
   display: inline-flex;
   gap: 2px;
+  grid-column: 2;
+  grid-row: 2;
 }
 .pk-mini__seg {
   width: 7px;
@@ -3739,6 +3750,8 @@ li {
   box-shadow: inset 0 0 0 1px var(--sun-edge);
 }
 .pk-mini__n {
+  grid-column: 3;
+  grid-row: 1 / 3;
   min-width: 2ch;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -3820,8 +3833,11 @@ li {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.pk-care__label--wait {
+.pk-care__wait {
+  min-height: 14px;
   font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 14px;
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
@@ -3943,11 +3959,18 @@ li {
 /* Who is home: every pet as a face in a circle, the one at home ringed. */
 .pk-switch {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--space-2);
+  max-width: 100%;
+  padding: var(--space-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
 }
+.pk-switch::-webkit-scrollbar { display: none; }
 .pk-switch__pet {
+  flex: none;
   display: grid;
   place-items: end center;
   width: 44px;
@@ -3970,12 +3993,12 @@ li {
   border-color: var(--edge);
   box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--sun);
 }
-/* Where each pet lives, on its corner: a small pool check for one on Solana,
-   and for one in this browser a pool button that keeps it there — the one
-   way onto Solana from Home, sitting on the pet it is about. */
+/* A passive check marks a pet read from Solana. Keeping a browser pet is a
+   labelled button below the deck, with its own full touch target. */
 .pk-switch__slot {
   position: relative;
   display: inline-grid;
+  flex: none;
 }
 .pk-switch__badge {
   position: absolute;
@@ -3996,26 +4019,6 @@ li {
   width: 16px;
   height: 16px;
   pointer-events: none;
-}
-.pk-switch__badge--keep {
-  cursor: pointer;
-  box-shadow: 0 0 0 1px var(--pool-edge);
-  transition: transform var(--dur-press) var(--ease-press);
-}
-.pk-switch__badge--keep::after {
-  /* A 28px target around a small mark, clear of the middle of the face. */
-  content: "";
-  position: absolute;
-  inset: -4px;
-}
-@media (hover: hover) {
-  .pk-switch__badge--keep:hover {
-    transform: scale(1.12);
-  }
-}
-.pk-switch__badge--keep:focus-visible {
-  outline: var(--stroke-line) solid var(--focus);
-  outline-offset: 2px;
 }
 /* The last circle adopts another: a plus, centred, on the dashed edge an
    empty pocket has. The face rule above enlarges and lowers a pet to sit
@@ -4066,7 +4069,7 @@ li {
   z-index: 2;
   display: grid;
   gap: var(--space-4);
-  margin: calc(-1 * var(--space-5)) var(--space-3) var(--space-3);
+  margin: 0 0 var(--space-3);
   padding: var(--space-4);
   background: var(--surface);
   border: var(--stroke-line) solid var(--edge);
@@ -4081,7 +4084,7 @@ li {
     gap: var(--space-6);
     width: fit-content;
     max-width: calc(100% - 2 * var(--space-5));
-    margin-inline: auto;
+    margin: calc(-1 * var(--space-5)) auto var(--space-3);
     padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3);
   }
 }
@@ -6786,8 +6789,8 @@ details > .pk-risks {
   color: var(--ink-soft);
 }
 .pk-toast--done .pk-toast__mark {
-  background: var(--sprout-soft);
-  color: var(--sprout-text);
+  background: var(--pool-soft);
+  color: var(--pool-text);
 }
 .pk-toast--note .pk-toast__mark {
   background: var(--sun-soft);

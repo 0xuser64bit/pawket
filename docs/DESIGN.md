@@ -255,7 +255,7 @@ It is the flat room's language in three dimensions, not a model viewer:
   hat and glasses. In the 3D room the player is a person the player dressed — build,
   skin tone, hair, clothes — in the palette's hues; bloom and alarm are not
   offered.
-- **Nothing floats over the animal.** The deck floats over the frame's foot —
+- **Nothing floats over the animal.** On desktop the deck floats over the frame's foot —
   the floor — and emotes, the look, the room switch and every failure note
   live below it. The frame keeps its
   `radius-room`, its 2px `edge` and its sticker shadow.
@@ -294,14 +294,18 @@ shapes, one outline, the palette — never a grid of identical pockets:
   are the buttons and whose centre pad holds the pet. The pet is drawn
   whole (`pose="full"`) and its face answers the game. Sky clouds have no
   outline, so they never read as the storm clouds to dodge.
-- **Home** (`src/components/home/`). The room across the whole width and a
-  deck floating on its foot: the level as a ring of ten segments, the four
-  vitals minimized to a glyph, five segments and a count, the four cares as
+- **Home** (`src/components/home/`). On a phone the room and care deck are
+  separate, full-width surfaces. On desktop the deck tucks onto its foot.
+  The level is a labelled ring of ten segments, the four
+  vitals have names, glyphs, five segments and a count, the four cares are
   round buttons on a shelf (the one the pet wants in sun), and the tools.
-  Faces in the bar say who is home. Photo prints the room on the room's own
+  Care names stay visible beside their countdowns. Success and refusal use
+  the shared toast, so feedback never shifts the care controls. Faces in a
+  scrollable bar say who is home; a labelled “Keep on Solana” button sits
+  beside the room switch. Photo prints the room on the room's own
   paper.
-- **The profile** (`src/components/profile/`). The same stage with a plate
-  on its foot (the player's name and what they have done together,
+- **The profile** (`src/components/profile/`). The same stage with a separate
+  plate beneath it on mobile (the player's name and what they have done together,
   counted), the look editor always open, then the shelf: pets, the
   wardrobe, the sticker book (a sticker is a tilted disc in its hue's soft
   tint; one not yet earned is a dashed outline), and settings.

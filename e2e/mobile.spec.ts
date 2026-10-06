@@ -66,6 +66,43 @@ async function adopt(page: import("@playwright/test").Page) {
   await page.goto("/playground");
 }
 
+test("Home separates the room from care and keeps its labels and layout after a care", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await adopt(page);
+  await page.goto("/home");
+  const room = (await page.locator(".pk-room").boundingBox())!;
+  const deck = (await page.locator(".pk-deck").boundingBox())!;
+  expect(deck.y).toBeGreaterThan(room.y + room.height);
+  const keep = page.getByRole("button", { name: "Keep Pepper on Solana" });
+  const target = (await keep.boundingBox())!;
+  expect(target.height).toBeGreaterThanOrEqual(44);
+  const feed = page.getByRole("button", { name: "Feed", exact: true });
+  const before = (await feed.boundingBox())!;
+  await feed.tap();
+  const resting = page.getByRole("button", { name: /^Feed, resting/ });
+  await expect(resting).toBeDisabled();
+  await expect(resting).toContainText("Feed");
+  await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
+  const after = (await page.locator(".pk-deck").boundingBox())!;
+  expect((await resting.boundingBox())!.y - after.y).toBe(before.y - deck.y);
+  expect(after.height).toBe(deck.height);
+});
+
+test("a large pet family scrolls inside its picker, with long names wrapping on the screen", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await adopt(page);
+  await page.evaluate(() => {
+    const [pet] = JSON.parse(localStorage.getItem("pawket.pets.v1")!);
+    localStorage.setItem("pawket.pets.v1", JSON.stringify([pet, ...Array.from({ length: 10 }, (_, i) => ({ ...pet, id: `family-${i}`, name: `MarmaladeMarmalade${i}` }))]));
+  });
+  await page.goto("/home");
+  const picker = page.getByRole("group", { name: "Who is home" });
+  expect(await picker.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  await picker.getByRole("button", { name: "Bring MarmaladeMarmalade9 home" }).tap();
+  await expect(page.getByRole("heading", { name: "MarmaladeMarmalade9's room" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});
+
 for (const name of ["Catch", "Hop"]) {
   test(`${name} pauses without losing the round and resumes by touch`, async ({ page }) => {
     await adopt(page);

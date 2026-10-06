@@ -131,7 +131,7 @@ export async function sendPawket({
   onStage,
   cosign = askSponsor,
 }: SendOptions): Promise<SendResult> {
-  onStage?.("signing");
+  onStage?.("preparing");
   const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send({ abortSignal: AbortSignal.timeout(CONFIRMATION_TIMEOUT_MS) });
   const base = pipe(createTransactionMessage({ version: "legacy" }), (m) =>
     setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
@@ -149,6 +149,7 @@ export async function sendPawket({
     if (!same(sponsored.messageBytes, built.messageBytes)) {
       throw new Error("The sponsor returned a different transaction. Nothing was sent.");
     }
+    onStage?.("signing");
     signed = await signingDeadline(() => walletSigns(owner, sponsored));
     if (!same(signed.messageBytes, built.messageBytes)) {
       throw new Error("Your wallet changed the transaction, so Pawket's signature no longer fits it. Nothing was sent.");
@@ -165,6 +166,7 @@ export async function sendPawket({
       (m) => setTransactionMessageFeePayerSigner(owner, m),
       (m) => appendTransactionMessageInstructions(instructions({ owner, payer: owner }), m),
     );
+    onStage?.("signing");
     signed = await signingDeadline(() => partiallySignTransactionMessageWithSigners(message));
   }
 
@@ -191,8 +193,9 @@ export async function sendPrepared({
   /** Whether Pawket's sponsor pays its fee (a keepsake) or the owner does (a coin). */
   sponsored?: boolean;
 }): Promise<SendResult> {
-  onStage?.("signing");
+  onStage?.("preparing");
   const prepared = decode(await prepare());
+  onStage?.("signing");
   const signed = await signingDeadline(() => walletSigns(owner, prepared));
   const signedBefore = Object.entries(prepared.signatures).some(([address, signature]) => address !== owner.address && signature);
   if (signedBefore && !same(signed.messageBytes, prepared.messageBytes)) {

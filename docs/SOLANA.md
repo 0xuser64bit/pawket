@@ -188,6 +188,10 @@ the player pays, the wallet is fee payer and signs alone. No optimistic
 adopt/care state. The cooldown is checked before the wallet opens, with the
 program's own rule.
 
+The progress message stays at preparation through blockhash reads, sponsor
+cosigning and server-built transaction fetches. It says signing only when
+the signer is called, so a slow network is not described as a wallet prompt.
+
 Why the sponsor signs first: a wallet rewrites a transaction that carries no
 signature yet — Phantom adds priority-fee and guard instructions — and the
 sponsor refuses instructions that are not Pawket's. A transaction that

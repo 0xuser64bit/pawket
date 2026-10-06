@@ -16,7 +16,9 @@ web deployment; it needs no new APK.
   is bounded, unanswered signing ends after 90 seconds, and a late signature
   is never broadcast. An adapter association timeout is reported as a failure
   rather than silently treated as a player declining. A blocked action does
-  not wait for another unnecessary wallet refresh.
+  not wait for another unnecessary wallet refresh. The progress message says
+  preparation until the signer is actually called, including sponsor and
+  server-built transactions.
 - A device key is kept only after its IndexedDB transaction commits. Aborted
   persistence cannot leave the player with a linked key the app failed to keep.
   Wallet connection returns to the action that opened it.
@@ -31,7 +33,7 @@ web deployment; it needs no new APK.
 
 ## Verification
 
-- `pnpm verify`: typecheck, lint, 344 unit tests and production build pass;
+- `pnpm verify`: typecheck, lint, 346 unit tests and production build pass;
   14 opt-in devnet unit tests are skipped by this command.
 - `PLAYWRIGHT_PORT=3100 pnpm e2e e2e/layout.spec.ts e2e/smoke.spec.ts e2e/mobile.spec.ts e2e/room.spec.ts --workers=2`:
   45 checks pass. The strengthened landscape dock-clearance checks also pass.
@@ -44,6 +46,8 @@ web deployment; it needs no new APK.
 - `PLAYWRIGHT_PORT=3100 PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts --workers=1`:
   three real devnet flows pass: adoption/care/Passport/keepsake, guild founding
   and joining, and Pawket Wallet deposit/link/device care/history/unlink/close.
+  The wallet flow also passes after the preparation/signing refinement; it
+  waits for the care's own receipt and checks the owner's signature count.
   This uses the test wallet, not a consumer wallet or physical Android phone.
 - Android `./gradlew testDebugUnitTest` passes with JDK 21 and the configured
   Android SDK. Native source is unchanged.

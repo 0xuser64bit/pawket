@@ -1,29 +1,53 @@
 // @vitest-environment node
 import {
+  blockhash,
+  compileTransaction,
+  createTransactionMessage,
   generateKeyPairSigner,
   getBase64Encoder,
+  getBase64EncodedWireTransaction,
   getSignatureFromTransaction,
   getTransactionDecoder,
+  pipe,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
   SolanaError,
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
 } from "@solana/kit";
 import { describe, expect, it, vi } from "vitest";
-import { CONFIRMATION_TIMEOUT_MS } from "./transactions";
-import { sendPawket, type SendRpc } from "./send";
+import { CONFIRMATION_TIMEOUT_MS, type TransactionStage } from "./transactions";
+import { sendPawket, sendPrepared, type SendRpc } from "./send";
 
 describe("broadcast uncertainty", () => {
-  it("an unanswered signing request releases the UI and a late answer is never sent", async () => {
+  it.each(["owner", "sponsored", "prepared"])("%s preparation is shown before signing, and a timed-out signature is never sent", async (kind) => {
     const owner = await generateKeyPairSigner();
+    const stages: TransactionStage[] = [];
+    const lifetime = { blockhash: blockhash("11111111111111111111111111111111"), lastValidBlockHeight: 1n };
     let answer!: (value: Awaited<ReturnType<typeof owner.signTransactions>>) => void;
-    const signer = { ...owner, signTransactions: () => new Promise<Awaited<ReturnType<typeof owner.signTransactions>>>((resolve) => { answer = resolve; }) };
+    const signer = { ...owner, signTransactions: () => {
+      expect(stages).toEqual(["preparing", "signing"]);
+      return new Promise<Awaited<ReturnType<typeof owner.signTransactions>>>((resolve) => { answer = resolve; });
+    } };
     const send = vi.fn();
     const rpc = {
-      getLatestBlockhash: () => ({ send: async () => ({ value: { blockhash: "11111111111111111111111111111111", lastValidBlockHeight: 1n } }) }),
+      getLatestBlockhash: () => ({ send: async () => { expect(stages).toEqual(["preparing"]); return { value: lifetime }; } }),
       sendTransaction: send,
     } as unknown as SendRpc;
     vi.useFakeTimers();
     try {
-      const pending = sendPawket({ rpc, owner: signer, sponsor: null, instructions: () => [] });
+      const options = {
+        rpc, owner: signer, sponsor: kind === "sponsored" ? owner.address : null, instructions: () => [],
+        onStage: (stage: TransactionStage) => stages.push(stage),
+        cosign: async (wire: string) => { expect(stages).toEqual(["preparing"]); return wire; },
+      };
+      const pending = kind === "prepared" ? sendPrepared({ ...options, prepare: async () => {
+        expect(stages).toEqual(["preparing"]);
+        return getBase64EncodedWireTransaction(compileTransaction(pipe(
+          createTransactionMessage({ version: "legacy" }),
+          (m) => setTransactionMessageFeePayerSigner(owner, m),
+          (m) => setTransactionMessageLifetimeUsingBlockhash(lifetime, m),
+        )));
+      } }) : sendPawket(options);
       const refused = expect(pending).rejects.toThrow(/did not finish signing.*Nothing was sent/);
       await vi.advanceTimersByTimeAsync(90_000);
       await refused;

@@ -1,0 +1,67 @@
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { ShareButton } from "@/components/pet/share-button";
+import { AdoptLink } from "@/components/park/adopt-link";
+import { AddressLine } from "@/components/wallet/address";
+import { ReadFailure } from "./read-failure";
+import { dismissToast, Toasts } from "./toast";
+
+const native = vi.hoisted(() => ({ inApp: false, share: vi.fn(), refresh: vi.fn() }));
+vi.mock("@/lib/native/android", () => ({ inAndroidApp: () => native.inApp, shareLink: native.share }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: native.refresh }) }));
+
+afterEach(() => {
+  cleanup();
+  for (const id of ["copy-address", "copy-adoption", "share-page"]) dismissToast(id);
+  native.inApp = false;
+  vi.clearAllMocks();
+  vi.unstubAllGlobals();
+});
+
+describe("read and share recovery", () => {
+  it("retries the server read from the screen", () => {
+    render(<ReadFailure body="The pet could not be read." />);
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(native.refresh).toHaveBeenCalledOnce();
+  });
+
+  it("shows a selectable value on clipboard refusal and clears it on a successful retry", async () => {
+    const copy = vi.fn().mockRejectedValueOnce(new Error("Refused")).mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText: copy } });
+    render(<><AddressLine value="FullAddressThatMustBeReachable" label="address" /><Toasts /></>);
+    fireEvent.click(screen.getByRole("button", { name: "Copy address" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("FullAddressThatMustBeReachable");
+    fireEvent.click(screen.getByRole("button", { name: "Copy address" }));
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(screen.getByRole("button", { name: "address copied" })).toBeTruthy();
+  });
+
+  it("keeps a refused adoption link reachable", async () => {
+    vi.stubGlobal("navigator", { clipboard: { writeText: vi.fn().mockRejectedValue(new Error("Refused")) } });
+    render(<><AdoptLink url="https://pawket.app/adopt" /><Toasts /></>);
+    fireEvent.click(screen.getByRole("button", { name: "Copy the adoption link" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("https://pawket.app/adopt");
+  });
+
+  it("reports a failed share but leaves an intentional cancellation quiet", async () => {
+    const share = vi.fn().mockRejectedValueOnce(new DOMException("Canceled", "AbortError")).mockRejectedValueOnce(new Error("Refused"));
+    vi.stubGlobal("navigator", { share });
+    render(<><ShareButton name="Pepper" /><Toasts /></>);
+    const button = screen.getByRole("button", { name: "Share Pepper's record" });
+    fireEvent.click(button);
+    await waitFor(() => expect(share).toHaveBeenCalledOnce());
+    expect(screen.queryByRole("alert")).toBeNull();
+    fireEvent.click(button);
+    expect((await screen.findByRole("alert")).textContent).toContain("The link could not be shared");
+  });
+
+  it("reports the Android bridge refusing to open a share sheet", async () => {
+    native.inApp = true;
+    native.share.mockResolvedValue({ ok: false, reason: "no-answer" });
+    render(<><ShareButton name="Pepper" /><Toasts /></>);
+    fireEvent.click(screen.getByRole("button", { name: "Share Pepper's record" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("The share sheet did not open");
+    expect(native.share).toHaveBeenCalledWith({ url: window.location.href, title: "Pepper on Pawket" });
+  });
+});

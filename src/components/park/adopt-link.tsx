@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/pk";
+import { Button, dismissToast, showToast } from "@/components/pk";
 
 /** Copies the adoption link — the one that unfurls as a Blink. */
 export function AdoptLink({ url }: { url: string }) {
@@ -15,10 +15,11 @@ export function AdoptLink({ url }: { url: string }) {
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(url);
+          dismissToast("copy-adoption");
           setCopied(true);
           window.setTimeout(() => setCopied(false), 2000);
         } catch {
-          // Clipboard refused: the link is pawket's /adopt page.
+          showToast({ id: "copy-adoption", tone: "risk", title: "The link could not be copied", body: <span style={{ overflowWrap: "anywhere", userSelect: "text" }}>{url}</span> });
         }
       }}
     />

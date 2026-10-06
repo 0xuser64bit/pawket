@@ -21,6 +21,7 @@ export {
   type ChipTone,
 } from "./controls";
 export { Choice } from "./choice";
+export { ReadFailure } from "./read-failure";
 export {
   Banner,
   Card,

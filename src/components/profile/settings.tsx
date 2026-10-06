@@ -4,6 +4,7 @@ import type { Address } from "@solana/kit";
 import { Button, ButtonLink, Card, Row, ThemePicker } from "@/components/pk";
 import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";
+import { useSponsor } from "@/lib/solana/use-send";
 import { useRoomMode } from "@/components/home/room";
 import { useSound } from "@/lib/play/sound";
 import type { PetForm } from "@/components/pk";
@@ -22,6 +23,7 @@ export function Settings({ form }: { form?: PetForm }) {
   const { here } = useHere();
   const inApp = useAndroidApp();
   const [haptics, setHaptics] = useHaptics();
+  const sponsor = useSponsor();
   return (
     <div className="pk-stack" style={{ gap: "var(--space-5)" }}>
       <Card>
@@ -34,8 +36,9 @@ export function Settings({ form }: { form?: PetForm }) {
       <Card>
         <h2 className="title">Pawket Wallet</h2>
         <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-          Link {here} once, and what your pets do on Solana stops asking your wallet each time. Pawket pays
-          the fees; anything that spends SOL still asks.
+          Link {here} once, and your pets can act inside the limits you set without asking your wallet each time.{" "}
+          {sponsor.data?.available ? "Pawket pays the fees right now." : "A SOL balance covers fees when sponsorship is unavailable."}{" "}
+          Anything that spends SOL still asks.
         </p>
         <div style={{ marginTop: "var(--space-4)" }}>
           <ButtonLink label="Open the Pawket Wallet" href="/wallet" icon="bolt" tone="quiet" size="sm" />

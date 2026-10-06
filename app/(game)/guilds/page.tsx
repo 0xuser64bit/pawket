@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Banner, ButtonLink, Card, LaunchStage, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
+import { ButtonLink, Card, LaunchStage, ReadFailure, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { GUILD_CAN, GUILD_CANNOT } from "@/lib/guilds/boundary";
 import { isListed } from "@/lib/guilds/delisted";
@@ -89,11 +89,7 @@ export default async function GuildsPage() {
 
       <Stack gap={6}>
         {guilds === null ? (
-          <Banner
-            tone="wait"
-            title="Solana did not answer"
-            body="Every guild there is unchanged; this page could not read them just now. Reload to ask again."
-          />
+          <ReadFailure body="This page could not read the guilds just now. Trying again only reads their records." />
         ) : guilds.length === 0 ? (
           <Card>
             <h2 className="title">No guild yet</h2>
@@ -135,7 +131,7 @@ export default async function GuildsPage() {
               </div>
             </div>
             <p className="body-sm pk-muted">
-              A pet joins with its owner&apos;s signature and Pawket pays the fee. No stat increase, no faster care, no XP
+              A pet joins with its owner&apos;s signature. Network fees are covered while the sponsor is available. No stat increase, no faster care, no XP
               multiplier, no matchmaking priority — and a guild&apos;s coin, if it has one, changes none of that either.
               Leaving changes nothing about the pet.
             </p>

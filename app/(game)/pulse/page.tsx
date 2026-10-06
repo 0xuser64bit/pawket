@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Banner, Paper, Receipt, Screen, ScreenBar, Chip, Stack } from "@/components/pk";
+import { ReadFailure, Paper, Receipt, Screen, ScreenBar, Chip, Stack } from "@/components/pk";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
@@ -45,7 +45,7 @@ export default async function PulsePage() {
       </ScreenBar>
 
       {!pulse ? (
-        <Banner tone="wait" title="Solana did not answer" body="Nothing here is stored anywhere but on chain, and the chain did not answer just now. Reload to ask again." />
+        <ReadFailure body="The counts could not be read just now. Trying again only reads what is on Solana." />
       ) : (
         <Stack gap={5}>
           <dl className="pk-headline" aria-label="Pawket on Solana, counted">

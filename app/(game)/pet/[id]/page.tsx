@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { isAddress } from "@solana/kit";
-import { BackLink, Banner, Screen } from "@/components/pk";
+import { BackLink, Banner, ReadFailure, Screen } from "@/components/pk";
 import { Passport } from "@/components/pet/passport";
 import { PetScreen } from "@/components/pet/pet-screen";
 import { SPECIES_LABEL } from "@/lib/game/appearance";
@@ -39,11 +39,7 @@ export default async function PetPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Pets on Solana" href="/park" />
-        <Banner
-          tone="wait"
-          title="Solana did not answer"
-          body="The record is unchanged; this page could not read it just now. Reload to ask again."
-        />
+        <ReadFailure body="This page could not read the pet just now. Trying again only reads its record." />
       </Screen>
     );
   }

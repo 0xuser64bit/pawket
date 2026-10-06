@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Icon } from "@/components/pk";
+import { Icon, dismissToast, showToast } from "@/components/pk";
 import { truncateAddress } from "@/lib/utils/format";
 
 /**
@@ -21,10 +21,11 @@ export function AddressLine({ value, label, href }: { value: string; label: stri
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(value);
+            dismissToast("copy-address");
             setCopied(true);
             window.setTimeout(() => setCopied(false), 1500);
           } catch {
-            // Clipboard refused (permissions, an iframe): the full value is in the title.
+            showToast({ id: "copy-address", tone: "risk", title: `${label} could not be copied`, body: <span className="addr" style={{ overflowWrap: "anywhere", userSelect: "text" }}>{value}</span> });
           }
         }}
       >

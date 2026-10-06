@@ -413,8 +413,8 @@ function Result({
       }
       await navigator.clipboard.writeText(`${text} ${url}`);
       setShared("Copied. Paste it anywhere.");
-    } catch {
-      setShared(undefined);
+    } catch (error) {
+      setShared((error instanceof Error || error instanceof DOMException) && error.name === "AbortError" ? undefined : "The score could not be shared. Try again, or copy this page's link.");
     }
   }
 

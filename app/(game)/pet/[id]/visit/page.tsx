@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { isAddress } from "@solana/kit";
-import { BackLink, Banner, Screen } from "@/components/pk";
+import { BackLink, Banner, ReadFailure, Screen } from "@/components/pk";
 import { VisitRoom } from "@/components/pet/visit-room";
 import { toCompanionRecord } from "@/lib/solana/accounts";
 import { readGuestbook, readPet } from "@/server/solana";
@@ -25,7 +25,7 @@ export default async function VisitPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Pets on Solana" href="/park" />
-        <Banner tone="wait" title="Solana did not answer" body="The pet is unchanged; this visit could not read it just now. Reload to ask again." />
+        <ReadFailure body="This visit could not read the pet just now. Trying again only reads its record." />
       </Screen>
     );
   }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Banner,
+  ReadFailure,
   ButtonLink,
   Card,
   Chip,
@@ -65,11 +65,7 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
         <ScreenBar>
           <h1 className="display-l">Park</h1>
         </ScreenBar>
-        <Banner
-          tone="wait"
-          title="Solana did not answer"
-          body="Every pet there is unchanged; this page could not read them just now. Reload to ask again."
-        />
+        <ReadFailure body="This page could not read the pets just now. Trying again only reads their records." />
       </Screen>
     );
   }

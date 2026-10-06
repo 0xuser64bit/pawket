@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BackLink, Banner, ButtonLink, Card, Chip, LaunchStage, PetArt, Presence, Row, Screen, Stack } from "@/components/pk";
+import { BackLink, Banner, ButtonLink, Card, Chip, LaunchStage, PetArt, Presence, ReadFailure, Row, Screen, Stack } from "@/components/pk";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { GuildMembership } from "@/components/guilds/membership";
 import { GuildGatherings } from "@/components/guilds/gatherings";
@@ -67,7 +67,7 @@ export default async function GuildPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Guilds" href="/guilds" />
-        <Banner tone="wait" title="Solana did not answer" body="The guild is unchanged; this page could not read it just now. Reload to ask again." />
+        <ReadFailure body="This page could not read the guild just now. Trying again only reads its record." />
       </Screen>
     );
   }

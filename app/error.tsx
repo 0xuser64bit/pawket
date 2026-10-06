@@ -2,11 +2,7 @@
 
 import { Banner, Button, ButtonLink, Row, Screen, Stack } from "@/components/pk";
 
-/**
- * A failure names what is unchanged in the same breath as what went wrong.
- * That sentence is not reassurance; it is the fact a worried person is
- * looking for.
- */
+/** A screen failure cannot establish whether an earlier send reached Solana. */
 export default function GlobalError({
   error,
   reset,
@@ -21,7 +17,7 @@ export default function GlobalError({
         <Banner
           tone="risk"
           title="This screen ran into a problem"
-          body="Nothing you own has changed, and no transaction was sent. Your pet is saved in this browser."
+          body="Try opening this screen again. If you were sending a transaction, check its receipt before repeating it."
         />
         {error.digest ? (
           <p className="addr pk-faint">Error {error.digest}</p>

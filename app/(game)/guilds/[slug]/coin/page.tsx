@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BackLink, Banner, Chip, Columns, LaunchProgress, LaunchStage, OfficialMark, Paper, Receipt, Row, Screen, Stack } from "@/components/pk";
+import { BackLink, Banner, Chip, Columns, LaunchProgress, LaunchStage, OfficialMark, Paper, ReadFailure, Receipt, Row, Screen, Stack } from "@/components/pk";
 import { CoinDesk } from "@/components/coins/coin-desk";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { AddressLine } from "@/components/wallet/address";
@@ -52,7 +52,7 @@ export default async function CoinPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Guilds" href="/guilds" />
-        <Banner tone="wait" title="Solana did not answer" body="The coin is unchanged; this page could not read it just now. Reload to ask again." />
+        <ReadFailure body="This page could not read the coin just now. Trying again only reads its record." />
       </Screen>
     );
   }

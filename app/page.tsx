@@ -31,7 +31,7 @@ export const revalidate = 60;
 
 const ON_SOLANA: Array<{ icon: IconName; title: string; body: string }> = [
   { icon: "paw", title: "One signature to move in", body: "Keep the pet you raised in this browser on Solana. Its name, species and temperament go with it." },
-  { icon: "spark", title: "Pawket pays the fee", body: "A sponsor covers the network fee and the rent, and signs nothing but Pawket's own instructions. A wallet with no SOL can play." },
+  { icon: "spark", title: "Sponsored network fees", body: "While the sponsor is available, it covers the network fee and the rent: a wallet with no SOL can play. It signs only Pawket's own instructions." },
   { icon: "bolt", title: "One approval, then no pop-ups", body: "Link this browser to a Pawket Wallet once — no SOL needed while Pawket pays — and it signs care, rounds, outfits, guilds and waves inside the limits you set. Anything that spends SOL still asks your wallet." },
   { icon: "doc", title: "A Passport anyone can open", body: "Every care, round and outfit is a signed record: the streak, the counts and the last eight cares, public at the pet's address." },
   { icon: "image", title: "A card in your wallet", body: "A keepsake that points at the pet, frozen for good: it cannot be sold or sent, because the pet is not for sale." },

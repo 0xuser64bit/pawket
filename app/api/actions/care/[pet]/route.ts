@@ -32,7 +32,7 @@ export async function GET(request: Request, { params }: Props) {
     type: "action",
     icon: absolute(request, `/api/actions/icon?pet=${pet}`),
     title: `${record.name} · ${MOOD_LABEL[projected.mood]}`,
-    description: `Level ${projected.level}, ${streak === 0 ? "no run today yet" : `a ${streak}-day run`}. Only ${record.name}'s owner can care for them, and each care rests 30 minutes. Anyone else can wave — once a day, into ${record.name}'s guestbook on Solana — or adopt their own. Pawket pays the fee either way.`,
+    description: `Level ${projected.level}, ${streak === 0 ? "no run today yet" : `a ${streak}-day run`}. Only ${record.name}'s owner can care for them, and each care rests 30 minutes. Anyone else can wave — once a day, into ${record.name}'s guestbook on Solana — or adopt their own. Network fees are covered while sponsorship is available.`,
     label: "Care",
     links: {
       actions: [

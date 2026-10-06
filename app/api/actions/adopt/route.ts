@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     icon: absolute(request, "/api/actions/icon"),
     title: "Adopt a pet on Pawket",
     description:
-      "A luna cat, a moss pup or a cloud bun, kept on Solana devnet from the first day: every care a signed record anyone can check. Pawket pays the network fee; nothing is for sale.",
+      "A luna cat, a moss pup or a cloud bun, kept on Solana devnet from the first day: every care a signed record anyone can check. Network fees are covered while sponsorship is available; nothing is for sale.",
     label: "Adopt",
     links: { actions: [adoptLinkedAction()] },
   });

@@ -32,7 +32,7 @@ export async function GET(request: Request, { params }: Props) {
     type: "action",
     icon: absolute(request, `/api/actions/icon?guild=${guild.slug}`),
     title: guild.name,
-    description: `${guild.motto ? `${guild.motto} ` : ""}A guild of ${guild.memberCount} ${guild.memberCount === 1 ? "pet" : "pets"} on Solana. Optional, free to join and to leave, and nothing in it changes a pet. Your most recent pet that is in no guild joins; Pawket pays the fee.`,
+    description: `${guild.motto ? `${guild.motto} ` : ""}A guild of ${guild.memberCount} ${guild.memberCount === 1 ? "pet" : "pets"} on Solana. Optional, free to join and to leave, and nothing in it changes a pet. Your most recent pet that is in no guild joins. Network fees are covered while sponsorship is available.`,
     label: "Join",
     links: {
       actions: [{ type: "transaction", label: `Join ${guild.name}`, href: `/api/actions/guild/${guild.slug}` }],

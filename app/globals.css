@@ -2340,7 +2340,7 @@ li {
    is there. */
 .pk-shell-btn {
   gap: 6px;
-  min-height: 34px;
+  min-height: 44px;
 }
 .pk-shell-btn--hold {
   display: inline-block;
@@ -2370,7 +2370,9 @@ li {
   color: var(--on-sun);
 }
 .pk-theme-button {
-  min-height: 34px;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
 }
 @media (max-width: 400px) {
   /* A phone keeps the mark, the wallet's own mark and the room's name. */
@@ -2593,8 +2595,30 @@ li {
   animation: pk-rise var(--dur-sheet) var(--ease-press);
 }
 .pk-sheet .pk-paper__body {
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
+.pk-sheet > :is(header, footer) { flex-shrink: 0; }
+.pk-sheet__close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin-left: auto;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.pk-sheet__close:focus-visible { outline: var(--stroke-line) solid var(--focus); }
+.pk-sheet__close:active { background: var(--surface-sunk); }
+.pk-scrim--out { animation: pk-fade var(--dur-sheet) var(--ease-swap) reverse both; }
+.pk-scrim--out .pk-sheet { animation: pk-sheet-out var(--dur-sheet) var(--ease-swap) both; }
+@keyframes pk-sheet-out { to { opacity: 0; transform: translateY(24px); } }
 .pk-sheet .pk-paper__foot {
   padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
 }
@@ -2630,7 +2654,7 @@ li {
   padding: 0 var(--space-5) var(--space-5);
 }
 .pk-sheet--room > .pk-paper__foot {
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-3) var(--space-5) calc(var(--space-3) + env(safe-area-inset-bottom));
   background: var(--surface-sunk);
   border-top: var(--stroke-hair) solid var(--edge-soft);
 }
@@ -2646,6 +2670,14 @@ li {
   from {
     transform: translateY(24px);
   }
+}
+@media (min-width: 720px) {
+  .pk-sheet--room > .pk-paper__foot { padding-bottom: var(--space-3); }
+}
+@media (pointer: coarse) {
+  .pk-btn--sm, .pk-tabs__t, .pk-toast__close { min-height: 44px; }
+  .pk-toast__close { min-width: 44px; }
+  input, textarea, select { font-size: max(16px, 1em); }
 }
 @keyframes pk-fade {
   from {

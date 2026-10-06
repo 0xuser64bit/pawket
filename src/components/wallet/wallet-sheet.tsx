@@ -32,7 +32,7 @@ export function WalletSheet({ onDismiss, onConnected = onDismiss, why }: { onDis
       title="Connect a wallet"
       meta="Solana devnet"
       onDismiss={onDismiss}
-      foot={<Button tone="quiet" size="sm" label="Not now" full onClick={onDismiss} />}
+      foot={(dismiss) => <Button tone="quiet" size="sm" label="Not now" full onClick={dismiss} />}
     >
       <Stack gap={4}>
         <p className="body-sm">{why}</p>

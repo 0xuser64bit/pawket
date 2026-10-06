@@ -116,7 +116,7 @@ function WalletPanel({
       title="Your wallet"
       meta={`Solana ${cluster}`}
       onDismiss={onDismiss}
-      foot={
+      foot={(dismiss) => (
         <div className="pk-spread">
           <Button
             tone="ghost"
@@ -124,12 +124,12 @@ function WalletPanel({
             label="Disconnect"
             onClick={() => {
               disconnect.dispatch();
-              onDismiss();
+              dismiss();
             }}
           />
-          <Button tone="quiet" size="sm" label="Done" onClick={onDismiss} />
+          <Button tone="quiet" size="sm" label="Done" onClick={dismiss} />
         </div>
-      }
+      )}
     >
       <Stack gap={4}>
         <div className="pk-wallet-who">

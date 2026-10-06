@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useBackCloses } from "@/lib/native/android";
+import { Icon } from "./icon";
 
 /**
  * A decision that costs money arrives as a Paper sheet over a dimmed
@@ -28,7 +29,7 @@ export function Sheet({
 }: {
   title: string;
   meta?: ReactNode;
-  foot?: ReactNode;
+  foot?: ReactNode | ((dismiss: () => void) => ReactNode);
   register?: "paper" | "room";
   /** Cancel. Escape and the scrim do the same. */
   onDismiss: () => void;
@@ -41,7 +42,17 @@ export function Sheet({
   );
   const scrim = useRef<HTMLDivElement>(null);
   const sheet = useRef<HTMLElement>(null);
-  useBackCloses(onDismiss);
+  const [leaving, setLeaving] = useState(false);
+  const closing = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function dismiss() {
+    if (closing.current !== null) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return onDismiss();
+    setLeaving(true);
+    const duration = getComputedStyle(document.documentElement).getPropertyValue("--dur-sheet");
+    closing.current = setTimeout(onDismiss, parseFloat(duration) || 220);
+  }
+  useBackCloses(dismiss);
+  useEffect(() => () => { if (closing.current !== null) clearTimeout(closing.current); }, []);
 
   useEffect(() => {
     if (!mounted) return;
@@ -68,9 +79,9 @@ export function Sheet({
   return createPortal(
     <div
       ref={scrim}
-      className="pk-scrim"
+      className={`pk-scrim${leaving ? " pk-scrim--out" : ""}`}
       onClick={(event) => {
-        if (event.target === event.currentTarget) onDismiss();
+        if (event.target === event.currentTarget) dismiss();
       }}
     >
       <section
@@ -81,15 +92,29 @@ export function Sheet({
         aria-label={title}
         tabIndex={-1}
         onKeyDown={(event) => {
-          if (event.key === "Escape") onDismiss();
+          if (event.key === "Escape") { event.preventDefault(); dismiss(); }
+          if (event.key !== "Tab") return;
+          const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+            .filter((el) => !el.matches(":disabled") && el.getClientRects().length > 0);
+          const first = controls[0];
+          const last = controls.at(-1);
+          if (!first) { event.preventDefault(); return; }
+          if (event.shiftKey && (document.activeElement === first || document.activeElement === sheet.current)) {
+            event.preventDefault(); last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault(); first.focus();
+          }
         }}
       >
         <header className="pk-paper__head">
           {register === "room" ? <h2 className="title">{title}</h2> : <span className="receipt-label">{title}</span>}
           {meta ? <span className={register === "room" ? "caption pk-faint" : "receipt-label"}>{meta}</span> : null}
+          <button type="button" className="pk-sheet__close" aria-label={`Close ${title}`} onClick={dismiss}><Icon name="close" size={16} /></button>
         </header>
         <div className="pk-paper__body">{children}</div>
-        {foot ? <footer className="pk-paper__foot">{foot}</footer> : null}
+        {/* The render prop receives an event callback; it does not read the timer ref during render. */}
+        {/* eslint-disable-next-line react-hooks/refs */}
+        {foot ? <footer className="pk-paper__foot">{typeof foot === "function" ? foot(dismiss) : foot}</footer> : null}
       </section>
     </div>,
     document.body,

@@ -168,9 +168,9 @@ export function ThemePicker({
 }
 
 /**
- * The shell's room switch: names the room you are in, and a tap moves into
+ * The shell's room switch: shows the room's colours, and a tap moves into
  * the next one — every free room, and the Market rooms the closet (`owned`)
- * holds. No menu: the name on the button is the whole story, and "Follow my
+ * holds. The accessible name carries both rooms; "Follow my
  * device" lives with the other rooms in Settings.
  */
 export function ThemeButton({ owned = NOTHING_OWNED }: { owned?: ReadonlySet<number> }) {
@@ -184,10 +184,10 @@ export function ThemeButton({ owned = NOTHING_OWNED }: { owned?: ReadonlySet<num
       type="button"
       className="pk-btn pk-btn--quiet pk-btn--sm pk-theme-button"
       aria-label={`Room: ${current.name}. Move to ${next.name}`}
+      title={`${current.name} → ${next.name}`}
       onClick={() => setTheme(next.id)}
     >
       <span className="pk-theme-dot" data-theme-preview={current.id} aria-hidden="true" />
-      <span>{current.name}</span>
     </button>
   );
 }

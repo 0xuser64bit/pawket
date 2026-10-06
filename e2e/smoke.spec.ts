@@ -48,9 +48,9 @@ test("a wallet is offered, never asked for: the front door has none, the shell h
   await page.getByRole("button", { name: "Not now" }).click();
   // A tap on the room's name moves into the next room; no menu opens.
   const room = shell.getByRole("button", { name: /^Room: / });
-  const before = await room.textContent();
+  const before = await room.getAttribute("aria-label");
   await room.click();
-  await expect(room).not.toHaveText(before ?? "");
+  await expect(room).not.toHaveAttribute("aria-label", before ?? "");
   await expect(page.getByRole("menu")).toHaveCount(0);
 
   await expect(page.getByText(/Already keep a pet on Solana\?/)).toBeVisible();

@@ -118,7 +118,8 @@ A pressable control moves on `cubic-bezier(.2,.9,.3,1)` at 90ms (`--ease-press`,
 moves the face, never the page. A card or guild row that is a link lifts 1px
 onto `shadow-sticker-lift` under a pointer and presses flat under a finger.
 Hover exists only where a pointer can hover. A sheet rises over 220ms
-(`--dur-sheet`); it is a modal in behaviour too — focus moves in, the page
+(`--dur-sheet`) and leaves on the same curve; reduced motion closes at once.
+It is a modal in behaviour too — focus moves in and stays inside, the page
 behind goes inert, and Escape or the dimmed room leave the way Cancel does. Nothing animates on
 a Paper surface: a quote does not count up and a launch meter does not fill on
 load. All of it stops under `prefers-reduced-motion`.
@@ -336,7 +337,8 @@ while this browser signs with no pop-up; it is offered in place where it
 does something (finding the pets a wallet keeps) and never asked for up
 front (the front door has none). Choosing a wallet and the wallet you are
 open as Playroom sheets; Paper is for money. An address always sits beside
-a copy control. The room switch names the room and a tap moves into the
+a copy control. The room switch shows the room's colour mark, with its name
+and the next room in its accessible label; a tap moves into the
 next one; every room, and "Follow my device", is in Settings. A send is a toast
 (`src/components/pk/toast.tsx`), one per send, in the corner and over the
 page — never a block in it: waiting is a spinner and says what it waits

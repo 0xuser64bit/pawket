@@ -193,9 +193,9 @@ function ItemSheet({
       title={item.name}
       meta={has ? "In your closet" : "Fixed price"}
       onDismiss={onDismiss}
-      foot={
+      foot={(dismiss) => (
         <div className="pk-spread">
-          <Button tone="ghost" size="sm" label={has ? "Done" : "Not now"} onClick={onDismiss} />
+          <Button tone="ghost" size="sm" label={has ? "Done" : "Not now"} onClick={dismiss} />
           {!owner ? (
             <Button label="Connect a wallet" icon="wallet" tone="paper" onClick={() => setConnecting(true)} />
           ) : has ? (
@@ -206,7 +206,7 @@ function ItemSheet({
             <Button label={`Buy for ${sol(price)}`} tone="paper" disabled={sender.busy || !canSign || short} onClick={() => void buy()} />
           )}
         </div>
-      }
+      )}
     >
       <Stack gap={4}>
         <div className="pk-market-try" data-theme-preview={item.room} aria-hidden="true">

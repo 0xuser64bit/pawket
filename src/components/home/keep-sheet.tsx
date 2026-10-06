@@ -87,9 +87,9 @@ export function KeepSheet({
       title={`Keep ${pet.name} on Solana`}
       meta={`Solana ${cluster}`}
       onDismiss={onDismiss}
-      foot={
+      foot={(dismiss) => (
         <div className="pk-spread">
-          <Button tone="ghost" size="sm" label="Not now" onClick={onDismiss} />
+          <Button tone="ghost" size="sm" label="Not now" onClick={dismiss} />
           {owner && canSign ? (
             <Button
               label={`Keep ${pet.name}`}
@@ -102,7 +102,7 @@ export function KeepSheet({
             <Button label="Connect a wallet" icon="wallet" tone="quiet" onClick={() => setConnecting(true)} />
           )}
         </div>
-      }
+      )}
     >
       <Stack gap={4}>
         <div className="pk-keep">

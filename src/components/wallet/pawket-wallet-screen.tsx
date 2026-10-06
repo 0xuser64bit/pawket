@@ -359,7 +359,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               <Banner
                 tone="wait"
                 title="Today's limit is reached"
-                body="Until midnight UTC your wallet signs again, as before. Nothing else changed."
+                body="This device can act again after midnight UTC. To continue sooner, link again with a higher daily limit below."
               />
             ) : null}
             <Row gap={2} wrap>
@@ -379,7 +379,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
           <>
             <p className="body-sm pk-muted">
               {expired
-                ? `Its link ran out on ${until}. Your wallet signs again until you link it once more.`
+                ? `Its link ran out on ${until}. Link it again to continue without pop-ups.`
                 : elsewhere
                   ? `Another browser (${truncateAddress(wallet.device!)}) is linked. Linking this one takes its place; the other keeps what it holds for fees until it unlinks itself.`
                   : "Link it, and what your pets do on Solana stops asking your wallet every time."}

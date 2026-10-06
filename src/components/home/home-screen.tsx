@@ -54,7 +54,7 @@ import {
   type TodayGoals,
 } from "@/lib/guest/pet";
 import { readPet, removePet, savePet } from "@/lib/guest/storage";
-import { haptic, useHere } from "@/lib/native/android";
+import { haptic, useAndroidApp, useHere } from "@/lib/native/android";
 import { describeLook } from "@/lib/player/look";
 import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
@@ -439,6 +439,7 @@ function RoomLine({
  */
 function NoPrompt({ state, now }: { state: PawketWalletState | null; now: Date }) {
   const { here, Here } = useHere();
+  const app = useAndroidApp();
   const why = deviceFallback(state, now.getTime() / 1000);
   const line: ReactNode =
     why === null ? (
@@ -447,10 +448,16 @@ function NoPrompt({ state, now }: { state: PawketWalletState | null; now: Date }
       </>
     ) : why === "expired" ? (
       <>
-        {Here}&apos;s link ran out, so your wallet asks again. <Link href="/wallet">Link it again</Link>
+        {Here}&apos;s link ran out. <Link href="/wallet">Link it again</Link>
       </>
     ) : why === "limit" ? (
-      <>{Here} has done all it may today; your wallet signs until midnight UTC.</>
+      <>
+        {Here} reached today&apos;s limit. <Link href="/wallet">Change the limit</Link> or return after midnight UTC.
+      </>
+    ) : app ? (
+      <>
+        Link this app to care on Solana without pop-ups. <Link href="/wallet">Link this app</Link>
+      </>
     ) : (
       <>
         Each care asks your wallet. <Link href="/wallet">Link {here}</Link> and it stops asking.

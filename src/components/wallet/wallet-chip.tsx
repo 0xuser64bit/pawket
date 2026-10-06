@@ -162,7 +162,7 @@ function WalletPanel({
             <div className="pk-fill">
               <p className="title">Today&apos;s limit is used</p>
               <p className="caption pk-muted">
-                Your wallet signs until midnight UTC.{" "}
+                This device can act again after midnight UTC.{" "}
                 <Link href="/wallet" onClick={onDismiss}>
                   Change the limit
                 </Link>

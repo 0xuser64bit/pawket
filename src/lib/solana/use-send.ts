@@ -92,7 +92,8 @@ export function usePawketSend() {
       go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void, show: (next: Partial<TxState>) => void) => Promise<SendResult>,
       fallback?: DeviceFallback,
     ) => {
-      // Shared across screens and double taps: never open competing wallet sessions or queue a send.
+      // ponytail: one send per tab; use account-scoped slots only if concurrent wallets are supported.
+      // Never open competing wallet sessions or queue a send.
       if (sending) return null;
       setSending(true);
       // Each send is one toast, kept up to date to the end — even after the screen that sent it is gone.
@@ -123,7 +124,7 @@ export function usePawketSend() {
         else haptic("refuse");
         return null;
       } finally {
-        if (state.by === "device" && owner) await refreshPawketWallet(owner);
+        if (state.by === "device" && owner && state.signature) await refreshPawketWallet(owner);
         setSending(false);
       }
     },
@@ -205,10 +206,10 @@ export function usePawketSend() {
   /**
    * Anything for the connected wallet's pets that costs no money — care,
    * rounds, clothes, adoption, guilds, gatherings, waves — built as the owner
-   * would sign it. This device signs it, with no prompt, while it is linked
-   * and may act (`asDeviceInstruction`); otherwise the wallet does, and the
-   * receipt says why. With no sponsor up, the device pays its own fee from its
-   * float, and anything that would need it to pay rent goes to the wallet.
+   * would sign it. This device signs while linked and allowed. In the Android
+   * app an unavailable device produces a recovery message; in a browser the
+   * owner may sign instead. Without sponsorship a funded device pays its fee;
+   * rent-bearing actions need the sponsor in the app, or the owner in a browser.
    */
   const act = useCallback(
     (label: string, instructions: SendOptions["instructions"]): Promise<SendResult | null> =>

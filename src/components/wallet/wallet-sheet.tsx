@@ -20,7 +20,7 @@ const INSTALL = [
  * a pet on Solana, or finding the ones a wallet already holds — and never
  * the first thing a player sees.
  */
-export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: string }) {
+export function WalletSheet({ onDismiss, onConnected = onDismiss, why }: { onDismiss: () => void; onConnected?: () => void; why: string }) {
   const wallets = useWallets(wallet);
   const connect = useConnect(wallet);
   const sponsor = useSponsor();
@@ -45,7 +45,7 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
                 className="pk-btn pk-btn--quiet pk-btn--full pk-wallet-pick"
                 disabled={connect.isRunning}
                 onClick={() => {
-                  connect.dispatchAsync(option).then(onDismiss, () => {
+                  connect.dispatchAsync(option).then(onConnected, () => {
                     // The error is on `connect`; the sheet says it below.
                   });
                 }}

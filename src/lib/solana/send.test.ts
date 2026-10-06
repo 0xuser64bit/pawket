@@ -12,6 +12,27 @@ import { CONFIRMATION_TIMEOUT_MS } from "./transactions";
 import { sendPawket, type SendRpc } from "./send";
 
 describe("broadcast uncertainty", () => {
+  it("an unanswered signing request releases the UI and a late answer is never sent", async () => {
+    const owner = await generateKeyPairSigner();
+    let answer!: (value: Awaited<ReturnType<typeof owner.signTransactions>>) => void;
+    const signer = { ...owner, signTransactions: () => new Promise<Awaited<ReturnType<typeof owner.signTransactions>>>((resolve) => { answer = resolve; }) };
+    const send = vi.fn();
+    const rpc = {
+      getLatestBlockhash: () => ({ send: async () => ({ value: { blockhash: "11111111111111111111111111111111", lastValidBlockHeight: 1n } }) }),
+      sendTransaction: send,
+    } as unknown as SendRpc;
+    vi.useFakeTimers();
+    try {
+      const pending = sendPawket({ rpc, owner: signer, sponsor: null, instructions: () => [] });
+      const refused = expect(pending).rejects.toThrow(/did not finish signing.*Nothing was sent/);
+      await vi.advanceTimersByTimeAsync(90_000);
+      await refused;
+      answer([]);
+      await Promise.resolve();
+      expect(send).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
+  });
+
   it("a broadcast that never replies times out and looks up the signed transaction", async () => {
     const owner = await generateKeyPairSigner();
     const timeout = AbortSignal.timeout.bind(AbortSignal);

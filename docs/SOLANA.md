@@ -9,6 +9,15 @@ Pawket's presets up), and a lint rule refuses them anywhere else.
 
 ## The program
 
+The Android app routes non-money actions through its linked Pawket Wallet.
+It reads the link fresh before every action; setup, expiry, limits and a fee
+shortfall are actionable refusals, not an automatic wallet-app redirect.
+The shell keeps setup visible on every page. Purchases, deposits, withdrawals
+and prepared coin/keepsake transactions still need the owner's approval.
+One shared send slot covers preparation through confirmation across screens.
+Sponsor/preparation requests are bounded; an unanswered wallet signature
+times out after 90 seconds and any late answer is never broadcast.
+
 `programs/pawket/src/lib.rs`, devnet
 `PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`, upgradeable by the deploy
 wallet. The IDL `pnpm program:build` writes is committed at

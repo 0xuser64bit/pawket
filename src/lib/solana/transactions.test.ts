@@ -42,6 +42,12 @@ describe("transaction errors", () => {
     expect(mobileWalletProblem(new Error("boom"))).toBeNull();
   });
 
+  it("does not silently dismiss the adapter's connection timeout as a user decline", () => {
+    const timeout = mwa("SolanaMobileWalletAdapterError", "ERROR_ASSOCIATION_CANCELLED", "Wallet connection timed out");
+    expect(isUserRejection(timeout)).toBe(false);
+    expect(toUserFacingError(timeout)).toMatch(/did not open in time.*reconnect.*Nothing was sent/);
+  });
+
   it("maps program codes to one-sentence copy", () => {
     expect(pawketErrorMessage(6002)).toMatch(/cooling down/);
     expect(pawketErrorMessage(6001)).toMatch(/owner/);

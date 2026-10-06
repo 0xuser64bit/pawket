@@ -31,6 +31,8 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
   switch (tx.stage) {
     case "idle":
       return null;
+    case "preparing":
+      return { id, tone: "wait", title, body: "Checking your wallet and preparing the record." };
     case "signing":
       return {
         id,
@@ -78,6 +80,7 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
         body: (
           <>
             {tx.error}
+            {tx.error?.includes("Pawket Wallet") ? <> <Link href="/wallet">Open Pawket Wallet</Link></> : null}
             {tx.error && /not enough sol/i.test(tx.error) && cluster !== "mainnet-beta" ? (
               <>
                 {" "}

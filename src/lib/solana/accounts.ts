@@ -259,7 +259,7 @@ export function decodeWallet(address: Address, bytes: Uint8Array, lamports: bigi
 /** The Pawket Wallet `owner` keeps, or null when they have not opened one. */
 export async function fetchWallet(rpc: Rpc<GetMultipleAccountsApi>, owner: string | Address): Promise<ChainWallet | null> {
   const address = (await deriveWalletPda(owner)).address;
-  const [account] = await fetchEncodedAccounts(rpc, [address]);
+  const [account] = await fetchEncodedAccounts(rpc, [address], { abortSignal: AbortSignal.timeout(30_000) });
   if (!account.exists || account.programAddress !== PAWKET_PROGRAM_ID) return null;
   return decodeWallet(address, account.data, account.lamports);
 }

@@ -41,7 +41,7 @@ let walletRent: Promise<bigint> | null = null;
 export function rentOfWallet(): Promise<bigint> {
   walletRent ??= rpc
     .getMinimumBalanceForRentExemption(BigInt(PAWKET_ACCOUNTS.wallet.size))
-    .send()
+    .send({ abortSignal: AbortSignal.timeout(30_000) })
     .catch((error: unknown) => {
       walletRent = null;
       throw error;
@@ -69,7 +69,7 @@ async function read(owner: Address): Promise<void> {
   const before = states.get(owner);
   try {
     const [wallet, device, rent] = await Promise.all([fetchWallet(rpc, owner), loadDevice(owner), rentOfWallet()]);
-    const deviceLamports = device ? (await rpc.getBalance(device.address, { commitment: "confirmed" }).send()).value : 0n;
+    const deviceLamports = device ? (await rpc.getBalance(device.address, { commitment: "confirmed" }).send({ abortSignal: AbortSignal.timeout(30_000) })).value : 0n;
     publish(owner, {
       owner,
       status: "ready",
@@ -91,9 +91,17 @@ function empty(owner: Address): PawketWalletState {
 
 /** Read `owner`'s Pawket Wallet again — after a deposit, a link, an action. Resolves once it is read. */
 export function refreshPawketWallet(owner: Address): Promise<void> {
+  const existing = reading.get(owner);
+  if (existing) return existing;
   const pending = read(owner).finally(() => reading.delete(owner));
   reading.set(owner, pending);
   return pending;
+}
+
+/** A fresh read before choosing who signs; never guess while hydration or a stale link is catching up. */
+export async function readPawketWallet(owner: Address): Promise<PawketWalletState> {
+  await refreshPawketWallet(owner);
+  return states.get(owner)!;
 }
 
 function subscribe(owner: Address | null, listener: () => void) {

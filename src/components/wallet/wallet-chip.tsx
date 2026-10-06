@@ -7,14 +7,15 @@ import { useConnectedWallet, useDisconnect, useIsWalletReady } from "@solana/kit
 import { Button, Icon, Sheet, Stack } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
-import { wallet } from "@/lib/solana/browser-client";
+import { wallet, useConnected } from "@/lib/solana/browser-client";
 import { deviceFallback } from "@/lib/solana/use-send";
 import { formatUtcDate, truncateAddress } from "@/lib/utils/format";
 import { useMounted } from "@/lib/utils/use-mounted";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { AddressLine } from "./address";
 import { WalletSheet } from "./wallet-sheet";
-import { useHere } from "@/lib/native/android";
+import { useAndroidApp, useHere } from "@/lib/native/android";
+import { usePawketWallet } from "@/lib/wallet/pawket-wallet";
 
 /**
  * The wallet, in the shell, just before the room switch and drawn the same
@@ -42,7 +43,7 @@ export function WalletChip() {
           <span>Connect</span>
         </button>
         {open === "connect" ? (
-          <WalletSheet why="Connect the wallet that keeps your pets on Solana. Connecting signs nothing." onDismiss={() => setOpen(null)} />
+          <WalletSheet why="Connect the wallet that keeps your pets on Solana. Connecting signs nothing." onDismiss={() => setOpen(null)} onConnected={() => setOpen("panel")} />
         ) : null}
       </>
     );
@@ -71,6 +72,20 @@ export function WalletChip() {
         <WalletPanel address={address} name={connected.wallet.name} icon={connected.wallet.icon} linking={linking} onDismiss={() => setOpen(null)} />
       ) : null}
     </>
+  );
+}
+
+/** Setup stays findable on every phone screen before an action needs it. */
+export function MobileWalletNotice() {
+  const app = useAndroidApp();
+  const connected = useConnected();
+  const state = usePawketWallet((connected?.account.address as Address | undefined) ?? null);
+  if (!app || !connected || !state || state.status === "loading" || deviceFallback(state) === null) return null;
+  return (
+    <div className="pk-mobile-wallet body-sm" role="status">
+      <span>{state.error ? "Your Pawket Wallet could not be read." : "Link Pawket Wallet for care, games and outfits without pop-ups."}</span>
+      <Link className="pk-btn pk-btn--quiet pk-btn--sm" href="/wallet">Pawket Wallet</Link>
+    </div>
   );
 }
 

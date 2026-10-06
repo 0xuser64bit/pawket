@@ -38,6 +38,7 @@ export const CONFIRMATION_TIMEOUT_MS = 30_000;
 
 export type TransactionStage =
   | "idle"
+  | "preparing"
   | "signing"
   | "sending"
   | "confirming"
@@ -51,7 +52,7 @@ export type TransactionStage =
  * 1:1 to things the UI actually observes.
  */
 export function isActiveStage(stage: TransactionStage): boolean {
-  return stage === "signing" || stage === "sending" || stage === "confirming";
+  return stage === "preparing" || stage === "signing" || stage === "sending" || stage === "confirming";
 }
 
 /** The error, then every `cause` under it: Kit wraps the useful part. */
@@ -90,7 +91,7 @@ const MOBILE_REFUSALS = new Set<string | number>([-1, -3, "ERROR_ASSOCIATION_CAN
 
 export function isUserRejection(error: unknown): boolean {
   const code = mobileWalletErrorCode(error);
-  if (code !== null && MOBILE_REFUSALS.has(code)) return true;
+  if (code !== null && MOBILE_REFUSALS.has(code) && !/timed? out|timeout/i.test(messageOf(error))) return true;
   return /user rejected|rejected by user|declined|user denied|cancell?ed by user/i.test(messageOf(error));
 }
 
@@ -102,7 +103,9 @@ export function mobileWalletProblem(error: unknown): string | null {
     case "ERROR_SESSION_CLOSED":
       return "Your wallet closed before it answered.";
     case "ERROR_SESSION_TIMEOUT":
-      return "Your wallet did not answer in time.";
+      return "Your wallet did not answer in time. Return to Pawket, disconnect and reconnect your wallet, then try again.";
+    case "ERROR_ASSOCIATION_CANCELLED":
+      return /timed? out|timeout/i.test(messageOf(error)) ? "Your wallet did not open in time. Return to Pawket and reconnect your wallet." : null;
     case "ERROR_LOOPBACK_ACCESS_BLOCKED":
       return "This browser is not letting Pawket reach your wallet app. Allow local network access for this site, then try again.";
     default:

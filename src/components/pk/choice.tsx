@@ -24,9 +24,9 @@ export function Choice<T extends string | number>({
   const id = useId();
   function onKeyDown(event: KeyboardEvent, index: number) {
     const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
-    if (!step) return;
+    const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : step ? (index + step + options.length) % options.length : null;
+    if (next === null) return;
     event.preventDefault();
-    const next = (index + step + options.length) % options.length;
     onPick(options[next].value);
     refs.current[next]?.focus();
   }

@@ -29,6 +29,18 @@ async function inTheApp(page: Page) {
 
 const asked = (page: Page) => page.evaluate(() => (window as unknown as { posted: Array<{ op: string; kind?: string }> }).posted);
 
+test("the phone Back gesture returns from naming without losing the draft", async ({ page }) => {
+  await inTheApp(page);
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await expect.poll(() => page.evaluate(() => typeof window.pawketBack)).toBe("function");
+  expect(await page.evaluate(() => window.pawketBack?.())).toBe(true);
+  await expect(page.getByRole("heading", { name: "Who is coming home with you?" })).toBeVisible();
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await expect(page.getByRole("textbox", { name: "Pet name" })).toHaveValue("Pepper");
+});
+
 test("in the app a pet lives in this app, a care is felt, and the bars follow the room", async ({ page }) => {
   const problems: string[] = [];
   page.on("console", (message) => {

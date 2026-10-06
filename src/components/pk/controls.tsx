@@ -176,9 +176,9 @@ export function Field({
   const describedBy = error ? `${inputId}-error` : helper ? `${inputId}-help` : undefined;
   return (
     <div className={className}>
-      <label className={["pk-field", error && "pk-field--error"].filter(Boolean).join(" ")}>
+      <label htmlFor={inputId} className="label pk-faint pk-field__label">{label}</label>
+      <div className={["pk-field", error && "pk-field--error"].filter(Boolean).join(" ")}>
         <Icon name={icon} size={17} />
-        <span className="pk-sr">{label}</span>
         <input
           className={["pk-field__input", amount && "pk-field__input--amount"].filter(Boolean).join(" ")}
           aria-describedby={describedBy}
@@ -187,9 +187,9 @@ export function Field({
           id={inputId}
         />
         {suffix ? <span className="amount-sm pk-faint">{suffix}</span> : null}
-      </label>
+      </div>
       {error ? (
-        <p id={describedBy} className="body-sm" style={{ color: "var(--alarm-text)", marginTop: "var(--space-2)" }}>
+        <p id={describedBy} role="alert" className="body-sm" style={{ color: "var(--alarm-text)", marginTop: "var(--space-2)" }}>
           {error}
         </p>
       ) : helper ? (

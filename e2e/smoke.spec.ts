@@ -336,7 +336,40 @@ test("a short name is refused in words, not in bytes", async ({ page }) => {
   await page.goto("/adopt");
   await page.getByRole("button", { name: /choose the luna cat/i }).click();
   await page.getByRole("button", { name: /that’s the one/i }).click();
-  await expect(page.getByText(/a name needs at least two characters/i)).toBeVisible();
+  const error = page.getByRole("main").getByRole("alert");
+  await expect(error).toContainText(/at least two plain letters/i);
+  const name = page.getByRole("textbox", { name: "Pet name" });
+  await expect(name).toBeFocused();
+  await expect(name).toHaveAttribute("aria-invalid", "true");
+  await name.fill("🐾".repeat(7));
+  await expect(error).toHaveCount(0);
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await expect(error).toContainText("That name is too long");
+  await name.fill("🐾");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await expect(page.getByRole("heading", { name: "🐾 is yours." })).toBeVisible();
+});
+
+test("look tabs and colour choices have one keyboard stop and follow navigation keys", async ({ page }) => {
+  await page.goto("/profile#look");
+  const tabs = page.getByRole("tablist", { name: "Parts of your look" });
+  const body = tabs.getByRole("tab", { name: "Body" });
+  await body.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(tabs.getByRole("tab", { name: "Hair" })).toBeFocused();
+  await expect(tabs.getByRole("tab", { name: "Hair" })).toHaveAttribute("aria-selected", "true");
+  await expect(body).toHaveAttribute("tabindex", "-1");
+  await page.keyboard.press("End");
+  await expect(tabs.getByRole("tab", { name: "Extras" })).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(body).toBeFocused();
+  const tones = page.getByRole("radiogroup", { name: "Skin" });
+  await tones.getByRole("radio", { checked: true }).focus();
+  await page.keyboard.press("End");
+  await expect(tones.getByRole("radio").last()).toBeFocused();
+  await expect(tones.getByRole("radio").last()).toHaveAttribute("aria-checked", "true");
+  await page.keyboard.press("Home");
+  await expect(tones.getByRole("radio").first()).toBeFocused();
 });
 
 test("health endpoint reports ok", async ({ request }) => {

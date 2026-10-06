@@ -2,6 +2,29 @@ import { expect, test } from "@playwright/test";
 
 test.use({ viewport: { width: 375, height: 740 }, hasTouch: true, isMobile: true });
 
+test("adoption follows the visible pet after a swipe and viewport change, with compact named controls", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/adopt");
+  await page.locator(".pk-boot").waitFor({ state: "detached" });
+  const stage = page.locator(".pk-adopt__stage");
+  await page.getByRole("button", { name: "Moss pup", exact: true }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("button", { name: "Choose the moss pup" })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 650 });
+  await page.getByRole("button", { name: "Luna cat", exact: true }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("button", { name: "Choose the luna cat" })).toBeVisible();
+  expect(await stage.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  await page.getByRole("button", { name: "Choose the luna cat" }).tap();
+  const name = page.getByRole("textbox", { name: "Pet name" });
+  await name.fill("Pepper");
+  await expect(page.locator("label", { hasText: "Pet name" })).toBeVisible();
+  const cards = page.locator(".pk-temper");
+  const first = (await cards.nth(0).boundingBox())!;
+  const second = (await cards.nth(1).boundingBox())!;
+  expect(first.y).toBe(second.y);
+  expect(second.x).toBeGreaterThan(first.x + first.width);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});
+
 test("the icon-only room control and modal close are usable on a phone", async ({ page }) => {
   await page.goto("/home");
   const room = page.getByRole("button", { name: /^Room:/ });

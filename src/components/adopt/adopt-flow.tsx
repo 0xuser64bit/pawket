@@ -32,7 +32,7 @@ import { useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend } from "@/lib/solana/use-send";
 import { formatUtcDate } from "@/lib/utils/format";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
-import { useHere } from "@/lib/native/android";
+import { useBackCloses, useHere } from "@/lib/native/android";
 
 const SPECIES = [PetSpecies.LunaCat, PetSpecies.MossPup, PetSpecies.CloudBun];
 
@@ -68,8 +68,9 @@ function Steps({ step }: { step: 1 | 2 | 3 }) {
   return (
     <ol className="pk-steps" aria-label={`Step ${step} of 3`}>
       {[1, 2, 3].map((n) => (
-        <li key={n} className={n < step ? "pk-steps__done" : n === step ? "pk-steps__now" : undefined}>
+        <li key={n} aria-current={n === step ? "step" : undefined} className={n < step ? "pk-steps__done" : n === step ? "pk-steps__now" : undefined}>
           <Icon name="paw" size={18} />
+          <span className="pk-sr">{["Choose a pet", "Name your pet", "Welcome home"][n - 1]}{n < step ? ", complete" : ""}</span>
         </li>
       ))}
     </ol>
@@ -79,10 +80,15 @@ function Steps({ step }: { step: 1 | 2 | 3 }) {
 function Bar({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
   return (
     <div className="pk-screen__bar pk-adopt__bar">
-      {onBack ? <Button label="Back" tone="ghost" icon="left" onClick={onBack} /> : <Mark href="/" size={26} type={18} />}
+      {onBack ? <AdoptBack onBack={onBack} /> : <Mark href="/" size={26} type={18} />}
       <Steps step={step} />
     </div>
   );
+}
+
+function AdoptBack({ onBack }: { onBack: () => void }) {
+  useBackCloses(onBack);
+  return <Button label="Back" tone="ghost" icon="left" onClick={onBack} />;
 }
 
 /**
@@ -127,17 +133,25 @@ export function AdoptFlow() {
   useEffect(() => {
     const row = stage.current;
     if (step !== 1 || !row) return;
+    const picks = Array.from(row.querySelectorAll<HTMLElement>("[data-species]"));
     const io = new IntersectionObserver(
-      (entries) => {
+      () => {
         if (row.scrollWidth <= row.clientWidth) return;
-        for (const entry of entries) {
-          const option = (entry.target as HTMLElement).dataset.species as PetSpecies | undefined;
-          if (entry.isIntersecting && option) setSpecies(option);
+        // Observer entries can describe the previous viewport after a resize.
+        // Read the current carousel so the CTA always names the visible pet.
+        const center = row.getBoundingClientRect().left + row.clientWidth / 2;
+        let closest: HTMLElement | undefined;
+        let distance = Infinity;
+        for (const pick of picks) {
+          const box = pick.getBoundingClientRect();
+          const next = Math.abs(box.left + box.width / 2 - center);
+          if (next < distance) { closest = pick; distance = next; }
         }
+        if (closest) setSpecies(closest.dataset.species as PetSpecies);
       },
       { root: row, threshold: 0.8 },
     );
-    for (const pick of row.querySelectorAll("[data-species]")) io.observe(pick);
+    for (const pick of picks) io.observe(pick);
     return () => io.disconnect();
   }, [step, ready]);
 
@@ -156,7 +170,7 @@ export function AdoptFlow() {
   function choose(option: PetSpecies, target: HTMLElement) {
     setSpecies(option);
     setHop((n) => n + 1);
-    target.closest("[data-species]")?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    target.closest("[data-species]")?.scrollIntoView({ inline: "center", block: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
 
   function commit() {
@@ -176,7 +190,7 @@ export function AdoptFlow() {
     } catch {
       // The rule comes from the on-chain name seed (2–24 UTF-8 bytes); the
       // sentence a player reads should not.
-      setError("A name needs at least two characters, and no more than 24.");
+      setError(typed.length < 2 ? "A name needs at least two plain letters, or a single emoji." : "That name is too long. Shorten it; accents and emoji use more room.");
       nameInput.current?.focus();
     }
   }
@@ -293,10 +307,10 @@ export function AdoptFlow() {
                   autoComplete="off"
                   maxLength={24}
                   value={name}
-                  onChange={(event) => setName(event.target.value)}
+                  onChange={(event) => { setName(event.target.value); setError(undefined); }}
                   placeholder={NAMES[species][0]}
                   error={error}
-                  helper="Two to 24 characters. It is theirs for good."
+                  helper="Up to 24 plain letters; accents and emoji use more room. It is theirs for good."
                 />
               </div>
               <div className="pk-adopt__names" role="group" aria-label="Names to try">
@@ -304,7 +318,7 @@ export function AdoptFlow() {
                   <button
                     key={suggestion}
                     type="button"
-                    onClick={() => setName(suggestion)}
+                    onClick={() => { setName(suggestion); setError(undefined); }}
                     aria-pressed={typed === suggestion}
                     className="pk-pill pk-adopt__suggest"
                   >

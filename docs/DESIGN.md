@@ -289,7 +289,10 @@ shapes, one outline, the palette — never a grid of identical pockets:
   lifts into a `sun` ring and hops. On a phone they are a row you swipe,
   and the one you land on is chosen. Naming stitches the name on the pet's
   blanket as it is typed, and each temperament is shown as the face it
-  makes. The welcome is the pet radiant beside its first page, on Paper.
+  makes. The name field keeps its label visible; temperaments are a compact
+  two-column grid on phones. Back returns to choosing without losing the
+  draft, including the Android gesture. The welcome is the pet radiant
+  beside its first page, on Paper.
 - **The park** (`src/components/park/park-scene.tsx`). Hills, trees, a
   bench, a path, the sun or the moon; the pets out today (then the most
   cared for) stand on the lawn as figurines, front row by care, depth by

@@ -68,7 +68,7 @@ function OutfitDots({ look }: { look: PlayerLook }) {
 
 
 /**
- * How the player looks in the room, in full: the four parts as tabs, three
+ * How the player looks in the room, in full: five parts as tabs, three
  * outfits to keep and put back on, and a surprise. Saved on this device;
  * like the pet's wardrobe it is expression only. The room above it changes
  * as you go.
@@ -152,8 +152,20 @@ export function LookEditor({
         <Button label="Surprise me" icon="spark" tone="quiet" size="sm" onClick={surprise} />
       </div>
       <div className="pk-look">
-        {/* Four facets, one at a time, so the room stays in view above. */}
-        <div role="tablist" aria-label="Parts of your look" className="pk-look__tabs">
+        {/* Five facets, one at a time, so the room stays in view above. */}
+        <div
+          role="tablist"
+          aria-label="Parts of your look"
+          className="pk-look__tabs"
+          onKeyDown={(event) => {
+            const index = PARTS.findIndex((p) => p.key === part);
+            const next = event.key === "Home" ? 0 : event.key === "End" ? PARTS.length - 1 : event.key === "ArrowRight" ? (index + 1) % PARTS.length : event.key === "ArrowLeft" ? (index + PARTS.length - 1) % PARTS.length : null;
+            if (next === null) return;
+            event.preventDefault();
+            setPart(PARTS[next].key);
+            event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+          }}
+        >
           {PARTS.map((p) => (
             <button
               key={p.key}
@@ -161,6 +173,7 @@ export function LookEditor({
               role="tab"
               id={`${tabsId}-${p.key}`}
               aria-selected={part === p.key}
+              tabIndex={part === p.key ? 0 : -1}
               aria-controls={`${tabsId}-panel`}
               className="pk-choice"
               data-tab
@@ -175,6 +188,7 @@ export function LookEditor({
           role="tabpanel"
           id={`${tabsId}-panel`}
           aria-labelledby={`${tabsId}-${part}`}
+          tabIndex={0}
           className="pk-stack pk-look__panel"
           style={{ gap: "var(--space-4)" }}
         >

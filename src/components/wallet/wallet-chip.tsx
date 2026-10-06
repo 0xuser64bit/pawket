@@ -43,7 +43,7 @@ export function WalletChip() {
           <span>Connect</span>
         </button>
         {open === "connect" ? (
-          <WalletSheet why="Connect the wallet that keeps your pets on Solana. Connecting signs nothing." onDismiss={() => setOpen(null)} onConnected={() => setOpen("panel")} />
+          <WalletSheet why="Connect the wallet that keeps your pets on Solana. Connecting signs nothing." onDismiss={() => setOpen(null)} />
         ) : null}
       </>
     );

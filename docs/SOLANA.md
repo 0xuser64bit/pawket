@@ -17,6 +17,10 @@ and prepared coin/keepsake transactions still need the owner's approval.
 One shared send slot covers preparation through confirmation across screens.
 Sponsor/preparation requests are bounded; an unanswered wallet signature
 times out after 90 seconds and any late answer is never broadcast.
+Device-key creation waits for the IndexedDB transaction to commit before
+linking it, so an aborted storage write cannot leave an unusable chain link.
+Connecting dismisses the chooser and returns to the action the player was
+doing; Pawket Wallet setup remains visible in the app's shell.
 
 `programs/pawket/src/lib.rs`, devnet
 `PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`, upgradeable by the deploy

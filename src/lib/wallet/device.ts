@@ -30,8 +30,11 @@ async function run<T>(mode: IDBTransactionMode, act: (store: IDBObjectStore) => 
   const db = await open();
   try {
     return await new Promise<T>((resolve, reject) => {
-      const request = act(db.transaction(STORE, mode).objectStore(STORE));
-      request.onsuccess = () => resolve(request.result);
+      const transaction = db.transaction(STORE, mode);
+      const request = act(transaction.objectStore(STORE));
+      // A successful request can still roll back. Never link a key until its storage commits.
+      transaction.oncomplete = () => resolve(request.result);
+      transaction.onabort = () => reject(transaction.error ?? new Error("Device storage did not finish. Nothing was linked."));
       request.onerror = () => reject(request.error);
     });
   } finally {
@@ -69,7 +72,11 @@ export async function makeDevice(owner: string): Promise<KeyPairSigner> {
     );
   }
   if (pair.privateKey.extractable) throw new Error(`${here} made a key that could be read. Nothing was linked.`);
-  await run("readwrite", (store) => store.put(pair, owner));
+  try {
+    await run("readwrite", (store) => store.put(pair, owner));
+  } catch {
+    throw new Error(`${here} could not save its device key. Check that app storage is available, then try again. Nothing was linked.`);
+  }
   return createSignerFromKeyPair(pair);
 }
 

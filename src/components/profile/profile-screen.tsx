@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Field, Screen, ScreenBar, Stack, Tabs, Waiting } from "@/components/pk";
 import { Room, type RoomState } from "@/components/home/room";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
@@ -48,16 +49,19 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
   const [connecting, setConnecting] = useState(false);
   const [nameNotice, setNameNotice] = useState<string>();
   const { here, Here } = useHere();
-  // Came to change how you look (Home's Look, #look): the editor starts open.
-  const [lookOpen] = useState(() => typeof window !== "undefined" && window.location.hash === "#look");
+  const router = useRouter();
   // Hooks run before the early return below: what others did with these pets on Solana.
   const social = useSocialRecords(companion.owned.map((entry) => entry.pet.address));
 
-  // The page is drawn once the pets are read, after the browser has looked for
-  // #look or #shelf; land on it then.
+  // Read the hash after navigation commits: a prefetched render can happen
+  // before #look reaches the address bar. Native details keeps its own state.
   useEffect(() => {
-    if (ready && window.location.hash) document.getElementById(window.location.hash.slice(1))?.scrollIntoView();
-  }, [ready]);
+    if (!ready || !window.location.hash) return;
+    const target = document.getElementById(window.location.hash.slice(1));
+    const fold = window.location.hash === "#look" ? target?.querySelector("details") : null;
+    if (fold) fold.open = true;
+    target?.scrollIntoView();
+  }, [ready, router.bfcacheId]);
 
   if (!ready) {
     return (
@@ -142,7 +146,6 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
         <section id="look" className="pk-anchor">
           <LookEditor
             look={look}
-            open={lookOpen}
             shown={roomState === "live" || roomState === "loading"}
             twin={pet ? { name: pet.name, wearing: pet.wearing } : undefined}
           />

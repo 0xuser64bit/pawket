@@ -74,6 +74,10 @@ test("the flat room is a choice this device remembers", async ({ page }) => {
 });
 
 test("your look is saved on this device and dresses the room", async ({ page }) => {
+  // Visit once before Home links here again: the prefetched or reused page
+  // must still open its editor when the new destination includes #look.
+  await page.goto("/profile");
+  await expect(page.locator(".pk-fold").first()).not.toHaveAttribute("open");
   await adopt(page);
   await page.getByRole("link", { name: "Look" }).click();
   await expect(page).toHaveURL(/\/profile#look/);

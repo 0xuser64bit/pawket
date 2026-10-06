@@ -1834,7 +1834,7 @@ li {
   min-height: var(--control-md);
   align-items: center;
   gap: var(--space-2);
-  padding: 10px var(--space-4);
+  padding: 0 var(--space-4);
   background: var(--surface-sunk);
   box-shadow: var(--shadow-well);
   border: var(--stroke-line) solid var(--edge);
@@ -1850,6 +1850,7 @@ li {
 }
 .pk-field__input {
   flex: 1;
+  min-height: var(--touch-target);
   min-width: 0;
   color: var(--ink);
   background: transparent;
@@ -3007,11 +3008,12 @@ li {
     text-underline-offset: 4px;
   }
 }
-@media (pointer: coarse) {
-  .pk-landing__link::after {
-    content: "";
-    position: absolute;
-    inset: -14px -6px;
+@media (any-pointer: coarse), (max-width: 719px) {
+  .pk-landing__link {
+    display: inline-flex;
+    min-height: var(--touch-target);
+    min-width: var(--touch-target);
+    align-items: center;
   }
 }
 
@@ -3228,15 +3230,13 @@ li {
   --pk-keep: 0 0 transparent;
   box-shadow: none;
 }
-/* A chip-sized choice and the mark in a bar are drawn small; a finger gets
-   a 44px target all the same. */
-@media (pointer: coarse) {
-  .pk-pick--flat,
-  a.pk-mark {
+/* Keep the compact room choices tappable; the mark has its own real box. */
+@media (any-pointer: coarse), (max-width: 719px) {
+  a.pk-mark { min-height: var(--touch-target); }
+  .pk-pick--flat {
     position: relative;
   }
-  .pk-pick--flat::after,
-  a.pk-mark::after {
+  .pk-pick--flat::after {
     content: "";
     position: absolute;
     inset: -8px -2px;

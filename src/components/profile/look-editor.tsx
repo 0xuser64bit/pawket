@@ -77,12 +77,9 @@ export function LookEditor({
   look,
   shown,
   twin,
-  open = false,
 }: {
   look: PlayerLook;
   shown: boolean;
-  /** Open from the start: the player came here to change it. */
-  open?: boolean;
   /** The pet at home, whose hat or glasses the player can match. */
   twin?: { name: string; wearing: string | null };
 }) {
@@ -136,7 +133,7 @@ export function LookEditor({
   }
 
   return (
-    <details className="pk-fold" open={open}>
+    <details className="pk-fold">
       <summary>
         <span className="title">How you look</span>
         <span key={lookSummary(look)} className="caption pk-faint pk-swap">

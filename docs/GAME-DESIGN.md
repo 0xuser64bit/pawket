@@ -4,6 +4,14 @@
 
 ## 1. Stats & care (locked)
 
+Playground rounds have a Pause/Resume control and pause when the page is
+hidden, preserving the round. Catch captures the finger until it lifts;
+hovering before the first tap does not start a round. Copy locks its input
+between patterns and replays the current demonstration after a pause.
+Pairs keeps a completed round until its result is delivered, even across
+pause/resume or a changed render callback. These are interaction rules;
+the scores, seeds, daily XP and program math are unchanged.
+
 - Initial: **72** all vitals (`INITIAL_STAT_VALUE`). Range 0–100, rounded, clamped.
 - Cooldown: **30 min per action** (`CARE_COOLDOWN_SECONDS`), client-validated + on-chain 6002.
 - No death state; floor 0.

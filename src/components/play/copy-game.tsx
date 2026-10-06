@@ -9,7 +9,7 @@ const BEAN_NAMES = ["Sun bean", "Pool bean", "Sprout bean", "Copper bean"];
 /** Where each bean sits in the arch, and which way the pet looks at it. */
 const BEAN_LOOK = [-1, -0.4, 0.4, 1];
 
-type Phase = "ready" | "show" | "turn" | "wrong";
+type Phase = "ready" | "show" | "turn" | "copied" | "wrong";
 
 /**
  * Copy, drawn: one giant paw. The pet sits in its centre pad and taps the
@@ -23,6 +23,7 @@ export function CopyGame({
   wearing,
   sky,
   seed,
+  paused = false,
   onFinish,
 }: {
   form: PetForm;
@@ -30,6 +31,7 @@ export function CopyGame({
   wearing: string | null;
   sky: Sky;
   seed: number;
+  paused?: boolean;
   onFinish: (score: number) => void;
 }) {
   const [phase, setPhase] = useState<Phase>("ready");
@@ -40,6 +42,7 @@ export function CopyGame({
   const [said, setSaid] = useState("");
   const pattern = copyPattern(seed, length);
   const timers = useRef<number[]>([]);
+  const finished = useRef(false);
 
   const later = (ms: number, run: () => void) => {
     timers.current.push(window.setTimeout(run, ms));
@@ -48,7 +51,7 @@ export function CopyGame({
 
   // The pet shows the pattern, one bean at a time, then hands it over.
   useEffect(() => {
-    if (phase !== "show") return;
+    if (phase !== "show" || paused) return;
     const on = showMs(length);
     const gap = Math.round(on * 0.45);
     pattern.forEach((bean, i) => {
@@ -63,12 +66,25 @@ export function CopyGame({
       setTaps([]);
       setSaid("Your turn.");
     });
+    return () => {
+      timers.current.forEach((id) => window.clearTimeout(id));
+      timers.current = [];
+    };
     // The pattern is a function of seed and length.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, length, seed]);
+  }, [phase, length, seed, paused]);
+
+  useEffect(() => {
+    if (paused || finished.current || (phase !== "copied" && phase !== "wrong")) return;
+    const timer = window.setTimeout(() => {
+      if (phase === "wrong") { finished.current = true; onFinish(length - 1); }
+      else { setFace("happy"); setLength(length + 1); setPhase("show"); }
+    }, phase === "wrong" ? 1100 : 700);
+    return () => window.clearTimeout(timer);
+  }, [phase, paused, length, onFinish]);
 
   function tap(bean: number) {
-    if (phase !== "turn") return;
+    if (phase !== "turn" || paused || taps.length >= pattern.length) return;
     const next = [...taps, bean];
     setTaps(next);
     setLit(bean);
@@ -79,25 +95,21 @@ export function CopyGame({
       setFace("lonely");
       setPhase("wrong");
       setSaid(`Not that one. You copied ${length - 1}.`);
-      later(1100, () => onFinish(length - 1));
       return;
     }
     blip(BEAN_NOTES[bean], 160, "sine", 0.06);
     if (answer === "done") {
+      setPhase("copied");
       setFace("radiant");
       setSaid(`${length} copied.`);
-      later(700, () => {
-        setFace("happy");
-        setLength(length + 1);
-        setPhase("show");
-      });
     }
   }
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const bean = Number(event.key) - 1;
-      if (bean >= 0 && bean < BEANS) tap(bean);
+      if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (bean >= 0 && bean < BEANS && !paused) { event.preventDefault(); tap(bean); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -113,7 +125,7 @@ export function CopyGame({
             type="button"
             className={["pk-paws__bean", `pk-paws__bean--${bean}`, lit === bean && "pk-paws__bean--lit"].filter(Boolean).join(" ")}
             aria-label={`${BEAN_NAMES[bean]} (${bean + 1})`}
-            disabled={phase !== "turn"}
+            disabled={phase !== "turn" || paused}
             onClick={() => tap(bean)}
           />
         ))}

@@ -19,12 +19,14 @@ export function HopGame({
   temper,
   wearing,
   seed,
+  paused = false,
   onFinish,
 }: {
   form: PetForm;
   temper: Temper;
   wearing: string | null;
   seed: number;
+  paused?: boolean;
   onFinish: (score: number) => void;
 }) {
   const [state, setState] = useState<HopState>(() => startHop(seed));
@@ -33,7 +35,7 @@ export function HopGame({
   const wantsJump = useRef(false);
   const finished = useRef(false);
 
-  useFrame(running, (dt) => {
+  useFrame(running && !paused, (dt) => {
     const next = stepHop(live.current, dt, wantsJump.current);
     wantsJump.current = false;
     live.current = next;
@@ -54,7 +56,7 @@ export function HopGame({
   }, [state, onFinish]);
 
   function jump() {
-    if (state.over) return;
+    if (state.over || paused) return;
     if (!running) setRunning(true);
     wantsJump.current = true;
   }

@@ -17,12 +17,14 @@ export function CatchGame({
   temper,
   wearing,
   seed,
+  paused = false,
   onFinish,
 }: {
   form: PetForm;
   temper: Temper;
   wearing: string | null;
   seed: number;
+  paused?: boolean;
   onFinish: (score: number) => void;
 }) {
   const [state, setState] = useState<CatchState>(() => startCatch(seed));
@@ -35,7 +37,7 @@ export function CatchGame({
 
   const live = useRef(state);
 
-  useFrame(running, (dt) => {
+  useFrame(running && !paused, (dt) => {
     if (keys.current.left) target.current = Math.max(0, target.current - dt * 1.4);
     if (keys.current.right) target.current = Math.min(1, target.current + dt * 1.4);
     const next = stepCatch(live.current, dt, target.current);
@@ -58,10 +60,10 @@ export function CatchGame({
   }, [state, onFinish]);
 
   function aim(event: PointerEvent<HTMLDivElement>) {
+    if (paused || state.over) return;
     const box = field.current?.getBoundingClientRect();
     if (!box) return;
-    target.current = (event.clientX - box.left) / box.width;
-    if (!running && !state.over) setRunning(true);
+    target.current = Math.max(0, Math.min(1, (event.clientX - box.left) / box.width));
   }
 
   function onKey(event: KeyboardEvent<HTMLDivElement>, down: boolean) {
@@ -83,8 +85,9 @@ export function CatchGame({
       tabIndex={0}
       role="application"
       aria-label={`Catch. Move with the pointer or the arrow keys. ${state.score} caught, ${left} seconds left.`}
-      onPointerMove={aim}
-      onPointerDown={aim}
+      onPointerMove={(event) => { if (running) aim(event); }}
+      onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); aim(event); if (!state.over) setRunning(true); }}
+      onBlur={() => { keys.current = { left: false, right: false }; }}
       onKeyDown={(event) => onKey(event, true)}
       onKeyUp={(event) => onKey(event, false)}
     >

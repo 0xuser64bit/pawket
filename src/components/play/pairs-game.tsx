@@ -31,12 +31,14 @@ export function PairsGame({
   temper,
   wearing,
   seed,
+  paused = false,
   onFinish,
 }: {
   form: PetForm;
   temper: Temper;
   wearing: string | null;
   seed: number;
+  paused?: boolean;
   onFinish: (score: number) => void;
 }) {
   const [state, setState] = useState<PairsState>(() => dealPairs(seed));
@@ -47,23 +49,24 @@ export function PairsGame({
 
   // A miss is shown for a moment, then turned back.
   useEffect(() => {
-    if (state.open.length !== 2) return;
+    if (state.open.length !== 2 || paused) return;
     const timer = window.setTimeout(() => {
       setState((current) => settle(current));
       setFace("happy");
     }, 760);
     return () => window.clearTimeout(timer);
-  }, [state.open]);
+  }, [state.open, paused]);
 
   useEffect(() => {
     if (state.over && !finished.current) {
-      finished.current = true;
-      const timer = window.setTimeout(() => onFinish(pairsScore(state)), 500);
+      if (paused) return;
+      const timer = window.setTimeout(() => { finished.current = true; onFinish(pairsScore(state)); }, 500);
       return () => window.clearTimeout(timer);
     }
-  }, [state, onFinish]);
+  }, [state, onFinish, paused]);
 
   function flip(index: number) {
+    if (paused) return;
     const next = flipCard(state, index);
     if (next === state) return;
     if (next.moves > state.moves) {

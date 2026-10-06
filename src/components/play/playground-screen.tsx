@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   Banner,
   Button,
@@ -77,6 +77,8 @@ export function PlaygroundScreen() {
   const [daily, setDaily] = useState(true);
   const [round, setRound] = useState(randomSeed);
   const [outcome, setOutcome] = useState<Outcome>();
+  const [paused, setPaused] = useState(false);
+  const field = useRef<HTMLDivElement>(null);
   const [sound, setSound] = useSound();
   const today = utcDay(new Date());
   const stored = useSyncExternalStore(noop, () => JSON.stringify([readBest(), readDaily(today)]), () => "[{},{}]");
@@ -89,10 +91,20 @@ export function PlaygroundScreen() {
   function play(id: GameId, asDaily = daily) {
     sender.reset();
     setOutcome(undefined);
+    setPaused(false);
     setDaily(asDaily);
     setRound(randomSeed());
     setGame(id);
   }
+
+  useEffect(() => {
+    const hide = () => { if (document.hidden) setPaused(true); };
+    document.addEventListener("visibilitychange", hide);
+    return () => document.removeEventListener("visibilitychange", hide);
+  }, []);
+  useEffect(() => {
+    if (game) field.current?.scrollIntoView({ block: "center", behavior: "instant" });
+  }, [game]);
 
   const finish = useCallback(
     (score: number) => {
@@ -179,11 +191,19 @@ export function PlaygroundScreen() {
               </Row>
               <p className="body-sm pk-muted">{current.line}</p>
             </div>
-            <Button label="All games" tone="ghost" size="sm" icon="left" disabled={sender.busy} onClick={() => setGame(null)} />
+            <Row gap={2} wrap>
+              {!outcome ? <Button label={paused ? "Resume round" : "Pause round"} tone="quiet" size="sm" onClick={() => setPaused(!paused)} /> : null}
+              <Button label="All games" tone="ghost" size="sm" icon="left" disabled={sender.busy} onClick={() => setGame(null)} />
+            </Row>
           </div>
           <div className="pk-play">
-            <div className="pk-play__field">
-              <Field key={`${current.id}-${seed}-${round}`} game={current.id} pet={pet} seed={seed} onFinish={finish} />
+            <div ref={field} className="pk-play__field">
+              <div className="pk-play__stage">
+                <div inert={paused && !outcome}>
+                  <Field key={`${current.id}-${seed}-${round}`} game={current.id} pet={pet} seed={seed} paused={paused} onFinish={finish} />
+                </div>
+                {paused && !outcome ? <div className="pk-play__pause" role="status"><p className="title">Round paused</p><Button label="Keep playing" tone="pool" onClick={() => setPaused(false)} /></div> : null}
+              </div>
             </div>
             {outcome ? (
               <Result
@@ -213,12 +233,12 @@ export function PlaygroundScreen() {
   );
 }
 
-function Field({ game, pet, seed, onFinish }: { game: GameId; pet: GuestPet; seed: number; onFinish: (score: number) => void }) {
+function Field({ game, pet, seed, paused, onFinish }: { game: GameId; pet: GuestPet; seed: number; paused: boolean; onFinish: (score: number) => void }) {
   const { form, temper, wearing } = petLook(pet);
-  if (game === "catch") return <CatchGame form={form} temper={temper} wearing={wearing} seed={seed} onFinish={onFinish} />;
-  if (game === "hop") return <HopGame form={form} temper={temper} wearing={wearing} seed={seed} onFinish={onFinish} />;
-  if (game === "pairs") return <PairsGame form={form} temper={temper} wearing={wearing} seed={seed} onFinish={onFinish} />;
-  return <CopyGame form={form} temper={temper} wearing={wearing} sky={SPECIES_SKY[pet.species]} seed={seed} onFinish={onFinish} />;
+  if (game === "catch") return <CatchGame form={form} temper={temper} wearing={wearing} seed={seed} paused={paused} onFinish={onFinish} />;
+  if (game === "hop") return <HopGame form={form} temper={temper} wearing={wearing} seed={seed} paused={paused} onFinish={onFinish} />;
+  if (game === "pairs") return <PairsGame form={form} temper={temper} wearing={wearing} seed={seed} paused={paused} onFinish={onFinish} />;
+  return <CopyGame form={form} temper={temper} wearing={wearing} sky={SPECIES_SKY[pet.species]} seed={seed} paused={paused} onFinish={onFinish} />;
 }
 
 /** The four games as cards, each drawn with the player's own pet in it. */

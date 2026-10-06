@@ -5696,6 +5696,18 @@ details > .pk-risks {
 .pk-play__field {
   min-width: 0;
 }
+.pk-play__stage { position: relative; }
+.pk-play__pause {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-4);
+  border-radius: var(--radius-room);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  color: var(--ink);
+}
 
 /* Pairs: twelve cards on the table and the pet beside them. A card turns
    over in 3D on the press curve; under reduced motion it simply shows its

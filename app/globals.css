@@ -5118,6 +5118,10 @@ details > .pk-risks {
   color: var(--ink);
   box-shadow: var(--shadow-sticker-sm);
 }
+@media (max-width: 719px) {
+  .pk-look__tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--stroke-line); }
+  .pk-look__tabs .pk-choice { padding-inline: var(--stroke-hair); font-size: 12px; }
+}
 
 /* ------------------------------------------------------- the wallet layer
    An address or a signature is a fact: mono, truncated no shorter than four

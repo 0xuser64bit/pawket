@@ -155,9 +155,23 @@ test.describe("with reduced motion", () => {
 });
 
 test("nothing scrolls sideways on a small phone with the look open", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 320, height: 700 });
   await adopt(page);
   await page.goto("/profile#look");
+  const tabs = page.getByRole("tablist", { name: "Parts of your look" });
+  await expect(tabs).toBeVisible();
+  const targets = await tabs.getByRole("tab").evaluateAll((els) => els.map((el) => {
+    const { width, height } = el.getBoundingClientRect();
+    return { name: el.textContent, y: (el as HTMLElement).offsetTop, width, height, content: el.scrollWidth, client: el.clientWidth };
+  }));
+  expect(targets).toHaveLength(5);
+  for (const box of targets) {
+    expect(box.y, box.name ?? "").toBe(targets[0].y);
+    expect(box.width, box.name ?? "").toBeGreaterThanOrEqual(44);
+    expect(box.height, box.name ?? "").toBeGreaterThanOrEqual(44);
+    expect(box.content, box.name ?? "").toBeLessThanOrEqual(box.client);
+  }
   for (const part of ["Body", "Hair", "Clothes", "Shoes", "Extras"]) {
     await page.getByRole("tab", { name: part }).click();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

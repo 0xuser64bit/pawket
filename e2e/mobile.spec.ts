@@ -155,6 +155,7 @@ test("a long pet name keeps the sheet heading, close control and footer inside a
 });
 
 test("room settings show two compact choices per row and remember a touch selection", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 320, height: 650 });
   await page.goto("/profile?tab=settings#shelf");
   const rooms = page.getByRole("radiogroup", { name: "Rooms" });

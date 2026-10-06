@@ -138,7 +138,8 @@ keyboard opens; native fields and scroll padding keep focused controls clear
 of the dock.
 
 Room settings use two compact previews per row on a phone, with Follow my
-device across the top. A failed server read has Try again, with a disabled
+device across the top. All five look tabs share one row, with one keyboard
+stop and arrow-key navigation. A failed server read has Try again, with a disabled
 reading state; it refreshes the records without resetting the player's
 local state. Copy and share failures leave a selectable link or address.
 

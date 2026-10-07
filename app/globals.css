@@ -4556,6 +4556,27 @@ li {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+/* On a phone the book is two stickers to a row, each a disc over its name,
+   so seventeen read as a page of a sticker book rather than a long list. */
+@media (max-width: 719px) {
+  .pk-stickers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pk-stickers > .pk-sticker {
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-3);
+    text-align: center;
+  }
+  .pk-stickers .pk-sticker__words {
+    align-items: center;
+  }
+  .pk-stickers .pk-sticker__words > .title {
+    font-size: 15px;
+    line-height: 20px;
+  }
+}
 .pk-sticker {
   --pk-tint: var(--sun-soft);
   --pk-glyph: var(--sun-text);

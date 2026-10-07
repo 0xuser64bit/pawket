@@ -119,8 +119,10 @@ the send path are unchanged.
 | Desktop at 1280×800: the dock covered the care buttons | Care hidden on a laptop | The room gives up height on short screens |
 | three.js read every shader's logs on arrival | A long main-thread freeze on reaching Home | Production skips the check (three.js's advice); measured gain needs a real GPU (headless software GL has no parallel compile) |
 
-Smaller fixes: look-editor parts in the tabs' trough and six skin tones per
-row, the sticker book two to a row, the profile's empty pocket beside the
+Smaller fixes: the park's list of everyone three faces to a row on a
+phone, a poll's answers at a finger's height with a press, the round's whole
+mark as its link, going home and to a new guild arriving with the matching
+motion, look-editor parts in the tabs' trough and six skin tones per row, the sticker book two to a row, the profile's empty pocket beside the
 pets, meter readouts that keep a figure with its unit, a guild's facts apart
 from its actions, the not-found screen's mark and notch clearance, a guild
 placeholder that is not a taken name, wardrobe copy for touch, and title

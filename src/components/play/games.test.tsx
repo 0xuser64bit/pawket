@@ -3,7 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { copyPattern } from "@/lib/play/copy";
 import { dealPairs } from "@/lib/play/pairs";
 import { CopyGame } from "./copy-game";
-import { PairsGame } from "./pairs-game";
+import { PairsGame, facesFor } from "./pairs-game";
+import { WEARABLES } from "@/lib/closet/catalog";
 
 const look = { form: "cat" as const, temper: "cozy" as const, wearing: null, seed: 42 };
 const beans = ["Sun bean (1)", "Pool bean (2)", "Sprout bean (3)", "Copper bean (4)"];
@@ -65,5 +66,16 @@ describe("round lifecycle", () => {
     game.rerender(<PairsGame {...look} onFinish={finish} />);
     act(() => vi.advanceTimersByTime(1000));
     expect(finish).not.toHaveBeenCalled();
+  });
+});
+
+describe("Pairs faces", () => {
+  it("deals six pieces of six different kinds, so no two pairs look alike", () => {
+    const kindOf = new Map(WEARABLES.map((item) => [item.id, item.kind]));
+    for (let seed = 0; seed < 300; seed++) {
+      const faces = facesFor(seed);
+      expect(faces).toHaveLength(6);
+      expect(new Set(faces.map((id) => kindOf.get(id))).size).toBe(6);
+    }
   });
 });

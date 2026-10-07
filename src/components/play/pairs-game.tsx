@@ -7,17 +7,25 @@ import { PAIRS, dealPairs, flipCard, pairsScore, settle, type PairsState } from 
 import { nextRandom } from "@/lib/play/random";
 import { blip } from "@/lib/play/sound";
 
-/** Six pieces of the wardrobe for this round's faces, picked by the seed. */
-function facesFor(seed: number): string[] {
-  const ids = WEARABLES.map((item) => item.id);
+/**
+ * Six pieces of the wardrobe for this round's faces, picked by the seed —
+ * one of each kind, so no two pairs look alike (a paper crown beside a gold
+ * one, a red collar beside a bell collar) and a miss is never the art's fault.
+ */
+export function facesFor(seed: number): string[] {
+  const items = [...WEARABLES];
   let state = seed ^ 0x5f3759df;
-  for (let i = ids.length - 1; i > 0; i--) {
+  for (let i = items.length - 1; i > 0; i--) {
     let r: number;
     [r, state] = nextRandom(state);
     const j = Math.floor(r * (i + 1));
-    [ids[i], ids[j]] = [ids[j], ids[i]];
+    [items[i], items[j]] = [items[j], items[i]];
   }
-  return ids.slice(0, PAIRS);
+  const kinds = new Set<string>();
+  return items
+    .filter((item) => !kinds.has(item.kind) && Boolean(kinds.add(item.kind)))
+    .slice(0, PAIRS)
+    .map((item) => item.id);
 }
 
 /**

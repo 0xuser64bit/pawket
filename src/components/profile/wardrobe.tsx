@@ -119,7 +119,9 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
             <Stack gap={3}>
               <SectionLabel count={`${open} / ${free.length}`}>Free to wear</SectionLabel>
               <p className="body-sm pk-muted">
-                One at a time. Point at a piece to try it on; tap it to wear it. It changes how {pet.name} looks,
+                One at a time.{" "}
+                <span className="pk-if-hover">Point at a piece to try it on; click it to wear it.</span>
+                <span className="pk-if-touch">Tap a piece and {pet.name} wears it.</span> It changes how {pet.name} looks,
                 never a vital, a cooldown or a score. A few are earned by {pet.name}&apos;s stickers, never bought.
                 {chain ? " On Solana, changing it is a signed record." : ""}
               </p>

@@ -1058,6 +1058,19 @@ li {
 .pk-muted {
   color: var(--ink-soft);
 }
+/* Words about the hand in use: pointing where a pointer can hover, tapping
+   where a finger cannot. */
+.pk-if-hover {
+  display: none;
+}
+@media (hover: hover) {
+  .pk-if-hover {
+    display: inline;
+  }
+  .pk-if-touch {
+    display: none;
+  }
+}
 .pk-faint {
   color: var(--ink-faint);
 }

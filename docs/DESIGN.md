@@ -336,7 +336,10 @@ shapes, one outline, the palette — never a grid of identical pockets:
   bench, a path, the sun or the moon; the pets out today (then the most
   cared for) stand on the lawn as figurines, front row by care, depth by
   scale, each wandering a few steps at a pace from its address. Name tags
-  are `pool` when out today. Server-rendered, CSS motion only.
+  are `pool` when out today. Server-rendered, CSS motion only. A phone's
+  park stands its eight on spots of its own, so every name tag clears the
+  heads in front of it, and its list of everyone is three faces to a row —
+  name, level and crest; the counts are on each Passport.
 - **The playground** (`src/components/play/`). Catch is a garden, Hop is
   the park path with drifting hills, Copy is one giant paw whose toe beans
   are the buttons and whose centre pad holds the pet. The pet is drawn

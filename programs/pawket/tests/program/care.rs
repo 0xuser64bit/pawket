@@ -2,6 +2,7 @@
 
 use anchor_lang::error::ErrorCode;
 use pawket::{decayed, utc_day, CareActionType, CareMark, PawketError};
+use solana_keypair::Keypair;
 use solana_signer::Signer;
 
 use crate::harness::*;
@@ -74,7 +75,23 @@ fn a_passport_only_records_its_own_pet() {
     let mut ix = care_ix(&owner.pubkey(), &pepper, CareActionType::Feed);
     ix.accounts[2].pubkey = passport_pda(&nib);
 
-    expect_anchor(&env.send(&[ix], &owner, &[]), ErrorCode::ConstraintHasOne);
+    expect_anchor(&env.send(&[ix], &owner, &[]), ErrorCode::ConstraintSeeds);
+}
+
+#[test]
+fn a_passport_counts_only_at_its_own_address() {
+    let mut env = Env::new();
+    let owner = env.player();
+    let pet = env.adopt(&owner, "Pepper");
+    // The pet's own passport, word for word, kept somewhere else: only its address is wrong.
+    let elsewhere = Keypair::new().pubkey();
+    let copy = env.passport(&pet);
+    env.forge(&elsewhere, &copy);
+    let mut ix = care_ix(&owner.pubkey(), &pet, CareActionType::Feed);
+    ix.accounts[2].pubkey = elsewhere;
+
+    expect_anchor(&env.send(&[ix], &owner, &[]), ErrorCode::ConstraintSeeds);
+    assert_eq!(env.passport(&pet).care_count, 0);
 }
 
 #[test]

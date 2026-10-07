@@ -1150,7 +1150,7 @@ pub struct Care<'info> {
     pub owner: Signer<'info>,
     #[account(mut, has_one = owner @ PawketError::NotPetOwner)]
     pub pet: Account<'info, Pet>,
-    #[account(mut, has_one = pet)]
+    #[account(mut, seeds = [PASSPORT_SEED, pet.key().as_ref()], bump = passport.bump)]
     pub passport: Account<'info, PetPassport>,
 }
 
@@ -1195,7 +1195,7 @@ pub struct JoinGuild<'info> {
     pub payer: Signer<'info>,
     #[account(has_one = owner @ PawketError::NotPetOwner)]
     pub pet: Account<'info, Pet>,
-    #[account(mut)]
+    #[account(mut, seeds = [GUILD_SEED, guild.slug.as_bytes()], bump = guild.bump)]
     pub guild: Account<'info, Guild>,
     #[account(
         init,
@@ -1339,7 +1339,7 @@ pub struct CareByDevice<'info> {
     pub wallet: Account<'info, PawketWallet>,
     #[account(mut, constraint = pet.owner == wallet.owner @ PawketError::NotPetOwner)]
     pub pet: Account<'info, Pet>,
-    #[account(mut, has_one = pet)]
+    #[account(mut, seeds = [PASSPORT_SEED, pet.key().as_ref()], bump = passport.bump)]
     pub passport: Account<'info, PetPassport>,
 }
 
@@ -1490,7 +1490,7 @@ pub struct JoinGuildByDevice<'info> {
     pub payer: Signer<'info>,
     #[account(constraint = pet.owner == wallet.owner @ PawketError::NotPetOwner)]
     pub pet: Account<'info, Pet>,
-    #[account(mut)]
+    #[account(mut, seeds = [GUILD_SEED, guild.slug.as_bytes()], bump = guild.bump)]
     pub guild: Account<'info, Guild>,
     #[account(
         init,

@@ -363,14 +363,32 @@
         },
         {
           "name": "pet",
-          "writable": true,
-          "relations": [
-            "passport"
-          ]
+          "writable": true
         },
         {
           "name": "passport",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  115,
+                  115,
+                  112,
+                  111,
+                  114,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -1285,14 +1303,32 @@
         },
         {
           "name": "pet",
-          "writable": true,
-          "relations": [
-            "passport"
-          ]
+          "writable": true
         },
         {
           "name": "passport",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  115,
+                  115,
+                  112,
+                  111,
+                  114,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -1347,14 +1383,32 @@
         },
         {
           "name": "pet",
-          "writable": true,
-          "relations": [
-            "passport"
-          ]
+          "writable": true
         },
         {
           "name": "passport",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  115,
+                  115,
+                  112,
+                  111,
+                  114,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -1626,7 +1680,26 @@
         },
         {
           "name": "guild",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  117,
+                  105,
+                  108,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guild.slug",
+                "account": "Guild"
+              }
+            ]
+          }
         },
         {
           "name": "member",
@@ -1716,7 +1789,26 @@
         },
         {
           "name": "guild",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  117,
+                  105,
+                  108,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guild.slug",
+                "account": "Guild"
+              }
+            ]
+          }
         },
         {
           "name": "member",
@@ -2065,14 +2157,32 @@
         },
         {
           "name": "pet",
-          "writable": true,
-          "relations": [
-            "passport"
-          ]
+          "writable": true
         },
         {
           "name": "passport",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  115,
+                  115,
+                  112,
+                  111,
+                  114,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
         }
       ],
       "args": [

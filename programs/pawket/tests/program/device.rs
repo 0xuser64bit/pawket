@@ -3,8 +3,8 @@
 //! paying the fee and the rent exactly as it does for the owner, and the owner signing nothing.
 //! It never acts for anyone else's pet, past its limit, or with money.
 
-use anchor_lang::Discriminator;
-use pawket::{instruction as ix, CareActionType, PawketError, CHECK_IN_EARLY_SECONDS, DEVICE_FLOAT_LAMPORTS};
+use anchor_lang::{error::ErrorCode, Discriminator};
+use pawket::{instruction as ix, CareActionType, Guestbook, PawketError, CHECK_IN_EARLY_SECONDS, DEVICE_FLOAT_LAMPORTS};
 use solana_keypair::Keypair;
 use solana_signer::Signer;
 
@@ -187,4 +187,35 @@ fn a_device_with_no_float_acts_only_while_someone_else_pays_its_fee() {
     ok(env.send(&[link_ix(&d.owner.pubkey(), &d.device.pubkey(), week, 50)], &d.sponsor, &[&d.owner, &d.device]));
     assert_eq!(env.lamports(&d.device.pubkey()), DEVICE_FLOAT_LAMPORTS);
     ok(env.send(&[care_by_device_ix(&d.device.pubkey(), &d.owner.pubkey(), &d.pet, CareActionType::Feed)], &d.device, &[]));
+}
+
+#[test]
+fn a_device_is_held_to_the_same_addresses_its_owner_is() {
+    let mut env = Env::new();
+    let d = linked(&mut env, 50);
+    let (owner, sponsor) = (d.owner.pubkey(), d.sponsor.pubkey());
+
+    // The pet's passport, word for word, somewhere else.
+    let elsewhere = Keypair::new().pubkey();
+    let copy = env.passport(&d.pet);
+    env.forge(&elsewhere, &copy);
+    let mut care = care_ix(&owner, &d.pet, CareActionType::Feed);
+    care.accounts[2].pubkey = elsewhere;
+    expect_anchor(&d.send(&mut env, care, ix::CareByDevice::DISCRIMINATOR), ErrorCode::ConstraintSeeds);
+
+    // A guild, word for word, somewhere else.
+    let founder = env.player();
+    let saffron = env.adopt(&founder, "Saffron");
+    ok(env.send(&[found_ix(&founder.pubkey(), &founder.pubkey(), &saffron, "sunbeam-club")], &founder, &[]));
+    let fake = Keypair::new().pubkey();
+    let guild = env.guild("sunbeam-club");
+    env.forge(&fake, &guild);
+    let join = join_ix(&owner, &sponsor, &d.pet, &fake);
+    expect_anchor(&d.send(&mut env, join, ix::JoinGuildByDevice::DISCRIMINATOR), ErrorCode::ConstraintSeeds);
+
+    // At Saffron's guestbook address, a book that names the device owner's pet.
+    let forged = Guestbook { pet: d.pet, waves: 0, recent: Default::default(), bump: 0 };
+    env.forge(&guestbook_pda(&saffron), &forged);
+    let wave = wave_ix(&owner, &sponsor, &saffron);
+    expect_anchor(&d.send(&mut env, wave, ix::WaveByDevice::DISCRIMINATOR), ErrorCode::ConstraintRaw);
 }

@@ -1,5 +1,6 @@
 use anchor_lang::{Discriminator, Space};
 use pawket::{Guild, GuildMember, PawketError, MAX_MOTTO_LEN};
+use solana_keypair::Keypair;
 use solana_signer::Signer;
 
 use crate::harness::*;
@@ -133,6 +134,24 @@ fn the_rent_goes_back_only_to_whoever_paid_it() {
     let result = env.send(&[leave_ix(&owner.pubkey(), &pet, &guild_pda("sunbeam-club"), &thief.pubkey())], &owner, &[]);
     expect_anchor(&result, anchor_lang::error::ErrorCode::ConstraintHasOne);
     assert!(env.exists(&member_pda(&pet)));
+}
+
+#[test]
+fn a_pet_joins_a_guild_only_at_the_guilds_own_address() {
+    let mut env = Env::new();
+    let founder = env.player();
+    let joiner = env.player();
+    let saffron = env.adopt(&founder, "Saffron");
+    let pepper = env.adopt(&joiner, "Pepper");
+    ok(env.send(&[found_ix(&founder.pubkey(), &founder.pubkey(), &saffron, "sunbeam-club")], &founder, &[]));
+    // The guild, word for word, somewhere else.
+    let elsewhere = Keypair::new().pubkey();
+    let copy = env.guild("sunbeam-club");
+    env.forge(&elsewhere, &copy);
+
+    let result = env.send(&[join_ix(&joiner.pubkey(), &joiner.pubkey(), &pepper, &elsewhere)], &joiner, &[]);
+    expect_anchor(&result, anchor_lang::error::ErrorCode::ConstraintSeeds);
+    assert!(!env.exists(&member_pda(&pepper)));
 }
 
 #[test]

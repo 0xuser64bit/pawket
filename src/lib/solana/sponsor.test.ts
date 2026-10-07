@@ -1,5 +1,6 @@
 // @vitest-environment node
 import {
+  AccountRole,
   appendTransactionMessageInstructions,
   compileTransaction,
   createNoopSigner,
@@ -140,7 +141,7 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(asAdopter, sponsor.address)).toMatchObject({ ok: false });
   });
 
-  it("refuses a priority fee, the one way to spend the float faster", async () => {
+  it("refuses a priority fee, one way to spend the float faster", async () => {
     const priority: Instruction = {
       programAddress: "ComputeBudget111111111111111111111111111111" as Instruction["programAddress"],
       accounts: [],
@@ -149,6 +150,17 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(await built(() => [priority, care()]), sponsor.address)).toMatchObject({
       ok: false,
     });
+  });
+
+  it("refuses more signatures than a Pawket transaction needs, the other way: each is a fee it pays", async () => {
+    // Anchor takes extra accounts without a word, so a care can carry signers it never reads.
+    const extra = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner()]);
+    const ix = care();
+    const padded = { ...ix, accounts: [...(ix.accounts ?? []), ...extra.map(({ address }) => ({ address, role: AccountRole.READONLY_SIGNER }))] };
+    expect(checkSponsorable(await built(() => [padded]), sponsor.address)).toMatchObject({ ok: false });
+    // Linking a device is the most any asks: the sponsor, the owner and the device.
+    const link = await built(() => [getLinkDeviceInstruction({ owner, wallet: WALLET, device: DEVICE, expiresAt: 1_790_848_800, dailyActions: 200 })]);
+    expect(checkSponsorable(link, sponsor.address)).toEqual({ ok: true, kinds: ["link"] });
   });
 
   it("pays the rent of a new guild and of a pet's place in one, and takes it back when the pet leaves", async () => {

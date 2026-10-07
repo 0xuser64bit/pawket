@@ -213,11 +213,14 @@ small float — not the upgrade authority. `checkSponsorable` signs only when:
   `vote` or `wave` (rent it pays), or `leave_guild`'s `payer` (rent it gets
   back) — one account later in a device's twin;
 - there are no lookup tables and no compute-budget instructions (a priority
-  fee is the one way to spend the float faster).
+  fee spends the float faster);
+- it carries at most three signatures — the sponsor, the owner and a device
+  being linked — since each is a fee the sponsor pays, and Anchor takes extra
+  signer accounts without a word.
 
-It signs before the player and does not send: the client sends, with
-preflight on, so a transaction that would fail lands nothing and costs the
-float nothing.
+It signs before the player and does not send. Pawket's client sends with
+preflight on, so its own failures land nothing; a caller who skips preflight
+can land one that fails, and the float pays its fee, inside the limits below.
 
 Rent — an adoption, a founding, a join, a keepsake, a closet, an event, an RSVP, a poll, a ballot or a guestbook — is limited to 20 an hour per caller (an
 IP for the web app, a wallet for a Blink) and 120 an hour in all, which

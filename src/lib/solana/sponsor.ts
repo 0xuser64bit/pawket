@@ -20,8 +20,9 @@ import { DEVICE_VARIANTS, PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID, type PawketI
  * `join_guild`, `open_wallet`, `buy` (the closet, never the price),
  * `create_event`, `rsvp`, `create_poll`, `vote` and `wave`, or as the account
  * `leave_guild` hands that rent back to. A compute-budget instruction is
- * refused too — a priority fee is the one way a caller could spend the float
- * faster.
+ * refused too, and more signatures than any Pawket transaction needs: a
+ * priority fee and a padding of signers are the ways a caller could spend
+ * the float faster.
  *
  * A linked device's action (`*_by_device`) is sponsored as its owner's would
  * be: the same kind, with the device and the Pawket Wallet where the owner
@@ -127,6 +128,11 @@ const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
 export const RENT_KINDS: readonly SponsoredKind[] = ["adopt", "found", "join", "open-wallet", "buy", "event", "rsvp", "poll", "vote", "wave"];
 
 const MAX_INSTRUCTIONS = 4;
+/**
+ * Each signature is a fee the sponsor pays, and Anchor takes extra signer accounts without a
+ * word: so no more than a Pawket transaction needs — the sponsor, the owner, a device being linked.
+ */
+const MAX_SIGNATURES = 3;
 
 export type SponsorCheck =
   | { ok: true; kinds: SponsoredKind[] }
@@ -168,6 +174,9 @@ export function checkSponsorable(
   }
   const accounts = message.staticAccounts;
   if (accounts[0] !== sponsor) return refuse("The sponsor must be the fee payer.");
+  if (message.header.numSignerAccounts > MAX_SIGNATURES) {
+    return refuse(`At most ${MAX_SIGNATURES} signatures are sponsored.`);
+  }
   if (message.instructions.length === 0 || message.instructions.length > MAX_INSTRUCTIONS) {
     return refuse(`Between 1 and ${MAX_INSTRUCTIONS} instructions are sponsored.`);
   }
@@ -221,8 +230,9 @@ export class SponsorRefusal extends Error {
  * The sponsor's whole job: decode, check, and sign as fee payer — first,
  * before the player. Returns the transaction with the sponsor's signature
  * and every other slot as it came; throws `SponsorRefusal` with the reason.
- * A transaction that would fail is still never paid for: the client sends
- * it with preflight on, and a failed preflight lands nothing.
+ * Pawket's client sends with preflight on, so its own failures land nothing;
+ * a caller who skips preflight can land one that fails, and the float pays
+ * its fee, inside the same limits as any other.
  */
 export async function cosign(
   sponsor: KeyPairSigner,

@@ -4401,11 +4401,37 @@ li {
   color: var(--ink);
   text-decoration: none;
   min-height: 120px;
+  transition:
+    border-color var(--dur-swap) var(--ease-swap),
+    background-color var(--dur-swap) var(--ease-swap),
+    transform var(--dur-press) var(--ease-press);
 }
 @media (hover: hover) {
   .pk-slot--link:hover {
     border-color: var(--edge);
   }
+}
+.pk-slot--link:active {
+  transform: scale(0.98);
+  background: var(--surface-sunk);
+}
+/* The last pocket on a shelf of pets: empty, the same size as the cards
+   beside it, a plus where a pet would sit — so it takes the next place on
+   the shelf, even on a phone. */
+.pk-slot--pocket {
+  grid-column: auto;
+  align-items: center;
+  text-align: center;
+}
+.pk-slot__plus {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-2);
+  border: var(--stroke-line) dashed var(--edge-soft);
+  border-radius: var(--radius-pill);
+  color: var(--ink-soft);
 }
 
 /* The sticker book: a sticker is a disc in its hue's soft tint, its glyph

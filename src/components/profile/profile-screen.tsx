@@ -187,7 +187,7 @@ function Stat({ label, value, unit }: { label: string; value: number; unit?: str
     <div className="pk-stat">
       <dt className="label pk-faint">{label}</dt>
       <dd>
-        <span className="amount-sm">{value}</span>
+        <span className="amount">{value}</span>
         {unit ? <span className="caption pk-faint"> {unit}</span> : null}
       </dd>
     </div>

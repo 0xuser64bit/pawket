@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, ButtonLink, Card, Chip, PetFrame, Row, SectionLabel, Stack } from "@/components/pk";
+import { Button, ButtonLink, Card, Chip, Icon, PetFrame, Row, SectionLabel, Stack } from "@/components/pk";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
@@ -31,7 +31,10 @@ export function PetsShelf({ companion, onConnect }: { companion: CompanionState;
         {companion.all.map((pet) => (
           <PetCard key={pet.id} pet={pet} onChain={onChain.has(pet.id)} home={pet.id === home} onHome={() => bringHome(pet.id)} />
         ))}
-        <Link href="/adopt" className="pk-slot pk-slot--link">
+        <Link href="/adopt" className="pk-slot pk-slot--link pk-slot--pocket">
+          <span className="pk-slot__plus" aria-hidden="true">
+            <Icon name="plus" size={26} />
+          </span>
           <span className="title">Adopt another</span>
           <span className="caption pk-faint">Three taps. They start in {here}, beside the others.</span>
         </Link>
@@ -70,7 +73,7 @@ function PetCard({ pet, onChain, home, onHome }: { pet: GuestPet; onChain: boole
           ) : (
             <Button label="Bring home" icon="home" tone="quiet" size="sm" onClick={onHome} />
           )}
-          <Chip label={onChain ? "On Solana" : `In ${here}`} tone={onChain ? "pool" : undefined} />
+          <Chip label={onChain ? "On Solana" : `In ${here}`} tone={onChain ? "pool" : "plain"} icon={onChain ? "check" : undefined} />
         </Row>
       </div>
     </Card>

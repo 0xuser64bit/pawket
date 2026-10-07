@@ -177,7 +177,9 @@ own back, a screen's content replacing its placeholder — only crossfades, so
 nothing rises twice. The shell, the dock and the toasts are the walls: they
 change in place and ride above the arriving screen. The dock's lit slot is
 one pill that slides to the place chosen on `--ease-spring`, taking bloom as
-it reaches Guilds, and a finger on a place presses its glyph in. A browser
+it reaches Guilds, and a finger on a place presses its glyph in. The place
+you are on, pressed again, scrolls back to its top, as a phone's own tab bar
+does. A browser
 without view transitions shows the new screen at once. Changing rooms
 crossfades the whole page with a view transition where the browser has one. Someone changing clothes is seen
 changing: the player (in 3D and on the flat room's peg doll) and the pet give

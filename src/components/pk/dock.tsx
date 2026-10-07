@@ -37,7 +37,8 @@ export function activePlace(pathname: string): string {
 }
 
 export function Dock() {
-  const active = activePlace(usePathname());
+  const pathname = usePathname();
+  const active = activePlace(pathname);
   const dock = useRef<HTMLElement>(null);
   const pill = useRef<HTMLSpanElement>(null);
 
@@ -86,6 +87,14 @@ export function Dock() {
             href={place.href}
             transitionTypes={["nav-place"]}
             aria-current={on ? "page" : undefined}
+            // The place you are on, pressed again, goes back to its top — as
+            // a phone's own tab bar does — rather than doing nothing.
+            onClick={(event) => {
+              if (pathname !== place.href) return;
+              event.preventDefault();
+              const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+              window.scrollTo({ top: 0, behavior: reduce ? "instant" : "smooth" });
+            }}
             aria-label={place.label}
             className={[
               "pk-dock__item",

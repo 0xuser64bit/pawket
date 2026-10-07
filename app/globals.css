@@ -5039,6 +5039,18 @@ li {
 }
 .pk-poll__option--vote {
   cursor: pointer;
+  transition:
+    transform var(--dur-press) var(--ease-press),
+    border-color var(--dur-swap) var(--ease-swap);
+}
+.pk-poll__option--vote:active:not(:disabled) {
+  transform: scale(0.98);
+  border-color: var(--bloom-edge);
+}
+@media (any-pointer: coarse), (max-width: 719px) {
+  .pk-poll__option {
+    min-height: var(--touch-target);
+  }
 }
 @media (hover: hover) {
   .pk-poll__option--vote:hover:not(:disabled) {

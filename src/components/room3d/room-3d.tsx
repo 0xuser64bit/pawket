@@ -133,6 +133,10 @@ export default memo(function Room3D(props: Room3DProps) {
       gl={{ antialias: true, powerPreference: "high-performance" }}
       style={{ touchAction: "pan-y" }}
       onCreated={({ gl }) => {
+        // Asking a shader for its log waits for it to finish compiling, which
+        // turns the room's async compile back into a long freeze on arrival.
+        // Development keeps the check, as three.js advises; production skips it.
+        gl.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
         gl.domElement.style.touchAction = "pan-y";
         gl.domElement.addEventListener("webglcontextlost", (event) => {
           event.preventDefault();

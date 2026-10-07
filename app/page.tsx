@@ -83,7 +83,7 @@ export default function LandingPage() {
           <span className="pk-landing__theme--head">
             <ThemeButton />
           </span>
-          <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />
+          <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" className="pk-landing__adopt" />
         </div>
       </header>
 
@@ -91,22 +91,22 @@ export default function LandingPage() {
         <section className="pk-band pk-landing__hero">
           <div className="pk-hero">
             <Stack gap={6}>
-              <div>
+              <div className="pk-hero__chip">
                 <Chip label="Live on Solana devnet" tone="pool" icon="check" />
               </div>
-              <h1 className="display-hero" style={{ maxWidth: "12ch" }}>
+              <h1 className="display-hero pk-hero__title" style={{ maxWidth: "12ch" }}>
                 Raise a pet. Keep every paw print.
               </h1>
-              <p className="body-lg pk-muted" style={{ maxWidth: "46ch" }}>
-                Adopt a luna cat, a moss pup or a cloud bun. Feed them, dress them, play three little
+              <p className="body-lg pk-muted pk-hero__lede" style={{ maxWidth: "46ch" }}>
+                Adopt a luna cat, a moss pup or a cloud bun. Feed them, dress them, play four little
                 games together — they grow because you show up, not because you spent more. Keep them
                 on Solana, and every care becomes a record nobody can erase.
               </p>
-              <Row gap={3} wrap>
+              <div className="pk-hero__go">
                 <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" size="lg" />
                 <ButtonLink label="See the park" href="/park" tone="quiet" icon="users" size="lg" />
-              </Row>
-              <p className="body-sm pk-faint">
+              </div>
+              <p className="body-sm pk-faint pk-hero__note">
                 Free to start. No wallet, no token, no Solana knowledge needed — your pet starts in this
                 browser, and moves on chain only if you ask.
               </p>
@@ -166,7 +166,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <h3 className="display-s">Play</h3>
-              <p className="body pk-muted">Catch the treats, hop the park path, copy the pattern on a giant paw. Any one is the day&apos;s round. The score stays yours.</p>
+              <p className="body pk-muted">Catch the treats, hop the park path, copy the pattern on a giant paw, find the pairs. Any one is the day&apos;s round. The score stays yours.</p>
             </article>
             <article className="pk-day">
               <div className="pk-day__art pk-day__art--dress">
@@ -368,7 +368,7 @@ async function FeaturedPassport() {
         </span>
         <div>
           <p className="label pk-faint">A real Passport</p>
-          <p className="display-s" style={{ overflowWrap: "anywhere" }}>
+          <p className="display-s" style={{ overflowWrap: "break-word" }}>
             {best.pet.name}
           </p>
           <p className="body-sm pk-muted">

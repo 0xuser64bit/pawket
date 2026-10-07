@@ -3140,16 +3140,18 @@ li {
   align-items: center;
   gap: var(--space-3);
 }
-/* The theme switch lives in the header where there is room for it, and in
-   the footer on a phone, where the header holds the mark and one action. */
+/* The theme switch lives in the header. On a phone the header holds the
+   mark and the switch only: the hero's own Adopt is right beneath it, and
+   two sun buttons in one view would leave the player choosing between
+   identical doors. */
 .pk-landing__theme--head {
+  display: inline-flex;
+}
+.pk-landing__theme--foot {
   display: none;
 }
-@media (min-width: 720px) {
-  .pk-landing__theme--head {
-    display: inline-flex;
-  }
-  .pk-landing__theme--foot {
+@media (max-width: 719px) {
+  .pk-landing__adopt {
     display: none;
   }
 }
@@ -3187,10 +3189,41 @@ li {
   gap: var(--space-7);
   align-items: center;
 }
+.pk-hero__go {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
 @media (min-width: 1024px) {
   .pk-hero {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
     gap: 56px;
+  }
+}
+/* On a phone the front door is the title, the three pets, then the way in
+   — the picture first, not after a screen of words — and the two ways in
+   are the same width, one above the other. */
+@media (max-width: 1023px) {
+  .pk-hero {
+    gap: var(--space-5);
+  }
+  .pk-hero > .pk-stack {
+    display: contents;
+  }
+  .pk-hero__chip { order: 1; }
+  .pk-hero__title { order: 2; }
+  .pk-heroscene { order: 3; aspect-ratio: 4 / 3; }
+  .pk-hero__go { order: 4; }
+  .pk-hero__lede { order: 5; }
+  .pk-hero__note { order: 6; }
+}
+@media (max-width: 719px) {
+  .pk-hero__go {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .pk-hero__go > .pk-btn {
+    width: 100%;
   }
 }
 
@@ -6936,6 +6969,22 @@ details > .pk-risks {
   grid-template-columns: 112px minmax(0, 1fr);
   gap: var(--space-4);
   align-items: center;
+}
+@media (max-width: 719px) {
+  .pk-passcard__head {
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+}
+/* On the smallest phones the portrait stands over the name, so a name is
+   never broken inside a word to fit beside it. */
+@media (max-width: 399px) {
+  .pk-passcard__head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pk-passcard__pet {
+    width: 96px;
+  }
 }
 
 /* The last word: three pets, the question, the door. */

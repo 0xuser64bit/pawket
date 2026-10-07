@@ -9,7 +9,7 @@ import { guestPetSchema, migrateStoredPet, type GuestPet } from "./pet";
  * to the upgrade; the old key goes only once the list has been written.
  */
 const STORAGE_KEY = "pawket.pets.v1";
-const LEGACY_KEY = "pawket.guest-pet.v1";
+const LEGACY_KEY = "pawket.guest-pet.v1"; // gitleaks:allow (a localStorage key name)
 
 const NONE: GuestPet[] = [];
 

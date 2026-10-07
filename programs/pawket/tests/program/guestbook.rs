@@ -42,3 +42,19 @@ fn anyone_but_the_owner_waves_once_a_day_and_the_guestbook_keeps_the_last_eight(
     assert!(book.recent.iter().all(|mark| mark.visitor != visitor.pubkey()), "the oldest wave is overwritten");
     assert_eq!(8 + <Guestbook as Space>::INIT_SPACE, 365);
 }
+
+#[test]
+fn a_guestbook_that_is_there_already_takes_waves_only_for_the_pet_it_names() {
+    let mut env = Env::new();
+    let owner = env.player();
+    let visitor = env.player();
+    let pepper = env.adopt(&owner, "Pepper");
+    let nib = env.adopt(&owner, "Nib");
+    // At Pepper's guestbook address, a book that names Nib: `init_if_needed`'s second path, held.
+    let forged = Guestbook { pet: nib, waves: 0, recent: Default::default(), bump: 0 };
+    env.forge(&guestbook_pda(&pepper), &forged);
+
+    let result = env.send(&[wave_ix(&visitor.pubkey(), &visitor.pubkey(), &pepper)], &visitor, &[]);
+    expect_anchor(&result, anchor_lang::error::ErrorCode::ConstraintRaw);
+    assert_eq!(env.guestbook(&pepper).waves, 0);
+}

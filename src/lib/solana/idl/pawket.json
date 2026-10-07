@@ -271,6 +271,9 @@
         },
         {
           "name": "closet",
+          "docs": [
+            "Made the owner's in `buy` when it is new; one that is there already is held to them here."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -2594,6 +2597,9 @@
         },
         {
           "name": "guestbook",
+          "docs": [
+            "Made the pet's in `greet` when it is new; one that is there already is held to it here."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -2683,6 +2689,9 @@
         },
         {
           "name": "guestbook",
+          "docs": [
+            "Made the pet's in `greet` when it is new; one that is there already is held to it here."
+          ],
           "writable": true,
           "pda": {
             "seeds": [

@@ -71,6 +71,22 @@ fn a_sale_goes_to_the_treasury_and_nowhere_else() {
 }
 
 #[test]
+fn a_closet_that_is_there_already_is_bought_into_only_while_it_names_its_owner() {
+    let mut env = Env::new();
+    let owner = env.player();
+    let other = env.player();
+    // At the owner's closet address, a closet that names someone else. Only `buy` writes a closet
+    // on a cluster, always with its signer, so this is `init_if_needed`'s second path, held anyway.
+    let forged = Closet { owner: other.pubkey(), items: [0; 32], count: 0, spent: 0, bump: 0 };
+    env.forge(&closet_pda(&owner.pubkey()), &forged);
+    let treasury_before = env.lamports(&TREASURY);
+
+    let result = env.send(&[buy_ix(&owner.pubkey(), &owner.pubkey(), HALO)], &owner, &[]);
+    expect_anchor(&result, anchor_lang::error::ErrorCode::ConstraintRaw);
+    assert_eq!(env.lamports(&TREASURY), treasury_before);
+}
+
+#[test]
 fn a_piece_not_in_the_closet_is_not_worn() {
     let mut env = Env::new();
     let owner = env.player();

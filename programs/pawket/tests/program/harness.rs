@@ -4,7 +4,7 @@
 use anchor_lang::{
     prelude::{Clock, Pubkey},
     solana_program::{instruction::Instruction, system_program},
-    AccountDeserialize, InstructionData, ToAccountMetas,
+    AccountDeserialize, AccountSerialize, InstructionData, Space, ToAccountMetas,
 };
 use litesvm::{
     types::{FailedTransactionMetadata, TransactionMetadata},
@@ -173,6 +173,17 @@ impl Env {
 
     pub fn exists(&self, address: &Pubkey) -> bool {
         self.svm.get_account(address).is_some_and(|a| a.lamports > 0)
+    }
+
+    /// `value` as the program's account at `address`, at its full size: what only `init` makes on
+    /// a cluster, and only at its own address. For the tests that show a forged one is refused.
+    pub fn forge<T: AccountSerialize + Space>(&mut self, address: &Pubkey, value: &T) {
+        let mut data = Vec::new();
+        value.try_serialize(&mut data).unwrap();
+        data.resize(8 + T::INIT_SPACE, 0);
+        let lamports = self.svm.minimum_balance_for_rent_exemption(data.len());
+        let account = solana_account::Account { lamports, data, owner: pawket::ID, executable: false, rent_epoch: 0 };
+        self.svm.set_account(*address, account).unwrap();
     }
 
     /// `ixs` with `fee_payer` paying; every keypair in `signers` signs.

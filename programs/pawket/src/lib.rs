@@ -415,6 +415,11 @@ pub mod pawket {
             closet.bump = ctx.bumps.closet;
         }
         require!(!closet.has(item), PawketError::AlreadyOwned);
+        // The record, then the payment: the transfer reads nothing the record changed, and if it
+        // fails the whole purchase does.
+        closet.add(item);
+        closet.count = closet.count.saturating_add(1);
+        closet.spent = closet.spent.saturating_add(price);
         system_program::transfer(
             CpiContext::new(
                 system_program::ID,
@@ -425,10 +430,6 @@ pub mod pawket {
             ),
             price,
         )?;
-        let closet = &mut ctx.accounts.closet;
-        closet.add(item);
-        closet.count = closet.count.saturating_add(1);
-        closet.spent = closet.spent.saturating_add(price);
         emit!(ItemBought { owner, item, price });
         Ok(())
     }
@@ -1363,12 +1364,14 @@ pub struct Buy<'info> {
     pub owner: Signer<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
+    /// Made the owner's in `buy` when it is new; one that is there already is held to them here.
     #[account(
         init_if_needed,
         payer = payer,
         space = 8 + Closet::INIT_SPACE,
         seeds = [CLOSET_SEED, owner.key().as_ref()],
-        bump
+        bump,
+        constraint = closet.owner == Pubkey::default() || closet.owner == owner.key()
     )]
     pub closet: Account<'info, Closet>,
     #[account(mut, address = TREASURY)]
@@ -1689,12 +1692,14 @@ pub struct WaveByDevice<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub pet: Account<'info, Pet>,
+    /// Made the pet's in `greet` when it is new; one that is there already is held to it here.
     #[account(
         init_if_needed,
         payer = payer,
         space = 8 + Guestbook::INIT_SPACE,
         seeds = [GUESTBOOK_SEED, pet.key().as_ref()],
-        bump
+        bump,
+        constraint = guestbook.pet == Pubkey::default() || guestbook.pet == pet.key()
     )]
     pub guestbook: Account<'info, Guestbook>,
     pub system_program: Program<'info, System>,
@@ -1811,12 +1816,14 @@ pub struct Wave<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub pet: Account<'info, Pet>,
+    /// Made the pet's in `greet` when it is new; one that is there already is held to it here.
     #[account(
         init_if_needed,
         payer = payer,
         space = 8 + Guestbook::INIT_SPACE,
         seeds = [GUESTBOOK_SEED, pet.key().as_ref()],
-        bump
+        bump,
+        constraint = guestbook.pet == Pubkey::default() || guestbook.pet == pet.key()
     )]
     pub guestbook: Account<'info, Guestbook>,
     pub system_program: Program<'info, System>,

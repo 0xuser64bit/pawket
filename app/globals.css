@@ -3029,6 +3029,29 @@ li {
     --pk-cards-gap: var(--space-4);
   }
 }
+/* Held upright, a phone's crowd is three faces to a row: the name, the level
+   and the guild's crest, with the counts left to each pet's Passport. */
+@media (max-width: 719px) {
+  .pk-cards--dense {
+    --pk-cards-gap: var(--space-2);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .pk-cards--dense .pk-card__art {
+    padding: var(--space-2) var(--space-2) 0;
+  }
+  .pk-cards--dense .pk-card__body {
+    padding: var(--space-2) var(--space-2) var(--space-3);
+  }
+  .pk-cards--dense .pk-card__body > .title {
+    font-size: 14px;
+    line-height: 18px;
+  }
+  .pk-cards--dense .pk-park-cares,
+  .pk-cards--dense .pk-park-kind,
+  .pk-cards--dense .pk-park-guild .caption {
+    display: none;
+  }
+}
 /* An empty pocket on the shelf: dashed where a card would be outlined, and
    never lifted. It takes the whole row on a phone, where half a row is too
    narrow to read in. */

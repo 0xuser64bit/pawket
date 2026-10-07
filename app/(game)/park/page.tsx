@@ -207,9 +207,10 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
                       </span>
                     ) : null}
                     <p className="caption pk-faint">
-                      Level {projected.level} · {SPECIES_LABEL[entry.pet.species]}
+                      Level {projected.level}
+                      <span className="pk-park-kind"> · {SPECIES_LABEL[entry.pet.species]}</span>
                     </p>
-                    <p className="caption pk-faint">
+                    <p className="caption pk-faint pk-park-cares">
                       {entry.passport.careCount} {entry.passport.careCount === 1 ? "care" : "cares"}
                       {streak.count > 0 ? ` · ${streak.count}-day run` : ""}
                     </p>

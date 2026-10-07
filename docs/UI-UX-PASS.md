@@ -84,3 +84,67 @@ the browser stand-in; this pass did not rebuild or publish an APK.
 
 No deployment or push is included; the installed shell receives the UI
 after the shared web deployment.
+
+# Mobile product pass — 7 October 2026
+
+The second pass treats the phone as the product rather than a narrow
+desktop. It audited every screen at 320, 375 and 768px and on a desktop, in
+Daylight and Lamplight, with a production build measured in headless
+Chromium. APK/app/program versions, game math, program accounts, prices and
+the send path are unchanged.
+
+## Findings and fixes
+
+| Finding | Player impact | Implemented change |
+| --- | --- | --- |
+| Button labels wrapped to two lines; names led labels ("Keep Sir Marmalade Pickles on Solana") | Rows of buttons at different heights; long names pushed the verb off the end | One-line labels that end in an ellipsis; labels lead with the verb; layout primitives may shrink below their content, so a button never widens the page |
+| Ghost buttons were underlined caps | Read as web links in a game | No underline; a pressed tint in their own ink; back controls aligned to the gutter |
+| Sheets rose 24px and faded | Felt like web pop-ups | Phone sheets rise from the bottom edge, carry a grabber and drag down to dismiss with a velocity check; the main action spans the foot, Cancel beneath |
+| Tab changes faded the page in twice (skeleton, then page), and nothing moved in the dock | Content seemed to teleport; no sense of where you went | React view transitions per screen: dock places fade and rise, deeper pages slide forward, back slides back, placeholders crossfade; the dock and toasts ride above; one measured pill slides to the chosen place; pressing the current place scrolls to its top |
+| The incoming screen painted over the dock mid-transition | A flash of page through the dock | The dock and toasts are their own transition layers, above the screen |
+| Vitals were 5px squares with the count floating away from them | Hard to read at a glance | Name and count on one line over five segments across the column |
+| A resting care showed its countdown on an extra line, half transparent | Low contrast; an empty line reserved under every care | A resting face drops its shelf, dashes its edge and counts down inside itself in full ink |
+| Today's round was a row of pills that did nothing when pressed | Looked tappable | A five-mark tracker; only the round (played elsewhere) is a link |
+| "Let {pet} go" sat on the daily room | A destructive action beside care | Moved to the pet's record, behind a second press |
+| A saved care said so only at the top of the screen | Eyes are on the button, not the toast | A small "+10 XP" rises off the pressed button once (not under reduced motion) |
+| Say/Today panels opened below the fold; a finished round's score did too | Taps seemed to do nothing | Opened panels and results scroll into view, clear of the dock |
+| Adoption's action scrolled away; long names spilled off the blanket; step 1 opened blank until hydration | Extra scrolling; broken-looking name tags; "is this broken?" | Each step's action is pinned under the thumb (above the keyboard while naming); the name is sized in the blanket's own units and hops with the pet; steps slide; step 1 draws before storage is read |
+| Game cards were silent buttons with Practice floating outside them | No visible way to start | Play reaches over the whole card, Practice beside it inside; Play buttons align across a row; All games comes first in a round |
+| Pairs could deal the paper crown and the gold crown together | Two pairs a glance cannot tell apart, in a game scored on misses | One wardrobe piece per kind (tested over 300 seeds); the deal and score are unchanged |
+| The park's second row hid its name tags behind front-row heads | Names unreadable; pets cut by the frame | A phone's park has its own eight spots |
+| The landing opened a phone on six lines of text and two identical Adopt buttons | The pets were below the fold | Title, the three pets, then two full-width ways in; the copy counts four games |
+| Passport, empty Home, guild and error actions stacked at different widths | Ragged columns | `pk-acts`: a row where there is room, one width on a phone |
+| No press feedback on tiles, tools, choices, rows and the park's figures; the browser's grey tap box and long-press selection on controls | "Did that work?"; web tells | Every pressable gives while held; tap highlight and control text selection are off |
+| A phone's browser has no wallet, and the sheet only described what to do | Dead end for iPhone and most phone browsers | "Open in Phantom/Solflare" via each app's published browse link |
+| Desktop at 1280×800: the dock covered the care buttons | Care hidden on a laptop | The room gives up height on short screens |
+| three.js read every shader's logs on arrival | A long main-thread freeze on reaching Home | Production skips the check (three.js's advice); measured gain needs a real GPU (headless software GL has no parallel compile) |
+
+Smaller fixes: look-editor parts in the tabs' trough and six skin tones per
+row, the sticker book two to a row, the profile's empty pocket beside the
+pets, meter readouts that keep a figure with its unit, a guild's facts apart
+from its actions, the not-found screen's mark and notch clearance, a guild
+placeholder that is not a taken name, wardrobe copy for touch, and title
+descenders clear of the line beneath.
+
+## Verification
+
+- `pnpm verify`: typecheck, lint, **352 unit tests** and production build.
+- `pnpm e2e --workers=3`: **55 browser checks** pass (four devnet flows
+  skipped by default); updated selectors for the new Play buttons and
+  labels.
+- Production navigation (headless Chromium, Pixel 7 profile): every dock tap
+  is a soft navigation; transitions start in ~20ms and finish in ~430ms;
+  dynamic places run a second crossfade when their content replaces the
+  placeholder.
+- Screenshots at 320/375/768/1280 in both rooms for Home (empty, fed,
+  resting), all adoption steps, Playground (cards, a round, a result), Park,
+  Profile (all tabs, look editor), Guilds (list, page, founding), a coin, a
+  live Passport and visit, Market and its sheet, Pulse, Wallet, the connect
+  sheet and the not-found screen.
+
+## Remaining evidence
+
+A physical phone still has to confirm: the 3D room's arrival cost with
+parallel shader compile, the pinned adoption action above a real keyboard,
+drag-to-dismiss feel, and the Phantom/Solflare browse links on iOS and
+Android (`ANDROID-PHONE-CHECK.md`).

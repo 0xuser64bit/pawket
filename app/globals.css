@@ -5454,9 +5454,18 @@ details > .pk-risks {
   .pk-choice {
     min-height: var(--touch-target);
   }
+  /* 40px dots keep six to a row on a phone; each still answers a 44px
+     finger, the extra two pixels round it invisible. */
   .pk-swatch {
-    width: var(--touch-target);
-    height: var(--touch-target);
+    position: relative;
+    width: 40px;
+    height: 40px;
+  }
+  .pk-swatch::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: var(--radius-pill);
   }
 }
 .pk-twin {
@@ -5469,13 +5478,21 @@ details > .pk-risks {
   border: var(--stroke-line) dashed var(--edge-soft);
   border-radius: var(--radius-md);
 }
+/* The parts of a look are tabs, so they wear the tabs' trough — the same
+   one as the profile's shelf — and never look like the choices beneath
+   them. */
 .pk-look__tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  padding-bottom: var(--space-4);
-  margin-bottom: var(--space-4);
-  border-bottom: var(--stroke-line) solid var(--edge-soft);
+  gap: var(--space-1);
+  margin-bottom: var(--space-5);
+  padding: 4px;
+  background: var(--surface-sunk);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+}
+.pk-look__tabs .pk-choice:not([aria-selected="true"]) {
+  border-color: transparent;
 }
 .pk-choice[aria-selected="true"] {
   --pk-keep: var(--shadow-sticker-sm);
@@ -5485,8 +5502,11 @@ details > .pk-risks {
   box-shadow: var(--shadow-sticker-sm);
 }
 @media (max-width: 719px) {
-  .pk-look__tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--stroke-line); }
-  .pk-look__tabs .pk-choice { padding-inline: var(--stroke-hair); font-size: 12px; }
+  .pk-look__tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 2px; }
+  .pk-look__tabs .pk-choice { padding-inline: 0; font-size: 12px; }
+}
+@media (max-width: 359px) {
+  .pk-look__tabs .pk-choice { font-size: 11px; }
 }
 
 /* ------------------------------------------------------- the wallet layer

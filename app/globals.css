@@ -875,6 +875,9 @@
 
 html {
   background: var(--ground);
+  /* every control draws its own press (a shelf, a tint, a squeeze), so the
+     browser's grey tap box would only flash a rectangle over a rounded thing */
+  -webkit-tap-highlight-color: transparent;
   /* a page that scrolls and one that does not keep the same width */
   scrollbar-gutter: stable;
   /* focus and anchors land clear of the floating dock, not under it */
@@ -907,6 +910,14 @@ li {
 ::selection {
   background: var(--sun);
   color: var(--on-sun);
+}
+
+/* A control is pressed, not read: holding a finger on one never selects its
+   label or opens the browser's link menu over it. */
+:is(.pk-btn, .pk-dock__item, .pk-care, .pk-tool, .pk-choice, .pk-swatch, .pk-tabs__t, .pk-switch__pet, .pk-gamecard, .pk-tile-hit) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* ------------------------------------------------------------------ type */

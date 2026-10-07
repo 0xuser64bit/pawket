@@ -104,6 +104,14 @@ export function HomeScreen() {
     return () => window.clearInterval(id);
   }, []);
 
+  // A tool's panel opens under the deck; on a phone that is below the fold,
+  // so it comes up to meet the tap rather than opening out of sight.
+  useEffect(() => {
+    if (!panel) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("pk-deck-panel")?.scrollIntoView({ block: "nearest", behavior: reduce ? "instant" : "smooth" });
+  }, [panel]);
+
   // A pet carried onto Solana leaves this browser once the chain copy is the one drawn.
   useEffect(() => {
     if (carried.current && active?.pet.address === carried.current.address) {

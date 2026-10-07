@@ -5725,6 +5725,15 @@ details > .pk-risks {
   max-width: 440px;
   margin: var(--space-4) auto 0;
 }
+/* Naming and the welcome are columns read from the left: their action
+   takes the column's width, like the field above it. */
+@media (min-width: 720px) {
+  .pk-adopt__name-step .pk-adopt__act,
+  .pk-adopt--narrow .pk-adopt__act {
+    max-width: none;
+    margin: 0;
+  }
+}
 @media (max-width: 719px) {
   .pk-adopt__act {
     position: sticky;
@@ -5936,7 +5945,7 @@ details > .pk-risks {
 .pk-gamecard {
   position: relative;
   display: grid;
-  align-content: start;
+  grid-template-rows: auto 1fr;
   overflow: hidden;
   border: var(--stroke-line) solid var(--edge);
   border-radius: var(--radius-lg);
@@ -5954,11 +5963,13 @@ details > .pk-risks {
   transform: translate(1px, 1px);
   box-shadow: var(--shadow-sticker-sm);
 }
+/* At the card's foot, so a row of cards puts every Play on one line. */
 .pk-gamecard__go {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-top: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-2);
 }
 /* It may not move under a finger or a pointer: a transform would pull its
    reach back to the button and leave the card. The card presses instead. */
@@ -6099,7 +6110,8 @@ details > .pk-risks {
   top: 34%;
 }
 .pk-gamecard__words {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-4) var(--space-5) var(--space-5);
 }

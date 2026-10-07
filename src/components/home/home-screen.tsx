@@ -147,13 +147,13 @@ export function HomeScreen() {
               Nobody lives here yet. Adopting takes three taps, and the pet starts out in {here}.
               {companion.owner ? "" : " Already keep a pet on Solana? Connect the wallet that keeps it, and it comes home here."}
             </p>
-            <Row gap={2} wrap className="pk-foot">
+            <div className="pk-foot pk-acts">
               <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" />
               {companion.owner ? null : (
                 <Button label="Connect a wallet" icon="wallet" tone="quiet" onClick={() => setConnecting(true)} />
               )}
-              <ButtonLink label="Change your look" href="/profile#look" tone="ghost" size="sm" />
-            </Row>
+              <ButtonLink label="Change your look" href="/profile#look" tone="ghost" size="sm" className="pk-btn--flush" />
+            </div>
           </Card>
           <ChainTrouble error={companion.chainError} onRetry={companion.refresh} />
         </Stack>

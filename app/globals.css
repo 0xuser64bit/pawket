@@ -3698,7 +3698,11 @@ li {
 
 .pk-home__line {
   min-height: 36px;
-  padding: 0 var(--space-2);
+}
+/* A ghost that opens the line gives back its tint's room, so its word
+   starts on the column's edge like everything else on the screen. */
+.pk-home__line .pk-row > .pk-btn--ghost:first-child {
+  margin-left: calc(-1 * var(--space-3));
 }
 .pk-home__line p {
   min-width: 0;
@@ -3846,6 +3850,24 @@ li {
 .pk-foot {
   margin-top: auto;
   padding-top: var(--space-4);
+}
+/* A card's actions: a row where there is room; on a phone, one above the
+   other at the full width, so two ways forward are never two different
+   lengths. A ghost keeps its own width, under them. */
+.pk-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+@media (max-width: 719px) {
+  .pk-acts {
+    display: grid;
+    justify-items: start;
+  }
+  .pk-acts > .pk-btn:not(.pk-btn--ghost) {
+    justify-self: stretch;
+  }
 }
 .pk-home__vitals {
   display: grid;
@@ -4172,7 +4194,7 @@ li {
 .pk-today {
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-2) 0;
+  padding: var(--space-4) 0 0;
 }
 .pk-today__head {
   display: flex;
@@ -6580,7 +6602,8 @@ details > .pk-risks {
    the statements behind them in columns that keep their own heights. */
 .pk-headline {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  /* two to a row on a phone, all five in one band where there is room */
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: var(--space-4);
   margin: 0;
   padding: var(--space-5);

@@ -33,7 +33,7 @@ describe("Button", () => {
 describe("Button meta", () => {
   it("sets a figure beside the label apart, so it can be mono", () => {
     const html = renderToStaticMarkup(<Button label="Feed" meta="4:59" />);
-    expect(html).toContain('<span>Feed</span><span class="pk-btn__meta">4:59</span>');
+    expect(html).toContain('<span class="pk-btn__label">Feed</span><span class="pk-btn__meta">4:59</span>');
   });
 });
 

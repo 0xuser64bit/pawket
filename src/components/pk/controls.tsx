@@ -51,7 +51,7 @@ function buttonFace({ label, meta, size = "md", icon, after }: ButtonShape) {
   return (
     <>
       {icon ? <Icon name={icon} size={glyph} /> : null}
-      <span>{label}</span>
+      <span className="pk-btn__label">{label}</span>
       {meta ? <span className="pk-btn__meta">{meta}</span> : null}
       {after ? <Icon name={after} size={14} /> : null}
     </>

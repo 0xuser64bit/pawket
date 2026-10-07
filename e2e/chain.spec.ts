@@ -56,7 +56,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await expect(page.getByRole("button", { name: `Care for ${name}` })).toBeVisible();
 
   // The keepsake: a card in the owner's wallet, made by the server, signed here.
-  await page.getByRole("button", { name: `Keep ${name}'s card` }).click();
+  await page.getByRole("button", { name: "Keep the card" }).click();
   await expect(page.getByText(/^Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText(/Pawket paid the fee/).first()).toBeVisible();
   // Read again from chain, the record now lists it.
@@ -66,7 +66,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
     await page.locator("summary", { hasText: "On the record" }).click();
     await expect(page.getByText("Keepsake", { exact: true })).toBeVisible({ timeout: 3_000 });
   }).toPass({ timeout: 45_000 });
-  await expect(page.getByRole("button", { name: `Keep ${name}'s card` })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Keep the card" })).toHaveCount(0);
 });
 
 test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) => {

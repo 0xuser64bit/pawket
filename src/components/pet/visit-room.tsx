@@ -46,7 +46,7 @@ export function VisitRoom({
 
   return (
     <Screen>
-      <BackLink label={`${record.name}'s record`} href={`/pet/${address}`} />
+      <BackLink label={record.name} href={`/pet/${address}`} />
       <Stack gap={4}>
         <div>
           <h1 className="display-l">Visiting {record.name}</h1>

@@ -92,7 +92,7 @@ export function KeepSheet({
           <Button tone="ghost" size="sm" label="Not now" onClick={dismiss} />
           {owner && canSign ? (
             <Button
-              label={`Keep ${pet.name}`}
+              label="Keep on Solana"
               icon="keep"
               tone="pool"
               disabled={sender.busy || taken}

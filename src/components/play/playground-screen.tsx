@@ -445,7 +445,7 @@ function Result({
             <Button label="Share the score" icon="out" tone="quiet" onClick={() => void share()} />
           ) : null}
           <Button label="Another game" tone="quiet" disabled={sender.busy} onClick={onOther} />
-          <ButtonLink label={`Back to ${pet.name}`} href="/home" tone="ghost" icon="home" />
+          <ButtonLink label="Back home" href="/home" tone="ghost" icon="home" />
         </Row>
         {shared ? (
           <p role="status" className="caption pk-faint">

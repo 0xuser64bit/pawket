@@ -126,7 +126,12 @@ load. All of it stops under `prefers-reduced-motion`.
 
 Photos use that same sheet, including its close motion, focus return and
 safe-area footer. Buttons use the shared control heights: 36px small (44px on
-a phone or touch device), 48px standard, 56px large. Address controls have
+a phone or touch device), 48px standard, 56px large. A label stays on one line and
+leads with its verb, so a long name ends in an ellipsis without hiding what
+the button does; a pet's name belongs in the sentence beside it, not in front
+of the verb. A ghost button carries no underline: it has no shelf to press, so
+a finger tints it in its own ink, and one that opens a row lines its words up
+with the column's edge (`pk-btn--flush`). Address controls have
 separate 44px touch targets; their invisible hit areas never overlap. Editable fields stay at
 16px or larger on a phone, with a real 44px input area, avoiding focus zoom. Game controls stay beside
 the playing area, and all four games reflow for a phone held sideways.

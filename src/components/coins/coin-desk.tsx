@@ -281,7 +281,7 @@ function LaunchPanel({
           <RiskGate agreed={agreed} onAgree={agree} />
           <div>
             <Button
-              label={`Launch ${guild.name}'s coin`}
+              label="Launch the coin"
               tone="paper"
               disabled={!agreed || lamports === null || sender.busy}
               onClick={() => void launch()}

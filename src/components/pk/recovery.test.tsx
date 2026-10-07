@@ -48,7 +48,7 @@ describe("read and share recovery", () => {
     const share = vi.fn().mockRejectedValueOnce(new DOMException("Canceled", "AbortError")).mockRejectedValueOnce(new Error("Refused"));
     vi.stubGlobal("navigator", { share });
     render(<><ShareButton name="Pepper" /><Toasts /></>);
-    const button = screen.getByRole("button", { name: "Share Pepper's record" });
+    const button = screen.getByRole("button", { name: "Share this record" });
     fireEvent.click(button);
     await waitFor(() => expect(share).toHaveBeenCalledOnce());
     expect(screen.queryByRole("alert")).toBeNull();
@@ -60,7 +60,7 @@ describe("read and share recovery", () => {
     native.inApp = true;
     native.share.mockResolvedValue({ ok: false, reason: "no-answer" });
     render(<><ShareButton name="Pepper" /><Toasts /></>);
-    fireEvent.click(screen.getByRole("button", { name: "Share Pepper's record" }));
+    fireEvent.click(screen.getByRole("button", { name: "Share this record" }));
     expect((await screen.findByRole("alert")).textContent).toContain("The share sheet did not open");
     expect(native.share).toHaveBeenCalledWith({ url: window.location.href, title: "Pepper on Pawket" });
   });

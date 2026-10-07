@@ -69,7 +69,7 @@ export function Columns({
  * bare arrow.
  */
 export function BackLink({ label, href }: { label: string; href: string }) {
-  return <ButtonLink label={label} href={href} tone="ghost" icon="left" />;
+  return <ButtonLink label={label} href={href} tone="ghost" icon="left" className="pk-btn--flush" />;
 }
 
 /* ------------------------------------------------ spacing, as components */

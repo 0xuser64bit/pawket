@@ -88,7 +88,7 @@ function Bar({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
 
 function AdoptBack({ onBack }: { onBack: () => void }) {
   useBackCloses(onBack);
-  return <Button label="Back" tone="ghost" icon="left" onClick={onBack} />;
+  return <Button label="Back" tone="ghost" icon="left" className="pk-btn--flush" onClick={onBack} />;
 }
 
 /**
@@ -354,7 +354,7 @@ export function AdoptFlow() {
               </div>
             </fieldset>
 
-            <Button type="submit" label={typed.length >= 2 ? `That’s the one: ${typed}` : "That’s the one"} size="lg" full icon="heart" />
+            <Button type="submit" label="That’s the one" size="lg" full icon="heart" />
           </Stack>
         </form>
       </main>
@@ -413,7 +413,7 @@ export function AdoptFlow() {
                   {kept} lives in {here}. Today is the best day to keep them on Solana too: they are brand new, so
                   nothing starts over.
                 </p>
-                <Button label={`Keep ${kept} on Solana`} icon="keep" tone="quiet" size="sm" onClick={() => setKeeping(true)} />
+                <Button label="Keep on Solana" aria-label={`Keep ${kept} on Solana`} icon="keep" tone="quiet" size="sm" onClick={() => setKeeping(true)} />
               </div>
             ) : null}
             {adopted && keeping ? (

@@ -1237,13 +1237,16 @@ li {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  /* A button is never squeezed by the words beside it, and only breaks its
-     label when the label is longer than the whole column; a ticking
-     countdown never changes its width. */
+  /* A button is never squeezed by the words beside it and never grows a
+     second line: a label longer than its column ends in an ellipsis, so
+     every button in a row keeps the same height. Labels lead with the verb,
+     so what is cut is never what the button does. A ticking countdown never
+     changes its width. */
   flex-shrink: 0;
   max-width: 100%;
+  min-width: 0;
   text-align: center;
-  text-wrap: balance;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   text-decoration: none;
@@ -1266,6 +1269,14 @@ li {
   transform: translateY(var(--stroke-shelf));
   border-bottom-width: var(--stroke-line);
   margin-bottom: var(--stroke-shelf);
+}
+.pk-btn__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pk-btn > svg {
+  flex: none;
 }
 /* a figure on a button — a countdown — is mono, like every figure */
 .pk-btn__meta {
@@ -1315,19 +1326,31 @@ li {
   --pk-on: var(--ink);
   border-color: var(--edge);
 }
-/* ghost: no box at all; only for tertiary actions inside a card */
+/* ghost: no box at all; only for tertiary actions inside a card. It has no
+   shelf to press, so a finger tints it instead, in its own ink — which reads
+   on Playroom and Paper alike. Its padding is the tint's room; a ghost that
+   opens a row (`pk-btn--flush`) gives it back, so its words line up with the
+   column's edge rather than the tint's. */
 .pk-btn--ghost {
   background: transparent;
   border: 0;
-  padding: 7px var(--space-2);
+  padding: 7px var(--space-3);
   color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  transition:
+    background-color var(--dur-press) var(--ease-press),
+    transform var(--dur-press) var(--ease-press);
 }
 @media (hover: hover) {
   .pk-btn--ghost:hover {
-    text-decoration-thickness: 2px;
+    background: color-mix(in srgb, currentColor 7%, transparent);
   }
+}
+.pk-btn--ghost:active {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  transform: scale(0.97);
+}
+.pk-btn--flush {
+  margin-left: calc(-1 * var(--space-3));
 }
 /* paper: the only button allowed on a Paper surface. Square, no shelf, and
    deliberately unsatisfying to press. */
@@ -1372,6 +1395,15 @@ li {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
+  max-width: 100%;
+}
+.pk-chip > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pk-chip > svg {
+  flex: none;
 }
 .pk-chip--sun {
   background: var(--sun-soft);

@@ -34,7 +34,7 @@ export function KeepsakeCard({ owner, pet, name, made }: { owner: string; pet: s
       </p>
       <div style={{ marginTop: "var(--space-4)" }}>
         <Button
-          label={`Keep ${name}'s card`}
+          label="Keep the card"
           icon="wallet"
           tone="pool"
           disabled={sender.busy}

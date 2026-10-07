@@ -9,7 +9,7 @@ export function ShareButton({ name, label }: { name: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <Button
-      label={copied ? "Link copied" : (label ?? `Share ${name}'s record`)}
+      label={copied ? "Link copied" : (label ?? "Share this record")}
       icon={copied ? "check" : "out"}
       tone="quiet"
       size="sm"

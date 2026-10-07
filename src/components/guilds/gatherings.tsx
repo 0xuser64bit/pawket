@@ -158,7 +158,7 @@ export function GuildGatherings({
                       return live ? (
                         <Button
                           key={entry.pet.address}
-                          label={`Check ${entry.pet.name} in`}
+                          label={`Check in ${entry.pet.name}`}
                           tone="bloom"
                           size="sm"
                           disabled={sender.busy}
@@ -171,7 +171,7 @@ export function GuildGatherings({
                     return (
                       <Button
                         key={entry.pet.address}
-                        label={`${entry.pet.name} is going`}
+                        label={`Going with ${entry.pet.name}`}
                         tone="quiet"
                         size="sm"
                         disabled={sender.busy || !companion.canSign}

@@ -339,7 +339,12 @@ shapes, one outline, the palette — never a grid of identical pockets:
   the park path with drifting hills, Copy is one giant paw whose toe beans
   are the buttons and whose centre pad holds the pet. The pet is drawn
   whole (`pose="full"`) and its face answers the game. Sky clouds have no
-  outline, so they never read as the storm clouds to dodge.
+  outline, so they never read as the storm clouds to dodge. A game's card
+  says how to start it: Play (today's round) reaches over the whole card,
+  so the drawing is a target too, and Practice sits beside it inside the
+  card. In a round, the way back to every game comes first and Pause sits
+  apart; a finished round's score comes up to meet the player, with one
+  next action across the width and the rest beneath it.
 - **Home** (`src/components/home/`). On a phone the room and care deck are
   separate, full-width surfaces; whose room it is and who else is home share
   one line above them. On desktop the deck tucks onto the room's foot, and

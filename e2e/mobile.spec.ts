@@ -175,7 +175,7 @@ test("room settings show two compact choices per row and remember a touch select
 for (const name of ["Catch", "Hop"]) {
   test(`${name} pauses without losing the round and resumes by touch`, async ({ page }) => {
     await adopt(page);
-    await page.getByRole("button", { name: new RegExp(`^${name}`) }).tap();
+    await page.getByRole("button", { name: new RegExp(`^Play ${name}`) }).tap();
     const field = page.locator(".pk-game");
     await field.tap();
     await page.getByRole("button", { name: "Pause round" }).tap();
@@ -191,7 +191,7 @@ for (const name of ["Catch", "Hop"]) {
 
 test("Catch keeps a finger drag and a backgrounded round pauses", async ({ page }) => {
   await adopt(page);
-  await page.getByRole("button", { name: /^Catch/ }).tap();
+  await page.getByRole("button", { name: /^Play Catch/ }).tap();
   const field = page.locator(".pk-game");
   await expect(field).toBeInViewport();
   const box = (await field.boundingBox())!;
@@ -213,7 +213,7 @@ for (const name of ["Catch", "Hop", "Copy", "Pairs"]) {
   test(`${name} keeps its controls and playing area reachable in landscape`, async ({ page }) => {
     await page.setViewportSize({ width: 640, height: 360 });
     await adopt(page);
-    await page.getByRole("button", { name: new RegExp(`^${name}`) }).tap();
+    await page.getByRole("button", { name: new RegExp(`^Play ${name}`) }).tap();
     await expect(page.getByRole("button", { name: "Pause round" })).toBeInViewport();
     const area = page.locator(name === "Copy" ? ".pk-paws__paw" : name === "Pairs" ? ".pk-pairs__board" : ".pk-game");
     await expect(area).toBeInViewport({ ratio: 0.95 });

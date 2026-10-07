@@ -152,6 +152,7 @@ export function PlaygroundScreen() {
             icon="music"
             tone="ghost"
             size="sm"
+            className="pk-btn--flush"
             aria-pressed={sound}
             onClick={() => setSound(!sound)}
           />
@@ -194,10 +195,10 @@ export function PlaygroundScreen() {
           </div>
           <div className="pk-play">
             <div ref={field} className="pk-play__field">
-              <Row gap={2} wrap className="pk-play__controls">
+              <div className="pk-spread pk-play__controls">
+                <Button label="All games" tone="ghost" size="sm" icon="left" className="pk-btn--flush" disabled={sender.busy} onClick={() => setGame(null)} />
                 {!outcome ? <Button label={paused ? "Resume round" : "Pause round"} tone="quiet" size="sm" onClick={() => setPaused(!paused)} /> : null}
-                <Button label="All games" tone="ghost" size="sm" icon="left" disabled={sender.busy} onClick={() => setGame(null)} />
-              </Row>
+              </div>
               <div className="pk-play__stage">
                 <div inert={paused && !outcome}>
                   <Field key={`${current.id}-${seed}-${round}`} game={current.id} pet={pet} seed={seed} paused={paused} onFinish={finish} />
@@ -286,8 +287,7 @@ function Picker({
       />
       <div className="pk-games">
         {GAMES.map((game) => (
-          <div key={game.id} className="pk-gamecard-wrap">
-            <button type="button" className="pk-gamecard" onClick={() => onPlay(game.id, true)}>
+          <article key={game.id} className="pk-gamecard" aria-labelledby={`game-${game.id}`}>
               <span className={`pk-gamecard__art pk-gamecard__art--${game.id}`} aria-hidden="true">
                 {game.id === "catch" ? (
                   <>
@@ -333,7 +333,7 @@ function Picker({
               </span>
               <span className="pk-gamecard__words">
                 <span className="pk-spread">
-                  <span className="display-s">{game.name}</span>
+                  <h2 id={`game-${game.id}`} className="display-s">{game.name}</h2>
                   {todays[game.id] !== undefined ? (
                     <span className="amount-sm pk-faint">Today {todays[game.id]}</span>
                   ) : bests[game.id] ? (
@@ -341,15 +341,18 @@ function Picker({
                   ) : null}
                 </span>
                 <span className="body-sm pk-muted">{game.line}</span>
+                {/* Play covers the whole card, so the drawing is a target too; Practice sits above it. */}
+                <span className="pk-gamecard__go">
+                  <Button label="Play" icon="ball" tone="sprout" size="sm" className="pk-gamecard__play" aria-label={`Play ${game.name}, today's round`} onClick={() => onPlay(game.id, true)} />
+                  <Button label="Practice" tone="ghost" size="sm" className="pk-gamecard__practice" aria-label={`Practise ${game.name}, a new round`} onClick={() => onPlay(game.id, false)} />
+                </span>
               </span>
-            </button>
-            <Button label="Practice" tone="ghost" size="sm" onClick={() => onPlay(game.id, false)} aria-label={`Practise ${game.name}, a new round`} />
-          </div>
+          </article>
         ))}
       </div>
       <p className="caption pk-faint">
-        A game card plays today&apos;s round — the same one for everyone today, so a score is worth sharing. Practice is a
-        new round every time.
+        Play is today&apos;s round — the same one for everyone today, so a score is worth sharing. Practice is a new
+        round every time.
       </p>
     </Stack>
   );
@@ -383,6 +386,13 @@ function Result({
   const [shared, setShared] = useState<string>();
   const { Here } = useHere();
   const recorded = sender.tx.stage === "confirmed";
+  // A round ends where it was played; on a phone the score is below it, so
+  // it comes up to meet the player rather than waiting to be found.
+  const card = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    card.current?.scrollIntoView({ block: "nearest", behavior: reduce ? "instant" : "smooth" });
+  }, []);
   const line = outcome.onChain
     ? recorded
       ? outcome.xpGained > 0
@@ -419,6 +429,7 @@ function Result({
   }
 
   return (
+    <div ref={card} className="pk-result">
     <Card>
       <Stack gap={4}>
         <div>
@@ -434,19 +445,20 @@ function Result({
             {line} {bestScore != null && !outcome.best ? `Your best here is ${bestScore}.` : ""}
           </p>
         </div>
-        {outcome.onChain && !recorded ? (
-          <div>
-            <Button label="Record the round" icon="spark" tone="sun" disabled={sender.busy} onClick={onRecord} />
-          </div>
-        ) : null}
-        <Row gap={2} wrap>
-          <Button label="Play again" icon="ball" tone="pool" disabled={sender.busy} onClick={outcome.daily ? onAgain : onPractice} />
-          {outcome.daily ? (
-            <Button label="Share the score" icon="out" tone="quiet" onClick={() => void share()} />
+        {/* The one thing to do next across the width; the rest beneath it, side by side. */}
+        <div className="pk-result__acts">
+          {outcome.onChain && !recorded ? (
+            <Button label="Record the round" icon="spark" tone="sun" full disabled={sender.busy} onClick={onRecord} />
           ) : null}
-          <Button label="Another game" tone="quiet" disabled={sender.busy} onClick={onOther} />
-          <ButtonLink label="Back home" href="/home" tone="ghost" icon="home" />
-        </Row>
+          <Button label="Play again" icon="ball" tone={outcome.onChain && !recorded ? "quiet" : "sprout"} full disabled={sender.busy} onClick={outcome.daily ? onAgain : onPractice} />
+          <div className="pk-result__more">
+            {outcome.daily ? (
+              <Button label="Share the score" icon="out" tone="quiet" full onClick={() => void share()} />
+            ) : null}
+            <Button label="Another game" tone="quiet" full disabled={sender.busy} onClick={onOther} />
+          </div>
+          <ButtonLink label="Back home" href="/home" tone="ghost" icon="home" size="sm" className="pk-btn--flush" />
+        </div>
         {shared ? (
           <p role="status" className="caption pk-faint">
             {shared}
@@ -454,5 +466,6 @@ function Result({
         ) : null}
       </Stack>
     </Card>
+    </div>
   );
 }

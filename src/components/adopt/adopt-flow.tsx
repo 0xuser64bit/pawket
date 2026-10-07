@@ -1,18 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { addTransitionType, startTransition, useEffect, useRef, useState, ViewTransition, type CSSProperties, type ReactNode, type Ref } from "react";
 import {
+  ARRIVE,
   Banner,
   Button,
   Field,
   Icon,
+  LEAVE,
   Mark,
   Paper,
   PetFrame,
   Receipt,
   Stack,
-  Waiting,
 } from "@/components/pk";
 import {
   PERSONALITY_LABEL,
@@ -86,6 +87,34 @@ function Bar({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
   );
 }
 
+/**
+ * One step of the three. Going on, the next one comes in from the right as
+ * this one steps left; Back runs the other way — the same motion as going
+ * deeper into a place, and back out of it.
+ */
+function StepView({ narrow = false, scope, children }: { narrow?: boolean; scope?: Ref<HTMLElement>; children: ReactNode }) {
+  return (
+    <ViewTransition enter={ARRIVE} exit={LEAVE} default="none">
+      <main id="main" className={narrow ? "pk-adopt pk-adopt--narrow" : "pk-adopt"} ref={scope}>
+        {children}
+      </main>
+    </ViewTransition>
+  );
+}
+
+/** The name stitched on the blanket, sized so a long one still fits across it. */
+function Tag({ name, empty }: { name: string; empty?: boolean }) {
+  return (
+    <span
+      className={["pk-adopt__tag", empty && "pk-adopt__tag--empty"].filter(Boolean).join(" ")}
+      style={{ "--len": Math.max(name.length, 6) } as CSSProperties}
+      aria-hidden="true"
+    >
+      {name}
+    </span>
+  );
+}
+
 function AdoptBack({ onBack }: { onBack: () => void }) {
   useBackCloses(onBack);
   return <Button label="Back" tone="ghost" icon="left" className="pk-btn--flush" onClick={onBack} />;
@@ -127,6 +156,13 @@ export function AdoptFlow() {
   const { here, Here } = useHere();
   const owner = (connected?.account.address as Address | undefined) ?? null;
   useEyesFollow(scope);
+
+  function go(next: 1 | 2 | 3) {
+    startTransition(() => {
+      addTransitionType(next > step ? "nav-forward" : "nav-back");
+      setStep(next);
+    });
+  }
 
   // On a phone the three are a row you swipe: the one you land on is the one
   // chosen, so the button under them never names a pet you swiped past.
@@ -186,7 +222,7 @@ export function AdoptFlow() {
       setAdopted(created);
       setStored(saved);
       setError(undefined);
-      setStep(3);
+      go(3);
     } catch {
       // The rule comes from the on-chain name seed (2–24 UTF-8 bytes); the
       // sentence a player reads should not.
@@ -202,18 +238,11 @@ export function AdoptFlow() {
     setStored(saved);
   }
 
-  if (!ready) {
-    return (
-      <main id="main" className="pk-adopt">
-        <Bar step={1} />
-        <Waiting label="Opening adoption" />
-      </main>
-    );
-  }
-
+  // The first step draws before this browser's pets are read: only the line
+  // about who will have company waits for them.
   if (step === 1) {
     return (
-      <main id="main" className="pk-adopt" ref={scope}>
+      <StepView key={1} scope={scope}>
         <Bar step={1} />
         <div className="pk-adopt__head">
           <h1 ref={heading} tabIndex={-1} className="display-l">
@@ -267,18 +296,18 @@ export function AdoptFlow() {
           })}
         </div>
 
-        <div className="pk-adopt__go">
-          <Button label={`Choose the ${SPECIES_LABEL[species].toLowerCase()}`} size="lg" full icon="paw" onClick={() => setStep(2)} />
-          <p className="caption pk-faint">Free, and it starts in {here}. Clothes come later, and they change only how they look.</p>
+        <p className="caption pk-faint pk-adopt__note">Free, and it starts in {here}. Clothes come later, and they change only how they look.</p>
+        <div className="pk-adopt__act">
+          <Button label={`Choose the ${SPECIES_LABEL[species].toLowerCase()}`} size="lg" full icon="paw" onClick={() => go(2)} />
         </div>
-      </main>
+      </StepView>
     );
   }
 
   if (step === 2) {
     return (
-      <main id="main" className="pk-adopt" ref={scope}>
-        <Bar step={2} onBack={() => setStep(1)} />
+      <StepView key={2} scope={scope}>
+        <Bar step={2} onBack={() => go(1)} />
         <form
           className="pk-adopt__name-step"
           onSubmit={(event) => {
@@ -287,9 +316,9 @@ export function AdoptFlow() {
           }}
         >
           <div className="pk-adopt__portrait" data-eyes>
-            <PetFrame form={form} temper={temper} sky={sky} size="lg" seed={species} />
-            <span className={["pk-adopt__tag", typed ? "" : "pk-adopt__tag--empty"].join(" ")} aria-hidden="true">
-              {typed || "Your pet"}
+            <span className="pk-adopt__plate">
+              <PetFrame form={form} temper={temper} sky={sky} size="lg" seed={species} />
+              <Tag name={typed || "Your pet"} empty={!typed} />
             </span>
           </div>
 
@@ -354,10 +383,12 @@ export function AdoptFlow() {
               </div>
             </fieldset>
 
-            <Button type="submit" label="That’s the one" size="lg" full icon="heart" />
+            <div className="pk-adopt__act">
+              <Button type="submit" label="That’s the one" size="lg" full icon="heart" />
+            </div>
           </Stack>
         </form>
-      </main>
+      </StepView>
     );
   }
 
@@ -365,11 +396,11 @@ export function AdoptFlow() {
   const projected = adopted ? projectGuestPet(adopted) : null;
 
   return (
-    <main id="main" className="pk-adopt pk-adopt--narrow" ref={scope}>
+    <StepView key={3} narrow scope={scope}>
       <Bar step={3} />
       <Stack gap={5}>
         <div className="pk-adopt__portrait pk-adopt__welcome" data-eyes>
-          <span className="pk-adopt__pet pk-adopt__pet--hop">
+          <span className="pk-adopt__plate pk-adopt__pet pk-adopt__pet--hop">
             <PetFrame
               form={form}
               temper={temper}
@@ -379,8 +410,8 @@ export function AdoptFlow() {
               level={projected?.level ?? 1}
               seed={kept}
             />
+            <Tag name={kept} />
           </span>
-          <span className="pk-adopt__tag">{kept}</span>
         </div>
 
         <div>
@@ -406,7 +437,9 @@ export function AdoptFlow() {
                 ]}
               />
             </Paper>
-            <Button label="Take them home" size="lg" full icon="home" onClick={() => router.push("/home")} />
+            <div className="pk-adopt__act">
+              <Button label="Take them home" size="lg" full icon="home" onClick={() => router.push("/home")} />
+            </div>
             {adopted ? (
               <div className="pk-adopt__keep">
                 <p className="body-sm pk-muted">
@@ -442,6 +475,6 @@ export function AdoptFlow() {
           </>
         )}
       </Stack>
-    </main>
+    </StepView>
   );
 }

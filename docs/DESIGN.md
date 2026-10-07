@@ -318,9 +318,15 @@ shapes, one outline, the palette — never a grid of identical pockets:
 - **Adoption** (`src/components/adopt/`). The three species sit large and
   alive; their eyes follow the pointer (`useEyesFollow`); the chosen one
   lifts into a `sun` ring and hops. On a phone they are a row you swipe,
-  and the one you land on is chosen. Naming stitches the name on the pet's
-  blanket as it is typed, and each temperament is shown as the face it
-  makes. The name field keeps its label visible; temperaments are a compact
+  and the one you land on is chosen. Each step's one action is pinned to
+  the foot of a phone on the ground's colour (`pk-adopt__act`), so choosing,
+  naming and going home never wait on a scroll and stay above the keyboard;
+  going on slides the next step in from the right, Back slides it the other
+  way. Naming stitches the name on the pet's blanket as it is typed, sized
+  in the blanket's own units so a long name still fits across it and hops
+  with the pet; suggestions are set as names, not labels. Each temperament
+  is shown as the face it makes, its words from the top of the card. The
+  name field keeps its label visible; temperaments are a compact
   two-column grid on phones. Back returns to choosing without losing the
   draft, including the Android gesture. The welcome is the pet radiant
   beside its first page, on Paper.

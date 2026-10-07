@@ -11,8 +11,8 @@ import { ButtonLink } from "./controls";
  * nothing rises twice. The shell and the dock never move. Nothing that
  * changes within a screen (its own state, a refresh) plays any of this.
  */
-const ARRIVE = { "nav-forward": "pk-in-forward", "nav-back": "pk-in-back", "nav-place": "pk-in", default: "pk-swap" };
-const LEAVE = { "nav-forward": "pk-out-forward", "nav-back": "pk-out-back", "nav-place": "pk-out", default: "pk-swap" };
+export const ARRIVE = { "nav-forward": "pk-in-forward", "nav-back": "pk-in-back", "nav-place": "pk-in", default: "pk-swap" };
+export const LEAVE = { "nav-forward": "pk-out-forward", "nav-back": "pk-out-back", "nav-place": "pk-out", default: "pk-swap" };
 
 /**
  * A screen has one primary action, and it is the only `sun` fill in view.

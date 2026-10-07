@@ -5580,12 +5580,34 @@ details > .pk-risks {
 .pk-adopt__line {
   max-width: 28ch;
 }
-.pk-adopt__go {
-  display: grid;
-  gap: var(--space-3);
+.pk-adopt__note {
   max-width: 440px;
-  margin: var(--space-6) auto 0;
+  margin: var(--space-4) auto 0;
   text-align: center;
+}
+/* The step's one action. On a phone it stays under the thumb — pinned to
+   the foot of the screen on the ground's own colour, over whatever scrolls
+   beneath it — so choosing, naming and going home never wait on a scroll,
+   and above the keyboard while a name is typed. */
+.pk-adopt__act {
+  max-width: 440px;
+  margin: var(--space-4) auto 0;
+}
+@media (max-width: 719px) {
+  .pk-adopt__act {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    max-width: none;
+    margin-inline: calc(-1 * max(var(--gutter), env(safe-area-inset-left)));
+    padding: var(--space-3) max(var(--gutter), env(safe-area-inset-right)) calc(var(--space-3) + env(safe-area-inset-bottom))
+      max(var(--gutter), env(safe-area-inset-left));
+    background: var(--ground);
+    border-top: var(--stroke-hair) solid var(--edge-soft);
+  }
+  .pk-adopt {
+    padding-bottom: 0;
+  }
 }
 
 @keyframes pk-peek {
@@ -5616,16 +5638,20 @@ details > .pk-risks {
   display: grid;
   justify-items: center;
 }
-.pk-adopt__portrait > .pk-adopt__pet {
-  width: 100%;
-  display: grid;
-  justify-items: center;
-}
-.pk-adopt__portrait .pk-pet--lg {
+/* The pet and its blanket are one thing: the name is stitched on in the
+   blanket's own units, so it is sized to the frame it sits in, shrinks to
+   fit a long name across it, and hops when the pet does. */
+.pk-adopt__plate {
+  position: relative;
+  display: block;
   width: min(100%, 340px);
+  container-type: inline-size;
+}
+.pk-adopt__plate > .pk-pet {
+  width: 100%;
 }
 @media (min-width: 1024px) {
-  .pk-adopt__portrait .pk-pet--lg {
+  .pk-adopt__plate {
     width: min(100%, 440px);
   }
 }
@@ -5633,20 +5659,17 @@ details > .pk-risks {
   position: absolute;
   left: 50%;
   bottom: 6.5%;
-  max-width: 70%;
+  max-width: 84%;
   transform: translateX(-50%);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-display);
   font-variation-settings: "SOFT" 100, "WONK" 1;
-  font-size: clamp(20px, 6cqi, 32px);
+  font-size: clamp(13px, min(10cqi, calc(150cqi / var(--len, 6))), 34px);
   font-weight: 600;
   color: var(--ink);
   pointer-events: none;
-}
-.pk-adopt__portrait {
-  container-type: inline-size;
 }
 .pk-adopt__tag--empty {
   color: var(--ink-faint);
@@ -5659,11 +5682,16 @@ details > .pk-risks {
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
+/* A name is a name, not a label: set as it will be written. */
 .pk-adopt__suggest {
   min-height: var(--touch-target);
   cursor: pointer;
   color: var(--ink);
   font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   transition: transform var(--dur-press) var(--ease-press);
 }
 .pk-adopt__suggest[aria-pressed="true"] {
@@ -5694,6 +5722,7 @@ details > .pk-risks {
   display: grid;
   grid-template-columns: 68px minmax(0, 1fr);
   align-items: center;
+  align-content: start;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2);
   border: var(--stroke-line) solid var(--edge);
@@ -5744,7 +5773,7 @@ details > .pk-risks {
   min-width: 0;
 }
 @media (max-width: 719px) {
-  .pk-adopt__name-step .pk-pet--lg { width: min(56vw, 220px); }
+  .pk-adopt__name-step .pk-adopt__plate { width: min(56vw, 220px); }
   .pk-temper {
     grid-template-columns: var(--touch-target) minmax(0, 1fr);
     gap: var(--space-2);

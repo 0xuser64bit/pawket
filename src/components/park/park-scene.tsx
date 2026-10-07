@@ -29,6 +29,21 @@ const SPOTS: Array<{ x: number; y: number; s: number }> = [
   { x: 64, y: 38, s: 0.6 },
   { x: 18, y: 39, s: 0.58 },
 ];
+/**
+ * A phone's park is square and holds eight: four in front, four standing
+ * clear above their heads, so every name can be read and nobody is cut by
+ * the frame.
+ */
+const PHONE_SPOTS: Array<{ x: number; y: number; s: number }> = [
+  { x: 14, y: 3, s: 1 },
+  { x: 38, y: 1, s: 1 },
+  { x: 62, y: 4, s: 1 },
+  { x: 86, y: 2, s: 1 },
+  { x: 20, y: 33, s: 0.72 },
+  { x: 40, y: 31, s: 0.72 },
+  { x: 60, y: 34, s: 0.72 },
+  { x: 80, y: 32, s: 0.72 },
+];
 export const PARK_CAPACITY = SPOTS.length;
 
 /** A pet's own pace, from its address: how long a wander takes and where in it they start. */
@@ -98,11 +113,23 @@ export function ParkScene({ pets }: { pets: ParkPet[] }) {
       <ul className="pk-parkscene__pets">
         {pets.slice(0, PARK_CAPACITY).map((pet, i) => {
           const spot = SPOTS[i];
+          const phone = PHONE_SPOTS[i] ?? spot;
           return (
             <li
               key={pet.address}
               className="pk-parkscene__pet"
-              style={{ left: `${spot.x}%`, bottom: `${spot.y}%`, "--pk-depth": spot.s, zIndex: 20 - i, ...pace(pet.address) } as CSSProperties}
+              style={
+                {
+                  "--pk-x": `${spot.x}%`,
+                  "--pk-y": `${spot.y}%`,
+                  "--pk-s": spot.s,
+                  "--pk-phone-x": `${phone.x}%`,
+                  "--pk-phone-y": `${phone.y}%`,
+                  "--pk-phone-s": phone.s,
+                  zIndex: 20 - i,
+                  ...pace(pet.address),
+                } as CSSProperties
+              }
             >
               <Link href={`/pet/${pet.address}`} className="pk-parkscene__link" transitionTypes={["nav-forward"]}>
                 <span className="pk-parkscene__walk">

@@ -6429,13 +6429,20 @@ details > .pk-risks {
   list-style: none;
 }
 .pk-parkscene__pet {
+  --pk-depth: var(--pk-s, 1);
   position: absolute;
+  left: var(--pk-x);
+  bottom: var(--pk-y);
   width: calc(30cqh * var(--pk-depth, 1));
   translate: -50% 0;
 }
-/* A phone's park holds eight, so nobody stands on anybody. */
+/* A phone's park holds eight on its own spots, so nobody stands on anybody
+   and every name tag is clear of the heads in front of it. */
 @media (max-width: 719px) {
   .pk-parkscene__pet {
+    --pk-depth: var(--pk-phone-s, 1);
+    left: var(--pk-phone-x);
+    bottom: var(--pk-phone-y);
     width: calc(24cqh * var(--pk-depth, 1));
   }
   .pk-parkscene__pet:nth-child(n + 9) {

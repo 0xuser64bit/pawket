@@ -3062,7 +3062,9 @@ li {
 .pk-tile-hit--locked .pk-tile__art {
   opacity: 0.4;
 }
-/* The tile is the control. The button itself has no second frame. */
+/* The tile is the control. The button itself has no second frame; the tile
+   lifts under a pointer and presses flat under a finger, like a card that
+   is a link. */
 .pk-tile-hit {
   display: block;
   width: 100%;
@@ -3075,6 +3077,21 @@ li {
   text-align: start;
   cursor: pointer;
   border-radius: var(--radius-lg);
+}
+.pk-tile-hit:not(.pk-tile-hit--locked) .pk-tile {
+  transition:
+    transform var(--dur-press) var(--ease-press),
+    box-shadow var(--dur-press) var(--ease-press);
+}
+@media (hover: hover) {
+  .pk-tile-hit:not(.pk-tile-hit--locked, :disabled):hover .pk-tile {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-sticker);
+  }
+}
+.pk-tile-hit:not(.pk-tile-hit--locked, :disabled):active .pk-tile {
+  transform: translate(1px, 1px);
+  box-shadow: none;
 }
 .pk-log {
   list-style: none;

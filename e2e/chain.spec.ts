@@ -32,7 +32,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await expect(page.getByRole("button", { name: /^Your wallet, .+…/ })).toBeVisible();
 
   await page.getByRole("button", { name: `Keep ${name} on Solana` }).click();
-  await page.getByRole("dialog").getByRole("button", { name: `Keep ${name}`, exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Keep on Solana", exact: true }).click();
   await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
   // The toast outlives the sheet that asked for it.
   await expect(page.getByText(`Keep ${name} on Solana`).first()).toBeVisible();
@@ -85,7 +85,7 @@ test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) 
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await page.getByRole("button", { name: `Keep ${name} on Solana` }).click();
-  await page.getByRole("dialog").getByRole("button", { name: `Keep ${name}`, exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Keep on Solana", exact: true }).click();
   await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
 
   await page.goto("/guilds/new");
@@ -122,7 +122,7 @@ test("a Pawket Wallet links this browser, and a care on Solana asks the wallet n
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await page.getByRole("button", { name: `Keep ${name} on Solana` }).click();
-  await page.getByRole("dialog").getByRole("button", { name: `Keep ${name}`, exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Keep on Solana", exact: true }).click();
   await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText("Each care asks your wallet.")).toBeVisible();
 

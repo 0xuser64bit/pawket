@@ -19,7 +19,7 @@ export function OwnerActions({ owner, address, name }: { owner: string; address:
       size="sm"
       onClick={() => {
         choose(address);
-        router.push("/home");
+        router.push("/home", { transitionTypes: ["nav-place"] });
       }}
     />
   );

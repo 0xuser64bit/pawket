@@ -21,7 +21,7 @@ export function PetsShelf({ companion, onConnect }: { companion: CompanionState;
 
   function bringHome(id: string) {
     companion.choose(id);
-    router.push("/home");
+    router.push("/home", { transitionTypes: ["nav-place"] });
   }
 
   return (

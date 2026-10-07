@@ -59,7 +59,7 @@ export function FoundGuild() {
     ]);
     if (result?.outcome === "confirmed") {
       companion.refresh();
-      router.push(`/guilds/${slug}`);
+      router.push(`/guilds/${slug}`, { transitionTypes: ["nav-forward"] });
     }
   }
 

@@ -438,7 +438,7 @@ export function AdoptFlow() {
               />
             </Paper>
             <div className="pk-adopt__act">
-              <Button label="Take them home" size="lg" full icon="home" onClick={() => router.push("/home")} />
+              <Button label="Take them home" size="lg" full icon="home" onClick={() => router.push("/home", { transitionTypes: ["nav-place"] })} />
             </div>
             {adopted ? (
               <div className="pk-adopt__keep">
@@ -459,7 +459,7 @@ export function AdoptFlow() {
                 onCarried={(address) => {
                   removePet(adopted.id);
                   choosePet(address);
-                  router.push("/home");
+                  router.push("/home", { transitionTypes: ["nav-place"] });
                 }}
               />
             ) : null}

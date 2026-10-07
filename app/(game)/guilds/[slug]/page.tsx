@@ -105,15 +105,14 @@ export default async function GuildPage({ params }: Props) {
             {guild.motto ? <p className="body-lg pk-muted">{guild.motto}</p> : null}
             <Row gap={2} wrap style={{ marginTop: "var(--space-3)", alignItems: "center" }}>
               <Chip label={`${guild.memberCount} ${guild.memberCount === 1 ? "pet" : "pets"}`} tone="pool" icon="users" />
-              <Chip label={`Since ${since(guild.createdAt)}`} />
               <Chip label="Optional" tone="bloom" icon="guild" />
-              <ShareButton name={guild.name} label="Share" />
+              <Chip label={`Since ${since(guild.createdAt)}`} tone="plain" />
             </Row>
-            {delisted ? null : (
-              <div className="pk-guild-hero__join">
-                <GuildMembership guild={{ address: guild.address, name: guild.name }} />
-              </div>
-            )}
+            {/* Facts above, the ways in below: joining, and passing the page on. */}
+            <div className="pk-guild-hero__join">
+              {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name }} />}
+              <ShareButton name={guild.name} label="Share this guild" />
+            </div>
           </div>
         </header>
 

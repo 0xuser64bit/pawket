@@ -58,20 +58,20 @@ function LevelRing({ level, into, of }: { level: number; into: number; of: numbe
   );
 }
 
-/** One vital, minimized: its glyph, five segments and the number. */
+/** One vital, minimized: its glyph, its name and the number, then five segments across the column. */
 function MiniVital({ label, icon, value }: { label: string; icon: IconName; value: number }) {
   const filled = Math.round(value / 20);
   return (
     <span className={["pk-mini", value < 25 && "pk-mini--low"].filter(Boolean).join(" ")} role="img" aria-label={`${label} ${value} / 100`}>
-      <Icon name={icon} size={14} />
-      <span className="pk-mini__label" aria-hidden="true">{label}</span>
+      <span className="pk-mini__head" aria-hidden="true">
+        <Icon name={icon} size={14} />
+        <span className="pk-mini__label">{label}</span>
+        <span className="pk-mini__n">{value}</span>
+      </span>
       <span className="pk-mini__track" aria-hidden="true">
         {Array.from({ length: 5 }, (_, i) => (
           <span key={i} className={i < filled ? "pk-mini__seg pk-mini__seg--on" : "pk-mini__seg"} />
         ))}
-      </span>
-      <span className="pk-mini__n" aria-hidden="true">
-        {value}
       </span>
     </span>
   );
@@ -81,8 +81,9 @@ function MiniVital({ label, icon, value }: { label: string; icon: IconName; valu
  * Everything you can do in the room, floating under it: how the pet is
  * (level, the four vitals, the mood in a word), the four cares as round
  * buttons — the one the pet most wants in sun, a resting one counting down
- * — and the tools: say something and today's numbers open a panel below,
- * and how you look opens in your profile. Nothing here sits over the animal.
+ * inside its face, its name kept beneath — and the tools: say something and
+ * today's numbers open a panel below, and how you look opens in your
+ * profile. Nothing here sits over the animal.
  */
 export function Deck({
   name,
@@ -155,10 +156,13 @@ export function Deck({
               onClick={() => onCare(action)}
             >
               <span className="pk-care__face">
-                <Icon name={CARE_ICON[action]} size={20} />
+                {left > 0 ? (
+                  <span className="pk-care__wait" aria-hidden="true">{formatCountdown(left)}</span>
+                ) : (
+                  <Icon name={CARE_ICON[action]} size={22} />
+                )}
               </span>
               <span className="pk-care__label">{label}</span>
-              <span className="pk-care__wait" aria-hidden="true">{left > 0 ? formatCountdown(left) : ""}</span>
             </button>
           );
         })}

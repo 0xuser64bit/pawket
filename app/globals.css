@@ -2383,8 +2383,9 @@ li {
   padding: var(--space-3) 0 var(--space-2);
 }
 /* A display title's line is tighter than its descenders, so the line under
-   it keeps clear of the g and the y. */
-.pk-screen__bar :is(.display-l, .display-m) + p {
+   it keeps clear of the g, the p and the y — in a screen's bar, and in any
+   head that sets a title beside its action. */
+:is(.pk-screen__bar, .pk-spread) :is(.display-l, .display-m) + p {
   margin-top: var(--space-2);
 }
 
@@ -3651,9 +3652,13 @@ li {
 .pk-room--stage {
   max-height: none;
 }
+/* On a desktop the room is a wide stage, but never so tall that the deck on
+   its foot falls under the dock: on a laptop's short screen it gives up
+   height, not the care buttons. */
 @media (min-width: 1024px) {
   .pk-room--stage {
     aspect-ratio: 16 / 7;
+    max-height: max(300px, calc(100svh - 400px));
   }
 }
 
@@ -3666,7 +3671,19 @@ li {
 }
 .pk-home__line p:empty { display: none; }
 .pk-home__line { flex-wrap: wrap; gap: var(--space-3); }
-.pk-home-screen .pk-screen__bar > div:first-child { min-width: 0; }
+/* Whose room, and who else is home, share one line: the faces stay beside
+   the name (and scroll there when the family is large) rather than taking a
+   row of their own above the room. */
+.pk-home-screen .pk-screen__bar {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+.pk-home-screen .pk-screen__bar > div:first-child { flex: 1 1 auto; min-width: 0; }
+.pk-home-screen .pk-screen__bar > .pk-switch {
+  flex: none;
+  max-width: 46%;
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0;
+}
 .pk-home-screen h1 { overflow-wrap: anywhere; }
 .pk-home__noprompt {
   display: flex;
@@ -3684,13 +3701,37 @@ li {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-/* Under the day: the way to the record and the family, in quiet words. */
+/* Under the day: the way to the record, as a row you can press, and the
+   rest of the family beneath it in quiet words. */
 .pk-home__foot {
   display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.pk-home__foot > .pk-rowcard {
+  justify-self: stretch;
+}
+/* A card that is one line you can press: what it opens, a line of what is
+   there, and the way in. */
+.pk-rowcard {
+  display: flex;
+  align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2) 0 0;
-  border-top: var(--stroke-hair) solid var(--edge-soft);
-  margin-top: var(--space-2);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5);
+}
+.pk-rowcard__words {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pk-rowcard__words > .title {
+  overflow-wrap: anywhere;
+}
+.pk-rowcard > svg {
+  flex: none;
+  color: var(--ink-soft);
 }
 /* A button that reads as a link inside a line of words. */
 .pk-linkish {
@@ -3839,6 +3880,11 @@ li {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2) var(--space-4);
 }
+@media (min-width: 1024px) {
+  .pk-deck__vitals {
+    grid-template-columns: repeat(2, 132px);
+  }
+}
 .pk-deck__care {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3903,24 +3949,39 @@ li {
   color: var(--sprout-text);
 }
 
-/* A vital, minimized: glyph, five segments, the count. */
+/* A vital, minimized: its glyph, name and count on one line, then five
+   segments across the whole column — a bar you can count at a glance. */
 .pk-mini {
   display: grid;
-  grid-template-columns: 14px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-1);
+  gap: 5px;
+  min-width: 0;
   color: var(--ink-soft);
 }
-.pk-mini__label { font-size: 12px; line-height: 16px; }
+.pk-mini__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.pk-mini__head svg {
+  flex: none;
+}
+.pk-mini__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 16px;
+}
 .pk-mini__track {
-  display: inline-flex;
-  gap: 2px;
-  grid-column: 2;
-  grid-row: 2;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
 }
 .pk-mini__seg {
-  width: 7px;
-  height: 8px;
+  height: 6px;
   border-radius: 2px;
   background: var(--surface-sunk);
   box-shadow: inset 0 0 0 1px var(--edge-soft);
@@ -3934,12 +3995,10 @@ li {
   box-shadow: inset 0 0 0 1px var(--sun-edge);
 }
 .pk-mini__n {
-  grid-column: 3;
-  grid-row: 1 / 3;
-  min-width: 2ch;
+  flex: none;
   font-family: var(--font-mono);
   font-size: 11px;
-  line-height: 14px;
+  line-height: 16px;
   color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
 }
@@ -3965,8 +4024,8 @@ li {
   --pk-on: var(--ink);
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border: var(--stroke-line) solid var(--edge);
   border-bottom-width: calc(var(--stroke-line) + var(--stroke-shelf));
   border-bottom-color: var(--pk-shelf);
@@ -4006,8 +4065,17 @@ li {
 .pk-care[disabled] {
   cursor: default;
 }
+/* Resting: the shelf drops away, the edge breaks into dashes and the face
+   counts down in full ink, so the time left is read, not squinted at. */
 .pk-care[disabled] .pk-care__face {
-  opacity: var(--opacity-disabled);
+  --pk-face: var(--surface-sunk);
+  border-style: dashed;
+  border-color: var(--edge-soft);
+  border-bottom-width: var(--stroke-line);
+  color: var(--ink-soft);
+}
+.pk-care[disabled] .pk-care__label {
+  color: var(--ink-faint);
 }
 .pk-care__label {
   font-family: var(--font-text);
@@ -4018,14 +4086,11 @@ li {
   text-transform: uppercase;
 }
 .pk-care__wait {
-  min-height: 14px;
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 14px;
   font-weight: 500;
   letter-spacing: 0;
-  text-transform: none;
-  color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
 }
 
@@ -4066,12 +4131,73 @@ li {
 }
 
 /* Today's round, in one band under the room: the title and the count, then
-   five goals as small pills that fill in as they happen. No card around it:
-   it is a line of the room's day, not a thing to open. */
+   the five things that make a good day as a row of marks that fill in as
+   they happen — read like a tracker, never pressed like a button (only the
+   round, which happens in the playground, is a way there). No card around
+   it: it is a line of the room's day, not a thing to open. */
 .pk-today {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-2) 0;
+}
+.pk-today__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+.pk-today__goals {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+  max-width: 440px;
+  margin: 0;
+  padding: 0;
+}
+.pk-goal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-faint);
+  text-align: center;
+}
+.pk-goal > span:not(.pk-goal__mark),
+.pk-goal a {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pk-goal a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pk-goal__mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: var(--stroke-line) dashed var(--edge-soft);
+  border-radius: var(--radius-pill);
+  color: var(--ink-faint);
+  transition:
+    background-color var(--dur-swap) var(--ease-swap),
+    border-color var(--dur-swap) var(--ease-swap),
+    color var(--dur-swap) var(--ease-swap);
+}
+.pk-goal--done {
+  color: var(--ink);
+}
+.pk-goal--done .pk-goal__mark {
+  border-style: solid;
+  border-color: var(--sprout-edge);
+  background: var(--sprout-soft);
+  color: var(--sprout-text);
 }
 @media (min-width: 1024px) {
   .pk-today {
@@ -4082,62 +4208,6 @@ li {
   .pk-today__line {
     grid-column: 2;
   }
-}
-.pk-today__head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-}
-.pk-today__goals {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-}
-.pk-today__goals .pk-goal {
-  gap: var(--space-2);
-  padding: 3px var(--space-3) 3px 3px;
-  border: var(--stroke-hair) solid var(--edge-soft);
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  font-size: 13px;
-}
-.pk-today__goals .pk-goal__mark {
-  width: 22px;
-  height: 22px;
-}
-.pk-today__goals .pk-goal--done {
-  border-color: var(--sprout-edge);
-}
-.pk-goal {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: 14px;
-  color: var(--ink-soft);
-}
-.pk-goal a {
-  color: var(--ink);
-  text-underline-offset: 3px;
-}
-.pk-goal__mark {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border: var(--stroke-line) solid var(--edge-soft);
-  border-radius: var(--radius-pill);
-  color: var(--ink-faint);
-}
-.pk-goal--done {
-  color: var(--ink);
-}
-.pk-goal--done .pk-goal__mark {
-  border-color: var(--sprout-edge);
-  background: var(--sprout-soft);
-  color: var(--sprout-text);
 }
 
 /* Who is home: every pet as a face in a circle, the one at home ringed. */

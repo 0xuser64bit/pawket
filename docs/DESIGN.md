@@ -335,15 +335,21 @@ shapes, one outline, the palette — never a grid of identical pockets:
   whole (`pose="full"`) and its face answers the game. Sky clouds have no
   outline, so they never read as the storm clouds to dodge.
 - **Home** (`src/components/home/`). On a phone the room and care deck are
-  separate, full-width surfaces. On desktop the deck tucks onto its foot.
-  The level is a labelled ring of ten segments, the four
-  vitals have names, glyphs, five segments and a count, the four cares are
-  round buttons on a shelf (the one the pet wants in sun), and the tools.
-  Care names stay visible beside their countdowns. Success and refusal use
-  the shared toast, so feedback never shifts the care controls. Faces in a
-  scrollable bar say who is home; a labelled “Keep on Solana” button sits
-  beside the room switch. Photo prints the room on the room's own
-  paper.
+  separate, full-width surfaces; whose room it is and who else is home share
+  one line above them. On desktop the deck tucks onto the room's foot, and
+  the room gives up height on a short screen rather than letting the dock
+  cover the deck. The level is a labelled ring of ten segments; each vital
+  is its glyph, name and count on one line over five segments that span its
+  column. The four cares are round buttons on a shelf (the one the pet wants
+  in sun); a resting one loses its shelf, breaks its edge into dashes and
+  counts down inside its face in full ink, its name kept beneath. Success
+  and refusal use the shared toast, so feedback never shifts the care
+  controls. Today's round is a row of five marks that fill in as they
+  happen — a tracker, never a row of buttons; only the round, which happens
+  in the playground, is a link. The pet's record is a row you press; letting
+  a pet go lives at the foot of that record, behind a second press, never
+  on the daily room. A labelled “Keep on Solana” button sits beside the room
+  switch. Photo prints the room on the room's own paper.
 - **The profile** (`src/components/profile/`). The same stage with a separate
   plate beneath it on mobile (the player's name and what they have done together,
   counted), the look editor always open, then the shelf: pets, the

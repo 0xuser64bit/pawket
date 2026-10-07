@@ -1,15 +1,16 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   BackLink,
+  Button,
   ButtonLink,
   Card,
-  Chip,
   Columns,
   EmptyState,
   Meter,
   PetFrame,
-  Row,
   Screen,
   Stack,
   Waiting,
@@ -23,7 +24,8 @@ import {
   SPECIES_SKY,
   petLook,
 } from "@/lib/game/appearance";
-import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
+import { projectGuestPet, streakAsOf, type GuestPet } from "@/lib/guest/pet";
+import { removePet } from "@/lib/guest/storage";
 import { usePets } from "@/lib/guest/use-pets";
 import { formatUtcDate } from "@/lib/utils/format";
 import { StickerStrip } from "./sticker-strip";
@@ -111,12 +113,6 @@ export function PetScreen({ id }: { id: string }) {
               <ButtonLink label="Dress" href="/profile?tab=wardrobe#shelf" icon="spark" size="sm" tone="quiet" />
             </div>
 
-            <Row gap={2} wrap>
-              <Chip label="Cloth" />
-              <Chip label={PERSONALITY_LABEL[pet.personality]} />
-              {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
-            </Row>
-
             <Card>
               <Stack gap={3}>
                 <Meter
@@ -179,9 +175,46 @@ export function PetScreen({ id }: { id: string }) {
             </Card>
 
             <ButtonLink label="Back to the room" href="/home" tone="quiet" full icon="home" />
+            <LetGo pet={pet} others={pets.length - 1} />
           </>
         }
       />
     </Screen>
+  );
+}
+
+/**
+ * Letting a pet go from this browser: last on its record, behind a second
+ * press that says what goes with it — never one tap away on the daily room.
+ */
+function LetGo({ pet, others }: { pet: GuestPet; others: number }) {
+  const { here } = useHere();
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <section className="pk-letgo" aria-label={`Let ${pet.name} go`}>
+      {confirming ? (
+        <Card variant="quiet">
+          <p className="body-sm">
+            Let {pet.name} go from {here}? Their care, streak and clothes go too. This cannot be undone.
+            {others > 0 ? " Your other pets stay." : ""}
+          </p>
+          <div className="pk-spread" style={{ marginTop: "var(--space-3)" }}>
+            <Button tone="quiet" size="sm" label="Keep them" onClick={() => setConfirming(false)} />
+            <Button
+              tone="alarm"
+              size="sm"
+              label="Let them go"
+              onClick={() => {
+                removePet(pet.id);
+                router.replace(others > 0 ? "/profile#shelf" : "/home");
+              }}
+            />
+          </div>
+        </Card>
+      ) : (
+        <Button tone="ghost" size="sm" label={`Let ${pet.name} go`} className="pk-btn--flush" onClick={() => setConfirming(true)} />
+      )}
+    </section>
   );
 }

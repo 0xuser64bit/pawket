@@ -274,7 +274,7 @@ export function HomeScreen() {
             <span className="caption pk-faint">
               {PERSONALITY_LABEL[pet.personality]} · {SPECIES_LABEL[pet.species]}
             </span>
-            <Chip label={onChain ? "On Solana" : `In ${here}`} tone={onChain ? "pool" : undefined} />
+            <Chip label={onChain ? "On Solana" : `In ${here}`} tone={onChain ? "pool" : "plain"} icon={onChain ? "check" : undefined} />
             {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
           </Row>
         </div>
@@ -611,28 +611,25 @@ function Vital({ label, value }: { label: string; value: number }) {
   );
 }
 
-/** The way to the pet's record and to the rest of the family, and — in this browser — letting a pet go. */
+/**
+ * Under the day: the way to the pet's whole record, and to the rest of the
+ * family. Letting a pet go lives on its record, away from the daily care.
+ */
 function HomeFoot({ pet, onChain, others }: { pet: GuestPet; onChain: boolean; others: number }) {
   const { here } = useHere();
-  const [confirming, setConfirming] = useState(false);
   return (
     <div className="pk-home__foot">
-      <Row gap={1} wrap>
-        <ButtonLink label={`${pet.name}'s record`} href={`/pet/${pet.id}`} tone="ghost" size="sm" after="right" />
-        {others > 0 ? <ButtonLink label={`All ${others + 1} of your pets`} href="/profile#shelf" tone="ghost" size="sm" /> : null}
-        {onChain || confirming ? null : <Button tone="ghost" size="sm" label={`Let ${pet.name} go`} onClick={() => setConfirming(true)} />}
-      </Row>
-      {!onChain && confirming ? (
-        <Card variant="quiet">
-          <p className="body-sm">
-            Let {pet.name} go from {here}? Their care, streak and clothes go too. This cannot be undone.
-            {others > 0 ? " Your other pets stay." : ""}
-          </p>
-          <Row gap={2} wrap style={{ marginTop: "var(--space-3)" }}>
-            <Button tone="alarm" size="sm" label={`Let ${pet.name} go`} onClick={() => removePet(pet.id)} />
-            <Button tone="quiet" size="sm" label="Keep them" onClick={() => setConfirming(false)} />
-          </Row>
-        </Card>
+      <Card href={`/pet/${pet.id}`} className="pk-rowcard">
+        <span className="pk-rowcard__words">
+          <span className="title">{pet.name}&apos;s record</span>
+          <span className="caption pk-faint">
+            Every care, sticker and round, {onChain ? "kept on Solana for anyone to read" : `kept in ${here}`}
+          </span>
+        </span>
+        <Icon name="right" size={18} />
+      </Card>
+      {others > 0 ? (
+        <ButtonLink label={`All ${others + 1} of your pets`} href="/profile#shelf" tone="ghost" size="sm" after="right" className="pk-btn--flush" />
       ) : null}
     </div>
   );

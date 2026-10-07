@@ -3,6 +3,26 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: The audit of 7 October, answered where each rule is enforced
+
+**Context:** An automated security review of `aff66a4` listed 68 patterns in
+Pawket's code and 12 package notes. It confirmed no defect and asked that
+each be read; most were the program's accounts and arithmetic.
+**Decision:** Answer each where it is enforced, prove each change with a test
+that fails without it, and record the rest in `docs/SECURITY.md`. The
+program's devnet upgrade of 2026-10-07 (slot 508518503) holds a pet's
+passport and a joined guild to their seeds, a closet or guestbook that
+exists already to whose it is, and refuses an event span too long to count.
+Every instruction, account layout and error code is as it was, and every
+live account was checked against the new rules first. Packages move to
+patched releases through `pnpm-workspace.yaml`; bigint-buffer, which has
+none, is patched to its pure-JS path. Next.js moves to 16.3.8 for a remote
+code execution in `next/og` the report did not list, and the sponsor signs
+at most three signatures.
+**Consequence:** `pnpm audit` lists only bigint-buffer (patched) and braces
+(lint only). The binary before the upgrade is
+`.keys/backups/pawket-devnet-replaced-2026-10-07-by-audit-hardening.so`.
+
 ## 2026-10: pawket.world is the official origin
 
 **Context:** The owner purchased `pawket.world` and asked to make it Pawket's

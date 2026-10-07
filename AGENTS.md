@@ -112,6 +112,7 @@ or a transaction. Inside the app a pet is kept "in this app" (`useHere()`).
 | Touching guilds/launches  | `docs/GUILDS.md` + `docs/METEORA-INTEGRATION.md` + `docs/SAFETY-ECONOMY.md` |
 | Touching indexer/API      | `docs/INDEXER.md` + `docs/API-CONTRACTS.md` + `docs/ROUTES.md` |
 | Preparing mainnet (v1)    | `docs/MAINNET.md`                                           |
+| Reviewing security, or an audit | `docs/SECURITY.md`                                    |
 | Adding tests              | `docs/TESTING.md`                                           |
 | Declaring work done       | `docs/WORKFLOW.md` (Definition of Done)                     |
 | Questioning a decision    | `docs/DECISIONS.md` (history) + `docs/OPEN-QUESTIONS.md` (pending) |

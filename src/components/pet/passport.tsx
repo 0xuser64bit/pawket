@@ -91,7 +91,7 @@ export function Passport({
               </p>
             </div>
             <Row gap={2} wrap>
-              <Chip label="On Solana" tone="pool" />
+              <Chip label="On Solana" tone="pool" icon="check" />
               {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
             </Row>
             {guild ? (
@@ -105,11 +105,11 @@ export function Passport({
                 </span>
               </Link>
             ) : null}
-            <Row gap={2} wrap>
+            <div className="pk-acts">
               <OwnerActions owner={pet.owner} address={pet.address} name={pet.name} />
               <ButtonLink label={`Visit ${pet.name}`} href={`/pet/${pet.address}/visit`} icon="home" tone="quiet" size="sm" transitionTypes={["nav-forward"]} />
               <ShareButton name={pet.name} />
-            </Row>
+            </div>
           </div>
         }
         second={

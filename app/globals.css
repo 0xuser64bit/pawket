@@ -7334,6 +7334,30 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
   transition: stroke var(--dur-swap) var(--ease-swap);
 }
 
+/* Five emotes, five equal tiles: one row, never three and two of different
+   widths. On a phone each is its glyph over its word. */
+.pk-emotes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.pk-emotes > .pk-btn {
+  width: 100%;
+}
+@media (max-width: 719px) {
+  .pk-emotes {
+    gap: 6px;
+  }
+  .pk-emotes > .pk-btn {
+    flex-direction: column;
+    gap: 6px;
+    min-height: 64px;
+    padding: var(--space-2) 2px;
+    letter-spacing: 0.04em;
+  }
+}
+
 /* What a tool on the deck opens below it rises into place. */
 .pk-deck__panel > * {
   animation: pk-swap-in var(--dur-swap) var(--ease-swap);

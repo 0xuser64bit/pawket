@@ -20,7 +20,7 @@ import {
 import { KeepSheet } from "@/components/home/keep-sheet";
 import { dismissToast, showToast } from "@/components/pk/toast";
 import { RemindMe } from "@/components/home/remind-me";
-import { CARE_ICON, Deck, type Panel } from "@/components/home/deck";
+import { CARE_ICON, Deck, type Gain, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
 import { PhotoDialog } from "@/components/home/photo";
 import { PetSwitcher } from "@/components/home/pet-switcher";
@@ -84,6 +84,7 @@ export function HomeScreen() {
   /** The browser pet whose "keep it on Solana" sheet is open. */
   const [keeping, setKeeping] = useState<GuestPet | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
+  const [gain, setGain] = useState<Gain | null>(null);
   const [shot, setShot] = useState<string | null>(null);
   const roomView = useRef<RoomView>(null);
   const closePhoto = useCallback(() => setShot(null), []);
@@ -96,6 +97,7 @@ export function HomeScreen() {
   const onStatus = useCallback((next: DirectorStatus) => setStatus(next), []);
   const lookShown = roomState === "live" || roomState === "loading";
   const ask = (moment: string) => setCue({ moment, nonce: Date.now() });
+  const earned = (action: CareActionType, xp: number) => setGain({ action, xp, at: Date.now() });
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 1000);
@@ -233,6 +235,7 @@ export function HomeScreen() {
     });
     // Only now, with the care saved, does the room show it — and a new
     // level is the one thing worth a cheer.
+    earned(action, result.xpGained);
     ask(level ? "cheer" : CARE_MOMENT[action]);
     haptic(level ? "cheer" : "done");
   }
@@ -261,6 +264,7 @@ export function HomeScreen() {
           check.ok ? earnedLine(pet, check.pet, { onChain: true, guild: Boolean(active.member) }) : ""
         }`,
       });
+      if (check.ok) earned(action, check.xpGained);
       ask(level ? "cheer" : CARE_MOMENT[action]);
     }
   }
@@ -315,6 +319,7 @@ export function HomeScreen() {
           busy={sender.busy}
           streak={streak.count}
           panel={panel}
+          gain={gain}
           onCare={care}
           onPanel={setPanel}
           onSnap={roomState === "live" ? () => setShot(roomView.current?.snap() ?? null) : undefined}

@@ -22,6 +22,9 @@ const VITALS: Array<{ key: keyof PetStats; label: string; icon: IconName }> = [
 
 export type Panel = "say" | "today";
 
+/** XP a care just earned, shown once where the thumb is; a new `at` replays it. */
+export type Gain = { action: CareActionType; xp: number; at: number };
+
 const TOOLS: Array<{ key: Panel; label: string; icon: IconName }> = [
   { key: "say", label: "Say", icon: "chat" },
   { key: "today", label: "Today", icon: "info" },
@@ -97,6 +100,7 @@ export function Deck({
   busy,
   streak,
   panel,
+  gain,
   onCare,
   onPanel,
   onSnap,
@@ -112,6 +116,7 @@ export function Deck({
   busy: boolean;
   streak: number;
   panel: Panel | null;
+  gain?: Gain | null;
   onCare: (action: CareActionType) => void;
   onPanel: (panel: Panel | null) => void;
   /** Take a photo of the room; absent where the room cannot be photographed (the flat room). */
@@ -163,6 +168,11 @@ export function Deck({
                 )}
               </span>
               <span className="pk-care__label">{label}</span>
+              {gain && gain.action === action && gain.xp > 0 ? (
+                <span key={gain.at} className="pk-care__gain" aria-hidden="true">
+                  +{gain.xp} XP
+                </span>
+              ) : null}
             </button>
           );
         })}

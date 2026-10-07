@@ -355,7 +355,9 @@ shapes, one outline, the palette — never a grid of identical pockets:
   in sun); a resting one loses its shelf, breaks its edge into dashes and
   counts down inside its face in full ink, its name kept beneath. Success
   and refusal use the shared toast, so feedback never shifts the care
-  controls. Today's round is a row of five marks that fill in as they
+  controls; what a saved care earned also rises once off its own button as
+  a small sprout tag (`+10 XP`), where the thumb is, and is gone in a second
+  (never under reduced motion). Today's round is a row of five marks that fill in as they
   happen — a tracker, never a row of buttons; only the round, which happens
   in the playground, is a link. The pet's record is a row you press; letting
   a pet go lives at the foot of that record, behind a second press, never

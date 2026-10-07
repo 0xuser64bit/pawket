@@ -4062,6 +4062,7 @@ li {
 /* A care: a round face on a shelf, its name below. The one the pet wants
    is in sun; a resting one counts down where its name was. */
 .pk-care {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4140,6 +4141,52 @@ li {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+/* What a saved care earned, said once where the thumb is: a small sprout
+   tag that rises off the face and goes. The toast says the rest. */
+.pk-care__gain {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  padding: 1px 7px;
+  border: var(--stroke-hair) solid var(--sprout-edge);
+  border-radius: var(--radius-pill);
+  background: var(--sprout-soft);
+  color: var(--sprout-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  translate: -50% 0;
+  animation: pk-gain 1100ms var(--ease-swap) both;
+}
+@keyframes pk-gain {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.85);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(0) scale(1.06);
+  }
+  30% {
+    transform: translateY(-2px) scale(1);
+  }
+  72% {
+    opacity: 1;
+    transform: translateY(-14px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pk-care__gain {
+    display: none;
+  }
 }
 .pk-care__wait {
   font-family: var(--font-mono);

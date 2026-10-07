@@ -537,11 +537,24 @@ function TodayStrip({ name, today }: { name: string; today: TodayGoals }) {
           </li>
         ))}
         <li className={today.round ? "pk-goal pk-goal--done" : "pk-goal"}>
-          <span className="pk-goal__mark" aria-hidden="true">
-            <Icon name={today.round ? "check" : "ball"} size={14} />
-          </span>
-          {today.round ? <span>A round</span> : <Link href="/playground">A round</Link>}
-          <span className="pk-sr">{today.round ? ", done" : ", not yet"}</span>
+          {today.round ? (
+            <>
+              <span className="pk-goal__mark" aria-hidden="true">
+                <Icon name="check" size={14} />
+              </span>
+              <span>A round</span>
+              <span className="pk-sr">, done</span>
+            </>
+          ) : (
+            // The one goal played elsewhere: its whole mark is the way there.
+            <Link href="/playground" className="pk-goal__go" transitionTypes={["nav-place"]}>
+              <span className="pk-goal__mark" aria-hidden="true">
+                <Icon name="ball" size={14} />
+              </span>
+              <span className="pk-goal__link">A round</span>
+              <span className="pk-sr">, not yet — to the playground</span>
+            </Link>
+          )}
         </li>
       </ul>
       <p className="caption pk-faint pk-today__line">

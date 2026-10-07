@@ -4341,15 +4341,37 @@ li {
   color: var(--ink-faint);
   text-align: center;
 }
-.pk-goal > span:not(.pk-goal__mark),
-.pk-goal a {
+.pk-goal > span:not(.pk-goal__mark) {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pk-goal a {
+.pk-goal__go {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: var(--touch-target);
   color: var(--ink);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+}
+.pk-goal__go .pk-goal__mark {
+  border-style: solid;
+  border-color: var(--edge);
+  color: var(--ink);
+  transition: transform var(--dur-press) var(--ease-press);
+}
+.pk-goal__go:active .pk-goal__mark {
+  transform: scale(0.9);
+}
+.pk-goal__link {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   text-decoration: underline;
   text-underline-offset: 3px;
 }

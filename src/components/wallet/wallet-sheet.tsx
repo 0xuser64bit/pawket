@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useConnect, useWallets } from "@solana/kit-plugin-wallet/react";
 import { Button, Sheet, Stack } from "@/components/pk";
 import { wallet } from "@/lib/solana/browser-client";
@@ -16,6 +17,16 @@ const INSTALL = [
 ];
 
 /**
+ * A phone's browser has no wallet of its own: the wallet app's browser does.
+ * Each app publishes a link that opens a page inside it (and offers the app
+ * where it is not installed yet).
+ */
+const OPEN_IN = [
+  { name: "Phantom", href: (page: string, ref: string) => `https://phantom.app/ul/browse/${encodeURIComponent(page)}?ref=${encodeURIComponent(ref)}` },
+  { name: "Solflare", href: (page: string, ref: string) => `https://solflare.com/ul/v1/browse/${encodeURIComponent(page)}?ref=${encodeURIComponent(ref)}` },
+];
+
+/**
  * Choosing a wallet. Offered only where connecting does something — keeping
  * a pet on Solana, or finding the ones a wallet already holds — and never
  * the first thing a player sees.
@@ -25,6 +36,8 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
   const connect = useConnect(wallet);
   const sponsor = useSponsor();
   const declined = connect.isError && isUserRejection(connect.error);
+  // The sheet opens only after a tap, so the page and the hand are known here.
+  const [where] = useState(() => ({ page: window.location.href, ref: window.location.origin, phone: window.matchMedia("(pointer: coarse)").matches }));
 
   return (
     <Sheet
@@ -57,11 +70,22 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
               </button>
             ))}
           </Stack>
+        ) : where.phone ? (
+          <Stack gap={2}>
+            <p className="body-sm pk-muted">
+              This browser has no wallet of its own. Open this page inside your wallet app, where it can sign — the
+              link offers the app if you do not have it yet.
+            </p>
+            {OPEN_IN.map((option) => (
+              <a key={option.name} className="pk-btn pk-btn--quiet pk-btn--full" href={option.href(where.page, where.ref)} rel="noreferrer">
+                <span className="pk-btn__label">Open in {option.name}</span>
+              </a>
+            ))}
+          </Stack>
         ) : (
           <Stack gap={2}>
             <p className="body-sm pk-muted">
-              No Solana wallet in this browser. Any of these works; install one, then come back. On a
-              phone, open Pawket inside the wallet app&apos;s own browser instead.
+              No Solana wallet in this browser. Any of these works; install one, then come back.
             </p>
             {INSTALL.map((option) => (
               <a key={option.name} className="pk-btn pk-btn--quiet pk-btn--full" href={option.href} target="_blank" rel="noreferrer">

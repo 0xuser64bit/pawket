@@ -406,7 +406,10 @@ wallet is connected, then the wallet's own mark and address, with a bolt
 while this browser signs with no pop-up; it is offered in place where it
 does something (finding the pets a wallet keeps) and never asked for up
 front (the front door has none). Choosing a wallet and the wallet you are
-open as Playroom sheets; Paper is for money. An address always sits beside
+open as Playroom sheets; Paper is for money. A phone's browser holds no
+wallet, so there the picker offers to open the page inside Phantom or
+Solflare (their published browse links, which offer the app where it is
+missing) instead of sending the player to install pages. An address always sits beside
 a copy control. The room switch shows the room's colour mark, with its name
 and the next room in its accessible label; a tap moves into the
 next one; every room, and "Follow my device", is in Settings. A send is a toast

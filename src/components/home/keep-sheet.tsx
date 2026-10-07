@@ -94,12 +94,11 @@ export function KeepSheet({
             <Button
               label="Keep on Solana"
               icon="keep"
-              tone="pool"
               disabled={sender.busy || taken}
               onClick={() => void carry()}
             />
           ) : owner ? null : (
-            <Button label="Connect a wallet" icon="wallet" tone="quiet" onClick={() => setConnecting(true)} />
+            <Button label="Connect a wallet" icon="wallet" onClick={() => setConnecting(true)} />
           )}
         </div>
       )}

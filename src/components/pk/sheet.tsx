@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type PointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useBackCloses } from "@/lib/native/android";
 import { Icon } from "./icon";
@@ -16,8 +16,8 @@ import { Icon } from "./icon";
  *
  * It is a modal in behaviour as well as looks: it renders into the body, so
  * everything behind it goes inert; focus moves into it; and Escape, a tap
- * on the dimmed room, or the phone's back gesture in the Android app leaves
- * by the same door as Cancel.
+ * on the dimmed room, the phone's back gesture in the Android app, or
+ * dragging it down by its head leaves by the same door as Cancel.
  */
 export function Sheet({
   title,
@@ -53,6 +53,43 @@ export function Sheet({
   }
   useBackCloses(dismiss);
   useEffect(() => () => { if (closing.current !== null) clearTimeout(closing.current); }, []);
+
+  // On a phone the sheet is a thing in the hand: its head drags it down, and
+  // let go past a third of the way (or with a flick) it leaves the way Cancel
+  // does; short of that it settles back. The dimmed room lightens as it goes.
+  const drag = useRef<{ from: number; dy: number; y: number; t: number; v: number } | null>(null);
+  function grab(event: PointerEvent<HTMLElement>) {
+    const target = event.target as HTMLElement;
+    if (event.button !== 0 || !target.closest(".pk-sheet__grab, .pk-paper__head") || target.closest("button, a, input")) return;
+    if (!window.matchMedia("(max-width: 719px)").matches) return;
+    drag.current = { from: event.clientY, dy: 0, y: event.clientY, t: event.timeStamp, v: 0 };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  function pull(event: PointerEvent<HTMLElement>) {
+    const d = drag.current;
+    const el = sheet.current;
+    if (!d || !el) return;
+    const raw = event.clientY - d.from;
+    // Down follows the finger; up gives a little, then holds.
+    d.dy = raw > 0 ? raw : raw / 5;
+    const dt = event.timeStamp - d.t;
+    if (dt > 0) d.v = (event.clientY - d.y) / dt;
+    d.y = event.clientY;
+    d.t = event.timeStamp;
+    el.style.transition = "none";
+    el.style.transform = `translateY(${d.dy}px)`;
+    scrim.current?.style.setProperty("--pk-drag", String(Math.max(0, d.dy) / el.offsetHeight));
+  }
+  function release() {
+    const d = drag.current;
+    const el = sheet.current;
+    drag.current = null;
+    if (!d || !el) return;
+    if (d.dy > Math.min(160, el.offsetHeight / 3) || (d.dy > 24 && d.v > 0.5)) return dismiss();
+    el.style.transition = "";
+    el.style.transform = "";
+    scrim.current?.style.removeProperty("--pk-drag");
+  }
 
   useEffect(() => {
     if (!mounted) return;
@@ -91,6 +128,10 @@ export function Sheet({
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
+        onPointerDown={grab}
+        onPointerMove={pull}
+        onPointerUp={release}
+        onPointerCancel={release}
         onKeyDown={(event) => {
           if (event.key === "Escape") { event.preventDefault(); dismiss(); }
           if (event.key !== "Tab") return;
@@ -106,6 +147,7 @@ export function Sheet({
           }
         }}
       >
+        <div className="pk-sheet__grab" aria-hidden="true" />
         <header className="pk-paper__head">
           {register === "room" ? <h2 className="title">{title}</h2> : <span className="receipt-label">{title}</span>}
           {meta ? <span className={register === "room" ? "caption pk-faint" : "receipt-label"}>{meta}</span> : null}

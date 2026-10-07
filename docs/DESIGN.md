@@ -136,8 +136,15 @@ separate 44px touch targets; their invisible hit areas never overlap. Editable f
 16px or larger on a phone, with a real 44px input area, avoiding focus zoom. Game controls stay beside
 the playing area, and all four games reflow for a phone held sideways.
 Sheet headings reserve a column for Close; long names wrap without pushing
-it out. Phone footers give Cancel and the main action the same height, and
-the body scrolls independently. The shell, adoption and landing headers
+it out. On a phone a sheet is a thing in the hand: it rises from the bottom
+edge over `--dur-sheet-in` on `--ease-sheet`, wears a grabber, and its head
+drags it down — let go past a third of the way, or with a flick, and it
+leaves the way Cancel does, the dim lifting as it goes; short of that it
+settles back. Only the dim fades, never the sheet. Its foot puts the main
+action across the whole width first, under the thumb, and Cancel beneath
+it, every action the same height; wider screens set them in a row, Cancel
+apart on the left. A Paper sheet's Cancel is a Paper button like its
+Confirm. The body scrolls independently. The shell, adoption and landing headers
 include the top safe area. Supporting browsers resize content when the
 keyboard opens; native fields and scroll padding keep focused controls clear
 of the dock.

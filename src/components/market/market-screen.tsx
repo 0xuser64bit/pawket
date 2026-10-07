@@ -195,7 +195,7 @@ function ItemSheet({
       onDismiss={onDismiss}
       foot={(dismiss) => (
         <div className="pk-spread">
-          <Button tone="ghost" size="sm" label={has ? "Done" : "Not now"} onClick={dismiss} />
+          <Button tone="paper" label={has ? "Done" : "Not now"} onClick={dismiss} />
           {!owner ? (
             <Button label="Connect a wallet" icon="wallet" tone="paper" onClick={() => setConnecting(true)} />
           ) : has ? (

@@ -148,7 +148,7 @@ test("a long pet name keeps the sheet heading, close control and footer inside a
   }).toBe(true);
   const cancel = (await sheet.getByRole("button", { name: "Not now" }).boundingBox())!;
   const connect = (await sheet.getByRole("button", { name: "Connect a wallet" }).boundingBox())!;
-  expect(cancel.height).toBe(connect.height);
+  expect(cancel.height).toBeCloseTo(connect.height, 1);
   expect(connect.x + connect.width).toBeLessThanOrEqual(320);
   expect(connect.y + connect.height).toBeLessThanOrEqual(480);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);

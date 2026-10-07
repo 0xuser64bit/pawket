@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Row, Sheet } from "@/components/pk";
+import { Button, Sheet } from "@/components/pk";
 import { savePicture, sharePicture, useAndroidApp } from "@/lib/native/android";
 
 /** The tokens a photo is printed in, read from the room the player is in. */
@@ -147,17 +147,17 @@ export function PhotoDialog({
       onDismiss={onClose}
       foot={(dismiss) => (
         <>
-          <Row gap={2} wrap>
+          <div className="pk-spread">
+            <Button label="Close" tone="ghost" size="sm" onClick={dismiss} />
+            <Button label="Share" tone="quiet" size="sm" icon="out" disabled={!print || handing} onClick={() => void share()} />
             {print && inApp ? (
               <Button label="Save the photo" size="sm" disabled={handing} onClick={() => void toPhone("save")} />
             ) : print ? (
               <a href={print} download={`${file}.png`} className="pk-btn pk-btn--sm">
-                <span>Save the photo</span>
+                <span className="pk-btn__label">Save the photo</span>
               </a>
             ) : null}
-            <Button label="Share" tone="quiet" size="sm" icon="out" disabled={!print || handing} onClick={() => void share()} />
-            <Button label="Close" tone="ghost" size="sm" onClick={dismiss} />
-          </Row>
+          </div>
           <p role="status" className="caption pk-faint" style={{ marginTop: said ? "var(--space-2)" : 0 }}>
             {said}
           </p>

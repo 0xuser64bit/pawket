@@ -104,7 +104,7 @@ export function ParkScene({ pets }: { pets: ParkPet[] }) {
               className="pk-parkscene__pet"
               style={{ left: `${spot.x}%`, bottom: `${spot.y}%`, "--pk-depth": spot.s, zIndex: 20 - i, ...pace(pet.address) } as CSSProperties}
             >
-              <Link href={`/pet/${pet.address}`} className="pk-parkscene__link">
+              <Link href={`/pet/${pet.address}`} className="pk-parkscene__link" transitionTypes={["nav-forward"]}>
                 <span className="pk-parkscene__walk">
                   <PetArt {...pet.look} pose="full" />
                 </span>

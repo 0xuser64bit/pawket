@@ -56,7 +56,7 @@ function PetCard({ pet, onChain, home, onHome }: { pet: GuestPet; onChain: boole
   const { level, mood } = projectGuestPet(pet);
   return (
     <Card variant="flush">
-      <Link href={`/pet/${pet.id}`} className="pk-card__art" aria-label={`${pet.name}'s record`}>
+      <Link href={`/pet/${pet.id}`} className="pk-card__art" aria-label={`${pet.name}'s record`} transitionTypes={["nav-forward"]}>
         <PetFrame {...petLook(pet, mood)} sky={SPECIES_SKY[pet.species]} level={level} size="fluid" still />
       </Link>
       <div className="pk-card__body">

@@ -149,7 +149,7 @@ export default async function GuildPage({ params }: Props) {
                     const out = streakAsOf(record.streak, now).activeToday;
                     return (
                       <li key={entry.pet.address}>
-                        <Link href={`/pet/${entry.pet.address}`} className="pk-pet-row">
+                        <Link href={`/pet/${entry.pet.address}`} className="pk-pet-row" transitionTypes={["nav-forward"]}>
                           <span className={`pk-avatar ${SKY_CLASS[SPECIES_SKY[record.species]]}`} aria-hidden="true">
                             <PetArt {...petLook(record, mood)} still />
                           </span>
@@ -265,7 +265,7 @@ function CoinCard({ guildName, slug, coin }: { guildName: string; slug: string; 
     <Card variant="quiet">
       <div className="pk-spread">
         <h2 className="title">{coin.stage === "none" ? "A coin, if it wants one" : coin.name}</h2>
-        <ButtonLink label={coin.stage === "none" ? "How it works" : "Open"} href={`/guilds/${slug}/coin`} tone="ghost" size="sm" after="right" />
+        <ButtonLink label={coin.stage === "none" ? "How it works" : "Open"} href={`/guilds/${slug}/coin`} tone="ghost" size="sm" after="right" transitionTypes={["nav-forward"]} />
       </div>
       <div style={{ marginTop: "var(--space-2)" }}>
         <LaunchStage stage={coin.stage} />

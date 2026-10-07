@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLayoutEffect, useRef } from "react";
 import { Icon, type IconName } from "./icon";
 
 /**
@@ -37,15 +38,53 @@ export function activePlace(pathname: string): string {
 
 export function Dock() {
   const active = activePlace(usePathname());
+  const dock = useRef<HTMLElement>(null);
+  const pill = useRef<HTMLSpanElement>(null);
+
+  // The lit slot is one pill that slides from the place you left to the
+  // place you chose, so going somewhere is seen happening. It is measured,
+  // not guessed: slots are equal on a phone and as wide as their names
+  // wider up. Until it is measured (and with no script) the slot lights
+  // itself.
+  useLayoutEffect(() => {
+    const nav = dock.current;
+    const shape = pill.current;
+    if (!nav || !shape) return;
+    const place = () => {
+      const on = nav.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!on) return;
+      shape.style.width = `${on.offsetWidth}px`;
+      shape.style.height = `${on.offsetHeight}px`;
+      shape.style.transform = `translate(${on.offsetLeft}px, ${on.offsetTop}px)`;
+    };
+    const first = !nav.hasAttribute("data-pill");
+    if (first) shape.style.transition = "none";
+    place();
+    nav.setAttribute("data-pill", "");
+    if (first) {
+      void shape.offsetWidth;
+      shape.style.transition = "";
+    }
+    const watch = new ResizeObserver(() => {
+      shape.style.transition = "none";
+      place();
+      void shape.offsetWidth;
+      shape.style.transition = "";
+    });
+    watch.observe(nav);
+    return () => watch.disconnect();
+  }, [active]);
 
   return (
-    <nav className="pk-dock" aria-label="Pawket">
+    <nav ref={dock} className="pk-dock" aria-label="Pawket">
+      <span ref={pill} className={["pk-dock__pill", active === "guilds" && "pk-dock__pill--guild"].filter(Boolean).join(" ")} aria-hidden="true" />
       {PLACES.map((place) => {
         const on = place.key === active;
         return (
           <Link
             key={place.key}
             href={place.href}
+            transitionTypes={["nav-place"]}
             aria-current={on ? "page" : undefined}
             aria-label={place.label}
             className={[

@@ -70,7 +70,10 @@ export function setTheme(choice: ThemeChoice) {
   // The whole page crossfades into the new room where the browser can, and
   // simply changes where it cannot or motion is reduced.
   if ("startViewTransition" in document && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    document.startViewTransition(apply);
+    // Marked, so this crossfade is the room's and not a screen's arrival.
+    const root = document.documentElement;
+    root.dataset.transition = "room";
+    document.startViewTransition(apply).finished.finally(() => delete root.dataset.transition);
   } else {
     apply();
   }

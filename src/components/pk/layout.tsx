@@ -1,5 +1,18 @@
-import type { CSSProperties, ReactNode } from "react";
+import { ViewTransition, type CSSProperties, type ReactNode } from "react";
 import { ButtonLink } from "./controls";
+
+/**
+ * How a screen arrives and leaves when the player goes somewhere: deeper in
+ * (`nav-forward`) the new one comes in from the right as the old one steps
+ * left; back (`nav-back`) the other way; to another place in the dock
+ * (`nav-place`) the old one fades as the new one rises a few pixels into
+ * place. Anything else that swaps a screen — the browser's own back, a
+ * screen's content arriving after its placeholder — only crossfades, so
+ * nothing rises twice. The shell and the dock never move. Nothing that
+ * changes within a screen (its own state, a refresh) plays any of this.
+ */
+const ARRIVE = { "nav-forward": "pk-in-forward", "nav-back": "pk-in-back", "nav-place": "pk-in", default: "pk-swap" };
+const LEAVE = { "nav-forward": "pk-out-forward", "nav-back": "pk-out-back", "nav-place": "pk-out", default: "pk-swap" };
 
 /**
  * A screen has one primary action, and it is the only `sun` fill in view.
@@ -21,12 +34,14 @@ export function Screen({
   children: ReactNode;
 }) {
   return (
-    <main
-      id="main"
-      className={["pk-screen", width === "narrow" && "pk-screen--narrow", className].filter(Boolean).join(" ")}
-    >
-      {children}
-    </main>
+    <ViewTransition enter={ARRIVE} exit={LEAVE} default="none">
+      <main
+        id="main"
+        className={["pk-screen", width === "narrow" && "pk-screen--narrow", className].filter(Boolean).join(" ")}
+      >
+        {children}
+      </main>
+    </ViewTransition>
   );
 }
 
@@ -69,7 +84,7 @@ export function Columns({
  * bare arrow.
  */
 export function BackLink({ label, href }: { label: string; href: string }) {
-  return <ButtonLink label={label} href={href} tone="ghost" icon="left" className="pk-btn--flush" />;
+  return <ButtonLink label={label} href={href} tone="ghost" icon="left" className="pk-btn--flush" transitionTypes={["nav-back"]} />;
 }
 
 /* ------------------------------------------------ spacing, as components */

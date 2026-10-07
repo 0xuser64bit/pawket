@@ -95,7 +95,7 @@ export function Passport({
               {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
             </Row>
             {guild ? (
-              <Link href={`/guilds/${guild.slug}`} className="pk-guild-tag">
+              <Link href={`/guilds/${guild.slug}`} className="pk-guild-tag" transitionTypes={["nav-forward"]}>
                 <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} size="sm" />
                 <span>
                   <span className="caption pk-faint" style={{ display: "block" }}>
@@ -107,7 +107,7 @@ export function Passport({
             ) : null}
             <Row gap={2} wrap>
               <OwnerActions owner={pet.owner} address={pet.address} name={pet.name} />
-              <ButtonLink label={`Visit ${pet.name}`} href={`/pet/${pet.address}/visit`} icon="home" tone="quiet" size="sm" />
+              <ButtonLink label={`Visit ${pet.name}`} href={`/pet/${pet.address}/visit`} icon="home" tone="quiet" size="sm" transitionTypes={["nav-forward"]} />
               <ShareButton name={pet.name} />
             </Row>
           </div>

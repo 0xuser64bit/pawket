@@ -36,7 +36,7 @@ function GuildCard({ guild, coin }: { guild: ChainGuild; coin?: CoinStage }) {
       <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} />
       <div className="pk-fill">
         <div className="pk-guild__head">
-          <Link href={`/guilds/${guild.slug}`} className="title pk-guild__name">
+          <Link href={`/guilds/${guild.slug}`} className="title pk-guild__name" transitionTypes={["nav-forward"]}>
             {guild.name}
           </Link>
         </div>

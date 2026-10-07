@@ -164,9 +164,22 @@ past and back; a vital fills segment by segment; a care going to rest greys
 over a moment. Content that is *replaced* is remounted with a new key and
 eases in (`pk-swap-in`, `pk-swap`, `pk-pop-in`): the look editor's panel and
 its summary, the profile's tabs, the deck's panels, a care's notice, a kept
-outfit, the wardrobe's mirror. A page arriving rises 6px into place; the
-shell and the dock stay put. Changing rooms crossfades the whole page with a
-view transition where the browser has one. Someone changing clothes is seen
+outfit, the wardrobe's mirror.
+
+Going somewhere is a view transition, and only the screen moves (`Screen`
+carries React's `<ViewTransition>`; the classes live under "Going somewhere"
+in `app/globals.css`). The old screen lets go in 140ms so it never competes;
+the new one arrives 70ms later and more gently. A place in the dock
+(`nav-place`) fades and rises 8px; something deeper (`nav-forward` — a card,
+a row, a record) comes in from the right as the old screen steps left; a
+back control (`nav-back`) runs the other way; anything else — the browser's
+own back, a screen's content replacing its placeholder — only crossfades, so
+nothing rises twice. The shell, the dock and the toasts are the walls: they
+change in place and ride above the arriving screen. The dock's lit slot is
+one pill that slides to the place chosen on `--ease-spring`, taking bloom as
+it reaches Guilds, and a finger on a place presses its glyph in. A browser
+without view transitions shows the new screen at once. Changing rooms
+crossfades the whole page with a view transition where the browser has one. Someone changing clothes is seen
 changing: the player (in 3D and on the flat room's peg doll) and the pet give
 one squash and stretch from the feet, never on arrival. The room itself
 crosses between flat and 3D over `--dur-room` (420ms): see `docs/ROOM-3D.md`.

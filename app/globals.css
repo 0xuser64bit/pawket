@@ -1750,6 +1750,8 @@ li {
   box-shadow: var(--shadow-sticker);
 }
 .pk-dock__item {
+  position: relative;
+  z-index: 1;
   flex: 1 1 0;
   min-width: 0;
   display: inline-flex;
@@ -1773,6 +1775,11 @@ li {
 }
 .pk-dock__item svg {
   flex: none;
+  transition: transform var(--dur-press) var(--ease-press);
+}
+/* A finger on a place presses its glyph in, the way a button gives. */
+.pk-dock__item:active svg {
+  transform: scale(0.86);
 }
 @media (hover: hover) {
   .pk-dock__item:not(.pk-dock__item--on):hover {
@@ -1792,6 +1799,39 @@ li {
   color: var(--bloom-text);
   border-color: var(--bloom-text);
 }
+/* Once the dock has measured itself the lit slot is one pill behind the
+   places, sliding from the one you left to the one you chose — just past,
+   and back — and taking the guild's hue as it arrives there. */
+.pk-dock__pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  display: none;
+  border: var(--stroke-line) solid var(--sun-text);
+  border-radius: var(--radius-lg);
+  background: var(--sun-soft);
+  pointer-events: none;
+  transition:
+    transform var(--dur-room) var(--ease-spring),
+    width var(--dur-room) var(--ease-spring),
+    background-color var(--dur-swap) var(--ease-swap),
+    border-color var(--dur-swap) var(--ease-swap);
+}
+.pk-dock__pill--guild {
+  background: var(--bloom-soft);
+  border-color: var(--bloom-text);
+}
+.pk-dock[data-pill] .pk-dock__pill {
+  display: block;
+}
+.pk-dock[data-pill] .pk-dock__item--on {
+  background: transparent;
+  border-color: transparent;
+}
+.pk-dock[data-pill] .pk-dock__item {
+  transition: color var(--dur-swap) var(--ease-swap);
+}
 .pk-dock__label {
   display: inline;
 }
@@ -1804,6 +1844,9 @@ li {
     max-width: none;
     gap: var(--space-1);
     padding: var(--space-2);
+  }
+  .pk-dock__pill {
+    border-radius: var(--radius-pill);
   }
   .pk-dock__item {
     flex: none;
@@ -2835,6 +2878,12 @@ li {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
   }
 }
 
@@ -6792,10 +6841,113 @@ details > .pk-risks {
   animation: pk-pop-in 320ms var(--ease-swap);
 }
 
-/* A page arriving: what is new rises a few pixels into place. The shell
-   and the dock stay put — only the screen moves. */
-.pk-screen {
-  animation: pk-swap-in 320ms var(--ease-swap);
+/* Going somewhere: only the screen moves, as a view transition (`Screen`
+   names the way in and out). The old screen lets go quickly so it never
+   competes; the new one arrives a beat later and more gently. Into
+   something deeper the new screen comes from the right while the old one
+   steps left; back, the other way; to another place in the dock, a fade
+   and a rise. The shell and the dock are the room's walls: they change in
+   place, at once — the dock's own pill does the travelling. A browser
+   without view transitions simply shows the new screen. */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(root) {
+  display: none;
+}
+::view-transition-new(root) {
+  animation: none;
+}
+/* The dock and the toasts ride above the screen that is arriving, as they
+   do on the page: never under it, and changed in place. */
+.pk-dock {
+  view-transition-name: pk-dock;
+}
+.pk-toasts {
+  view-transition-name: pk-toasts;
+}
+::view-transition-group(pk-dock),
+::view-transition-group(pk-toasts) {
+  z-index: 2;
+}
+html:not([data-transition="room"])::view-transition-group(pk-dock),
+html:not([data-transition="room"])::view-transition-group(pk-toasts),
+html:not([data-transition="room"])::view-transition-new(pk-dock),
+html:not([data-transition="room"])::view-transition-new(pk-toasts) {
+  animation: none;
+}
+html:not([data-transition="room"])::view-transition-old(pk-dock),
+html:not([data-transition="room"])::view-transition-old(pk-toasts) {
+  display: none;
+}
+::view-transition-old(.pk-out),
+::view-transition-old(.pk-out-forward),
+::view-transition-old(.pk-out-back),
+::view-transition-old(.pk-swap) {
+  animation: pk-vt-fade-out 140ms var(--ease-swap) both;
+}
+::view-transition-new(.pk-in),
+::view-transition-new(.pk-in-forward),
+::view-transition-new(.pk-in-back),
+::view-transition-new(.pk-swap) {
+  animation: pk-vt-fade-in var(--dur-swap) var(--ease-swap) 70ms both;
+}
+::view-transition-new(.pk-in) {
+  animation-name: pk-vt-fade-in, pk-vt-rise;
+  animation-duration: var(--dur-swap), 320ms;
+}
+::view-transition-old(.pk-out-forward) {
+  animation-name: pk-vt-fade-out, pk-vt-step-left;
+  animation-duration: 140ms, 320ms;
+}
+::view-transition-new(.pk-in-forward) {
+  animation-name: pk-vt-fade-in, pk-vt-from-right;
+  animation-duration: var(--dur-swap), 360ms;
+  animation-delay: 70ms, 0ms;
+}
+::view-transition-old(.pk-out-back) {
+  animation-name: pk-vt-fade-out, pk-vt-step-right;
+  animation-duration: 140ms, 320ms;
+}
+::view-transition-new(.pk-in-back) {
+  animation-name: pk-vt-fade-in, pk-vt-from-left;
+  animation-duration: var(--dur-swap), 360ms;
+  animation-delay: 70ms, 0ms;
+}
+@keyframes pk-vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes pk-vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pk-vt-rise {
+  from {
+    transform: translateY(8px);
+  }
+}
+@keyframes pk-vt-from-right {
+  from {
+    transform: translateX(32px);
+  }
+}
+@keyframes pk-vt-from-left {
+  from {
+    transform: translateX(-32px);
+  }
+}
+@keyframes pk-vt-step-left {
+  to {
+    transform: translateX(-24px);
+  }
+}
+@keyframes pk-vt-step-right {
+  to {
+    transform: translateX(24px);
+  }
 }
 
 /* A pick takes effect: the chosen one rises onto its shelf, just past and
@@ -6885,11 +7037,14 @@ details > .pk-risks {
   }
 }
 
-/* Changing rooms (themes) crossfades the whole page, where the browser can. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: var(--dur-room);
-  animation-timing-function: var(--ease-swap);
+/* Changing rooms (themes) crossfades the whole page, where the browser can
+   (the room switch marks the document while it does). */
+html[data-transition="room"]::view-transition-old(*) {
+  display: block;
+  animation: pk-vt-fade-out var(--dur-room) var(--ease-swap) both;
+}
+html[data-transition="room"]::view-transition-new(*) {
+  animation: pk-vt-fade-in var(--dur-room) var(--ease-swap) both;
 }
 
 /* Toasts: what a send is doing, in the corner and over the page — never in

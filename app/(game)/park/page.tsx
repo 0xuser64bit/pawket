@@ -155,7 +155,7 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
                   const look = looks.get(mark.pet.address);
                   return (
                     <li key={`${mark.pet.address}-${mark.at}-${mark.action}`}>
-                      <Link href={`/pet/${mark.pet.address}`} className="pk-feed__row">
+                      <Link href={`/pet/${mark.pet.address}`} className="pk-feed__row" transitionTypes={["nav-forward"]}>
                         <span className="pk-avatar" aria-hidden="true">
                           {look ? <PetArt {...look} still /> : null}
                         </span>

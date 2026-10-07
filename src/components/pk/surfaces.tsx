@@ -32,7 +32,7 @@ export function Card({
     .join(" ");
   if (href) {
     return (
-      <Link href={href} className={classes} style={style}>
+      <Link href={href} className={classes} style={style} transitionTypes={["nav-forward"]}>
         {children}
       </Link>
     );

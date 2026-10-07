@@ -10,8 +10,9 @@ Android release in `ANDROID-HANDOFF.md`.
 Pawket stores guest pets, care history, the player name and appearance,
 outfits, room choice and settings in the app's WebView storage. That storage
 belongs to Pawket on this phone and is separate from Chrome. Clearing app
-data or uninstalling removes it. Android backup excludes the WebView and
-device-key storage, so a replacement phone starts with empty app storage.
+data or uninstalling removes it. Pawket opts out of Android backup, and a
+phone-to-phone transfer leaves the WebView and device-key storage behind, so
+a replacement phone starts with empty app storage.
 
 Pawket also keeps the wallet adapter's authorization cache so a previously
 connected wallet can reconnect. Disconnecting or clearing app data removes

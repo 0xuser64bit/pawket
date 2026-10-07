@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-   WebView session state (cookies, local storage, databases) stays on the device.
-   Mirrors backup_rules.xml, which covers devices older than API 31.
+   Pawket is not backed up (allowBackup is false): the page and Solana keep its records.
+   Android 12 and later may still move an app's data to a new phone; WebView storage
+   (cookies, local storage, IndexedDB with the Pawket Wallet device key) and databases
+   never go with it.
 -->
 <data-extraction-rules>
     <cloud-backup>

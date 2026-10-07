@@ -102,7 +102,7 @@ the page's components, selectors, extras or permission flags.
 
 | What | Where it is kept | What ends it |
 | --- | --- | --- |
-| Pets in this app, the player's name, look, outfits, room, settings | this app's WebView storage on this phone — not Chrome's, not a wallet browser's | uninstalling, or clearing the app's storage. Android backup leaves WebView data out (`data_extraction_rules.xml`), so a new phone starts empty |
+| Pets in this app, the player's name, look, outfits, room, settings | this app's WebView storage on this phone — not Chrome's, not a wallet browser's | uninstalling, or clearing the app's storage. The app is not backed up (`allowBackup="false"`), and a phone-to-phone transfer leaves WebView data out (`data_extraction_rules.xml`), so a new phone starts empty |
 | Pets on Solana, their Passports, guilds, the closet | Solana | nothing on the phone: connect the same wallet anywhere |
 | The Mobile Wallet Adapter authorization | this app's storage (the adapter's cache) | disconnecting, or clearing the app's storage |
 | A Pawket Wallet device key | this app's IndexedDB: a non-extractable WebCrypto Ed25519 key that cannot be read, exported or backed up | uninstalling, or clearing the app's storage. Unlink it from the wallet (any device) and link this app again |

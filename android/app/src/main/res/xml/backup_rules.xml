@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-   WebView session state (cookies, local storage, databases) stays on the device.
-   Applies to devices older than API 31; data_extraction_rules.xml covers newer ones.
+   Pawket is not backed up (allowBackup is false), so on Android 10 and 11 nothing leaves
+   the phone. Were backup ever turned on, WebView storage and databases would still stay.
+   data_extraction_rules.xml covers Android 12 and later.
 -->
 <full-backup-content>
     <exclude domain="root" path="app_webview" />

@@ -1,9 +1,13 @@
-import { ButtonLink, PetFrame, Row, Screen, Stack } from "@/components/pk";
+import { ButtonLink, Mark, PetFrame, Screen, Stack } from "@/components/pk";
 
+/** An address with nothing at it: the mark, so the player knows where they are, and two ways back in. */
 export default function NotFound() {
   return (
     <Screen width="narrow">
-      <Stack gap={5} style={{ paddingTop: "var(--space-7)" }}>
+      <div className="pk-screen__bar">
+        <Mark href="/" size={26} type={18} />
+      </div>
+      <Stack gap={5} style={{ paddingTop: "var(--space-4)" }}>
         <div className="pk-portrait">
           <PetFrame form="dog" temper="curious" feeling="lonely" sky="plain" size="lg" seed="lost" />
         </div>
@@ -13,10 +17,10 @@ export default function NotFound() {
             There is nothing at this address. Your pets, your progress and everything you own are untouched.
           </p>
         </div>
-        <Row gap={3} wrap>
+        <div className="pk-acts">
           <ButtonLink label="Go home" href="/home" icon="home" />
           <ButtonLink label="See the park" href="/park" tone="quiet" icon="users" />
-        </Row>
+        </div>
       </Stack>
     </Screen>
   );

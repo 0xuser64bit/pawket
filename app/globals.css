@@ -2358,6 +2358,11 @@ li {
 .pk-shell ~ .pk-screen {
   padding-bottom: calc(var(--space-10) + env(safe-area-inset-bottom));
 }
+/* A screen with no shell above it (a lost address, a failure) keeps clear of
+   the notch itself. */
+.pk-screen:not(.pk-shell ~ .pk-screen) {
+  padding-top: calc(var(--space-2) + env(safe-area-inset-top));
+}
 .pk-mobile-wallet {
   display: flex;
   align-items: center;

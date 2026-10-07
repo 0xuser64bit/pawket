@@ -1,6 +1,6 @@
 "use client";
 
-import { Banner, Button, ButtonLink, Row, Screen, Stack } from "@/components/pk";
+import { Banner, Button, ButtonLink, Screen, Stack } from "@/components/pk";
 
 /** A screen failure cannot establish whether an earlier send reached Solana. */
 export default function GlobalError({
@@ -22,10 +22,10 @@ export default function GlobalError({
         {error.digest ? (
           <p className="addr pk-faint">Error {error.digest}</p>
         ) : null}
-        <Row gap={3} wrap>
+        <div className="pk-acts">
           <Button label="Try again" onClick={reset} icon="clock" />
           <ButtonLink label="Home" href="/home" tone="quiet" icon="home" />
-        </Row>
+        </div>
       </Stack>
     </Screen>
   );

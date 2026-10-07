@@ -1663,11 +1663,14 @@ li {
   flex-direction: column;
   gap: 6px;
 }
+/* The count never breaks inside itself — a figure stays with its unit —
+   so where the two do not fit on one line, the count takes the next. */
 .pk-meter__head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: 2px var(--space-3);
 }
 .pk-meter__name {
   font-size: 12px;
@@ -1682,6 +1685,7 @@ li {
   font-size: 13px;
   font-weight: 500;
   color: var(--ink);
+  white-space: nowrap;
 }
 .pk-meter__track {
   display: flex;

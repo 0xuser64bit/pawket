@@ -85,7 +85,7 @@ export function FoundGuild() {
             name="guild-name"
             icon="guild"
             maxLength={GUILD_LIMITS.maxName}
-            placeholder="Sunbeam Club"
+            placeholder="Window Watchers"
             value={name}
             onChange={(event) => setName(event.target.value)}
             error={tried ? problems.name : undefined}
@@ -96,7 +96,7 @@ export function FoundGuild() {
             name="guild-motto"
             icon="chat"
             maxLength={GUILD_LIMITS.maxMotto}
-            placeholder="Naps first, questions later."
+            placeholder="Every bird gets a look."
             value={motto}
             onChange={(event) => setMotto(event.target.value)}
             error={tried ? problems.motto : undefined}

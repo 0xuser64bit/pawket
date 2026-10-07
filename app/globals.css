@@ -7372,6 +7372,35 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
   transition-duration: var(--dur-press);
 }
 
+/* Everything a finger can press gives under it, for the moment it is held:
+   a card-like row presses flat, a line in a list takes a tint that reaches a
+   little past its words, a choice squeezes, a pet in the park ducks. */
+.pk-guild:has(.pk-guild__name:active) {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-feed__row:active,
+.pk-pet-row:active,
+.pk-guild-tag:active,
+.pk-fold > summary:active {
+  background-color: color-mix(in srgb, currentColor 7%, transparent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 7%, transparent);
+  border-radius: var(--radius-sm);
+}
+.pk-tool:active {
+  background-color: color-mix(in srgb, currentColor 10%, transparent);
+}
+.pk-temper:active,
+.pk-adopt__suggest:active,
+.pk-theme:active,
+.pk-switch__pet:active {
+  transform: scale(0.96);
+  transition-duration: var(--dur-press);
+}
+.pk-parkscene__link:active .pk-parkscene__walk {
+  scale: 0.94;
+}
+
 /* Counts that change — a vital after a care, a level filling — fill in,
    segment by segment, rather than flipping. */
 .pk-meter__seg,

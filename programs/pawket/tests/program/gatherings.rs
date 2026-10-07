@@ -117,6 +117,8 @@ fn an_event_is_held_to_its_rules() {
         plan("Nap", "", now - 2 * HOUR, now - HOUR),
         plan("Nap", "", now + HOUR, now + HOUR + 8 * DAY),
         plan("Nap", "", now + 61 * DAY, now + 61 * DAY + HOUR),
+        // A span too long to count is refused like any other, not left to overflow.
+        plan("Nap", "", i64::MIN, now + HOUR),
     ] {
         expect_pawket(&env.send(&[ix], &g.founder, &[]), PawketError::InvalidEvent);
     }

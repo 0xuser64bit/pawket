@@ -724,7 +724,7 @@ fn plan(
             && note.len() <= MAX_EVENT_NOTE_LEN
             && ends_at > starts_at
             && ends_at > now
-            && ends_at - starts_at <= MAX_EVENT_SECONDS
+            && ends_at.checked_sub(starts_at).is_some_and(|span| span <= MAX_EVENT_SECONDS)
             && starts_at <= now + MAX_EVENT_LEAD_SECONDS,
         PawketError::InvalidEvent
     );
@@ -975,7 +975,7 @@ fn act<'info>(wallet: &mut Account<'info, PawketWallet>, device: &Signer<'info>,
         wallet.actions_today = 0;
     }
     require!(wallet.actions_today < wallet.daily_actions, PawketError::DailyLimitReached);
-    wallet.actions_today += 1;
+    wallet.actions_today = wallet.actions_today.saturating_add(1);
     wallet.actions = wallet.actions.saturating_add(1);
 
     let info = wallet.to_account_info();
@@ -985,7 +985,7 @@ fn act<'info>(wallet: &mut Account<'info, PawketWallet>, device: &Signer<'info>,
         .min(FEE_PER_SIGNATURE)
         .min(spendable(&info)?);
     // A device that holds nothing is not topped up into a sliver below rent.
-    if refill > 0 && held + refill >= Rent::get()?.minimum_balance(0) {
+    if refill > 0 && held.saturating_add(refill) >= Rent::get()?.minimum_balance(0) {
         info.sub_lamports(refill)?;
         device.add_lamports(refill)?;
         wallet.spent = wallet.spent.saturating_add(refill);

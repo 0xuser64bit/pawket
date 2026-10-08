@@ -3770,48 +3770,19 @@ li {
 }
 
 .pk-home__line {
-  min-height: 36px;
-}
-/* A ghost that opens the line gives back its tint's room, so its word
-   starts on the column's edge like everything else on the screen. */
-.pk-home__line .pk-row > .pk-btn--ghost:first-child {
-  margin-left: calc(-1 * var(--space-3));
-}
-.pk-home__line p {
-  min-width: 0;
+  min-height: 44px;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
 }
 .pk-home__line p:empty { display: none; }
-.pk-home__line { flex-wrap: wrap; gap: var(--space-3); }
-/* Whose room, and who else is home, share one line: the faces stay beside
-   the name (and scroll there when the family is large) rather than taking a
-   row of their own above the room. */
-.pk-home-screen .pk-screen__bar {
-  flex-wrap: nowrap;
-  align-items: flex-start;
-}
-.pk-home-screen .pk-screen__bar > div:first-child { flex: 1 1 auto; min-width: 0; }
-.pk-home-screen .pk-screen__bar > .pk-switch {
-  flex: none;
-  max-width: 46%;
-  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0;
-}
+.pk-home__line .pk-btn { flex-shrink: 0; white-space: nowrap; }
+.pk-home-screen .pk-screen__bar { align-items: flex-start; }
+.pk-home-screen .pk-screen__bar > div:first-child { flex: 1; min-width: 0; }
+.pk-home-screen .pk-screen__bar > .pk-chip { flex-shrink: 0; }
 .pk-home-screen h1 { overflow-wrap: anywhere; }
-.pk-home__noprompt {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  text-align: center;
-}
-.pk-home__noprompt svg {
-  flex: none;
-  color: var(--sun-text);
-}
-.pk-home__noprompt a {
-  color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
+.pk-home__pets { min-width: 0; margin-bottom: var(--space-3); }
+.pk-home__pets > .pk-switch { max-width: 100%; }
 /* Under the day: the way to the record, as a row you can press, and the
    rest of the family beneath it in quiet words. */
 .pk-home__foot {

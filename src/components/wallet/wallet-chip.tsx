@@ -193,6 +193,10 @@ function WalletPanel({
             </div>
           )}
         </div>
+        <Link className="pk-btn pk-btn--quiet pk-btn--full" href="/wallet" onClick={onDismiss}>
+          <Icon name="wallet" size={16} />
+          <span>Pawket Wallet</span>
+        </Link>
         <p className="caption pk-faint">Disconnecting changes nothing on Solana; your pets stay there.</p>
       </Stack>
     </Sheet>

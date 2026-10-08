@@ -49,6 +49,26 @@ test("the icon-only room control and modal close are usable on a phone", async (
   await expect(connect).toBeFocused();
 });
 
+test("a large pet family and room controls fit a narrow phone, with Profile last", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await adopt(page);
+  await page.evaluate(() => {
+    const pets = JSON.parse(localStorage.getItem("pawket.pets.v1")!);
+    localStorage.setItem("pawket.pets.v1", JSON.stringify(Array.from({ length: 12 }, (_, i) => ({
+      ...pets[0], id: `guest-family-${i}`, name: `Pepper ${i + 1}`,
+    }))));
+  });
+  await page.goto("/home");
+  const family = page.getByRole("group", { name: "Who is home" });
+  await expect(family.getByRole("button")).toHaveCount(12);
+  expect(await family.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  const view = page.getByRole("button", { name: /Switch to [23]D view/ });
+  await expect(view).toBeVisible();
+  expect(await view.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(page.getByRole("navigation", { name: "Pawket" }).getByRole("link").last()).toHaveAttribute("href", "/profile");
+});
+
 test("a sheet stays within a short phone in either room, with its controls reachable", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 480 });
   await page.goto("/market");

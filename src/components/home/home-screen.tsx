@@ -54,14 +54,13 @@ import {
   type TodayGoals,
 } from "@/lib/guest/pet";
 import { readPet, removePet, savePet } from "@/lib/guest/storage";
-import { haptic, useAndroidApp, useHere } from "@/lib/native/android";
+import { haptic, useHere } from "@/lib/native/android";
 import { describeLook } from "@/lib/player/look";
 import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
 import { CARE_MOMENT, type RoomCue } from "@/lib/room/moments";
 import { getCareInstruction } from "@/lib/solana/instructions";
-import { deviceFallback, usePawketSend } from "@/lib/solana/use-send";
-import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
+import { usePawketSend } from "@/lib/solana/use-send";
 
 /**
  * The room you actually live in, and the whole width of the screen: you and
@@ -286,19 +285,29 @@ export function HomeScreen() {
             <span className="caption pk-faint">
               {PERSONALITY_LABEL[pet.personality]} · {SPECIES_LABEL[pet.species]}
             </span>
-            <Chip label={onChain ? "On Solana" : `In ${here}`} tone={onChain ? "pool" : "plain"} icon={onChain ? "check" : undefined} />
             {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
           </Row>
         </div>
+        <Chip label={onChain ? "On Solana" : `In ${here}`} tone={onChain ? "pool" : "plain"} icon={onChain ? "check" : undefined} />
+      </ScreenBar>
+
+      <div className="pk-home__pets">
         <PetSwitcher
           pets={companion.all}
           home={pet.id}
           onChoose={companion.choose}
           kept={new Set(companion.owned.map((entry) => entry.pet.address))}
         />
-      </ScreenBar>
+      </div>
 
       <Stack gap={3}>
+        <RoomLine
+          sentence=""
+          mode={mode}
+          state={roomState}
+          onMode={setMode}
+          action={!onChain ? <Button label="Keep on Solana" aria-label={`Keep ${pet.name} on Solana`} tone="quiet" size="sm" icon="keep" onClick={() => setKeeping(pet)} /> : undefined}
+        />
         <Room
           pet={{
             ...petLook(pet, projected.mood),
@@ -315,6 +324,7 @@ export function HomeScreen() {
           stage
           viewRef={roomView}
         />
+        {status.sentence ? <p role="status" className="body-sm pk-muted">{status.sentence}</p> : null}
         <Deck
           name={pet.name}
           mood={projected.mood}
@@ -332,14 +342,7 @@ export function HomeScreen() {
           onPanel={setPanel}
           onSnap={roomState === "live" ? () => setShot(roomView.current?.snap() ?? null) : undefined}
         />
-        <RoomLine
-          sentence={status.sentence}
-          mode={mode}
-          state={roomState}
-          onMode={setMode}
-          action={!onChain ? <Button label="Keep on Solana" aria-label={`Keep ${pet.name} on Solana`} tone="quiet" size="sm" icon="keep" onClick={() => setKeeping(pet)} /> : undefined}
-        />
-        {onChain ? <NoPrompt state={sender.pawketWallet} now={now} /> : null}
+
 
         <div id="pk-deck-panel" className="pk-deck__panel" hidden={panel === null}>
           {panel === "say" ? (
@@ -438,7 +441,8 @@ function RoomLine({
         {action}
         {state === "unsupported" || state === "failed" ? null : (
           <Button
-            label={mode === "3d" ? (state === "loading" ? "Stay flat" : "Flat room") : "3D room"}
+            label={mode === "3d" ? "2D view" : "3D view"}
+            aria-label={mode === "3d" ? "Switch to 2D view" : "Switch to 3D view"}
             tone="ghost"
             size="sm"
             onClick={() => onMode(mode === "3d" ? "flat" : "3d")}
@@ -448,45 +452,6 @@ function RoomLine({
         )}
       </Row>
     </div>
-  );
-}
-
-/**
- * For a pet on Solana: whether what it does will ask the wallet, and why —
- * this browser not linked, its link run out, today's limit used — with the
- * way to change it.
- */
-function NoPrompt({ state, now }: { state: PawketWalletState | null; now: Date }) {
-  const { here, Here } = useHere();
-  const app = useAndroidApp();
-  const why = deviceFallback(state, now.getTime() / 1000);
-  const line: ReactNode =
-    why === null ? (
-      <>
-        Signed by {here}, with no pop-up. <Link href="/wallet">Your Pawket Wallet</Link>
-      </>
-    ) : why === "expired" ? (
-      <>
-        {Here}&apos;s link ran out. <Link href="/wallet">Link it again</Link>
-      </>
-    ) : why === "limit" ? (
-      <>
-        {Here} reached today&apos;s limit. <Link href="/wallet">Change the limit</Link> or return after midnight UTC.
-      </>
-    ) : app ? (
-      <>
-        Link this app to care on Solana without pop-ups. <Link href="/wallet">Link this app</Link>
-      </>
-    ) : (
-      <>
-        Each care asks your wallet. <Link href="/wallet">Link {here}</Link> and it stops asking.
-      </>
-    );
-  return (
-    <p className="caption pk-faint pk-home__noprompt">
-      <Icon name="bolt" size={14} />
-      <span>{line}</span>
-    </p>
   );
 }
 

@@ -19,8 +19,8 @@ const PLACES: Array<{ key: string; label: string; short?: string; icon: IconName
   { key: "park", label: "Park", icon: "users", href: "/park" },
   { key: "playground", label: "Playground", short: "Play", icon: "ball", href: "/playground" },
   { key: "market", label: "Market", icon: "market", href: "/market" },
-  { key: "profile", label: "Profile", icon: "person", href: "/profile" },
   { key: "guilds", label: "Guilds", icon: "guild", href: "/guilds" },
+  { key: "profile", label: "Profile", icon: "person", href: "/profile" },
 ];
 
 /**

@@ -41,3 +41,11 @@ waiting forever after disconnect. Linking refuses stale wallet-read errors.
 Transport tests exercise a refusal followed by a successful retry and an
 unanswered authorization; they do not mock transaction signatures or prove
 behaviour on a physical Solflare installation.
+
+## Home and navigation
+
+Home gives the pet strip its own full-width row, the storage label sits by
+the heading, and a separate toolbar above the room holds the 2D/3D choice.
+The wallet sheet links to Pawket Wallet; Home no longer repeats that line.
+Profile is the rightmost dock destination. The phone regression includes
+twelve pets at 320px, readable view controls and dock order.

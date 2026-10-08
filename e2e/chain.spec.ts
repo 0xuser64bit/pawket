@@ -134,7 +134,7 @@ test("Market purchases spend Pawket Wallet and unlock a room and photo frame", a
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await page.goto("/wallet");
   await expect(page.getByRole("heading", { name: "Set up your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
-  await page.getByRole("button", { name: "0.25 SOL", exact: true }).click();
+  await page.getByRole("radio", { name: "0.25 SOL", exact: true }).click();
   await page.getByRole("button", { name: "Link this browser" }).click();
   await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
   const rpc = createSolanaRpc(process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com");

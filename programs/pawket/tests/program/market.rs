@@ -59,6 +59,15 @@ fn nothing_is_bought_twice_and_only_what_the_market_sells_is_sold() {
         expect_pawket(&env.send(&[buy_ix(&owner.pubkey(), &owner.pubkey(), item)], &owner, &[]), PawketError::UnknownItem);
     }
     assert_eq!(env.closet(&owner.pubkey()).spent, spent);
+    // Every id there is: the four pieces and two rooms have their prices, and nothing else has one.
+    for item in 0..=u8::MAX {
+        let expected = match item {
+            HALO..=LAST_PIECE => Some(WEARABLE_PRICE_LAMPORTS),
+            FIRST_ROOM..=65 => Some(ROOM_PRICE_LAMPORTS),
+            _ => None,
+        };
+        assert_eq!(pawket::item_price(item), expected, "item {item}");
+    }
 }
 
 #[test]
@@ -84,6 +93,17 @@ fn a_closet_that_is_there_already_is_bought_into_only_while_it_names_its_owner()
     let result = env.send(&[buy_ix(&owner.pubkey(), &owner.pubkey(), HALO)], &owner, &[]);
     expect_anchor(&result, anchor_lang::error::ErrorCode::ConstraintRaw);
     assert_eq!(env.lamports(&TREASURY), treasury_before);
+}
+
+#[test]
+fn a_purchase_lands_only_in_the_buyers_own_closet() {
+    let mut env = Env::new();
+    let (buyer, other) = (env.player(), env.player());
+    ok(env.send(&[buy_ix(&other.pubkey(), &other.pubkey(), HALO)], &other, &[]));
+    let mut misdirected = buy_ix(&buyer.pubkey(), &buyer.pubkey(), HALO + 1);
+    misdirected.accounts[2].pubkey = closet_pda(&other.pubkey());
+    expect_anchor(&env.send(&[misdirected], &buyer, &[]), anchor_lang::error::ErrorCode::ConstraintSeeds);
+    assert_eq!(env.closet(&other.pubkey()).count, 1);
 }
 
 #[test]

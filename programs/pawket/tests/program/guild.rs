@@ -137,6 +137,27 @@ fn the_rent_goes_back_only_to_whoever_paid_it() {
 }
 
 #[test]
+fn leaving_counts_down_only_the_guild_the_pet_is_in() {
+    let mut env = Env::new();
+    let (first, second) = (env.player(), env.player());
+    let pepper = env.adopt(&first, "Pepper");
+    let miso = env.adopt(&second, "Miso");
+    ok(env.send(&[found_ix(&first.pubkey(), &first.pubkey(), &pepper, "sunbeam-club")], &first, &[]));
+    ok(env.send(&[found_ix(&second.pubkey(), &second.pubkey(), &miso, "cloud-nine")], &second, &[]));
+    let cloud = guild_pda("cloud-nine");
+
+    // Pepper leaves, naming a guild it was never in.
+    let wrong = leave_ix(&first.pubkey(), &pepper, &cloud, &first.pubkey());
+    expect_anchor(&env.send(&[wrong], &first, &[]), anchor_lang::error::ErrorCode::ConstraintHasOne);
+    // Or naming Miso's place in it, the rent going to whoever paid for that place.
+    let mut borrowed = leave_ix(&first.pubkey(), &pepper, &cloud, &second.pubkey());
+    borrowed.accounts[2].pubkey = member_pda(&miso);
+    expect_anchor(&env.send(&[borrowed], &first, &[]), anchor_lang::error::ErrorCode::ConstraintSeeds);
+    assert_eq!((env.guild("sunbeam-club").member_count, env.guild("cloud-nine").member_count), (1, 1));
+    assert!(env.exists(&member_pda(&miso)));
+}
+
+#[test]
 fn a_pet_joins_a_guild_only_at_the_guilds_own_address() {
     let mut env = Env::new();
     let founder = env.player();

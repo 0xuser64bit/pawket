@@ -763,6 +763,262 @@
   --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
 }
 
+/* Terracotta: sun-baked clay and sand. */
+:root[data-theme="terracotta"],
+[data-theme-preview="terracotta"] {
+  color-scheme: light;
+
+  --ground: #f5e6da;
+  --surface: #fffaf5;
+  --surface-sunk: #ebd2c0;
+  --surface-ink: #3b2016;
+  --paper: #f7f7f4;
+  --paper-sunk: #ecece7;
+  --rule: #85816f;
+  --ink: #3b2016;
+  --ink-soft: #6b3f2c;
+  --ink-faint: #7a4b37;
+  --ink-inverse: #fff6ef;
+  --edge: #3b2016;
+  --edge-soft: #e3c3ad;
+  --sun: #ff8752;
+  --sun-edge: #b0461b;
+  --sun-text: #97380f;
+  --sun-soft: #ffdcc8;
+  --sprout: #6bb35a;
+  --sprout-edge: #3a7a31;
+  --sprout-text: #2c6a26;
+  --sprout-soft: #dcefd3;
+  --pool: #76a2e0;
+  --pool-edge: #3a63ad;
+  --pool-text: #2a5399;
+  --pool-soft: #dde7f8;
+  --bloom: #b8407a;
+  --bloom-edge: #7c2650;
+  --bloom-text: #8f2d5a;
+  --bloom-soft: #f8dde8;
+  --alarm: #d13a1f;
+  --alarm-edge: #8f2412;
+  --alarm-text: #a0280f;
+  --alarm-soft: #fbdcd4;
+  --on-sun: #3b2016;
+  --on-sprout: #2a1e14;
+  --on-pool: #2a1e14;
+  --on-bloom: #fff8ec;
+  --on-alarm: #fffaf1;
+  --focus: #7a2c0b;
+  --focus-contrast: #fffaf5;
+  --trim-cloth: #8c7a60;
+  --trim-copper: #a45f2a;
+  --trim-glass: #2d8296;
+  --trim-foil: #95761a;
+  --pet-blush: #ff9f8f;
+  --pet-cream: #fff3e2;
+  --pet-cocoa: #6b3d1f;
+  --pet-cloud: #fbf8f4;
+  --pet-cloud-shade: #c7d3f2;
+  --pk-day: 1;
+  --pk-night: 0;
+
+  --shadow-sticker: 3px 3px 0 #3b2016;
+  --shadow-sticker-sm: 2px 2px 0 #3b2016;
+  --shadow-sticker-lift: 4px 4px 0 #3b2016;
+  --shadow-lift: 0 20px 44px -16px rgba(42, 30, 20, 0.35);
+  --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
+}
+
+/* Black ink on newsprint, and nothing else loud. */
+:root[data-theme="newsprint"],
+[data-theme-preview="newsprint"] {
+  color-scheme: light;
+
+  --ground: #ecebe6;
+  --surface: #fafaf7;
+  --surface-sunk: #dcdbd4;
+  --surface-ink: #1c1c1a;
+  --paper: #f7f7f4;
+  --paper-sunk: #ecece7;
+  --rule: #85816f;
+  --ink: #1c1c1a;
+  --ink-soft: #45443f;
+  --ink-faint: #55544e;
+  --ink-inverse: #fafaf7;
+  --edge: #1c1c1a;
+  --edge-soft: #cdcbc3;
+  --sun: #ff8a3d;
+  --sun-edge: #b8500f;
+  --sun-text: #94400b;
+  --sun-soft: #fbe3d0;
+  --sprout: #63b655;
+  --sprout-edge: #3a7a31;
+  --sprout-text: #2b6a26;
+  --sprout-soft: #dcefd3;
+  --pool: #7ba4ec;
+  --pool-edge: #3a63ad;
+  --pool-text: #2a5399;
+  --pool-soft: #dfe7f6;
+  --bloom: #b8407a;
+  --bloom-edge: #7c2650;
+  --bloom-text: #8f2d5a;
+  --bloom-soft: #f6dfe8;
+  --alarm: #d13a1f;
+  --alarm-edge: #8f2412;
+  --alarm-text: #a0280f;
+  --alarm-soft: #f8ddd6;
+  --on-sun: #1c1c1a;
+  --on-sprout: #1c1c1a;
+  --on-pool: #1c1c1a;
+  --on-bloom: #fafaf7;
+  --on-alarm: #fafaf7;
+  --focus: #1d3f8f;
+  --focus-contrast: #fafaf7;
+  --trim-cloth: #8c7a60;
+  --trim-copper: #a45f2a;
+  --trim-glass: #2d8296;
+  --trim-foil: #95761a;
+  --pet-blush: #ff9f8f;
+  --pet-cream: #fff3e2;
+  --pet-cocoa: #6b3d1f;
+  --pet-cloud: #fbf8f4;
+  --pet-cloud-shade: #c7d3f2;
+  --pk-day: 1;
+  --pk-night: 0;
+
+  --shadow-sticker: 3px 3px 0 #1c1c1a;
+  --shadow-sticker-sm: 2px 2px 0 #1c1c1a;
+  --shadow-sticker-lift: 4px 4px 0 #1c1c1a;
+  --shadow-lift: 0 20px 44px -16px rgba(42, 30, 20, 0.35);
+  --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
+}
+
+/* Hot cocoa: dark chocolate and caramel. */
+:root[data-theme="cocoa"],
+[data-theme-preview="cocoa"] {
+  color-scheme: dark;
+
+  --ground: #2a1a13;
+  --surface: #3a251b;
+  --surface-sunk: #1d110c;
+  --surface-ink: #fbe9da;
+  --paper: #16181f;
+  --paper-sunk: #0f1116;
+  --rule: #737a8c;
+  --ink: #fdf1e6;
+  --ink-soft: #e2c6b1;
+  --ink-faint: #cfab92;
+  --ink-inverse: #2a1a13;
+  --edge: #fbe3cf;
+  --edge-soft: #5a3b2c;
+  --sun: #ffad66;
+  --sun-edge: #a8530f;
+  --sun-text: #ffbe85;
+  --sun-soft: #4a2e22;
+  --sprout: #86cc76;
+  --sprout-edge: #2f6427;
+  --sprout-text: #a2da95;
+  --sprout-soft: #2b3524;
+  --pool: #9fbdf5;
+  --pool-edge: #2f538f;
+  --pool-text: #b6cdfa;
+  --pool-soft: #2a2f45;
+  --bloom: #ee80b3;
+  --bloom-edge: #8a2d5a;
+  --bloom-text: #f6a3c8;
+  --bloom-soft: #43243a;
+  --alarm: #ff7a5e;
+  --alarm-edge: #932412;
+  --alarm-text: #ff9c85;
+  --alarm-soft: #4a221c;
+  --on-sun: #2a1a13;
+  --on-sprout: #2a1a13;
+  --on-pool: #2a1a13;
+  --on-bloom: #2a1a13;
+  --on-alarm: #2a1a13;
+  --focus: #ffd27a;
+  --focus-contrast: #2a1a13;
+  --trim-cloth: #c0ab8b;
+  --trim-copper: #d08a4e;
+  --trim-glass: #63c0d4;
+  --trim-foil: #d8b43e;
+  --pet-blush: #f2907f;
+  --pet-cream: #f6e6cc;
+  --pet-cocoa: #8a5530;
+  --pet-cloud: #efe9f2;
+  --pet-cloud-shade: #b3c1ea;
+  --pk-day: 0;
+  --pk-night: 1;
+
+  --shadow-sticker: 3px 3px 0 #020a0b;
+  --shadow-sticker-sm: 2px 2px 0 #020a0b;
+  --shadow-sticker-lift: 4px 4px 0 #020a0b;
+  --shadow-lift: 0 20px 44px -16px rgba(0, 0, 0, 0.72);
+  --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* An arcade after closing: violet, with neon. */
+:root[data-theme="arcade"],
+[data-theme-preview="arcade"] {
+  color-scheme: dark;
+
+  --ground: #150e24;
+  --surface: #211638;
+  --surface-sunk: #0c0716;
+  --surface-ink: #f1e8ff;
+  --paper: #16181f;
+  --paper-sunk: #0f1116;
+  --rule: #737a8c;
+  --ink: #f6f0ff;
+  --ink-soft: #cbbbea;
+  --ink-faint: #b19fd6;
+  --ink-inverse: #150e24;
+  --edge: #efe4ff;
+  --edge-soft: #3d2b62;
+  --sun: #ffb04f;
+  --sun-edge: #a8530f;
+  --sun-text: #ffc27a;
+  --sun-soft: #3d2a2c;
+  --sprout: #6ee08c;
+  --sprout-edge: #24663a;
+  --sprout-text: #8fe9a8;
+  --sprout-soft: #1d3328;
+  --pool: #6fd8ff;
+  --pool-edge: #1f5f86;
+  --pool-text: #97e3ff;
+  --pool-soft: #1c2c4a;
+  --bloom: #ff6ad0;
+  --bloom-edge: #8a2d6a;
+  --bloom-text: #ff9ade;
+  --bloom-soft: #3c1f42;
+  --alarm: #ff6b5a;
+  --alarm-edge: #932412;
+  --alarm-text: #ff978a;
+  --alarm-soft: #3f1b26;
+  --on-sun: #150e24;
+  --on-sprout: #150e24;
+  --on-pool: #150e24;
+  --on-bloom: #150e24;
+  --on-alarm: #150e24;
+  --focus: #ffe07a;
+  --focus-contrast: #150e24;
+  --trim-cloth: #c0ab8b;
+  --trim-copper: #d08a4e;
+  --trim-glass: #63c0d4;
+  --trim-foil: #d8b43e;
+  --pet-blush: #f2907f;
+  --pet-cream: #f6e6cc;
+  --pet-cocoa: #8a5530;
+  --pet-cloud: #efe9f2;
+  --pet-cloud-shade: #b3c1ea;
+  --pk-day: 0;
+  --pk-night: 1;
+
+  --shadow-sticker: 3px 3px 0 #020a0b;
+  --shadow-sticker-sm: 2px 2px 0 #020a0b;
+  --shadow-sticker-lift: 4px 4px 0 #020a0b;
+  --shadow-lift: 0 20px 44px -16px rgba(0, 0, 0, 0.72);
+  --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
 /* Starlight: a navy night with a gold moon. */
 :root[data-theme="starlight"],
 [data-theme-preview="starlight"] {

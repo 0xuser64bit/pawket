@@ -101,7 +101,7 @@ pub const MARKET_WEARABLE_COUNT: u8 = 25;
 pub const CLASSIC_WEARABLE_COUNT: u8 = 15;
 /// The Market's rooms, as item ids from 64. The app draws them; the Closet records them.
 pub const FIRST_ROOM_ITEM: u8 = 64;
-pub const MARKET_ROOM_COUNT: u8 = 8;
+pub const MARKET_ROOM_COUNT: u8 = 12;
 /// The Market's photo frames, as item ids from 80.
 pub const FIRST_FRAME_ITEM: u8 = 80;
 pub const MARKET_FRAME_COUNT: u8 = 4;

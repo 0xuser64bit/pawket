@@ -248,7 +248,7 @@ describe("program.ts against the IDL", () => {
     expect(frames).toEqual(Array.from({ length: MARKET.frames }, (_, i) => MARKET.firstFrame + i));
     expect(rooms.map(marketPrice)).toEqual(rooms.map(() => MARKET.roomPrice));
     expect(frames.map(marketPrice)).toEqual(frames.map(() => MARKET.framePrice));
-    for (const invalid of [-1, 3, 29, 63, 72, 79, 84, 256, 80.5]) expect(marketPrice(invalid)).toBeNull();
+    for (const invalid of [-1, 3, 29, 63, 76, 79, 84, 256, 80.5]) expect(marketPrice(invalid)).toBeNull();
   });
 
   it("holds the Market and a guild's gatherings to the program's numbers", () => {

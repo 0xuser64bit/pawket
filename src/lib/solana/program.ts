@@ -62,7 +62,7 @@ export const MARKET = {
   wearables: 25,
   classicWearables: 15,
   firstRoom: 64,
-  rooms: 8,
+  rooms: 12,
   firstFrame: 80,
   frames: 4,
   classicPrice: 20_000_000n,

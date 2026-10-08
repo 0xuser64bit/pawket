@@ -17,6 +17,10 @@ export const THEMES = [
   // The Market's rooms: bought once (their item id is the program's), then any device of the wallet's.
   { id: "blossom", name: "Blossom", line: "Cherry blossom: petal pink and plum.", scheme: "light", item: 64 },
   { id: "aurora", name: "Aurora", line: "A green-lit night, for staying up late.", scheme: "dark", item: 65 },
+  { id: "terracotta", name: "Terracotta", line: "Sun-baked clay and sand.", scheme: "light", item: 72 },
+  { id: "newsprint", name: "Newsprint", line: "Black ink on newsprint, and nothing else loud.", scheme: "light", item: 73 },
+  { id: "cocoa", name: "Cocoa", line: "Hot cocoa: dark chocolate and caramel.", scheme: "dark", item: 74 },
+  { id: "arcade", name: "Arcade", line: "An arcade after closing: violet, with neon.", scheme: "dark", item: 75 },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];

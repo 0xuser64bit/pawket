@@ -10,7 +10,7 @@ const HALO: u8 = 19;
 const LAST_CLASSIC: u8 = 18;
 const LAST_PIECE: u8 = 28;
 const FIRST_ROOM: u8 = 64;
-const LAST_ROOM: u8 = 71;
+const LAST_ROOM: u8 = 75;
 const LAST_FRAME: u8 = 83;
 
 #[test]

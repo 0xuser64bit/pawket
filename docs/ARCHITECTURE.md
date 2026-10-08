@@ -12,6 +12,7 @@ programs/pawket/            the Anchor program (Rust) and its LiteSVM tests
 app/                        routes, layouts, route handlers (Server by default)
   page.tsx                  landing (revalidates each minute: a live count from chain)
   adopt/                    three-step adoption, no dock; adds a pet beside the others
+  privacy/                  the privacy policy (web and Android)
   (game)/                   shell: mark, dock, wallet chip, room switch
     home/                   the room across the width, the deck, the care loop, photos
     park/                   every pet on Solana, read live (Server)
@@ -29,9 +30,10 @@ app/                        routes, layouts, route handlers (Server by default)
   api/keepsake/             a pet's card in its owner's wallet (Metaplex Core)
   api/coins/[slug]/         a guild coin's quote, launch, trade, graduation, fee claim, metadata
   api/actions/              Solana Actions: adopt, care, wave, join a guild, their icons
+  api/rpc/route.ts          the browser's RPC proxy: allow-listed calls, to SOLANA_RPC_URL
 src/components/             UI; "use client" only at interactive leaves
   pk/                       design system
-  wallet/                   connect sheet, wallet chip, address line, tx receipt
+  wallet/                   connect sheet, wallet chip, address line, the send's toast, Pawket Wallet
   home/ adopt/ pet/ profile/ guilds/ play/ market/ coins/
   room3d/                   the 3D room: one R3F Canvas, loaded only by Home
 src/config/                 validated env (public + server-only) + site constants

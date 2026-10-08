@@ -205,7 +205,8 @@ sends nothing.
 ## The sponsor
 
 `/api/sponsor` pays fees, and the rent of a new pet, a new guild or a pet's
-place in one, so a wallet with no SOL can play. Its key (`SPONSOR_KEYPAIR`, server-only) is a devnet hot wallet with a
+place in one, so the SOL a player puts in their Pawket Wallet goes only to
+what they choose to buy. Its key (`SPONSOR_KEYPAIR`, server-only) is a devnet hot wallet with a
 small float — not the upgrade authority. `checkSponsorable` signs only when:
 
 - every instruction is one of Pawket's, on Pawket's program — a linked

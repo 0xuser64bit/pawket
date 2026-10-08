@@ -188,7 +188,7 @@ pnpm test             # Vitest
 pnpm e2e              # Playwright (needs no wallet; asserts shell, not signing)
 pnpm assets:3d        # rebuild public/3d from the source files in assets/
 pnpm program:test     # anchor build (SBF v2) + the LiteSVM suite, incl. the lockstep replay
-pnpm e2e:devnet       # Vitest against the deployed program: a 0-SOL wallet adopts and cares
+pnpm e2e:devnet       # Vitest against the deployed program: adoption, care, guilds, the Market and a linked browser
 PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/chain.spec.ts e2e/coins.spec.ts   # the same paths, and a coin's trades, through the real screens
 (cd android && ./gradlew testDebugUnitTest)   # the Android shell's own checks (JDK 17+, Android SDK)
 PAWKET_ANDROID_KEYSTORE=… scripts/android-release.sh   # the signed release APK, and what to record (docs/ANDROID.md)

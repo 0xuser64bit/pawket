@@ -28,7 +28,7 @@ Browser-first on devnet: Wallet Standard wallets, one rpc and one wallet client 
 
 On Android, the same app runs in Pawket's own app (`android/`, the official Solana Mobile webshell): the wallet apps on the phone sign through Mobile Wallet Adapter, and the share sheet, gallery, calendar, haptics and back gesture are the phone's (`docs/ANDROID.md`). A pet kept there lives in the app, not in Chrome.
 
-The loop: adopt in the browser → care (4 actions, 30-min cooldown each, decay projected and labeled an estimate) → keep it on Solana (one signature) → every care, round and outfit a signed record → the Passport and the Park show it to everyone.
+The loop: adopt in the browser → care (4 actions, 30-min cooldown each, decay projected and labeled an estimate) → keep it on Solana (one approval sets up a Pawket Wallet; the browser signs from then on) → every care, round and outfit a signed record → the Passport and the Park show it to everyone.
 
 ## Capabilities and Constraints
 
@@ -48,7 +48,7 @@ Name: Pawket. Tagline in the shell: "A living companion". The mark (a paw print 
 
 Real implementation: the program in `programs/pawket/` (deployed to devnet), the routes in `docs/ROUTES.md`, `src/lib/guest/` (the browser record), `src/lib/game/` (math, in lockstep with the program), `src/lib/solana/` (builders, decoders, send path, sponsor rules), `src/lib/companion/`, `src/lib/closet/`, `src/lib/play/`, `src/lib/guilds/`, `src/lib/game/badges.ts`, `src/lib/player/`, `src/config/themes.ts`, `src/components/pk/` (design system and the geometric pet), LiteSVM, Vitest and Playwright suites, and a devnet path tested end to end.
 
-Absences future work must not fabricate: no pet asset that can be sold, a keepsake only once it is read from chain, no testimonials, customers, press, benchmarks or prices. The only live player data is what the program holds, read as it is. A wearable changes nothing but looks. An emote changes nothing on the record. Marketplace, guild launches and real-time multiplayer remain specs.
+Absences future work must not fabricate: no pet asset that can be sold, a keepsake only once it is read from chain, no testimonials, customers, press, benchmarks or prices. The only live player data is what the program holds, read as it is. A wearable changes nothing but looks. An emote changes nothing on the record. A market for pets, resale of looks and real-time multiplayer remain specs.
 
 ## Product Principles
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Address } from "@solana/kit";
-import { Button, ButtonLink, ItemTile, PetArt, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice } from "@/components/pk";
+import { Button, ButtonLink, ItemTile, PetArt, RARITY_LABEL, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice, type Rarity } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
@@ -69,6 +69,17 @@ const FRAMES: Item[] = PHOTO_FRAMES.map((frame) => ({
 
 const sol = (lamports: bigint | string) => `${formatUnits(lamports, 9, 4)} SOL`;
 
+/**
+ * Each shelf's material, so the trim says what kind of thing it is: the
+ * classic pieces are cloth, the rest of the pieces foil, rooms glass and
+ * frames copper. Looks only; it is written beside the price.
+ */
+function rarityOf(item: Item): Rarity {
+  if (item.kind === "room") return "glass";
+  if (item.kind === "frame") return "copper";
+  return marketPrice(item.id) === MARKET.classicPrice ? "cloth" : "foil";
+}
+
 export function MarketScreen() {
   const cluster = getPublicEnv().solanaCluster;
   const connected = useConnected();
@@ -84,8 +95,8 @@ export function MarketScreen() {
       <button key={item.id} type="button" className="pk-tile-hit" aria-haspopup="dialog" onClick={() => setPicked(item)}>
         <ItemTile
           name={item.name}
-          kind={has ? "In your closet" : item.kind === "room" ? "Room" : item.kind === "frame" ? "Frame" : "Piece"}
-          rarity="foil"
+          kind={has ? "In your closet" : `${RARITY_LABEL[rarityOf(item)]} ${item.kind}`}
+          rarity={rarityOf(item)}
           price={has ? undefined : sol(marketPrice(item.id)!)}
           art={item.art}
           equipped={has && item.room === choice}

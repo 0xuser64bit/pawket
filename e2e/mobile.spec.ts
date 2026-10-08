@@ -261,7 +261,8 @@ test("starter choices stay small and every Market category opens a readable shar
   await page.goto("/profile?tab=settings#shelf");
   await expect(page.getByRole("radiogroup", { name: "Rooms" }).getByRole("radio")).toHaveCount(3);
   await page.goto("/market");
-  await expect(page.locator(".pk-tiles button")).toHaveCount(31);
+  // 25 pieces, 12 rooms and 8 frames.
+  await expect(page.locator(".pk-tiles button")).toHaveCount(45);
   await page.getByRole("button", { name: /Sunshine/ }).tap();
   const sheet = page.getByRole("dialog", { name: "Sunshine" });
   await expect(sheet.getByText("0.025 SOL", { exact: true })).toBeVisible();

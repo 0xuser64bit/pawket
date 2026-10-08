@@ -105,10 +105,14 @@ test("the Market states its fixed prices and where the SOL goes, and asks a wall
   await page.goto("/market");
   await expect(page.getByRole("heading", { name: "Market" })).toBeVisible();
   await expect(page.getByText(/looks only, never power/i)).toBeVisible();
-  for (const piece of ["Star pin", "Halo", "Wizard hat", "Sun hat", "Gold crown", "Strawberry", "Blossom", "Aurora", "Postcard", "Film strip", "Garden", "Sunshine"]) {
+  for (const piece of ["Star pin", "Halo", "Wizard hat", "Sun hat", "Gold crown", "Cowboy hat", "Necktie", "Strawberry", "Blossom", "Aurora", "Terracotta", "Arcade", "Postcard", "Film strip", "Garden", "Sunshine", "Instant", "Confetti"]) {
     await expect(page.getByText(piece, { exact: true }).first()).toBeVisible();
   }
   await expect(page.getByText("Where the SOL goes")).toBeVisible();
+  // Each shelf wears its material: classic pieces cloth, the rest foil, rooms glass, frames copper.
+  for (const [name, kind] of [["Star pin", "Cloth piece"], ["Halo", "Foil piece"], ["Aurora", "Glass room"], ["Postcard", "Copper frame"]]) {
+    await expect(page.getByRole("button", { name: new RegExp(`^${name}`) })).toContainText(kind);
+  }
   await page.getByRole("button", { name: /Halo/ }).click();
   // The item opens over the shelves, not under them.
   const sheet = page.getByRole("dialog", { name: "Halo" });

@@ -37,7 +37,7 @@ Per hour: hunger **2.5**, happiness **1.8**, energy **1.5**, hygiene **1.2** (`S
 ## 3. XP, levels, mood
 
 - XP: **+10/care** (`XP_PER_CARE_ACTION`); daily-goal bonus **+25** (`DAILY_GOAL_REWARD_XP`, M4+).
-- Level: `floor(xp/100)+1` (`BASE_XP_PER_LEVEL=100`); `xpForNextLevel(level)=level*100`.
+- Level: `floor(xp/100)+1` (`BASE_XP_PER_LEVEL=100`); the next level comes at `level*100` XP.
 - Mood priority: hunger<25→Hungry; energy<25→Tired; hygiene<25→Scruffy; happiness<25→Lonely; else avg≥88 Radiant, ≥68 Happy, else Okay. (`calculatePetMood` — exact thresholds tested.)
 
 ## 4. Passport (progression record)

@@ -63,13 +63,6 @@ export const HAIR_COLOURS = {
   sprout: "#4f9a44",
 } as const;
 
-export type Body = (typeof BODIES)[number];
-export type Hairstyle = (typeof HAIRSTYLES)[number];
-export type Top = (typeof TOPS)[number];
-export type Bottom = (typeof BOTTOMS)[number];
-export type Shoes = (typeof SHOES)[number];
-export type Headwear = (typeof HEADWEAR)[number];
-export type Eyewear = (typeof EYEWEAR)[number];
 export type ClothColour = (typeof CLOTH_COLOURS)[number];
 export type HairColour = keyof typeof HAIR_COLOURS;
 

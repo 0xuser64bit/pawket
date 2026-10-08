@@ -257,5 +257,3 @@ export const PAWKET_ERROR_CODES = {
   6029: "ALREADY_WAVED_TODAY",
 } as const;
 
-export type PawketErrorCode =
-  (typeof PAWKET_ERROR_CODES)[keyof typeof PAWKET_ERROR_CODES];

@@ -63,10 +63,6 @@ export function calculateLevelFromXp(xp: number): number {
   return Math.floor(safeXp / BASE_XP_PER_LEVEL) + 1;
 }
 
-export function xpForNextLevel(level: number): number {
-  return Math.max(1, Math.floor(level)) * BASE_XP_PER_LEVEL;
-}
-
 export function calculatePetMood(stats: PetStats): PetMood {
   if (stats.hunger < 25) return PetMood.Hungry;
   if (stats.energy < 25) return PetMood.Tired;

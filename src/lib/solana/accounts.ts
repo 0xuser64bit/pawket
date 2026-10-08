@@ -794,11 +794,6 @@ export async function fetchGuildEvents(rpc: ReadRpc, guild: string | Address): P
   return (await scan(rpc, PAWKET_ACCOUNTS.event, 8n, guild, decodeEvent)).sort((a, b) => a.startsAt - b.startsAt);
 }
 
-/** Every RSVP to an event. */
-export function fetchEventRsvps(rpc: ReadRpc, event: string | Address): Promise<ChainRsvp[]> {
-  return scan(rpc, PAWKET_ACCOUNTS.rsvp, 8n, event, decodeRsvp);
-}
-
 /** Every event a pet said it was going to, and whether it came: its stickers read these. */
 export function fetchPetRsvps(rpc: ReadRpc, pet: string | Address): Promise<ChainRsvp[]> {
   return scan(rpc, PAWKET_ACCOUNTS.rsvp, 40n, pet, decodeRsvp);

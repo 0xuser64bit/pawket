@@ -26,5 +26,3 @@ export const STAT_DECAY_PER_HOUR = {
   energy: 1.5,
   hygiene: 1.2,
 } as const;
-
-export type StatKey = keyof typeof STAT_DECAY_PER_HOUR;

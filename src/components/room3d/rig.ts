@@ -85,11 +85,6 @@ export function reach(upper: Object3D, lower: Object3D, hand: Object3D, target: 
   hand.updateMatrixWorld(true);
 }
 
-/** Critically damped approach: frame-rate independent smoothing. */
-export function damp(current: number, target: number, rate: number, dt: number): number {
-  return target + (current - target) * Math.exp(-rate * dt);
-}
-
 export function dampVector(current: Vector3, target: Vector3, rate: number, dt: number): Vector3 {
   return current.lerp(target, 1 - Math.exp(-rate * dt));
 }

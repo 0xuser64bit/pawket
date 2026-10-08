@@ -31,10 +31,6 @@ export function readPrimitive(prim) {
   };
 }
 
-export function vertexCount(mesh) {
-  return mesh.pos.length / 3;
-}
-
 /** Growable copy of a mesh, so cuts can append vertices. */
 function growable(mesh) {
   return {

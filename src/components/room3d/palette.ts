@@ -7,8 +7,8 @@ import { HAIR_COLOURS, type ClothColour, type HairColour } from "@/lib/player/lo
  * in `app/globals.css` — `palette.test.ts` fails if they drift. The pets'
  * coats are the same values, baked into their GLBs by the asset pipeline.
  *
- * What follows the theme is read from the page instead (`readThemeInk`):
- * the outline is the theme's `edge`, and the backdrop is the theme's sky.
+ * What follows the theme comes from the page instead: the outline is the
+ * theme's `edge`, and the backdrop is the theme's sky.
  */
 export const DAYLIGHT = {
   ground: "#f6efe2",
@@ -67,16 +67,4 @@ export function clothHex(colour: ClothColour): string {
 
 export function hairHex(colour: HairColour): string {
   return HAIR_COLOURS[colour];
-}
-
-/** What the theme decides: the outline ink, and whether it is evening. */
-export interface ThemeInk {
-  edge: string;
-  evening: boolean;
-}
-
-export function readThemeInk(): ThemeInk {
-  const style = getComputedStyle(document.documentElement);
-  const edge = style.getPropertyValue("--edge").trim() || DAYLIGHT.edge;
-  return { edge, evening: style.colorScheme === "dark" };
 }

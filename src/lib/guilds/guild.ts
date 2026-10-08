@@ -11,7 +11,6 @@ import { GUILD_LIMITS } from "@/lib/solana/program";
  * from the design system, and bloom — the guild layer's own — comes first.
  */
 export const CREST_GLYPHS = ["paw", "star", "heart", "moon", "spark", "ball", "crown", "music"] as const;
-export type CrestGlyph = (typeof CREST_GLYPHS)[number];
 
 export const CREST_COLOURS = [
   { id: "bloom", label: "Bloom", token: "var(--bloom)", on: "var(--on-bloom)" },

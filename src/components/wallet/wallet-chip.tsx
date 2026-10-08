@@ -7,15 +7,14 @@ import { useConnectedWallet, useDisconnect, useIsWalletReady } from "@solana/kit
 import { Button, Icon, Sheet, Stack } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
-import { wallet, useConnected } from "@/lib/solana/browser-client";
+import { wallet } from "@/lib/solana/browser-client";
 import { deviceFallback } from "@/lib/solana/use-send";
 import { formatUtcDate, truncateAddress } from "@/lib/utils/format";
 import { useMounted } from "@/lib/utils/use-mounted";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { AddressLine } from "./address";
 import { WalletSheet } from "./wallet-sheet";
-import { useAndroidApp, useHere } from "@/lib/native/android";
-import { usePawketWallet } from "@/lib/wallet/pawket-wallet";
+import { useHere } from "@/lib/native/android";
 
 /**
  * The wallet, in the shell, just before the room switch and drawn the same
@@ -50,7 +49,7 @@ export function WalletChip() {
   }
 
   const address = connected.account.address as Address;
-  const signsHere = deviceFallback(linking.state) === null;
+  const signsHere = deviceFallback(linking.state) === null && (linking.state?.balance ?? 0n) > 0n && !linking.state?.error;
   return (
     <>
       <button
@@ -72,20 +71,6 @@ export function WalletChip() {
         <WalletPanel address={address} name={connected.wallet.name} icon={connected.wallet.icon} linking={linking} onDismiss={() => setOpen(null)} />
       ) : null}
     </>
-  );
-}
-
-/** Setup stays findable on every phone screen before an action needs it. */
-export function MobileWalletNotice() {
-  const app = useAndroidApp();
-  const connected = useConnected();
-  const state = usePawketWallet((connected?.account.address as Address | undefined) ?? null);
-  if (!app || !connected || !state || state.status === "loading" || deviceFallback(state) === null) return null;
-  return (
-    <div className="pk-mobile-wallet body-sm" role="status">
-      <span>{state.error ? "Your Pawket Wallet could not be read." : "Link Pawket Wallet for care, games and outfits without pop-ups."}</span>
-      <Link className="pk-btn pk-btn--quiet pk-btn--sm" href="/wallet">Pawket Wallet</Link>
-    </div>
   );
 }
 
@@ -147,6 +132,13 @@ function WalletPanel({
           </span>
           {!state || state.status === "loading" ? (
             <p className="body-sm pk-muted pk-fill">Reading your Pawket Wallet…</p>
+          ) : state.error ? (
+            <p className="body-sm pk-muted pk-fill">Pawket Wallet could not be read. Open it and try again.</p>
+          ) : state.balance <= 0n && why === null ? (
+            <div className="pk-fill">
+              <p className="title">Add SOL to Pawket Wallet</p>
+              <p className="caption pk-muted">This device is linked. Add a balance before caring, playing or buying on Solana.</p>
+            </div>
           ) : why === null ? (
             <div className="pk-fill">
               <p className="title">No pop-ups in {here}</p>
@@ -172,7 +164,7 @@ function WalletPanel({
             <div className="pk-fill">
               <p className="title">{why === "expired" ? `${Here}'s link ran out` : "Stop the pop-ups"}</p>
               <p className="caption pk-muted">
-                One approval{state.wallet ? "" : ", no SOL"}, and {here} signs what your pets do — care, rounds,
+                Link and fund Pawket Wallet, and {here} signs what your pets do — care, rounds,
                 outfits, guilds, waves. Anything that spends SOL still asks your wallet.
               </p>
               <div style={{ marginTop: "var(--space-3)" }}>
@@ -180,9 +172,9 @@ function WalletPanel({
                   tone="sun"
                   size="sm"
                   icon="bolt"
-                  label={why === "expired" ? "Link it again" : `Link ${here}`}
+                  label={state.balance <= 0n ? "Link + add 0.01 SOL" : why === "expired" ? "Link it again" : `Link ${here}`}
                   disabled={linking.busy}
-                  onClick={() => void linking.link()}
+                  onClick={() => void linking.link({ deposit: state.balance > 0n ? 0n : 10_000_000n })}
                 />
               </div>
               {linking.problem ? (

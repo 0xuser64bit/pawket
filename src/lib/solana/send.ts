@@ -5,6 +5,7 @@ import {
   createTransactionMessage,
   getBase64Encoder,
   getBase64EncodedWireTransaction,
+  getCompiledTransactionMessageDecoder,
   getSignatureFromTransaction,
   getSignersFromTransactionMessage,
   getTransactionDecoder,
@@ -27,6 +28,8 @@ import {
   type Transaction,
   type TransactionSigner,
 } from "@solana/kit";
+import { deriveWalletPda } from "./pda";
+import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
 import { CONFIRMATION_TIMEOUT_MS, waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
 
 /**
@@ -54,6 +57,8 @@ export interface SendOptions {
   owner: TransactionSigner;
   /** The sponsor's address, or null when the owner pays. */
   sponsor: Address | null;
+  /** A linked device pays when sponsorship is unavailable; the owner still approves money. */
+  feePayer?: TransactionSigner;
   /** The instructions, given the owner's signer and whoever pays rent (adoption needs it). */
   instructions: (signers: { owner: TransactionSigner; payer: TransactionSigner }) => Instruction[];
   onStage?: (stage: TransactionStage) => void;
@@ -127,6 +132,7 @@ export async function sendPawket({
   rpc,
   owner,
   sponsor,
+  feePayer,
   instructions,
   onStage,
   cosign = askSponsor,
@@ -138,14 +144,15 @@ export async function sendPawket({
   );
 
   let signed: Transaction;
-  if (sponsor) {
+  if (sponsor || feePayer) {
+    const payerAddress = sponsor ?? feePayer!.address;
     const message = pipe(
       base,
-      (m) => setTransactionMessageFeePayer(sponsor, m),
-      (m) => appendTransactionMessageInstructions(instructions({ owner, payer: createNoopSigner(sponsor) }), m),
+      (m) => setTransactionMessageFeePayer(payerAddress, m),
+      (m) => appendTransactionMessageInstructions(instructions({ owner, payer: createNoopSigner(payerAddress) }), m),
     );
     const built = compileTransaction(message);
-    const sponsored = decode(await cosign(getBase64EncodedWireTransaction(built)));
+    const sponsored = sponsor ? decode(await cosign(getBase64EncodedWireTransaction(built))) : await walletSigns(feePayer!, built);
     if (!same(sponsored.messageBytes, built.messageBytes)) {
       throw new Error("The sponsor returned a different transaction. Nothing was sent.");
     }
@@ -156,7 +163,7 @@ export async function sendPawket({
     }
     // Any other key named as a signer (a device being linked) signs last, as it is.
     for (const other of getSignersFromTransactionMessage(message)) {
-      if (other.address === owner.address || other.address === sponsor || !isTransactionPartialSigner(other)) continue;
+      if (other.address === owner.address || other.address === payerAddress || !isTransactionPartialSigner(other)) continue;
       const [signatures] = await other.signTransactions([signed as Parameters<typeof other.signTransactions>[0][number]]);
       signed = { ...signed, signatures: { ...signed.signatures, ...signatures } };
     }
@@ -187,14 +194,29 @@ export async function sendPrepared({
   prepare,
   onStage,
   sponsored = true,
+  extraSigner,
 }: Pick<SendOptions, "rpc" | "owner" | "onStage"> & {
   /** Fetches the server's transaction, as base64. */
   prepare: () => Promise<string>;
-  /** Whether Pawket's sponsor pays its fee (a keepsake) or the owner does (a coin). */
+  /** Whether Pawket's sponsor pays its fee (a keepsake); coins use the linked device. */
   sponsored?: boolean;
+  extraSigner?: TransactionSigner;
 }): Promise<SendResult> {
   onStage?.("preparing");
-  const prepared = decode(await prepare());
+  let prepared = decode(await prepare());
+  if (extraSigner) {
+    const message = getCompiledTransactionMessageDecoder().decode(prepared.messageBytes);
+    if (message.version !== "legacy") throw new Error("This transaction does not use your Pawket Wallet. Nothing was signed or sent.");
+    const keys = message.staticAccounts;
+    const first = message.instructions[0];
+    const last = message.instructions.at(-1);
+    const wallet = (await deriveWalletPda(owner.address)).address;
+    const matches = (ix: typeof first | undefined, discriminator: readonly number[]) => ix && keys[ix.programAddressIndex] === PAWKET_PROGRAM_ID && discriminator.every((byte, i) => ix.data?.[i] === byte) && keys[ix.accountIndices?.[0] ?? -1] === owner.address && keys[ix.accountIndices?.[1] ?? -1] === wallet && keys[ix.accountIndices?.[2] ?? -1] === extraSigner.address;
+    if (keys[0] !== extraSigner.address || !matches(first, PAWKET_DISCRIMINATORS.fundWalletSpend) || !matches(last, PAWKET_DISCRIMINATORS.settleWalletSpend)) {
+      throw new Error("This transaction does not use your Pawket Wallet. Nothing was signed or sent.");
+    }
+    prepared = await walletSigns(extraSigner, prepared);
+  }
   onStage?.("signing");
   const signed = await signingDeadline(() => walletSigns(owner, prepared));
   const signedBefore = Object.entries(prepared.signatures).some(([address, signature]) => address !== owner.address && signature);

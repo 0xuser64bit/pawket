@@ -1,7 +1,10 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { Connection, Keypair, LAMPORTS_PER_SOL, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
+import { getOpenWalletInstruction, getDepositInstruction, getLinkDeviceInstruction } from "@/lib/solana/instructions";
+import { deriveWalletPda } from "@/lib/solana/pda";
+import { type Address } from "@solana/kit";
+import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction, TransactionInstruction, sendAndConfirmTransaction } from "@solana/web3.js";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { ChainGuild } from "@/lib/solana/accounts";
 
@@ -24,17 +27,21 @@ const RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
 describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
   const connection = new Connection(RPC_URL, "confirmed");
   const founder = Keypair.generate();
+  const device = Keypair.generate();
+  let walletAddress: string;
   const slug = `coin-check-${Date.now().toString(36)}`;
   const guild = { slug, name: "Coin Check", founder: founder.publicKey.toBase58() } as unknown as ChainGuild;
   let coins: typeof import("./meteora");
 
   const sign = async (wire: string, signer: Keypair) => {
     const transaction = Transaction.from(Buffer.from(wire, "base64"));
-    transaction.partialSign(signer);
+    const before = await connection.getBalance(signer.publicKey);
+    transaction.partialSign(signer, device);
     const signature = await connection.sendRawTransaction(transaction.serialize(), { preflightCommitment: "confirmed" });
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
     const result = await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
     expect(result.value.err, signature).toBeNull();
+    expect(await connection.getBalance(signer.publicKey)).toBe(before);
     return signature;
   };
 
@@ -49,6 +56,14 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
       new Transaction().add(SystemProgram.transfer({ fromPubkey: funder.publicKey, toPubkey: founder.publicKey, lamports: 3 * LAMPORTS_PER_SOL })),
       [funder],
     );
+    const owner = founder.publicKey.toBase58() as Address;
+    walletAddress = (await deriveWalletPda(owner)).address;
+    const instructions = [
+      getOpenWalletInstruction({ owner, payer: owner, wallet: walletAddress }),
+      getDepositInstruction({ owner, wallet: walletAddress, amount: 2_800_000_000n }),
+      getLinkDeviceInstruction({ owner, wallet: walletAddress, device: device.publicKey.toBase58(), expiresAt: Math.floor(Date.now() / 1000) + 86_400, dailyActions: 100 }),
+    ].map((ix) => new TransactionInstruction({ programId: new PublicKey(ix.programAddress), data: Buffer.from(ix.data!), keys: ix.accounts!.map((meta) => ({ pubkey: new PublicKey(meta.address), isSigner: meta.role >= 2, isWritable: (meta.role & 1) === 1 })) }));
+    await sendAndConfirmTransaction(connection, new Transaction().add(...instructions), [founder, device]);
   });
 
   it("launches on a preset, with the founder's first buy in the same transaction", async () => {
@@ -108,14 +123,14 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
   });
 
   it("pays the founder their share of the curve's fees", async () => {
-    const before = await connection.getBalance(founder.publicKey);
+    const before = await connection.getBalance(new PublicKey(walletAddress));
     const coin = (await coins.readCoin(guild))!;
     expect(BigInt(coin.fees.founderUnclaimed)).toBeGreaterThan(0n);
     // Halves, to the lamport Meteora's rounding gives Pawket.
     const gap = BigInt(coin.fees.pawketUnclaimed) - BigInt(coin.fees.founderUnclaimed);
     expect(gap >= 0n && gap <= 1n).toBe(true);
     await sign(await coins.claimTransaction(guild, founder.publicKey.toBase58()), founder);
-    expect(await connection.getBalance(founder.publicKey)).toBeGreaterThan(before - 10_000);
+    expect(await connection.getBalance(new PublicKey(walletAddress))).toBeGreaterThan(before);
     expect((await coins.readCoin(guild))!.fees.founderUnclaimed).toBe("0");
   });
 });

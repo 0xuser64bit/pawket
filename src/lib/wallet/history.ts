@@ -6,6 +6,7 @@ import {
   type Rpc,
   type Signature,
 } from "@solana/kit";
+import { MPL_CORE_PROGRAM_ID, PAWKET_COLLECTION } from "@/lib/solana/core";
 import { WEARABLES } from "@/lib/closet/catalog";
 import { CareActionType } from "@/lib/game/enums";
 import { CARE_ACTION_VARIANTS, PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "@/lib/solana/program";
@@ -37,7 +38,10 @@ export type WalletEntryKind =
   | "check-in"
   | "poll"
   | "vote"
-  | "wave";
+  | "wave"
+  | "purchase"
+  | "coin"
+  | "card";
 
 export interface WalletEntry {
   signature: string;
@@ -63,6 +67,8 @@ export interface WalletEntry {
 }
 
 const KIND: Partial<Record<keyof typeof PAWKET_DISCRIMINATORS, WalletEntryKind>> = {
+  buyWithWallet: "purchase",
+  fundWalletSpend: "coin",
   openWallet: "open",
   deposit: "deposit",
   withdraw: "withdraw",
@@ -127,8 +133,12 @@ export function entryFrom(signature: string, tx: ReadTransaction, wallet: Addres
     ok: tx.meta?.err == null,
   };
   for (const ix of instructions) {
-    if (accountKeys[ix.programIdIndex] !== PAWKET_PROGRAM_ID) continue;
     const data = base58.encode(ix.data);
+    if (accountKeys[ix.programIdIndex] === MPL_CORE_PROGRAM_ID && data[0] === 20 && accountKeys[ix.accounts[1]] === PAWKET_COLLECTION && ix.accounts.some((i) => accountKeys[i] === wallet)) {
+      entry.kinds.push("card");
+      continue;
+    }
+    if (accountKeys[ix.programIdIndex] !== PAWKET_PROGRAM_ID) continue;
     const name = (Object.keys(PAWKET_DISCRIMINATORS) as (keyof typeof PAWKET_DISCRIMINATORS)[]).find((key) =>
       PAWKET_DISCRIMINATORS[key].every((byte, i) => data[i] === byte),
     );

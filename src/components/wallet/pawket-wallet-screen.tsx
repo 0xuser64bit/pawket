@@ -50,7 +50,7 @@ import { useHere } from "@/lib/native/android";
  * inside the limits they set, while anything that spends SOL still asks the
  * wallet. Pawket pays the fees while it can; a balance the player puts in
  * pays them when it does not. Money moves only with the wallet's own approval,
- * and only ever back to it. Everything here is read from Solana.
+ * including Market purchases and coins. Everything here is read from Solana.
  *
  * Money is Paper: statements, not celebrations, and nothing moves on it.
  */
@@ -65,11 +65,11 @@ const DAILY = [
   { value: 100, label: "100 a day" },
   { value: 250, label: "250 a day" },
 ] as const;
-/** What a player may put in when opening: nothing while Pawket pays the fees. */
+/** A starting balance; a linked Pawket Wallet must hold SOL before it acts. */
 const PUT = [
-  { value: 0, label: "Nothing" },
   { value: 10_000_000, label: "0.01 SOL" },
-  { value: 50_000_000, label: "0.05 SOL" },
+  { value: 100_000_000, label: "0.1 SOL" },
+  { value: 250_000_000, label: "0.25 SOL" },
 ] as const;
 const sol = (lamports: bigint) => `${formatSol(lamports)} SOL`;
 
@@ -196,7 +196,7 @@ function Rules() {
   );
 }
 
-/** Opening one and linking this browser, in one approval: nothing to put in while Pawket pays the fees. */
+/** Opening, funding and linking this device in one approval. */
 function SetUp() {
   const { link, problem, busy } = useLinkBrowser();
   const sponsor = useSponsor();
@@ -204,11 +204,10 @@ function SetUp() {
   const rent = useRequest(rentOfWallet);
   const cluster = getPublicEnv().solanaCluster;
   const sponsored = Boolean(sponsor.data?.available);
-  const [put, setPut] = useState<number>(0);
+  const [put, setPut] = useState<number>(PUT[0].value);
   const [days, setDays] = useState<number>(30);
   const [daily, setDaily] = useState<number>(100);
-  // With nobody paying its fees, the browser needs a float of its own before it can sign anything.
-  const deposit = BigInt(sponsored ? put : Math.max(put, PUT[1].value));
+  const deposit = BigInt(put);
 
   return (
     <Card>
@@ -220,10 +219,10 @@ function SetUp() {
       <Stack gap={4} style={{ marginTop: "var(--space-4)" }}>
         <Choice label={`Link ${here} for`} options={DAYS} value={days} onPick={setDays} />
         <Choice label="At most" options={DAILY} value={daily} onPick={setDaily} />
-        <Choice label="Put in" options={sponsored ? PUT : PUT.slice(1)} value={sponsored ? put : Math.max(put, PUT[1].value)} onPick={setPut} />
+        <Choice label="Put in" options={PUT} value={put} onPick={setPut} />
         <p className="caption pk-faint" style={{ marginTop: "calc(-1 * var(--space-2))" }}>
           {sponsored
-            ? `Pawket pays the fees, so nothing is needed. A balance keeps ${here} signing if it ever stops; it comes back to you whenever you like.`
+            ? `Keep a balance here to use Pawket. Pawket currently pays pet-action fees. Purchases and coins spend this balance with your approval; you can withdraw the rest.`
             : `Pawket is not paying fees right now, so ${here} pays its own from what you put in — one fee an action, and the rest back whenever you like.`}
         </p>
         <Paper title="What this approval does" meta={`Solana ${cluster}`}>
@@ -270,7 +269,7 @@ function Opened({ state, owner }: { state: PawketWalletState; owner: Address }) 
               { k: "On this device, for fees", v: state.device ? sol(state.deviceLamports) : "—" },
               { k: "Put in", v: sol(wallet.deposited) },
               { k: "Taken out", v: sol(wallet.withdrawn) },
-              { k: "Moved to devices for fees", v: sol(wallet.spent) },
+              { k: "Spent on activity + fees", v: sol(wallet.spent) },
               { k: "Actions by a device", v: wallet.actions.toLocaleString() },
             ]}
           />
@@ -472,7 +471,7 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
     entry.feePayer === owner ? "paid by you" : entry.feePayer === sponsor.data?.address ? "paid by Pawket" : "paid by a device, from your balance";
   const rent = useRequest(rentOfWallet);
   // Read again whenever the wallet moves; the rent first, since it is never the balance.
-  const version = `${wallet.address}:${wallet.actions}:${wallet.deposited}:${wallet.withdrawn}:${wallet.device}`;
+  const version = `${wallet.address}:${wallet.actions}:${wallet.deposited}:${wallet.withdrawn}:${wallet.spent}:${wallet.device}`;
   const first = useCallback(
     () => fetchWalletHistory(rpc, wallet.address, { rent: rent.data, limit: 6 }),
     [wallet.address, version, rent.data], // eslint-disable-line react-hooks/exhaustive-deps
@@ -579,6 +578,12 @@ export function describe(entry: WalletEntry, names: Map<string, string>): string
         return "Voted";
       case "wave":
         return `Waved at ${pet}`;
+      case "purchase":
+        return "Bought a Market item";
+      case "coin":
+        return "Guild coin transaction";
+      case "card":
+        return "Made a keepsake card";
     }
   });
   return words.join(" · ");

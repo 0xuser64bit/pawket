@@ -30,8 +30,7 @@ one stage at a time (`LaunchStage`) and offers only what that stage allows.
    its age and must be taken again after 20 seconds.
 4. **Preflight on.** Every coin transaction is sent with preflight; one that
    would fail lands nothing.
-5. **Explicit sign per trade.** No auto-trading, no "approve all", no linked
-   device: a Pawket Wallet's device can never sign a coin transaction.
+5. **Explicit sign per trade.** No auto-trading, no "approve all", the owner approves every spend. A linked device co-signs only as fee payer; it cannot authorize spending.
 6. **Verified routing only.** The DAMM v2 route is used only when the pool
    exists at `deriveDammV2PoolAddress(config for the preset's fee option,
    mint, wSOL)` and holds those mints. Anything else is `pending`.
@@ -39,7 +38,7 @@ one stage at a time (`LaunchStage`) and offers only what that stage allows.
    locked liquidity, launch fee) are on the page before anyone signs, and
    what can go wrong (`COIN_RISKS`) must be read once per coin, per device,
    before the first trade or launch.
-8. **The player pays.** Pawket's sponsor pays for pets, never for coins:
+8. **The player pays.** Pawket Wallet funds the transaction, returns unused SOL and receives sale proceeds. The owner's existing SOL stays unchanged. Pawket's sponsor pays for pets, never for coins:
    `checkSponsorable` refuses any instruction that is not Pawket's.
 9. **No promise of value.** `copy.test.ts` holds every coin surface to the
    banned-phrase list; a meter toward graduation is "community

@@ -36,10 +36,10 @@ the device). One record shape for all of them. Home is the room across the
 whole width with a deck beneath it (care, Say, Today, Photo, Look). Profile
 (the dock slot Inventory had) is the player: their name, their 3D look with
 hats, glasses and saved outfits, and what they keep — pets, the wardrobe
-(18 free pieces, five earned by stickers, and the Market's four; on Solana a
+(three free starter pieces and the Market's nineteen; on Solana a
 signed `dress` or `dress_owned`), stickers read from each record
 (`src/lib/game/badges.ts`), and settings, including ten rooms
-(`src/config/themes.ts`, two of them the Market's). The playground is four solo games
+(`src/config/themes.ts`, eight of them the Market's). The playground is four solo games
 (Catch, Hop, Copy, Pairs) with a daily round everyone shares; on Solana a
 finished round is kept when the player presses "Record the round".
 `/pet/<address>` is the public Passport, server-rendered from chain, with its
@@ -57,7 +57,7 @@ pays the rent). A guild of three pets may launch one
 optional coin on Meteora (`src/lib/coins/`, `src/server/coins/`): a Dynamic
 Bonding Curve on one of Pawket's presets that graduates into a DAMM v2 pool
 with its liquidity locked for good. The server builds every coin transaction
-with Meteora's SDKs, the player signs and pays (the sponsor never does), a
+with Meteora's SDKs, the player approves and their Pawket Wallet pays (the sponsor never does), a
 coin is traded only on its own page, and holding one only pins the guild's
 crest on its pets there.
 A player can keep a Pawket Wallet (`/wallet`): a `PawketWallet` PDA whose
@@ -70,11 +70,11 @@ adoption, guilds, gatherings and waves (each a `*_by_device` twin;
 inside the daily limit the owner set. `usePawketSend().act` is the one way
 those are sent. The sponsor pays a device's fee and rent as it does the
 owner's; with no sponsor the device pays its own fee from a float the
-balance refills by at most that fee per action. Its history is read from
+balance refills by at most that fee per action. A linked, funded Pawket Wallet is required for app transactions; no owner-wallet fallback. The owner approves Market and coin spending. Coin transactions use `fund_wallet_spend` and `settle_wallet_spend` in one atomic transaction, preserve existing owner SOL and return change and proceeds to Pawket Wallet. Its history is read from
 Solana (`src/lib/wallet/history.ts`).
 The Market (`/market`) sells looks for SOL at prices fixed in the program
-(`item_price`): four pieces for pets and two rooms. `buy` sends the price
-from the owner straight to Pawket's treasury and records the item in the
+(`item_price`): nineteen pieces for pets, eight rooms and four photo frames. `buy_with_wallet` sends the price
+from the owner's Pawket Wallet straight to Pawket's treasury and records the item in the
 owner's `Closet` on Solana for good; the sponsor pays only the fee and the
 closet's rent. A bought piece goes on with `dress_owned` (the program checks
 the closet). Nothing sold changes a vital, XP, a cooldown or a score, and
@@ -145,7 +145,7 @@ One home per fact. If two files disagree, the left column wins.
 | Routes                            | `app/`                              |
 | Design system (tokens, components)| `app/globals.css` + `src/components/pk/` |
 | Guest companion record            | `src/lib/guest/`                    |
-| Wearables (expression only)       | `src/lib/closet/catalog.ts` (the last four are the Market's) |
+| Wearables (expression only)       | `src/lib/closet/catalog.ts` (slots 4–22 are the Market's) |
 | The Market: items, prices, treasury | `programs/pawket/src/lib.rs` (`item_price`) ↔ `MARKET` in `src/lib/solana/program.ts` |
 | What a wallet bought              | its `Closet` on chain, read with `useCloset` (`src/lib/market/use-closet.ts`) |
 | Pawket's counts                   | `src/server/pulse.ts` (read from chain, never stored) |

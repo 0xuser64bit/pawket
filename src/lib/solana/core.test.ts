@@ -16,6 +16,7 @@ describe("keepsake instructions (Metaplex Core)", () => {
       payer: sponsor,
       owner,
       pet: PET,
+      pawketWallet: PET,
       name: "Pepper",
       uri: "https://pawket.test/api/keepsake/x",
       species: "Luna cat",
@@ -42,6 +43,7 @@ describe("keepsake instructions (Metaplex Core)", () => {
       [MPL_CORE_PROGRAM_ID, AccountRole.READONLY],
       ["11111111111111111111111111111111", AccountRole.READONLY],
       [MPL_CORE_PROGRAM_ID, AccountRole.READONLY],
+      [PET, AccountRole.READONLY],
     ]);
   });
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Dock, Mark } from "@/components/pk";
 import { RoomButton } from "@/components/market/room-button";
-import { MobileWalletNotice, WalletChip } from "@/components/wallet/wallet-chip";
+import { WalletChip } from "@/components/wallet/wallet-chip";
 
 /**
  * The app shell: the mark, the Dock, and the two facts about this session.
@@ -28,7 +28,6 @@ export default function GameLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <MobileWalletNotice />
       {children}
     </>
   );

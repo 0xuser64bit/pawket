@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHmac } from "node:crypto";
-import { Connection, Keypair, PublicKey, type Transaction } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, TransactionInstruction, type Transaction } from "@solana/web3.js";
 import BN from "bn.js";
 import {
   DAMM_V2_MIGRATION_FEE_ADDRESS,
@@ -22,7 +22,12 @@ import { getServerEnv, serverRpcUrl } from "@/config/server-env";
 import { COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type PresetId } from "@/lib/coins/presets";
 import { coinStage, type CoinStage } from "@/lib/coins/stage";
 import { DELISTED_SLUGS } from "@/lib/guilds/delisted";
-import type { ChainGuild } from "@/lib/solana/accounts";
+import { fetchWallet, type ChainGuild } from "@/lib/solana/accounts";
+import type { Address, Instruction } from "@solana/kit";
+import { deriveWalletPda } from "@/lib/solana/pda";
+import { getWalletSpendInstruction } from "@/lib/solana/instructions";
+import { PAWKET_ACCOUNTS, WALLET_LIMITS } from "@/lib/solana/program";
+import { sponsorRpc } from "@/server/sponsor";
 
 /**
  * A guild's coin, as Meteora keeps it: read from Solana, quoted and built
@@ -400,10 +405,36 @@ export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: b
   };
 }
 
-/** The player is the fee payer and signs last, in their own wallet; any key the transaction makes signs here first. */
+/** The owner approves the coin transaction; Pawket Wallet funds it and its device pays the fee.
+ * Both funding brackets land atomically with the trade. Existing owner SOL stays unchanged.
+ */
 async function forPlayer(transaction: Transaction, player: PublicKey, signers: Keypair[] = []): Promise<string> {
-  transaction.feePayer = player;
-  transaction.recentBlockhash = (await rpc().getLatestBlockhash("confirmed")).blockhash;
+  const owner = player.toBase58() as Address;
+  const wallet = await fetchWallet(sponsorRpc(), owner);
+  if (!wallet || !wallet.device || wallet.deviceExpiresAt <= Date.now() / 1000) throw new CoinRefusal("Link this device in your Pawket Wallet first.", 409);
+  const deviceAddress = wallet.device;
+  const device = new PublicKey(deviceAddress);
+  const [rent, deviceBalance, keep, blockhash] = await Promise.all([
+    rpc().getMinimumBalanceForRentExemption(PAWKET_ACCOUNTS.wallet.size),
+    rpc().getBalance(device), rpc().getBalance(player), rpc().getLatestBlockhash("confirmed"),
+  ]);
+  const balance = wallet.lamports - BigInt(rent);
+  if (balance <= 0n) throw new CoinRefusal("Add SOL to your Pawket Wallet first.", 409);
+  const address = (await deriveWalletPda(owner)).address;
+  const legacy = (ix: Instruction) => new TransactionInstruction({
+    programId: new PublicKey(ix.programAddress), data: Buffer.from(ix.data ?? []),
+    keys: (ix.accounts ?? []).map((meta) => ({ pubkey: new PublicKey(meta.address), isSigner: meta.role >= 2, isWritable: (meta.role & 1) === 1 })),
+  });
+  const bracket = (amount?: bigint) => legacy(getWalletSpendInstruction({ owner, wallet: address, device: deviceAddress, keep: BigInt(keep), amount }));
+  transaction.feePayer = device;
+  transaction.recentBlockhash = blockhash.blockhash;
+  transaction.instructions.unshift(bracket(0n));
+  transaction.add(bracket());
+  const fee = (await rpc().getFeeForMessage(transaction.compileMessage(), "confirmed")).value;
+  if (fee === null || deviceBalance < fee + 890_880) throw new CoinRefusal("Add SOL and relink this device in Pawket Wallet to fill its network-fee balance.", 409);
+  const refill = WALLET_LIMITS.deviceFloat > BigInt(deviceBalance - fee) ? WALLET_LIMITS.deviceFloat - BigInt(deviceBalance - fee) : 0n;
+  if (balance <= refill) throw new CoinRefusal("Add SOL to your Pawket Wallet to cover this transaction.", 409);
+  transaction.instructions[0] = bracket(balance - refill);
   if (signers.length) transaction.partialSign(...signers);
   return transaction.serialize({ requireAllSignatures: false, verifySignatures: false }).toString("base64");
 }

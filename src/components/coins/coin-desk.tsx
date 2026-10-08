@@ -12,6 +12,7 @@ import { COIN_PRESETS, COIN_TERMS, feeSplitBps, type PresetId } from "@/lib/coin
 import { canTrade } from "@/lib/coins/stage";
 import { rpc, useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
+import { usePawketWallet } from "@/lib/wallet/pawket-wallet";
 import { formatUnits, parseUnits } from "@/lib/utils/format";
 import type { CoinQuote, CoinState } from "@/server/coins/meteora";
 
@@ -21,7 +22,7 @@ import type { CoinQuote, CoinState } from "@/server/coins/meteora";
  * graduated pool, after a quote and after reading what can go wrong; anyone
  * graduates a full curve on devnet; the founder claims their share of the
  * fees. Every transaction is built by Pawket's server and signed only in
- * the player's wallet, and the player pays its fee — Pawket's sponsor pays
+ * the player's wallet, with Pawket Wallet funding it and its linked device paying the fee — Pawket's sponsor pays
  * for pets, never for coins. The page reads Solana again after each one.
  */
 
@@ -56,6 +57,9 @@ export function CoinDesk({ guild, coin, thresholds, cluster }: CoinDeskProps) {
 
   return (
     <Stack gap={4}>
+      {owner && (!sender.pawketWallet?.linked || (sender.pawketWallet?.balance ?? 0n) <= 0n) ? (
+        <Banner tone="wait" title="Link and fund Pawket Wallet" body="Coin activity uses your Pawket Wallet balance." action={<a className="pk-btn pk-btn--quiet pk-btn--sm" href="/wallet">Open Pawket Wallet</a>} />
+      ) : null}
       {coin.stage === "none" ? (
         isFounder ? (
           <LaunchPanel guild={guild} thresholds={thresholds} sender={sender} onDone={done} />
@@ -103,9 +107,10 @@ export function CoinDesk({ guild, coin, thresholds, cluster }: CoinDeskProps) {
 
 /** The connected wallet's SOL and coin, read from Solana; read again after every send. */
 function useBalances(owner: Address | null, mint: string | null) {
+  const walletState = usePawketWallet(owner);
   const fetcher = useCallback(async () => {
     const [{ value: lamports }, coin] = await Promise.all([
-      rpc.getBalance(owner!, { commitment: "confirmed" }).send(),
+      Promise.resolve({ value: walletState?.balance ?? 0n }),
       mint
         ? rpc
             .getTokenAccountsByOwner(owner!, { mint: mint as Address }, { encoding: "jsonParsed", commitment: "confirmed" })
@@ -117,7 +122,7 @@ function useBalances(owner: Address | null, mint: string | null) {
       0n,
     );
     return { lamports, units };
-  }, [owner, mint]);
+  }, [owner, mint, walletState?.balance]);
   return useRequest(owner ? fetcher : null);
 }
 
@@ -414,11 +419,11 @@ function TradeTicket({
           placeholder={side === "buy" ? "SOL to spend, like 0.05" : `${coin.symbol} to sell`}
           value={amount}
           onChange={(event) => change(() => setAmount(event.target.value))}
-          error={amount.trim() && units === null ? "An amount above nothing." : over ? "More than this wallet holds." : undefined}
+          error={amount.trim() && units === null ? "An amount above nothing." : over ? "More than your available balance." : undefined}
           helper={
             balances
-              ? `In this wallet: ${sol(balances.lamports)} · ${formatUnits(balances.units, COIN_TERMS.decimals, 2)} ${coin.symbol}`
-              : "Reading this wallet…"
+              ? `Pawket Wallet: ${sol(balances.lamports)} · Your tokens: ${formatUnits(balances.units, COIN_TERMS.decimals, 2)} ${coin.symbol}`
+              : "Reading Pawket Wallet and your tokens…"
           }
         />
         <Choice
@@ -461,7 +466,7 @@ function TradeTicket({
             />
           ) : null}
         </Row>
-        <p className="caption pk-faint">You pay the network fee. Pawket&apos;s sponsor pays for pets, never for coins.</p>
+        <p className="caption pk-faint">Pawket Wallet covers this transaction and its network fee. Unspent SOL and sale proceeds return there. Your external wallet approves; its existing SOL stays untouched.</p>
       </Stack>
     </Card>
   );

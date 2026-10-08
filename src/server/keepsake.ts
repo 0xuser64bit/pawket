@@ -14,6 +14,7 @@ import { getServerEnv } from "@/config/server-env";
 import { PERSONALITY_LABEL, SPECIES_LABEL } from "@/lib/game/appearance";
 import type { PetOnChain } from "@/lib/solana/accounts";
 import { getCreateKeepsakeInstruction, MPL_CORE_PROGRAM_ID, PAWKET_COLLECTION } from "@/lib/solana/core";
+import { deriveWalletPda } from "@/lib/solana/pda";
 import { signedBySponsor, sponsorRpc } from "./sponsor";
 
 /**
@@ -65,6 +66,7 @@ export async function keepsakeTransaction(sponsor: KeyPairSigner, { pet }: PetOn
       payer: sponsor,
       owner: createNoopSigner(pet.owner),
       pet: pet.address,
+      pawketWallet: (await deriveWalletPda(pet.owner)).address,
       name: pet.name,
       uri: keepsakeUri(pet.address),
       species: SPECIES_LABEL[pet.species],

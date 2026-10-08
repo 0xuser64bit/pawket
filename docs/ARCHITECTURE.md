@@ -72,7 +72,7 @@ docs/                       the docs you are reading
   browser id or an address). Each pet on Solana is read with its Passport
   and its guild place in one batch.
 - A care on Solana: `send.ts` builds, the sponsor signs first as fee
-  payer, the wallet signs as owner, the client checks the message came back
+  payer, the linked, funded device signs for its owner, the client checks the message came back
   unchanged and sends it with preflight, waits for `confirmed`, then
   re-reads the pet. The room plays the moment only then.
 - Server Components (Passport, Park, the landing's count) read the chain

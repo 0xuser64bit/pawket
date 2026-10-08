@@ -46,6 +46,8 @@ export interface KeepsakeInput {
   /** The pet's owner, who receives the card. A signer, so nothing lands in a wallet that did not ask. */
   owner: SignerInput;
   pet: string | Address;
+  /** Read-only receipt address, so the card appears in Pawket Wallet history. */
+  pawketWallet?: string | Address;
   name: string;
   uri: string;
   species: string;
@@ -71,6 +73,7 @@ export function getCreateKeepsakeInstruction(input: KeepsakeInput): Instruction 
       { address: CORE, role: AccountRole.READONLY }, // updateAuthority: none, the collection holds it
       { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
       { address: CORE, role: AccountRole.READONLY }, // logWrapper: none
+      ...(input.pawketWallet ? [{ address: parseAddress(input.pawketWallet, "Pawket Wallet"), role: AccountRole.READONLY }] : []),
     ],
     data: concatBytes(
       byte(CREATE_V2),

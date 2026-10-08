@@ -57,6 +57,19 @@ describe("broadcast uncertainty", () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it("refuses a prepared coin that would charge the external wallet, before any signer is called", async () => {
+    const owner = await generateKeyPairSigner();
+    const device = await generateKeyPairSigner();
+    const sign = vi.fn();
+    const prepared = compileTransaction(pipe(
+      createTransactionMessage({ version: "legacy" }),
+      (m) => setTransactionMessageFeePayerSigner(owner, m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockhash("11111111111111111111111111111111"), lastValidBlockHeight: 1n }, m),
+    ));
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: sign }, extraSigner: { ...device, signTransactions: sign }, prepare: async () => getBase64EncodedWireTransaction(prepared), sponsored: false })).rejects.toThrow(/does not use your Pawket Wallet/);
+    expect(sign).not.toHaveBeenCalled();
+  });
+
   it("a broadcast that never replies times out and looks up the signed transaction", async () => {
     const owner = await generateKeyPairSigner();
     const timeout = AbortSignal.timeout.bind(AbortSignal);

@@ -78,4 +78,11 @@ describe("a Pawket Wallet's statement", () => {
     const transfer = { programIdIndex: 2, accounts: [0, 1], data: data([2, 0, 0, 0, 64, 66, 15, 0, 0, 0, 0, 0]) };
     expect(entryFrom("c", tx(keys, [transfer], [10, 0, 1], [5, 5, 1]), WALLET)).toBeNull();
   });
+  it("keeps purchases and atomic coin activity in the same statement", () => {
+    const keys = [DEVICE, OWNER, WALLET, PAWKET_PROGRAM_ID];
+    const read = (discriminator: readonly number[]) => entryFrom("sig", tx(keys, [{ programIdIndex: 3, accounts: [1, 2, 0], data: data([...discriminator]) }], [1_000_000, 200_000_000, 100_000_000, 1], [1_000_000, 200_000_000, 50_000_000, 1]), WALLET);
+    expect(read(PAWKET_DISCRIMINATORS.buyWithWallet)).toMatchObject({ kinds: ["purchase"], change: -50_000_000n });
+    expect(read(PAWKET_DISCRIMINATORS.fundWalletSpend)).toMatchObject({ kinds: ["coin"], change: -50_000_000n });
+  });
+
 });

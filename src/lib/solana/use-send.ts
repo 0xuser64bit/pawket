@@ -6,9 +6,10 @@ import { createNoopSigner, type Address, type KeyPairSigner, type TransactionSig
 import { dismissToast, showToast } from "@/components/pk/toast";
 import { txToast } from "@/components/wallet/tx-toast";
 import { getPublicEnv } from "@/config/env";
-import { haptic, inAndroidApp } from "@/lib/native/android";
+import { haptic } from "@/lib/native/android";
 import { readPawketWallet, refreshPawketWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
 import { rpc, useConnected } from "./browser-client";
+import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
 import { asDeviceInstruction } from "./instructions";
 import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
 import { isActiveStage, isUserRejection, toUserFacingError, type TransactionStage } from "./transactions";
@@ -52,6 +53,14 @@ async function fetchSponsor(signal?: AbortSignal): Promise<SponsorStatus> {
   } catch {
     return { available: false, reason: "The sponsor did not answer." };
   }
+}
+
+async function requirePawketWallet(owner: Address) {
+  const state = await readPawketWallet(owner);
+  if (state.error) throw new Error("Pawket could not read your Pawket Wallet. Try again once you are online. Nothing was sent.");
+  if (!state.wallet || !state.device || !state.linked) throw new Error("Link this device in your Pawket Wallet before continuing. Nothing was sent.");
+  if (state.balance <= 0n) throw new Error("Add SOL to your Pawket Wallet before continuing. Nothing was sent.");
+  return state;
 }
 
 let sends = 0;
@@ -124,7 +133,7 @@ export function usePawketSend() {
         else haptic("refuse");
         return null;
       } finally {
-        if (state.by === "device" && owner && state.signature) await refreshPawketWallet(owner);
+        if (owner && state.signature) await refreshPawketWallet(owner);
         setSending(false);
       }
     },
@@ -145,12 +154,21 @@ export function usePawketSend() {
         signer,
         by,
         async (owner, onStage) => {
+          const built = instructions({ owner, payer: owner });
+          const management = built.every((ix) => ix.programAddress === PAWKET_PROGRAM_ID && ["openWallet", "deposit", "withdraw", "linkDevice", "unlinkDevice", "closeWallet"].some((name) =>
+            PAWKET_DISCRIMINATORS[name as keyof typeof PAWKET_DISCRIMINATORS].every((byte, i) => ix.data?.[i] === byte)));
+          if (by === "wallet" && !management && built.some((ix) => ix.programAddress !== PAWKET_PROGRAM_ID || !PAWKET_DISCRIMINATORS.buyWithWallet.every((byte, i) => ix.data?.[i] === byte))) {
+            throw new Error("Pet actions must use your linked Pawket Wallet. Nothing was sent.");
+          }
+          const state = by === "wallet" && !management ? await requirePawketWallet(owner.address) : null;
           const sponsor = await fetchSponsor();
+          if (state && !sponsor.available && !state.paysOwnWay) throw new Error("Add SOL and relink this device in your Pawket Wallet to cover its network fee. Nothing was sent.");
           return sendPawket({
             rpc,
             owner,
             sponsor: sponsor.available && sponsor.address ? (sponsor.address as Address) : null,
             instructions,
+            feePayer: state?.device ?? undefined,
             onStage,
           });
         },
@@ -172,12 +190,14 @@ export function usePawketSend() {
    */
   const sendFromServer = useCallback(
     (label: string, path: string, fields: Record<string, unknown> = {}, { sponsored = true } = {}): Promise<SendResult | null> =>
-      run(label, connected?.signer, "wallet", (owner, onStage) =>
-        sendPrepared({
+      run(label, connected?.signer, "wallet", async (owner, onStage) => {
+        const state = await requirePawketWallet(owner.address);
+        return sendPrepared({
           rpc,
           owner,
           onStage,
           sponsored,
+          extraSigner: sponsored ? undefined : state.device!,
           prepare: async () => {
             const response = await fetch(path, {
               method: "POST",
@@ -191,8 +211,8 @@ export function usePawketSend() {
             }
             return body.transaction;
           },
-        }),
-      ),
+        });
+      }),
     [run, connected],
   );
 
@@ -206,36 +226,30 @@ export function usePawketSend() {
   /**
    * Anything for the connected wallet's pets that costs no money — care,
    * rounds, clothes, adoption, guilds, gatherings, waves — built as the owner
-   * would sign it. This device signs while linked and allowed. In the Android
-   * app an unavailable device produces a recovery message; in a browser the
-   * owner may sign instead. Without sponsorship a funded device pays its fee;
-   * rent-bearing actions need the sponsor in the app, or the owner in a browser.
+   * would sign it. Only a linked, funded device acts; there is no owner-wallet
+   * fallback. Without sponsorship the device pays its fee; rent-bearing
+   * actions wait for sponsorship.
    */
   const act = useCallback(
     (label: string, instructions: SendOptions["instructions"]): Promise<SendResult | null> =>
-      run(label, connected?.signer, "device", async (walletSigner, onStage, show) => {
+      run(label, connected?.signer, "device", async (walletSigner, onStage) => {
         const state = await readPawketWallet(walletSigner.address);
         if (state.error) throw new Error("Pawket could not read your Pawket Wallet. Try again once you are online. Nothing was sent.");
         const fallback = deviceFallback(state);
         const sponsor = await fetchSponsor();
         const sponsorAddress = sponsor.available && sponsor.address ? sponsor.address as Address : null;
-        const sendWallet = () => {
-          show({ by: "wallet", fallback: fallback ?? undefined });
-          return sendPawket({ rpc, owner: walletSigner, sponsor: sponsorAddress, instructions, onStage });
-        };
         if (fallback || !state.device || !state.wallet) {
-          if (!inAndroidApp()) return sendWallet();
           throw new Error(fallback === "limit"
             ? "Your Pawket Wallet has used today's limit. Change it in your Pawket Wallet or return after midnight UTC. Nothing was sent."
-            : "Link this app in your Pawket Wallet to play without wallet pop-ups. Nothing was sent.");
+            : "Link this device in your Pawket Wallet before continuing. Nothing was sent.");
         }
+        if (state.balance <= 0n) throw new Error("Add SOL to your Pawket Wallet before continuing. Nothing was sent.");
         const device = state.device;
         const forOwner = createNoopSigner(walletSigner.address);
         const twins = (payer: TransactionSigner) => instructions({ owner: forOwner, payer })
           .map((ix) => asDeviceInstruction(ix, { device, wallet: state.wallet!.address }));
         const paysRent = twins(device).some((ix) => (ix.accounts ?? []).slice(1).some((meta) => meta.address === device.address));
         if (!sponsorAddress && (!state.paysOwnWay || paysRent)) {
-          if (!inAndroidApp()) return sendWallet();
           throw new Error(paysRent
             ? "Pawket cannot cover this action's account rent right now. Try again when sponsorship returns. Nothing was sent."
             : "Your Pawket Wallet needs SOL for this app's network fees while sponsorship is unavailable. Add SOL and relink this app in your Pawket Wallet. Nothing was sent.");
@@ -255,7 +269,7 @@ export function usePawketSend() {
     reset,
     busy: busy || isActiveStage(tx.stage),
     /** This device can act for the connected wallet with no prompt. */
-    noPrompt: deviceFallback(pawketWallet) === null,
+    noPrompt: !pawketWallet?.error && deviceFallback(pawketWallet) === null && (pawketWallet?.balance ?? 0n) > 0n,
     /** The connected wallet's Pawket Wallet, as every screen sees it. */
     pawketWallet,
   };

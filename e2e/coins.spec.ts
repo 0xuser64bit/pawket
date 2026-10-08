@@ -35,14 +35,20 @@ async function trade(page: Page, ticket: Locator, side: "Buy" | "Sell", symbol: 
 test("a coin on its curve is bought and sold from its page, and a graduated one is bought in its pool", async ({ page }) => {
   test.setTimeout(420_000);
   const wallet = createTestWallet();
-  await fund(wallet.address, 60_000_000n);
+  await fund(wallet.address, 150_000_000n);
   await page.addInitScript(wallet.script);
 
   await page.goto("/guilds/sunbeam-club/coin");
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
+  await page.goto("/wallet");
+  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("radio", { name: "0.1 SOL", exact: true }).click();
+  await page.getByRole("button", { name: "Link this browser" }).click();
+  await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
+  await page.goto("/guilds/sunbeam-club/coin");
   const ticket = page.locator(".pk-ticket");
-  await expect(ticket.getByText(/^In this wallet: 0\.06 SOL · 0 SUNBEAM$/)).toBeVisible({ timeout: 60_000 });
+  await expect(ticket.getByText(/^Pawket Wallet: 0\.099 SOL · Your tokens: 0 SUNBEAM$/)).toBeVisible({ timeout: 60_000 });
 
   // Nothing signs before what can go wrong is read, once for this coin.
   await expect(ticket.getByRole("button", { name: /^Sign:/ })).toHaveCount(0);
@@ -50,7 +56,7 @@ test("a coin on its curve is bought and sold from its page, and a graduated one 
 
   await trade(page, ticket, "Buy", "SUNBEAM", "0.01", /^Meteora bonding curve$/);
   // The coin is in the wallet now, read again from Solana.
-  await expect(ticket.getByText(/^In this wallet: .+ SOL · [1-9][\d,.]* SUNBEAM$/)).toBeVisible({ timeout: 60_000 });
+  await expect(ticket.getByText(/^Pawket Wallet: .+ SOL · Your tokens: [1-9][\d,.]* SUNBEAM$/)).toBeVisible({ timeout: 60_000 });
   await trade(page, ticket, "Sell", "SUNBEAM", "1000", /^Meteora bonding curve$/);
 
   // A graduated coin trades in its pool, after its own warning.
@@ -58,5 +64,5 @@ test("a coin on its curve is bought and sold from its page, and a graduated one 
   await expect(page.getByText("Active liquidity · DAMM v2").first()).toBeVisible();
   await agree(page.locator(".pk-ticket"));
   await trade(page, page.locator(".pk-ticket"), "Buy", "CLOUD", "0.005", /^Meteora DAMM v2 pool$/);
-  await expect(page.locator(".pk-ticket").getByText(/· [1-9][\d,.]* CLOUD$/)).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator(".pk-ticket").getByText(/Your tokens: [1-9][\d,.]* CLOUD$/)).toBeVisible({ timeout: 60_000 });
 });

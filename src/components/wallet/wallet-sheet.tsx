@@ -105,7 +105,7 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
           Pawket is on devnet, Solana&apos;s test network, so set your wallet to devnet (in Phantom: Settings,
           Developer settings, Testnet mode).{" "}
           {sponsor.data?.available
-            ? "Pawket pays the network fee, so the wallet needs no SOL."
+            ? "Pawket covers pet-action fees. Link and fund Pawket Wallet before taking actions on Solana."
             : "Each record costs a small network fee in devnet SOL, which is free at faucet.solana.com."}
         </p>
       </Stack>

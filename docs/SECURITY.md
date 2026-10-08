@@ -17,7 +17,7 @@ in `AGENTS.md`.
   outright.
 - The two `init_if_needed` accounts, a closet and a guestbook, are held to
   whose they are when they exist already, as `init` makes them so when new.
-- Lamports move only from an owner to the treasury (`buy`, at a price fixed
+- Lamports move from the owner or their Pawket Wallet to the treasury (`buy`, `buy_with_wallet`, at a price fixed
   in the program); from an owner into their own Pawket Wallet and back
   (`deposit`, `withdraw`, `close_wallet`); from the balance to a linked
   device (its float, then at most one fee per action inside the owner's
@@ -179,3 +179,20 @@ clock, ring indexes modulo eight, `item / 8` into 32 bytes, a slug indexed
 after its length check, decay clamped to its horizon, and an event's start:
 an event ends after it is made and lasts at most seven days, so it starts
 no earlier than seven days before it is made.
+
+## Hackathon wallet extension — 8 October 2026
+
+The owner approved program changes and devnet redeployment with version
+numbers unchanged. `buy_with_wallet` spends only the signed owner's PDA
+balance above rent, into the fixed treasury. There is no device twin.
+`fund_wallet_spend` and `settle_wallet_spend` bind the first and last
+instructions of the same atomic transaction through the real instructions
+sysvar, to the same owner, wallet and reserved existing owner SOL. Missing,
+reordered or mismatched settlement fails; spending reserved owner SOL
+rolls the transaction back. The linked device pays network fees but cannot
+approve spending. The sponsor refuses these coin brackets.
+
+LiteSVM checks purchases, insufficient balance, foreign PDAs, missing and
+mismatched brackets, change, proceeds and rollback. These extensions are
+new review scope for the pre-mainnet external audit; the earlier audit
+entries describe the earlier commits.

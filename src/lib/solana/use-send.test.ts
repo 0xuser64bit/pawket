@@ -10,9 +10,10 @@ vi.mock("@/lib/wallet/pawket-wallet", () => ({ usePawketWallet: () => null, read
 vi.mock("./send", () => ({ sendPawket: mock.send, sendPrepared: vi.fn(), RelayError: Error }));
 vi.mock("@/lib/native/android", () => ({ haptic: vi.fn(), inAndroidApp: () => mock.app }));
 vi.mock("@/components/pk/toast", () => ({ dismissToast: vi.fn(), showToast: vi.fn() }));
+import { getBuyWithWalletInstruction, getDepositInstruction } from "./instructions";
 import { usePawketSend } from "./use-send";
 
-const empty = { owner, status: "ready", wallet: null, device: null } as PawketWalletState;
+const empty = { owner, status: "ready", wallet: null, device: null, balance: 0n } as PawketWalletState;
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); mock.app = false; });
 function sponsor(available = true) { vi.stubGlobal("fetch", vi.fn(async () => ({ json: async () => ({ available, address: owner }) }))); }
 
@@ -31,7 +32,7 @@ describe("send routing (no wallet signing)", () => {
       finishRead(empty);
       await pending;
     });
-    expect(mock.send).toHaveBeenCalledTimes(1);
+    expect(mock.send).not.toHaveBeenCalled();
     expect(second.result.current.busy).toBe(false);
   });
 
@@ -40,13 +41,13 @@ describe("send routing (no wallet signing)", () => {
     const hook = renderHook(usePawketSend);
     await act(async () => { expect(await hook.result.current.act("Care", () => [])).toBeNull(); });
     expect(mock.send).not.toHaveBeenCalled();
-    expect(hook.result.current.tx.error).toContain("Link this app in your Pawket Wallet");
+    expect(hook.result.current.tx.error).toContain("Link this device in your Pawket Wallet");
   });
 
   it("uses a freshly read device even when the screen's cached wallet is still loading", async () => {
     sponsor(); mock.app = true;
     const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);
-    mock.read.mockResolvedValue({ ...empty, device, wallet: { address: owner, device: device.address, deviceExpiresAt: Date.now() / 1000 + 1000, actionsToday: 0, dailyActions: 100 }, paysOwnWay: false });
+    mock.read.mockResolvedValue({ ...empty, balance: 1n, device, wallet: { address: owner, device: device.address, deviceExpiresAt: Date.now() / 1000 + 1000, actionsToday: 0, dailyActions: 100 }, paysOwnWay: false });
     mock.send.mockResolvedValue({ outcome: "confirmed", signature: "receipt", sponsored: true });
     const hook = renderHook(usePawketSend);
     await act(async () => { await hook.result.current.act("Care", () => []); });
@@ -55,13 +56,13 @@ describe("send routing (no wallet signing)", () => {
   });
 
   it.each([
-    { name: "expired link", expires: 0, actions: 0, sponsor: true, error: "Link this app" },
+    { name: "expired link", expires: 0, actions: 0, sponsor: true, error: "Link this device" },
     { name: "daily limit", expires: Number.MAX_SAFE_INTEGER, actions: 100, sponsor: true, error: "today's limit" },
     { name: "unfunded device without sponsorship", expires: Number.MAX_SAFE_INTEGER, actions: 0, sponsor: false, error: "needs SOL" },
   ])("explains $name in the app without redirecting to the owner wallet", async (entry) => {
     sponsor(entry.sponsor); mock.app = true;
     const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);
-    mock.read.mockResolvedValue({ ...empty, device, wallet: { address: owner, device: device.address, deviceExpiresAt: entry.expires, actionsToday: entry.actions, dailyActions: 100 }, paysOwnWay: false });
+    mock.read.mockResolvedValue({ ...empty, balance: 1n, device, wallet: { address: owner, device: device.address, deviceExpiresAt: entry.expires, actionsToday: entry.actions, dailyActions: 100 }, paysOwnWay: false });
     const hook = renderHook(usePawketSend);
     await act(async () => { expect(await hook.result.current.act("Care", () => [])).toBeNull(); });
     expect(mock.send).not.toHaveBeenCalled();
@@ -69,4 +70,24 @@ describe("send routing (no wallet signing)", () => {
     expect(mock.refresh).not.toHaveBeenCalled();
     expect(hook.result.current.busy).toBe(false);
   });
+  it.each([false, true])("blocks an unfunded Pawket Wallet in browser/app=%s even with sponsorship", async (app) => {
+    sponsor(); mock.app = app;
+    const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);
+    mock.read.mockResolvedValue({ ...empty, linked: true, device, wallet: { address: owner, device: device.address, deviceExpiresAt: Number.MAX_SAFE_INTEGER, actionsToday: 0, dailyActions: 100 } });
+    const hook = renderHook(usePawketSend);
+    await act(async () => { expect(await hook.result.current.act("Feed", () => [])).toBeNull(); });
+    expect(mock.send).not.toHaveBeenCalled();
+    expect(hook.result.current.tx.error).toContain("Add SOL to your Pawket Wallet");
+  });
+
+  it("gates a purchase but allows an explicit deposit to recover an empty wallet", async () => {
+    sponsor(); mock.read.mockResolvedValue(empty);
+    const hook = renderHook(usePawketSend);
+    await act(async () => { await hook.result.current.send("Buy", ({ owner: signer, payer }) => [getBuyWithWalletInstruction({ owner: signer, payer, wallet: owner, closet: owner, item: 4 })]); });
+    expect(mock.send).not.toHaveBeenCalled();
+    expect(hook.result.current.tx.error).toContain("Link this device");
+    await act(async () => { await hook.result.current.send("Deposit", ({ owner: signer }) => [getDepositInstruction({ owner: signer, wallet: owner, amount: 10_000_000n })]); });
+    expect(mock.send).toHaveBeenCalledOnce();
+  });
+
 });

@@ -35,7 +35,7 @@ enum variant order, error codes.
 | `PetPassport` | `[b"passport", pet]`         | 169  | pet, owner, event/care/play counts, streak, best streak, last active UTC day, last bonus UTC day, the last eight cares, bump |
 | `Guild`       | `[b"guild", slug]`           | 235  | founder (wallet), founder pet, created, member count, crest glyph, crest colour, bump, slug, name, motto (strings last) |
 | `GuildMember` | `[b"member", pet]`           | 145  | pet, guild, owner, payer (who gets the rent back), joined, bump — seeded by the pet, so one guild per pet |
-| `PawketWallet` | `[b"wallet", owner]`        | 157  | owner, linked device (or the default key), the link's end, daily actions, the UTC day and today's count, all-time actions, deposited, withdrawn, spent (moved onto devices for fees, less what came back), rent payer, created, bump. Its lamports above rent are the balance |
+| `PawketWallet` | `[b"wallet", owner]`        | 157  | owner, linked device (or the default key), the link's end, daily actions, the UTC day and today's count, all-time actions, deposited, withdrawn, spent (device fees, Market purchases and net coin spending), rent payer, created, bump. Its lamports above rent are the balance |
 | `Closet`      | `[b"closet", owner]`         | 83   | owner, a 256-bit set of the Market items it holds, count, lamports paid in all, bump |
 | `GuildEvent`  | `[b"event", guild, id u32]`  | 285  | guild, creator, id, starts, ends, created, going, came, bump, title (48), note (120) |
 | `EventRsvp`   | `[b"rsvp", event, pet]`      | 146  | event, pet, owner, payer, when, came, bump |
@@ -59,8 +59,10 @@ enum variant order, error codes.
 | `unlink_device`       | owner or device      | ends the link; when the device signs, everything it holds comes back to the balance (it may pay its own fee and close to zero) |
 | `close_wallet`        | owner                | no device linked; the balance to the owner, the rent to the recorded payer |
 | `*_by_device` (14: care, round, dress, dress owned, adopt, found, join, leave, event, RSVP, check-in, poll, vote, wave) | device | the owner instruction's own rules, arguments and record, for the wallet owner and their pets only, inside the link's end and today's limit. Accounts: the device and the Pawket Wallet where the owner was, then the owner instruction's in order (`asDeviceInstruction`). A device that paid its own fee is refilled from the balance — by at most one fee (5,000 lamports) and never past its float |
-| `buy`                 | owner, payer         | one Market item at its fixed price (`item_price`: pieces 19–22 at 0.05 SOL, rooms 64–65 at 0.1 SOL), from the owner to `TREASURY` and nowhere else; the closet records it; `payer` covers the closet's rent the first time |
-| `dress_owned`, `dress_owned_by_device` | owner, or device | one of the eighteen, or a Market piece the owner's closet holds |
+| `buy`                 | owner, payer         | one Market item at its fixed price (`item_price`: pieces 4–22 at 0.05 SOL, rooms 64–71 at 0.1 SOL, frames 80–83 at 0.025 SOL), from the owner to `TREASURY` and nowhere else; the closet records it; `payer` covers the closet's rent the first time |
+| `buy_with_wallet` | owner, payer | the app's purchase instruction: price debited from the owner's Pawket Wallet above rent, to the fixed treasury; same Closet receipt |
+| `fund_wallet_spend`, `settle_wallet_spend` | owner | atomic first/last brackets around coin transactions; funded from Pawket Wallet, existing owner SOL reserved, unused SOL and proceeds returned; device pays network fees only |
+| `dress_owned`, `dress_owned_by_device` | owner, or device | one of the three starters, or a Market piece the owner's closet holds |
 | `create_event`        | owner (the guild's founder), payer | an event: a 3–48 byte title, a note to 120, ending after it starts and after now, at most 7 days long, starting within 60 days |
 | `rsvp`                | owner, payer         | a pet in the event's guild is going; one RSVP per pet, until the event ends |
 | `check_in`            | owner                | from 15 minutes before the start until the end, once |
@@ -102,17 +104,18 @@ scope enforced by the program, not by Pawket:
   except money: care, rounds, clothes, adoption, guilds, events, check-ins,
   votes and waves — each a `*_by_device` twin (`DEVICE_VARIANTS`), for the
   wallet owner and their pets only, before the link's end and under today's
-  limit — and `unlink_device` for itself. Nothing that moves the balance, a
-  Market sale or a coin takes a device's signature.
+  limit — and `unlink_device` for itself. A device cannot authorize a balance
+  transfer or Market purchase. For coins it co-signs only as fee payer; the
+  owner must approve every spend.
 - **Who pays.** The sponsor, exactly as for the owner: the fee, and the rent
   where the owner's instruction has a `payer`. So a player with an empty
   wallet opens a Pawket Wallet (the sponsor pays its rent, back to it on
-  close), links a browser with nothing in it, and is never asked again.
+  close), deposits a balance and links the device. App actions require a positive balance even while sponsored.
   With no sponsor, the device is its own fee payer: it is handed a 0.001 SOL
   float when linked (if the balance holds one), and each action it pays for
   refills it from the balance by at most one fee, so a key that leaked could
   spend no faster than the daily limit allows; anything that would need it
-  to pay rent goes to the wallet instead.
+  to pay rent waits for sponsorship; no owner-wallet fallback.
 - **The money** is the wallet account's own lamports above rent. Deposits
   come from the owner; a withdrawal and a close go only to the owner; the
   rent goes back to whoever paid it (`rent_payer`: the owner, or the sponsor
@@ -125,8 +128,7 @@ scope enforced by the program, not by Pawket:
 `usePawketSend().act` sends anything for the connected wallet's pets that
 costs no money: built as the owner would sign it, then turned into its twin
 and signed by this device with no prompt while it may act (linked, under
-today's limit); otherwise by the wallet, and the receipt says why
-(`deviceFallback`).
+today's limit and with a positive balance). An unavailable link, exhausted limit, empty balance or failed fresh read blocks the action with recovery instructions; the owner wallet is never a fallback.
 
 A guild is people and their pets and nothing else: no token, no treasury,
 no vote weight, and nothing in it touches a vital, XP or a score. The
@@ -329,8 +331,14 @@ web3.js v1 in `src/server/coins/` and `scripts/`):
 | `GET /api/coins/<slug>/metadata` | the token's metadata JSON (the URI the mint carries), with the crest card as its image |
 
 Every transaction comes back as base64 for `sendPrepared` with
-`sponsored: false`: the player is the fee payer and signs in their wallet,
-with preflight on. **Stages** are decided on the server from chain
+`sponsored: false`: the linked device pays the fee and the owner approves.
+`forPlayer` surrounds the SDK instructions with `fund_wallet_spend` and
+`settle_wallet_spend`. Funding temporarily makes the available Pawket
+Wallet balance usable by the SDK; settlement returns all change and SOL
+proceeds. Both brackets bind the same owner/wallet/reserved SOL through the
+real instructions sysvar, and the program refuses any transaction that
+would consume preexisting owner SOL. Network-fee float refill is capped.
+The sponsor refuses both brackets. Every send still uses preflight. **Stages** are decided on the server from chain
 (`coinStage` in `src/lib/coins/stage.ts`): a curve below its threshold is
 `dbc`; full, or migrated but its pool not found where the preset derives
 (`deriveDammV2PoolAddress(DAMM_V2_MIGRATION_FEE_ADDRESS[option], mint,
@@ -362,7 +370,7 @@ than the program account needs `solana program extend <id> <bytes>` first
 Wallet upgrade of 2026-10-04 by 60,000 — the binary before it is
 `.keys/backups/`, named by the date it was replaced); dump the
 deployed binary with `solana program dump` before any upgrade, so it can be
-put back. Upgrades only ever add: an existing instruction, account layout or
+put back. The owner-approved 8 October Market change moves former free choices into the Market without renumbering slots or stripping equipped pieces. Otherwise upgrades only ever add: an existing instruction, account layout or
 error code does not change. `pnpm dlx tsx scripts/seed-guilds.mts` founds
 the starter guilds and does only what is missing. Then
 `pnpm e2e:devnet` (the path through the sponsor code, ending with a

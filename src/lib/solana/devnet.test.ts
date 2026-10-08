@@ -32,7 +32,7 @@ import {
 import {
   asDeviceInstruction,
   getAdoptPetInstruction,
-  getBuyInstruction,
+  getBuyWithWalletInstruction,
   getCheckInInstruction,
   getCreateEventInstruction,
   getCreatePollInstruction,
@@ -396,7 +396,13 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     });
     const closet = (await deriveClosetPda(owner.address)).address;
     const treasuryBefore = (await rpc.getBalance(MARKET.treasury as typeof pet).send()).value;
-    const bought = await send(({ payer }) => [getBuyInstruction({ owner, payer, closet, item: 19 })]);
+    const wallet = (await deriveWalletPda(owner.address)).address;
+    const device = await generateKeyPairSigner();
+    await send(({ payer }) => [getOpenWalletInstruction({ owner, payer, wallet }), getDepositInstruction({ owner, wallet, amount: 55_000_000n }), getLinkDeviceInstruction({ owner, wallet, device, expiresAt: Math.floor(Date.now() / 1000) + 86_400, dailyActions: 100 })]);
+    const before = (await rpc.getBalance(owner.address).send()).value;
+    const bought = await send(({ payer }) => [getBuyWithWalletInstruction({ owner, payer, closet, wallet, item: 19 })]);
+    expect((await rpc.getBalance(owner.address).send()).value).toBe(before);
+    expect((await fetchWalletHistory(rpc, wallet)).entries[0].kinds).toEqual(["purchase"]);
     expect(bought).toMatchObject({ outcome: "confirmed", sponsored: true });
     expect((await rpc.getBalance(MARKET.treasury as typeof pet).send()).value - treasuryBefore).toBe(MARKET.wearablePrice);
     expect((await fetchCloset(rpc, owner.address))?.items).toEqual([19]);

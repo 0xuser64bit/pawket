@@ -1,10 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { fund } from "./devnet";
 import { createTestWallet } from "./test-wallet";
+import { createSolanaRpc, type Address } from "@solana/kit";
 
 /**
  * The on-chain path through the real screens, against devnet: a pet adopted
- * in the browser is carried onto Solana by a wallet holding no SOL, fed
+ * in the browser is carried onto Solana through a funded Pawket Wallet, fed
  * there, shows up on its public record, and its card goes to the wallet. Opt-in, because it spends the
  * sponsor's devnet float and waits on the network:
  *   PAWKET_DEVNET=1 pnpm e2e e2e/chain.spec.ts
@@ -16,6 +17,7 @@ const NAMES = ["Biscuit", "Mochi", "Clover", "Juniper", "Waffles", "Pickle", "No
 test("a browser pet moves onto Solana, is fed there, and has a public record", async ({ page }) => {
   test.setTimeout(240_000);
   const wallet = createTestWallet();
+  await fund(wallet.address, 150_000_000n);
   await page.addInitScript(wallet.script);
   const name = NAMES[Math.floor(Math.random() * NAMES.length)];
 
@@ -31,6 +33,11 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await expect(page.getByRole("button", { name: /^Your wallet, .+…/ })).toBeVisible();
 
+  await page.goto("/wallet");
+  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Link this browser" }).click();
+  await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
+  await page.goto("/home");
   await page.getByRole("button", { name: `Keep ${name} on Solana` }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Keep on Solana", exact: true }).click();
   await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
@@ -40,7 +47,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await page.getByRole("button", { name: "Feed" }).click();
   await expect(page.getByText(`Feed ${name}`)).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText(/^Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText(/Pawket paid the fee/).first()).toBeVisible();
+  await expect(page.getByText(/Recorded on Solana, no pop-up/).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
 
   await page.getByRole("link", { name: `${name}'s record` }).click();
@@ -72,6 +79,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
 test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) => {
   test.setTimeout(300_000);
   const wallet = createTestWallet();
+  await fund(wallet.address, 150_000_000n);
   await page.addInitScript(wallet.script);
   const name = NAMES[Math.floor(Math.random() * NAMES.length)];
   // Test guilds are named so discovery leaves them out (src/lib/guilds/delisted.ts).
@@ -84,6 +92,11 @@ test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) 
   await page.getByRole("button", { name: /take them home/i }).click();
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
+  await page.goto("/wallet");
+  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Link this browser" }).click();
+  await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
+  await page.goto("/home");
   await page.getByRole("button", { name: `Keep ${name} on Solana` }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Keep on Solana", exact: true }).click();
   await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
@@ -107,10 +120,55 @@ test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) 
 
 const signedByWallet = (page: Page) => page.evaluate(() => (window as unknown as { __testWalletSigned?: number }).__testWalletSigned ?? 0);
 
+test("Market purchases spend Pawket Wallet and unlock a room and photo frame", async ({ page }) => {
+  test.setTimeout(300_000);
+  const wallet = createTestWallet();
+  await fund(wallet.address, 350_000_000n);
+  await page.addInitScript(wallet.script);
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await page.getByRole("button", { name: /take them home/i }).click();
+  await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
+  await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
+  await page.goto("/wallet");
+  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "0.25 SOL", exact: true }).click();
+  await page.getByRole("button", { name: "Link this browser" }).click();
+  await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
+  const rpc = createSolanaRpc(process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com");
+  const before = (await rpc.getBalance(wallet.address as Address, { commitment: "confirmed" }).send()).value;
+  await page.goto("/market");
+  for (const [name, price] of [["Starlight", "0.1"], ["Sunshine", "0.025"]]) {
+    await page.getByRole("button", { name: new RegExp(`^${name}`) }).click();
+    const sheet = page.getByRole("dialog", { name, exact: true });
+    await sheet.getByRole("button", { name: `Buy for ${price} SOL` }).click();
+    await expect(sheet).toContainText("In your closet", { timeout: 120_000 });
+    if (name === "Starlight") {
+      await sheet.getByRole("button", { name: "Live in Starlight" }).click();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "starlight");
+    }
+    await sheet.getByRole("button", { name: "Done", exact: true }).click();
+  }
+  expect((await rpc.getBalance(wallet.address as Address, { commitment: "confirmed" }).send()).value).toBe(before);
+  await page.goto("/home");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "starlight");
+  await page.getByRole("button", { name: "Photo", exact: true }).click();
+  const photo = page.getByRole("dialog", { name: /A photo:/ });
+  await expect(photo.getByRole("combobox", { name: "Photo frame" })).toBeVisible();
+  await photo.getByRole("combobox", { name: "Photo frame" }).selectOption("sunshine");
+  await expect(photo.getByRole("link", { name: "Save the photo" })).toBeVisible();
+  await photo.getByRole("button", { name: "Close", exact: true }).click();
+  await page.goto("/wallet");
+  await expect(page.getByText("Bought a Market item")).toHaveCount(2, { timeout: 60_000 });
+  await expect(page.getByText("0.124 SOL", { exact: true })).toBeVisible();
+});
+
 test("a Pawket Wallet links this browser, and a care on Solana asks the wallet nothing", async ({ page }) => {
   test.setTimeout(420_000);
   const wallet = createTestWallet();
-  await fund(wallet.address, 50_000_000n);
+  await fund(wallet.address, 150_000_000n);
   await page.addInitScript(wallet.script);
   const name = NAMES[Math.floor(Math.random() * NAMES.length)];
 
@@ -121,22 +179,17 @@ test("a Pawket Wallet links this browser, and a care on Solana asks the wallet n
   await page.getByRole("button", { name: /take them home/i }).click();
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
+  await page.goto("/wallet");
+  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Link this browser" }).click();
+  await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
+  await page.goto("/home");
   await page.getByRole("button", { name: `Keep ${name} on Solana` }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Keep on Solana", exact: true }).click();
   await expect(page.getByText("On Solana", { exact: true })).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText("Each care asks your wallet.")).toBeVisible();
-
-  // One approval opens it, puts a little in and links this browser.
-  await page.getByRole("link", { name: "Link this browser" }).click();
-  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
-  await page.getByRole("radio", { name: "0.01 SOL" }).click();
-  await page.getByRole("button", { name: "Link this browser" }).click();
-  await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
+  await page.goto("/wallet");
   await expect(page.getByText("0.009 SOL", { exact: true })).toBeVisible();
-
-  // A care now: signed here, paid from the balance, and the wallet asked nothing.
-  await page.getByRole("link", { name: "Home" }).click();
-  await expect(page.getByText("Signed by this browser, with no pop-up.")).toBeVisible({ timeout: 60_000 });
+  await page.goto("/home");
   const before = await signedByWallet(page);
   await page.getByRole("button", { name: "Feed" }).click();
   const careReceipt = page.getByRole("status").filter({ has: page.getByText(`Feed ${name}`, { exact: true }) });

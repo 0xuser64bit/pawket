@@ -94,13 +94,18 @@ pub const GUESTBOOK_SEED: &[u8] = b"guestbook";
 
 /// Where every Market sale goes: Pawket's treasury.
 pub const TREASURY: Pubkey = pubkey!("SEpAw5iTAXf4j5YUsgpLD8UTKLCT6xqUAkecnvJvWfw");
-/// The Market's wardrobe: pieces after the eighteen (slots 19–22), worn with `dress_owned`.
-pub const MARKET_WEARABLE_COUNT: u8 = 19;
+/// The Market's wardrobe: every piece after the three starters (slots 4–28), worn with
+/// `dress_owned`. The first fifteen are the classic pieces, at the cloth price; the rest at the
+/// wearable price.
+pub const MARKET_WEARABLE_COUNT: u8 = 25;
+pub const CLASSIC_WEARABLE_COUNT: u8 = 15;
 /// The Market's rooms, as item ids from 64. The app draws them; the Closet records them.
 pub const FIRST_ROOM_ITEM: u8 = 64;
 pub const MARKET_ROOM_COUNT: u8 = 8;
+/// The Market's photo frames, as item ids from 80.
 pub const FIRST_FRAME_ITEM: u8 = 80;
 pub const MARKET_FRAME_COUNT: u8 = 4;
+pub const CLASSIC_PRICE_LAMPORTS: u64 = 20_000_000;
 pub const FRAME_PRICE_LAMPORTS: u64 = 25_000_000;
 pub const WEARABLE_PRICE_LAMPORTS: u64 = 50_000_000;
 pub const ROOM_PRICE_LAMPORTS: u64 = 100_000_000;
@@ -1010,7 +1015,7 @@ fn put_on(pet: &mut Account<Pet>, wearing: u8) -> Result<()> {
     Ok(())
 }
 
-/// One of the eighteen, or a Market piece the Closet holds.
+/// One of the three starters, or a Market piece the Closet holds.
 fn may_wear(closet: &Closet, wearing: u8) -> Result<()> {
     require!(wearing <= WEARABLE_COUNT + MARKET_WEARABLE_COUNT, PawketError::UnknownWearable);
     require!(wearing <= WEARABLE_COUNT || closet.has(wearing), PawketError::NotInCloset);
@@ -1019,7 +1024,9 @@ fn may_wear(closet: &Closet, wearing: u8) -> Result<()> {
 
 /// What an item costs in the Market, in lamports, or None where nothing is sold.
 pub fn item_price(item: u8) -> Option<u64> {
-    if (WEARABLE_COUNT + 1..=WEARABLE_COUNT + MARKET_WEARABLE_COUNT).contains(&item) {
+    if (WEARABLE_COUNT + 1..=WEARABLE_COUNT + CLASSIC_WEARABLE_COUNT).contains(&item) {
+        Some(CLASSIC_PRICE_LAMPORTS)
+    } else if (WEARABLE_COUNT + CLASSIC_WEARABLE_COUNT + 1..=WEARABLE_COUNT + MARKET_WEARABLE_COUNT).contains(&item) {
         Some(WEARABLE_PRICE_LAMPORTS)
     } else if (FIRST_ROOM_ITEM..FIRST_ROOM_ITEM + MARKET_ROOM_COUNT).contains(&item) {
         Some(ROOM_PRICE_LAMPORTS)

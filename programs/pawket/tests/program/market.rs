@@ -1,13 +1,17 @@
 use anchor_lang::{Discriminator, Space};
-use pawket::{Closet, PawketError, ROOM_PRICE_LAMPORTS, TREASURY, WEARABLE_COUNT, WEARABLE_PRICE_LAMPORTS};
+use pawket::{Closet, PawketError, CLASSIC_PRICE_LAMPORTS, ROOM_PRICE_LAMPORTS, TREASURY, WEARABLE_COUNT, WEARABLE_PRICE_LAMPORTS};
 use solana_signer::Signer;
 
 use crate::harness::*;
 
-/// The first piece the Market sells: the original paid slot; its id stays unchanged.
+/// The first piece the Market sold: the original paid slot; its id stays unchanged.
 const HALO: u8 = 19;
-const LAST_PIECE: u8 = 22;
+/// The classic pieces (4–18) sell at the cloth price, the rest (19–28) at the wearable price.
+const LAST_CLASSIC: u8 = 18;
+const LAST_PIECE: u8 = 28;
 const FIRST_ROOM: u8 = 64;
+const LAST_ROOM: u8 = 71;
+const LAST_FRAME: u8 = 83;
 
 #[test]
 fn a_piece_bought_in_the_market_goes_to_the_treasury_and_into_the_closet_while_a_sponsor_pays_the_rest() {
@@ -55,16 +59,17 @@ fn nothing_is_bought_twice_and_only_what_the_market_sells_is_sold() {
     ok(env.send(&[buy_ix(&owner.pubkey(), &owner.pubkey(), HALO)], &owner, &[]));
     let spent = env.closet(&owner.pubkey()).spent;
     expect_pawket(&env.send(&[buy_ix(&owner.pubkey(), &owner.pubkey(), HALO)], &owner, &[]), PawketError::AlreadyOwned);
-    for item in [0, 1, WEARABLE_COUNT, LAST_PIECE + 1, FIRST_ROOM - 1, FIRST_ROOM + 8, 79, 84, 255] {
+    for item in [0, 1, WEARABLE_COUNT, LAST_PIECE + 1, FIRST_ROOM - 1, LAST_ROOM + 1, 79, LAST_FRAME + 1, 255] {
         expect_pawket(&env.send(&[buy_ix(&owner.pubkey(), &owner.pubkey(), item)], &owner, &[]), PawketError::UnknownItem);
     }
     assert_eq!(env.closet(&owner.pubkey()).spent, spent);
     // Every id there is: pet pieces, rooms and photo frames have their prices, and nothing else has one.
     for item in 0..=u8::MAX {
         let expected = match item {
-            4..=LAST_PIECE => Some(WEARABLE_PRICE_LAMPORTS),
-            FIRST_ROOM..=71 => Some(ROOM_PRICE_LAMPORTS),
-            80..=83 => Some(pawket::FRAME_PRICE_LAMPORTS),
+            4..=LAST_CLASSIC => Some(CLASSIC_PRICE_LAMPORTS),
+            HALO..=LAST_PIECE => Some(WEARABLE_PRICE_LAMPORTS),
+            FIRST_ROOM..=LAST_ROOM => Some(ROOM_PRICE_LAMPORTS),
+            80..=LAST_FRAME => Some(pawket::FRAME_PRICE_LAMPORTS),
             _ => None,
         };
         assert_eq!(pawket::item_price(item), expected, "item {item}");
@@ -188,13 +193,14 @@ fn funded_purchases_debit_pawket_wallet_and_never_the_owners_existing_sol() {
         ok(env.send(&[buy_with_wallet_ix(&owner.pubkey(), &sponsor.pubkey(), item)], &sponsor, &[&owner]));
         assert!(env.closet(&owner.pubkey()).has(item));
     }
-    let cost = WEARABLE_PRICE_LAMPORTS + ROOM_PRICE_LAMPORTS + pawket::FRAME_PRICE_LAMPORTS;
+    let cost = CLASSIC_PRICE_LAMPORTS + ROOM_PRICE_LAMPORTS + pawket::FRAME_PRICE_LAMPORTS;
     assert_eq!(env.lamports(&owner.pubkey()), keep);
     assert_eq!(balance - env.balance(&owner.pubkey()), cost);
     assert_eq!(env.lamports(&TREASURY) - treasury, cost);
     expect_pawket(&env.send(&[buy_with_wallet_ix(&owner.pubkey(), &sponsor.pubkey(), 83)], &sponsor, &[&owner]), PawketError::AlreadyOwned);
-    expect_pawket(&env.send(&[buy_with_wallet_ix(&owner.pubkey(), &sponsor.pubkey(), 5)], &sponsor, &[&owner]), PawketError::InsufficientBalance);
-    assert!(!env.closet(&owner.pubkey()).has(5));
+    // What is left (about 0.054 SOL) covers a piece but not a room.
+    expect_pawket(&env.send(&[buy_with_wallet_ix(&owner.pubkey(), &sponsor.pubkey(), FIRST_ROOM)], &sponsor, &[&owner]), PawketError::InsufficientBalance);
+    assert!(!env.closet(&owner.pubkey()).has(FIRST_ROOM));
     // Neither a foreign wallet account nor a device signature can spend the owner's balance.
     let stranger = env.player();
     ok(env.send(&[open_wallet_ix(&stranger.pubkey(), &sponsor.pubkey())], &sponsor, &[&stranger]));

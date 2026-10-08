@@ -235,7 +235,10 @@ describe("program.ts against the IDL", () => {
   it("numbers the whole wardrobe and nothing past it: the three starters, then the Market's", () => {
     expect(WEARABLE_COUNT + MARKET.wearables).toBe(WEARABLES.length);
     expect(WEARABLES.slice(0, WEARABLE_COUNT).every((item) => !item.price)).toBe(true);
-    expect(WEARABLES.slice(WEARABLE_COUNT).every((item) => item.price === MARKET.wearablePrice)).toBe(true);
+    // Each piece's price is the program's: the classics at the classic price, the rest at the wearable price.
+    WEARABLES.slice(WEARABLE_COUNT).forEach((item, i) => expect(item.price, item.id).toBe(marketPrice(WEARABLE_COUNT + 1 + i)));
+    expect(WEARABLES.slice(WEARABLE_COUNT, WEARABLE_COUNT + MARKET.classicWearables).every((item) => item.price === MARKET.classicPrice)).toBe(true);
+    expect(WEARABLES.slice(WEARABLE_COUNT + MARKET.classicWearables).every((item) => item.price === MARKET.wearablePrice)).toBe(true);
   });
 
   it("gives every paid room and photo frame one valid, unique entitlement", () => {
@@ -245,7 +248,7 @@ describe("program.ts against the IDL", () => {
     expect(frames).toEqual(Array.from({ length: MARKET.frames }, (_, i) => MARKET.firstFrame + i));
     expect(rooms.map(marketPrice)).toEqual(rooms.map(() => MARKET.roomPrice));
     expect(frames.map(marketPrice)).toEqual(frames.map(() => MARKET.framePrice));
-    for (const invalid of [-1, 3, 23, 63, 72, 79, 84, 256, 80.5]) expect(marketPrice(invalid)).toBeNull();
+    for (const invalid of [-1, 3, 29, 63, 72, 79, 84, 256, 80.5]) expect(marketPrice(invalid)).toBeNull();
   });
 
   it("holds the Market and a guild's gatherings to the program's numbers", () => {
@@ -256,6 +259,8 @@ describe("program.ts against the IDL", () => {
     expect(Number(constant("MARKET_FRAME_COUNT"))).toBe(MARKET.frames);
     expect(BigInt(constant("FRAME_PRICE_LAMPORTS")!)).toBe(MARKET.framePrice);
     expect(Number(constant("MARKET_WEARABLE_COUNT"))).toBe(MARKET.wearables);
+    expect(Number(constant("CLASSIC_WEARABLE_COUNT"))).toBe(MARKET.classicWearables);
+    expect(BigInt(constant("CLASSIC_PRICE_LAMPORTS")!)).toBe(MARKET.classicPrice);
     expect(Number(constant("FIRST_ROOM_ITEM"))).toBe(MARKET.firstRoom);
     expect(Number(constant("MARKET_ROOM_COUNT"))).toBe(MARKET.rooms);
     expect(BigInt(constant("WEARABLE_PRICE_LAMPORTS")!)).toBe(MARKET.wearablePrice);

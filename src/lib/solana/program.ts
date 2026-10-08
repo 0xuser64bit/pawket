@@ -54,15 +54,18 @@ export const WEARABLE_COUNT = 3;
 
 /**
  * The program's Market (`item_price`): the pieces after the three starters (worn
- * with `dress_owned`), rooms from item 64, their prices in lamports, and
- * where every sale goes.
+ * with `dress_owned`) — the fifteen classics at the classic price, the rest at
+ * the wearable price — rooms from item 64, photo frames from item 80, their
+ * prices in lamports, and where every sale goes.
  */
 export const MARKET = {
-  wearables: 19,
+  wearables: 25,
+  classicWearables: 15,
   firstRoom: 64,
   rooms: 8,
   firstFrame: 80,
   frames: 4,
+  classicPrice: 20_000_000n,
   framePrice: 25_000_000n,
   wearablePrice: 50_000_000n,
   roomPrice: 100_000_000n,

@@ -436,6 +436,107 @@ Object.assign(FIT, {
     g.position.set(0.12, 1.41, 0.12);
     return g;
   },
+  // The Market's second shelf.
+  "cowboy-hat": () => {
+    const g = new Group();
+    // A brim whose two sides curl up, under a crown with a sun band.
+    const brim = new CylinderGeometry(0.84, 0.84, 0.045, 36);
+    const pos = brim.getAttribute("position");
+    for (let i = 0; i < pos.count; i++) pos.setY(i, pos.getY(i) + Math.max(0, Math.abs(pos.getX(i)) - 0.42) * 0.5);
+    brim.computeVertexNormals();
+    g.add(part(brim, "pet-cocoa"));
+    const crown = part(new CylinderGeometry(0.34, 0.44, 0.44, 24), "pet-cocoa");
+    crown.position.y = 0.23;
+    g.add(crown);
+    const band = part(new CylinderGeometry(0.44, 0.44, 0.09, 24, 1, true), "sun", false);
+    (band.material as { side: typeof DoubleSide }).side = DoubleSide;
+    band.position.y = 0.08;
+    g.add(band);
+    g.position.set(0, 1.42, 0.04);
+    g.rotation.z = -0.06;
+    return g;
+  },
+  "chef-hat": () => {
+    const g = new Group();
+    const band = part(new CylinderGeometry(0.4, 0.42, 0.24, 24), "pet-cloud");
+    band.position.y = 0.12;
+    g.add(band);
+    for (const [x, y, z, r] of [
+      [0, 0.46, 0, 0.32],
+      [-0.25, 0.36, 0, 0.23],
+      [0.25, 0.36, 0, 0.23],
+      [0, 0.36, 0.24, 0.21],
+      [0, 0.36, -0.24, 0.21],
+    ]) {
+      const puff = part(new SphereGeometry(r, 16, 12), "pet-cloud");
+      puff.position.set(x, y, z);
+      g.add(puff);
+    }
+    g.position.set(0, 1.4, 0.02);
+    return g;
+  },
+  sunglasses: () => {
+    const g = new Group();
+    for (const side of [-1, 1]) {
+      const lens = part(new CylinderGeometry(0.13, 0.13, 0.03, 24), "edge");
+      lens.rotation.x = Math.PI / 2;
+      lens.scale.set(1.18, 1, 0.92);
+      lens.position.set(side * EYES.x, EYES.y, EYES.z + 0.03);
+      g.add(lens);
+      const arm = part(new CylinderGeometry(0.015, 0.015, 0.2, 6), "edge", false);
+      arm.rotation.z = Math.PI / 2;
+      arm.position.set(side * (EYES.x + 0.24), EYES.y + 0.03, EYES.z + 0.02);
+      g.add(arm);
+    }
+    const bridge = part(new CylinderGeometry(0.018, 0.018, EYES.x * 2 - 0.28, 6), "edge", false);
+    bridge.rotation.z = Math.PI / 2;
+    bridge.position.set(0, EYES.y + 0.05, EYES.z + 0.03);
+    g.add(bridge);
+    return g;
+  },
+  headphones: () => {
+    const g = new Group();
+    // A band over the crown from one side of the head to the other, a cup on each.
+    const band = part(new TorusGeometry(0.7, 0.05, 8, 36, Math.PI), "pool");
+    band.position.y = 0.8;
+    g.add(band);
+    for (const side of [-1, 1]) {
+      const cup = part(new CylinderGeometry(0.2, 0.2, 0.16, 20), "pool-edge");
+      cup.rotation.z = Math.PI / 2;
+      cup.position.set(side * 0.7, 0.8, 0);
+      g.add(cup);
+    }
+    return g;
+  },
+  beret: () => {
+    const g = new Group();
+    const cap = part(new SphereGeometry(0.52, 24, 12), "sun-edge");
+    cap.scale.set(1, 0.28, 1);
+    g.add(cap);
+    const stem = part(new CylinderGeometry(0.025, 0.03, 0.12, 8), "edge", false);
+    stem.position.y = 0.17;
+    g.add(stem);
+    g.position.set(0.08, 1.46, 0.02);
+    g.rotation.z = -0.22;
+    return g;
+  },
+  necktie: () => {
+    const g = new Group();
+    const knot = part(new BoxGeometry(0.11, 0.08, 0.05), "pool-edge");
+    knot.position.set(0, 0.36, 0.73);
+    g.add(knot);
+    const s = new Shape();
+    s.moveTo(-0.045, 0);
+    s.lineTo(0.045, 0);
+    s.lineTo(0.08, -0.2);
+    s.lineTo(0, -0.28);
+    s.lineTo(-0.08, -0.2);
+    s.closePath();
+    const blade = part(new ExtrudeGeometry(s, { depth: 0.025, bevelEnabled: false }), "pool");
+    blade.position.set(0, 0.33, 0.71);
+    g.add(blade);
+    return g;
+  },
 } satisfies Record<string, () => Object3D>);
 
 /** The item's shape, ready to parent to the pet's body, or null if none exists. */

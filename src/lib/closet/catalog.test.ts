@@ -27,12 +27,11 @@ describe("wearable catalog", () => {
     ]);
   });
 
-  it("keeps three starter pieces free and sells the other nineteen as looks", () => {
-    expect(MARKET_WEARABLES).toHaveLength(19);
-    expect(MARKET_WEARABLES.map((item) => wearableItem(item.id))).toEqual(Array.from({ length: 19 }, (_, i) => i + 4));
-    for (const item of MARKET_WEARABLES) {
-      expect(item.price).toBe(50_000_000n);
-    }
+  it("keeps three starter pieces free and sells the other twenty-five as looks, classics for less", () => {
+    expect(MARKET_WEARABLES).toHaveLength(25);
+    expect(MARKET_WEARABLES.map((item) => wearableItem(item.id))).toEqual(Array.from({ length: 25 }, (_, i) => i + 4));
+    expect(MARKET_WEARABLES.slice(0, 15).every((item) => item.price === 20_000_000n)).toBe(true);
+    expect(MARKET_WEARABLES.slice(15).every((item) => item.price === 50_000_000n)).toBe(true);
     expect(WEARABLES.slice(0, 3).some((item) => item.price)).toBe(false);
   });
 

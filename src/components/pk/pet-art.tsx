@@ -614,6 +614,70 @@ function worn(id: string | null | undefined, form: PetForm, p: PetPaint, layer: 
         </g>
       );
     }
+    case "cowboy-hat": {
+      // A brim that curls up at both ends, and a creased crown with a sun band.
+      const t = f.top + 2;
+      return (
+        <g>
+          <path d={`M44 ${t + 4}C43 ${t - 12} 50 ${t - 16} 55 ${t - 10}C57 ${t - 13} 63 ${t - 13} 65 ${t - 10}C70 ${t - 16} 77 ${t - 12} 76 ${t + 4}z`} fill={p.cocoa} />
+          <path d={`M44.6 ${t - 2}C54 ${t} 66 ${t} 75.4 ${t - 2}`} stroke={p.sun} strokeWidth="3.4" />
+          <path d={`M27 ${t}Q33 ${t + 11} 60 ${t + 11}Q87 ${t + 11} 93 ${t}Q86 ${t + 6} 60 ${t + 6}Q34 ${t + 6} 27 ${t}z`} fill={p.cocoa} />
+        </g>
+      );
+    }
+    case "chef-hat": {
+      const t = f.top + 2;
+      return (
+        <g>
+          <path d={`M47 ${t - 2}c-9-1-9-14 0-13 1-8 12-10 13-3 3-6 13-5 13 3 9-1 9 12 0 13z`} fill={p.surface} />
+          <rect x="45" y={t - 4} width="30" height="11" rx="2.4" fill={p.surface} />
+          <path d={`M53 ${t - 1}v5M60 ${t - 1}v5M67 ${t - 1}v5`} stroke={p.cloudShade} strokeWidth="2" />
+        </g>
+      );
+    }
+    case "sunglasses": {
+      const { eyeL: l, eyeR: r, eyeY: y } = f;
+      const lens = (cx: number) => `M${cx - 10.4} ${y - 6}h20.8v5.6c0 6-4.4 9.4-10.4 9.4s-10.4-3.4-10.4-9.4z`;
+      return (
+        <g strokeWidth="2.6">
+          <path d={lens(l)} fill={p.eye} />
+          <path d={lens(r)} fill={p.eye} />
+          <path d={`M${l + 10.4} ${y - 4}h${r - l - 20.8}M${l - 10.4} ${y - 5}l-6.4-2.2M${r + 10.4} ${y - 5}l6.4-2.2`} fill="none" />
+          <path d={`M${l - 6} ${y - 2}h4.4M${r - 6} ${y - 2}h4.4`} stroke={p.shine} strokeWidth="2" />
+        </g>
+      );
+    }
+    case "headphones": {
+      const { eyeY: y } = f;
+      const t = f.top;
+      const arc = `M31 ${y - 2}C28 ${t - 16} 92 ${t - 16} 89 ${y - 2}`;
+      return (
+        <g>
+          <path d={arc} strokeWidth="7.4" fill="none" />
+          <path d={arc} stroke={p.pool} strokeWidth="3.6" fill="none" />
+          <rect x="23" y={y - 10} width="12" height="19" rx="5.4" fill={p.poolEdge} strokeWidth="2.6" />
+          <rect x="85" y={y - 10} width="12" height="19" rx="5.4" fill={p.poolEdge} strokeWidth="2.6" />
+        </g>
+      );
+    }
+    case "beret": {
+      const t = f.top + 1;
+      return (
+        <g>
+          <path d={`M60 ${t - 12}l1.2-5.4`} strokeWidth="3" />
+          <path d={`M37 ${t + 3}C33 ${t - 10} 63 ${t - 16} 83 ${t - 6}C89 ${t - 2} 85 ${t + 5} 77 ${t + 6}C64 ${t + 9} 46 ${t + 9} 37 ${t + 3}z`} fill={p.sunEdge} />
+          <path d={`M42 ${t + 4}c11 3.4 25 3.4 36 0`} stroke={p.sun} strokeWidth="2" />
+        </g>
+      );
+    }
+    case "necktie":
+      return (
+        <g strokeWidth="2.4">
+          <path d={`M54.6 ${n}h10.8l-2.2 5.6h-6.4z`} fill={p.poolEdge} />
+          <path d={`M56.8 ${n + 5.6}h6.4l3.6 13.4-6.8 6.2-6.8-6.2z`} fill={p.pool} />
+          <path d={`M57.6 ${n + 11}l5.2-2M56.6 ${n + 17}l7-2.6`} stroke={p.surface} strokeWidth="1.8" />
+        </g>
+      );
     default:
       return null;
   }
@@ -635,6 +699,11 @@ const ON_HEAD = new Set([
   "wizard-hat",
   "sun-hat",
   "gold-crown",
+  "cowboy-hat",
+  "chef-hat",
+  "sunglasses",
+  "headphones",
+  "beret",
 ]);
 
 /* ---------------------------------------------------------------- PetArt */
@@ -1028,6 +1097,62 @@ export function WearableArt({ id, className }: { id: string; className?: string 
           <path d="M32 34C22 18 8 22 10 34c6 6 16 4 22 0z" fill={p.sprout} />
           <path d="M32 30C40 12 56 14 56 28c-6 7-17 6-24 2z" fill={p.sprout} />
           <path d="M16 31c5-2 10-1 14 2M38 26c5-3 10-4 14-2" stroke={p.sproutEdge} strokeWidth="2" fill="none" />
+        </>
+      );
+      break;
+    case "cowboy-hat":
+      art = (
+        <>
+          <path d="M16 40C15 20 22 14 27 20C29 16 35 16 37 20C42 14 49 20 48 40z" fill={p.cocoa} />
+          <path d="M16.6 32C26 35 38 35 47.4 32" stroke={p.sun} strokeWidth="4" />
+          <path d="M3 36Q9 50 32 50Q55 50 61 36Q54 43 32 43Q10 43 3 36z" fill={p.cocoa} />
+        </>
+      );
+      break;
+    case "chef-hat":
+      art = (
+        <>
+          <path d="M18 40c-12-2-12-20 0-19 1-11 15-13 17-5 4-8 18-6 17 4 12-1 12 18 0 20z" fill={p.surface} />
+          <rect x="16" y="37" width="32" height="15" rx="3" fill={p.surface} />
+          <path d="M24 41v7M32 41v7M40 41v7" stroke={p.cloudShade} strokeWidth="2.4" />
+        </>
+      );
+      break;
+    case "sunglasses":
+      art = (
+        <>
+          <path d="M5 24h23v8c0 7-5 11-11.5 11S5 39 5 32z" fill={p.eye} />
+          <path d="M36 24h23v8c0 7-5 11-11.5 11S36 39 36 32z" fill={p.eye} />
+          <path d="M28 27h8M5 25l-3-2.4M59 25l3-2.4" />
+          <path d="M10 29h6M41 29h6" stroke={p.shine} strokeWidth="2.4" />
+        </>
+      );
+      break;
+    case "headphones":
+      art = (
+        <>
+          <path d="M12 40C10 6 54 6 52 40" strokeWidth="9" />
+          <path d="M12 40C10 6 54 6 52 40" stroke={p.pool} strokeWidth="4.4" />
+          <rect x="4" y="33" width="15" height="22" rx="6.4" fill={p.poolEdge} />
+          <rect x="45" y="33" width="15" height="22" rx="6.4" fill={p.poolEdge} />
+        </>
+      );
+      break;
+    case "beret":
+      art = (
+        <>
+          <path d="M31 17l1.4-7" strokeWidth="3.4" />
+          <path d="M7 38C1 21 38 11 56 25C62 31 56 42 46 44C34 47 16 46 7 38z" fill={p.sunEdge} />
+          <path d="M12 40c11 4 24 4 34 1" stroke={p.sun} strokeWidth="2.4" />
+        </>
+      );
+      break;
+    case "necktie":
+      art = (
+        <>
+          <path d="M25.6 6h12.8l-2.6 8h-7.6z" fill={p.poolEdge} />
+          <path d="M28.2 14h7.6l6.4 30-10.2 12-10.2-12z" fill={p.pool} />
+          <path d="M28 24l8-3M26.8 33l10.4-3.8M26.4 42l11-4" stroke={p.surface} strokeWidth="2.4" />
         </>
       );
       break;

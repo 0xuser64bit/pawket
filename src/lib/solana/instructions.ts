@@ -465,7 +465,9 @@ export function isMarketItem(item: number): boolean {
 /** What `item` costs in the Market, in lamports, or null where nothing is sold. */
 export function marketPrice(item: number): bigint | null {
   if (!isMarketItem(item)) return null;
-  return item <= WEARABLE_COUNT + MARKET.wearables ? MARKET.wearablePrice : item < MARKET.firstFrame ? MARKET.roomPrice : MARKET.framePrice;
+  if (item <= WEARABLE_COUNT + MARKET.classicWearables) return MARKET.classicPrice;
+  if (item <= WEARABLE_COUNT + MARKET.wearables) return MARKET.wearablePrice;
+  return item < MARKET.firstFrame ? MARKET.roomPrice : MARKET.framePrice;
 }
 
 /**

@@ -45,7 +45,7 @@ Rent-exempt minimum = (size + 128) × 6,960 lamports.
 | PetPassport | 169 | 0.0021 SOL | sponsor (adoption) |
 | Guild | 235 | 0.0025 SOL | sponsor |
 | GuildMember | 145 | 0.0019 SOL | sponsor, returned on leave |
-| PawketWallet | 157 | 0.0020 SOL | the owner, returned on close |
+| PawketWallet | 157 | 0.0020 SOL | sponsor, returned on close |
 | Closet | 83 | 0.0015 SOL | sponsor, once per buyer |
 | GuildEvent | 285 | 0.0029 SOL | sponsor |
 | EventRsvp | 146 | 0.0019 SOL | sponsor |

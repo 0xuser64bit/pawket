@@ -115,8 +115,9 @@ scope enforced by the program, not by Pawket:
   to pay rent goes to the wallet instead.
 - **The money** is the wallet account's own lamports above rent. Deposits
   come from the owner; a withdrawal and a close go only to the owner; the
-  rent goes back to whoever paid it (always the owner — the sponsor never
-  pays a wallet's rent, so opening and closing cannot drain it).
+  rent goes back to whoever paid it (`rent_payer`: the owner, or the sponsor
+  when it paid), so opening and closing cannot drain the sponsor, and the
+  balance never reaches into the rent.
 - **The history** is read from Solana (`src/lib/wallet/history.ts`): every
   transaction that touched the wallet account, decoded into what it was, how
   the balance moved and who paid the fee. Pawket keeps none of it.

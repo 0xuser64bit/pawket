@@ -12,9 +12,11 @@ import {
  *
  * SAFETY (do not weaken without a program change):
  * 1. Never change PDA seed strings or their order.
- * 2. Care, a round, dressing and a pet's guild are signed by `pet.owner` —
- *    or, for care, a round and dressing only, by the device the owner linked
- *    to their Pawket Wallet, inside its end date and daily limit.
+ * 2. Each instruction is signed by the wallet it acts for (a pet's owner, a
+ *    guild's founder, a visitor) — or by the device that wallet linked to its
+ *    Pawket Wallet, through the instruction's `*_by_device` twin
+ *    (`DEVICE_VARIANTS`), inside the link's end date and daily limit.
+ *    Nothing that moves money has a twin.
  * 3. Names are 2–24 UTF-8 bytes, trimmed by the client before derivation.
  * 4. Nothing in the program moves value except rent, which `payer` covers on
  *    adoption, founding, joining, opening a Pawket Wallet, a closet, an

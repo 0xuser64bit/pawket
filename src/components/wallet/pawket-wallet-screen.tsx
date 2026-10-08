@@ -7,6 +7,7 @@ import { useRequest } from "@solana/react";
 import {
   Banner,
   Button,
+  ButtonLink,
   Card,
   Chip,
   Choice,
@@ -365,6 +366,8 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               />
             ) : null}
             <Row gap={2} wrap>
+              {/* Set up, the way back to what it is for: the pets. */}
+              {state.balance > 0n ? <ButtonLink label="Back to your pets" icon="home" size="sm" href="/home" /> : null}
               <Button label={`Unlink ${place}`} tone="quiet" size="sm" disabled={sender.busy} onClick={() => void unlinkHere()} />
             </Row>
             <details className="pk-wallet-more">
@@ -384,7 +387,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
                 ? `Its link ran out on ${until}. Link it again to continue without pop-ups.`
                 : elsewhere
                   ? `Another browser (${truncateAddress(wallet.device!)}) is linked. Linking this one takes its place; the other keeps what it holds for fees until it unlinks itself.`
-                  : "Link it, and what your pets do on Solana stops asking your wallet every time."}
+                  : `Pawket acts on Solana through a linked device. Link ${place}, and it signs what your pets do with no pop-up.`}
             </p>
             {limits}
             <Row gap={2} wrap>

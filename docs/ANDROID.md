@@ -8,8 +8,7 @@ share sheet, the gallery, the calendar, haptics, the back gesture, launcher
 shortcuts and links that open in the app. Nothing about a pet, a key or a
 transaction lives in Kotlin.
 
-Work in progress and its evidence: `docs/ANDROID-HANDOFF.md`. The
-assignment: `docs/ANDROID-BUILD-BRIEF.md`.
+The release record and its evidence: `docs/ANDROID-HANDOFF.md`.
 
 ## Where it lives
 

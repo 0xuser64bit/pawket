@@ -1,6 +1,6 @@
 # Pawket Android handoff
 
-Assignment: `ANDROID-BUILD-BRIEF.md`. Architecture/build: `ANDROID.md`.
+Architecture/build: `ANDROID.md`.
 Reviewer and store materials: `ANDROID-SUBMISSION.md`.
 
 ## Current objective and checkpoint

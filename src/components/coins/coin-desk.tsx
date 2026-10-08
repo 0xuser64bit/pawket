@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useRequest } from "@solana/react";
 import type { Address } from "@solana/kit";
-import { Banner, Button, Card, Choice, Field, Paper, Receipt, Row, Stack, type ReceiptRow } from "@/components/pk";
+import { Banner, Button, ButtonLink, Card, Choice, Field, Paper, Receipt, Row, Stack, type ReceiptRow } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import type { SolanaCluster } from "@/config/env";
 import { COIN_RISKS } from "@/lib/coins/copy";
@@ -58,7 +58,7 @@ export function CoinDesk({ guild, coin, thresholds, cluster }: CoinDeskProps) {
   return (
     <Stack gap={4}>
       {owner && (!sender.pawketWallet?.linked || (sender.pawketWallet?.balance ?? 0n) <= 0n) ? (
-        <Banner tone="wait" title="Link and fund Pawket Wallet" body="Coin activity uses your Pawket Wallet balance." action={<a className="pk-btn pk-btn--quiet pk-btn--sm" href="/wallet">Open Pawket Wallet</a>} />
+        <Banner tone="wait" title="Link and fund Pawket Wallet" body="Coin activity uses your Pawket Wallet balance." action={<ButtonLink label="Open Pawket Wallet" tone="quiet" size="sm" href="/wallet" />} />
       ) : null}
       {coin.stage === "none" ? (
         isFounder ? (

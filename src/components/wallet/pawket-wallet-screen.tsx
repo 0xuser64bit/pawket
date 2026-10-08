@@ -90,7 +90,7 @@ export function PawketWalletScreen() {
       <ScreenBar>
         <div>
           <h1 className="display-l">Pawket Wallet</h1>
-          <p className="caption pk-faint">One approval, then no pop-ups. Yours, on Solana {getPublicEnv().solanaCluster}.</p>
+          <p className="caption pk-faint">Everything Pawket does on Solana, from one balance and one history. Yours, on Solana {getPublicEnv().solanaCluster}.</p>
         </div>
         {state?.linked ? <Chip label={`${Here} is linked`} tone="sprout" icon="check" /> : null}
       </ScreenBar>
@@ -100,10 +100,10 @@ export function PawketWalletScreen() {
       ) : !owner ? (
         <Stack gap={4}>
           <Card>
-            <h2 className="title">Stop the pop-ups</h2>
+            <h2 className="title">Set up your Pawket Wallet</h2>
             <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-              Connect the wallet that keeps your pets. It approves once, and then {here} signs for them with no
-              pop-up. Connecting signs nothing.
+              Connect the wallet that keeps your pets. It owns the Pawket Wallet and approves once; then {here}
+              signs for your pets with no pop-up. Connecting signs nothing.
             </p>
             <div className="pk-foot">
               <Button label="Connect a wallet" icon="wallet" tone="quiet" onClick={() => setConnecting(true)} />
@@ -211,10 +211,12 @@ function SetUp() {
 
   return (
     <Card>
-      <h2 className="title">Stop the pop-ups</h2>
+      <h2 className="title">Set up your Pawket Wallet</h2>
       <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-        Your wallet approves once. After that, {here} signs what your pets do on Solana — care, rounds,
-        outfits, guilds, gatherings and waves — with no pop-up. Anything that spends SOL still asks your wallet.
+        Pawket acts on Solana only through it. Your wallet approves once — opening it, putting SOL in and linking{" "}
+        {here}. After that {here} signs what your pets do — care, rounds, outfits, guilds, gatherings and waves —
+        with no pop-up, and Market looks and guild coins spend this balance once your wallet approves. Every one of
+        them is in the history here.
       </p>
       <Stack gap={4} style={{ marginTop: "var(--space-4)" }}>
         <Choice label={`Link ${here} for`} options={DAYS} value={days} onPick={setDays} />
@@ -222,8 +224,9 @@ function SetUp() {
         <Choice label="Put in" options={PUT} value={put} onPick={setPut} />
         <p className="caption pk-faint" style={{ marginTop: "calc(-1 * var(--space-2))" }}>
           {sponsored
-            ? `Keep a balance here to use Pawket. Pawket currently pays pet-action fees. Purchases and coins spend this balance with your approval; you can withdraw the rest.`
+            ? "Pawket pays the network fees for your pets. The balance pays for Market looks and guild coins, with your approval; take out what is left whenever you like."
             : `Pawket is not paying fees right now, so ${here} pays its own from what you put in — one fee an action, and the rest back whenever you like.`}
+          {cluster === "devnet" ? " Devnet SOL is free at faucet.solana.com." : ""}
         </p>
         <Paper title="What this approval does" meta={`Solana ${cluster}`}>
           <Receipt
@@ -419,10 +422,11 @@ function MoveMoney({ state, owner }: { state: PawketWalletState; owner: Address 
   }
 
   return (
-    <Card>
+    <Card id="put-in">
       <h2 className="title">Put in, take out</h2>
       <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
         Either way your wallet approves it. What comes out goes to your wallet ({truncateAddress(owner)}) and nowhere else.
+        {getPublicEnv().solanaCluster === "devnet" ? " Devnet SOL is free at faucet.solana.com." : ""}
       </p>
       <Stack gap={4} style={{ marginTop: "var(--space-4)" }}>
         <Choice

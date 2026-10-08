@@ -42,6 +42,8 @@ describe("send routing (no wallet signing)", () => {
     await act(async () => { expect(await hook.result.current.act("Care", () => [])).toBeNull(); });
     expect(mock.send).not.toHaveBeenCalled();
     expect(hook.result.current.tx.error).toContain("Link this device in your Pawket Wallet");
+    // A next step, not a failure: nothing was tried.
+    expect(hook.result.current.tx.needs).toBe("link");
   });
 
   it("uses a freshly read device even when the screen's cached wallet is still loading", async () => {
@@ -56,9 +58,9 @@ describe("send routing (no wallet signing)", () => {
   });
 
   it.each([
-    { name: "expired link", expires: 0, actions: 0, sponsor: true, error: "Link this device" },
-    { name: "daily limit", expires: Number.MAX_SAFE_INTEGER, actions: 100, sponsor: true, error: "today's limit" },
-    { name: "unfunded device without sponsorship", expires: Number.MAX_SAFE_INTEGER, actions: 0, sponsor: false, error: "needs SOL" },
+    { name: "expired link", expires: 0, actions: 0, sponsor: true, error: "Link this device", needs: "link" },
+    { name: "daily limit", expires: Number.MAX_SAFE_INTEGER, actions: 100, sponsor: true, error: "today's limit", needs: "limit" },
+    { name: "unfunded device without sponsorship", expires: Number.MAX_SAFE_INTEGER, actions: 0, sponsor: false, error: "needs SOL", needs: undefined },
   ])("explains $name in the app without redirecting to the owner wallet", async (entry) => {
     sponsor(entry.sponsor); mock.app = true;
     const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);
@@ -67,6 +69,7 @@ describe("send routing (no wallet signing)", () => {
     await act(async () => { expect(await hook.result.current.act("Care", () => [])).toBeNull(); });
     expect(mock.send).not.toHaveBeenCalled();
     expect(hook.result.current.tx.error).toContain(entry.error);
+    expect(hook.result.current.tx.needs).toBe(entry.needs);
     expect(mock.refresh).not.toHaveBeenCalled();
     expect(hook.result.current.busy).toBe(false);
   });
@@ -78,6 +81,7 @@ describe("send routing (no wallet signing)", () => {
     await act(async () => { expect(await hook.result.current.act("Feed", () => [])).toBeNull(); });
     expect(mock.send).not.toHaveBeenCalled();
     expect(hook.result.current.tx.error).toContain("Add SOL to your Pawket Wallet");
+    expect(hook.result.current.tx.needs).toBe("fund");
   });
 
   it("gates a purchase but allows an explicit deposit to recover an empty wallet", async () => {

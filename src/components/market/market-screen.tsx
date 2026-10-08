@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Address } from "@solana/kit";
-import { Button, ItemTile, PetArt, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice } from "@/components/pk";
+import { Button, ButtonLink, ItemTile, PetArt, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
@@ -214,7 +214,7 @@ function ItemSheet({
               <Button label={`Live in ${item.name}`} tone="paper" onClick={() => setTheme(item.room!)} />
             ) : null
           ) : needsLink || short ? (
-            <a className="pk-btn pk-btn--paper" href="/wallet">{needsLink ? "Link Pawket Wallet" : "Add SOL to Pawket Wallet"}</a>
+            <ButtonLink tone="paper" label={needsLink ? "Set up Pawket Wallet" : "Add SOL to Pawket Wallet"} href={needsLink ? "/wallet" : "/wallet#put-in"} />
           ) : (
             <Button label={`Buy for ${sol(price)}`} tone="paper" disabled={sender.busy || !canSign || short} onClick={() => void buy()} />
           )}

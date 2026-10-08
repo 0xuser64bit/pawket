@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Address } from "@solana/kit";
 import { useConnectedWallet, useDisconnect, useIsWalletReady } from "@solana/kit-plugin-wallet/react";
-import { Button, Icon, Sheet, Stack } from "@/components/pk";
+import { Button, ButtonLink, Icon, Sheet, Stack } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { wallet } from "@/lib/solana/browser-client";
@@ -137,7 +137,13 @@ function WalletPanel({
           ) : state.balance <= 0n && why === null ? (
             <div className="pk-fill">
               <p className="title">Add SOL to Pawket Wallet</p>
-              <p className="caption pk-muted">This device is linked. Add a balance before caring, playing or buying on Solana.</p>
+              <p className="caption pk-muted">
+                {Here} is linked. Pawket acts on Solana from this balance — add some before caring, playing or buying.
+                {cluster === "devnet" ? " Devnet SOL is free at faucet.solana.com." : ""}
+              </p>
+              <div style={{ marginTop: "var(--space-3)" }}>
+                <ButtonLink label="Add SOL" icon="wallet" tone="sun" size="sm" href="/wallet#put-in" onClick={onDismiss} />
+              </div>
             </div>
           ) : why === null ? (
             <div className="pk-fill">
@@ -162,10 +168,11 @@ function WalletPanel({
             </div>
           ) : (
             <div className="pk-fill">
-              <p className="title">{why === "expired" ? `${Here}'s link ran out` : "Stop the pop-ups"}</p>
+              <p className="title">{why === "expired" ? `${Here}'s link ran out` : "Set up Pawket Wallet"}</p>
               <p className="caption pk-muted">
-                Link and fund Pawket Wallet, and {here} signs what your pets do — care, rounds,
-                outfits, guilds, waves. Anything that spends SOL still asks your wallet.
+                Pawket acts on Solana through it: {here} signs what your pets do — care, rounds, outfits, guilds,
+                waves — with no pop-up, and Market looks and coins spend its balance once your wallet approves.
+                {cluster === "devnet" ? " Devnet SOL is free at faucet.solana.com." : ""}
               </p>
               <div style={{ marginTop: "var(--space-3)" }}>
                 <Button
@@ -185,10 +192,7 @@ function WalletPanel({
             </div>
           )}
         </div>
-        <Link className="pk-btn pk-btn--quiet pk-btn--full" href="/wallet" onClick={onDismiss}>
-          <Icon name="wallet" size={16} />
-          <span>Pawket Wallet</span>
-        </Link>
+        <ButtonLink label="Open Pawket Wallet" icon="wallet" tone="quiet" full href="/wallet" onClick={onDismiss} />
         <p className="caption pk-faint">Disconnecting changes nothing on Solana; your pets stay there.</p>
       </Stack>
     </Sheet>

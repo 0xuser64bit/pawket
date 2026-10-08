@@ -16,6 +16,7 @@ import { Icon, type IconName } from "./icon";
 export function Card({
   variant,
   href,
+  id,
   className,
   style,
   children,
@@ -23,6 +24,8 @@ export function Card({
   /** `room` is a whole area, `ink` is the inverted panel, `flush` lets art bleed. */
   variant?: "room" | "ink" | "flush" | "quiet";
   href?: string;
+  /** For a link that opens the page at this card. */
+  id?: string;
   className?: string;
   style?: CSSProperties;
   children: ReactNode;
@@ -38,7 +41,7 @@ export function Card({
     );
   }
   return (
-    <div className={classes} style={style}>
+    <div id={id} className={classes} style={style}>
       {children}
     </div>
   );

@@ -32,7 +32,30 @@ export interface TxState {
   /** Why the wallet signed something this device could have: what would let it next time. */
   fallback?: DeviceFallback;
   error?: string;
+  /** Nothing was tried: the Pawket Wallet needs this first — a link, a balance, or tomorrow. */
+  needs?: PawketWalletNeed;
 }
+
+export type PawketWalletNeed = "link" | "fund" | "limit";
+
+/**
+ * Pawket acts on Solana only through a linked, funded Pawket Wallet, never
+ * the connected wallet on its own. When one is not ready, nothing is sent and
+ * the player is told the next step, as a note rather than a failure.
+ */
+export class PawketWalletNeeded extends Error {
+  constructor(readonly need: PawketWalletNeed, message: string) {
+    super(message);
+    this.name = "PawketWalletNeeded";
+  }
+}
+
+const NEEDS: Record<PawketWalletNeed, string> = {
+  link: "Link this device in your Pawket Wallet first. Nothing was sent.",
+  fund: "Add SOL to your Pawket Wallet first. Nothing was sent.",
+  limit: "Your Pawket Wallet has used today's limit. Change it there, or come back after midnight UTC. Nothing was sent.",
+};
+const needed = (need: PawketWalletNeed) => new PawketWalletNeeded(need, NEEDS[need]);
 
 /** Why a linked device did not sign: none is linked here, its link ran out, or today's limit is used. */
 export type DeviceFallback = "unlinked" | "expired" | "limit";
@@ -58,8 +81,8 @@ async function fetchSponsor(signal?: AbortSignal): Promise<SponsorStatus> {
 async function requirePawketWallet(owner: Address) {
   const state = await readPawketWallet(owner);
   if (state.error) throw new Error("Pawket could not read your Pawket Wallet. Try again once you are online. Nothing was sent.");
-  if (!state.wallet || !state.device || !state.linked) throw new Error("Link this device in your Pawket Wallet before continuing. Nothing was sent.");
-  if (state.balance <= 0n) throw new Error("Add SOL to your Pawket Wallet before continuing. Nothing was sent.");
+  if (!state.wallet || !state.device || !state.linked) throw needed("link");
+  if (state.balance <= 0n) throw needed("fund");
   return state;
 }
 
@@ -127,6 +150,10 @@ export function usePawketSend() {
         if (result.outcome === "confirmed") haptic("done");
         return result;
       } catch (error) {
+        if (error instanceof PawketWalletNeeded) {
+          show({ stage: "failed", error: error.message, needs: error.need });
+          return null;
+        }
         show({ stage: "failed", error: toUserFacingError(error), signature: (error as { signature?: string }).signature });
         // Saying no in the wallet sent nothing and changed nothing: nothing to report.
         if (isUserRejection(error)) dismissToast(id);
@@ -238,12 +265,8 @@ export function usePawketSend() {
         const fallback = deviceFallback(state);
         const sponsor = await fetchSponsor();
         const sponsorAddress = sponsor.available && sponsor.address ? sponsor.address as Address : null;
-        if (fallback || !state.device || !state.wallet) {
-          throw new Error(fallback === "limit"
-            ? "Your Pawket Wallet has used today's limit. Change it in your Pawket Wallet or return after midnight UTC. Nothing was sent."
-            : "Link this device in your Pawket Wallet before continuing. Nothing was sent.");
-        }
-        if (state.balance <= 0n) throw new Error("Add SOL to your Pawket Wallet before continuing. Nothing was sent.");
+        if (fallback || !state.device || !state.wallet) throw needed(fallback === "limit" ? "limit" : "link");
+        if (state.balance <= 0n) throw needed("fund");
         const device = state.device;
         const forOwner = createNoopSigner(walletSigner.address);
         const twins = (payer: TransactionSigner) => instructions({ owner: forOwner, payer })

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Button, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt } from "@/components/pk";
+import { Button, ButtonLink, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt } from "@/components/pk";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { MARKET_WEARABLES, WEARABLES, findWearable, wearableItem } from "@/lib/closet/catalog";
 import type { CompanionState } from "@/lib/companion/use-companion";
@@ -202,7 +202,7 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
                   );
                 })}
               </div>
-              <Link className="pk-btn pk-btn--quiet pk-btn--sm" href="/market">Explore the Market</Link>
+              <ButtonLink label="Explore the Market" tone="quiet" size="sm" href="/market" />
               {worn ? (
                 <div>
                   <Button

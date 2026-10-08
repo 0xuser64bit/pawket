@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import type { Address } from "@solana/kit";
-import { Button, PetArt, Sheet, Stack } from "@/components/pk";
+import { Button, ButtonLink, PetArt, Sheet, Stack } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { getPublicEnv } from "@/config/env";
 import { petLook } from "@/lib/game/appearance";
@@ -93,7 +92,7 @@ export function KeepSheet({
         <div className="pk-spread">
           <Button tone="ghost" size="sm" label="Not now" onClick={dismiss} />
           {owner && canSign && !ready ? (
-            <Link className="pk-btn" href="/wallet">Link and fund Pawket Wallet</Link>
+            <ButtonLink label="Set up Pawket Wallet" icon="wallet" href="/wallet" />
           ) : owner && canSign ? (
             <Button
               label="Keep on Solana"

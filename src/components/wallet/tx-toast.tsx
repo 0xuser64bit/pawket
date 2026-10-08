@@ -73,6 +73,19 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
         ),
       };
     case "failed":
+      if (tx.needs) {
+        return {
+          id,
+          tone: "note",
+          ttl: 12_000,
+          title: tx.needs === "limit" ? "Today's limit is used" : tx.needs === "fund" ? "Add SOL to your Pawket Wallet" : "Link your Pawket Wallet",
+          body: (
+            <>
+              {tx.error} <Link href="/wallet">Open Pawket Wallet</Link>
+            </>
+          ),
+        };
+      }
       return {
         id,
         tone: "risk",

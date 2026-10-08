@@ -62,7 +62,8 @@
 
 **Needed by:** mainnet, or the first time `SPONSOR_KEYPAIR` must rotate. **Recommendation:** a separate server-only secret for both derivations — on devnet, set to the sponsor's current secret so no address moves — never rotated with the hot key; and `liveCoin` takes a pool as the guild's coin only when `poolState.creator` is its founder.
 **Context:** every card's and coin's address is an HMAC of the sponsor's secret, derived again on each read (`src/server/keepsake.ts`, `coinKeypair` in `src/server/coins/meteora.ts`). Rotating the key — the first thing to do if it leaks — loses every card and coin and lets each pet and guild make a second; a leaked key can also make any guild's coin before its founder, and Pawket's pages would show it as the guild's.
-**Decision needed:** where the secret lives and how it is backed up; whether the creator check lands now or with mainnet.
+**Decision needed:** where the secret lives and how it is backed up.
+**Partly done (2026-10-09):** the creator check landed — `liveCoin` and the guild list take a curve as a guild's coin only when `poolState.creator` is its founder, and a launch over a curve someone else made is refused. The separate secret is still open.
 
 ## Resolution log
 

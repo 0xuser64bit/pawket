@@ -90,6 +90,8 @@ export interface CoinState {
 interface LiveCoin {
   state: CoinState;
   mint: Keypair;
+  /** A curve sits at the guild's coin address that its founder did not make: not the guild's coin, and none can be launched. */
+  taken?: boolean;
   curve: { address: PublicKey; pool: VirtualPool; config: PoolConfig; configAddress: PublicKey } | null;
   graduated: { address: PublicKey; pool: Awaited<ReturnType<CpAmm["fetchPoolState"]>> } | null;
 }
@@ -196,6 +198,9 @@ async function liveCoin(guild: ChainGuild): Promise<LiveCoin | null> {
   if (!pool || !config) return { state: base, mint, curve: null, graduated: null };
 
   const curveState = pool.poolState;
+  // Only the founder launches a guild's coin, so a curve someone else made
+  // at its address (which takes the coin's key) is not the guild's coin.
+  if (!curveState.creator.equals(new PublicKey(guild.founder))) return { state: base, mint, curve: null, graduated: null, taken: true };
   const migrated = curveState.isMigrated === 1;
   let graduated: LiveCoin["graduated"] = null;
   if (migrated) {
@@ -267,6 +272,7 @@ export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, 
     if (!account) continue;
     const { guild, mint, config } = candidates[i];
     const pool = coder.accounts.decode<VirtualPool>("virtualPool", account.data).poolState;
+    if (!pool.creator.equals(new PublicKey(guild.founder))) continue;
     const settings = await readConfig(config);
     if (!settings) continue;
     const migrated = pool.isMigrated === 1;
@@ -460,6 +466,7 @@ export async function launchTransaction({
   const coin = await liveCoin(guild);
   if (!coin) throw new CoinRefusal("Guild coins are off on this deployment.", 503);
   if (coin.state.stage !== "none") throw new CoinRefusal(`${guild.name} already has its coin. Nothing was sent.`, 409);
+  if (coin.taken) throw new CoinRefusal(`A coin ${guild.name}'s founder did not launch holds its address, so Pawket cannot launch one. Nothing was sent.`, 409);
   const config = presetConfig(getPublicEnv().solanaCluster, preset);
   if (!config) throw new CoinRefusal("That preset is not offered here.", 400);
   const payer = new PublicKey(founder);

@@ -28,7 +28,7 @@ import { Room, preloadRoom3D, useRoomMode, type RoomState } from "@/components/h
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { RoomView } from "@/components/room3d/room-3d";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
-import { WEARABLES, findWearable } from "@/lib/closet/catalog";
+import { findWearable } from "@/lib/closet/catalog";
 import { newlyEarned, type BadgeContext } from "@/lib/game/badges";
 import { useCompanion } from "@/lib/companion/use-companion";
 import {
@@ -401,15 +401,11 @@ export function HomeScreen() {
   );
 }
 
-/** A sticker a care just earned, said after it — and the piece of the wardrobe it opens, if any. */
+/** A sticker a care just earned, said after it. */
 function earnedLine(before: GuestPet, after: GuestPet, context: BadgeContext = {}): string {
   const earned = newlyEarned(before, after, context);
   if (earned.length === 0) return "";
-  const pieces = WEARABLES.filter((item) => earned.some((badge) => badge.id === item.earnedBy));
-  const opens = pieces.length
-    ? ` The ${pieces.map((piece) => piece.name.toLowerCase()).join(" and the ")} ${pieces.length === 1 ? "is" : "are"} theirs to wear now.`
-    : "";
-  return ` New sticker: ${earned.map((badge) => badge.name).join(", ")}.${opens}`;
+  return ` New sticker: ${earned.map((badge) => badge.name).join(", ")}.`;
 }
 
 /** The new level when XP crosses one, else null. */

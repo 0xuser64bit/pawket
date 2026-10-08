@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Address } from "@solana/kit";
+import { useConnected } from "@/lib/solana/browser-client";
+import { useCloset } from "@/lib/market/use-closet";
+import { PHOTO_FRAMES, type PhotoFrameId } from "@/lib/market/frames";
 import { Button, Sheet } from "@/components/pk";
 import { savePicture, sharePicture, useAndroidApp } from "@/lib/native/android";
 
@@ -13,6 +17,7 @@ function ink() {
     edge: token("--edge", "#2a1e14"),
     ink: token("--ink", "#2a1e14"),
     faint: token("--ink-faint", "#6f5f4a"),
+    sprout: token("--sprout-text", "#315b35"),
     sun: token("--sun", "#ff8a3d"),
     display: token("--font-display", "serif"),
     mono: token("--font-mono", "monospace"),
@@ -33,7 +38,7 @@ function load(src: string): Promise<HTMLImageElement> {
  * ink outline, on the room's own paper, with who is in it and the day under
  * it, and the name of the place it was taken.
  */
-export async function printPhoto(shot: string, title: string, line: string): Promise<string> {
+export async function printPhoto(shot: string, title: string, line: string, frame?: PhotoFrameId): Promise<string> {
   const image = await load(shot);
   await document.fonts.ready;
   const t = ink();
@@ -49,18 +54,36 @@ export async function printPhoto(shot: string, title: string, line: string): Pro
   ctx.fillStyle = t.paper;
   ctx.fillRect(0, 0, W, H);
 
-  const r = 40;
+  const r = frame === "postcard" || frame === "film" ? 0 : 40;
   ctx.save();
   ctx.beginPath();
   ctx.roundRect(pad, pad, photoW, photoH, r);
   ctx.clip();
   ctx.drawImage(image, pad, pad, photoW, photoH);
   ctx.restore();
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = t.edge;
+  ctx.lineWidth = frame === "sunshine" || frame === "film" ? 28 : 6;
+  ctx.strokeStyle = frame === "sunshine" ? t.sun : frame === "garden" ? t.sprout : t.edge;
   ctx.beginPath();
   ctx.roundRect(pad, pad, photoW, photoH, r);
   ctx.stroke();
+
+  if (frame === "postcard") ctx.strokeRect(pad - 16, pad - 16, photoW + 32, photoH + 32);
+  if (frame === "film") {
+    ctx.fillStyle = t.paper;
+    for (let y = pad + 12; y < pad + photoH - 12; y += 44) {
+      ctx.fillRect(pad - 7, y, 14, 22);
+      ctx.fillRect(W - pad - 7, y, 14, 22);
+    }
+  }
+  if (frame === "garden") {
+    ctx.fillStyle = t.sprout;
+    for (const [x, y] of [[pad, pad], [W - pad, pad], [pad, pad + photoH], [W - pad, pad + photoH]]) {
+      for (let petal = 0; petal < 5; petal++) {
+        const a = petal * Math.PI * 2 / 5;
+        ctx.beginPath(); ctx.arc(x + Math.cos(a) * 15, y + Math.sin(a) * 15, 11, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
 
   const base = pad + photoH;
   ctx.fillStyle = t.ink;
@@ -98,20 +121,25 @@ export function PhotoDialog({
   file: string;
   onClose: () => void;
 }) {
+  const connected = useConnected();
+  const closet = useCloset((connected?.account.address as Address | undefined) ?? null);
+  const [frame, setFrame] = useState<PhotoFrameId>();
+  const available = PHOTO_FRAMES.filter((option) => closet.data?.items.includes(option.item));
+  const selected = available.some((option) => option.id === frame) ? frame : undefined;
   const [print, setPrint] = useState<string | null>(null);
   const [said, setSaid] = useState<string>();
   const [handing, setHanding] = useState(false);
   const inApp = useAndroidApp();
   useEffect(() => {
     let alive = true;
-    printPhoto(shot, title, line).then(
+    printPhoto(shot, title, line, selected).then(
       (url) => alive && setPrint(url),
       () => alive && setPrint(shot),
     );
     return () => {
       alive = false;
     };
-  }, [shot, title, line]);
+  }, [shot, title, line, selected]);
 
   /** To the phone: its gallery, or its share sheet. It says what happened, and what did not. */
   async function toPhone(how: "save" | "share") {
@@ -164,6 +192,13 @@ export function PhotoDialog({
         </>
       )}
     >
+      {available.length ? <label className="pk-stack label">
+        Photo frame
+        <select className="pk-input" value={selected ?? ""} onChange={(event) => { setPrint(null); setFrame(event.target.value ? event.target.value as PhotoFrameId : undefined); }}>
+          <option value="">Classic · free</option>
+          {available.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
+        </select>
+      </label> : null}
       {print ? (
         // A data URL made on this device: there is nothing for the image optimiser to fetch.
         // eslint-disable-next-line @next/next/no-img-element

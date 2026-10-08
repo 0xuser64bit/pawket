@@ -708,3 +708,29 @@ pub fn expect_custom(result: &TxResult, code: u32) {
         ),
     }
 }
+
+/// An owner-approved Market purchase paid from Pawket Wallet.
+pub fn buy_with_wallet_ix(owner: &Pubkey, payer: &Pubkey, item: u8) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::BuyWithWallet {
+            owner: *owner, payer: *payer, closet: closet_pda(owner),
+            treasury: pawket::TREASURY, system_program: system_program::ID, wallet: wallet_pda(owner),
+        }.to_account_metas(None),
+        data: pawket::instruction::BuyWithWallet { item }.data(),
+    }
+}
+
+pub fn wallet_spend_ix(owner: &Pubkey, device: &Pubkey, keep: u64, amount: Option<u64>) -> Instruction {
+    Instruction {
+        program_id: pawket::ID,
+        accounts: pawket::accounts::WalletSpend {
+            owner: *owner, wallet: wallet_pda(owner), device: *device,
+            instructions: solana_instructions_sysvar::ID, system_program: system_program::ID,
+        }.to_account_metas(None),
+        data: match amount {
+            Some(amount) => pawket::instruction::FundWalletSpend { amount, keep }.data(),
+            None => pawket::instruction::SettleWalletSpend { keep }.data(),
+        },
+    }
+}

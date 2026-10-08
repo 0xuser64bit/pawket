@@ -32,6 +32,7 @@ export function Settings({ form }: { form?: PetForm }) {
           The whole of Pawket, in another room. Every colour still means what it meant.
         </p>
         <ThemePicker form={form} owned={new Set(closet.data?.items ?? [])} />
+        <ButtonLink label="Find more rooms in the Market" href="/market" tone="quiet" size="sm" />
       </Card>
       <Card>
         <h2 className="title">Pawket Wallet</h2>

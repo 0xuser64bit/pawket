@@ -74,7 +74,10 @@ describe("rooms", () => {
   });
 
   it("applies only rooms it knows before paint", () => {
-    for (const theme of THEMES) expect(THEME_SCRIPT).toContain(`"${theme.id}"`);
+    for (const theme of THEMES) {
+      if ("item" in theme) expect(THEME_SCRIPT).not.toContain(`"${theme.id}"`);
+      else expect(THEME_SCRIPT).toContain(`"${theme.id}"`);
+    }
     expect(THEME_SCRIPT).toContain("indexOf(t)>=0");
   });
 });

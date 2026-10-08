@@ -39,7 +39,7 @@
 //! whoever paid it.
 #![allow(clippy::result_large_err)]
 
-use anchor_lang::{prelude::*, system_program};
+use anchor_lang::{prelude::*, system_program, Discriminator};
 
 declare_id!("PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74");
 
@@ -54,7 +54,7 @@ pub const BASE_XP_PER_LEVEL: u32 = 100;
 /// Points lost per hour, in tenths: hunger 2.5, happiness 1.8, energy 1.5, hygiene 1.2.
 pub const DECAY_TENTHS_PER_HOUR: [i64; 4] = [25, 18, 15, 12];
 /// The wardrobe in `src/lib/closet/catalog.ts`, numbered from 1 in catalog order. 0 is nothing.
-pub const WEARABLE_COUNT: u8 = 18;
+pub const WEARABLE_COUNT: u8 = 3;
 /// How many cares the Passport keeps, newest overwriting oldest.
 pub const RECENT_CARES: usize = 8;
 pub const SECONDS_PER_DAY: i64 = 86_400;
@@ -95,10 +95,13 @@ pub const GUESTBOOK_SEED: &[u8] = b"guestbook";
 /// Where every Market sale goes: Pawket's treasury.
 pub const TREASURY: Pubkey = pubkey!("SEpAw5iTAXf4j5YUsgpLD8UTKLCT6xqUAkecnvJvWfw");
 /// The Market's wardrobe: pieces after the eighteen (slots 19–22), worn with `dress_owned`.
-pub const MARKET_WEARABLE_COUNT: u8 = 4;
+pub const MARKET_WEARABLE_COUNT: u8 = 19;
 /// The Market's rooms, as item ids from 64. The app draws them; the Closet records them.
 pub const FIRST_ROOM_ITEM: u8 = 64;
-pub const MARKET_ROOM_COUNT: u8 = 2;
+pub const MARKET_ROOM_COUNT: u8 = 8;
+pub const FIRST_FRAME_ITEM: u8 = 80;
+pub const MARKET_FRAME_COUNT: u8 = 4;
+pub const FRAME_PRICE_LAMPORTS: u64 = 25_000_000;
 pub const WEARABLE_PRICE_LAMPORTS: u64 = 50_000_000;
 pub const ROOM_PRICE_LAMPORTS: u64 = 100_000_000;
 
@@ -297,6 +300,53 @@ pub mod pawket {
         Ok(())
     }
 
+    /// Fund a transaction from Pawket Wallet. The owner's existing SOL must remain untouched;
+    /// settlement is the final instruction in this same atomic transaction. Only the owner signs.
+    pub fn fund_wallet_spend(ctx: Context<WalletSpend>, amount: u64, keep: u64) -> Result<()> {
+        use solana_instructions_sysvar::{load_current_index_checked, load_instruction_at_checked};
+        let a = ctx.accounts;
+        require!(load_current_index_checked(&a.instructions)? == 0, PawketError::InvalidAmount);
+        require!(a.owner.lamports() == keep, PawketError::InvalidAmount);
+        let data = a.instructions.try_borrow_data()?;
+        let count = u16::from_le_bytes([data[0], data[1]]) as usize;
+        drop(data);
+        let last = load_instruction_at_checked(count - 1, &a.instructions)?;
+        require!(last.program_id == crate::ID && last.accounts.len() >= 2 && last.data == [crate::instruction::SettleWalletSpend::DISCRIMINATOR, &keep.to_le_bytes()].concat(), PawketError::InvalidAmount);
+        require!(last.accounts[0].pubkey == a.owner.key() && last.accounts[1].pubkey == a.wallet.key(), PawketError::InvalidAmount);
+        require!(a.wallet.device_expires_at > Clock::get()?.unix_timestamp, PawketError::DeviceExpired);
+        let refill = DEVICE_FLOAT_LAMPORTS.saturating_sub(a.device.lamports());
+        let total = amount.checked_add(refill).ok_or(PawketError::InvalidAmount)?;
+        require!(total <= spendable(&a.wallet.to_account_info())?, PawketError::InsufficientBalance);
+        a.wallet.sub_lamports(total)?;
+        a.owner.add_lamports(amount)?;
+        a.device.add_lamports(refill)?;
+        a.wallet.spent = a.wallet.spent.saturating_add(total);
+        Ok(())
+    }
+
+    /// Return unspent SOL and sale proceeds to Pawket Wallet. If any existing owner SOL would be
+    /// consumed, the whole transaction fails, including the external trade.
+    pub fn settle_wallet_spend(ctx: Context<WalletSpend>, keep: u64) -> Result<()> {
+        use solana_instructions_sysvar::{load_current_index_checked, load_instruction_at_checked};
+        let a = ctx.accounts;
+        let current = load_current_index_checked(&a.instructions)? as usize;
+        require!(load_instruction_at_checked(current + 1, &a.instructions).is_err(), PawketError::InvalidAmount);
+        let first = load_instruction_at_checked(0, &a.instructions)?;
+        require!(first.program_id == crate::ID && first.accounts.len() >= 2 && first.data.len() == 24 && first.data[..8] == *crate::instruction::FundWalletSpend::DISCRIMINATOR, PawketError::InvalidAmount);
+        require!(first.accounts[0].pubkey == a.owner.key() && first.accounts[1].pubkey == a.wallet.key(), PawketError::InvalidAmount);
+        require!(first.data[16..24] == keep.to_le_bytes(), PawketError::InvalidAmount);
+        let amount = u64::from_le_bytes(first.data[8..16].try_into().unwrap());
+        let surplus = a.owner.lamports().checked_sub(keep).ok_or(PawketError::InsufficientBalance)?;
+        if surplus > 0 {
+            system_program::transfer(CpiContext::new(system_program::ID, system_program::Transfer {
+                from: a.owner.to_account_info(), to: a.wallet.to_account_info(),
+            }), surplus)?;
+        }
+        a.wallet.spent = a.wallet.spent.saturating_sub(surplus.min(amount));
+        a.wallet.deposited = a.wallet.deposited.saturating_add(surplus.saturating_sub(amount));
+        Ok(())
+    }
+
     /// Link `device` to act for the owner until `expires_at` (30 days at most), at most
     /// `daily_actions` times a UTC day: it may do for the owner's pets what the owner signs for —
     /// care, rounds, clothes, adoption, guilds, gatherings, waves — and nothing that moves money.
@@ -420,21 +470,40 @@ pub mod pawket {
         closet.add(item);
         closet.count = closet.count.saturating_add(1);
         closet.spent = closet.spent.saturating_add(price);
-        system_program::transfer(
-            CpiContext::new(
-                system_program::ID,
-                system_program::Transfer {
-                    from: ctx.accounts.owner.to_account_info(),
-                    to: ctx.accounts.treasury.to_account_info(),
-                },
-            ),
-            price,
-        )?;
+        system_program::transfer(CpiContext::new(system_program::ID, system_program::Transfer {
+            from: ctx.accounts.owner.to_account_info(), to: ctx.accounts.treasury.to_account_info(),
+        }), price)?;
         emit!(ItemBought { owner, item, price });
         Ok(())
     }
 
-    /// Put on anything the owner may wear: one of the eighteen, or a Market piece their Closet
+    /// An owner-approved purchase from Pawket Wallet into the fixed treasury.
+    /// The balance never reaches into rent; the sponsor may pay the Closet's rent.
+    pub fn buy_with_wallet(ctx: Context<BuyWithWallet>, item: u8) -> Result<()> {
+        let price = item_price(item).ok_or(PawketError::UnknownItem)?;
+        let owner = ctx.accounts.owner.key();
+        let closet = &mut ctx.accounts.closet;
+        if closet.owner == Pubkey::default() {
+            closet.owner = owner;
+            closet.bump = ctx.bumps.closet;
+        }
+        require!(!closet.has(item), PawketError::AlreadyOwned);
+        // The record, then the payment: the transfer reads nothing the record changed, and if it
+        // fails the whole purchase does.
+        closet.add(item);
+        closet.count = closet.count.saturating_add(1);
+        closet.spent = closet.spent.saturating_add(price);
+        let wallet = &mut ctx.accounts.wallet;
+        let info = wallet.to_account_info();
+        require!(price <= spendable(&info)?, PawketError::InsufficientBalance);
+        info.sub_lamports(price)?;
+        ctx.accounts.treasury.add_lamports(price)?;
+        wallet.spent = wallet.spent.saturating_add(price);
+        emit!(ItemBought { owner, item, price });
+        Ok(())
+    }
+
+    /// Put on anything the owner may wear: one of the three starters, or a Market piece their Closet
     /// holds. 0 takes it off. Looks only, like `dress`.
     pub fn dress_owned(ctx: Context<DressOwned>, wearing: u8) -> Result<()> {
         may_wear(&ctx.accounts.closet, wearing)?;
@@ -954,6 +1023,8 @@ pub fn item_price(item: u8) -> Option<u64> {
         Some(WEARABLE_PRICE_LAMPORTS)
     } else if (FIRST_ROOM_ITEM..FIRST_ROOM_ITEM + MARKET_ROOM_COUNT).contains(&item) {
         Some(ROOM_PRICE_LAMPORTS)
+    } else if (FIRST_FRAME_ITEM..FIRST_FRAME_ITEM + MARKET_FRAME_COUNT).contains(&item) {
+        Some(FRAME_PRICE_LAMPORTS)
     } else {
         None
     }
@@ -1274,6 +1345,21 @@ pub struct Withdraw<'info> {
 }
 
 #[derive(Accounts)]
+pub struct WalletSpend<'info> {
+    #[account(mut)]
+    pub owner: Signer<'info>,
+    #[account(mut, seeds = [WALLET_SEED, owner.key().as_ref()], bump = wallet.bump, has_one = owner, has_one = device @ PawketError::NotThisDevice)]
+    pub wallet: Account<'info, PawketWallet>,
+    /// CHECK: only refilled to its existing fee float, with the owner's signature; held to wallet.device.
+    #[account(mut)]
+    pub device: UncheckedAccount<'info>,
+    /// CHECK: the real instructions sysvar binds both halves to this transaction.
+    #[account(address = solana_instructions_sysvar::ID)]
+    pub instructions: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
 pub struct LinkDevice<'info> {
     pub owner: Signer<'info>,
     #[account(
@@ -1377,6 +1463,29 @@ pub struct Buy<'info> {
     #[account(mut, address = TREASURY)]
     pub treasury: SystemAccount<'info>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct BuyWithWallet<'info> {
+    #[account(mut)]
+    pub owner: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    /// Made the owner's in `buy` when it is new; one that is there already is held to them here.
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + Closet::INIT_SPACE,
+        seeds = [CLOSET_SEED, owner.key().as_ref()],
+        bump,
+        constraint = closet.owner == Pubkey::default() || closet.owner == owner.key()
+    )]
+    pub closet: Account<'info, Closet>,
+    #[account(mut, address = TREASURY)]
+    pub treasury: SystemAccount<'info>,
+    pub system_program: Program<'info, System>,
+    #[account(mut, seeds = [WALLET_SEED, owner.key().as_ref()], bump = wallet.bump, has_one = owner)]
+    pub wallet: Account<'info, PawketWallet>,
 }
 
 #[derive(Accounts)]

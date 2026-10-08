@@ -454,16 +454,18 @@ export function asDeviceInstruction(
 
 /** Whether the program sells `item` (`item_price` in `programs/pawket/src/lib.rs`). */
 export function isMarketItem(item: number): boolean {
+  if (!Number.isInteger(item)) return false;
   return (
     (item > WEARABLE_COUNT && item <= WEARABLE_COUNT + MARKET.wearables) ||
-    (item >= MARKET.firstRoom && item < MARKET.firstRoom + MARKET.rooms)
+    (item >= MARKET.firstRoom && item < MARKET.firstRoom + MARKET.rooms) ||
+    (item >= MARKET.firstFrame && item < MARKET.firstFrame + MARKET.frames)
   );
 }
 
 /** What `item` costs in the Market, in lamports, or null where nothing is sold. */
 export function marketPrice(item: number): bigint | null {
   if (!isMarketItem(item)) return null;
-  return item <= WEARABLE_COUNT + MARKET.wearables ? MARKET.wearablePrice : MARKET.roomPrice;
+  return item <= WEARABLE_COUNT + MARKET.wearables ? MARKET.wearablePrice : item < MARKET.firstFrame ? MARKET.roomPrice : MARKET.framePrice;
 }
 
 /**
@@ -489,6 +491,30 @@ export function getBuyInstruction(input: {
       { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
     ],
     data: concatBytes(PAWKET_DISCRIMINATORS.buy, u8.encode(input.item)),
+  };
+}
+
+export function getBuyWithWalletInstruction(input: {
+  owner: SignerInput;
+  payer?: SignerInput;
+  /** The owner's closet (`deriveClosetPda`). */
+  closet: string | Address;
+  item: number;
+  wallet: string | Address;
+  programId?: string | Address;
+}): Instruction {
+  if (!isMarketItem(input.item)) throw new Error(`The Market sells nothing at ${input.item}`);
+  return {
+    programAddress: programAddress(input.programId),
+    accounts: [
+      signerMeta(input.owner, AccountRole.WRITABLE_SIGNER, "owner"),
+      signerMeta(input.payer ?? input.owner, AccountRole.WRITABLE_SIGNER, "payer"),
+      { address: parseAddress(input.closet, "closet"), role: AccountRole.WRITABLE },
+      { address: parseAddress(MARKET.treasury, "treasury"), role: AccountRole.WRITABLE },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+    ],
+    data: concatBytes(PAWKET_DISCRIMINATORS.buyWithWallet, u8.encode(input.item)),
   };
 }
 
@@ -705,5 +731,26 @@ export function getWaveInstruction(input: {
       { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
     ],
     data: new Uint8Array(PAWKET_DISCRIMINATORS.wave),
+  };
+}
+
+/** Owner-approved funding brackets; keep the owner's existing SOL unchanged and return all change. */
+export function getWalletSpendInstruction(input: {
+  owner: SignerInput; wallet: string | Address; device: string | Address;
+  keep: bigint; amount?: bigint;
+}): Instruction {
+  if (input.keep < 0n || (input.amount !== undefined && input.amount < 0n)) throw new Error("Choose a nonnegative amount");
+  return {
+    programAddress: programAddress(),
+    accounts: [
+      signerMeta(input.owner, AccountRole.WRITABLE_SIGNER, "owner"),
+      { address: parseAddress(input.wallet, "wallet"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.device, "device"), role: AccountRole.WRITABLE },
+      { address: parseAddress("Sysvar1nstructions1111111111111111111111111", "instructions"), role: AccountRole.READONLY },
+      { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+    ],
+    data: input.amount === undefined
+      ? concatBytes(PAWKET_DISCRIMINATORS.settleWalletSpend, u64.encode(input.keep))
+      : concatBytes(PAWKET_DISCRIMINATORS.fundWalletSpend, u64.encode(input.amount), u64.encode(input.keep)),
   };
 }

@@ -1,6 +1,8 @@
 import { AccountRole, type Instruction } from "@solana/kit";
 import { describe, expect, it } from "vitest";
 import { WEARABLES } from "@/lib/closet/catalog";
+import { THEMES } from "@/config/themes";
+import { PHOTO_FRAMES } from "@/lib/market/frames";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import idl from "./idl/pawket.json";
 import { readFileSync } from "node:fs";
@@ -8,6 +10,9 @@ import path from "node:path";
 import {
   getAdoptPetInstruction,
   getBuyInstruction,
+  getBuyWithWalletInstruction,
+  getWalletSpendInstruction,
+  marketPrice,
   getCheckInInstruction,
   getCreateEventInstruction,
   getCreatePollInstruction,
@@ -94,6 +99,9 @@ const BUILT: Record<string, Instruction> = {
   // As the IDL has it; a device that signs its own unlink is a signer there too (below).
   unlink_device: getUnlinkDeviceInstruction({ authority: A, wallet: A, device: B, deviceSigns: false }),
   close_wallet: getCloseWalletInstruction({ owner: A, wallet: A, rentPayer: A }),
+  fund_wallet_spend: getWalletSpendInstruction({ owner: A, wallet: A, device: B, keep: 0n, amount: 1n }),
+  settle_wallet_spend: getWalletSpendInstruction({ owner: A, wallet: A, device: B, keep: 0n }),
+  buy_with_wallet: getBuyWithWalletInstruction({ owner: A, payer: A, closet: A, wallet: A, item: 19 }),
   buy: getBuyInstruction({ owner: A, payer: A, closet: A, item: 19 }),
   dress_owned: getDressOwnedInstruction({ owner: A, pet: A, closet: A, wearing: 19 }),
   create_event: getCreateEventInstruction({ owner: A, payer: A, guild: A, event: A, id: 7, title: "Sunday nap", note: "By the window.", startsAt: 1_790_848_800, endsAt: 1_790_856_000 }),
@@ -182,7 +190,7 @@ describe("program.ts against the IDL", () => {
     // Every `*_by_device` instruction the program has is a twin here; nothing that moves money is.
     const twins = idl.instructions.filter((ix) => ix.name.endsWith("_by_device")).map((ix) => camel(ix.name)).sort();
     expect([...Object.values(DEVICE_VARIANTS)].sort()).toEqual(twins);
-    for (const money of ["buy", "deposit", "withdraw", "openWallet", "linkDevice", "closeWallet"]) expect(DEVICE_VARIANTS).not.toHaveProperty(money);
+    for (const money of ["buy", "buyWithWallet", "fundWalletSpend", "settleWalletSpend", "deposit", "withdraw", "openWallet", "linkDevice", "closeWallet"]) expect(DEVICE_VARIANTS).not.toHaveProperty(money);
   });
 
   it("holds the Pawket Wallet's limits to the program's", () => {
@@ -224,15 +232,29 @@ describe("program.ts against the IDL", () => {
     );
   });
 
-  it("numbers the whole wardrobe and nothing past it: the free eighteen, then the Market's", () => {
+  it("numbers the whole wardrobe and nothing past it: the three starters, then the Market's", () => {
     expect(WEARABLE_COUNT + MARKET.wearables).toBe(WEARABLES.length);
     expect(WEARABLES.slice(0, WEARABLE_COUNT).every((item) => !item.price)).toBe(true);
     expect(WEARABLES.slice(WEARABLE_COUNT).every((item) => item.price === MARKET.wearablePrice)).toBe(true);
   });
 
+  it("gives every paid room and photo frame one valid, unique entitlement", () => {
+    const rooms = THEMES.flatMap((theme) => "item" in theme ? [theme.item] : []);
+    const frames = PHOTO_FRAMES.map((frame) => frame.item);
+    expect(rooms.sort()).toEqual(Array.from({ length: MARKET.rooms }, (_, i) => MARKET.firstRoom + i));
+    expect(frames).toEqual(Array.from({ length: MARKET.frames }, (_, i) => MARKET.firstFrame + i));
+    expect(rooms.map(marketPrice)).toEqual(rooms.map(() => MARKET.roomPrice));
+    expect(frames.map(marketPrice)).toEqual(frames.map(() => MARKET.framePrice));
+    for (const invalid of [-1, 3, 23, 63, 72, 79, 84, 256, 80.5]) expect(marketPrice(invalid)).toBeNull();
+  });
+
   it("holds the Market and a guild's gatherings to the program's numbers", () => {
     const source = readFileSync(path.join(process.cwd(), "programs/pawket/src/lib.rs"), "utf8");
     const constant = (name: string) => source.match(new RegExp(`pub const ${name}: [\\w&\\[\\]]+ = ([^;]+);`))?.[1].replaceAll("_", "");
+    expect(Number(constant("WEARABLE_COUNT"))).toBe(WEARABLE_COUNT);
+    expect(Number(constant("FIRST_FRAME_ITEM"))).toBe(MARKET.firstFrame);
+    expect(Number(constant("MARKET_FRAME_COUNT"))).toBe(MARKET.frames);
+    expect(BigInt(constant("FRAME_PRICE_LAMPORTS")!)).toBe(MARKET.framePrice);
     expect(Number(constant("MARKET_WEARABLE_COUNT"))).toBe(MARKET.wearables);
     expect(Number(constant("FIRST_ROOM_ITEM"))).toBe(MARKET.firstRoom);
     expect(Number(constant("MARKET_ROOM_COUNT"))).toBe(MARKET.rooms);

@@ -4,8 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt } from "@/components/pk";
 import { PetSwitcher } from "@/components/home/pet-switcher";
-import { MARKET_WEARABLES, WEARABLES, findWearable, isUnlocked, wearableItem } from "@/lib/closet/catalog";
-import { BADGES, badgesFor } from "@/lib/game/badges";
+import { MARKET_WEARABLES, WEARABLES, findWearable, wearableItem } from "@/lib/closet/catalog";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, setWearing } from "@/lib/guest/pet";
@@ -18,7 +17,6 @@ import {
 } from "@/lib/solana/instructions";
 import { deriveClosetPda } from "@/lib/solana/pda";
 import { WEARABLE_COUNT } from "@/lib/solana/program";
-import { formatUnits } from "@/lib/utils/format";
 import type { PawketSender } from "@/lib/solana/use-send";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 import { useHere } from "@/lib/native/android";
@@ -26,8 +24,8 @@ import { useHere } from "@/lib/native/android";
 /**
  * The dressing room: any of your pets in the mirror, trying on whatever the
  * pointer or focus rests on before a tap wears it. Clothes change nothing
- * but looks; on Solana, putting one on is a signed record. The eighteen are
- * free; the Market's four are worn by a pet on Solana once its owner's
+ * but looks; on Solana, putting one on is a signed record. Three are
+ * free; the Market's nineteen are worn by a pet on Solana once its owner's
  * closet holds them — the program checks the closet, not this screen.
  */
 export function Wardrobe({ companion, sender }: { companion: CompanionState; sender: PawketSender }) {
@@ -45,9 +43,8 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
   useEyesFollow(room);
   if (!pet) return null;
   const shown = trying !== undefined ? trying : pet.wearing;
-  const stickers = badgesFor(pet, { onChain: chain !== null, guild: Boolean(chain?.member) });
   const free = WEARABLES.filter((item) => !item.price);
-  const open = free.filter((item) => isUnlocked(item, stickers)).length;
+  const collected = MARKET_WEARABLES.filter((item) => bought.has(wearableItem(item.id)));
 
   async function wear(id: string) {
     if (!pet) return;
@@ -55,7 +52,7 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
       const next = setWearing(pet, id).wearing;
       const item = findWearable(next ?? id);
       const slot = wearableSlot(next);
-      // A Market piece goes on with `dress_owned`, which reads the owner's closet; the eighteen with `dress`.
+      // A Market piece goes on with `dress_owned`, which reads the owner's closet; the starters with `dress`.
       const closetAddress = slot > WEARABLE_COUNT ? (await deriveClosetPda(chain.pet.owner)).address : null;
       const result = await sender.act(
         next ? `Put the ${item?.name.toLowerCase()} on ${pet.name}` : `Take the ${item?.name.toLowerCase()} off ${pet.name}`,
@@ -117,31 +114,17 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
           }
           second={
             <Stack gap={3}>
-              <SectionLabel count={`${open} / ${free.length}`}>Free to wear</SectionLabel>
+              <SectionLabel count={`${free.length}`}>Free to wear</SectionLabel>
               <p className="body-sm pk-muted">
                 One at a time.{" "}
                 <span className="pk-if-hover">Point at a piece to try it on; click it to wear it.</span>
                 <span className="pk-if-touch">Tap a piece and {pet.name} wears it.</span> It changes how {pet.name} looks,
-                never a vital, a cooldown or a score. A few are earned by {pet.name}&apos;s stickers, never bought.
+                never a vital, a cooldown or a score. Find more looks in the Market.
                 {chain ? " On Solana, changing it is a signed record." : ""}
               </p>
               <div className="pk-tiles" onPointerLeave={() => setTrying(undefined)}>
                 {free.map((item) => {
                   const on = pet.wearing === item.id;
-                  const earned = isUnlocked(item, stickers);
-                  const badge = BADGES.find((b) => b.id === item.earnedBy);
-                  if (!earned) {
-                    return (
-                      <div key={item.id} className="pk-tile-hit pk-tile-hit--locked" title={badge?.how}>
-                        <ItemTile
-                          name={item.name}
-                          kind={`Earned by ${badge?.name ?? "a sticker"}`}
-                          art={<WearableArt id={item.id} className="pk-tile__piece" />}
-                        />
-                        <span className="pk-sr">Not earned yet. {badge?.how}</span>
-                      </div>
-                    );
-                  }
                   return (
                     <button
                       key={item.id}
@@ -167,27 +150,25 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
                   );
                 })}
               </div>
-              <SectionLabel count={`${MARKET_WEARABLES.filter((item) => bought.has(wearableItem(item.id))).length} / ${MARKET_WEARABLES.length}`}>
+              <SectionLabel count={`${collected.length}`}>
                 From the Market
               </SectionLabel>
               <p className="body-sm pk-muted">
                 Bought once with SOL, worn by any of your pets on Solana. Looks only, like the rest.
               </p>
               <div className="pk-tiles" onPointerLeave={() => setTrying(undefined)}>
-                {MARKET_WEARABLES.map((item) => {
+                {collected.map((item) => {
                   const on = pet.wearing === item.id;
-                  const owned = bought.has(wearableItem(item.id));
-                  const tile = (kind: string, price?: string) => (
+                  const tile = (kind: string) => (
                     <ItemTile
                       name={item.name}
                       kind={kind}
                       rarity="foil"
-                      price={price}
                       art={<WearableArt id={item.id} className="pk-tile__piece" />}
                       equipped={on}
                     />
                   );
-                  if (owned && chain) {
+                  if (chain) {
                     return (
                       <button
                         key={item.id}
@@ -210,17 +191,18 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
                   return (
                     <Link
                       key={item.id}
-                      href="/market"
+                      href="/home"
                       className="pk-tile-hit"
                       onPointerEnter={() => setTrying(item.id)}
                       onFocus={() => setTrying(item.id)}
                       onBlur={() => setTrying(undefined)}
                     >
-                      {owned ? tile(`Keep ${pet.name} on Solana to wear it`) : tile("In the Market", `${formatUnits(item.price!, 9)} SOL`)}
+                      {tile(`Keep ${pet.name} on Solana to wear it`)}
                     </Link>
                   );
                 })}
               </div>
+              <Link className="pk-btn pk-btn--quiet pk-btn--sm" href="/market">Explore the Market</Link>
               {worn ? (
                 <div>
                   <Button

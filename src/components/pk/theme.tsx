@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import { THEMES, THEME_KEY, isThemeId, roomOpen, type ThemeChoice, type ThemeId } from "@/config/themes";
@@ -133,7 +132,7 @@ export function ThemePicker({
         </span>
         <span className="pk-theme__words">
           <span className="title">Follow my device</span>
-          <span className="caption pk-muted">Daylight, or Lamplight when the device is dark.</span>
+          <span className="caption pk-muted">Light, or Dark when your device is dark.</span>
         </span>
       </label>
       {THEMES.map((theme) =>
@@ -154,17 +153,7 @@ export function ThemePicker({
               <span className="caption pk-muted">{theme.line}</span>
             </span>
           </label>
-        ) : (
-          <Link key={theme.id} href="/market" className="pk-theme pk-theme--market">
-            <span className="pk-theme__art">
-              <Swatch id={theme.id} form={form} />
-            </span>
-            <span className="pk-theme__words">
-              <span className="title">{theme.name}</span>
-              <span className="caption pk-muted">{theme.line} In the Market.</span>
-            </span>
-          </Link>
-        ),
+        ) : null,
       )}
     </div>
   );

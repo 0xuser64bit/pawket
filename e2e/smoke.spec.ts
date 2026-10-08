@@ -105,7 +105,7 @@ test("the Market states its fixed prices and where the SOL goes, and asks a wall
   await page.goto("/market");
   await expect(page.getByRole("heading", { name: "Market" })).toBeVisible();
   await expect(page.getByText(/looks only, never power/i)).toBeVisible();
-  for (const piece of ["Halo", "Wizard hat", "Sun hat", "Gold crown", "Blossom", "Aurora"]) {
+  for (const piece of ["Star pin", "Halo", "Wizard hat", "Sun hat", "Gold crown", "Strawberry", "Blossom", "Aurora", "Postcard", "Film strip", "Garden", "Sunshine"]) {
     await expect(page.getByText(piece, { exact: true }).first()).toBeVisible();
   }
   await expect(page.getByText("Where the SOL goes")).toBeVisible();

@@ -93,8 +93,13 @@ test("your look is saved on this device and dresses the room", async ({ page }) 
 test("you can wear a hat and glasses, and match your pet's", async ({ page }) => {
   await adopt(page);
   await page.goto("/profile?tab=wardrobe#shelf");
-  await page.getByRole("button", { name: /Knit beanie/ }).click();
-  await expect(page.getByRole("button", { name: /Knit beanie/ })).toHaveAttribute("aria-pressed", "true");
+  // A previously worn piece remains visible when its catalog availability changes.
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem("pawket.pets.v1")!);
+    state[0].wearing = "knit-beanie";
+    localStorage.setItem("pawket.pets.v1", JSON.stringify(state));
+  });
+  await page.reload();
   await page.locator("summary", { hasText: "How you look" }).click();
   await page.getByRole("tab", { name: "Extras" }).click();
   await page.getByRole("radiogroup", { name: "On your nose" }).getByRole("radio", { name: "Heart glasses" }).click();

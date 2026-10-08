@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { useRequest } from "@solana/react";
+import { useState } from "react";
 import type { Address } from "@solana/kit";
 import { Button, ItemTile, PetArt, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
@@ -12,11 +11,12 @@ import { MARKET_WEARABLES, wearableItem } from "@/lib/closet/catalog";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { petLook } from "@/lib/game/appearance";
 import { projectGuestPet } from "@/lib/guest/pet";
+import { PHOTO_FRAMES } from "@/lib/market/frames";
 import { useCloset } from "@/lib/market/use-closet";
-import { rpc, useConnected } from "@/lib/solana/browser-client";
+import { useConnected } from "@/lib/solana/browser-client";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
-import { getBuyInstruction, marketPrice } from "@/lib/solana/instructions";
-import { deriveClosetPda } from "@/lib/solana/pda";
+import { getBuyWithWalletInstruction, marketPrice } from "@/lib/solana/instructions";
+import { deriveClosetPda, deriveWalletPda } from "@/lib/solana/pda";
 import { MARKET } from "@/lib/solana/program";
 import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
 import { formatUnits } from "@/lib/utils/format";
@@ -26,7 +26,7 @@ import { formatUnits } from "@/lib/utils/format";
  * everyone. The shelves are the screen; a tap on anything opens it as a
  * sheet — your own pet wearing it, or sitting in the room — with its price
  * and where the SOL goes, on Paper, and one button. A purchase is one signed
- * transaction: the price from the buyer's wallet straight to Pawket's
+ * transaction: the price from the buyer's Pawket Wallet straight to Pawket's
  * treasury, the item into their closet on Solana for good. Pawket's sponsor
  * pays the network fee and the closet's rent. Nothing here changes a vital,
  * XP, a cooldown or a score, and nothing is resold.
@@ -36,7 +36,7 @@ interface Item {
   id: number;
   name: string;
   line: string;
-  kind: "piece" | "room";
+  kind: "piece" | "room" | "frame";
   art: React.ReactNode;
   /** The catalog id of a piece, to try it on. */
   piece?: string;
@@ -61,6 +61,11 @@ const ROOMS: Item[] = THEMES.filter((theme) => roomItem(theme.id) !== null).map(
   art: <span className="pk-market-room" data-theme-preview={theme.id} aria-hidden="true" />,
 }));
 
+const FRAMES: Item[] = PHOTO_FRAMES.map((frame) => ({
+  id: frame.item, name: frame.name, line: frame.line, kind: "frame",
+  art: <span className={`pk-market-frame pk-market-frame--${frame.id}`} aria-hidden="true">Pawket</span>,
+}));
+
 const sol = (lamports: bigint | string) => `${formatUnits(lamports, 9, 4)} SOL`;
 
 export function MarketScreen() {
@@ -78,7 +83,7 @@ export function MarketScreen() {
       <button key={item.id} type="button" className="pk-tile-hit" aria-haspopup="dialog" onClick={() => setPicked(item)}>
         <ItemTile
           name={item.name}
-          kind={has ? "In your closet" : item.kind === "room" ? "Room" : "Piece"}
+          kind={has ? "In your closet" : item.kind === "room" ? "Room" : item.kind === "frame" ? "Photo frame" : "Piece"}
           rarity="foil"
           price={has ? undefined : sol(marketPrice(item.id)!)}
           art={item.art}
@@ -97,6 +102,12 @@ export function MarketScreen() {
       <Stack gap={3}>
         <SectionLabel count={`${MARKET.rooms}`}>Rooms</SectionLabel>
         <div className="pk-tiles">{ROOMS.map(tile)}</div>
+      </Stack>
+
+      <Stack gap={3}>
+        <SectionLabel count={`${FRAMES.length}`}>For your photos</SectionLabel>
+        <p className="body-sm pk-muted">Frame a moment with your pet. Save it or share it from Home.</p>
+        <div className="pk-tiles">{FRAMES.map(tile)}</div>
       </Stack>
 
       <details className="pk-fold">
@@ -124,7 +135,7 @@ export function MarketScreen() {
             ) : null}
           </div>
           <p className="body-sm pk-muted">
-            Every sale goes from the buyer&apos;s wallet straight to the treasury; only an upgrade of the program changes a
+            Every sale goes from the buyer&apos;s Pawket Wallet straight to the treasury; only an upgrade of the program changes a
             price. The treasury pays the network fees Pawket covers for everyone&apos;s pets.
           </p>
         </Stack>
@@ -165,27 +176,27 @@ function ItemSheet({
   const sponsor = useSponsor();
   const { pet } = useCompanion();
   const [connecting, setConnecting] = useState(false);
-  const readBalance = useCallback(async () => (await rpc.getBalance(owner!, { commitment: "confirmed" }).send()).value, [owner]);
-  const balance = useRequest(owner ? readBalance : null);
   const price = marketPrice(item.id)!;
-  const short = owner !== null && balance.data !== undefined && balance.data < price;
+  const balance = sender.pawketWallet?.balance;
+  const short = owner !== null && balance !== undefined && balance < price;
+  const needsLink = owner !== null && !sender.pawketWallet?.linked;
   // Your own pet, wearing it — or in the room — before anything is signed.
   const look = pet ? petLook(pet, projectGuestPet(pet).mood) : ({ form: "cat", temper: "curious", feeling: "happy", wearing: null, seed: item.name } as const);
 
   async function buy() {
     if (!owner) return;
     const address = (await deriveClosetPda(owner)).address;
+    const wallet = (await deriveWalletPda(owner)).address;
     const result = await sender.send(`Buy the ${item.name.toLowerCase()}`, ({ owner: signer, payer }) => [
-      getBuyInstruction({ owner: signer, payer, closet: address, item: item.id }),
+      getBuyWithWalletInstruction({ owner: signer, payer, closet: address, wallet, item: item.id }),
     ]);
     if (result?.outcome === "confirmed") {
       onBought();
-      balance.refresh();
     }
   }
 
   if (connecting) {
-    return <WalletSheet why="Connect the wallet that pays. It signs each purchase; nothing else is asked of it." onDismiss={() => setConnecting(false)} />;
+    return <WalletSheet why="Connect your wallet, then link and fund Pawket Wallet. Your wallet approves purchases; Pawket Wallet pays." onDismiss={() => setConnecting(false)} />;
   }
 
   return (
@@ -202,6 +213,8 @@ function ItemSheet({
             item.room ? (
               <Button label={`Live in ${item.name}`} tone="paper" onClick={() => setTheme(item.room!)} />
             ) : null
+          ) : needsLink || short ? (
+            <a className="pk-btn pk-btn--paper" href="/wallet">{needsLink ? "Link Pawket Wallet" : "Add SOL to Pawket Wallet"}</a>
           ) : (
             <Button label={`Buy for ${sol(price)}`} tone="paper" disabled={sender.busy || !canSign || short} onClick={() => void buy()} />
           )}
@@ -210,7 +223,7 @@ function ItemSheet({
     >
       <Stack gap={4}>
         <div className="pk-market-try" data-theme-preview={item.room} aria-hidden="true">
-          <PetArt {...look} wearing={item.piece ?? look.wearing} pose="full" />
+          {item.kind === "frame" ? item.art : <PetArt {...look} wearing={item.piece ?? look.wearing} pose="full" />}
         </div>
         <div>
           <h2 className="title">{item.name}</h2>
@@ -222,16 +235,18 @@ function ItemSheet({
         <Receipt
           rows={[
             { k: "Price", v: sol(price), tone: "warn" },
+            { k: "Paid from", v: "Pawket Wallet" },
             { k: "Goes to", v: "Pawket's treasury" },
-            { k: "Network fee", v: sponsor.data?.available ? "Paid by Pawket" : "A little devnet SOL" },
+            { k: "Network fee", v: sponsor.data?.available ? "Paid by Pawket" : "From Pawket Wallet’s device" },
             { k: "Your closet's rent", v: sponsor.data?.available ? "Paid by Pawket, the first time" : "A little devnet SOL, the first time" },
           ]}
           note="Looks only: it changes no vital, XP, cooldown or score. It stays in your closet on Solana; Pawket does not buy it back."
         />
+        {has && item.kind === "frame" ? <p className="body-sm pk-muted">Ready for your next photo. Open Photo on Home and choose this frame.</p> : null}
         {has && item.piece ? <p className="body-sm pk-muted">Yours. Put it on from the wardrobe in Profile.</p> : null}
-        {short ? (
+        {!has && short ? (
           <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
-            This wallet holds {sol(balance.data!)}. {cluster === "devnet" ? "Devnet SOL is free at faucet.solana.com." : ""} Nothing was sent.
+            Your Pawket Wallet holds {sol(balance ?? 0n)}. Add SOL there before buying. {cluster === "devnet" ? "Devnet SOL is free at faucet.solana.com." : ""} Nothing was sent.
           </p>
         ) : null}
       </Stack>

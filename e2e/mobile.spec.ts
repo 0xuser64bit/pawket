@@ -185,10 +185,10 @@ test("room settings show two compact choices per row and remember a touch select
   expect(daylight.y).toBe(lamplight.y);
   expect(lamplight.x).toBeGreaterThan(daylight.x + daylight.width);
   expect((await rooms.boundingBox())!.height).toBeLessThan(1100);
-  await rooms.getByText("Lamplight", { exact: true }).tap();
-  await expect(rooms.getByRole("radio", { name: /^Lamplight/ })).toBeChecked();
+  await rooms.getByText("Dark", { exact: true }).tap();
+  await expect(rooms.getByRole("radio", { name: /^Dark/ })).toBeChecked();
   await page.reload();
-  await expect(rooms.getByRole("radio", { name: /^Lamplight/ })).toBeChecked();
+  await expect(rooms.getByRole("radio", { name: /^Dark/ })).toBeChecked();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });
 
@@ -243,3 +243,21 @@ for (const name of ["Catch", "Hop", "Copy", "Pairs"]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
   });
 }
+
+test("starter choices stay small and every Market category opens a readable shareable preview", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 650 });
+  await adopt(page);
+  await page.goto("/profile?tab=wardrobe#shelf");
+  await expect(page.locator(".pk-tiles button")).toHaveCount(3);
+  await expect(page.getByRole("button", { name: /Knit beanie/ })).toHaveCount(0);
+  await page.goto("/profile?tab=settings#shelf");
+  await expect(page.getByRole("radiogroup", { name: "Rooms" }).getByRole("radio")).toHaveCount(3);
+  await page.goto("/market");
+  await expect(page.locator(".pk-tiles button")).toHaveCount(31);
+  await page.getByRole("button", { name: /Sunshine/ }).tap();
+  const sheet = page.getByRole("dialog", { name: "Sunshine" });
+  await expect(sheet.getByText("0.025 SOL", { exact: true })).toBeVisible();
+  await expect(sheet.getByText("Pawket Wallet", { exact: true })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Connect a wallet" })).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});

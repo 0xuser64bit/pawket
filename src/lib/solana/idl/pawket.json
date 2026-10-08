@@ -313,6 +313,102 @@
       ]
     },
     {
+      "name": "buy_with_wallet",
+      "docs": [
+        "An owner-approved purchase from Pawket Wallet into the fixed treasury.",
+        "The balance never reaches into rent; the sponsor may pay the Closet's rent."
+      ],
+      "discriminator": [
+        153,
+        110,
+        66,
+        10,
+        90,
+        11,
+        135,
+        96
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "closet",
+          "docs": [
+            "Made the owner's in `buy` when it is new; one that is there already is held to them here."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  108,
+                  111,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "address": "SEpAw5iTAXf4j5YUsgpLD8UTKLCT6xqUAkecnvJvWfw"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "item",
+          "type": "u8"
+        }
+      ]
+    },
+    {
       "name": "care_by_device",
       "docs": [
         "A care, signed by the owner's linked device: the same rules and the same record as one the",
@@ -1139,7 +1235,7 @@
     {
       "name": "dress_owned",
       "docs": [
-        "Put on anything the owner may wear: one of the eighteen, or a Market piece their Closet",
+        "Put on anything the owner may wear: one of the three starters, or a Market piece their Closet",
         "holds. 0 takes it off. Looks only, like `dress`."
       ],
       "discriminator": [
@@ -1644,6 +1740,81 @@
         {
           "name": "colour",
           "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "fund_wallet_spend",
+      "docs": [
+        "Fund a transaction from Pawket Wallet. The owner's existing SOL must remain untouched;",
+        "settlement is the final instruction in this same atomic transaction. Only the owner signs."
+      ],
+      "discriminator": [
+        185,
+        137,
+        98,
+        107,
+        255,
+        123,
+        154,
+        87
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "device",
+          "writable": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "instructions",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "keep",
+          "type": "u64"
         }
       ]
     },
@@ -2398,6 +2569,77 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "settle_wallet_spend",
+      "docs": [
+        "Return unspent SOL and sale proceeds to Pawket Wallet. If any existing owner SOL would be",
+        "consumed, the whole transaction fails, including the external trade."
+      ],
+      "discriminator": [
+        50,
+        123,
+        140,
+        252,
+        104,
+        133,
+        31,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "wallet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "device",
+          "writable": true,
+          "relations": [
+            "wallet"
+          ]
+        },
+        {
+          "name": "instructions",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "keep",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "unlink_device",

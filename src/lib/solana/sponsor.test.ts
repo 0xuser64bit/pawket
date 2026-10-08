@@ -23,6 +23,8 @@ import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import {
   getAdoptPetInstruction,
   getBuyInstruction,
+  getBuyWithWalletInstruction,
+  getWalletSpendInstruction,
   getCheckInInstruction,
   getCreateEventInstruction,
   getCreatePollInstruction,
@@ -249,8 +251,12 @@ describe("checkSponsorable", () => {
 
   it("pays the fee and the closet's rent for a purchase, never its price, and the fee to wear what was bought", async () => {
     const CLOSET = "7preVB3hcxXBLoAxefPgUfB9Hd62GsLkN9PTqG763MVc";
-    const buy = await built((payer) => [getBuyInstruction({ owner, payer, closet: CLOSET, item: 19 })]);
+    const buy = await built((payer) => [getBuyWithWalletInstruction({ owner, payer, closet: CLOSET, wallet: WALLET, item: 19 })]);
     expect(checkSponsorable(buy, sponsor.address)).toEqual({ ok: true, kinds: ["buy"] });
+    const asWallet = await built((payer) => [getBuyWithWalletInstruction({ owner, payer, closet: CLOSET, wallet: payer.address, item: 19 })]);
+    expect(checkSponsorable(asWallet, sponsor.address)).toMatchObject({ ok: false });
+    const coin = await built(() => [getWalletSpendInstruction({ owner, wallet: WALLET, device: DEVICE, amount: 1n, keep: 10n })]);
+    expect(checkSponsorable(coin, sponsor.address)).toMatchObject({ ok: false });
     // The sponsor as the buyer would be paying the price: a part it does not take.
     const asBuyer = await built((payer) => [getBuyInstruction({ owner: payer, payer, closet: CLOSET, item: 19 })]);
     expect(checkSponsorable(asBuyer, sponsor.address)).toMatchObject({ ok: false });

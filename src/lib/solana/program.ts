@@ -24,8 +24,9 @@ import {
  *    sponsor in `app/api/sponsor` — and which leaving or closing hands back
  *    to that payer; a player's own Pawket Wallet, which only its owner fills
  *    or empties, and which refills a linked device by at most one fee per
- *    action it takes; and a Market sale, which goes from the owner to
- *    `PAWKET_TREASURY` and nowhere else.
+ *    action it takes; and a Market sale, which goes from the Pawket Wallet to
+ *    `PAWKET_TREASURY`; owner-approved coin funding returns change and proceeds
+ *    to Pawket Wallet without consuming existing owner SOL.
  */
 
 /** Must match `declare_id!` in `programs/pawket/src/lib.rs`. */
@@ -49,17 +50,20 @@ export const MAX_NAME_BYTES = 24;
 export const MIN_NAME_BYTES = 2;
 
 /** The program's `WEARABLE_COUNT`: the free wardrobe, numbered from 1 in catalog order. */
-export const WEARABLE_COUNT = 18;
+export const WEARABLE_COUNT = 3;
 
 /**
- * The program's Market (`item_price`): the pieces after the eighteen (worn
+ * The program's Market (`item_price`): the pieces after the three starters (worn
  * with `dress_owned`), rooms from item 64, their prices in lamports, and
  * where every sale goes.
  */
 export const MARKET = {
-  wearables: 4,
+  wearables: 19,
   firstRoom: 64,
-  rooms: 2,
+  rooms: 8,
+  firstFrame: 80,
+  frames: 4,
+  framePrice: 25_000_000n,
   wearablePrice: 50_000_000n,
   roomPrice: 100_000_000n,
   treasury: "SEpAw5iTAXf4j5YUsgpLD8UTKLCT6xqUAkecnvJvWfw",
@@ -114,6 +118,9 @@ export const WALLET_LIMITS = {
 
 /** Anchor 8-byte instruction discriminators. */
 export const PAWKET_DISCRIMINATORS = {
+  settleWalletSpend: [50, 123, 140, 252, 104, 133, 31, 99],
+  fundWalletSpend: [185, 137, 98, 107, 255, 123, 154, 87],
+  buyWithWallet: [153, 110, 66, 10, 90, 11, 135, 96],
   adoptPet: [76, 210, 131, 114, 75, 135, 64, 171],
   performCareAction: [74, 53, 41, 221, 110, 244, 231, 218],
   finishRound: [23, 104, 163, 186, 110, 225, 11, 242],

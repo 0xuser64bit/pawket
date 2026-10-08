@@ -2387,18 +2387,6 @@ li {
 .pk-screen:not(.pk-shell ~ .pk-screen) {
   padding-top: calc(var(--space-2) + env(safe-area-inset-top));
 }
-.pk-mobile-wallet {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin: var(--space-3) var(--gutter);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--pool-soft);
-  color: var(--pool-text);
-}
-.pk-mobile-wallet > span { flex: 1 1 180px; }
 @media (min-width: 1024px) {
   .pk-screen {
     --measure: 1120px;
@@ -7779,3 +7767,8 @@ html[data-transition="room"]::view-transition-new(*) {
   .pk-paws { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: var(--space-3); gap: var(--space-3); align-items: center; }
   .pk-paws__paw { width: min(100%, calc(100svh - var(--space-10) - var(--space-9))); }
 }
+
+.pk-market-frame { display: grid; place-items: center; aspect-ratio: 1; width: 75%; padding: var(--space-3); background: var(--surface); color: var(--ink); font-family: var(--font-display); border: 6px double var(--edge); }
+.pk-market-frame--film { border: 12px dashed var(--edge); }
+.pk-market-frame--garden { border: 6px dotted var(--sprout-text); border-radius: var(--radius-md); }
+.pk-market-frame--sunshine { border: 12px solid var(--sun); border-radius: var(--radius-md); }

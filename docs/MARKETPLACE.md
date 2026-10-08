@@ -8,14 +8,14 @@ Q1 and Q5 (`OPEN-QUESTIONS.md`).
 ## 1. Principles (normative)
 
 - **Looks only.** Everything sold is expression: a piece a pet wears, a room
-  the player lives in. Nothing sold changes a vital, XP, a cooldown, a score
+  the player lives in, or a frame for their photos. Nothing sold changes a vital, XP, a cooldown, a score
   or a place in a guild.
 - **Fixed, published prices.** Prices live in the program (`item_price` in
   `programs/pawket/src/lib.rs`), the same for everyone; only a program
   upgrade changes them. `MARKET` in `src/lib/solana/program.ts` mirrors them,
   and `program.test.ts` holds the two together.
-- **Settled on chain, in one signature.** `buy` moves the price from the
-  buyer straight to Pawket's treasury and records the item in the buyer's
+- **Settled on chain, in one signature.** `buy_with_wallet` moves the price from the
+  buyer's Pawket Wallet straight to Pawket's treasury and records the item in the buyer's
   `Closet` in the same instruction. There is no order, no escrow and no
   receipt to reconcile: the transaction is the receipt.
 - **Nothing is resold, and nothing is bought back.** A closet is for good.
@@ -24,18 +24,21 @@ Q1 and Q5 (`OPEN-QUESTIONS.md`).
 
 ## 2. What it sells
 
-| Item id | What | Price | Worn or used with |
+| Item ids | What | Price | Used with |
 | --- | --- | --- | --- |
-| 19 | Halo | 0.05 SOL | `dress_owned` (any of the buyer's pets on Solana) |
-| 20 | Wizard hat | 0.05 SOL | `dress_owned` |
-| 21 | Sun hat | 0.05 SOL | `dress_owned` |
-| 22 | Gold crown | 0.05 SOL | `dress_owned` |
-| 64 | Blossom (a room) | 0.1 SOL | the room picker, on any device of the buyer's wallet |
-| 65 | Aurora (a room) | 0.1 SOL | the room picker |
+| 4–22 | Nineteen pet pieces | 0.05 SOL each | `dress_owned`, on the buyer's pets on Solana |
+| 64–71 | Eight rooms | 0.1 SOL each | the room picker |
+| 80–83 | Postcard, Film strip, Garden, Sunshine photo frames | 0.025 SOL each | Home → Photo → Photo frame |
 
-Pieces are wardrobe slots after the free eighteen, so the catalog
-(`src/lib/closet/catalog.ts`) and the program agree on their numbers. Rooms
-are token blocks in `app/globals.css` with an `item` in `src/config/themes.ts`.
+The wool scarf, paper crown and red collar are free starters. Light and
+Dark (plus following the device) are free. All other choices appear in the
+Market; Profile shows starters and confirmed purchases only. Stickers
+remain achievements and no longer unlock wardrobe pieces.
+
+Catalog slot numbers stay unchanged. Blossom and Aurora remain 64 and 65;
+Strawberry through Starlight use 66–71. The existing 256-bit Closet holds
+all entitlements without a layout migration. A previously worn piece is
+not stripped from a pet when its availability changes.
 
 ## 3. The flow
 
@@ -43,14 +46,15 @@ are token blocks in `app/globals.css` with an `item` in `src/config/themes.ts`.
 /market → tap an item → a Paper sheet over the shelves: your own pet wearing it (or sitting
   in the room), its price, where the SOL goes, who pays the fee
   → "Buy for 0.05 SOL" → the wallet signs → Solana confirms → the closet is read again
-  → the wardrobe offers the piece / the room picker offers the room
+  → every screen refreshes its closet read → the piece, room or photo frame becomes available
 ```
 
 - The sponsor pays the network fee and the closet's rent the first time; the
-  buyer pays only the price (`checkSponsorable` lets the sponsor be `buy`'s
+  buyer's Pawket Wallet pays the price (`checkSponsorable` lets the sponsor be `buy_with_wallet`'s
   `payer`, never its `owner`).
 - A pet in this browser cannot wear a bought piece: the closet belongs to a
   wallet, so the wardrobe says to keep the pet on Solana first.
+- Purchases require a linked, funded Pawket Wallet. The owner still approves money; the app never falls back to paying from their external balance. Legacy `buy` stays on chain for compatibility; the app does not use it.
 - A linked device can put a bought piece on (`dress_owned_by_device`); it can
   never buy.
 

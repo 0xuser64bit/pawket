@@ -54,6 +54,8 @@ export type SponsoredKind =
   | "unlink"
   | "close-wallet"
   | "buy"
+  | "fund"
+  | "settle"
   | "dress-owned"
   | "event"
   | "rsvp"
@@ -80,6 +82,9 @@ export const KIND_OF: Record<Exclude<PawketInstructionName, DeviceName>, Sponsor
   unlinkDevice: "unlink",
   closeWallet: "close-wallet",
   buy: "buy",
+  buyWithWallet: "buy",
+  fundWalletSpend: "fund",
+  settleWalletSpend: "settle",
   dressOwned: "dress-owned",
   createEvent: "event",
   rsvp: "rsvp",
@@ -116,6 +121,8 @@ export const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
   "close-wallet": [2],
   // The payer of each: the closet's, the event's, the RSVP's, the poll's, the ballot's and the guestbook's rent.
   buy: [1],
+  fund: [],
+  settle: [],
   "dress-owned": [],
   event: [1],
   rsvp: [1],
@@ -190,6 +197,7 @@ export function checkSponsorable(
     const found = kindOf(ix.data);
     if (!found) return refuse("That is not a Pawket instruction.");
     const { kind, shift } = found;
+    if (kind === "fund" || kind === "settle") return refuse("Coin spending is never sponsored.");
     const misplaced = (ix.accountIndices ?? []).some(
       (index, position) => index === 0 && !SPONSOR_SLOTS[kind].includes(position - shift),
     );

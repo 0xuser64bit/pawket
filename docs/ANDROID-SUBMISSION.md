@@ -197,6 +197,7 @@ are the checklist for the actual portal.
 No push-notification service, native camera permission, seed custody or
 secondary market is claimed. Haptics are implemented but must be felt on
 hardware. WebView 134 cannot create the device's Ed25519 key; it displays
-update guidance while owner signing remains available. A modern WebView
+update guidance, and with no owner-wallet fallback nothing on Solana is
+sent until the WebView is updated. A modern WebView
 with Ed25519 must pass linking, delegated care and revocation before that
 path is called verified on Android.

@@ -26,10 +26,10 @@ Reviewer and store materials: `ANDROID-SUBMISSION.md`.
   both branches are synchronized at this documentation checkpoint.
 - Private repository: `git@github.com:0xuser64bit/pawket.git`.
 - Baseline: `43881c60d4643b9bd19eaf875607bcc2d54a585c`.
-- Current deployed web/native build: `096248c`; Vercel deployment
-  `8tmvNXR8stRszx3JSNnuL3EEHMxi`, status success. Healthy devnet site at
-  `https://pawket.world/home`; assetlinks serves the unchanged release signer.
-  The previous `52a4db2` deployment was reviewed for APK 0.1.0 below.
+- Current deployed web: `e61ebd2` (2026-10-09); healthy devnet site at
+  `https://pawket.world/home`; assetlinks serves the unchanged release
+  signer. APK 0.1.1 was first reviewed against `096248c` (Vercel deployment
+  `8tmvNXR8stRszx3JSNnuL3EEHMxi`), and 0.1.0 against `52a4db2` below.
 - All task source commits are on `main` and `android`;
   `git log 43881c6..main` shows the sequence. Inspect actual status and
   origin/main before subsequent work. The hosted code verified above is
@@ -107,7 +107,8 @@ Reviewer and store materials: `ANDROID-SUBMISSION.md`.
   requests have a 30-second budget; no fresh transaction is automatically
   built or sent. Definite preflight failures stop before confirmation.
 - WebView 134 has no WebCrypto Ed25519. No exportable-key workaround was
-  introduced. Owner-wallet signing continues; linking says to update WebView.
+  introduced. Since 8 October there is no owner-wallet fallback, so nothing
+  on Solana is sent from such a WebView; linking says to update it.
 - Release manifest is not debuggable and compiled code passes `false` to
   WebView debugging. This userdebug emulator still exposes a socket because
   [Chromium enables it on development OS builds](https://chromium.googlesource.com/chromium/src/+/3546854f59..2e285ebae2).
@@ -222,10 +223,19 @@ action or specific authorization. These do not prevent installing/testing the AP
 - Signed APK `pawket-0.1.1.apk`; source build also at
   `android/app/build/outputs/apk/release/app-release.apk`.
 - Package `app.pawket.android`; 0.1.1 (2); min29/target37.
-- APK SHA-256:
-  `ca299ade38fbb9876ba41b600e07ae57df2f4f204934b94b366c3d3b8db0be6a`.
-- Native source, APK build checkout and reviewed hosted web: `096248c`.
-  Later handoff-only commits do not change the verified code.
+- APK SHA-256 (rebuilt 2026-10-09, same version, signer and origin, with
+  Android backup off from `8384821`):
+  `2256b8e5e84193164e91cdf7f16b3172d3b83e42b3f8f703485577fa321bbcfb`.
+  Native source `8384821` (android/ unchanged since), build checkout
+  `bd81b89`, hosted web `e61ebd2`. Manifest: `allowBackup=false`, not
+  debuggable, INTERNET the only capability permission. Checks at that
+  point: web unit 376 (14 opt-in skipped), program 79, browser 58 plus the
+  five devnet screen specs (adopt → link with 0.01 SOL → keep → feed →
+  record → card, a guild, the Market, a linked care, coin trades on the
+  curve and in DAMM v2), Android JVM 6 and lint.
+- The first 0.1.1 build (`ca299ade…be6a`, from `096248c`) is kept at
+  `android/.local/previous/pawket-0.1.1-096248c.apk`; screenshots 11–15
+  and `world-receipts.json` were taken with it.
 - Previous folder and `Pawket-Android-Review.zip` remain intact under
   `/Users/user64bit/Code/pawket-android/android/.local/`. Its 0.1.0 APK hash is
   `9be5b00bec4529a239bba42a5ff557a27d3da5f000a10016223fbfc6e5ce2016`;

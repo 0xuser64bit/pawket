@@ -113,8 +113,9 @@ same: a new origin is new, empty storage.
 
 The device key is the phone's WebView's, not Seed Vault's. Making it needs
 WebCrypto Ed25519, which the emulator's System WebView 134 does not have:
-there the app says to update Android System WebView, and the wallet signs
-everything meanwhile.
+there the app says to update Android System WebView. Every action on Solana
+goes through a linked Pawket Wallet, so until it is updated nothing on
+Solana is sent from that phone; play in the app is unaffected.
 
 ## Build
 

@@ -75,9 +75,10 @@ anything that spends SOL; this app signs care and the rest with no prompt.
     the connection and retry. For an unknown transaction outcome, inspect
     the existing Explorer receipt before sending a new action.
 
-No mainnet purchase or trade is required. The emulator already verified
-sponsored care, owner-paid care, a cosmetic purchase, a prepared keepsake
-and an owner-paid coin trade against devnet. Hardware checks establish the
+No mainnet purchase or trade is required. Before the funded-wallet rule of
+8 October, the emulator verified sponsored care, owner-paid care, a
+cosmetic purchase, a prepared keepsake and an owner-paid coin trade against
+devnet; the browser suite has walked the funded-wallet paths since. Hardware checks establish the
 consumer wallet and physical-device behavior that the emulator cannot prove.
 
 ## Result record

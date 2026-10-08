@@ -41,7 +41,9 @@ describe("read and share recovery", () => {
     vi.stubGlobal("navigator", { clipboard: { writeText: vi.fn().mockRejectedValue(new Error("Refused")) } });
     render(<><AdoptLink url="https://pawket.app/adopt" /><Toasts /></>);
     fireEvent.click(screen.getByRole("button", { name: "Share adoption link" }));
-    expect(screen.getByRole("textbox", { name: "Share link" })).toHaveValue("https://pawket.app/adopt");
+    // The link is printed in the sheet, selectable, whatever the clipboard does.
+    expect(screen.getByText("https://pawket.app/adopt")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Post it on X" }).getAttribute("href")).toContain(encodeURIComponent("https://pawket.app/adopt"));
     fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
     expect((await screen.findByRole("status")).textContent).toContain("Select the link above");
   });

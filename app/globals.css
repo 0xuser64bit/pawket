@@ -5275,6 +5275,45 @@ details > .pk-risks {
   aspect-ratio: 4 / 3;
   background: var(--surface-sunk);
 }
+/* A link, shared, the way a photo is: the card it unfurls as, printed on its
+   shelf, then the link itself — one tap selects all of it — and a post. */
+.pk-share__card {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sticker);
+  background: var(--surface-sunk);
+}
+.pk-share__card--wait {
+  color: transparent;
+}
+.pk-share__link {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: var(--stroke-line) dashed var(--edge-soft);
+  border-radius: var(--radius-md);
+}
+.pk-share__url {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  user-select: all;
+  -webkit-user-select: all;
+}
+.pk-share__post {
+  justify-self: start;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
 /* ------------------------------------------------------- rooms (themes)
 

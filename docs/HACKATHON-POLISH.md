@@ -72,6 +72,11 @@ includes twelve pets at 320px, the corner switch's targets and dock order.
 
 ## Sharing
 
-Adoption, Passport, guild and playground links open the same preview sheet.
-The sheet offers native sharing, explicit copying and a selectable link if
-clipboard access is refused. Cancelling native sharing stays quiet.
+Adoption, Passport, guild and playground links open one sheet, the way a
+photo does: the card the link unfurls as (its Open Graph image — the pet's
+own for a Passport), the words that go with it, the link itself (one tap
+selects all of it), and "Post it on X". The foot hands it to the phone's or
+browser's share sheet where there is one, and copies it either way; copying
+says "Copied" in place. Cancelling a share stays quiet; a refused clipboard
+points at the printed link. Labels say what is shared: "Share adoption
+link", "Share Pepper's record", "Share this guild", "Share the score".

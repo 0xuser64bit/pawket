@@ -108,7 +108,12 @@ export function Passport({
             <div className="pk-acts">
               <OwnerActions owner={pet.owner} address={pet.address} name={pet.name} />
               <ButtonLink label={`Visit ${pet.name}`} href={`/pet/${pet.address}/visit`} icon="home" tone="quiet" size="sm" transitionTypes={["nav-forward"]} />
-              <ShareButton name={pet.name} />
+              <ShareButton
+                name={pet.name}
+                label={`Share ${pet.name}'s record`}
+                image={`/pet/${pet.address}/opengraph-image`}
+                text={`${pet.name}, a ${SPECIES_LABEL[pet.species].toLowerCase()} kept on Solana in Pawket. Wave hello.`}
+              />
             </div>
           </div>
         }

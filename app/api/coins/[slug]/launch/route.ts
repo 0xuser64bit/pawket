@@ -3,14 +3,15 @@ import { isListed } from "@/lib/guilds/delisted";
 import { launchTransaction } from "@/server/coins/meteora";
 import { coinError, coinMetadataUri, guildOr404, postedFields, units } from "@/server/coins/routes";
 import { actionError, actionJson, caller, preflight } from "@/server/actions";
+import { readPet } from "@/server/solana";
 import { actionLimit } from "@/server/sponsor";
 
 /**
  * POST { account, preset, firstBuy }: the guild's coin, launched by its
  * founder on one of Pawket's presets — the curve and the coin, made in one
  * transaction their wallet signs, with their own first buy in it when they
- * ask. Only the founder, only once, only for a guild with enough pets in
- * it to be a community first.
+ * ask. Only the founder, while the pet they founded it with is still in it,
+ * only once, only for a guild with enough pets in it to be a community first.
  */
 
 export const dynamic = "force-dynamic";
@@ -39,6 +40,11 @@ export async function POST(request: Request, { params }: Props) {
     return actionError(`A guild launches a coin once ${COIN_TERMS.minMembers} pets are in it; ${guild.name} has ${guild.memberCount}. Nothing was sent.`, 409);
   }
   if (!actionLimit(caller(request))) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
+  const founding = await readPet(guild.founderPet).catch(() => undefined);
+  if (founding === undefined) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
+  if (founding?.member?.guild !== guild.address) {
+    return actionError(`The pet that founded ${guild.name} has left it, and a coin is launched only while it is in. Nothing was sent.`, 403);
+  }
 
   try {
     const transaction = await launchTransaction({

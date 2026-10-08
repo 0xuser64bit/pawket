@@ -57,6 +57,7 @@
 **Needed by:** mainnet (a coin carries real fees). **Recommendation:** the founder acts only while `founder_pet` is in the guild — checked first where it costs one read, the coin launch route, then in `create_event` and `create_poll` at the next additive upgrade.
 **Context:** `Guild.founder` is a wallet, set once, and no instruction hands it on. Nothing checks the founding pet is still a member, so after leaving, the founder still plans events, asks polls, and launches the guild's one coin and takes the founder's share of its fees (the audit of 8 October, `SECURITY.md`).
 **Decision needed:** whether leaving ends the role (and rejoining restores it), or founding is for good; and who, if anyone, inherits it.
+**Partly done (2026-10-09):** the coin launch route refuses once `founder_pet` is no longer in the guild. `create_event` and `create_poll` wait for the next additive upgrade.
 
 ## Q10 — The secret behind keepsake and coin addresses
 

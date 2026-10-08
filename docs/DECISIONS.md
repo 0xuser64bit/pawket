@@ -3,6 +3,20 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: A guild's coin is its founder's, while the founding pet is in
+
+**Context:** The audit of 8 October left two coin questions open (Q9, Q10):
+a founder whose pet left could still launch the guild's coin, and a curve
+made at the guild's coin address by anyone holding the sponsor's secret
+would have been shown as the guild's.
+**Decision:** Without a program change, the coin launch route refuses once
+`founder_pet` is no longer in the guild, and the server takes a curve as
+the guild's coin only when its creator is the founder; a launch over any
+other curve there is refused.
+**Consequence:** The program still lets such a founder plan events and ask
+polls until the next additive upgrade, and the keepsake and coin secret is
+still the sponsor's (Q9 and Q10 stay open for those parts).
+
 ## 2026-10: Pawket acts on Solana only through a funded Pawket Wallet
 
 **Context:** On 8 October the owner asked that no transaction ever come from

@@ -140,11 +140,12 @@ only a guild place's were. The program on devnet (slot 508518503) is byte
 for byte the build of this source, and its upgrade authority is the deploy
 wallet, not the sponsor.
 
-Raised for a decision, unchanged: a founder keeps the role after their pet
-leaves the guild, coin launch included (`OPEN-QUESTIONS.md` Q9); the
-sponsor's secret is also the keepsake and coin secret, so it cannot rotate
-without losing them, and a coin is not bound to its founder when read (Q10).
-A pet that RSVPs and then leaves can still check in.
+Raised for a decision: a founder keeps the role after their pet leaves the
+guild (`OPEN-QUESTIONS.md` Q9; since 9 October the coin launch route
+refuses then); the sponsor's secret is also the keepsake and coin secret,
+so it cannot rotate without losing them (Q10; since 9 October a coin is
+read as the guild's only when its founder made it). A pet that RSVPs and
+then leaves can still check in.
 
 ## Known and accepted
 

@@ -29,8 +29,6 @@ export interface TxState {
   sponsored?: boolean;
   /** Who signed: the wallet (with a prompt), or this device, linked to the Pawket Wallet (without one). */
   by?: "wallet" | "device";
-  /** Why the wallet signed something this device could have: what would let it next time. */
-  fallback?: DeviceFallback;
   error?: string;
   /** Nothing was tried: the Pawket Wallet needs this first — a link, a balance, or tomorrow. */
   needs?: PawketWalletNeed;
@@ -122,7 +120,6 @@ export function usePawketSend() {
       signer: TransactionSigner | null | undefined,
       by: NonNullable<TxState["by"]>,
       go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void, show: (next: Partial<TxState>) => void) => Promise<SendResult>,
-      fallback?: DeviceFallback,
     ) => {
       // ponytail: one send per tab; use account-scoped slots only if concurrent wallets are supported.
       // Never open competing wallet sessions or queue a send.
@@ -130,7 +127,7 @@ export function usePawketSend() {
       setSending(true);
       // Each send is one toast, kept up to date to the end — even after the screen that sent it is gone.
       const id = `send-${++sends}`;
-      let state: TxState = { stage: "preparing", label, by, fallback };
+      let state: TxState = { stage: "preparing", label, by };
       const show = (next: Partial<TxState>) => {
         state = { ...state, ...next };
         setTx(state);
@@ -174,7 +171,6 @@ export function usePawketSend() {
       signer: TransactionSigner | null | undefined,
       by: NonNullable<TxState["by"]>,
       instructions: SendOptions["instructions"],
-      fallback?: DeviceFallback,
     ) =>
       run(
         label,
@@ -199,7 +195,6 @@ export function usePawketSend() {
             onStage,
           });
         },
-        fallback,
       ),
     [run],
   );

@@ -34,7 +34,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await expect(page.getByRole("button", { name: /^Your wallet, .+…/ })).toBeVisible();
 
   await page.goto("/wallet");
-  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Set up your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Link this browser" }).click();
   await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
   await page.goto("/home");
@@ -93,7 +93,7 @@ test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) 
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await page.goto("/wallet");
-  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Set up your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Link this browser" }).click();
   await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
   await page.goto("/home");
@@ -133,7 +133,7 @@ test("Market purchases spend Pawket Wallet and unlock a room and photo frame", a
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await page.goto("/wallet");
-  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Set up your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "0.25 SOL", exact: true }).click();
   await page.getByRole("button", { name: "Link this browser" }).click();
   await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
@@ -180,7 +180,7 @@ test("a Pawket Wallet links this browser, and a care on Solana asks the wallet n
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await page.goto("/wallet");
-  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Set up your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Link this browser" }).click();
   await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
   await page.goto("/home");
@@ -208,5 +208,5 @@ test("a Pawket Wallet links this browser, and a care on Solana asks the wallet n
   expect(await signedByWallet(page)).toBe(beforeUnlink);
   await page.getByRole("button", { name: "Close my Pawket Wallet" }).click();
   await page.getByRole("button", { name: "Close it", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByRole("heading", { name: "Set up your Pawket Wallet" })).toBeVisible({ timeout: 120_000 });
 });

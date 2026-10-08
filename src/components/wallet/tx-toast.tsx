@@ -7,10 +7,6 @@ import { inAndroidApp } from "@/lib/native/android";
 
 /** Where a linked device key lives, said as the player sees it: this app, or this browser. Toasts are made at run time, never on the server. */
 const here = () => (inAndroidApp() ? "this app" : "this browser");
-const Here = () => (inAndroidApp() ? "This app" : "This browser");
-
-/** Asked once a visit: how to stop the pop-ups is worth saying, not worth repeating. */
-let nudged = false;
 
 /**
  * What a send looks like, as a toast. Waiting is neutral; a record is a fact
@@ -46,17 +42,14 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
       return { id, tone: "wait", title, body: "Waiting for Solana to confirm it." };
     case "confirmed": {
       const paid = tx.by === "device" ? "no pop-up" : tx.sponsored ? "Pawket paid the fee" : "you paid the fee";
-      const hint = tx.fallback && !nudged ? nudge(tx.fallback) : null;
-      if (hint) nudged = true;
       return {
         id,
         tone: "done",
         title,
-        ttl: hint ? 12_000 : 6_000,
+        ttl: 6_000,
         body: (
           <>
             Recorded on Solana, {paid}.{look}
-            {hint}
           </>
         ),
       };
@@ -111,13 +104,3 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
   }
 }
 
-function nudge(why: NonNullable<TxState["fallback"]>) {
-  if (why === "limit") return <> {Here()} has used today&apos;s limit, so your wallet asked.</>;
-  return (
-    <>
-      {" "}
-      {why === "expired" ? `${Here()}'s link ran out, so your wallet asked. ` : `Your wallet asked because ${here()} is not linked. `}
-      <Link href="/wallet">{why === "expired" ? "Link it again" : "Stop the pop-ups"}</Link>
-    </>
-  );
-}

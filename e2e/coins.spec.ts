@@ -42,7 +42,7 @@ test("a coin on its curve is bought and sold from its page, and a graduated one 
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await page.goto("/wallet");
-  await expect(page.getByRole("heading", { name: "Stop the pop-ups" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Set up your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("radio", { name: "0.1 SOL", exact: true }).click();
   await page.getByRole("button", { name: "Link this browser" }).click();
   await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });

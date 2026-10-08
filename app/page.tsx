@@ -18,6 +18,7 @@ import {
 } from "@/components/pk";
 import { HeroPets } from "@/components/landing/hero-pets";
 import { NetworkBadge } from "@/components/network-badge";
+import { SUPPORT_EMAIL } from "@/config/site";
 import { Obstacle, Star, Treat } from "@/components/play/game-art";
 import { PERSONALITY_LABEL, SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, utcDay } from "@/lib/guest/pet";
@@ -294,6 +295,9 @@ export default function LandingPage() {
                 {item.label}
               </Link>
             ))}
+            <Link href="/privacy" className="pk-landing__link">
+              Privacy
+            </Link>
           </nav>
           <span className="pk-landing__theme--foot">
             <ThemeButton />
@@ -304,6 +308,7 @@ export default function LandingPage() {
           Pawket is a game you play in this browser. The pet you adopt is saved here, and clearing
           this browser&apos;s data removes them — unless you keep them on Solana, where the program
           holds the record. A guild&apos;s coin is optional, never touches a pet, and is promised no value by anyone.
+          Write to us at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
         </p>
       </footer>
     </>

@@ -14,6 +14,13 @@ test("landing leads with the pet and closes with the rules", async ({ page }) =>
   await expect(page.getByText(/design preview|demo data/i)).toHaveCount(0);
 });
 
+test("the privacy policy is a click from the front door, with a way to write", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("navigation", { name: "Footer" }).getByRole("link", { name: "Privacy" }).click();
+  await expect(page.getByRole("heading", { name: "Privacy", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "hi@pawket.world" })).toHaveAttribute("href", "mailto:hi@pawket.world");
+});
+
 test("the dock reaches the places that exist", async ({ page }) => {
   await page.goto("/home");
   const dock = page.getByRole("navigation", { name: "Pawket" });

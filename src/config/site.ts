@@ -7,8 +7,11 @@ export const APP_DESCRIPTION =
 /** Single source for the release version (mirrors package.json). */
 export const APP_VERSION: string = version;
 
-/** Where Pawket's code and its issues live: reports about a guild open an issue here. */
+/** Where Pawket's code lives. */
 export const SOURCE_URL = "https://github.com/0xuser64bit/pawket";
+
+/** Where a player writes to Pawket: support, privacy, and reports about a guild. */
+export const SUPPORT_EMAIL = "hi@pawket.world";
 
 /**
  * A report about a guild — impersonation, a scam link, abuse — as a new

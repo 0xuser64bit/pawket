@@ -1,6 +1,7 @@
 "use client";
 
 import type { Address } from "@solana/kit";
+import Link from "next/link";
 import { Button, ButtonLink, Card, Row, ThemePicker } from "@/components/pk";
 import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";
@@ -80,7 +81,7 @@ export function Settings({ form }: { form?: PetForm }) {
           Your name, your look, your outfits, your room and the pets in {here} are saved on this device and
           nowhere else.
           {inApp ? " Uninstalling Pawket or clearing its storage takes them with it, and a browser on this phone keeps its own." : ""}{" "}
-          Pets on Solana are read from your wallet&apos;s accounts each time.
+          Pets on Solana are read from your wallet&apos;s accounts each time. <Link href="/privacy">Privacy</Link>
         </p>
       </Card>
     </div>

@@ -89,7 +89,7 @@ Reviewer and store materials: `ANDROID-SUBMISSION.md`.
 | Guest storage/device-key disclosures | verified | this-app copy; backup exclusions; old-WebView update guidance | current-WebView device key |
 | Web/program/native regression gates | verified | table below | rerun owning checks only if source changes |
 | Release APK and deployment | verified | APK installed; v2 signer; manifest not debuggable; healthy production; release receipts | consumer device proof |
-| Review/submission materials | prepared | local APK, PPTX, actual screenshots, recordings, copy/privacy/source guide | contact, policy publication, source access, identity and submission approval |
+| Review/submission materials | prepared | local APK, PPTX, actual screenshots, recordings, copy/source guide; support email and published privacy policy | source access, identity and submission approval |
 
 ## Decisions and constraints
 
@@ -209,10 +209,10 @@ especially modern WebView device linking/delegated care/revocation, consumer
 MWA cancellation/account changes/rotation, haptic feel, all games with touch
 and TalkBack. Exact procedure: `ANDROID-PHONE-CHECK.md`.
 
-Owner support email/URL remains unanswered. Privacy draft and store copy are
-ready, but policy publication, legal/publisher identity, project eligibility,
-private source access and store/event submission require owner action or
-specific authorization. These do not prevent installing/testing the APK.
+The support email is `hi@pawket.world` and the privacy policy is published
+at `https://pawket.world/privacy`. Legal/publisher identity, project
+eligibility, private source access and store/event submission require owner
+action or specific authorization. These do not prevent installing/testing the APK.
 
 ## Artifacts and release preparation
 
@@ -238,7 +238,7 @@ specific authorization. These do not prevent installing/testing the APK.
   `pawket-android-release-keystore`. Owner securely backs up both separately.
 - Local review folder includes APK/hash/release JSON, six-slide PPTX, original
   screenshots, 512px icon, actual silent emulator recordings and edited demo,
-  narration/build/source-access guide, privacy draft and phone checklist.
+  narration/build/source-access guide, privacy draft (now /privacy) and phone checklist.
   Videos and pitch screenshots retain their 0.1.0 provenance. Screens 11–15
   and public receipts are new 0.1.1 evidence. Raw captures and private pitch
   build/evidence remain under `android/.local/` in their original checkouts.
@@ -260,6 +260,6 @@ specific authorization. These do not prevent installing/testing the APK.
    focused commit, run relevant checks plus `pnpm verify`, and update this
    handoff. Native changes need a new signed APK and version code after any
    published release. Keep the same signer and origin.
-4. After hardware is green, obtain the public support contact and approve/
-   publish the policy, source access and store/event submission separately.
+4. After hardware is green, grant source access and make the store/event
+   submission separately.
    Do not turn this checkpoint into permission to grant access or submit.

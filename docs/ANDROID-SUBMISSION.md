@@ -185,8 +185,8 @@ are the checklist for the actual portal.
 | Portrait screenshots | Actual Android captures, 1080×2400, consistent aspect ratio |
 | Pitch and demonstration | PPTX, narration script and emulator capture; final hardware pass pending |
 | Short/full copy, permission notes | Above; only capability permission is INTERNET; AndroidX adds an internal signature permission |
-| Privacy policy | `ANDROID-PRIVACY.md` is a reviewable draft; owner must supply support contact, approve and publish a stable public URL |
-| Support contact / URL | Owner input required; no address invented |
+| Privacy policy | Published at `https://pawket.world/privacy` (`app/privacy/page.tsx`), for the web and the app |
+| Support contact / URL | `hi@pawket.world` (owner-supplied, 2026-10-09); `https://pawket.world/privacy` |
 | Publisher account, identity, legal declarations | Owner-only portal actions |
 | dApp Store wallet, publication fees/funds | Owner-only; no mainnet funds spent |
 | Private source access | Owner authorizes and grants verified reviewer access |

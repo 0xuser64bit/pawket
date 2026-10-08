@@ -119,6 +119,37 @@ fn decay_is_lazy_and_lands_on_the_same_integers_as_the_web_app() {
 }
 
 #[test]
+fn time_only_lowers_a_vital_and_no_clock_can_make_decay_fail() {
+    // Every value, every rate, and elapsed times from the most negative to the largest: a vital
+    // never rises, never leaves 0–100, and only falls as time goes on. A panic here would leave a
+    // pet that can never be cared for again.
+    let times = [i64::MIN, -1, 0, 1, 719, 720, 721, HOUR, DAY, 300_000, 1_000_000, 1_000_001, i64::MAX];
+    for value in 0..=100u8 {
+        for rate in pawket::DECAY_TENTHS_PER_HOUR {
+            let mut previous = value;
+            for elapsed in times {
+                let now = decayed(value, rate, elapsed);
+                assert!(now <= previous, "{value} at {rate}/h rose after {elapsed}s");
+                previous = now;
+            }
+        }
+    }
+}
+
+#[test]
+fn a_pet_left_alone_for_decades_is_cared_for_like_any_other() {
+    let mut env = Env::new();
+    let owner = env.player();
+    let pet = env.adopt(&owner, "Pepper");
+    ok(env.care(&owner, &pet, CareActionType::Feed));
+    env.warp(50 * 365 * DAY);
+    ok(env.care(&owner, &pet, CareActionType::Feed));
+    let state = env.pet(&pet);
+    assert_eq!((state.hunger, state.happiness, state.energy, state.hygiene), (23, 2, 0, 0));
+    assert_eq!(env.passport(&pet).streak, 1);
+}
+
+#[test]
 fn xp_rises_ten_per_care_and_the_level_every_hundred() {
     let mut env = Env::new();
     let owner = env.player();

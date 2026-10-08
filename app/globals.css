@@ -3757,20 +3757,83 @@ li {
   }
 }
 
-.pk-home__line {
-  min-height: 44px;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  justify-content: flex-end;
-}
-.pk-home__line p:empty { display: none; }
-.pk-home__line .pk-btn { flex-shrink: 0; white-space: nowrap; }
-.pk-home-screen .pk-screen__bar { align-items: flex-start; }
+/* Whose room on the left; where the pet lives, or the way to keep it on
+   Solana, on the right. Under them the family takes a row of its own, the
+   whole width, and scrolls when it outgrows it. */
+.pk-home-screen .pk-screen__bar { flex-wrap: nowrap; align-items: flex-start; }
 .pk-home-screen .pk-screen__bar > div:first-child { flex: 1; min-width: 0; }
-.pk-home-screen .pk-screen__bar > .pk-chip { flex-shrink: 0; }
+.pk-home-screen .pk-screen__bar > :is(.pk-chip, .pk-btn) { flex-shrink: 0; white-space: nowrap; }
 .pk-home-screen h1 { overflow-wrap: anywhere; }
 .pk-home__pets { min-width: 0; margin-bottom: var(--space-3); }
-.pk-home__pets > .pk-switch { max-width: 100%; }
+/* The ring's room is the strip's padding: the faces start on the column's edge. */
+.pk-home__pets > .pk-switch {
+  max-width: calc(100% + 2 * var(--space-2));
+  margin-inline: calc(-1 * var(--space-2));
+}
+.pk-home__said:empty { display: none; }
+
+/* The view switch sits in the room's top corner, on the wall, clear of the
+   pet: two segments in a trough, the one in use raised on its shelf. */
+.pk-room__corner {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 2;
+}
+.pk-viewswitch {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-sunk);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.pk-viewswitch__view {
+  min-width: 40px;
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border: var(--stroke-line) solid transparent;
+  border-radius: calc(var(--radius-md) - 4px);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-swap) var(--ease-swap),
+    border-color var(--dur-swap) var(--ease-swap),
+    color var(--dur-swap) var(--ease-swap);
+}
+.pk-viewswitch__view[aria-checked="true"] {
+  border-color: var(--edge);
+  background: var(--surface);
+  color: var(--ink);
+}
+.pk-viewswitch__view:active {
+  transform: scale(0.95);
+}
+@media (hover: hover) {
+  .pk-viewswitch__view:not([aria-checked="true"]):hover {
+    color: var(--ink);
+  }
+}
+/* A finger gets the full target: each segment answers 44px, the extra
+   reaching invisibly past the trough. */
+@media (any-pointer: coarse), (max-width: 719px) {
+  .pk-viewswitch__view {
+    position: relative;
+    min-width: 44px;
+    min-height: 36px;
+  }
+  .pk-viewswitch__view::after {
+    content: "";
+    position: absolute;
+    inset: -4px -1px;
+  }
+}
 /* Under the day: the way to the record, as a row you can press, and the
    rest of the family beneath it in quiet words. */
 .pk-home__foot {

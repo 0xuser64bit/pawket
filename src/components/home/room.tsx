@@ -88,6 +88,50 @@ export function useRoomMode(): ["3d" | "flat", (mode: "3d" | "flat") => void] {
   return [mode, set];
 }
 
+/**
+ * The room's view, as two segments in the frame's corner: 2D or 3D, the one
+ * in use raised. Arrow keys move between them; hovering 3D starts fetching it.
+ * Nothing to choose where 3D cannot draw, so then there is no switch.
+ */
+export function RoomViewSwitch({ mode, state, onMode }: { mode: "3d" | "flat"; state: RoomState; onMode: (mode: "3d" | "flat") => void }) {
+  if (state === "unsupported" || state === "failed") return null;
+  const views = [
+    { value: "flat", label: "2D", name: "Flat room" },
+    { value: "3d", label: "3D", name: "3D room" },
+  ] as const;
+  return (
+    <div className="pk-viewswitch" role="radiogroup" aria-label="Room view">
+      {views.map((view) => {
+        const on = view.value === mode;
+        return (
+          <button
+            key={view.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            aria-label={view.name}
+            tabIndex={on ? 0 : -1}
+            className="pk-viewswitch__view"
+            onClick={() => onMode(view.value)}
+            onKeyDown={(event) => {
+              if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+              event.preventDefault();
+              const next = mode === "3d" ? "flat" : "3d";
+              onMode(next);
+              (event.currentTarget.parentElement?.querySelector(`[data-view="${next}"]`) as HTMLElement | null)?.focus();
+            }}
+            data-view={view.value}
+            onPointerEnter={view.value === "3d" ? preloadRoom3D : undefined}
+            onFocus={view.value === "3d" ? preloadRoom3D : undefined}
+          >
+            {view.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 let webgl: boolean | null = null;
 
 /** Whether this browser can draw the 3D room at all (WebGL 2). */
@@ -132,7 +176,8 @@ export type RoomState = "flat" | "loading" | "live" | "failed" | "unsupported";
  * The room on Home: the player and their pet in one scene. The 3D room
  * when it can be drawn, the flat room otherwise — and the flat room while
  * the 3D one loads, so there is never an empty frame. Nothing floats over
- * the animal: every control lives below the room.
+ * the animal: the one control inside the frame is the view switch, in its
+ * top corner, where the wall is; everything else lives below the room.
  */
 export function Room({
   pet,
@@ -144,6 +189,7 @@ export function Room({
   onState,
   stage = false,
   viewRef,
+  corner,
 }: {
   pet: {
     species: PetSpecies;
@@ -164,6 +210,8 @@ export function Room({
   stage?: boolean;
   /** A handle on the 3D room, for a screen that turns it or takes its picture. */
   viewRef?: RefObject<RoomView | null>;
+  /** Drawn in the frame's top corner: Home's view switch. */
+  corner?: ReactNode;
 }) {
   const [mode] = useRoomMode();
   const canDraw = useCanDraw();
@@ -320,6 +368,7 @@ export function Room({
         </div>
       )}
       <span className="pk-sr">{description}</span>
+      {corner ? <div className="pk-room__corner">{corner}</div> : null}
     </div>
     {failed ? (
       <div className="pk-spread">

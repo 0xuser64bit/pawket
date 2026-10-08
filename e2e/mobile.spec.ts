@@ -62,9 +62,17 @@ test("a large pet family and room controls fit a narrow phone, with Profile last
   const family = page.getByRole("group", { name: "Who is home" });
   await expect(family.getByRole("button")).toHaveCount(12);
   expect(await family.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
-  const view = page.getByRole("button", { name: /Switch to [23]D view/ });
+  // The view switch sits in the room's corner, both views readable, each a finger's width.
+  const view = page.getByRole("radiogroup", { name: "Room view" });
   await expect(view).toBeVisible();
-  expect(await view.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  for (const name of ["Flat room", "3D room"]) {
+    const box = (await view.getByRole("radio", { name }).boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+  }
+  const room = (await page.locator(".pk-room").boundingBox())!;
+  const corner = (await view.boundingBox())!;
+  expect(corner.x + corner.width).toBeLessThanOrEqual(room.x + room.width);
+  expect(corner.y).toBeGreaterThanOrEqual(room.y);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(page.getByRole("navigation", { name: "Pawket" }).getByRole("link").last()).toHaveAttribute("href", "/profile");
 });

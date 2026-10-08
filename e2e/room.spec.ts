@@ -56,20 +56,20 @@ test("a care shows in the room only after it is saved", async ({ page }) => {
 test("the flat room is a choice this device remembers", async ({ page }) => {
   await adopt(page);
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
-  await page.getByRole("button", { name: "Switch to 2D view" }).click();
+  await page.getByRole("radio", { name: "Flat room" }).click();
   await expect(page.locator(".pk-room__flat")).toBeVisible();
   await expect(liveRoom(page)).toHaveCount(0);
   await expect(page.locator(".pk-room canvas")).toHaveCount(0);
   // Letting go of the canvas is not the room failing, and 3D comes straight back.
   await expect(page.getByText(/stopped drawing/)).toHaveCount(0);
-  await page.getByRole("button", { name: "Switch to 3D view" }).click();
+  await page.getByRole("radio", { name: "3D room" }).click();
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
-  await page.getByRole("button", { name: "Switch to 2D view" }).click();
+  await page.getByRole("radio", { name: "Flat room" }).click();
   await expect(page.locator(".pk-room canvas")).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole("button", { name: "Switch to 3D view" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Flat room" })).toBeChecked();
   await expect(page.locator(".pk-room canvas")).toHaveCount(0);
-  await page.getByRole("button", { name: "Switch to 3D view" }).click();
+  await page.getByRole("radio", { name: "3D room" }).click();
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
 });
 
@@ -137,7 +137,7 @@ test.describe("without WebGL", () => {
     // No loader waits for a 3D room that will never come.
     await expect(page.getByText("Building the room in 3D")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Wave" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Switch to 2D view" })).toHaveCount(0);
+    await expect(page.getByRole("radiogroup", { name: "Room view" })).toHaveCount(0);
     // Care still works exactly as before.
     await page.getByRole("button", { name: "Feed" }).click();
     await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();

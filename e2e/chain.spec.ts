@@ -27,7 +27,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await page.getByRole("textbox", { name: "Pet name" }).fill(name);
   await page.getByRole("button", { name: /that’s the one/i }).click();
   await page.getByRole("button", { name: /take them home/i }).click();
-  await expect(page.getByText("In this browser", { exact: true })).toBeVisible();
+  await expect(page.getByText(/In this browser/)).toBeVisible();
 
   await page.getByRole("banner").getByRole("button", { name: "Connect", exact: true }).click();
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "@solana/kit";
 import {
   Banner,
@@ -24,7 +24,7 @@ import { CARE_ICON, Deck, type Gain, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
 import { PhotoDialog } from "@/components/home/photo";
 import { PetSwitcher } from "@/components/home/pet-switcher";
-import { Room, preloadRoom3D, useRoomMode, type RoomState } from "@/components/home/room";
+import { Room, RoomViewSwitch, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { RoomView } from "@/components/room3d/room-3d";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
@@ -148,8 +148,8 @@ export function HomeScreen() {
             description={`${describeLook(look)}, in an empty room with the window open.`}
             onState={setRoomState}
             stage
+            corner={<RoomViewSwitch mode={mode} state={roomState} onMode={setMode} />}
           />
-          <RoomLine sentence="" mode={mode} state={roomState} onMode={setMode} />
           <Card>
             <h2 className="title">The window is open</h2>
             <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
@@ -284,11 +284,17 @@ export function HomeScreen() {
           <Row gap={2} wrap style={{ marginTop: "var(--space-1)" }}>
             <span className="caption pk-faint">
               {PERSONALITY_LABEL[pet.personality]} · {SPECIES_LABEL[pet.species]}
+              {onChain ? "" : ` · In ${here}`}
             </span>
             {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
           </Row>
         </div>
-        <Chip label={onChain ? "On Solana" : `In ${here}`} tone={onChain ? "pool" : "plain"} icon={onChain ? "check" : undefined} />
+        {/* Where the pet lives, or — for one in this browser — the way to keep it on Solana. */}
+        {onChain ? (
+          <Chip label="On Solana" tone="pool" icon="check" />
+        ) : (
+          <Button label="Keep on Solana" aria-label={`Keep ${pet.name} on Solana`} tone="quiet" size="sm" icon="keep" onClick={() => setKeeping(pet)} />
+        )}
       </ScreenBar>
 
       <div className="pk-home__pets">
@@ -301,13 +307,6 @@ export function HomeScreen() {
       </div>
 
       <Stack gap={3}>
-        <RoomLine
-          sentence=""
-          mode={mode}
-          state={roomState}
-          onMode={setMode}
-          action={!onChain ? <Button label="Keep on Solana" aria-label={`Keep ${pet.name} on Solana`} tone="quiet" size="sm" icon="keep" onClick={() => setKeeping(pet)} /> : undefined}
-        />
         <Room
           pet={{
             ...petLook(pet, projected.mood),
@@ -323,8 +322,8 @@ export function HomeScreen() {
           onState={setRoomState}
           stage
           viewRef={roomView}
+          corner={<RoomViewSwitch mode={mode} state={roomState} onMode={setMode} />}
         />
-        {status.sentence ? <p role="status" className="body-sm pk-muted">{status.sentence}</p> : null}
         <Deck
           name={pet.name}
           mood={projected.mood}
@@ -342,7 +341,10 @@ export function HomeScreen() {
           onPanel={setPanel}
           onSnap={roomState === "live" ? () => setShot(roomView.current?.snap() ?? null) : undefined}
         />
-
+        {/* What the room is doing, said under the deck so nothing above a finger moves. */}
+        <p role="status" className="body-sm pk-muted pk-home__said">
+          {status.sentence}
+        </p>
 
         <div id="pk-deck-panel" className="pk-deck__panel" hidden={panel === null}>
           {panel === "say" ? (
@@ -412,43 +414,6 @@ function earnedLine(before: GuestPet, after: GuestPet, context: BadgeContext = {
 function levelUp(before: number, after: number): number | null {
   const level = calculateLevelFromXp(after);
   return level > calculateLevelFromXp(before) ? level : null;
-}
-
-/** What the room is doing, said out loud, and the player's choice of room. */
-function RoomLine({
-  sentence,
-  mode,
-  state,
-  onMode,
-  action,
-}: {
-  sentence: string;
-  mode: "3d" | "flat";
-  state: RoomState;
-  onMode: (mode: "3d" | "flat") => void;
-  action?: ReactNode;
-}) {
-  return (
-    <div className="pk-spread pk-home__line">
-      <p role="status" className="body-sm pk-muted">
-        {sentence}
-      </p>
-      <Row gap={2} wrap>
-        {action}
-        {state === "unsupported" || state === "failed" ? null : (
-          <Button
-            label={mode === "3d" ? "2D view" : "3D view"}
-            aria-label={mode === "3d" ? "Switch to 2D view" : "Switch to 3D view"}
-            tone="ghost"
-            size="sm"
-            onClick={() => onMode(mode === "3d" ? "flat" : "3d")}
-            onPointerEnter={mode === "flat" ? preloadRoom3D : undefined}
-            onFocus={mode === "flat" ? preloadRoom3D : undefined}
-          />
-        )}
-      </Row>
-    </div>
-  );
 }
 
 /** Solana did not answer: say what is shown instead, and offer to ask again. */

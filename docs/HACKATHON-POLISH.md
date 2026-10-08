@@ -58,11 +58,17 @@ final check.
 
 ## Home and navigation
 
-Home gives the pet strip its own full-width row, the storage label sits by
-the heading, and a separate toolbar above the room holds the 2D/3D choice.
-The wallet sheet links to Pawket Wallet; Home no longer repeats that line.
-Profile is the rightmost dock destination. The phone regression includes
-twelve pets at 320px, readable view controls and dock order.
+Home's header is whose room it is on the left and, on the right, where the
+pet lives ("On Solana") or — for a pet in this browser — the labelled
+"Keep on Solana" button; "In this browser" is said in the caption. The
+family takes its own full-width row under the header and scrolls when it
+outgrows it. The 2D/3D choice is a two-segment switch in the room's top
+corner (the wall, clear of the pet), always readable, the view in use
+raised; it replaces the cut-off "Flat room" button that sat below the deck.
+The room's sentence moved under the deck so a care button never moves under
+a finger. The wallet sheet links to Pawket Wallet; Home no longer repeats
+that line. Profile is the rightmost dock destination. The phone regression
+includes twelve pets at 320px, the corner switch's targets and dock order.
 
 ## Sharing
 

@@ -295,8 +295,9 @@ It is the flat room's language in three dimensions, not a model viewer:
   skin tone, hair, clothes — in the palette's hues; bloom and alarm are not
   offered.
 - **Nothing floats over the animal.** On desktop the deck floats over the frame's foot —
-  the floor — and emotes, the look, the room switch and every failure note
-  live below it. The frame keeps its
+  the floor — and emotes, the look and every failure note live below it. The
+  one control inside the frame is the view switch (2D · 3D), a trough with the
+  view in use raised, in the top corner where the wall is. The frame keeps its
   `radius-room`, its 2px `edge` and its sticker shadow.
 - **The room says what it is doing.** A moment's sentence is read out in a
   status line; the frame names who is in it and how to turn it.
@@ -427,7 +428,7 @@ read. Declining in the wallet sends nothing and shows nothing.
 
 Call a pet "on Solana" only when it was read from chain. Do not put a
 simulated price on a screen: every price shown is the program's. The dock
-is Home, Park, Playground, Market, Profile, Guilds.
+is Home, Park, Playground, Market, Guilds, Profile — the player, last.
 
 ## The pets
 

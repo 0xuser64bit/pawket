@@ -43,6 +43,7 @@ import { useLinkBrowser } from "@/lib/wallet/link";
 import { fetchWalletHistory, type WalletEntry } from "@/lib/wallet/history";
 import { refreshPawketWallet, rentOfWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
 import { useHere } from "@/lib/native/android";
+import { DevnetFaucet } from "@/components/wallet/faucet";
 
 /**
  * The Pawket Wallet: one approval, then no pop-ups. The player's own wallet
@@ -227,7 +228,7 @@ function SetUp() {
           {sponsored
             ? "Pawket pays the network fees for your pets. The balance pays for Market looks and guild coins, with your approval; take out what is left whenever you like."
             : `Pawket is not paying fees right now, so ${here} pays its own from what you put in — one fee an action, and the rest back whenever you like.`}
-          {cluster === "devnet" ? " Devnet SOL is free at faucet.solana.com." : ""}
+          <DevnetFaucet />
         </p>
         <Paper title="What this approval does" meta={`Solana ${cluster}`}>
           <Receipt
@@ -429,7 +430,7 @@ function MoveMoney({ state, owner }: { state: PawketWalletState; owner: Address 
       <h2 className="title">Put in, take out</h2>
       <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
         Either way your wallet approves it. What comes out goes to your wallet ({truncateAddress(owner)}) and nowhere else.
-        {getPublicEnv().solanaCluster === "devnet" ? " Devnet SOL is free at faucet.solana.com." : ""}
+        <DevnetFaucet />
       </p>
       <Stack gap={4} style={{ marginTop: "var(--space-4)" }}>
         <Choice

@@ -232,7 +232,7 @@ export function toUserFacingError(error: unknown): string {
   const code = extractProgramErrorCode(error);
   if (code !== null) return pawketErrorMessage(code);
   if (isInsufficientFunds(error)) {
-    return "Not enough SOL for the fee. Nothing was sent.";
+    return "Not enough SOL in your wallet for this. Nothing was sent.";
   }
   if (/already in use/i.test(messageOf(error))) {
     return "That is already on Solana — a pet in a guild, or a guild with that name. Nothing changed.";

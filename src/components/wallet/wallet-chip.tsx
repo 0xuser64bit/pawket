@@ -15,6 +15,7 @@ import { useLinkBrowser } from "@/lib/wallet/link";
 import { AddressLine } from "./address";
 import { WalletSheet } from "./wallet-sheet";
 import { useHere } from "@/lib/native/android";
+import { DevnetFaucet } from "@/components/wallet/faucet";
 
 /**
  * The wallet, in the shell, just before the room switch and drawn the same
@@ -139,7 +140,7 @@ function WalletPanel({
               <p className="title">Add SOL to Pawket Wallet</p>
               <p className="caption pk-muted">
                 {Here} is linked. Pawket acts on Solana from this balance — add some before caring, playing or buying.
-                {cluster === "devnet" ? " Devnet SOL is free at faucet.solana.com." : ""}
+                <DevnetFaucet />
               </p>
               <div style={{ marginTop: "var(--space-3)" }}>
                 <ButtonLink label="Add SOL" icon="wallet" tone="sun" size="sm" href="/wallet#put-in" onClick={onDismiss} />
@@ -172,7 +173,7 @@ function WalletPanel({
               <p className="caption pk-muted">
                 Pawket acts on Solana through it: {here} signs what your pets do — care, rounds, outfits, guilds,
                 waves — with no pop-up, and Market looks and coins spend its balance once your wallet approves.
-                {cluster === "devnet" ? " Devnet SOL is free at faucet.solana.com." : ""}
+                <DevnetFaucet />
               </p>
               <div style={{ marginTop: "var(--space-3)" }}>
                 <Button

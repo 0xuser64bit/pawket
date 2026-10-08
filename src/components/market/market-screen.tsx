@@ -21,6 +21,7 @@ import { deriveClosetPda, deriveWalletPda } from "@/lib/solana/pda";
 import { MARKET } from "@/lib/solana/program";
 import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
 import { formatUnits } from "@/lib/utils/format";
+import { DevnetFaucet } from "@/components/wallet/faucet";
 
 /**
  * The Market: looks for SOL, at the prices Pawket's program fixes for
@@ -183,7 +184,6 @@ function ItemSheet({
   onBought: () => void;
   onDismiss: () => void;
 }) {
-  const cluster = getPublicEnv().solanaCluster;
   const sender = usePawketSend();
   const sponsor = useSponsor();
   const { pet } = useCompanion();
@@ -258,7 +258,7 @@ function ItemSheet({
         {has && item.piece ? <p className="body-sm pk-muted">Yours. Put it on from the wardrobe in Profile.</p> : null}
         {!has && short ? (
           <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
-            Your Pawket Wallet holds {sol(balance ?? 0n)}. Add SOL there before buying. {cluster === "devnet" ? "Devnet SOL is free at faucet.solana.com." : ""} Nothing was sent.
+            Your Pawket Wallet holds {sol(balance ?? 0n)}. Add SOL there before buying.<DevnetFaucet /> Nothing was sent.
           </p>
         ) : null}
       </Stack>

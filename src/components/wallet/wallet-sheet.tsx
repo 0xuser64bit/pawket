@@ -6,6 +6,7 @@ import { Button, Sheet, Stack } from "@/components/pk";
 import { wallet } from "@/lib/solana/browser-client";
 import { isUserRejection, mobileWalletProblem } from "@/lib/solana/transactions";
 import { useSponsor } from "@/lib/solana/use-send";
+import { DevnetFaucet } from "@/components/wallet/faucet";
 
 /** The name Mobile Wallet Adapter registers under (its SolanaMobileWalletAdapterWalletName), kept here so the sheet does not pull the adapter into every bundle. */
 const PHONE_WALLETS = "Mobile Wallet Adapter";
@@ -106,7 +107,8 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
           Developer settings, Testnet mode).{" "}
           {sponsor.data?.available
             ? "Pawket covers pet-action fees. Link and fund Pawket Wallet before taking actions on Solana."
-            : "Each record costs a small network fee in devnet SOL, which is free at faucet.solana.com."}
+            : "Each record costs a small network fee in devnet SOL."}
+          <DevnetFaucet />
         </p>
       </Stack>
     </Sheet>

@@ -4,6 +4,7 @@ import type { SolanaCluster } from "@/config/env";
 import { explorerTxUrl } from "@/lib/solana/cluster";
 import type { TxState } from "@/lib/solana/use-send";
 import { inAndroidApp } from "@/lib/native/android";
+import { DevnetFaucet } from "@/components/wallet/faucet";
 
 /** Where a linked device key lives, said as the player sees it: this app, or this browser. Toasts are made at run time, never on the server. */
 const here = () => (inAndroidApp() ? "this app" : "this browser");
@@ -87,16 +88,7 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
           <>
             {tx.error}
             {tx.error?.includes("Pawket Wallet") ? <> <Link href="/wallet">Open Pawket Wallet</Link></> : null}
-            {tx.error && /not enough sol/i.test(tx.error) && cluster !== "mainnet-beta" ? (
-              <>
-                {" "}
-                Devnet SOL is free at{" "}
-                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer">
-                  faucet.solana.com
-                </a>
-                .
-              </>
-            ) : null}
+            {tx.error && /not enough sol/i.test(tx.error) ? <DevnetFaucet /> : null}
             {look}
           </>
         ),

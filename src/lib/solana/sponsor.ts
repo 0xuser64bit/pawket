@@ -65,7 +65,7 @@ export type SponsoredKind =
 type DeviceName = (typeof DEVICE_VARIANTS)[keyof typeof DEVICE_VARIANTS];
 
 /** Each instruction's kind. A device's twin is its owner instruction's kind (`kindOf`). */
-const KIND_OF: Record<Exclude<PawketInstructionName, DeviceName>, SponsoredKind> = {
+export const KIND_OF: Record<Exclude<PawketInstructionName, DeviceName>, SponsoredKind> = {
   adoptPet: "adopt",
   performCareAction: "care",
   finishRound: "round",
@@ -94,11 +94,12 @@ const OWNER_OF = new Map<string, keyof typeof KIND_OF>(
 );
 
 /**
- * Where the sponsor may appear in each instruction's accounts: the `payer`
- * of an adoption, a founding or a join (rent it pays), and `leave_guild`'s
- * `payer` (rent it gets back). Nowhere else.
+ * Where the sponsor may appear in each instruction's accounts: the account
+ * the program calls `payer` (rent it pays, or `leave_guild`'s rent it gets
+ * back) or `rent_payer` (`close_wallet`'s). Nowhere else — `sponsor.test.ts`
+ * holds every index to that name in the IDL.
  */
-const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
+export const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
   adopt: [1],
   care: [],
   round: [],

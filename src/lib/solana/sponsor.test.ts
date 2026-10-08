@@ -43,7 +43,8 @@ import {
   getUnlinkDeviceInstruction,
   getWithdrawInstruction,
 } from "./instructions";
-import { checkSponsorable, cosign, createLimiter, SponsorRefusal } from "./sponsor";
+import idl from "./idl/pawket.json";
+import { checkSponsorable, cosign, createLimiter, KIND_OF, SPONSOR_SLOTS, SponsorRefusal } from "./sponsor";
 
 const LIFETIME = {
   blockhash: "11111111111111111111111111111111" as Blockhash,
@@ -279,6 +280,16 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(await built((payer) => [wave(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["wave"] });
     for (const asSomeone of [(p: TransactionSigner) => event(p, p), (p: TransactionSigner) => vote(p, p), (p: TransactionSigner) => wave(p, p)]) {
       expect(checkSponsorable(await built((payer) => [asSomeone(payer)]), sponsor.address)).toMatchObject({ ok: false });
+    }
+  });
+
+  it("stands exactly where the program names a payer, in every instruction and so in every twin", () => {
+    // A twin's accounts are its owner instruction's, one later (`program.test.ts`), so the owner's names decide.
+    for (const [name, kind] of Object.entries(KIND_OF)) {
+      const ix = idl.instructions.find((each) => each.name === name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`));
+      const payers = (ix?.accounts ?? []).flatMap((account, i) => (account.name === "payer" || account.name === "rent_payer" ? [i] : []));
+      expect(ix, name).toBeDefined();
+      expect(SPONSOR_SLOTS[kind], name).toEqual(payers);
     }
   });
 

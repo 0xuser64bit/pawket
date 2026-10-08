@@ -80,3 +80,26 @@ browser's share sheet where there is one, and copies it either way; copying
 says "Copied" in place. Cancelling a share stays quiet; a refused clipboard
 points at the printed link. Labels say what is shared: "Share adoption
 link", "Share Pepper's record", "Share this guild", "Share the score".
+
+## Wallet routing
+
+Every action on Solana goes through a linked, funded Pawket Wallet; the
+owner's wallet signs only wallet management and approvals of money
+(`buy_with_wallet`, and the coin brackets). When the wallet is not ready,
+nothing is sent and the toast is a note that names the step — link, add SOL,
+or today's limit — and opens Pawket Wallet. The wallet sheet calls it
+setting up Pawket Wallet, offers Add SOL when the balance is empty, and
+points at the devnet faucet.
+
+## Market
+
+Free: three starter pieces, Light and Dark. The Market: twenty-five pieces
+(fifteen classics at 0.02 SOL in cloth; ten at 0.05 in foil, six of them new
+— cowboy hat, chef hat, sunglasses, headphones, beret, necktie, drawn on the
+pet, as tiles and in 3D), twelve rooms at 0.1 in glass (Terracotta,
+Newsprint, Cocoa and Arcade new, each held to the contrast floor), and eight
+photo frames at 0.025 in copper (Instant, Hearts, Starry night and Confetti
+new, shown on the shelf as small framed prints). The program's `item_price`
+holds every price; a second devnet upgrade on 8 October opened ids 23–28,
+72–75 and 84–87 and the classic tier, after the deployed binary was saved
+to `.keys/backups/pawket-devnet-replaced-2026-10-08-by-market-second-shelf.so`.

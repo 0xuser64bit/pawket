@@ -3,6 +3,55 @@
 Record of architectural decisions. Newest first. Add an entry when a decision
 changes — never rewrite history.
 
+## 2026-10: Pawket acts on Solana only through a funded Pawket Wallet
+
+**Context:** On 8 October the owner asked that no transaction ever come from
+a player's own wallet while their Pawket Wallet is unlinked or empty, so that
+every action sits in one history.
+**Decision:** Pet actions (care, rounds, clothes, adoption, guilds,
+gatherings, waves) are signed only by a linked device of a funded Pawket
+Wallet; the owner's wallet signs only wallet management and approvals of
+money. Market purchases use `buy_with_wallet` (the price from the Pawket
+Wallet), coin trades are bracketed by `fund_wallet_spend` and
+`settle_wallet_spend` (existing owner SOL reserved, change and proceeds back
+to the Pawket Wallet), and keepsakes name the Pawket Wallet so they appear in
+its history. When the wallet is not ready, nothing is sent and the toast is a
+next step that opens Pawket Wallet, not a failure.
+**Consequence:** A new player needs a little devnet SOL in their Pawket Wallet
+before anything on Solana works (the screens point at the faucet). Browser
+pets still need no wallet at all.
+
+## 2026-10: The Market sells every look but three, at two prices
+
+**Context:** The owner asked for only Light and Dark free, two or three free
+wardrobe pieces, and many more things in the Market.
+**Decision:** Three starter pieces stay free. The fifteen classic pieces that
+used to be free are sold at 0.02 SOL (cloth); the special pieces, ten now with
+a cowboy hat, chef hat, sunglasses, headphones, beret and necktie, at 0.05
+(foil). Twelve rooms (four new: Terracotta, Newsprint, Cocoa, Arcade) at 0.1
+(glass) and eight photo frames (four new: Instant, Hearts, Starry night,
+Confetti) at 0.025 (copper). Stickers stay achievements; they no longer unlock
+pieces. Devnet upgrades of 2026-10-08 (the first by the Codex pass, the second
+here) moved `WEARABLE_COUNT` to 3 and set `item_price` to these ranges; every
+account layout is unchanged and a piece already worn stays on.
+**Consequence:** Item ids are 4–28, 64–75 and 80–87. A new look is a catalog
+line, its drawings (2D, tile, 3D) and a program upgrade for its id.
+
+## 2026-10: Mobile Wallet Adapter is patched where it hangs
+
+**Context:** In the Android app, linking with Solflare rarely worked the first
+time: the wallet opened, showed nothing to sign and froze until both apps
+were killed. MWA 0.6.0 re-authorizes each request with the saved token; when
+the wallet refused it, the adapter disconnected and then awaited forever
+without closing the session.
+**Decision:** Patch the pinned packages (`patches/`): a refused token is
+asked for again in the same session (a different account is refused), every
+session closes on every exit, a request the wallet abandons fails at once
+(protocol 3.0.0's fix, backported), and a wallet app gets a minute to open.
+Stay on 0.6.0 rather than the day-old 0.7.0, which does not change these paths.
+**Consequence:** `mobile-session.test.ts` holds the session rules; the
+physical-phone check with Solflare and Phantom remains the final evidence.
+
 ## 2026-10: The audit of 7 October, answered where each rule is enforced
 
 **Context:** An automated security review of `aff66a4` listed 68 patterns in

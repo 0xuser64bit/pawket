@@ -24,11 +24,16 @@ Q1 and Q5 (`OPEN-QUESTIONS.md`).
 
 ## 2. What it sells
 
-| Item ids | What | Price | Used with |
-| --- | --- | --- | --- |
-| 4–22 | Nineteen pet pieces | 0.05 SOL each | `dress_owned`, on the buyer's pets on Solana |
-| 64–71 | Eight rooms | 0.1 SOL each | the room picker |
-| 80–83 | Postcard, Film strip, Garden, Sunshine photo frames | 0.025 SOL each | Home → Photo → Photo frame |
+| Item ids | What | Material | Price | Used with |
+| --- | --- | --- | --- | --- |
+| 4–18 | Fifteen classic pet pieces (the wardrobe's old free pieces) | Cloth | 0.02 SOL each | `dress_owned`, on the buyer's pets on Solana |
+| 19–28 | Ten pet pieces: halo, wizard hat, sun hat, gold crown, cowboy hat, chef hat, sunglasses, headphones, beret, necktie | Foil | 0.05 SOL each | `dress_owned` |
+| 64–75 | Twelve rooms: Blossom, Aurora, Strawberry, Honey, Matcha, Seaside, Lavender, Starlight, Terracotta, Newsprint, Cocoa, Arcade | Glass | 0.1 SOL each | the room picker |
+| 80–87 | Eight photo frames: Postcard, Film strip, Garden, Sunshine, Instant, Hearts, Starry night, Confetti | Copper | 0.025 SOL each | Home → Photo → Photo frame |
+
+Each shelf's material is its tile's trim, and the word is written beside the
+price ("Cloth piece", "Glass room"). The material says what kind of thing it
+is; it is never a rarity anyone can chase, and nothing is scarce.
 
 The wool scarf, paper crown and red collar are free starters. Light and
 Dark (plus following the device) are free. All other choices appear in the
@@ -36,9 +41,13 @@ Market; Profile shows starters and confirmed purchases only. Stickers
 remain achievements and no longer unlock wardrobe pieces.
 
 Catalog slot numbers stay unchanged. Blossom and Aurora remain 64 and 65;
-Strawberry through Starlight use 66–71. The existing 256-bit Closet holds
-all entitlements without a layout migration. A previously worn piece is
-not stripped from a pet when its availability changes.
+Strawberry through Starlight use 66–71, and the second shelf's rooms 72–75.
+The existing 256-bit Closet holds all entitlements without a layout
+migration. A previously worn piece is not stripped from a pet when its
+availability or price changes. Every new piece is drawn three ways: on the
+pet (`pet-art.tsx`), as a tile (`WearableArt`) and in the 3D room
+(`room3d/wearables.ts`, held complete by `wearables.test.ts`); a frame is
+drawn on the print (`printPhoto`) and on the shelf (`FrameArt`).
 
 ## 3. The flow
 

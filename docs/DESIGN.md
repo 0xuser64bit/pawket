@@ -62,16 +62,18 @@ surface, ever.**
 
 ## Rooms (themes)
 
-A player can live in one of eight rooms: Daylight and Lamplight (the
-device decides between them unless the player picks), Strawberry, Honey,
-Matcha, Seaside, Lavender and Starlight. Each is a complete token block in
+A player can live in one of fourteen rooms: Light and Dark are free (the
+device decides between them unless the player picks); Strawberry, Honey,
+Matcha, Seaside, Lavender, Starlight, Blossom, Aurora, Terracotta,
+Newsprint, Cocoa and Arcade are the Market's. Each is a complete token block in
 `app/globals.css` (`:root[data-theme="…"]`) that also applies to any
 element marked `data-theme-preview`, so the shell's room switch and the
 picker in Profile draw each room in its own tokens — a preview can never
 disagree with the room it opens. Every hue keeps its job in every room;
 only the grounds, surfaces, ink and tints move. `themes.test.ts` holds each
 room to the accessibility floor below. The 3D wall takes the pet's sky in
-the picked room; an evening room (Lamplight, Starlight) lights the lantern.
+the picked room; an evening room (Dark, Starlight, Aurora, Cocoa, Arcade)
+lights the lantern.
 
 ## Type
 

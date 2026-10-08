@@ -1,5 +1,6 @@
 import { getPublicEnv } from "@/config/env";
 import { APP_NAME } from "@/config/site";
+import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { truncateAddress } from "@/lib/utils/format";
 
 /**
@@ -24,7 +25,7 @@ export function NetworkBadge() {
         }}
       />
       Cluster {env.solanaCluster} · Program{" "}
-      <span title={env.pawketProgramId}>{truncateAddress(env.pawketProgramId)}</span>
+      <span title={PAWKET_PROGRAM_ID}>{truncateAddress(PAWKET_PROGRAM_ID)}</span>
       <span className="pk-sr">for {APP_NAME}</span>
     </p>
   );

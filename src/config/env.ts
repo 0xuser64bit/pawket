@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 
 /**
  * Environment strategy.
@@ -22,13 +21,6 @@ function emptyToUndefined(value: unknown): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
-
-function isValidSolanaAddress(value: string): boolean {
-  // Base58, 32–44 chars — the shape of every Solana address. Full
-  // byte-level validation happens in `parseAddress` at the use site.
-  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value);
-}
-
 /** Well-known public RPC hosts per cluster — used only to catch misroutes. */
 const KNOWN_RPC_HOSTS: Array<{ cluster: SolanaCluster; host: string }> = [
   { cluster: "devnet", host: "api.devnet.solana.com" },
@@ -47,19 +39,8 @@ const publicEnvSchema = z
       emptyToUndefined,
       z.string().default("https://api.devnet.solana.com"),
     ),
-    pawketProgramId: z.preprocess(
-      emptyToUndefined,
-      z.string().default(PAWKET_PROGRAM_ID),
-    ),
   })
   .superRefine((env, ctx) => {
-    if (!isValidSolanaAddress(env.pawketProgramId)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["pawketProgramId"],
-        message: "Not a valid Solana address.",
-      });
-    }
     // A provider key in a public URL is in every browser that loads the app.
     if (/api[-_]?key=/i.test(env.solanaRpcUrl)) {
       ctx.addIssue({
@@ -93,7 +74,6 @@ export function getPublicEnv(): PublicEnv {
     appUrl: process.env.NEXT_PUBLIC_APP_URL,
     solanaCluster: process.env.NEXT_PUBLIC_SOLANA_CLUSTER,
     solanaRpcUrl: process.env.NEXT_PUBLIC_SOLANA_RPC_URL,
-    pawketProgramId: process.env.NEXT_PUBLIC_PAWKET_PROGRAM_ID,
   });
   return cachedPublicEnv;
 }

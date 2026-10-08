@@ -5,7 +5,6 @@ const KEYS = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SOLANA_CLUSTER",
   "NEXT_PUBLIC_SOLANA_RPC_URL",
-  "NEXT_PUBLIC_PAWKET_PROGRAM_ID",
 ];
 
 const saved = Object.fromEntries(KEYS.map((k) => [k, process.env[k]]));
@@ -19,15 +18,12 @@ afterEach(() => {
 });
 
 describe("getPublicEnv", () => {
-  it("defaults to devnet with the known program ID", () => {
+  it("defaults to devnet", () => {
     for (const k of KEYS) delete process.env[k];
     __resetEnvCacheForTests();
     const env = getPublicEnv();
     expect(env.solanaCluster).toBe("devnet");
     expect(env.solanaRpcUrl).toBe("https://api.devnet.solana.com");
-    expect(env.pawketProgramId).toBe(
-      "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74",
-    );
   });
 
   it("rejects unknown clusters instead of silently misrouting", () => {
@@ -39,14 +35,10 @@ describe("getPublicEnv", () => {
   it("treats empty-string values as unset so defaults apply", () => {
     process.env.NEXT_PUBLIC_SOLANA_CLUSTER = "";
     process.env.NEXT_PUBLIC_SOLANA_RPC_URL = "   ";
-    process.env.NEXT_PUBLIC_PAWKET_PROGRAM_ID = "";
     __resetEnvCacheForTests();
     const env = getPublicEnv();
     expect(env.solanaCluster).toBe("devnet");
     expect(env.solanaRpcUrl).toBe("https://api.devnet.solana.com");
-    expect(env.pawketProgramId).toBe(
-      "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74",
-    );
   });
 
   it("rejects a cluster/RPC mismatch instead of silently misrouting", () => {
@@ -61,12 +53,6 @@ describe("getPublicEnv", () => {
     process.env.NEXT_PUBLIC_SOLANA_RPC_URL = "https://devnet.example-rpc.com/?api-key=not-a-real-key";
     __resetEnvCacheForTests();
     expect(() => getPublicEnv()).toThrow(/SOLANA_RPC_URL/);
-  });
-
-  it("rejects a malformed program ID at startup, not deep in PDA code", () => {
-    process.env.NEXT_PUBLIC_PAWKET_PROGRAM_ID = "not-an-address!!";
-    __resetEnvCacheForTests();
-    expect(() => getPublicEnv()).toThrow();
   });
 });
 

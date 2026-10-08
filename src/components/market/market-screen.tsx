@@ -12,6 +12,7 @@ import { useCompanion } from "@/lib/companion/use-companion";
 import { petLook } from "@/lib/game/appearance";
 import { projectGuestPet } from "@/lib/guest/pet";
 import { PHOTO_FRAMES } from "@/lib/market/frames";
+import { FrameArt } from "./frame-art";
 import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
@@ -63,7 +64,7 @@ const ROOMS: Item[] = THEMES.filter((theme) => roomItem(theme.id) !== null).map(
 
 const FRAMES: Item[] = PHOTO_FRAMES.map((frame) => ({
   id: frame.item, name: frame.name, line: frame.line, kind: "frame",
-  art: <span className={`pk-market-frame pk-market-frame--${frame.id}`} aria-hidden="true">Pawket</span>,
+  art: <FrameArt id={frame.id} className="pk-market-frame" />,
 }));
 
 const sol = (lamports: bigint | string) => `${formatUnits(lamports, 9, 4)} SOL`;
@@ -83,7 +84,7 @@ export function MarketScreen() {
       <button key={item.id} type="button" className="pk-tile-hit" aria-haspopup="dialog" onClick={() => setPicked(item)}>
         <ItemTile
           name={item.name}
-          kind={has ? "In your closet" : item.kind === "room" ? "Room" : item.kind === "frame" ? "Photo frame" : "Piece"}
+          kind={has ? "In your closet" : item.kind === "room" ? "Room" : item.kind === "frame" ? "Frame" : "Piece"}
           rarity="foil"
           price={has ? undefined : sol(marketPrice(item.id)!)}
           art={item.art}

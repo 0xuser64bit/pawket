@@ -11,7 +11,7 @@ const LAST_CLASSIC: u8 = 18;
 const LAST_PIECE: u8 = 28;
 const FIRST_ROOM: u8 = 64;
 const LAST_ROOM: u8 = 75;
-const LAST_FRAME: u8 = 83;
+const LAST_FRAME: u8 = 87;
 
 #[test]
 fn a_piece_bought_in_the_market_goes_to_the_treasury_and_into_the_closet_while_a_sponsor_pays_the_rest() {

@@ -64,7 +64,7 @@ export const MARKET = {
   firstRoom: 64,
   rooms: 12,
   firstFrame: 80,
-  frames: 4,
+  frames: 8,
   classicPrice: 20_000_000n,
   framePrice: 25_000_000n,
   wearablePrice: 50_000_000n,

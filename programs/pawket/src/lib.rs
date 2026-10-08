@@ -104,7 +104,7 @@ pub const FIRST_ROOM_ITEM: u8 = 64;
 pub const MARKET_ROOM_COUNT: u8 = 12;
 /// The Market's photo frames, as item ids from 80.
 pub const FIRST_FRAME_ITEM: u8 = 80;
-pub const MARKET_FRAME_COUNT: u8 = 4;
+pub const MARKET_FRAME_COUNT: u8 = 8;
 pub const CLASSIC_PRICE_LAMPORTS: u64 = 20_000_000;
 pub const FRAME_PRICE_LAMPORTS: u64 = 25_000_000;
 pub const WEARABLE_PRICE_LAMPORTS: u64 = 50_000_000;

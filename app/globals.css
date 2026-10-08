@@ -8126,7 +8126,6 @@ html[data-transition="room"]::view-transition-new(*) {
   .pk-paws__paw { width: min(100%, calc(100svh - var(--space-10) - var(--space-9))); }
 }
 
-.pk-market-frame { display: grid; place-items: center; aspect-ratio: 1; width: 75%; padding: var(--space-3); background: var(--surface); color: var(--ink); font-family: var(--font-display); border: 6px double var(--edge); }
-.pk-market-frame--film { border: 12px dashed var(--edge); }
-.pk-market-frame--garden { border: 6px dotted var(--sprout-text); border-radius: var(--radius-md); }
-.pk-market-frame--sunshine { border: 12px solid var(--sun); border-radius: var(--radius-md); }
+/* A photo frame on the shelf: a small print in that frame (FrameArt). */
+.pk-tile__art .pk-market-frame { width: 74%; height: auto; }
+.pk-market-try .pk-market-frame { width: auto; height: 196px; align-self: center; }

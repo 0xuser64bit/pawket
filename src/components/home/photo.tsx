@@ -19,9 +19,33 @@ function ink() {
     faint: token("--ink-faint", "#6f5f4a"),
     sprout: token("--sprout-text", "#315b35"),
     sun: token("--sun", "#ff8a3d"),
+    pool: token("--pool", "#7ba4ec"),
+    blush: token("--pet-blush", "#ff9f8f"),
+    foil: token("--trim-foil", "#95761a"),
     display: token("--font-display", "serif"),
     mono: token("--font-mono", "monospace"),
   };
+}
+
+/** A heart centred on (x, y), `s` across its widest half. */
+function heart(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
+  ctx.beginPath();
+  ctx.moveTo(x, y + s * 0.9);
+  ctx.bezierCurveTo(x - s * 1.4, y, x - s * 0.8, y - s * 1.1, x, y - s * 0.35);
+  ctx.bezierCurveTo(x + s * 0.8, y - s * 1.1, x + s * 1.4, y, x, y + s * 0.9);
+  ctx.closePath();
+}
+
+/** A five-pointed star centred on (x, y). */
+function star(ctx: CanvasRenderingContext2D, x: number, y: number, outer: number, inner: number) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 ? inner : outer;
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    if (i === 0) ctx.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+    else ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+  }
+  ctx.closePath();
 }
 
 function load(src: string): Promise<HTMLImageElement> {
@@ -54,15 +78,16 @@ export async function printPhoto(shot: string, title: string, line: string, fram
   ctx.fillStyle = t.paper;
   ctx.fillRect(0, 0, W, H);
 
-  const r = frame === "postcard" || frame === "film" ? 0 : 40;
+  const r = frame === "postcard" || frame === "film" || frame === "polaroid" ? 0 : 40;
   ctx.save();
   ctx.beginPath();
   ctx.roundRect(pad, pad, photoW, photoH, r);
   ctx.clip();
   ctx.drawImage(image, pad, pad, photoW, photoH);
   ctx.restore();
-  ctx.lineWidth = frame === "sunshine" || frame === "film" ? 28 : 6;
-  ctx.strokeStyle = frame === "sunshine" ? t.sun : frame === "garden" ? t.sprout : t.edge;
+  ctx.lineWidth = frame === "sunshine" || frame === "film" || frame === "starry" ? 28 : frame === "polaroid" ? 4 : 6;
+  ctx.strokeStyle =
+    frame === "sunshine" ? t.sun : frame === "garden" ? t.sprout : frame === "hearts" ? t.blush : frame === "starry" ? t.pool : t.edge;
   ctx.beginPath();
   ctx.roundRect(pad, pad, photoW, photoH, r);
   ctx.stroke();
@@ -73,6 +98,72 @@ export async function printPhoto(shot: string, title: string, line: string, fram
     for (let y = pad + 12; y < pad + photoH - 12; y += 44) {
       ctx.fillRect(pad - 7, y, 14, 22);
       ctx.fillRect(W - pad - 7, y, 14, 22);
+    }
+  }
+  if (frame === "polaroid") {
+    // A strip of tape across the top edge, a little crooked.
+    ctx.save();
+    ctx.translate(W / 2, pad);
+    ctx.rotate(-0.04);
+    ctx.globalAlpha = 0.82;
+    ctx.fillStyle = t.paper;
+    ctx.fillRect(-96, -24, 192, 48);
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = t.faint;
+    ctx.strokeRect(-96, -24, 192, 48);
+    ctx.restore();
+  }
+  if (frame === "hearts") {
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = t.edge;
+    ctx.fillStyle = t.blush;
+    for (const [x, y, s] of [[pad, pad, 30], [W - pad, pad, 30], [pad, pad + photoH, 30], [W - pad, pad + photoH, 30], [W / 2, pad, 22], [W / 2, pad + photoH, 22]]) {
+      heart(ctx, x, y, s);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+  if (frame === "starry") {
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = t.edge;
+    ctx.fillStyle = t.foil;
+    const stars: Array<[number, number]> = [];
+    for (let x = pad + 60; x < W - pad - 30; x += 120) stars.push([x, pad], [x + 60, pad + photoH]);
+    for (let y = pad + 90; y < pad + photoH - 40; y += 150) stars.push([pad, y], [W - pad, y + 70]);
+    for (const [x, y] of stars) {
+      star(ctx, x, y, 12, 5);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+  if (frame === "confetti") {
+    // The same sprinkle every time: a fixed seed, so a print never changes between saves.
+    let seed = 7;
+    const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const colours = [t.sun, t.pool, t.sprout, t.blush];
+    const perimeter = 2 * (photoW + photoH);
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = t.edge;
+    for (let i = 0; i < 48; i++) {
+      let d = random() * perimeter;
+      const off = (random() - 0.5) * 44;
+      let x: number;
+      let y: number;
+      if (d < photoW) [x, y] = [pad + d, pad + off];
+      else if ((d -= photoW) < photoH) [x, y] = [pad + photoW + off, pad + d];
+      else if ((d -= photoH) < photoW) [x, y] = [pad + photoW - d, pad + photoH + off];
+      else [x, y] = [pad + off, pad + photoH - (d - photoW)];
+      ctx.fillStyle = colours[i % colours.length];
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(random() * Math.PI);
+      ctx.beginPath();
+      if (i % 3 === 0) ctx.arc(0, 0, 6, 0, Math.PI * 2);
+      else ctx.rect(-9, -4, 18, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
     }
   }
   if (frame === "garden") {

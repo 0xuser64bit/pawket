@@ -18,10 +18,12 @@ a wallet. Feed, play, brush and rest with your pet; choose your look, collect
 stickers and try the day's playground round. Nothing you buy changes a
 pet's care, XP or game score.
 
-When you choose, keep your pet on Solana. Your wallet signs, and a confirmed
-care becomes part of its public Passport. Pawket pays eligible fees while
-its sponsor is available. You can return with the same wallet on another
-device and find your pets on Solana there.
+When you choose, keep your pet on Solana. Your wallet approves a Pawket
+Wallet once, with a little SOL in it; this app then signs your pet's care
+with no pop-up, and each confirmed care becomes part of its public
+Passport. Pawket pays eligible fees while its sponsor is available. You can
+return with the same wallet on another device and find your pets on Solana
+there.
 
 On Android, save a room photo to your gallery or open the phone's share
 sheet. Use a calendar reminder, a launcher shortcut, and the back gesture
@@ -121,7 +123,8 @@ Do not edit a rejection or pending state into a successful result.
 | Feed or play in its room; Today and a playground round | “Care gives us a daily rhythm. The pet and my character share a room. Everyone gets the same daily round.” |
 | Photo, Save, native share sheet | “This is our room photo, saved to my gallery. I can send it through the phone's share sheet.” |
 | Connect, MWA approval, return | “Pawket reaches the wallet app on this phone. My keys stay there.” |
-| Keep the guest pet on Solana, wallet approves | “Now I choose to keep this pet on Solana. The sponsor pays eligible fees; my wallet signs for my pet.” |
+| Pawket Wallet: link this app with 0.01 devnet SOL, wallet approves | “One approval sets up my Pawket Wallet and links this app. Its key never leaves this phone, and it can never move money.” |
+| Keep the guest pet on Solana, no wallet prompt | “Now I choose to keep this pet on Solana. Pawket pays the fee; this app signs for my pet.” |
 | Confirmed care, updated record, Explorer receipt | “The moment plays after confirmation. This signature is the care record I can check.” |
 | Public Passport | “The Passport reads the pet and its history from Solana.” |
 | Back, background, relaunch | “I return to the same companion. Pets on Solana follow the same wallet; pets in this app stay on this phone.” |

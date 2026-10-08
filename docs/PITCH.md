@@ -23,16 +23,19 @@ and the identity your pet carries into guilds, games and a market of looks.**
 1. **Play first.** Adopt in three taps, no wallet, no sign-up. Feed, play,
    brush, rest — needs fall while you are away, and the pet's face says
    what it wants. A 3D room, four mini-games with a daily round everyone
-   shares, a wardrobe, eight free rooms.
+   shares, a starter wardrobe and two rooms, free.
 2. **Keep it when it matters.** One signature moves the pet onto Solana:
    from then on every care is a transaction, decay and cooldowns are
    enforced by the program with the same integer math as the browser
    (replayed against both), and the **Passport** — streak, counts, the last
-   eight cares, stickers, guestbook — is public. Pawket pays the fees; a
-   wallet with no SOL can play.
-3. **No popups.** A Pawket Wallet links this device with one approval: a
-   non-extractable WebCrypto key the program lets care for your pets, inside
-   a daily limit and an end date, and nothing else. It can never move money.
+   eight cares, stickers, guestbook — is public. Pawket pays every fee and
+   rent; the player puts a little SOL in a Pawket Wallet once (0.01 devnet
+   SOL is enough), and it pays only for what they approve: looks and coins.
+3. **One approval, then no popups.** Setting up the Pawket Wallet — open
+   it, fund it, link this device — is one approval. The device key is a
+   non-extractable WebCrypto key the program lets act for your pets (care,
+   rounds, clothes, adoption, guilds, gatherings, waves), inside a daily
+   limit and an end date. It can never move money.
 4. **Meet others.** The Park shows every pet on chain. Guilds are on chain:
    found or join one, plan events your pets RSVP to and check in at, ask
    polls each wallet answers once. Anyone can wave at a pet into its
@@ -51,12 +54,12 @@ and the identity your pet carries into guilds, games and a market of looks.**
 
 | Primitive | How Pawket uses it |
 | --- | --- |
-| Anchor program (`PawkHv…eM74`) | pets, Passports, guilds, gatherings, guestbooks, the Market, the Pawket Wallet — 25 instructions, 11 account types |
+| Anchor program (`PawkHv…eM74`) | pets, Passports, guilds, gatherings, guestbooks, the Market, the Pawket Wallet — 38 instructions (14 of them a linked device's twins), 11 account types |
 | Fee payer + partial signing | the sponsor signs first as fee payer for Pawket instructions only (`checkSponsorable`), the player signs as owner |
 | Solana Actions / Blinks | adopt, care, wave and join a guild from a shared link |
 | Metaplex Core | a frozen keepsake card per pet, found without an indexer |
 | Meteora DBC + DAMM v2 | guild coins: two presets, launch, partial-fill trades, graduation, fee splits |
-| WebCrypto Ed25519 | a non-extractable device key the program scopes to care |
+| WebCrypto Ed25519 | a non-extractable device key the program scopes to everything but money |
 | Kit v8 | every client call; Meteora's SDKs stay server-side |
 
 ## Business model (honest, and already on chain)
@@ -89,24 +92,29 @@ Market sales and the treasury. Say plainly that devnet includes test runs.
 
 ## Demo script (3 minutes)
 
-1. **0:00 — Adopt.** Landing → "Adopt a pet": a moss pup, "Brave", named.
-   No wallet. Home: the 3D room, feed and play; the pet reacts.
-2. **0:30 — Keep it on Solana.** Connect a wallet with **0 SOL**; "Record
-   Biscuit"; one approval; the receipt shows the signature and "Paid by
-   Pawket". Feed again: a signed care, the Explorer link.
-3. **1:00 — No popups.** Open the Pawket Wallet, link this device (one
-   approval). Care again: no wallet prompt, the receipt says "Signed by this
-   device".
-4. **1:20 — The Passport.** Open "Their record": stickers, the last cares,
-   the guestbook. From a second wallet, wave. Share the link: in a
+Before recording: a devnet wallet holding a little SOL from
+faucet.solana.com, and a second wallet for the wave.
+
+1. **0:00 — Adopt.** Landing → "Adopt a pet": a brave moss pup named
+   Biscuit. No wallet. Home: the 3D room, feed and play; the pet reacts.
+2. **0:30 — One approval.** Connect the wallet; open Pawket Wallet; link
+   this browser with 0.01 SOL in it. One approval opens the wallet, funds
+   it and links the browser; Pawket pays the rent and the fee.
+3. **0:50 — Keep it on Solana.** "Keep on Solana" beside the room's name;
+   the sheet says the record starts at level 1; confirm. No wallet prompt:
+   the browser signs, the toast says "Recorded on Solana, no pop-up" with
+   the Explorer a tap away, and the room says "On Solana". Feed: the same,
+   a signed care.
+4. **1:20 — The Passport.** Open "Biscuit's record": stickers, the last
+   cares, the guestbook. From the second wallet, wave. Share the link: in a
    Blink-aware wallet it is the pet's card — four cares for the owner, a
    wave or an adoption for everyone else.
 5. **1:50 — Guilds.** Sunbeam Club: the pets, the event (RSVP, check in),
    the poll (vote once). Open its coin: the terms on Paper, what can go
-   wrong, a quote, a buy. Then Cloud Nine's coin: graduated into DAMM v2,
-   its pool verified.
-6. **2:30 — The Market.** Buy the halo (devnet SOL); wear it from the
-   wardrobe. The sale lands in the treasury.
+   wrong, a quote, a buy from the Pawket Wallet that the wallet approves.
+   Then Cloud Nine's coin: graduated into DAMM v2, its pool verified.
+6. **2:30 — The Market.** Buy the halo from the Pawket Wallet (the wallet
+   approves); wear it from the wardrobe. The sale lands in the treasury.
 7. **2:45 — Pulse.** Everything above, counted from the program, live.
 
 ## Meteora bounty write-up ("Best use of DBC")

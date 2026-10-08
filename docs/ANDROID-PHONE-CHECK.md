@@ -24,50 +24,54 @@ without uninstalling or clearing the old app's data.
    to an app you choose. Cancel another share; Pawket should not claim that
    it was shared. Open a public Passport and test native link sharing too.
 
-## Wallet and care
+## Wallet, Pawket Wallet and care
 
-4. Set your supported wallet app to devnet, then connect from Pawket.
-   Approve in the wallet and return. Connecting alone must not send anything.
-5. Keep the fresh pet on Solana. Read the level-reset explanation. Approve
-   the transaction; wait for confirmation. The pet should then say
-   **on Solana**, with an Explorer receipt on devnet. Note the signature.
-6. Perform one available care and decline in the wallet. No XP, care log
-   or moment should change. Return and approve an available care. Its
-   moment and haptic should occur **after** confirmation. Note that receipt.
-7. Open the public Passport and check the confirmed care. Background the
-   app, reopen it, and follow a shared `/pet/…` link. The same wallet's
-   on-chain pets should return. Rotate while a wallet request is open;
-   Pawket must not reload or duplicate it.
+Every action on Solana goes through a linked, funded Pawket Wallet; there
+is no owner-wallet fallback. The wallet app approves setting it up and
+anything that spends SOL; this app signs care and the rest with no prompt.
 
-## Device key and fallback
-
-8. In Pawket Wallet, choose to link **this app**. Review the expiry and daily
-   limit and approve with your wallet. On a current WebView that supports
-   Ed25519, an eligible care should then use the linked device without a
-   wallet prompt, with the same visible confirmed receipt. Record the result.
-   Reopen the app and repeat an available care to check key persistence.
-   Check the chosen expiry and daily limit: once either prevents device
-   signing, the app must explain it and offer the owner-wallet fallback.
-9. Unlink using the owner wallet. The next eligible care should ask the
-   wallet again. Device signing must never offer a money transfer.
-10. If linking says to update Android System WebView, update it and repeat.
-    Report the exact message and WebView version if it still fails. Owner
-    signing should continue working. Do not describe this path as verified
-    until linking, delegated care and revocation have passed on the phone.
+4. Set your supported wallet app to devnet with a little devnet SOL from
+   faucet.solana.com (0.01 is enough), then connect from Pawket. Approve in
+   the wallet and return. Connecting alone must not send anything.
+5. Before linking, press "Keep on Solana" for the fresh pet and confirm:
+   Pawket must say to link this app first, offer Pawket Wallet and send
+   nothing.
+6. In Pawket Wallet, pick the link length, daily limit and 0.01 SOL, then
+   **Link this app**. Approve in the wallet and return; it should say
+   **This app is linked**. If it says to update Android System WebView
+   (no WebCrypto Ed25519), update it and repeat; record the exact message
+   and WebView version. Until linking passes, nothing on Solana works in
+   this app, so record this result first.
+7. Keep the fresh pet on Solana. Read the level-reset explanation and
+   confirm: no wallet prompt, then **on Solana** and a toast with the
+   devnet Explorer receipt. Note the signature.
+8. Perform an available care: no wallet prompt; its moment and haptic
+   occur **after** confirmation. Note that receipt. Reopen the app and
+   repeat an available care to check the key persisted.
+9. Start a Market purchase and decline in the wallet: nothing is bought,
+   the balance is unchanged and no success is claimed. Approve one if you
+   like (devnet SOL). Rotate while that wallet request is open; Pawket must
+   not reload or duplicate it.
+10. Open the public Passport and check the confirmed care. Background the
+    app, reopen it, and follow a shared `/pet/…` link. The same wallet's
+    on-chain pets should return.
+11. Unlink this app in Pawket Wallet (the app signs it). The next care
+    must say to link this app first and send nothing. A linked app never
+    offers a money transfer.
 
 ## Phone behavior
 
-11. Feel one confirmed-care haptic, turn haptics off in Profile, and confirm
+12. Feel one confirmed-care haptic, turn haptics off in Profile, and confirm
     that the setting sticks. Open a calendar reminder and inspect the event
     before deciding whether to save it. Pawket should request no calendar,
     gallery, camera or contacts permission.
-12. Back should close the newest sheet/photo, then page history, then send
+13. Back should close the newest sheet/photo, then page history, then send
     the root app to the background. Resume should retain the room. Try all
     four playground games with touch; switch between 3D and Flat Room.
-13. Check the keyboard, larger Android text size and light/dark rooms.
+14. Check the keyboard, larger Android text size and light/dark rooms.
     Use TalkBack for adoption, care controls and the wallet sheet. Note any
     clipped controls, missing labels or gesture that reloads the page.
-14. Try an offline cold open: Pawket should show its retry screen. Restore
+15. Try an offline cold open: Pawket should show its retry screen. Restore
     the connection and retry. For an unknown transaction outcome, inspect
     the existing Explorer receipt before sending a new action.
 
@@ -82,9 +86,9 @@ consumer wallet and physical-device behavior that the emulator cannot prove.
 | --- | --- |
 | Phone, Android, WebView, wallet versions | |
 | Guest persistence and photo save/share | |
-| MWA connect, decline, adoption and confirmed care | |
+| MWA connect, Pawket Wallet link (WebView version), keep and confirmed care | |
 | Passport, public link, background/relaunch/rotation | |
-| Device link, delegated care, revoke and owner fallback | |
+| Market decline, rotation, unlink and the link-first note | |
 | Haptics, calendar editor and all games | |
 | Larger text, keyboard, TalkBack and 3D/flat room | |
 | Offline/retry and any unknown receipt | |

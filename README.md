@@ -17,9 +17,11 @@ wants one, an optional coin on **Meteora's Dynamic Bonding Curve** that
 graduates into **DAMM v2** with its liquidity locked for good. Nothing money
 can buy changes a pet.
 
-**Live:** https://pawket.world — on Solana devnet, and Pawket pays
-the network fees, so a wallet with no SOL can play. Everything it holds,
-counted live: [`/pulse`](https://pawket.world/pulse).
+**Live:** https://pawket.world — on Solana devnet. Playing in the browser
+needs no wallet. Keeping a pet on Solana needs a wallet with a little devnet
+SOL (0.01 is enough; it is free at [faucet.solana.com](https://faucet.solana.com))
+to fill a Pawket Wallet; Pawket pays every network fee and rent. Everything
+it holds, counted live: [`/pulse`](https://pawket.world/pulse).
 
 **Program:** [`PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`](https://explorer.solana.com/address/PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74?cluster=devnet) (devnet, v0 — mainnet will be v1)
 
@@ -32,21 +34,23 @@ write-up are in [`docs/PITCH.md`](docs/PITCH.md); the mainnet plan is
 1. Open the live app and adopt — no wallet, no sign-up, and as many pets as
    you like. Feed, play, brush and rest in the room; the pet's needs fall
    while you are away, and its face (and the deck) says what it wants.
-2. To keep the pet on Solana, connect a wallet set to devnet ("Connect", top
-   right; in Phantom, turn on testnet mode and pick Solana Devnet). It needs
-   no SOL.
-3. Tap the small badge on Pepper's face in the pet bar, then "Keep Pepper",
-   and approve. Its record on Solana starts today, at level 1 — the sheet
-   says so first. Every care after that is a signed transaction; a toast
-   says when Solana has it, with the Explorer a tap away.
-4. Tired of approving each one? Open the Pawket Wallet (from the wallet
-   chip) and link this browser — one approval, no SOL needed while Pawket
-   pays the fees. From then on care, rounds, clothes, guilds, gatherings
-   and waves are signed here with no pop-up, inside the limits you set;
-   anything that spends SOL still asks your wallet. Withdraw or close it any
-   time; the history of every lamport is read from Solana.
-5. Open "Their record" — the public Passport anyone can read — and keep the
-   pet's card in your wallet from there.
+2. Connect a wallet set to devnet ("Connect", top right; in Phantom, turn on
+   testnet mode and pick Solana Devnet) holding a little devnet SOL from
+   [faucet.solana.com](https://faucet.solana.com).
+3. Set up your Pawket Wallet (from the wallet sheet, or `/wallet`): pick how
+   long to link this browser, a daily limit and what to put in (from 0.01
+   SOL), then "Link this browser". One approval opens it, puts the SOL in
+   and links the browser; Pawket pays its rent and every network fee. From
+   then on care, rounds, clothes, adoption, guilds, gatherings and waves are
+   signed here with no pop-up, inside the limits you set; Market looks and
+   guild coins spend the balance only when your wallet approves. Withdraw
+   or close it any time; the history of every lamport is read from Solana.
+4. On Home, press "Keep on Solana" beside the room's name and confirm. Its
+   record on Solana starts today, at level 1 — the sheet says so first.
+   Every care after that is a signed transaction; a toast says when Solana
+   has it, with the Explorer a tap away.
+5. Open "Pepper's record" — the public Passport anyone can read — and keep
+   the pet's card in your wallet from there.
 6. Share the Passport link: in a Blink-aware client it opens as the pet's
    card, with its four cares for you and "Adopt your own" for everyone else.
 7. Open Guilds and join Sunbeam Club, Muddy Paws or Cloud Nine with a pet on
@@ -54,17 +58,19 @@ write-up are in [`docs/PITCH.md`](docs/PITCH.md); the mainnet plan is
    the guild's card, and a pet joins from the wallet.
 8. Open a guild's coin: Sunbeam Club's is on its bonding curve, Cloud Nine's
    has graduated into its DAMM v2 pool. Read the terms and what can go
-   wrong, get a quote, and trade it with a little devnet SOL — or found a
-   guild, gather three pets, and launch its coin on a Pawket preset.
+   wrong, get a quote, and trade it from your Pawket Wallet's balance, your
+   wallet approving — or found a guild, gather three pets, and launch its
+   coin on a Pawket preset.
 9. In a guild's page, say your pet is going to its event and check in when
    it starts, and answer its poll — one vote per wallet. Open someone
    else's pet and wave: it lands in their guestbook, once a day.
-10. Visit the Market: a halo, a wizard hat, a sun hat, a gold crown and two
-    rooms, for devnet SOL at prices fixed in the program. A purchase goes
-    straight to Pawket's treasury and into your closet on Solana; wear it
-    from the wardrobe, live in it from Settings.
+10. Visit the Market: twenty-five pieces for pets, twelve rooms and eight
+    photo frames, at prices fixed in the program and paid from your Pawket
+    Wallet when your wallet approves. A purchase goes straight to Pawket's
+    treasury and into your closet on Solana; wear it from the wardrobe,
+    live in it from Settings.
 11. Make it yours in Profile: your name, your look (hats, glasses, outfits),
-    the wardrobe, the stickers each record has earned, and ten rooms.
+    the wardrobe, the stickers each record has earned, and your rooms.
 12. Open `/pulse` for everything above, counted from the program and read
     live.
 
@@ -87,13 +93,14 @@ write-up are in [`docs/PITCH.md`](docs/PITCH.md); the mainnet plan is
 | `adopt_pet` | a new pet at 72 across the board; the owner signs for the name, a separate `payer` covers rent |
 | `perform_care_action` | decays the vitals to now, applies the care, +10 XP, writes the Passport; each care rests 30 minutes |
 | `finish_round` | the playground's daily bonus: +25 XP once per UTC day |
-| `dress` | one thing to wear (18 pieces), or nothing. Looks only |
+| `dress` | one of the three free starter pieces, or nothing. Looks only |
 | `found_guild` | a pet founds a guild at its slug and is its first member; the sponsor can pay the rent |
 | `join_guild` / `leave_guild` | a pet joins one guild at a time; leaving returns the rent to whoever paid it |
 | `open_wallet` / `deposit` / `withdraw` / `close_wallet` | the owner's Pawket Wallet: money in from the owner, and out only to the owner |
 | `link_device` / `unlink_device` | the owner links one device (it co-signs) for up to 30 days and 500 actions a day; the owner or the device ends it |
 | `*_by_device` (14) | everything the owner signs for their pets but money — care, rounds, clothes, adoption, guilds, events, check-ins, votes, waves — signed by the linked device with no prompt; the sponsor pays as for the owner, or the device pays its own fee from a float the balance refills |
-| `buy` | one Market item at its fixed price, from the buyer to Pawket's treasury and nowhere else, into their closet |
+| `buy_with_wallet` | one Market item at its fixed price, from the owner's Pawket Wallet to Pawket's treasury and nowhere else, into their closet |
+| `fund_wallet_spend` / `settle_wallet_spend` | bracket a guild-coin trade in one transaction: the Pawket Wallet funds it, and change and proceeds go back to it |
 | `dress_owned` / `dress_owned_by_device` | a piece from the closet goes on; the program checks the closet |
 | `create_event` / `rsvp` / `check_in` | the founder plans; the guild's pets go, and check in when it starts |
 | `create_poll` / `vote` | the founder asks; each wallet with a pet in the guild answers once |
@@ -135,9 +142,9 @@ with a way in. Pawket pays those fees too.
 - **Home** — the room across the whole width, in 3D: you and the pet at home
   (or a drawn room where 3D cannot draw), with a deck floating beneath it —
   the level as a ring, the four vitals minimized, the four cares (the one
-  the pet wants in sun), and Say, Today, Photo and Look. Faces in the bar
-  bring any of your pets home, and a badge on a browser pet's face keeps it
-  on Solana. Today's round is a row of five goals under the deck; Photo
+  the pet wants in sun), and Say, Today, Photo and Look. Faces in the row
+  above the room bring any of your pets home, and "Keep on Solana" beside a
+  browser pet's room name keeps it on Solana. Today's round is a row of five goals under the deck; Photo
   prints the room as a picture to save or share.
 - **Park** — every pet the program keeps, read live: a drawn park where the
   pets out today wander on the lawn, what just happened, and everyone.
@@ -148,8 +155,9 @@ with a way in. Pawket pays those fees too.
 - **Profile** — you: your name, you in your room, your whole look (body,
   hair, clothes, shoes, hats and glasses, pastels, three saved outfits, and
   a way to match your pet), then what you keep — every pet, the wardrobe
-  (any pet in the mirror; 18 pieces, five earned by stickers), the sticker
-  book, and settings with eight rooms to live in.
+  (any pet in the mirror; three starter pieces and whatever your closet
+  holds from the Market), the sticker book, and settings with your rooms —
+  Light and Dark free, twelve more from the Market.
 - **Guilds** — optional, always: pets and their people under a name, a motto
   and a crest, kept on Solana. Found one with a pet on Solana, join or leave
   any time; Pawket pays the fee. Its founder plans events and asks polls;
@@ -165,9 +173,11 @@ with a way in. Pawket pays those fees too.
 - **`/pet/<address>`** — a pet's public Passport, server-rendered from chain,
   with its guild and its guestbook; its owner can keep the pet's card in
   their wallet here, and anyone else can wave.
-- **Market** — looks for SOL at fixed prices: four pieces for pets and two
-  rooms. A sale goes to Pawket's treasury and into the buyer's closet on
-  Solana; nothing sold changes a vital, XP or a score, and nothing is resold.
+- **Market** — looks for SOL at fixed prices: twenty-five pieces for pets,
+  twelve rooms and eight photo frames, paid from the Pawket Wallet when the
+  owner's wallet approves. A sale goes to Pawket's treasury and into the
+  buyer's closet on Solana; nothing sold changes a vital, XP or a score, and
+  nothing is resold.
 - **Pulse** (`/pulse`) — everything above, counted from the program's
   accounts and read live.
 
@@ -181,15 +191,16 @@ pnpm install
 pnpm dev        # http://localhost:3000
 ```
 
-With no `SPONSOR_KEYPAIR`, players pay their own (devnet) fees. To cover
-them locally, make a devnet keypair, fund it, and put its JSON byte array
-in `.env.local` as `SPONSOR_KEYPAIR`.
+With no `SPONSOR_KEYPAIR`, a linked browser pays its own fees from the
+Pawket Wallet, and nothing that needs rent (keeping a pet, a guild, a
+gathering) can be sent. To sponsor locally, make a devnet keypair, fund it,
+and put its JSON byte array in `.env.local` as `SPONSOR_KEYPAIR`.
 
 The program (Anchor 1.2, Rust 1.89, Solana CLI 3.x):
 
 ```sh
 pnpm program:test   # anchor build --arch v2, then the LiteSVM suite
-pnpm e2e:devnet     # a 0-SOL wallet adopts and cares against the deployed program
+pnpm e2e:devnet     # adoption, care, guilds, the Market and a linked browser, against the deployed program
 ```
 
 ## Commands

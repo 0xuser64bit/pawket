@@ -1,10 +1,7 @@
 # Pawket — Routes & Information Architecture
 
-**Status:** The routes under "Built today" are the product. The site map
-further down is still the later target. Never ship a nav link to an unwired
-route, and call a pet "on Solana" only when it was read from chain.
-
-Built today:
+**Status:** These are the product's routes. Never ship a nav link to an
+unwired route, and call a pet "on Solana" only when it was read from chain.
 
 ```text
 /                          landing (live count of pets on Solana)
@@ -17,24 +14,28 @@ Built today:
 (game)/pet/[id]            an address: the public Passport, from chain (with its guild and guestbook);
                            otherwise the record of a pet in this browser
 (game)/pet/[address]/visit you, in a pet's room on Solana: emotes, and a wave into its guestbook
-(game)/market              looks for SOL at fixed prices: four pieces, two rooms; the closet read from chain
+(game)/market              looks for SOL at fixed prices — 25 pieces, 12 rooms, 8 frames — paid from the Pawket Wallet; the closet read from chain
 (game)/pulse               everything the program holds, counted and read live
 (game)/guilds              every guild on Solana, read live (test and delisted ones left out), and the rule
 (game)/guilds/new          founding a guild: name, motto, crest, the founding pet
 (game)/guilds/[slug]       a guild: its pets read from their accounts, together counts, join or leave, its events and polls, its coin
 (game)/guilds/[slug]/coin  a guild's coin: its terms and stage from chain, launch, quote, trade, graduate, claim
+/privacy                   the privacy policy, for the web and the Android app
 /api/health
 /api/sponsor               GET: is it up. POST { transaction }: signed first, as fee payer
+/api/rpc                   the browser's RPC: allow-listed reads and sends for Pawket's program, to SOLANA_RPC_URL
 /api/actions/adopt         Solana Action: adopt straight onto Solana
 /api/actions/care/[pet]    Solana Action: the four cares for the owner; a wave or an adoption for anyone else
 /api/actions/wave/[pet]    Solana Action (POST): a wave, any wallet but the owner's, once a UTC day
+/api/actions/guild/[slug]  Solana Action: a pet joins the guild
 /api/actions/icon          a square card for an Action (?pet=)
 /api/keepsake/[pet]        GET: the card's metadata, live. POST { account }: its creation, owner only
 /api/keepsake/collection   the collection's metadata
 /api/coins/[slug]/quote    GET: a quote on the curve or in the verified DAMM v2 pool
+/api/coins/[slug]/position GET ?account=: a wallet's locked positions in a graduated coin's pool, and their unclaimed fees
 /api/coins/[slug]/{launch,trade,graduate,claim}   POST { account, ... }: a transaction for the player to sign
 /api/coins/[slug]/metadata the coin's token metadata
-/actions.json              /adopt and /pet/* unfurl as those Actions
+/actions.json              /adopt, /pet/* and /guilds/* unfurl as those Actions
 (game)/pet/[id]/opengraph-image, /opengraph-image   share cards
 ```
 
@@ -45,85 +46,28 @@ goes to the profile's shelf (`?tab=wardrobe` to its wardrobe).
 
 The `(game)` group owns the shell: the label-sized bar (the wallet chip,
 once a wallet is connected, and the room switch) and the floating Dock. The
-dock is Home, Park, Playground, Market, Profile, Guilds. A pet on Solana and
+dock is Home, Park, Playground, Market, Guilds, Profile. A pet on Solana and
 the Pulse light Park; a browser pet lights Profile, and so does the Pawket
 Wallet (reached from the wallet chip, Home's line under a pet on Solana, and
 Settings).
 
-## 1. Site map (target)
+## Server and client (normative)
 
-```text
-/                              marketing landing (wallet-free, pet-first hero, no token content)
-/home                          → redirect to (game)/home when game ships (avoid two homes)
-/api/health                    EXISTS — extend with indexer lag later, keep shape backward-compatible
+- Pages and layouts stay **Server Components**. `"use client"` only at
+  interactive leaves: forms, the deck, sheets, games, wallet leaves.
+- The server reads Solana with its own RPC (`src/server/solana.ts`), never
+  the wallet client, and passes plain props to leaves. Server secrets never
+  reach a client import.
+- Client reads go through `useRequest`, not a fetch in `useEffect`.
+  Countdowns are the one timer exception (display only).
+- Every send is an explicit button, disabled while it runs, through
+  `usePawketSend` and `send.ts`; its toast carries the signature and the
+  Explorer link (`src/components/wallet/tx-toast.tsx`).
 
-(game) — requires no wallet to VIEW; sends require connected signer
-├── home/                     personal space: active pet, emotes, background/music (E02)
-├── adopt/                    base-pet pick + name/species/personality → sign (E01; priced in E05)
-├── pet/[address]/            detail: stats/XP/mood/cooldown/Passport (E01)
-│   └── customize/            try-on + equip preview (E03)
-├── inventory/                owned pets + cosmetics + equipped state (E03)
-├── marketplace/              browse (E05)
-│   ├── [listingId]/          detail + fixed-price quote + checkout
-│   └── receipts/[orderId]/   receipt + signature + Explorer link
-├── playground/               games + daily goals + streaks + share (E06)
-├── guilds/                   discovery (approved/live only; suspended hidden) (E07)
-│   └── [slug]/               profile | events | votes | treasury | launch (launch tab M6 only)
-│       ├── events/
-│       ├── votes/
-│       ├── treasury/
-│       └── launch/           DBC progress / migration-pending / DAMM v2 swap (E08/E09)
-└── share/[petId]/            OG-image share card (E06)
-```
+## Navigation
 
-## 2. Per-route contract
-
-| Route | Server (data) | Client leaves | States |
-| --- | --- | --- | --- |
-| `/` | metadata, public env | wallet CTA, hero avatar (static) | no-wallet hero; never shows guild-token prices |
-| `(game)/home` | guest pet or wallet pets (RPC/DB) | `home-space.tsx`, `emote-row.tsx`, `scene-picker.tsx` | empty (adopt CTA) / guest banner / live / loading |
-| `(game)/adopt` | presets (species/personality), price (M3+) | `adopt-form.tsx` → `TransactionStatus` | validating / signing / sending / confirming / confirmed+Explorer / failed+retry-safe / unknown+lookup |
-| `(game)/pet/[address]` | pet + passport read (RPC → indexer) + freshness | `care-panel.tsx`, `passport-timeline.tsx` | not-found / wrong-owner (read-only) / cooling countdown / decay estimate |
-| `(game)/inventory` | owned pets + defs + equipped | `inventory-grid.tsx`, `equip-sheet.tsx` | empty / preview-not-saved (pre-chain-equip) / synced |
-| `(game)/marketplace` | listings + prices + fees | `listing-card.tsx`, `checkout-sheet.tsx` | no-wallet browse / quote / signing / receipt / unknown |
-| `(game)/playground` | goals/streaks/scores | `game-card.tsx`, `goal-tracker.tsx` | playable wallet-free; rewards never token-gated |
-| `(game)/guilds` | approved guilds only | `guild-card.tsx` | empty / list; suspended excluded |
-| `(game)/guilds/[slug]` | guild + policy + treasury + launch state | `launch-progress.tsx`, `quote-ticket.tsx`, `risk-disclosure.tsx`, `treasury-table.tsx` | dbc-active / migration-pending (sends blocked) / dammv2-active / ended / suspended (benefits off, factual record kept) |
-
-## 3. Server/Client split (normative)
-
-- Pages/layouts stay **Server Components**. `"use client"` only at: forms, care panel, checkout/quote tickets, emote/scene pickers, wallet leaves.
-- Server fetches via read-only RPC or `/api/*` (never wallet client); passes plain props to leaves. Thread server secrets via props, never imports.
-- Quote/launch polling via `useRequest` (framework hook), not `useEffect` fetch. Cooldown countdowns are the only `setInterval` exception (display-only, derived from `lastCareAt` + injected `now`).
-- Every send leaf: explicit button → disable while sending → `TransactionStatus` (the one component) → Explorer link from `cluster.ts`.
-
-## 4. Navigation rules
-
-- Global nav order (once shipped): **Home · Pets · Marketplace · Playground · Inventory · Guilds**. Pets before Guilds always.
-- Guild tokens never appear in Home/Inventory/Pet headers; guild flair renders only inside guild routes + optionally as a small badge on social cards (opt-in display, never price).
-- Suspended guild: route stays (factual record) with suspension banner; removed from discovery + nav highlights; benefits disabled.
-- Wallet-free: all browse/detail pages render fully; only signing actions gate on connection (with install guidance for empty discovery + `pending` placeholder per `SOLANA.md`).
-
-## 5. API surface (overview — shapes in API-CONTRACTS.md)
-
-```text
-GET  /api/health                       exists; add {indexer:{lagSlots,lastVerifiedSlot}} later
-GET  /api/pets?owner=                  owned pets (chain→cache) + freshness
-GET  /api/pets/:address                pet detail + passport + freshness
-GET  /api/marketplace/listings         browse + pagination
-POST /api/marketplace/orders           create order intent (server validates price/fees)
-GET  /api/marketplace/orders/:id       receipt + signature/slot
-GET  /api/guilds                       approved/live only
-GET  /api/guilds/:slug                 profile + policy + treasury summary + launch state
-POST /api/guilds/apply                 application intake (rate-limited)
-GET  /api/guilds/:slug/eligibility?wallet=  cosmetic/social benefits only
-GET  /api/guilds/:slug/quotes?side=&amount=  [M6] DBC/DAMM quote (server-assisted, frozen at sign)
-GET  /api/tx/:signature                tx reconciliation (confirmed/failed/unknown)
-GET  /api/indexer/status               lag + last verified slot
-```
-
-## 6. SEO / sharing
-
-- Guild profiles + marketplace listings are Server-rendered with metadata (name, utility statement excerpt — never price promises).
-- `share/[petId]` renders OG image (avatar SVG → PNG at request time, cached); no wallet required.
-- Token launch pages include `noindex` until `publishedAt` set (avoid indexing draft configs).
+- Pets before guilds, always. A guild's coin is traded only on its own
+  page; Home, Profile and a pet's record never show a coin or its price.
+- A delisted guild's page stays (the record is on chain) with what Pawket
+  stopped doing; it leaves discovery.
+- Wallet-free: every page reads without a wallet; only sends ask for one.

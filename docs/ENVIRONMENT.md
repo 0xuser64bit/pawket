@@ -18,7 +18,7 @@ there first with a safe default or a blank placeholder.
 | `NEXT_PUBLIC_SOLANA_CLUSTER`    | `devnet`                               | `devnet`/`testnet`/`mainnet-beta`/`localnet` |
 | `NEXT_PUBLIC_SOLANA_RPC_URL`    | `https://api.devnet.solana.com`        | The browser's RPC; `/api/rpc` routes browsers through Pawket's proxy to `SOLANA_RPC_URL` (allow-listed calls, Pawket's program only, rate-limited). Never a URL with a key — the app refuses one |
 | `SOLANA_RPC_URL`                | (the public RPC URL)                   | Server-only; may carry a provider key |
-| `SPONSOR_KEYPAIR`               | (empty: players pay their own fees)    | Server-only; the devnet fee sponsor |
+| `SPONSOR_KEYPAIR`               | (empty: a linked browser pays its own fees; nothing that needs rent is sent) | Server-only; the devnet fee sponsor |
 
 ## Validation
 

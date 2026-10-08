@@ -54,6 +54,8 @@ test("a care shows in the room only after it is saved", async ({ page }) => {
 });
 
 test("the flat room is a choice this device remembers", async ({ page }) => {
+  // Three 3D builds in software WebGL: more than the default thirty seconds when the suite runs in parallel.
+  test.setTimeout(90_000);
   await adopt(page);
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
   await page.getByRole("radio", { name: "Flat room" }).click();

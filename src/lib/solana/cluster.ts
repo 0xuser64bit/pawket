@@ -44,14 +44,3 @@ export function explorerAddressUrl(
 ): string {
   return `${EXPLORER_BASE}/address/${addr}${explorerClusterParam(cluster)}`;
 }
-
-/** Derive a WebSocket endpoint from an RPC URL unless explicitly configured. */
-export function defaultWsUrl(rpcUrl: string): string {
-  if (rpcUrl.startsWith("https://")) {
-    return rpcUrl.replace("https://", "wss://");
-  }
-  if (rpcUrl.startsWith("http://")) {
-    return rpcUrl.replace("http://", "ws://");
-  }
-  return rpcUrl;
-}

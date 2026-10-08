@@ -22,7 +22,6 @@ function emptyToUndefined(value: unknown): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
-const optionalString = z.preprocess(emptyToUndefined, z.string().optional());
 
 function isValidSolanaAddress(value: string): boolean {
   // Base58, 32–44 chars — the shape of every Solana address. Full
@@ -48,7 +47,6 @@ const publicEnvSchema = z
       emptyToUndefined,
       z.string().default("https://api.devnet.solana.com"),
     ),
-    solanaWsUrl: optionalString,
     pawketProgramId: z.preprocess(
       emptyToUndefined,
       z.string().default(PAWKET_PROGRAM_ID),
@@ -63,14 +61,12 @@ const publicEnvSchema = z
       });
     }
     // A provider key in a public URL is in every browser that loads the app.
-    for (const [path, url] of [["solanaRpcUrl", env.solanaRpcUrl], ["solanaWsUrl", env.solanaWsUrl]] as const) {
-      if (url && /api[-_]?key=/i.test(url)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [path],
-          message: "This URL carries a provider key, and NEXT_PUBLIC_ values reach every browser. Put it in SOLANA_RPC_URL (server-only).",
-        });
-      }
+    if (/api[-_]?key=/i.test(env.solanaRpcUrl)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["solanaRpcUrl"],
+        message: "This URL carries a provider key, and NEXT_PUBLIC_ values reach every browser. Put it in SOLANA_RPC_URL (server-only).",
+      });
     }
     for (const known of KNOWN_RPC_HOSTS) {
       if (
@@ -97,7 +93,6 @@ export function getPublicEnv(): PublicEnv {
     appUrl: process.env.NEXT_PUBLIC_APP_URL,
     solanaCluster: process.env.NEXT_PUBLIC_SOLANA_CLUSTER,
     solanaRpcUrl: process.env.NEXT_PUBLIC_SOLANA_RPC_URL,
-    solanaWsUrl: process.env.NEXT_PUBLIC_SOLANA_WS_URL,
     pawketProgramId: process.env.NEXT_PUBLIC_PAWKET_PROGRAM_ID,
   });
   return cachedPublicEnv;

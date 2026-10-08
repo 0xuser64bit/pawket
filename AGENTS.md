@@ -100,18 +100,18 @@ or a transaction. Inside the app a pet is kept "in this app" (`useHere()`).
 | If you are…               | Read                                                        |
 | ------------------------- | ----------------------------------------------------------- |
 | New to the repo           | this file → `docs/ARCHITECTURE.md` → `docs/VISION.md` → `docs/PRODUCT.md` |
-| Planning any feature      | `docs/ROADMAP.md` → `docs/EPICS.md` → `docs/TASKS.md` → `docs/OPEN-QUESTIONS.md` |
-| Implementing a task       | `docs/AGENT-GUIDE.md` + the one spec for your layer         |
+| Planning any feature      | `docs/PRODUCT.md` → `docs/VISION.md` → `docs/OPEN-QUESTIONS.md` → `docs/MAINNET.md` |
+| Implementing a task       | `docs/WORKFLOW.md` + the one doc for your layer             |
 | Running the app           | `docs/DEVELOPMENT.md`                                       |
 | Changing env/config       | `docs/ENVIRONMENT.md`                                       |
 | Touching Solana / wallets | `docs/SOLANA.md`                                            |
 | Touching game math        | `docs/GAME-DESIGN.md` (`src/lib/game/` is lockstep)         |
-| Touching pets/NFTs        | `docs/NFT-CUSTOMIZATION.md` + `docs/DOMAIN-MODEL.md`        |
+| Touching pets/keepsakes   | `docs/SOLANA.md` (Keepsakes) + `docs/OPEN-QUESTIONS.md` (Q1, Q5) |
 | Touching the 3D room      | `docs/ROOM-3D.md` + `docs/DESIGN.md` (“The room in 3D”)     |
 | Touching the Android app  | `docs/ANDROID.md` (+ `docs/ANDROID-HANDOFF.md` while it is in progress) |
-| Touching marketplace      | `docs/MARKETPLACE.md` + `docs/API-CONTRACTS.md`             |
+| Touching marketplace      | `docs/MARKETPLACE.md`                                       |
 | Touching guilds/launches  | `docs/GUILDS.md` + `docs/METEORA-INTEGRATION.md` + `docs/SAFETY-ECONOMY.md` |
-| Touching indexer/API      | `docs/INDEXER.md` + `docs/API-CONTRACTS.md` + `docs/ROUTES.md` |
+| Touching routes/API       | `docs/ROUTES.md`                                            |
 | Preparing mainnet (v1)    | `docs/MAINNET.md`                                           |
 | Reviewing security, or an audit | `docs/SECURITY.md`                                    |
 | Adding tests              | `docs/TESTING.md`                                           |
@@ -171,13 +171,9 @@ One home per fact. If two files disagree, the left column wins.
 | The Android app (shell, origin, version) | `android/` (`android/gradle.properties` holds the URL, id and version) |
 | What the page may ask of the phone | `android/app/src/main/java/app/pawket/android/PawketBridge.kt` ↔ `src/lib/native/android.ts` |
 | Links that open in the app        | `public/.well-known/assetlinks.json` (held to the build by `assetlinks.test.ts`) |
-| Target architecture (M3–M6)       | `docs/ARCHITECTURE-TARGET.md`       |
-| Domain types, state machines      | `docs/DOMAIN-MODEL.md`              |
 | Route IA + Server/Client split    | `docs/ROUTES.md`                    |
-| API envelopes + error codes       | `docs/API-CONTRACTS.md`             |
 | Meteora presets + launch stages   | `docs/METEORA-INTEGRATION.md`       |
-| Eligibility (cosmetic/social)     | `docs/GUILDS.md` + `docs/INDEXER.md`|
-| Task sequence + blockers          | `docs/TASKS.md` + `docs/OPEN-QUESTIONS.md` |
+| Open decisions                    | `docs/OPEN-QUESTIONS.md`            |
 
 Do not introduce a second store of any of these.
 

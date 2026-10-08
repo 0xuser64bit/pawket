@@ -1,8 +1,8 @@
 # Pawket — Vision & Product Requirements (PRD)
 
-**Status:** the product's north star. What ships today is in `PRODUCT.md`, and where each milestone stands is in `ROADMAP.md`. Nothing below is presented in UI as live until it is built and, where it lives on Solana, read from chain.
+**Status:** the product's north star. What ships today is in `PRODUCT.md`, and what stands between devnet and mainnet is in `MAINNET.md`. Nothing below is presented in UI as live until it is built and, where it lives on Solana, read from chain.
 **Sources:** founder brief (Sep 2026) + `docs/PRODUCT.md` (current truth) + `docs/ARCHITECTURE.md`.
-**Companion docs:** `ROADMAP.md` (sequencing) → `EPICS.md` (epic cards) → `TASKS.md` (atomic agent tasks).
+**Companion docs:** `PRODUCT.md` (what ships) → `OPEN-QUESTIONS.md` (decisions still open) → `MAINNET.md` (the way to v1).
 
 ---
 
@@ -165,4 +165,4 @@ Pet NFTs remain the primary ownership primitive. Guild tokens are optional infra
 
 ---
 
-**Next:** `ROADMAP.md` turns this into phased milestones; `DOMAIN-MODEL.md` turns assets into records.
+**Next:** `PRODUCT.md` says which of this ships today; `SOLANA.md` says how it is kept on chain.

@@ -32,8 +32,8 @@ export const DEVNET_COIN_NOTE =
   "This is devnet: its coins are test tokens with no value, and its SOL comes free from a faucet. Everything else works as it will on mainnet.";
 
 /**
- * Words a coin's copy never uses, case-insensitively — the list
- * `docs/AGENT-GUIDE.md` §5 asks every coin surface to pass.
+ * Words a coin's copy never uses, case-insensitively — the list every coin
+ * surface must pass (`docs/SAFETY-ECONOMY.md`).
  */
 export const BANNED_PHRASES: readonly string[] = [
   "guaranteed",

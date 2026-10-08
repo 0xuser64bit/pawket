@@ -20,7 +20,7 @@
 ## 3. Allocation & liquidity protection
 
 - Public recipients for team/creator/partner/treasury/community with amounts + unlock dates; vesting/lockups published; multisig treasury (signers, threshold, replacement + decision rules published).
-- Liquidity: who owns positions, locked/vested?, who receives fees, when changeable/withdrawable — all pre-published, then indexed (see `INDEXER.md`).
+- Liquidity: who owns positions, locked/vested?, who receives fees, when changeable/withdrawable — all pre-published, then read from chain.
 - Treasury dashboard (`treasury-table.tsx` + `GET /api/treasury/:slug`): wallets, signers, inflows/outflows with signatures/slots, allowed uses, decision log.
 
 ## 4. Moderation & policy boundaries

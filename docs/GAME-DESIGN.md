@@ -96,12 +96,12 @@ play; the bonus goes to that pet.
 
 ## 7. Customization (expression power = 0)
 
-Cosmetics change look/mood-display only. Forbidden fields: `statModifier`, `xpBoost`, `cooldownReduction`, `matchmakingWeight`. The wardrobe is 18 pieces; five are earned by a sticker (`earnedBy`, read from the record by `src/lib/game/badges.ts`), which only decides when the wardrobe offers them. The player's own extras (hats, glasses) are looks too. Type + review gate in `AGENT-GUIDE.md`. Theory: attachment via recognition ("that's Maya's star-glasses MossPup"), not advantage.
+Cosmetics change look/mood-display only. Forbidden fields: `statModifier`, `xpBoost`, `cooldownReduction`, `matchmakingWeight` (the catalog test keeps a wearable's type free of them). Three pieces are free; twenty-five more are sold once in the Market at prices fixed in the program, and worn with `dress_owned`. Stickers are achievements read from the record (`src/lib/game/badges.ts`) and unlock nothing. The player's own extras (hats, glasses) are looks too. Theory: attachment via recognition ("that's Maya's star-glasses MossPup"), not advantage.
 
 ## 8. Anti-bot & fairness
 
 - Reuse on-chain cooldown as the primary throttle (can't farm faster than 30m/action on-chain).
-- API rate limits: care-intent reads unlimited; order/vote/apply writes limited (see `API-CONTRACTS.md` 429).
+- Rate limits: the RPC proxy, the Actions and the coin routes limit each caller, and the rent the sponsor pays is limited per key and overall (`createLimiter`, `src/server/sponsor.ts`).
 - Anomaly flags (M4+): impossible care cadence across wallets, duplicate-device farming rings, wash-vote patterns → review queue, never auto-slash. Consequences published before enforcement.
 - No pay-to-win also means no "energy refill for SOL" — rejected explicitly. Rest is the only energy path.
 

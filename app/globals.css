@@ -1183,8 +1183,7 @@ li {
 .display-hero,
 .display-l,
 .display-m,
-.display-s,
-.pk-display {
+.display-s {
   font-family: var(--font-display);
   font-variation-settings: "SOFT" 64, "WONK" 1;
 }
@@ -2826,34 +2825,6 @@ li {
   display: grid;
   justify-items: center;
 }
-/* A screen with no way back — an arrival — starts lower, so the pet is not
-   pressed up under the bar. */
-.pk-arrival {
-  padding-top: var(--space-6);
-}
-
-/* A search and the tabs it searches: stacked on a phone, one row on a
-   desktop with the search holding a comfortable measure. */
-.pk-toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-@media (min-width: 1024px) {
-  .pk-toolbar {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-5);
-  }
-  .pk-toolbar > :first-child {
-    flex: 0 1 420px;
-  }
-  .pk-toolbar > .pk-tabs {
-    align-self: center;
-  }
-}
-
 /* Rows of the same kind — guilds, events, games — run in one column until
    a desktop gives them two. */
 .pk-rows {
@@ -2867,29 +2838,8 @@ li {
   }
 }
 
-/* Whatever explains a screen comes last, one note above the other on a
-   phone and side by side where there is room for them to be read so. */
-.pk-notes {
-  display: grid;
-  gap: var(--space-4);
-}
-@media (min-width: 1024px) {
-  .pk-notes {
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  }
-}
-
-/* A phone bar holds the mark, the preview flag and the theme switch in
-   320px: the flag drops a word first, then the mark keeps only its glyph
-   (the name stays for anything reading the link). */
-.pk-flag__more {
-  display: none;
-}
-@media (min-width: 480px) {
-  .pk-flag__more {
-    display: inline;
-  }
-}
+/* A phone bar holds the mark and the theme switch in 320px: the mark keeps
+   only its glyph (the name stays for anything reading the link). */
 @media (max-width: 359px) {
   .pk-shell__bar .pk-mark__name {
     position: absolute;
@@ -3318,17 +3268,6 @@ li {
   grid-template-columns: repeat(auto-fill, minmax(min(148px, 100%), 1fr));
   gap: var(--space-3);
 }
-/* A piece not yet earned: drawn faintly, outlined in dashes, not pressable. */
-.pk-tile-hit--locked {
-  cursor: default;
-}
-.pk-tile-hit--locked .pk-tile {
-  border-style: dashed;
-  box-shadow: none;
-}
-.pk-tile-hit--locked .pk-tile__art {
-  opacity: 0.4;
-}
 /* The tile is the control. The button itself has no second frame; the tile
    lifts under a pointer and presses flat under a finger, like a card that
    is a link. */
@@ -3345,18 +3284,18 @@ li {
   cursor: pointer;
   border-radius: var(--radius-lg);
 }
-.pk-tile-hit:not(.pk-tile-hit--locked) .pk-tile {
+.pk-tile-hit .pk-tile {
   transition:
     transform var(--dur-press) var(--ease-press),
     box-shadow var(--dur-press) var(--ease-press);
 }
 @media (hover: hover) {
-  .pk-tile-hit:not(.pk-tile-hit--locked, :disabled):hover .pk-tile {
+  .pk-tile-hit:not(:disabled):hover .pk-tile {
     transform: translate(-1px, -1px);
     box-shadow: var(--shadow-sticker);
   }
 }
-.pk-tile-hit:not(.pk-tile-hit--locked, :disabled):active .pk-tile {
+.pk-tile-hit:not(:disabled):active .pk-tile {
   transform: translate(1px, 1px);
   box-shadow: none;
 }
@@ -3376,7 +3315,7 @@ li {
   align-items: baseline;
 }
 
-/* ------------------------------------- the boundary lists and the ack box
+/* ---------------------------------------------------- the boundary lists
 
    Can and cannot, checks in pool and crosses in alarm, each line short
    enough to remember. This is the screen support points at. */
@@ -3390,50 +3329,6 @@ li {
   flex: none;
   width: 16px;
   font-weight: 700;
-}
-
-.pk-ack {
-  position: relative;
-  display: flex;
-  gap: var(--space-3);
-  align-items: flex-start;
-  padding: var(--space-3) 0;
-  cursor: pointer;
-}
-.pk-ack__box {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  margin-top: 1px;
-  border: var(--stroke-line) solid var(--ink);
-  border-radius: 2px;
-  display: grid;
-  place-items: center;
-  color: var(--ink);
-  background: var(--paper);
-}
-/* The real control sits over the drawn box, so the hit target is the box. */
-.pk-ack input {
-  position: absolute;
-  left: 0;
-  top: calc(var(--space-3) + 1px);
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.pk-ack input:focus-visible + .pk-ack__box {
-  outline: var(--stroke-line) solid var(--focus);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 var(--focus-ring) var(--focus-contrast);
-}
-
-/* A numbered disclosure line: the figure is mono, the sentence is not. */
-.pk-numbered li {
-  display: flex;
-  gap: var(--space-3);
-  padding: 5px 0;
 }
 
 /* ------------------------------------------------------- the landing page
@@ -3570,10 +3465,6 @@ li {
     grid-template-columns: 1fr auto;
     gap: 56px;
   }
-  .pk-split--wide-right {
-    grid-template-columns: 1fr 1.1fr;
-    align-items: start;
-  }
   .pk-split--wide-left {
     grid-template-columns: 1.1fr 1fr;
     align-items: start;
@@ -3703,60 +3594,9 @@ li {
   }
 }
 
-/* A choice among drawings: the option itself is the control, so selection
-   is a ring in the act hue rather than a second widget. The ring is a
-   shadow, not an outline, so a focused choice shows both at once. */
-.pk-pick {
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  text-align: left;
-  border-radius: var(--radius-lg);
-  opacity: 0.68;
-  transition: opacity var(--dur-press) var(--ease-press);
-}
-@media (hover: hover) {
-  .pk-pick:hover {
-    opacity: 1;
-  }
-}
-.pk-pick[aria-pressed="true"] {
-  --pk-keep: 0 0 0 4px var(--ground), 0 0 0 calc(4px + var(--stroke-line)) var(--sun-text);
-  opacity: 1;
-  box-shadow: var(--pk-keep);
-}
-/* Three species share one row at any width; the name sits under each
-   pocket, never over the face. */
-.pk-picks {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
-}
-.pk-pick__label {
-  display: block;
-  margin-top: var(--space-2);
-  text-align: center;
-}
-.pk-pick--flat {
-  opacity: 1;
-  border-radius: var(--radius-md);
-}
-.pk-pick--flat[aria-pressed="true"] {
-  --pk-keep: 0 0 transparent;
-  box-shadow: none;
-}
-/* Keep the compact room choices tappable; the mark has its own real box. */
+/* The mark has its own real box, tall enough to tap. */
 @media (any-pointer: coarse), (max-width: 719px) {
   a.pk-mark { min-height: var(--touch-target); }
-  .pk-pick--flat {
-    position: relative;
-  }
-  .pk-pick--flat::after {
-    content: "";
-    position: absolute;
-    inset: -8px -2px;
-  }
 }
 
 /* ------------------------------------------------------ the paw loader
@@ -4180,24 +4020,8 @@ li {
   border: var(--stroke-line) dashed var(--edge-soft);
   border-radius: var(--radius-lg);
 }
-.pk-home__more {
-  display: grid;
-  gap: var(--space-4);
-  margin-top: var(--space-3);
-}
-@media (min-width: 1024px) {
-  .pk-home__more {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: var(--space-5);
-  }
-}
-/* A row of cards is one height, the tallest's, and each card's foot — its
-   actions, or its last word — sits at the bottom, so they line up across
-   the row. */
-.pk-home__more > .pk-card {
-  display: flex;
-  flex-direction: column;
-}
+/* A card's foot — its actions, or its last word — sits at the bottom of a
+   card that is a flex column. */
 .pk-foot {
   margin-top: auto;
   padding-top: var(--space-4);
@@ -5628,16 +5452,6 @@ details > .pk-risks {
     box-shadow: var(--shadow-sticker-sm);
   }
 }
-/* A Market room the closet does not hold yet: a dashed way to the Market, like a piece not yet earned. */
-.pk-theme--market {
-  border-style: dashed;
-  color: inherit;
-  text-decoration: none;
-}
-.pk-theme--market:focus-visible {
-  outline: var(--stroke-line) solid var(--focus);
-  outline-offset: 2px;
-}
 .pk-theme__art {
   display: flex;
   overflow: hidden;
@@ -6000,41 +5814,6 @@ details > .pk-risks {
   height: 20px;
   border-radius: 4px;
   flex: none;
-}
-
-/* ---------------------------------------------------------------- the park
-   Who was out today: presence in pool, each name a way to their record. */
-.pk-presences {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-5);
-  margin-top: var(--space-3);
-}
-.pk-presence-link {
-  position: relative;
-  color: inherit;
-  text-decoration: none;
-}
-@media (hover: hover) {
-  .pk-presence-link:hover .body-sm {
-    text-decoration: underline;
-  }
-}
-@media (pointer: coarse) {
-  .pk-presence-link::after {
-    content: "";
-    position: absolute;
-    inset: -12px -4px;
-  }
-}
-.pk-feed-link {
-  color: inherit;
-  text-decoration: none;
-}
-@media (hover: hover) {
-  .pk-feed-link:hover {
-    text-decoration: underline;
-  }
 }
 
 /* ------------------------------------------------------- adoption

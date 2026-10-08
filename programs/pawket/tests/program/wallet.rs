@@ -3,6 +3,7 @@
 //! the balance one fee at a time.
 
 use crate::harness::*;
+use anchor_lang::{error::ErrorCode, prelude::Pubkey};
 use pawket::{CareActionType, PawketError, DEVICE_FLOAT_LAMPORTS, FEE_PER_SIGNATURE, MAX_DEVICE_SECONDS};
 use solana_keypair::Keypair;
 use solana_signer::Signer;
@@ -214,6 +215,86 @@ fn closing_hands_the_balance_to_the_owner_and_the_rent_to_whoever_paid_it() {
     assert!(!env.exists(&wallet_address));
     assert_eq!(env.lamports(&s.owner.pubkey()), owner_before + balance);
     assert_eq!(env.lamports(&s.sponsor.pubkey()), sponsor_before + rent - 10_000);
+}
+
+#[test]
+fn only_the_owner_closes_a_wallet_and_its_rent_goes_only_to_whoever_paid_it() {
+    let mut env = Env::new();
+    let s = setup(&mut env, SOL / 100, 50);
+    ok(env.send(&[unlink_ix(&s.owner.pubkey(), &s.owner.pubkey(), &s.device.pubkey(), true)], &s.owner, &[&s.device]));
+    let wallet = wallet_pda(&s.owner.pubkey());
+    let held = env.lamports(&wallet);
+    let thief = env.player();
+
+    // The owner closes, but names someone else to have the sponsor's rent.
+    let elsewhere = env.send(&[close_wallet_ix(&s.owner.pubkey(), &thief.pubkey())], &s.owner, &[]);
+    expect_anchor(&elsewhere, ErrorCode::ConstraintHasOne);
+    // A stranger closes it, naming themselves its owner, the rent going where it should.
+    let mut stranger = close_wallet_ix(&thief.pubkey(), &s.sponsor.pubkey());
+    stranger.accounts[1].pubkey = wallet;
+    expect_anchor(&env.send(&[stranger], &thief, &[]), ErrorCode::ConstraintSeeds);
+    assert_eq!(env.lamports(&wallet), held);
+}
+
+#[test]
+fn nobody_but_its_owner_links_a_device_to_a_wallet() {
+    let mut env = Env::new();
+    let owner = env.player();
+    let stranger = env.player();
+    let device = env.broke();
+    ok(env.send(&[open_wallet_ix(&owner.pubkey(), &owner.pubkey()), deposit_ix(&owner.pubkey(), SOL / 100)], &owner, &[]));
+
+    // The stranger names themselves the owner of someone else's wallet, and their own key its device.
+    let mut hijack = link_ix(&stranger.pubkey(), &device.pubkey(), env.now() + DAY, 500);
+    hijack.accounts[1].pubkey = wallet_pda(&owner.pubkey());
+    expect_anchor(&env.send(&[hijack], &stranger, &[&device]), ErrorCode::ConstraintSeeds);
+    assert_eq!(env.wallet(&owner.pubkey()).device, Pubkey::default());
+    assert_eq!(env.balance(&owner.pubkey()), SOL / 100);
+    assert_eq!(env.lamports(&device.pubkey()), 0);
+}
+
+#[test]
+fn a_replaced_device_can_neither_act_nor_unlink_its_replacement() {
+    let mut env = Env::new();
+    let s = setup(&mut env, SOL / 100, 50);
+    let newer = env.broke();
+    let week = env.now() + 7 * DAY;
+    ok(env.send(&[link_ix(&s.owner.pubkey(), &newer.pubkey(), week, 50)], &s.owner, &[&newer]));
+
+    let (old, owner) = (s.device.pubkey(), s.owner.pubkey());
+    let balance = env.balance(&owner);
+    let care = care_by_device_ix(&old, &owner, &s.pet, CareActionType::Feed);
+    expect_pawket(&env.send(&[care], &s.device, &[]), PawketError::NotThisDevice);
+    let unlink = unlink_ix(&old, &owner, &newer.pubkey(), false);
+    expect_pawket(&env.send(&[unlink], &s.device, &[]), PawketError::NotThisDevice);
+    assert_eq!(env.wallet(&owner).device, newer.pubkey());
+    // It paid its own two fees and the balance refilled neither.
+    assert_eq!(env.lamports(&old), DEVICE_FLOAT_LAMPORTS - 2 * FEE_PER_SIGNATURE);
+    assert_eq!(env.balance(&owner), balance);
+}
+
+#[test]
+fn a_leaked_device_draws_one_fee_an_action_from_the_balance_whatever_it_does_with_its_float() {
+    let mut env = Env::new();
+    let s = setup(&mut env, SOL / 100, 50);
+    let (device, owner, thief) = (s.device.pubkey(), s.owner.pubkey(), env.player().pubkey());
+    let balance = env.balance(&owner);
+    let spent = env.wallet(&owner).spent;
+
+    // It pays its own fee, sends its float away around three actions in one transaction, and is
+    // refilled by one fee for each — never by what it sent away.
+    let ixs = [
+        transfer_ix(&device, &thief, 100_000),
+        care_by_device_ix(&device, &owner, &s.pet, CareActionType::Feed),
+        transfer_ix(&device, &thief, FEE_PER_SIGNATURE),
+        dress_by_device_ix(&device, &owner, &s.pet, 2),
+        transfer_ix(&device, &thief, FEE_PER_SIGNATURE),
+        round_by_device_ix(&device, &owner, &s.pet),
+    ];
+    ok(env.send(&ixs, &s.device, &[]));
+    assert_eq!(env.balance(&owner), balance - 3 * FEE_PER_SIGNATURE);
+    assert_eq!(env.wallet(&owner).spent, spent + 3 * FEE_PER_SIGNATURE);
+    assert_eq!(env.wallet(&owner).actions_today, 3);
 }
 
 #[test]

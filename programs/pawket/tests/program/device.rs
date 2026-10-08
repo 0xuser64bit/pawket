@@ -4,7 +4,10 @@
 //! It never acts for anyone else's pet, past its limit, or with money.
 
 use anchor_lang::{error::ErrorCode, Discriminator};
-use pawket::{instruction as ix, CareActionType, Guestbook, PawketError, CHECK_IN_EARLY_SECONDS, DEVICE_FLOAT_LAMPORTS};
+use pawket::{
+    instruction as ix, CareActionType, Guestbook, PawketError, PawketWallet, CHECK_IN_EARLY_SECONDS, DEVICE_FLOAT_LAMPORTS,
+    MAX_DAILY_ACTIONS,
+};
 use solana_keypair::Keypair;
 use solana_signer::Signer;
 
@@ -218,4 +221,36 @@ fn a_device_is_held_to_the_same_addresses_its_owner_is() {
     env.forge(&guestbook_pda(&saffron), &forged);
     let wave = wave_ix(&owner, &sponsor, &saffron);
     expect_anchor(&d.send(&mut env, wave, ix::WaveByDevice::DISCRIMINATOR), ErrorCode::ConstraintRaw);
+}
+
+#[test]
+fn a_device_acts_only_through_its_owners_wallet_at_the_wallets_own_address() {
+    let mut env = Env::new();
+    let victim = env.player();
+    let pet = env.adopt(&victim, "Pepper");
+    let attacker = env.player();
+    // The victim's wallet as it would read with the attacker's key linked to it, kept somewhere else.
+    let bump = anchor_lang::prelude::Pubkey::find_program_address(&[b"wallet", victim.pubkey().as_ref()], &pawket::ID).1;
+    let forged = PawketWallet {
+        owner: victim.pubkey(),
+        device: attacker.pubkey(),
+        device_expires_at: i64::MAX,
+        daily_actions: MAX_DAILY_ACTIONS,
+        day: 0,
+        actions_today: 0,
+        actions: 0,
+        deposited: 0,
+        withdrawn: 0,
+        spent: 0,
+        rent_payer: attacker.pubkey(),
+        created_at: 0,
+        bump,
+    };
+    let elsewhere = Keypair::new().pubkey();
+    env.forge(&elsewhere, &forged);
+
+    let mut care = care_by_device_ix(&attacker.pubkey(), &victim.pubkey(), &pet, CareActionType::Feed);
+    care.accounts[1].pubkey = elsewhere;
+    expect_anchor(&env.send(&[care], &attacker, &[]), ErrorCode::ConstraintSeeds);
+    assert_eq!(env.passport(&pet).care_count, 0);
 }

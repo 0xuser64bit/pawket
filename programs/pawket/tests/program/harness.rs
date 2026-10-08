@@ -657,6 +657,16 @@ pub fn by_device(ix: Instruction, device: &Pubkey, owner: &Pubkey, discriminator
     }
 }
 
+/// A plain system transfer, which any key may sign for its own lamports: `Transfer` is variant 2.
+pub fn transfer_ix(from: &Pubkey, to: &Pubkey, lamports: u64) -> Instruction {
+    use anchor_lang::prelude::AccountMeta;
+    Instruction {
+        program_id: system_program::ID,
+        accounts: vec![AccountMeta::new(*from, true), AccountMeta::new(*to, false)],
+        data: [&2u32.to_le_bytes()[..], &lamports.to_le_bytes()].concat(),
+    }
+}
+
 fn care_accounts(owner: &Pubkey, pet: &Pubkey) -> Vec<anchor_lang::prelude::AccountMeta> {
     pawket::accounts::Care {
         owner: *owner,

@@ -43,11 +43,11 @@ const ASSETS = [
   ["Your pets", "Identity, appearance, care, progress — as many as you adopt", "No — they start in this browser", "No"],
   ["Its record on Solana", "Every care, the streak and the level, kept where nobody can edit them", "No — keeping it there is your choice", "No"],
   ["Its keepsake card", "A frozen card in your wallet that points at the pet", "No", "No — it cannot be sold or sent"],
-  ["Clothes and rooms", "Expression: eighteen free looks, five earned by caring; four more and two rooms in the Market", "No", "Free, or a fixed price in the Market — never resold, never power"],
+  ["Clothes and rooms", "Expression: three pieces and two rooms free; twenty-five pieces, twelve rooms and eight photo frames in the Market", "No", "Free, or a fixed price in the Market — never resold, never power"],
   ["A guild", "A crest and a place among other pets, kept on Solana", "No — joining is optional", "No — joining and leaving are free"],
   ["A guild's coin", "Optional: a guild may launch one on Meteora. Holders' pets wear its crest pin", "No — and it never touches a pet", "Yes: it trades, and can fall to nothing"],
-  ["A Pawket Wallet", "A browser you link, so your pets' actions ask nothing each time; a balance for its fees when Pawket does not pay them", "No — it is optional", "No — it holds your SOL and gives it back"],
-  ["SOL", "Network fees on devnet, which Pawket covers while it can", "No", "Yes, elsewhere"],
+  ["A Pawket Wallet", "One balance and one history for everything on Solana: a browser you link signs your pets' actions with no pop-up, and Market looks and coins spend it when your wallet approves", "Only on Solana — a browser pet needs none", "No — it holds your SOL and gives it back"],
+  ["SOL", "A little in your Pawket Wallet to play on Solana; Pawket covers network fees and rent while it can", "Only on Solana — devnet SOL is free", "Yes, elsewhere"],
 ];
 
 const NAV = [
@@ -182,7 +182,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <h3 className="display-s">Dress</h3>
-              <p className="body pk-muted">A scarf, a crown, a cape. Free, one at a time, tried on in the mirror first — and none of it changes a vital.</p>
+              <p className="body pk-muted">A scarf, a crown, a collar to start, and more in the Market. One at a time, tried on in the mirror first — and none of it changes a vital.</p>
             </article>
           </div>
         </section>

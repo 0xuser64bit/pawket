@@ -37,9 +37,10 @@ export function Settings({ form }: { form?: PetForm }) {
       <Card>
         <h2 className="title">Pawket Wallet</h2>
         <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-          Link {here} once, and your pets can act inside the limits you set without asking your wallet each time.{" "}
-          {sponsor.data?.available ? "Pawket pays the fees right now." : "A SOL balance covers fees when sponsorship is unavailable."}{" "}
-          Anything that spends SOL still asks.
+          Everything your pets do on Solana goes through it. Link {here} once with a little SOL in it, and your pets
+          act inside the limits you set without asking your wallet each time.{" "}
+          {sponsor.data?.available ? "Pawket pays the fees right now." : "The balance covers fees while sponsorship is unavailable."}{" "}
+          Market looks and coins spend the balance when your wallet approves.
         </p>
         <div style={{ marginTop: "var(--space-4)" }}>
           <ButtonLink label="Open the Pawket Wallet" href="/wallet" icon="bolt" tone="quiet" size="sm" />

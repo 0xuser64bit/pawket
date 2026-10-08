@@ -100,6 +100,9 @@ pet, as tiles and in 3D), twelve rooms at 0.1 in glass (Terracotta,
 Newsprint, Cocoa and Arcade new, each held to the contrast floor), and eight
 photo frames at 0.025 in copper (Instant, Hearts, Starry night and Confetti
 new, shown on the shelf as small framed prints). The program's `item_price`
-holds every price; a second devnet upgrade on 8 October opened ids 23–28,
-72–75 and 84–87 and the classic tier, after the deployed binary was saved
-to `.keys/backups/pawket-devnet-replaced-2026-10-08-by-market-second-shelf.so`.
+holds every price; a second devnet upgrade on 8 October (slot 508854840)
+opened ids 23–28, 72–75 and 84–87 and the classic tier, after the deployed
+binary was saved to
+`.keys/backups/pawket-devnet-replaced-2026-10-08-by-market-second-shelf.so`.
+The public devnet RPC rate-limited the buffer upload to a crawl; it went
+through the project's own RPC (`SOLANA_RPC_URL`) in minutes.

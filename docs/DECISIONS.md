@@ -31,9 +31,12 @@ a cowboy hat, chef hat, sunglasses, headphones, beret and necktie, at 0.05
 (foil). Twelve rooms (four new: Terracotta, Newsprint, Cocoa, Arcade) at 0.1
 (glass) and eight photo frames (four new: Instant, Hearts, Starry night,
 Confetti) at 0.025 (copper). Stickers stay achievements; they no longer unlock
-pieces. Devnet upgrades of 2026-10-08 (the first by the Codex pass, the second
-here) moved `WEARABLE_COUNT` to 3 and set `item_price` to these ranges; every
-account layout is unchanged and a piece already worn stays on.
+pieces. Two devnet upgrades on 2026-10-08 — slot 508807099 (the Codex pass:
+`WEARABLE_COUNT` 3, `buy_with_wallet`, the coin brackets) and slot 508854840
+(this shelf; binary sha256 `42107d4b…3e25aa`, the build of this source) — set
+`item_price` to these ranges; every account layout is unchanged and a piece
+already worn stays on. Simulated purchases of 4, 18, 23, 28, 72, 75, 84 and 87
+reach the price check; 29, 76 and 88 are unknown items.
 **Consequence:** Item ids are 4–28, 64–75 and 80–87. A new look is a catalog
 line, its drawings (2D, tile, 3D) and a program upgrade for its id.
 

@@ -225,7 +225,7 @@ export default async function GuildPage({ params }: Props) {
                 </p>
                 <p className="caption pk-faint">
                   Something wrong here — impersonation, a scam link, abuse?{" "}
-                  <a href={guildReportUrl(guild, `${getPublicEnv().appUrl}/guilds/${guild.slug}`)} target="_blank" rel="noreferrer">
+                  <a href={guildReportUrl(guild, `${getPublicEnv().appUrl}/guilds/${guild.slug}`)}>
                     Report {guild.name}
                   </a>
                   . Pawket can stop promoting a guild; it cannot remove one from Solana.

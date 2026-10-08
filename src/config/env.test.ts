@@ -72,11 +72,14 @@ describe("getPublicEnv", () => {
 });
 
 describe("guildReportUrl", () => {
-  it("opens a prefilled issue that names the guild and says what Pawket can and cannot do", async () => {
+  it("writes a prefilled email that names the guild and says what Pawket can and cannot do", async () => {
     const { guildReportUrl } = await import("./site");
-    const url = new URL(guildReportUrl({ slug: "sunbeam-club", name: "Sunbeam Club" }, "https://pawket.world/guilds/sunbeam-club"));
-    expect(url.pathname).toBe("/0xuser64bit/pawket/issues/new");
-    expect(url.searchParams.get("title")).toBe("Report: Sunbeam Club (sunbeam-club)");
-    expect(url.searchParams.get("body")).toContain("cannot remove it from Solana");
+    const link = guildReportUrl({ slug: "sunbeam-club", name: "Sunbeam Club" }, "https://pawket.world/guilds/sunbeam-club");
+    expect(link.startsWith("mailto:hi@pawket.world?")).toBe(true);
+    expect(link).not.toContain("+");
+    const params = new URLSearchParams(link.slice(link.indexOf("?") + 1));
+    expect(params.get("subject")).toBe("Report: Sunbeam Club (sunbeam-club)");
+    expect(params.get("body")).toContain("https://pawket.world/guilds/sunbeam-club");
+    expect(params.get("body")).toContain("cannot remove it from Solana");
   });
 });

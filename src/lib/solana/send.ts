@@ -99,12 +99,17 @@ export async function askSponsor(wireBase64: string): Promise<string> {
 
 const decode = (wireBase64: string) => getTransactionDecoder().decode(getBase64Encoder().encode(wireBase64));
 
-/** A wallet can open without ever answering. A late signature is discarded, never broadcast. */
+/**
+ * A wallet can open without ever answering. A late signature is discarded, never broadcast.
+ * Longer than a phone wallet's own limits (a minute to open, 85 seconds to answer, in the
+ * patched Mobile Wallet Adapter), so its session always ends before this gives up on it and
+ * a retry never opens a second session over a first.
+ */
 async function signingDeadline<T>(sign: () => Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
   try {
     return await Promise.race([sign(), new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error("Your wallet did not finish signing. Return to Pawket, disconnect and reconnect your wallet, then try again. Nothing was sent.")), 90_000);
+      timer = setTimeout(() => reject(new Error("Your wallet did not finish signing in time. Nothing was sent.")), 150_000);
     })]);
   } finally {
     clearTimeout(timer!);

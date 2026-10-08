@@ -49,7 +49,7 @@ describe("broadcast uncertainty", () => {
         )));
       } }) : sendPawket(options);
       const refused = expect(pending).rejects.toThrow(/did not finish signing.*Nothing was sent/);
-      await vi.advanceTimersByTimeAsync(90_000);
+      await vi.advanceTimersByTimeAsync(150_000);
       await refused;
       answer([]);
       await Promise.resolve();

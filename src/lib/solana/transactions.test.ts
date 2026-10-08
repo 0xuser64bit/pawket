@@ -45,7 +45,7 @@ describe("transaction errors", () => {
   it("does not silently dismiss the adapter's connection timeout as a user decline", () => {
     const timeout = mwa("SolanaMobileWalletAdapterError", "ERROR_ASSOCIATION_CANCELLED", "Wallet connection timed out");
     expect(isUserRejection(timeout)).toBe(false);
-    expect(toUserFacingError(timeout)).toMatch(/did not open in time.*reconnect.*Nothing was sent/);
+    expect(toUserFacingError(timeout)).toMatch(/did not open in time.*Nothing was sent/);
   });
 
   it("maps program codes to one-sentence copy", () => {

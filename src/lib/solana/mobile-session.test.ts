@@ -6,7 +6,12 @@ const protocol = requireMobile.resolve("@solana-mobile/mobile-wallet-adapter-pro
 const close = vi.fn();
 const authorize = vi.fn();
 const capabilities = vi.fn();
-const scenario = vi.fn(async () => ({ wallet: Promise.resolve({ authorize, getCapabilities: capabilities }), close }));
+const signTransactions = vi.fn();
+const scenario = vi.fn(async () => ({ wallet: Promise.resolve({ authorize, getCapabilities: capabilities, signTransactions }), close }));
+/** One account, as a wallet names it (base64), and the same account as Wallet Standard does. */
+const ACCOUNT = { address: Buffer.alloc(32, 1).toString("base64") };
+const OTHER = { address: Buffer.alloc(32, 2).toString("base64") };
+const refused = () => Object.assign(new Error("authorization request failed"), { name: "SolanaMobileWalletAdapterProtocolError", code: -1 });
 
 async function mobile() {
   vi.stubGlobal("navigator", { userAgent: "Android Solana Mobile Web Shell" });
@@ -44,21 +49,24 @@ it("closes an unanswered authorization and releases connection for another try",
   authorize.mockReturnValue(new Promise(() => {}));
   const result = adapter.features["standard:connect"].connect().catch((error: Error) => error);
   await vi.advanceTimersByTimeAsync(85_001);
-  expect(await result).toMatchObject({ message: expect.stringMatching(/timed out/i) });
+  expect(await result).toMatchObject({ message: expect.stringMatching(/timed out|in time/i) });
   expect(close).toHaveBeenCalledOnce();
   expect(adapter.connected).toBe(false);
 });
 
 it("closes a hung handshake and ignores its late wallet", async () => {
   vi.useFakeTimers();
-  let connect!: (value: { authorize: typeof authorize; getCapabilities: typeof capabilities }) => void;
+  let connect!: (value: { authorize: typeof authorize; getCapabilities: typeof capabilities; signTransactions: typeof signTransactions }) => void;
   scenario.mockImplementationOnce(async () => ({ wallet: new Promise((resolve) => { connect = resolve; }), close }));
   const adapter = await mobile();
   const result = adapter.features["standard:connect"].connect().catch((error: Error) => error);
+  // A wallet app still starting, or waiting to be unlocked, gets a minute to answer.
   await vi.advanceTimersByTimeAsync(30_001);
-  expect(await result).toMatchObject({ message: expect.stringMatching(/timed out/i) });
+  expect(close).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(30_000);
+  expect(await result).toMatchObject({ message: expect.stringMatching(/timed out|in time/i) });
   expect(close).toHaveBeenCalledOnce();
-  connect({ authorize, getCapabilities: capabilities });
+  connect({ authorize, getCapabilities: capabilities, signTransactions });
   await vi.advanceTimersByTimeAsync(1);
   expect(authorize).not.toHaveBeenCalled();
   expect(adapter.connected).toBe(false);
@@ -71,9 +79,42 @@ it("discards an authorization that answers after its session timed out", async (
   const adapter = await mobile();
   const result = adapter.features["standard:connect"].connect().catch((error: Error) => error);
   await vi.advanceTimersByTimeAsync(85_001);
-  expect(await result).toMatchObject({ message: expect.stringMatching(/timed out/i) });
+  expect(await result).toMatchObject({ message: expect.stringMatching(/timed out|in time/i) });
   approve({ auth_token: "too-late", accounts: [] });
   await vi.advanceTimersByTimeAsync(1);
   expect(capabilities).not.toHaveBeenCalled();
+  expect(adapter.connected).toBe(false);
+});
+
+async function connected() {
+  const adapter = await mobile();
+  authorize.mockResolvedValueOnce({ auth_token: "issued", accounts: [ACCOUNT] });
+  capabilities.mockResolvedValue({ features: ["solana:signTransactions"], supported_transaction_versions: ["legacy", 0] });
+  await adapter.features["standard:connect"].connect();
+  return adapter;
+}
+
+const sign = (adapter: Awaited<ReturnType<typeof mobile>>) =>
+  (adapter.features as unknown as Record<string, { signTransaction: (input: { transaction: Uint8Array }) => Promise<Array<{ signedTransaction: Uint8Array }>> }>)["solana:signTransaction"]
+    .signTransaction({ transaction: new Uint8Array([7]) });
+
+it("asks again, in the same session, when the wallet no longer honours its token, then signs", async () => {
+  const adapter = await connected();
+  authorize.mockRejectedValueOnce(refused()).mockResolvedValueOnce({ auth_token: "fresh", accounts: [ACCOUNT] });
+  signTransactions.mockResolvedValueOnce({ signed_payloads: [Buffer.from([7, 7]).toString("base64")] });
+  const [{ signedTransaction }] = await sign(adapter);
+  expect([...signedTransaction]).toEqual([7, 7]);
+  expect(authorize).toHaveBeenNthCalledWith(2, expect.objectContaining({ auth_token: "issued" }));
+  expect(authorize.mock.calls[2][0]).not.toHaveProperty("auth_token");
+  expect(close).toHaveBeenCalledTimes(2);
+  expect(adapter.connected).toBe(true);
+});
+
+it("signs nothing when the wallet answers the second ask for another account", async () => {
+  const adapter = await connected();
+  authorize.mockRejectedValueOnce(refused()).mockResolvedValueOnce({ auth_token: "fresh", accounts: [OTHER] });
+  await expect(sign(adapter)).rejects.toThrow(/different account/);
+  expect(signTransactions).not.toHaveBeenCalled();
+  expect(close).toHaveBeenCalledTimes(2);
   expect(adapter.connected).toBe(false);
 });

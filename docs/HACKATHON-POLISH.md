@@ -33,14 +33,28 @@ Verification and remaining limits are recorded below as each commit lands.
 
 ## Mobile sessions
 
-The pinned MWA 0.6.0 patch closes sessions on success, refusal and timeout;
-the association deadline covers the handshake and the request has its own
-85-second deadline. Authorization finishes before capability discovery, and
-cache writes are awaited. A failed reauthorization now rejects instead of
-waiting forever after disconnect. Linking refuses stale wallet-read errors.
-Transport tests exercise a refusal followed by a successful retry and an
-unanswered authorization; they do not mock transaction signatures or prove
-behaviour on a physical Solflare installation.
+Root cause of "Solflare opens, shows nothing to sign, and freezes": 0.6.0
+re-authorizes every request with the token Pawket saved. When the wallet
+no longer honoured it, the adapter disconnected and then waited forever
+(`await new Promise(() => {})`) without closing the session, so the wallet
+sat on "awaiting requests" and Pawket on its spinner until both were
+killed; the retry worked only because the failure had cleared the token.
+
+The pinned MWA 0.6.0 patch now asks the wallet to authorize again in the
+same session when it refuses its own token (a different account is
+refused), closes the session on every exit, and gives a wallet app a
+minute to open and 85 seconds to answer. The protocol 2.3.0 patch rejects
+a waiting request as soon as the wallet closes the session (3.0.0's fix).
+Authorization finishes before capability discovery, and cache writes are
+awaited. Pawket's signing deadline (150s) outlasts both limits, so a retry
+never overlaps a live session. Linking refuses stale wallet-read errors.
+
+Checked on the Android 16 emulator in the debug shell with the official
+test wallet: decline then retry; a cleared wallet (stale token) prompts a
+fresh authorization in the same session; backing out of the signing screen
+returns an error at once instead of hanging. `mobile-session.test.ts`
+covers the same paths. Solflare and Phantom on a physical phone remain the
+final check.
 
 ## Home and navigation
 

@@ -103,9 +103,9 @@ export function mobileWalletProblem(error: unknown): string | null {
     case "ERROR_SESSION_CLOSED":
       return "Your wallet closed before it answered.";
     case "ERROR_SESSION_TIMEOUT":
-      return "Your wallet did not answer in time. Return to Pawket, disconnect and reconnect your wallet, then try again.";
+      return "Your wallet did not answer in time.";
     case "ERROR_ASSOCIATION_CANCELLED":
-      return /timed? out|timeout/i.test(messageOf(error)) ? "Your wallet did not open in time. Return to Pawket and reconnect your wallet." : null;
+      return /timed? out|timeout/i.test(messageOf(error)) ? "Your wallet app did not open in time." : null;
     case "ERROR_LOOPBACK_ACCESS_BLOCKED":
       return "This browser is not letting Pawket reach your wallet app. Allow local network access for this site, then try again.";
     default:

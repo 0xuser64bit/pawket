@@ -1,0 +1,268 @@
+diff --git a/lib/cjs/index.browser.js b/lib/cjs/index.browser.js
+index 3e520a5a530fa301fcfde32d3a9e3939eed68a11..9ef4f425c17d16976940c196b441124f45a52397 100644
+--- a/lib/cjs/index.browser.js
++++ b/lib/cjs/index.browser.js
+@@ -535,7 +535,7 @@ const WEBSOCKET_CONNECTION_CONFIG = {
+ 		750,
+ 		1e3
+ 	],
+-	timeoutMs: 3e4
++	timeoutMs: 6e4
+ };
+ const WEBSOCKET_PROTOCOL_BINARY = "com.solana.mobilewalletadapter.v1";
+ const WEBSOCKET_PROTOCOL_BASE64 = "com.solana.mobilewalletadapter.v1.base64";
+@@ -603,6 +603,13 @@ async function startScenario(config) {
+ 		},
+ 		wallet: new Promise((resolve, reject) => {
+ 			const jsonRpcResponsePromises = {};
++			const rejectPendingRequests = (reason) => {
++				for (const id of Object.keys(jsonRpcResponsePromises)) {
++					const responsePromise = jsonRpcResponsePromises[id];
++					delete jsonRpcResponsePromises[id];
++					responsePromise.reject(reason);
++				}
++			};
+ 			const handleOpen = async () => {
+ 				if (state.__type !== "connecting") {
+ 					console.warn(`Expected adapter state to be \`connecting\` at the moment the websocket opens. Got \`${state.__type}\`.`);
+@@ -621,9 +628,11 @@ async function startScenario(config) {
+ 			const handleClose = (evt) => {
+ 				if (evt.wasClean) state = { __type: "disconnected" };
+ 				else reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, `The wallet session dropped unexpectedly (${evt.code}: ${evt.reason}).`, { closeEvent: evt }));
++				rejectPendingRequests(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, `The wallet session closed before a response was received (${evt.code}: ${evt.reason}).`, { closeEvent: evt }));
+ 				disposeSocket();
+ 			};
+ 			const handleError = async (_evt) => {
++				rejectPendingRequests(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, "The wallet session encountered a transport error before a response was received."));
+ 				disposeSocket();
+ 				if (Date.now() - connectionStartTime >= WEBSOCKET_CONNECTION_CONFIG.timeoutMs) reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_TIMEOUT, `Failed to connect to the wallet websocket at ${websocketURL}.`));
+ 				else {
+@@ -652,20 +661,26 @@ async function startScenario(config) {
+ 						break;
+ 					}
+ 					case "connected":
++						if (responseBuffer.byteLength === 0) break;
+ 						try {
+ 							const sequenceNumber = getSequenceNumberFromByteArray(responseBuffer.slice(0, 4));
+ 							if (sequenceNumber !== lastKnownInboundSequenceNumber + 1) throw new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_ILLEGAL_TRANSPORT_STATE, "Encrypted message has invalid sequence number");
+ 							lastKnownInboundSequenceNumber = sequenceNumber;
+ 							const jsonRpcMessage = await decryptJsonRpcMessage(responseBuffer, state.sharedSecret);
+ 							const responsePromise = jsonRpcResponsePromises[jsonRpcMessage.id];
++							if (!responsePromise) break;
+ 							delete jsonRpcResponsePromises[jsonRpcMessage.id];
+ 							responsePromise.resolve(jsonRpcMessage.result);
+ 						} catch (e) {
+ 							if (e instanceof SolanaMobileWalletAdapterProtocolError) {
+ 								const responsePromise = jsonRpcResponsePromises[e.jsonRpcMessageId];
++								if (!responsePromise) break;
+ 								delete jsonRpcResponsePromises[e.jsonRpcMessageId];
+ 								responsePromise.reject(e);
+-							} else throw e;
++							} else {
++								rejectPendingRequests(e);
++								socket.close();
++							}
+ 						}
+ 						break;
+ 					case "hello_req_sent": {
+diff --git a/lib/cjs/index.js b/lib/cjs/index.js
+index 7d32c23a7df932a92f49056c17fbcbb829e4dc21..b840681f723eea17ac87c4527e50877734b76e60 100644
+--- a/lib/cjs/index.js
++++ b/lib/cjs/index.js
+@@ -535,7 +535,7 @@ const WEBSOCKET_CONNECTION_CONFIG = {
+ 		750,
+ 		1e3
+ 	],
+-	timeoutMs: 3e4
++	timeoutMs: 6e4
+ };
+ const WEBSOCKET_PROTOCOL_BINARY = "com.solana.mobilewalletadapter.v1";
+ const WEBSOCKET_PROTOCOL_BASE64 = "com.solana.mobilewalletadapter.v1.base64";
+@@ -603,6 +603,13 @@ async function startScenario(config) {
+ 		},
+ 		wallet: new Promise((resolve, reject) => {
+ 			const jsonRpcResponsePromises = {};
++			const rejectPendingRequests = (reason) => {
++				for (const id of Object.keys(jsonRpcResponsePromises)) {
++					const responsePromise = jsonRpcResponsePromises[id];
++					delete jsonRpcResponsePromises[id];
++					responsePromise.reject(reason);
++				}
++			};
+ 			const handleOpen = async () => {
+ 				if (state.__type !== "connecting") {
+ 					console.warn(`Expected adapter state to be \`connecting\` at the moment the websocket opens. Got \`${state.__type}\`.`);
+@@ -621,9 +628,11 @@ async function startScenario(config) {
+ 			const handleClose = (evt) => {
+ 				if (evt.wasClean) state = { __type: "disconnected" };
+ 				else reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, `The wallet session dropped unexpectedly (${evt.code}: ${evt.reason}).`, { closeEvent: evt }));
++				rejectPendingRequests(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, `The wallet session closed before a response was received (${evt.code}: ${evt.reason}).`, { closeEvent: evt }));
+ 				disposeSocket();
+ 			};
+ 			const handleError = async (_evt) => {
++				rejectPendingRequests(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, "The wallet session encountered a transport error before a response was received."));
+ 				disposeSocket();
+ 				if (Date.now() - connectionStartTime >= WEBSOCKET_CONNECTION_CONFIG.timeoutMs) reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_TIMEOUT, `Failed to connect to the wallet websocket at ${websocketURL}.`));
+ 				else {
+@@ -652,20 +661,26 @@ async function startScenario(config) {
+ 						break;
+ 					}
+ 					case "connected":
++						if (responseBuffer.byteLength === 0) break;
+ 						try {
+ 							const sequenceNumber = getSequenceNumberFromByteArray(responseBuffer.slice(0, 4));
+ 							if (sequenceNumber !== lastKnownInboundSequenceNumber + 1) throw new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_ILLEGAL_TRANSPORT_STATE, "Encrypted message has invalid sequence number");
+ 							lastKnownInboundSequenceNumber = sequenceNumber;
+ 							const jsonRpcMessage = await decryptJsonRpcMessage(responseBuffer, state.sharedSecret);
+ 							const responsePromise = jsonRpcResponsePromises[jsonRpcMessage.id];
++							if (!responsePromise) break;
+ 							delete jsonRpcResponsePromises[jsonRpcMessage.id];
+ 							responsePromise.resolve(jsonRpcMessage.result);
+ 						} catch (e) {
+ 							if (e instanceof SolanaMobileWalletAdapterProtocolError) {
+ 								const responsePromise = jsonRpcResponsePromises[e.jsonRpcMessageId];
++								if (!responsePromise) break;
+ 								delete jsonRpcResponsePromises[e.jsonRpcMessageId];
+ 								responsePromise.reject(e);
+-							} else throw e;
++							} else {
++								rejectPendingRequests(e);
++								socket.close();
++							}
+ 						}
+ 						break;
+ 					case "hello_req_sent": {
+diff --git a/lib/esm/index.browser.js b/lib/esm/index.browser.js
+index 7efcb06b31065279c366188f87161af367d50e2c..fb585254b4eedb62b222d9484db24709fcb10e9f 100644
+--- a/lib/esm/index.browser.js
++++ b/lib/esm/index.browser.js
+@@ -534,7 +534,7 @@ const WEBSOCKET_CONNECTION_CONFIG = {
+ 		750,
+ 		1e3
+ 	],
+-	timeoutMs: 3e4
++	timeoutMs: 6e4
+ };
+ const WEBSOCKET_PROTOCOL_BINARY = "com.solana.mobilewalletadapter.v1";
+ const WEBSOCKET_PROTOCOL_BASE64 = "com.solana.mobilewalletadapter.v1.base64";
+@@ -602,6 +602,13 @@ async function startScenario(config) {
+ 		},
+ 		wallet: new Promise((resolve, reject) => {
+ 			const jsonRpcResponsePromises = {};
++			const rejectPendingRequests = (reason) => {
++				for (const id of Object.keys(jsonRpcResponsePromises)) {
++					const responsePromise = jsonRpcResponsePromises[id];
++					delete jsonRpcResponsePromises[id];
++					responsePromise.reject(reason);
++				}
++			};
+ 			const handleOpen = async () => {
+ 				if (state.__type !== "connecting") {
+ 					console.warn(`Expected adapter state to be \`connecting\` at the moment the websocket opens. Got \`${state.__type}\`.`);
+@@ -620,9 +627,11 @@ async function startScenario(config) {
+ 			const handleClose = (evt) => {
+ 				if (evt.wasClean) state = { __type: "disconnected" };
+ 				else reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, `The wallet session dropped unexpectedly (${evt.code}: ${evt.reason}).`, { closeEvent: evt }));
++				rejectPendingRequests(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, `The wallet session closed before a response was received (${evt.code}: ${evt.reason}).`, { closeEvent: evt }));
+ 				disposeSocket();
+ 			};
+ 			const handleError = async (_evt) => {
++				rejectPendingRequests(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, "The wallet session encountered a transport error before a response was received."));
+ 				disposeSocket();
+ 				if (Date.now() - connectionStartTime >= WEBSOCKET_CONNECTION_CONFIG.timeoutMs) reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_TIMEOUT, `Failed to connect to the wallet websocket at ${websocketURL}.`));
+ 				else {
+@@ -651,20 +660,26 @@ async function startScenario(config) {
+ 						break;
+ 					}
+ 					case "connected":
++						if (responseBuffer.byteLength === 0) break;
+ 						try {
+ 							const sequenceNumber = getSequenceNumberFromByteArray(responseBuffer.slice(0, 4));
+ 							if (sequenceNumber !== lastKnownInboundSequenceNumber + 1) throw new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_ILLEGAL_TRANSPORT_STATE, "Encrypted message has invalid sequence number");
+ 							lastKnownInboundSequenceNumber = sequenceNumber;
+ 							const jsonRpcMessage = await decryptJsonRpcMessage(responseBuffer, state.sharedSecret);
+ 							const responsePromise = jsonRpcResponsePromises[jsonRpcMessage.id];
++							if (!responsePromise) break;
+ 							delete jsonRpcResponsePromises[jsonRpcMessage.id];
+ 							responsePromise.resolve(jsonRpcMessage.result);
+ 						} catch (e) {
+ 							if (e instanceof SolanaMobileWalletAdapterProtocolError) {
+ 								const responsePromise = jsonRpcResponsePromises[e.jsonRpcMessageId];
++								if (!responsePromise) break;
+ 								delete jsonRpcResponsePromises[e.jsonRpcMessageId];
+ 								responsePromise.reject(e);
+-							} else throw e;
++							} else {
++								rejectPendingRequests(e);
++								socket.close();
++							}
+ 						}
+ 						break;
+ 					case "hello_req_sent": {
+diff --git a/lib/esm/index.js b/lib/esm/index.js
+index a7b05e1720e1b2a401f768571210caddcbfac592..2beb952f14153012b5921a015dccc320cb59aec5 100644
+--- a/lib/esm/index.js
++++ b/lib/esm/index.js
+@@ -534,7 +534,7 @@ const WEBSOCKET_CONNECTION_CONFIG = {
+ 		750,
+ 		1e3
+ 	],
+-	timeoutMs: 3e4
++	timeoutMs: 6e4
+ };
+ const WEBSOCKET_PROTOCOL_BINARY = "com.solana.mobilewalletadapter.v1";
+ const WEBSOCKET_PROTOCOL_BASE64 = "com.solana.mobilewalletadapter.v1.base64";
+@@ -602,6 +602,13 @@ async function startScenario(config) {
+ 		},
+ 		wallet: new Promise((resolve, reject) => {
+ 			const jsonRpcResponsePromises = {};
++			const rejectPendingRequests = (reason) => {
++				for (const id of Object.keys(jsonRpcResponsePromises)) {
++					const responsePromise = jsonRpcResponsePromises[id];
++					delete jsonRpcResponsePromises[id];
++					responsePromise.reject(reason);
++				}
++			};
+ 			const handleOpen = async () => {
+ 				if (state.__type !== "connecting") {
+ 					console.warn(`Expected adapter state to be \`connecting\` at the moment the websocket opens. Got \`${state.__type}\`.`);
+@@ -620,9 +627,11 @@ async function startScenario(config) {
+ 			const handleClose = (evt) => {
+ 				if (evt.wasClean) state = { __type: "disconnected" };
+ 				else reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, `The wallet session dropped unexpectedly (${evt.code}: ${evt.reason}).`, { closeEvent: evt }));
++				rejectPendingRequests(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, `The wallet session closed before a response was received (${evt.code}: ${evt.reason}).`, { closeEvent: evt }));
+ 				disposeSocket();
+ 			};
+ 			const handleError = async (_evt) => {
++				rejectPendingRequests(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_CLOSED, "The wallet session encountered a transport error before a response was received."));
+ 				disposeSocket();
+ 				if (Date.now() - connectionStartTime >= WEBSOCKET_CONNECTION_CONFIG.timeoutMs) reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_SESSION_TIMEOUT, `Failed to connect to the wallet websocket at ${websocketURL}.`));
+ 				else {
+@@ -651,20 +660,26 @@ async function startScenario(config) {
+ 						break;
+ 					}
+ 					case "connected":
++						if (responseBuffer.byteLength === 0) break;
+ 						try {
+ 							const sequenceNumber = getSequenceNumberFromByteArray(responseBuffer.slice(0, 4));
+ 							if (sequenceNumber !== lastKnownInboundSequenceNumber + 1) throw new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_ILLEGAL_TRANSPORT_STATE, "Encrypted message has invalid sequence number");
+ 							lastKnownInboundSequenceNumber = sequenceNumber;
+ 							const jsonRpcMessage = await decryptJsonRpcMessage(responseBuffer, state.sharedSecret);
+ 							const responsePromise = jsonRpcResponsePromises[jsonRpcMessage.id];
++							if (!responsePromise) break;
+ 							delete jsonRpcResponsePromises[jsonRpcMessage.id];
+ 							responsePromise.resolve(jsonRpcMessage.result);
+ 						} catch (e) {
+ 							if (e instanceof SolanaMobileWalletAdapterProtocolError) {
+ 								const responsePromise = jsonRpcResponsePromises[e.jsonRpcMessageId];
++								if (!responsePromise) break;
+ 								delete jsonRpcResponsePromises[e.jsonRpcMessageId];
+ 								responsePromise.reject(e);
+-							} else throw e;
++							} else {
++								rejectPendingRequests(e);
++								socket.close();
++							}
+ 						}
+ 						break;
+ 					case "hello_req_sent": {

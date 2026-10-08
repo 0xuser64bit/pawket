@@ -1,0 +1,10 @@
+import * as L from "./lib.mjs";
+const { browser, page } = await L.connect();
+L.sh("settings put system show_touches 1");
+const rec = L.recorder("test-feed");
+await L.sleep(1500);
+await L.tap(page.getByRole("button", { name: "Feed", exact: true }), { after: 2200 });
+await L.screenshot("/private/tmp/claude-501/-Users-user64bit-Code-pawket/8d3d9dfe-725c-40bc-84ad-0c7752be8672/scratchpad/shots/feed-mid.png");
+await L.sleep(4000);
+console.log(await rec.stop());
+await browser.close().catch(() => {});

@@ -31,5 +31,6 @@ export default defineConfig([
     "test-results/**",
     "target/**",
     "programs/**",
+    "video/**",
   ]),
 ]);

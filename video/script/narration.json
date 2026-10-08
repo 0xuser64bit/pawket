@@ -1,0 +1,19 @@
+{
+  "voice": { "name": "Jessica", "id": "cgSgspJ2msm6clMCkdW9", "model": "eleven_multilingual_v2",
+    "settings": { "stability": 0.5, "similarity_boost": 0.78, "style": 0.15, "use_speaker_boost": true, "speed": 0.95 } },
+  "sections": [
+    { "id": "s1-hook", "text": "Meet Mango. Mango notices when you're gone, and lights up when you come back. Every day you show up becomes part of a story you get to keep." },
+    { "id": "s2a-adopt", "text": "It starts in three taps. Choose a friend, give them a name, pick their temperament. No wallet, no sign-up." },
+    { "id": "s2b-room", "text": "Then it's the two of you, in a room you share. Feed, play, brush, rest. Needs fall while you're away, and Mango's face tells you what's missing." },
+    { "id": "s2c-today", "text": "Every care earns XP and ticks off today's round. Say hello, share a dance, then snap a photo of your room and send it from your phone." },
+    { "id": "s3a-play", "text": "When you both need a break, there are four quick games, and each day brings one round that everyone shares." },
+    { "id": "s3b-profile", "text": "Your profile is your household. Keep as many pets as you like, choose who's at home, dress up and save outfits, and watch stickers fill in as you care." },
+    { "id": "s3c-market", "text": "Want a new look? The Market has hats and halos, whole rooms, and photo frames. It's all cosmetic. Nothing you buy changes care, XP or a score." },
+    { "id": "s3d-guilds", "text": "Want company? Guilds are optional, and free to join. Plan a meetup, RSVP, check in, and vote in a poll. A guild's optional coin never touches a pet." },
+    { "id": "s3e-world", "text": "Step outside, and the Park shows every pet kept on Solana, read live. Pulse counts it all, straight from the program." },
+    { "id": "s4a-keep", "text": "When you're ready, keep Mango's story on Solana. Your wallet app approves once. That opens a Pawket Wallet with a little devnet SOL, and links this phone." },
+    { "id": "s4b-record", "text": "From then on, care is signed right here, with no pop-ups, and each moment plays only after Solana confirms it. Mango's Passport is public. Visitors can wave once a day, and Mango's keepsake card sits in your wallet." },
+    { "id": "s4c-money", "text": "This phone can care for your pets, but it can never move money. Spending always asks your wallet first." },
+    { "id": "s5-close", "text": "Show up for Mango, and Mango shows up for you. One care at a time, it becomes a story that's yours to keep. Pawket. A living companion." }
+  ]
+}

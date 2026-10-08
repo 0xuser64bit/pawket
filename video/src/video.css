@@ -1,0 +1,28 @@
+/* The three families of the Pawket design system, from the app's own files (src/fonts). */
+@font-face {
+  font-family: "Fraunces";
+  src: url("../public/fonts/Fraunces-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("../public/fonts/HankenGrotesk-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: "DM Mono";
+  src: url("../public/fonts/DMMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: block;
+}
+@font-face {
+  font-family: "DM Mono";
+  src: url("../public/fonts/DMMono-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: block;
+}
+* {
+  box-sizing: border-box;
+}

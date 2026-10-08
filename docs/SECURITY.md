@@ -1,8 +1,8 @@
 # Security
 
-Why Pawket's rules hold, what the audit of 7 October 2026 came to, and what
-is known to be left. The rules live where they are enforced: the program in
-`programs/pawket/src/lib.rs`, what the sponsor signs in
+Why Pawket's rules hold, what the audits of 7 and 8 October 2026 came to,
+and what is known to be left. The rules live where they are enforced: the
+program in `programs/pawket/src/lib.rs`, what the sponsor signs in
 `src/lib/solana/sponsor.ts` (described in `docs/SOLANA.md`), the hard rules
 in `AGENTS.md`.
 
@@ -27,10 +27,32 @@ in `AGENTS.md`.
   unchecked aborts its transaction instead of wrapping. Counters saturate,
   and a caller's numbers are checked or bounded before arithmetic touches
   them (an event's span with `checked_sub`; its start, by that span).
+- Nothing stored can make care fail: decay stops counting past
+  `DECAY_HORIZON_SECONDS`, so a pet left for any length of time is cared
+  for like any other.
 
-`pnpm program:test` forges what a cluster cannot hold — a passport or a
-guild copied to another address, a closet or guestbook that names someone
-else — and shows each refused.
+`pnpm program:test` forges what a cluster cannot hold — a passport, a guild
+or a Pawket Wallet copied to another address, a closet or guestbook that
+names someone else — and shows each refused. Every check that keeps one
+player's state from another is tried by the wrong hands there too.
+
+### What a change must not break
+
+- **The first rule above.** Care takes a pet, planning takes a guild, an
+  RSVP takes an event and a vote a poll by type alone, trusting that only
+  `init` at a PDA made them. So no `zero` or keypair-made accounts and no
+  `realloc`; and a field that says whose an account is or what it belongs
+  to (an owner, a founder, a guild, a device) is written only with that
+  party's signature. Otherwise every one of those becomes forgeable.
+- **A pet's owner never changes.** The passport, a guild place, an RSVP and
+  a ballot each copy it, and one ballot per wallet rests on it. A transfer
+  would have to move or retire each.
+- **A device has no twin for money.** `DEVICE_VARIANTS` and the program's
+  `*_by_device` list are held to each other (`program.test.ts`).
+- **The sponsor stands only where the program says `payer` or
+  `rent_payer`.** `SPONSOR_SLOTS` is held to the IDL by index
+  (`sponsor.test.ts`), so reordering an instruction's accounts fails there
+  before the sponsor can sign as anything else.
 
 ## The audit of 7 October 2026
 
@@ -84,6 +106,46 @@ The devnet upgrade of 2026-10-07 (slot 508518503) carries the program's
 changes; every live passport, guild, closet and guestbook was checked
 against the new rules before it.
 
+## The audit of 8 October 2026
+
+A second pass, by hand, over the program at `479da07` and the server keys
+that sign beside it (the sponsor, keepsakes, coins). Each instruction was
+read for every account's owner, address, seeds, signer and tie to the
+others; each record (a pet, a guild place, a Pawket Wallet and its link, an
+event, a poll, a guestbook) for the moves it allows; every lamport for
+where it can go; every sum, index and cast clippy flags
+(`arithmetic_side_effects`, `indexing_slicing`, `cast_possible_truncation`)
+for its bound; and the code Anchor 1.2 generates — no legacy IDL
+instructions (`legacy_idl` is off), duplicate mutable accounts refused,
+`init` safe on a pre-funded address, `close` zeroing an account and handing
+it to the system program.
+
+It found no defect in the program: nothing that moves a lamport, writes
+another player's state or reaches a rule it should not. What it changed:
+
+| What | Commit |
+| --- | --- |
+| Tests for each bypass the suite had not tried: a wallet's rent sent to a thief; a wallet closed, or a device linked, by a stranger; a replaced device acting or unlinking its replacement; a device acting through a forged wallet; a leaked device drawing more than one fee an action | 9976586 |
+| A pet going, voting or checking in on another pet's place or RSVP; leaving a guild it is not in; buying into another's closet; nothing but the Market's six items ever priced | 7532f5f |
+| A stranger checking in, voting or dressing with someone else's pet; a device doing a round, dressing, an RSVP, a vote or a check-in for a pet its owner does not keep; a wallet made or paid into in someone else's name | 7bd45a7 |
+| Decay over every value, rate and `i64` time: it never rises or fails, and a pet left fifty years is cared for on the SBF build | 3489204 |
+| The sponsor's slots held to the IDL's `payer` and `rent_payer` | e02ad03 |
+| SOLANA.md and MAINNET.md said the sponsor never pays a wallet's rent, `program.ts` that a device signs care, rounds and dressing only: both stale since the device twins | 5643fcf |
+
+Every guard the new tests aim at that can be deleted (21 of them; a
+closet's seeds cannot, `init_if_needed` needs them) was deleted from
+`lib.rs` one at a time and rebuilt, and its test failed each time. Row
+63–65 above said the tests send a wallet's rent elsewhere; until 9976586
+only a guild place's were. The program on devnet (slot 508518503) is byte
+for byte the build of this source, and its upgrade authority is the deploy
+wallet, not the sponsor.
+
+Raised for a decision, unchanged: a founder keeps the role after their pet
+leaves the guild, coin launch included (`OPEN-QUESTIONS.md` Q9); the
+sponsor's secret is also the keepsake and coin secret, so it cannot rotate
+without losing them, and a coin is not bound to its founder when read (Q10).
+A pet that RSVPs and then leaves can still check in.
+
 ## Known and accepted
 
 - bigint-buffer 1.1.5 stays in the lockfile, patched; scanners that read
@@ -109,4 +171,11 @@ pnpm audit
 cargo audit
 gitleaks git --redact .
 pnpm program:test
+cargo clippy -p pawket --lib -- -W clippy::arithmetic_side_effects -W clippy::indexing_slicing -W clippy::cast_possible_truncation
 ```
+
+The clippy line lists 21 sites at `479da07`, each bounded: operands from the
+clock, ring indexes modulo eight, `item / 8` into 32 bytes, a slug indexed
+after its length check, decay clamped to its horizon, and an event's start:
+an event ends after it is made and lasts at most seven days, so it starts
+no earlier than seven days before it is made.

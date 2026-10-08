@@ -52,6 +52,18 @@
 **Context:** real-time presence/physics is the largest frontend+ops cost with the weakest early-retention evidence.
 **Decision needed:** which 1–2 mini-games ship first + scoring formula sign-off (power-free certification).
 
+## Q9 — A guild's founder after their pet leaves
+
+**Needed by:** mainnet (a coin carries real fees). **Recommendation:** the founder acts only while `founder_pet` is in the guild — checked first where it costs one read, the coin launch route, then in `create_event` and `create_poll` at the next additive upgrade.
+**Context:** `Guild.founder` is a wallet, set once, and no instruction hands it on. Nothing checks the founding pet is still a member, so after leaving, the founder still plans events, asks polls, and launches the guild's one coin and takes the founder's share of its fees (the audit of 8 October, `SECURITY.md`).
+**Decision needed:** whether leaving ends the role (and rejoining restores it), or founding is for good; and who, if anyone, inherits it.
+
+## Q10 — The secret behind keepsake and coin addresses
+
+**Needed by:** mainnet, or the first time `SPONSOR_KEYPAIR` must rotate. **Recommendation:** a separate server-only secret for both derivations — on devnet, set to the sponsor's current secret so no address moves — never rotated with the hot key; and `liveCoin` takes a pool as the guild's coin only when `poolState.creator` is its founder.
+**Context:** every card's and coin's address is an HMAC of the sponsor's secret, derived again on each read (`src/server/keepsake.ts`, `coinKeypair` in `src/server/coins/meteora.ts`). Rotating the key — the first thing to do if it leaks — loses every card and coin and lets each pet and guild make a second; a leaked key can also make any guild's coin before its founder, and Pawket's pages would show it as the guild's.
+**Decision needed:** where the secret lives and how it is backed up; whether the creator check lands now or with mainnet.
+
 ## Resolution log
 
 | Date | Q | Decision | By |

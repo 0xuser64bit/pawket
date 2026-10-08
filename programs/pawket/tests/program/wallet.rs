@@ -237,6 +237,24 @@ fn only_the_owner_closes_a_wallet_and_its_rent_goes_only_to_whoever_paid_it() {
 }
 
 #[test]
+fn nobody_opens_or_pays_into_a_wallet_in_someone_elses_name() {
+    let mut env = Env::new();
+    let (owner, stranger) = (env.player(), env.player());
+    let wallet = wallet_pda(&owner.pubkey());
+    // Before the owner has one, the stranger makes it at the owner's address as their own.
+    let mut early = open_wallet_ix(&stranger.pubkey(), &stranger.pubkey());
+    early.accounts[2].pubkey = wallet;
+    expect_anchor(&env.send(&[early], &stranger, &[]), ErrorCode::ConstraintSeeds);
+    assert!(!env.exists(&wallet));
+    // After, the stranger pays into it as if it were theirs.
+    ok(env.send(&[open_wallet_ix(&owner.pubkey(), &owner.pubkey())], &owner, &[]));
+    let mut deposit = deposit_ix(&stranger.pubkey(), SOL / 100);
+    deposit.accounts[1].pubkey = wallet;
+    expect_anchor(&env.send(&[deposit], &stranger, &[]), ErrorCode::ConstraintSeeds);
+    assert_eq!(env.wallet(&owner.pubkey()).deposited, 0);
+}
+
+#[test]
 fn nobody_but_its_owner_links_a_device_to_a_wallet() {
     let mut env = Env::new();
     let owner = env.player();

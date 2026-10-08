@@ -6,7 +6,7 @@
 use anchor_lang::{error::ErrorCode, Discriminator};
 use pawket::{
     instruction as ix, CareActionType, Guestbook, PawketError, PawketWallet, CHECK_IN_EARLY_SECONDS, DEVICE_FLOAT_LAMPORTS,
-    MAX_DAILY_ACTIONS,
+    MAX_DAILY_ACTIONS, WEARABLE_COUNT,
 };
 use solana_keypair::Keypair;
 use solana_signer::Signer;
@@ -153,6 +153,43 @@ fn a_device_acts_for_its_owners_pets_and_no_one_elses() {
     let impostor = env.broke();
     let fake = by_device(join_ix(&owner, &sponsor, &d.pet, &guild), &impostor.pubkey(), &owner, ix::JoinGuildByDevice::DISCRIMINATOR);
     expect_pawket(&env.send(&[fake], &d.sponsor, &[&impostor]), PawketError::NotThisDevice);
+}
+
+#[test]
+fn every_twin_that_takes_a_pet_refuses_one_its_owner_does_not_keep() {
+    let mut env = Env::new();
+    let d = linked(&mut env, 50);
+    let (owner, sponsor) = (d.owner.pubkey(), d.sponsor.pubkey());
+    // The owner's own closet, so dressing gets as far as asking whose pet it is.
+    ok(env.send(&[buy_ix(&owner, &owner, WEARABLE_COUNT + 1)], &d.owner, &[]));
+    // Someone else's pet, in their guild, with an event to go to and a poll to answer.
+    let stranger = env.player();
+    let s = stranger.pubkey();
+    let theirs = env.adopt(&stranger, "Mochi");
+    ok(env.send(&[found_ix(&s, &s, &theirs, "muddy-paws")], &stranger, &[]));
+    let guild = guild_pda("muddy-paws");
+    let starts = env.now() + HOUR;
+    let plan = create_event_ix(&s, &s, &guild, 1, "Nap", "", starts, starts + HOUR);
+    ok(env.send(&[plan, create_poll_ix(&s, &s, &guild, 1, "Where?", &["Rug", "Sun"], starts + HOUR)], &stranger, &[]));
+    let (event, poll) = (event_pda(&guild, 1), poll_pda(&guild, 1));
+
+    let attempts = [
+        (round_ix(&owner, &theirs), ix::FinishRoundByDevice::DISCRIMINATOR),
+        (dress_ix(&owner, &theirs, 1), ix::DressByDevice::DISCRIMINATOR),
+        (dress_owned_ix(&owner, &theirs, WEARABLE_COUNT + 1), ix::DressOwnedByDevice::DISCRIMINATOR),
+        (rsvp_ix(&owner, &sponsor, &theirs, &event), ix::RsvpByDevice::DISCRIMINATOR),
+        (vote_ix(&owner, &sponsor, &theirs, &poll, 0), ix::VoteByDevice::DISCRIMINATOR),
+    ];
+    for (owners_ix, discriminator) in attempts {
+        expect_pawket(&d.send(&mut env, owners_ix, discriminator), PawketError::NotPetOwner);
+    }
+    // A check-in needs an RSVP to exist: theirs says it is going.
+    ok(env.send(&[rsvp_ix(&s, &s, &theirs, &event)], &stranger, &[]));
+    env.set_time(starts);
+    let check_in = d.send(&mut env, check_in_ix(&owner, &theirs, &event), ix::CheckInByDevice::DISCRIMINATOR);
+    expect_pawket(&check_in, PawketError::NotPetOwner);
+    let held = env.event(&event);
+    assert_eq!((held.going, held.came, env.poll(&poll).votes, env.pet(&theirs).wearing), (1, 0, [0; 4], 0));
 }
 
 #[test]

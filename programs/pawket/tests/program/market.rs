@@ -107,6 +107,17 @@ fn a_purchase_lands_only_in_the_buyers_own_closet() {
 }
 
 #[test]
+fn nobody_dresses_someone_elses_pet_in_what_they_bought() {
+    let mut env = Env::new();
+    let (owner, stranger) = (env.player(), env.player());
+    let pet = env.adopt(&owner, "Pepper");
+    ok(env.send(&[buy_ix(&stranger.pubkey(), &stranger.pubkey(), HALO)], &stranger, &[]));
+    let result = env.send(&[dress_owned_ix(&stranger.pubkey(), &pet, HALO)], &stranger, &[]);
+    expect_pawket(&result, PawketError::NotPetOwner);
+    assert_eq!(env.pet(&pet).wearing, 0);
+}
+
+#[test]
 fn a_piece_not_in_the_closet_is_not_worn() {
     let mut env = Env::new();
     let owner = env.player();

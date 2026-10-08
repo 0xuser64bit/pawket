@@ -210,6 +210,24 @@ fn a_pet_goes_and_answers_only_on_its_own_place_in_the_guild() {
 }
 
 #[test]
+fn nobody_checks_in_or_votes_with_someone_elses_pet() {
+    let mut env = Env::new();
+    let g = gathering(&mut env);
+    let (founder, member, starts) = (g.founder.pubkey(), g.member.pubkey(), env.now() + HOUR);
+    ok(env.send(&[create_event_ix(&founder, &founder, &g.guild, 1, "Nap", "", starts, starts + HOUR)], &g.founder, &[]));
+    ok(env.send(&[create_poll_ix(&founder, &founder, &g.guild, 1, "Where?", &["Rug", "Sun"], starts + HOUR)], &g.founder, &[]));
+    let (event, poll) = (event_pda(&g.guild, 1), poll_pda(&g.guild, 1));
+    ok(env.send(&[rsvp_ix(&member, &member, &g.member_pet, &event)], &g.member, &[]));
+    env.set_time(starts);
+
+    let stranger = env.player();
+    let s = stranger.pubkey();
+    expect_pawket(&env.send(&[check_in_ix(&s, &g.member_pet, &event)], &stranger, &[]), PawketError::NotPetOwner);
+    expect_pawket(&env.send(&[vote_ix(&s, &s, &g.member_pet, &poll, 0)], &stranger, &[]), PawketError::NotPetOwner);
+    assert_eq!((env.event(&event).came, env.poll(&poll).votes), (0, [0; 4]));
+}
+
+#[test]
 fn a_pet_checks_in_only_on_its_own_rsvp() {
     let mut env = Env::new();
     let g = gathering(&mut env);

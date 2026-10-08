@@ -28,6 +28,10 @@ export function useLinkBrowser() {
     try {
       const state = sender.pawketWallet;
       if (!state || state.status === "loading") return null;
+      if (state.error) {
+        setProblem("Your Pawket Wallet could not be read. Try again once you are online. Nothing was linked.");
+        return null;
+      }
       const owner = state.owner;
       setProblem(undefined);
       let device;

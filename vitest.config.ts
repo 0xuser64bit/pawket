@@ -11,6 +11,7 @@ export default defineConfig({
     },
   },
   test: {
+    server: { deps: { inline: ["@solana-mobile/wallet-standard-mobile"] } },
     environment: "jsdom",
     globals: false,
     setupFiles: ["./vitest.setup.ts"],

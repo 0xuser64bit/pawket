@@ -1,0 +1,384 @@
+diff --git a/lib/cjs/index.browser.js b/lib/cjs/index.browser.js
+index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..7752ca366b252c21e236e272c9b7f56e5f609aa9 100644
+--- a/lib/cjs/index.browser.js
++++ b/lib/cjs/index.browser.js
+@@ -1329,11 +1329,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 			}
+ 			const selectedChain = await this.#chainSelector.select(this.#chains);
+ 			return await this.#transact(async (wallet) => {
+-				const [capabilities, mwaAuthorizationResult] = await Promise.all([wallet.getCapabilities(), wallet.authorize({
++				const mwaAuthorizationResult = await wallet.authorize({
+ 					chain: selectedChain,
+ 					identity: this.#appIdentity,
+ 					sign_in_payload: signInPayload
+-				})]);
++				});
++				const capabilities = await wallet.getCapabilities();
+ 				const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
+ 				const authorization = {
+ 					...mwaAuthorizationResult,
+@@ -1341,7 +1342,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					chain: selectedChain,
+ 					capabilities
+ 				};
+-				Promise.all([
++				await Promise.all([
+ 					this.#handleWalletCapabilitiesResult(capabilities),
+ 					this.#authorizationCache.set(authorization),
+ 					this.#handleAuthorizationResult(authorization)
+@@ -1389,7 +1390,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 				chain,
+ 				capabilities
+ 			};
+-			Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
++			await Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
+ 		} catch (e) {
+ 			this.#disconnect();
+ 			throw new Error(getErrorMessage(e), { cause: e });
+@@ -1405,11 +1406,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 	#transact = async (callback) => {
+ 		const walletUriBase = this.#authorization?.wallet_uri_base;
+ 		const config = walletUriBase ? { baseUri: walletUriBase } : void 0;
+-		const currentConnectionGeneration = this.#connectionGeneration;
+ 		const loadingSpinner = new EmbeddedLoadingSpinner();
++		let timeout;
++		let rejectDeadline;
++		let closeSession;
++		let ended = false;
+ 		try {
+-			let associating = true;
+-			let timeout = void 0;
+ 			const useWebSocket = await isLocalWebSocketAvailable();
+ 			const result = await Promise.race([(async () => {
+ 				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
+@@ -1420,27 +1422,33 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					connectionType: "local",
+ 					relayDomain: this.#nostrRelay
+ 				}) : await (0, _solana_mobile_mobile_wallet_adapter_protocol.startScenario)(config);
+-				associating = false;
++				closeSession = close;
++				if (ended) { close(); throw new Error("Wallet session already ended"); }
+ 				loadingSpinner.addEventListener("close", (event) => {
+ 					if (event) close();
+ 				});
+ 				loadingSpinner.open();
+-				const result = await callback(await wallet);
+-				loadingSpinner.close();
+-				close();
+-				return result;
++				const connectedWallet = await wallet;
++				if (ended) throw new Error("Wallet session already ended");
++				clearTimeout(timeout);
++				timeout = setTimeout(() => rejectDeadline(new Error("Wallet request timed out. Return to Pawket and try again.")), 85_000);
++				return await callback(connectedWallet);
+ 			}), new Promise((_, reject) => {
++				rejectDeadline = reject;
+ 				timeout = setTimeout(() => {
+-					if (associating) reject(new _solana_mobile_mobile_wallet_adapter_protocol.SolanaMobileWalletAdapterError(_solana_mobile_mobile_wallet_adapter_protocol.SolanaMobileWalletAdapterErrorCode.ERROR_ASSOCIATION_CANCELLED, "Wallet connection timed out", { event: void 0 }));
++					reject(new _solana_mobile_mobile_wallet_adapter_protocol.SolanaMobileWalletAdapterError(_solana_mobile_mobile_wallet_adapter_protocol.SolanaMobileWalletAdapterErrorCode.ERROR_ASSOCIATION_CANCELLED, "Wallet connection timed out", { event: void 0 }));
+ 				}, WALLET_ASSOCIATION_TIMEOUT);
+ 			})]);
+-			clearTimeout(timeout);
+ 			return result;
+ 		} catch (e) {
+-			loadingSpinner.close();
+-			if (this.#connectionGeneration !== currentConnectionGeneration) await new Promise(() => {});
++
+ 			if (e instanceof Error && e.name === "SolanaMobileWalletAdapterError" && e.code === "ERROR_WALLET_NOT_FOUND") await this.#onWalletNotFound(this);
+ 			throw e;
++		} finally {
++			ended = true;
++			clearTimeout(timeout);
++			loadingSpinner.close();
++			closeSession?.();
+ 		}
+ 	};
+ 	#assertIsAuthorized = () => {
+diff --git a/lib/cjs/index.js b/lib/cjs/index.js
+index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..8b115c490245f01ca8a4b8b10d32afcc9b91de0b 100644
+--- a/lib/cjs/index.js
++++ b/lib/cjs/index.js
+@@ -1329,11 +1329,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 			}
+ 			const selectedChain = await this.#chainSelector.select(this.#chains);
+ 			return await this.#transact(async (wallet) => {
+-				const [capabilities, mwaAuthorizationResult] = await Promise.all([wallet.getCapabilities(), wallet.authorize({
++				const mwaAuthorizationResult = await wallet.authorize({
+ 					chain: selectedChain,
+ 					identity: this.#appIdentity,
+ 					sign_in_payload: signInPayload
+-				})]);
++				});
++				const capabilities = await wallet.getCapabilities();
+ 				const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
+ 				const authorization = {
+ 					...mwaAuthorizationResult,
+@@ -1341,7 +1342,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					chain: selectedChain,
+ 					capabilities
+ 				};
+-				Promise.all([
++				await Promise.all([
+ 					this.#handleWalletCapabilitiesResult(capabilities),
+ 					this.#authorizationCache.set(authorization),
+ 					this.#handleAuthorizationResult(authorization)
+@@ -1389,7 +1390,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 				chain,
+ 				capabilities
+ 			};
+-			Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
++			await Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
+ 		} catch (e) {
+ 			this.#disconnect();
+ 			throw new Error(getErrorMessage(e), { cause: e });
+@@ -1405,11 +1406,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 	#transact = async (callback) => {
+ 		const walletUriBase = this.#authorization?.wallet_uri_base;
+ 		const config = walletUriBase ? { baseUri: walletUriBase } : void 0;
+-		const currentConnectionGeneration = this.#connectionGeneration;
+ 		const loadingSpinner = new EmbeddedLoadingSpinner();
++		let timeout;
++		let rejectDeadline;
++		let closeSession;
++		let ended = false;
+ 		try {
+-			let associating = true;
+-			let timeout = void 0;
+ 			const useWebSocket = await isLocalWebSocketAvailable();
+ 			const result = await Promise.race([(async () => {
+ 				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
+@@ -1420,27 +1422,33 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					connectionType: "local",
+ 					relayDomain: this.#nostrRelay
+ 				}) : await (0, _solana_mobile_mobile_wallet_adapter_protocol.startScenario)(config);
+-				associating = false;
++				closeSession = close;
++				if (ended) { close(); throw new Error("Wallet session already ended"); }
+ 				loadingSpinner.addEventListener("close", (event) => {
+ 					if (event) close();
+ 				});
+ 				loadingSpinner.open();
+-				const result = await callback(await wallet);
+-				loadingSpinner.close();
+-				close();
+-				return result;
++				const connectedWallet = await wallet;
++				if (ended) throw new Error("Wallet session already ended");
++				clearTimeout(timeout);
++				timeout = setTimeout(() => rejectDeadline(new Error("Wallet request timed out. Return to Pawket and try again.")), 85_000);
++				return await callback(connectedWallet);
+ 			}), new Promise((_, reject) => {
++				rejectDeadline = reject;
+ 				timeout = setTimeout(() => {
+-					if (associating) reject(new _solana_mobile_mobile_wallet_adapter_protocol.SolanaMobileWalletAdapterError(_solana_mobile_mobile_wallet_adapter_protocol.SolanaMobileWalletAdapterErrorCode.ERROR_ASSOCIATION_CANCELLED, "Wallet connection timed out", { event: void 0 }));
++					reject(new _solana_mobile_mobile_wallet_adapter_protocol.SolanaMobileWalletAdapterError(_solana_mobile_mobile_wallet_adapter_protocol.SolanaMobileWalletAdapterErrorCode.ERROR_ASSOCIATION_CANCELLED, "Wallet connection timed out", { event: void 0 }));
+ 				}, WALLET_ASSOCIATION_TIMEOUT);
+ 			})]);
+-			clearTimeout(timeout);
+ 			return result;
+ 		} catch (e) {
+-			loadingSpinner.close();
+-			if (this.#connectionGeneration !== currentConnectionGeneration) await new Promise(() => {});
++
+ 			if (e instanceof Error && e.name === "SolanaMobileWalletAdapterError" && e.code === "ERROR_WALLET_NOT_FOUND") await this.#onWalletNotFound(this);
+ 			throw e;
++		} finally {
++			ended = true;
++			clearTimeout(timeout);
++			loadingSpinner.close();
++			closeSession?.();
+ 		}
+ 	};
+ 	#assertIsAuthorized = () => {
+diff --git a/lib/esm/index.browser.js b/lib/esm/index.browser.js
+index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..b7818cbe333d5c2fe6ba30964c7d468a6075d7cd 100644
+--- a/lib/esm/index.browser.js
++++ b/lib/esm/index.browser.js
+@@ -1305,11 +1305,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 			}
+ 			const selectedChain = await this.#chainSelector.select(this.#chains);
+ 			return await this.#transact(async (wallet) => {
+-				const [capabilities, mwaAuthorizationResult] = await Promise.all([wallet.getCapabilities(), wallet.authorize({
++				const mwaAuthorizationResult = await wallet.authorize({
+ 					chain: selectedChain,
+ 					identity: this.#appIdentity,
+ 					sign_in_payload: signInPayload
+-				})]);
++				});
++				const capabilities = await wallet.getCapabilities();
+ 				const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
+ 				const authorization = {
+ 					...mwaAuthorizationResult,
+@@ -1317,7 +1318,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					chain: selectedChain,
+ 					capabilities
+ 				};
+-				Promise.all([
++				await Promise.all([
+ 					this.#handleWalletCapabilitiesResult(capabilities),
+ 					this.#authorizationCache.set(authorization),
+ 					this.#handleAuthorizationResult(authorization)
+@@ -1365,7 +1366,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 				chain,
+ 				capabilities
+ 			};
+-			Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
++			await Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
+ 		} catch (e) {
+ 			this.#disconnect();
+ 			throw new Error(getErrorMessage(e), { cause: e });
+@@ -1381,11 +1382,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 	#transact = async (callback) => {
+ 		const walletUriBase = this.#authorization?.wallet_uri_base;
+ 		const config = walletUriBase ? { baseUri: walletUriBase } : void 0;
+-		const currentConnectionGeneration = this.#connectionGeneration;
+ 		const loadingSpinner = new EmbeddedLoadingSpinner();
++		let timeout;
++		let rejectDeadline;
++		let closeSession;
++		let ended = false;
+ 		try {
+-			let associating = true;
+-			let timeout = void 0;
+ 			const useWebSocket = await isLocalWebSocketAvailable();
+ 			const result = await Promise.race([(async () => {
+ 				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
+@@ -1396,27 +1398,33 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					connectionType: "local",
+ 					relayDomain: this.#nostrRelay
+ 				}) : await startScenario(config);
+-				associating = false;
++				closeSession = close;
++				if (ended) { close(); throw new Error("Wallet session already ended"); }
+ 				loadingSpinner.addEventListener("close", (event) => {
+ 					if (event) close();
+ 				});
+ 				loadingSpinner.open();
+-				const result = await callback(await wallet);
+-				loadingSpinner.close();
+-				close();
+-				return result;
++				const connectedWallet = await wallet;
++				if (ended) throw new Error("Wallet session already ended");
++				clearTimeout(timeout);
++				timeout = setTimeout(() => rejectDeadline(new Error("Wallet request timed out. Return to Pawket and try again.")), 85_000);
++				return await callback(connectedWallet);
+ 			}), new Promise((_, reject) => {
++				rejectDeadline = reject;
+ 				timeout = setTimeout(() => {
+-					if (associating) reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_ASSOCIATION_CANCELLED, "Wallet connection timed out", { event: void 0 }));
++					reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_ASSOCIATION_CANCELLED, "Wallet connection timed out", { event: void 0 }));
+ 				}, WALLET_ASSOCIATION_TIMEOUT);
+ 			})]);
+-			clearTimeout(timeout);
+ 			return result;
+ 		} catch (e) {
+-			loadingSpinner.close();
+-			if (this.#connectionGeneration !== currentConnectionGeneration) await new Promise(() => {});
++
+ 			if (e instanceof Error && e.name === "SolanaMobileWalletAdapterError" && e.code === "ERROR_WALLET_NOT_FOUND") await this.#onWalletNotFound(this);
+ 			throw e;
++		} finally {
++			ended = true;
++			clearTimeout(timeout);
++			loadingSpinner.close();
++			closeSession?.();
+ 		}
+ 	};
+ 	#assertIsAuthorized = () => {
+diff --git a/lib/esm/index.js b/lib/esm/index.js
+index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..eeb577ac6bd808070f641face11e95ab21788bbf 100644
+--- a/lib/esm/index.js
++++ b/lib/esm/index.js
+@@ -1305,11 +1305,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 			}
+ 			const selectedChain = await this.#chainSelector.select(this.#chains);
+ 			return await this.#transact(async (wallet) => {
+-				const [capabilities, mwaAuthorizationResult] = await Promise.all([wallet.getCapabilities(), wallet.authorize({
++				const mwaAuthorizationResult = await wallet.authorize({
+ 					chain: selectedChain,
+ 					identity: this.#appIdentity,
+ 					sign_in_payload: signInPayload
+-				})]);
++				});
++				const capabilities = await wallet.getCapabilities();
+ 				const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
+ 				const authorization = {
+ 					...mwaAuthorizationResult,
+@@ -1317,7 +1318,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					chain: selectedChain,
+ 					capabilities
+ 				};
+-				Promise.all([
++				await Promise.all([
+ 					this.#handleWalletCapabilitiesResult(capabilities),
+ 					this.#authorizationCache.set(authorization),
+ 					this.#handleAuthorizationResult(authorization)
+@@ -1365,7 +1366,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 				chain,
+ 				capabilities
+ 			};
+-			Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
++			await Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
+ 		} catch (e) {
+ 			this.#disconnect();
+ 			throw new Error(getErrorMessage(e), { cause: e });
+@@ -1381,11 +1382,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 	#transact = async (callback) => {
+ 		const walletUriBase = this.#authorization?.wallet_uri_base;
+ 		const config = walletUriBase ? { baseUri: walletUriBase } : void 0;
+-		const currentConnectionGeneration = this.#connectionGeneration;
+ 		const loadingSpinner = new EmbeddedLoadingSpinner();
++		let timeout;
++		let rejectDeadline;
++		let closeSession;
++		let ended = false;
+ 		try {
+-			let associating = true;
+-			let timeout = void 0;
+ 			const useWebSocket = await isLocalWebSocketAvailable();
+ 			const result = await Promise.race([(async () => {
+ 				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
+@@ -1396,27 +1398,33 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					connectionType: "local",
+ 					relayDomain: this.#nostrRelay
+ 				}) : await startScenario(config);
+-				associating = false;
++				closeSession = close;
++				if (ended) { close(); throw new Error("Wallet session already ended"); }
+ 				loadingSpinner.addEventListener("close", (event) => {
+ 					if (event) close();
+ 				});
+ 				loadingSpinner.open();
+-				const result = await callback(await wallet);
+-				loadingSpinner.close();
+-				close();
+-				return result;
++				const connectedWallet = await wallet;
++				if (ended) throw new Error("Wallet session already ended");
++				clearTimeout(timeout);
++				timeout = setTimeout(() => rejectDeadline(new Error("Wallet request timed out. Return to Pawket and try again.")), 85_000);
++				return await callback(connectedWallet);
+ 			}), new Promise((_, reject) => {
++				rejectDeadline = reject;
+ 				timeout = setTimeout(() => {
+-					if (associating) reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_ASSOCIATION_CANCELLED, "Wallet connection timed out", { event: void 0 }));
++					reject(new SolanaMobileWalletAdapterError(SolanaMobileWalletAdapterErrorCode.ERROR_ASSOCIATION_CANCELLED, "Wallet connection timed out", { event: void 0 }));
+ 				}, WALLET_ASSOCIATION_TIMEOUT);
+ 			})]);
+-			clearTimeout(timeout);
+ 			return result;
+ 		} catch (e) {
+-			loadingSpinner.close();
+-			if (this.#connectionGeneration !== currentConnectionGeneration) await new Promise(() => {});
++
+ 			if (e instanceof Error && e.name === "SolanaMobileWalletAdapterError" && e.code === "ERROR_WALLET_NOT_FOUND") await this.#onWalletNotFound(this);
+ 			throw e;
++		} finally {
++			ended = true;
++			clearTimeout(timeout);
++			loadingSpinner.close();
++			closeSession?.();
+ 		}
+ 	};
+ 	#assertIsAuthorized = () => {

@@ -198,10 +198,10 @@ Play, that is a different key, and its fingerprint joins `assetlinks.json`.
   new domain to read its pets, and link the device again with owner approval.
   No device key is exported. The old host and APK remain available; the app
   never restores the old origin's saved page into the new release.
-- Mobile Wallet Adapter 0.6.0 closes its session only after a request
-  succeeds: after a decline, the official test wallet waits on "Session
-  active" until the player backs out of it. Consumer-wallet return behavior
-  remains part of the physical-phone check.
+- Mobile Wallet Adapter 0.6.0 is patched locally to close sessions after
+  refusal and timeout as well as success, and to authorize before querying
+  capabilities. Consumer-wallet return behaviour remains part of the
+  physical-phone check; transport regressions do not replace that evidence.
 - Pawket needs a connection to open. A page already open keeps working for
   a pet in this app; anything on Solana says it could not reach it and sent
   nothing. There is no offline cache of the site.

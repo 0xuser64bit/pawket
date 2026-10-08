@@ -10,8 +10,9 @@ const scenario = vi.fn(async () => ({ wallet: Promise.resolve({ authorize, getCa
 
 async function mobile() {
   vi.stubGlobal("navigator", { userAgent: "Android Solana Mobile Web Shell" });
-  vi.doMock(protocol.replace("/cjs/", "/esm/"), () => ({ startScenario: scenario }));
-  vi.doMock(protocol, () => ({ startScenario: scenario }));
+  const transport = async () => ({ ...await vi.importActual(protocol) as object, startScenario: scenario });
+  vi.doMock(protocol.replace("/cjs/", "/esm/"), transport);
+  vi.doMock(protocol, transport);
   const { LocalSolanaMobileWalletAdapterWallet } = await import("@solana-mobile/wallet-standard-mobile");
   return new LocalSolanaMobileWalletAdapterWallet({
     appIdentity: { name: "Pawket", uri: "https://pawket.world" },
@@ -45,5 +46,34 @@ it("closes an unanswered authorization and releases connection for another try",
   await vi.advanceTimersByTimeAsync(85_001);
   expect(await result).toMatchObject({ message: expect.stringMatching(/timed out/i) });
   expect(close).toHaveBeenCalledOnce();
+  expect(adapter.connected).toBe(false);
+});
+
+it("closes a hung handshake and ignores its late wallet", async () => {
+  vi.useFakeTimers();
+  let connect!: (value: { authorize: typeof authorize; getCapabilities: typeof capabilities }) => void;
+  scenario.mockImplementationOnce(async () => ({ wallet: new Promise((resolve) => { connect = resolve; }), close }));
+  const adapter = await mobile();
+  const result = adapter.features["standard:connect"].connect().catch((error: Error) => error);
+  await vi.advanceTimersByTimeAsync(30_001);
+  expect(await result).toMatchObject({ message: expect.stringMatching(/timed out/i) });
+  expect(close).toHaveBeenCalledOnce();
+  connect({ authorize, getCapabilities: capabilities });
+  await vi.advanceTimersByTimeAsync(1);
+  expect(authorize).not.toHaveBeenCalled();
+  expect(adapter.connected).toBe(false);
+});
+
+it("discards an authorization that answers after its session timed out", async () => {
+  vi.useFakeTimers();
+  let approve!: (value: unknown) => void;
+  authorize.mockReturnValueOnce(new Promise((resolve) => { approve = resolve; }));
+  const adapter = await mobile();
+  const result = adapter.features["standard:connect"].connect().catch((error: Error) => error);
+  await vi.advanceTimersByTimeAsync(85_001);
+  expect(await result).toMatchObject({ message: expect.stringMatching(/timed out/i) });
+  approve({ auth_token: "too-late", accounts: [] });
+  await vi.advanceTimersByTimeAsync(1);
+  expect(capabilities).not.toHaveBeenCalled();
   expect(adapter.connected).toBe(false);
 });

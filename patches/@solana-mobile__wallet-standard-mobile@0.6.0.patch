@@ -1,5 +1,5 @@
 diff --git a/lib/cjs/index.browser.js b/lib/cjs/index.browser.js
-index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..7752ca366b252c21e236e272c9b7f56e5f609aa9 100644
+index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..feb730494da57ec8191d4f1fec1d618ec4022dc6 100644
 --- a/lib/cjs/index.browser.js
 +++ b/lib/cjs/index.browser.js
 @@ -1329,11 +1329,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
@@ -51,7 +51,7 @@ index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..7752ca366b252c21e236e272c9b7f56e
  			const useWebSocket = await isLocalWebSocketAvailable();
  			const result = await Promise.race([(async () => {
  				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
-@@ -1420,27 +1422,33 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1420,27 +1422,44 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  					connectionType: "local",
  					relayDomain: this.#nostrRelay
  				}) : await (0, _solana_mobile_mobile_wallet_adapter_protocol.startScenario)(config);
@@ -70,7 +70,18 @@ index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..7752ca366b252c21e236e272c9b7f56e
 +				if (ended) throw new Error("Wallet session already ended");
 +				clearTimeout(timeout);
 +				timeout = setTimeout(() => rejectDeadline(new Error("Wallet request timed out. Return to Pawket and try again.")), 85_000);
-+				return await callback(connectedWallet);
++				const activeWallet = new Proxy(connectedWallet, {
++					get(target, key) {
++						const method = Reflect.get(target, key);
++						if (typeof method !== "function") return method;
++						return async (...args) => {
++							const result = await method.apply(target, args);
++							if (ended) throw new Error("Wallet session already ended");
++							return result;
++						};
++					}
++				});
++				return await callback(activeWallet);
  			}), new Promise((_, reject) => {
 +				rejectDeadline = reject;
  				timeout = setTimeout(() => {
@@ -95,7 +106,7 @@ index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..7752ca366b252c21e236e272c9b7f56e
  	};
  	#assertIsAuthorized = () => {
 diff --git a/lib/cjs/index.js b/lib/cjs/index.js
-index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..8b115c490245f01ca8a4b8b10d32afcc9b91de0b 100644
+index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..e0d5453ab36326bcaed575eee6676f0731355e44 100644
 --- a/lib/cjs/index.js
 +++ b/lib/cjs/index.js
 @@ -1329,11 +1329,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
@@ -147,7 +158,7 @@ index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..8b115c490245f01ca8a4b8b10d32afcc
  			const useWebSocket = await isLocalWebSocketAvailable();
  			const result = await Promise.race([(async () => {
  				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
-@@ -1420,27 +1422,33 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1420,27 +1422,44 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  					connectionType: "local",
  					relayDomain: this.#nostrRelay
  				}) : await (0, _solana_mobile_mobile_wallet_adapter_protocol.startScenario)(config);
@@ -166,7 +177,18 @@ index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..8b115c490245f01ca8a4b8b10d32afcc
 +				if (ended) throw new Error("Wallet session already ended");
 +				clearTimeout(timeout);
 +				timeout = setTimeout(() => rejectDeadline(new Error("Wallet request timed out. Return to Pawket and try again.")), 85_000);
-+				return await callback(connectedWallet);
++				const activeWallet = new Proxy(connectedWallet, {
++					get(target, key) {
++						const method = Reflect.get(target, key);
++						if (typeof method !== "function") return method;
++						return async (...args) => {
++							const result = await method.apply(target, args);
++							if (ended) throw new Error("Wallet session already ended");
++							return result;
++						};
++					}
++				});
++				return await callback(activeWallet);
  			}), new Promise((_, reject) => {
 +				rejectDeadline = reject;
  				timeout = setTimeout(() => {
@@ -191,7 +213,7 @@ index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..8b115c490245f01ca8a4b8b10d32afcc
  	};
  	#assertIsAuthorized = () => {
 diff --git a/lib/esm/index.browser.js b/lib/esm/index.browser.js
-index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..b7818cbe333d5c2fe6ba30964c7d468a6075d7cd 100644
+index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..1a85ef9df1bd5e915ebf308f6178e8960c7ed88f 100644
 --- a/lib/esm/index.browser.js
 +++ b/lib/esm/index.browser.js
 @@ -1305,11 +1305,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
@@ -243,7 +265,7 @@ index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..b7818cbe333d5c2fe6ba30964c7d468a
  			const useWebSocket = await isLocalWebSocketAvailable();
  			const result = await Promise.race([(async () => {
  				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
-@@ -1396,27 +1398,33 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1396,27 +1398,44 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  					connectionType: "local",
  					relayDomain: this.#nostrRelay
  				}) : await startScenario(config);
@@ -262,7 +284,18 @@ index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..b7818cbe333d5c2fe6ba30964c7d468a
 +				if (ended) throw new Error("Wallet session already ended");
 +				clearTimeout(timeout);
 +				timeout = setTimeout(() => rejectDeadline(new Error("Wallet request timed out. Return to Pawket and try again.")), 85_000);
-+				return await callback(connectedWallet);
++				const activeWallet = new Proxy(connectedWallet, {
++					get(target, key) {
++						const method = Reflect.get(target, key);
++						if (typeof method !== "function") return method;
++						return async (...args) => {
++							const result = await method.apply(target, args);
++							if (ended) throw new Error("Wallet session already ended");
++							return result;
++						};
++					}
++				});
++				return await callback(activeWallet);
  			}), new Promise((_, reject) => {
 +				rejectDeadline = reject;
  				timeout = setTimeout(() => {
@@ -287,7 +320,7 @@ index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..b7818cbe333d5c2fe6ba30964c7d468a
  	};
  	#assertIsAuthorized = () => {
 diff --git a/lib/esm/index.js b/lib/esm/index.js
-index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..eeb577ac6bd808070f641face11e95ab21788bbf 100644
+index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..191b4d58539bfc4708a1d1e08fd39527ac38a590 100644
 --- a/lib/esm/index.js
 +++ b/lib/esm/index.js
 @@ -1305,11 +1305,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
@@ -339,7 +372,7 @@ index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..eeb577ac6bd808070f641face11e95ab
  			const useWebSocket = await isLocalWebSocketAvailable();
  			const result = await Promise.race([(async () => {
  				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
-@@ -1396,27 +1398,33 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1396,27 +1398,44 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  					connectionType: "local",
  					relayDomain: this.#nostrRelay
  				}) : await startScenario(config);
@@ -358,7 +391,18 @@ index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..eeb577ac6bd808070f641face11e95ab
 +				if (ended) throw new Error("Wallet session already ended");
 +				clearTimeout(timeout);
 +				timeout = setTimeout(() => rejectDeadline(new Error("Wallet request timed out. Return to Pawket and try again.")), 85_000);
-+				return await callback(connectedWallet);
++				const activeWallet = new Proxy(connectedWallet, {
++					get(target, key) {
++						const method = Reflect.get(target, key);
++						if (typeof method !== "function") return method;
++						return async (...args) => {
++							const result = await method.apply(target, args);
++							if (ended) throw new Error("Wallet session already ended");
++							return result;
++						};
++					}
++				});
++				return await callback(activeWallet);
  			}), new Promise((_, reject) => {
 +				rejectDeadline = reject;
  				timeout = setTimeout(() => {

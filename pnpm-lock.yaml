@@ -16,7 +16,7 @@ packageExtensionsChecksum: sha256-PP4MIMMJ/AcQoTZcRZqnxF3CiBco4T5Ai3O/6ibKcd8=
 
 patchedDependencies:
   '@solana-mobile/wallet-standard-mobile@0.6.0':
-    hash: 9c16e3cfcf4aa1b08aae32055a8d23e017c228dee947fb6aa2de71de7a0115ec
+    hash: b6112905052d98e59de115c3e5ca076a1d81eb8666e7ccdb4214426bfcbe9a77
     path: patches/@solana-mobile__wallet-standard-mobile@0.6.0.patch
   bigint-buffer@1.1.5:
     hash: de6d38284595c375b5b40aa887953d16b61b660cb4e2f56d7280b92409115d51
@@ -37,7 +37,7 @@ importers:
         version: 9.8.1(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(three@0.186.1)
       '@solana-mobile/wallet-standard-mobile':
         specifier: 0.6.0
-        version: 0.6.0(patch_hash=9c16e3cfcf4aa1b08aae32055a8d23e017c228dee947fb6aa2de71de7a0115ec)(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
+        version: 0.6.0(patch_hash=b6112905052d98e59de115c3e5ca076a1d81eb8666e7ccdb4214426bfcbe9a77)(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@solana-program/system':
         specifier: 0.14.1
         version: 0.14.1(@solana/kit@8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))
@@ -4875,7 +4875,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@solana-mobile/wallet-standard-mobile@0.6.0(patch_hash=9c16e3cfcf4aa1b08aae32055a8d23e017c228dee947fb6aa2de71de7a0115ec)(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)':
+  '@solana-mobile/wallet-standard-mobile@0.6.0(patch_hash=b6112905052d98e59de115c3e5ca076a1d81eb8666e7ccdb4214426bfcbe9a77)(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@solana-mobile/mobile-wallet-adapter-protocol': 2.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@solana/wallet-standard-chains': 1.1.2

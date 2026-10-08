@@ -49,3 +49,9 @@ the heading, and a separate toolbar above the room holds the 2D/3D choice.
 The wallet sheet links to Pawket Wallet; Home no longer repeats that line.
 Profile is the rightmost dock destination. The phone regression includes
 twelve pets at 320px, readable view controls and dock order.
+
+## Sharing
+
+Adoption, Passport, guild and playground links open the same preview sheet.
+The sheet offers native sharing, explicit copying and a selectable link if
+clipboard access is refused. Cancelling native sharing stays quiet.

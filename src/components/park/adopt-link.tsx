@@ -1,27 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Button, dismissToast, showToast } from "@/components/pk";
+import { ShareButton } from "@/components/pet/share-button";
 
-/** Copies the adoption link — the one that unfurls as a Blink. */
+/** The adoption link also unfurls as a Solana Blink. */
 export function AdoptLink({ url }: { url: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <Button
-      label={copied ? "Link copied" : "Copy the adoption link"}
-      icon={copied ? "check" : "copy"}
-      tone="quiet"
-      size="sm"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(url);
-          dismissToast("copy-adoption");
-          setCopied(true);
-          window.setTimeout(() => setCopied(false), 2000);
-        } catch {
-          showToast({ id: "copy-adoption", tone: "risk", title: "The link could not be copied", body: <span style={{ overflowWrap: "anywhere", userSelect: "text" }}>{url}</span> });
-        }
-      }}
-    />
-  );
+  return <ShareButton name="Adopt a companion" label="Share adoption link" url={url} text="Meet your little companion on Pawket. Adopt for free and bring them home." />;
 }

@@ -17,6 +17,7 @@ import {
   Waiting,
   WearableArt,
 } from "@/components/pk";
+import { ShareButton } from "@/components/pet/share-button";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { getPublicEnv } from "@/config/env";
 import { DAILY_GOAL_REWARD_XP } from "@/lib/game/constants";
@@ -28,7 +29,7 @@ import { getFinishRoundInstruction } from "@/lib/solana/instructions";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
 import { dailySeed, keepBest, keepDaily, readBest, readDaily, type GameId } from "@/lib/play/best";
 import { useSound } from "@/lib/play/sound";
-import { inAndroidApp, shareLink, useHere } from "@/lib/native/android";
+import { useHere } from "@/lib/native/android";
 import { CatchGame } from "./catch-game";
 import { CopyGame } from "./copy-game";
 import { HopGame } from "./hop-game";
@@ -383,7 +384,6 @@ function Result({
   onPractice: () => void;
   onOther: () => void;
 }) {
-  const [shared, setShared] = useState<string>();
   const { Here } = useHere();
   const recorded = sender.tx.stage === "confirmed";
   // A round ends where it was played; on a phone the score is below it, so
@@ -407,26 +407,6 @@ function Result({
         : "You already earned today's play bonus."
       : `Finished, but ${Here.toLowerCase()} did not store the bonus.`;
 
-  async function share() {
-    const url = new URL("/playground", getPublicEnv().appUrl).toString();
-    const text = `${pet.name} and I played today's ${name} in Pawket (${day}): ${unit(outcome.score)}. Same round for everyone today.`;
-    if (inAndroidApp()) {
-      const answer = await shareLink({ url, text });
-      setShared(answer.ok ? undefined : "The share sheet did not open. Nothing was sent.");
-      return;
-    }
-    try {
-      if (navigator.share) {
-        await navigator.share({ text, url });
-        setShared("Shared.");
-        return;
-      }
-      await navigator.clipboard.writeText(`${text} ${url}`);
-      setShared("Copied. Paste it anywhere.");
-    } catch (error) {
-      setShared((error instanceof Error || error instanceof DOMException) && error.name === "AbortError" ? undefined : "The score could not be shared. Try again, or copy this page's link.");
-    }
-  }
 
   return (
     <div ref={card} className="pk-result">
@@ -453,17 +433,13 @@ function Result({
           <Button label="Play again" icon="ball" tone={outcome.onChain && !recorded ? "quiet" : "sprout"} full disabled={sender.busy} onClick={outcome.daily ? onAgain : onPractice} />
           <div className="pk-result__more">
             {outcome.daily ? (
-              <Button label="Share the score" icon="out" tone="quiet" full onClick={() => void share()} />
+              <ShareButton name={`${pet.name} and I`} label="Share the score" full url={new URL("/playground", getPublicEnv().appUrl).toString()} text={`${pet.name} and I played today's ${name} in Pawket (${day}): ${unit(outcome.score)}. Same round for everyone today.`} />
             ) : null}
             <Button label="Another game" tone="quiet" full disabled={sender.busy} onClick={onOther} />
           </div>
           <ButtonLink label="Back home" href="/home" tone="ghost" icon="home" size="sm" className="pk-btn--flush" />
         </div>
-        {shared ? (
-          <p role="status" className="caption pk-faint">
-            {shared}
-          </p>
-        ) : null}
+
       </Stack>
     </Card>
     </div>

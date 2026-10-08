@@ -7,7 +7,7 @@ import { ReadFailure } from "./read-failure";
 import { dismissToast, Toasts } from "./toast";
 
 const native = vi.hoisted(() => ({ inApp: false, share: vi.fn(), refresh: vi.fn() }));
-vi.mock("@/lib/native/android", () => ({ inAndroidApp: () => native.inApp, shareLink: native.share }));
+vi.mock("@/lib/native/android", () => ({ inAndroidApp: () => native.inApp, shareLink: native.share, useBackCloses: () => {} }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: native.refresh }) }));
 
 afterEach(() => {
@@ -40,8 +40,10 @@ describe("read and share recovery", () => {
   it("keeps a refused adoption link reachable", async () => {
     vi.stubGlobal("navigator", { clipboard: { writeText: vi.fn().mockRejectedValue(new Error("Refused")) } });
     render(<><AdoptLink url="https://pawket.app/adopt" /><Toasts /></>);
-    fireEvent.click(screen.getByRole("button", { name: "Copy the adoption link" }));
-    expect((await screen.findByRole("alert")).textContent).toContain("https://pawket.app/adopt");
+    fireEvent.click(screen.getByRole("button", { name: "Share adoption link" }));
+    expect(screen.getByRole("textbox", { name: "Share link" })).toHaveValue("https://pawket.app/adopt");
+    fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
+    expect((await screen.findByRole("status")).textContent).toContain("Select the link above");
   });
 
   it("reports a failed share but leaves an intentional cancellation quiet", async () => {
@@ -50,10 +52,11 @@ describe("read and share recovery", () => {
     render(<><ShareButton name="Pepper" /><Toasts /></>);
     const button = screen.getByRole("button", { name: "Share this record" });
     fireEvent.click(button);
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
     await waitFor(() => expect(share).toHaveBeenCalledOnce());
     expect(screen.queryByRole("alert")).toBeNull();
-    fireEvent.click(button);
-    expect((await screen.findByRole("alert")).textContent).toContain("The link could not be shared");
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    expect((await screen.findByRole("status")).textContent).toContain("The link could not be shared");
   });
 
   it("reports the Android bridge refusing to open a share sheet", async () => {
@@ -61,7 +64,8 @@ describe("read and share recovery", () => {
     native.share.mockResolvedValue({ ok: false, reason: "no-answer" });
     render(<><ShareButton name="Pepper" /><Toasts /></>);
     fireEvent.click(screen.getByRole("button", { name: "Share this record" }));
-    expect((await screen.findByRole("alert")).textContent).toContain("The share sheet did not open");
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    expect((await screen.findByRole("status")).textContent).toContain("The share sheet did not open");
     expect(native.share).toHaveBeenCalledWith({ url: window.location.href, title: "Pepper on Pawket" });
   });
 });

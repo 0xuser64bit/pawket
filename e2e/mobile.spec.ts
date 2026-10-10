@@ -157,6 +157,10 @@ test("a large pet family scrolls inside its picker, with long names wrapping on 
   await picker.getByRole("button", { name: "Bring MarmaladeMarmalade9 home" }).tap();
   await expect(page.getByRole("heading", { name: "MarmaladeMarmalade9's room" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+  await page.goto("/profile#shelf");
+  const name = page.getByRole("heading", { name: "MarmaladeMarmalade9", exact: true });
+  await expect(name).toBeVisible();
+  expect(await name.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 });
 
 test("a long pet name keeps the sheet heading, close control and footer inside a short phone", async ({ page }) => {

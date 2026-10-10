@@ -126,7 +126,7 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
             icon="person"
             autoComplete="nickname"
             maxLength={MAX_PLAYER_NAME}
-            placeholder="What should your pets call you?"
+            placeholder="What should we call you?"
             value={profile.name}
             onChange={(event) =>
               setNameNotice(saveProfile({ ...profile, name: event.target.value }) ? undefined : `${Here} did not store that.`)

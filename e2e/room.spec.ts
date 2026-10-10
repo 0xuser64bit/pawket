@@ -53,6 +53,21 @@ test("a care shows in the room only after it is saved", async ({ page }) => {
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
 });
 
+test("the desktop care deck stays clear of the dock on short and tall screens", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await adopt(page);
+  for (const width of [1024, 1280]) {
+    for (const height of [640, 720, 900]) {
+      await page.setViewportSize({ width, height });
+      await expect.poll(async () => {
+        const deck = (await page.locator(".pk-deck").boundingBox())!;
+        const dock = (await page.getByRole("navigation", { name: "Pawket" }).boundingBox())!;
+        return dock.y - (deck.y + deck.height);
+      }, { message: `Care controls clear the dock at ${width} × ${height}` }).toBeGreaterThanOrEqual(8);
+    }
+  }
+});
+
 test("the flat room is a choice this device remembers", async ({ page }) => {
   // Three 3D builds in software WebGL: more than the default thirty seconds when the suite runs in parallel.
   test.setTimeout(90_000);

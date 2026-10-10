@@ -1473,6 +1473,9 @@ li {
 .pk-card__body {
   padding: var(--space-3) var(--space-4) var(--space-4);
 }
+.pk-card__body > .title {
+  overflow-wrap: anywhere;
+}
 /* A card that is a link lifts off the page under a pointer and presses
    flat under a finger, like every other thing in the Playroom you can
    press. */
@@ -3850,6 +3853,9 @@ li {
   .pk-room--stage {
     aspect-ratio: 16 / 7;
     max-height: max(300px, calc(100svh - 400px));
+  }
+  .pk-home-screen .pk-room--stage {
+    max-height: max(160px, calc(100svh - 500px));
   }
 }
 

@@ -146,7 +146,6 @@ const HEADWEAR: Record<Exclude<PlayerLook["headwear"], "none">, (crown: number, 
   bunny: (crown, colour) => {
     const g = new Group();
     const band = part(new TorusGeometry(0.104, 0.008, 6, 32, Math.PI), colour);
-    band.rotation.y = Math.PI / 2;
     band.position.y = crown - 0.02;
     g.add(band);
     for (const side of [-1, 1]) {

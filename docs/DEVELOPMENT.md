@@ -1,46 +1,62 @@
-# Development
+# Development and deployment
 
-Requires Node 20+ and pnpm 9+.
+## Setup
+
+Use Node 20 or later and pnpm as pinned by `packageManager` in `package.json`.
 
 ```sh
 cp .env.example .env.local
-pnpm install
-pnpm dev        # http://localhost:3000
+pnpm install --frozen-lockfile
+pnpm dev
 ```
+
+The local app opens at `http://localhost:3000`. Guest play needs no key.
+`ENVIRONMENT.md` describes Solana RPC and devnet sponsorship configuration.
+Do not replace an existing local env file or commit secrets.
 
 ## Commands
 
-| Command          | Purpose                                    |
-| ---------------- | ------------------------------------------ |
-| `pnpm dev`       | Local dev server                           |
-| `pnpm build`     | Production build (`next build`)            |
-| `pnpm start`     | Serve the production build                 |
-| `pnpm lint`      | ESLint (Next core-web-vitals + TypeScript) |
-| `pnpm typecheck` | `tsc --noEmit`                             |
-| `pnpm test`      | Vitest unit/component tests                |
-| `pnpm test:watch`| Vitest in watch mode                       |
-| `pnpm e2e`       | Playwright (starts `pnpm dev`; `PLAYWRIGHT_PORT` overrides 3000) |
-| `pnpm verify`    | typecheck + lint + test + build            |
-| `pnpm program:test` | anchor build (SBF v2) + LiteSVM tests   |
-| `pnpm e2e:devnet` | the chain path against the deployed program |
-| `cd android && ./gradlew assembleDebug -PSOLANA_MOBILE_URL=http://localhost:3000/home` | the Android app against this checkout (with `adb reverse tcp:3000 tcp:3000`; see `docs/ANDROID.md`) |
-| `scripts/android-release.sh` | the signed release APK, with its package, signer and SHA-256 |
+| Command | Purpose |
+| --- | --- |
+| `pnpm dev` | Development server |
+| `pnpm build` / `pnpm start` | Production build and server |
+| `pnpm lint` | Next.js and TypeScript ESLint rules, including the Meteora import boundary |
+| `pnpm typecheck` | Strict TypeScript, including unused locals and parameters |
+| `pnpm test` / `pnpm test:watch` | Unit and component tests; Vitest config is `vitest.config.mts` |
+| `pnpm e2e` | Playwright browser suite; `PLAYWRIGHT_PORT` selects the local port |
+| `pnpm verify` | Typecheck, lint, unit tests and production build |
+| `pnpm assets:3d` | Rebuild and validate the shipped GLBs |
+| `pnpm program:build` | Anchor SBF v2 build and committed IDL sync |
+| `pnpm program:test` | Program build and LiteSVM suite |
+| `pnpm e2e:devnet` | Program/sponsor integration against deployed devnet |
+| `pnpm e2e:coins` | Meteora coin lifecycle on devnet |
 
-## Editing rules
+Program tooling is pinned in `rust-toolchain.toml`, `Cargo.toml` and
+`Anchor.toml`; it also needs Anchor and the Solana CLI. `SOLANA.md` covers
+program deployment. Android setup, build and release commands are in `ANDROID.md`.
+`TESTING.md` explains the opt-in network tests and their effects.
 
-- Pages/layouts stay Server Components. Push `"use client"` to leaves.
-- One coherent purpose per commit; verify (`pnpm verify` at minimum:
-  the layer command + typecheck) before moving on.
-- Never commit `.env`, `.env.local`, `.next`, `coverage`, or Playwright
-  output — all are gitignored.
+## Change discipline
 
-## Deployment
+Read [AGENTS.md](../AGENTS.md), `WORKFLOW.md` and the owning system document. Follow existing
+modules, preserve storage migrations and public redirects, and update callers
+when an interface changes. Keep one purpose per commit and complete the owning
+checks plus `pnpm verify` before declaring the work done.
 
-Push to `main` deploys to Vercel (project `pawket`, live at
-https://pawket.world). Production cluster, RPC, program ID and the
-sponsor key come from Vercel environment variables written by
-`scripts/vercel-env.sh`, never code edits. Preview deployments inherit
-devnet defaults and have no sponsor unless one is added for them.
+For Next.js changes, read the installed guides in `node_modules/next/dist/docs/`;
+the repository's installed version governs the API. Interactive leaves use
+`"use client"`; routes and layouts default to Server Components.
 
-The program deploys separately (`docs/SOLANA.md`). Its toolchain: Anchor
-1.2 (`avm`), Rust 1.89 (`rust-toolchain.toml`), Solana CLI 3.x.
+## Hosted deployment
+
+The configured production origin is `https://pawket.world`. The Vercel project
+is `pawket`; pushes to `main` deploy the hosted app. Public env values are
+embedded during the build. `scripts/vercel-env.sh` manages production config
+and marks the sponsor key sensitive. Preview builds default to devnet and have
+no sponsor unless configured.
+
+Review the release diff and verification results before pushing. After a
+deploy, check `/api/health`, the configured cluster, sponsor availability,
+public reads and the changed player flow. A web release also changes the
+Android app's hosted content; validate it in the release APK when relevant.
+A program upgrade or native Android change has its own release procedure.

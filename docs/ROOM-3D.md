@@ -28,7 +28,7 @@ to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”
   blank frame. A model that has arrived is marked the way `use` reads a
   settled promise, so it is drawn the same frame; one that failed to load is
   forgotten, so "Try the 3D room again" asks again.
-- Five GLBs in `public/3d/`, built by `pnpm assets:3d`:
+- Six GLBs in `public/3d/`, built by `pnpm assets:3d`:
 
   | File | What | Size | Triangles (all variants) |
   | --- | --- | --- | --- |
@@ -47,7 +47,7 @@ to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”
 ## Sources
 
 Both packs are CC0 (Creative Commons Zero): no attribution is required, and
-`README.md` credits both anyway. `assets/` keeps only the files the pipeline
+[the repository README](../README.md) credits both anyway. `assets/` keeps only the files the pipeline
 reads — 27 files, about 15 MB (set `PAWKET_3D_SOURCE` to read them from
 elsewhere):
 

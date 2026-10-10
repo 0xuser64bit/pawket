@@ -4,55 +4,94 @@
 
 ## Platform
 
-web
+Web, with an Android shell around the hosted app. The browser and Android app
+share pages, game rules, server APIs and transaction handling.
 
 ## Users
 
-Primary, this version: a player in the browser. They adopt a companion and care for it with no wallet, no token and no account. The pet starts on the device.
-
-Second: the same player, or a Solana user, who keeps the pet on Solana devnet — a linked, funded Pawket Wallet signs each care and Pawket covers fees while sponsorship is available. The core loop stays completable without a wallet.
+Players who want a companion they can return to throughout the day. They can
+start without a wallet, account or token. A player who chooses Solana can
+use the same wallet on another device to find their pets and public Passports.
 
 ## Product Purpose
 
-Pawket is a living on-chain companion game. Each companion grows an evolving Passport — care history, personality, level, achievements, and collectible memories — on Solana's low-cost, fast ownership records, without custodial accounts.
+A player adopts a pet, cares for it and builds a visible history together.
+Care creates progression and stickers; customization creates recognition.
+The public Passport makes confirmed care history available to others.
 
-Success, this version, means a player adopts a pet, cares for it, sees honest stats, XP, level, cooldown, mood, streak and care history, dresses it and finishes a playground round — and can keep that pet on Solana, where the same loop runs on a PDA with the same math and the Passport (streak, counts, last cares) is a public record anyone can open.
+A successful core session lets a player adopt, understand the pet's current
+needs, complete a care, see its result, customize the room or look, and play
+a round. The complete local loop remains available without Solana.
 
 ## Positioning
 
-Living Passport identity: a pet's care history and progression become a persistent, visible part of its owner's on-chain identity. A neighboring pet game could copy feeding mechanics; it could not truthfully copy the Passport as accumulated proof of care.
+A living companion with a persistent record of care. Pets and their people
+lead the experience; guilds support community; coins remain optional.
 
 ## Operating Context
 
-Browser-first on devnet: Wallet Standard wallets, one rpc and one wallet client (`browser-client.ts`), explicit-sign sends through `send.ts` with preflight and an Explorer receipt after, state reloaded from chain after confirmation (no optimistic adopt/care state). A server sponsor pays fees and rent for Pawket instructions only. Live at https://pawket.world (Vercel, from `main`); local loop is `pnpm dev`; Done gate is `pnpm verify` plus `pnpm program:test` when the program changes.
+The default cluster is devnet. Public configuration is validated in
+`src/config/env.ts`; server secrets are read through `getServerEnv()`.
+Deployment and environment procedures live in `DEVELOPMENT.md` and
+`ENVIRONMENT.md`.
 
-On Android, the same app runs in Pawket's own app (`android/`, the official Solana Mobile webshell): the wallet apps on the phone sign through Mobile Wallet Adapter, and the share sheet, gallery, calendar, haptics and back gesture are the phone's (`docs/ANDROID.md`). A pet kept there lives in the app, not in Chrome.
+A pet starts in browser storage, or in the Android app's WebView storage.
+Keeping it on Solana creates a new program record with the chosen name,
+species and personality; browser progression is not imported. The confirmation
+flow explains the reset. Solana care changes the screen after confirmation
+and a fresh read. A keepsake is a frozen card pointing to the pet's account.
 
-The loop: adopt in the browser → care (4 actions, 30-min cooldown each, decay projected and labeled an estimate) → keep it on Solana (one approval sets up a Pawket Wallet; the browser signs from then on) → every care, round and outfit a signed record → the Passport and the Park show it to everyone.
+App transactions require a linked, funded Pawket Wallet. Its non-extractable
+device key signs non-money actions within the owner's expiry and daily limit.
+The owner approves setup, deposits, withdrawals, purchases and coin spending.
+Pawket sponsors eligible devnet fees and rent while sponsorship is available;
+unsponsored device actions use the wallet's fee float, and rent-bearing actions
+wait. Solana Actions have their own owner-approved flow (`SOLANA.md`).
 
 ## Capabilities and Constraints
 
-Ships today: landing (with a live count from chain), adoption of as many pets as a player wants, with one at home; the room and care loop — the room drawn in 3D across the whole width with the player and the pet together, a deck beneath it (level, vitals, the four cares, Say, Today, Photo, Look), a saved or confirmed care shown as a moment between them, emotes, photos of the room, and today's round of care as a checklist (flat SVG room wherever 3D cannot draw) — the care log, the UTC streak and the best run, the profile (the player's name, their look with hats, glasses, pastels and three outfits, every pet, the wardrobe, the sticker book read from each record, and Light/Dark plus twelve bought rooms), three free wardrobe pieces and twenty-five bought pieces, all cosmetic, four solo playground games (Catch, Hop, Copy, Pairs) with a daily round everyone shares and any pet playing, any round the day's round with a once-a-day XP bonus, keeping a pet on Solana (adopt, care, round and dress as signed, sponsored transactions with receipts), guilds on Solana (a pet founds or joins one; discovery, each guild's page and the Passport read live), a guild's optional coin (a guild of three pets launches one on Meteora's Dynamic Bonding Curve from Pawket's gentle or lively preset; it graduates into a DAMM v2 pool with its liquidity locked for good; quoted, traded and graduated from its own page, approved by the player and funded from Pawket Wallet; holders' pets wear the crest pin, and nothing else), the public Passport at `/pet/<address>` with its guestbook (anyone but the owner waves, once a day, from the page or the pet's Blink), the Market (twenty-five pieces, twelve rooms and eight photo frames for SOL at prices fixed in the program, paid from Pawket Wallet to Pawket's treasury, kept in the buyer's closet on chain), a guild's events, RSVPs, check-ins and one-vote-per-wallet polls, `/pulse` (every count read live from the program), a keepsake for a pet on Solana (a frozen Metaplex Core card in the owner's wallet), the Park (every pet on chain, who was out today, what just happened), `GET /api/health` and `/api/sponsor`.
+| Area | Supported behavior |
+| --- | --- |
+| Adoption | Multiple local pets; one chosen pet at home |
+| Home | Feed, play, groom, rest; decay estimates, cooldowns, XP, mood, UTC streak and care log; 3D room with flat fallback; emotes, photos and calendar reminders |
+| Profile | Player name, look and outfits; pets, wardrobe, record-derived stickers and settings |
+| Playground | Catch, Hop, Copy, Pairs; shared daily seeds; one flat daily XP bonus per pet; explicit recording for Solana rounds |
+| Public record | Server-read Passport and visit room, guestbook waves, Park discovery and Pulse counts |
+| Market | Three free pet pieces; 25 bought pieces, 12 bought rooms and 8 photo frames; fixed program prices and chain-read closet entitlements |
+| Guilds | One guild per pet; founding, joining, leaving, events, RSVPs, check-ins and one ballot per wallet per poll |
+| Coins | One optional coin per eligible guild; two devnet Meteora presets; quotes, trades, graduation and fee claims on its own page; permanently locked graduated liquidity |
+| Android | Wallet app integration, gallery and native sharing, calendar editor, haptics, back behavior, shortcuts and App Links |
 
-Explicitly deferred — do not build speculatively, and do not fake: a market for pets, resale of bought looks, a pet asset anyone can sell or send (Q1, Q5), coins on mainnet (Q6), guild treasuries, badges as their own items, real-time multiplayer, a database or indexer, seasons, friends, card or fiat payments, push notifications.
+Cosmetics and coin balances never change vitals, XP, cooldowns or scores.
+Coin holdings only add the guild's crest pin on that guild's page.
+A local pet is labelled "in this browser" or "in this app"; "on Solana"
+requires a chain-read record. Guestbooks retain eight recent waves; their
+once-per-day check is limited to that retained history (`SECURITY.md`).
 
-Durable constraints: devnet default, never mainnet in code; no custody (never ask for, log, or persist a player's seed or key — the app's only key is its server-only devnet sponsor); every send needs explicit user action + preflight simulation + visible signature and Explorer link; Server Components by default, `use client` only at interactive leaves; no `NEXT_PUBLIC_` secrets (server config via `getServerEnv()` only); honest UI — "On Solana" only for a pet read from chain, no "owned" / NFT / mainnet language (a keepsake is a "card"); no pay-to-win (token balances never touch game stat/XP/matchmaking inputs); pets outrank guild tokens in every surface; standard adoption, if it is ever priced, is fixed-price SOL, never a bonding curve; the pre-reset store instructions are deleted, and a store is a new design (Q5).
-
-Explicitly undecided (see `docs/OPEN-QUESTIONS.md`): Q1 beyond the keepsake (tradeable assets), Q2 backend DB, Q3 mainnet presets (devnet's are decided), Q4 indexer, Q5 marketplace settlement, Q6 legal sign-off before any coin on mainnet. Q7 and Q8 are decided for this version only: browser pet first and a Wallet Standard wallet on Solana with a fee sponsor; one solo game. See `docs/DECISIONS.md`.
+There is no pet resale, cosmetic resale, transferable keepsake, guild treasury,
+real-time multiplayer, server account system, database, indexer, push
+notification service or fiat checkout. These are not promised capabilities.
+Mainnet is gated by `MAINNET.md` and unresolved decisions in `OPEN-QUESTIONS.md`.
 
 ## Brand Commitments
 
-Name: Pawket. Tagline in the shell: "A living companion". The mark (a paw print whose centre pad is a heart), type and palette live in `docs/DESIGN.md`. Do not invent another logo or a mascot. Binding commitments: welcoming before protocol-savvy, expression over speculation, transparent about what is saved and where.
+Pawket's tagline is "A living companion". The mark, typography, colors,
+interaction rules and accessibility requirements live in `DESIGN.md`.
+Use clear storage and fee language, show verified records and prices, and
+never fabricate activity, player counts, traction or asset value.
 
 ## Evidence on Hand
 
-Real implementation: the program in `programs/pawket/` (deployed to devnet), the routes in `docs/ROUTES.md`, `src/lib/guest/` (the browser record), `src/lib/game/` (math, in lockstep with the program), `src/lib/solana/` (builders, decoders, send path, sponsor rules), `src/lib/companion/`, `src/lib/closet/`, `src/lib/play/`, `src/lib/guilds/`, `src/lib/game/badges.ts`, `src/lib/player/`, `src/config/themes.ts`, `src/components/pk/` (design system and the geometric pet), LiteSVM, Vitest and Playwright suites, and a devnet path tested end to end.
-
-Absences future work must not fabricate: no pet asset that can be sold, a keepsake only once it is read from chain, no testimonials, customers, press, benchmarks or prices. The only live player data is what the program holds, read as it is. A wearable changes nothing but looks. An emote changes nothing on the record. A market for pets, resale of looks and real-time multiplayer remain specs.
+The repository includes the Anchor program and IDL, browser game math in
+lockstep with it, chain readers and transaction builders, and unit, LiteSVM
+and browser suites. `TESTING.md` describes what each proves. Physical Android
+consumer-wallet and current-WebView device checks remain a separate release
+gate; emulator results cannot establish them.
 
 ## Product Principles
 
-1. Care creates identity — the Passport earns value from history, not from purchase size.
-2. Collecting serves expression — customization and trading make pets personal and recognizable, never powerful.
-3. Progress must be visible — every care action shows growth on the pet and its record.
-4. Ownership enriches, never gates or advantages — baseline play stays open; money never buys stats, speed, or wins.
+1. Care creates identity through accumulated history.
+2. Expression never buys progression or competitive advantage.
+3. Progress is visible after it is saved or confirmed.
+4. Local play stands on its own; Solana adds persistence and public records.
+5. Every financial action shows its terms before explicit approval.

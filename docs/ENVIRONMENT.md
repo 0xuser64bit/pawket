@@ -1,57 +1,51 @@
 # Environment
 
-## Strategy
+`.env.example` lists application runtime variables. `src/config/env.ts`
+validates public values; `src/config/server-env.ts` validates server values.
+The program ID is a source constant held to the IDL, not an environment option.
 
-| Prefix            | Bundle   | Use for                                              |
-| ----------------- | -------- | ---------------------------------------------------- |
-| `NEXT_PUBLIC_*`   | Browser  | Cluster, RPC URL, WS URL, program ID, app URL — never secrets |
-| No prefix         | Server only | RPC API keys, indexer tokens, privileged config    |
+## Runtime variables
 
-`.env.example` is the registry of every variable. If you add one, add it
-there first with a safe default or a blank placeholder.
+| Name | Default | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Canonical page and metadata origin |
+| `NEXT_PUBLIC_SOLANA_CLUSTER` | `devnet` | `devnet`, `testnet`, `mainnet-beta` or `localnet`; mainnet remains separately gated |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | Public devnet RPC | Browser-safe endpoint; `/api/rpc` uses Pawket's allow-listed proxy |
+| `SOLANA_RPC_URL` | Public endpoint for the selected cluster when the browser uses `/api/rpc`; otherwise the public RPC value | Server RPC; may contain a provider credential |
+| `SPONSOR_KEYPAIR` | Unset | Server-only devnet fee/rent sponsor JSON byte array |
 
-## Variables
+Use `NEXT_PUBLIC_SOLANA_RPC_URL=/api/rpc` with `SOLANA_RPC_URL` for a provider
+endpoint whose credentials must stay on the server. The public env parser
+refuses credential-bearing URLs. Prefixing a secret with `NEXT_PUBLIC_` exposes
+it to the browser build and is prohibited.
 
-| Name                            | Default                                | Notes                              |
-| ------------------------------- | -------------------------------------- | ---------------------------------- |
-| `NEXT_PUBLIC_APP_URL`           | `http://localhost:3000`                | Canonical origin                   |
-| `NEXT_PUBLIC_SOLANA_CLUSTER`    | `devnet`                               | `devnet`/`testnet`/`mainnet-beta`/`localnet` |
-| `NEXT_PUBLIC_SOLANA_RPC_URL`    | `https://api.devnet.solana.com`        | The browser's RPC; `/api/rpc` routes browsers through Pawket's proxy to `SOLANA_RPC_URL` (allow-listed calls, Pawket's program only, rate-limited). Never a URL with a key — the app refuses one |
-| `SOLANA_RPC_URL`                | (the public RPC URL)                   | Server-only; may carry a provider key |
-| `SPONSOR_KEYPAIR`               | (empty: a linked browser pays its own fees; nothing that needs rent is sent) | Server-only; the devnet fee sponsor |
+Public values are embedded during the Next.js build. Change deployment
+configuration and rebuild to change them. `getPublicEnv()` caches validated
+values; server config is accessed only through `getServerEnv()`. `server-only`
+prevents a client import of privileged modules.
 
-## Validation
+## Sponsorship
 
-`src/config/env.ts` parses `process.env` through Zod with devnet-first
-defaults. `getPublicEnv()` is cached and safe in client code.
-`src/config/server-env.ts` holds `getServerEnv()` and imports
-`server-only`, so any client-side import fails the build instead of
-leaking. Invalid values fail fast at startup, not mid-transaction.
+An unset key disables sponsorship. A linked, funded device pays eligible app
+fees from its Pawket Wallet float; rent-bearing actions wait for sponsorship.
+Mainnet sponsorship is disabled. The sponsor signs only approved Pawket roles,
+never acts as program upgrade authority, and is not the treasury.
 
-## Production domain
+The same secret currently derives keepsake and coin addresses and authorizes
+the keepsake collection. Rotating it is not a routine safe configuration
+change: Q10 in `OPEN-QUESTIONS.md` must be resolved to preserve those addresses
+and authorities. Keep server keys out of logs, source, client bundles and APKs.
+Operational scripts document their own local key inputs; do not put a player's
+wallet secret in an application environment variable.
 
-Pawket's official origin is `https://pawket.world`. Set
-`NEXT_PUBLIC_APP_URL=https://pawket.world` in Vercel's production environment,
-then deploy: Next.js embeds public values at build time. Local development
-keeps `http://localhost:3000`. The Android start URL is held to the same
-official origin by `src/lib/native/assetlinks.test.ts`.
+## Origins
 
-`www.pawket.world` redirects to the apex, preserving paths and queries.
-Keep `pawket-pets.vercel.app` serving the app for the previous APK and
-previously published metadata URLs; redirecting it would take that APK out
-of its trusted origin. Origin-local guest records and non-extractable device
-keys do not move between domains. A pet kept on Solana is read again by
-connecting the same wallet; a device needs a new owner-approved link.
+Production uses `NEXT_PUBLIC_APP_URL=https://pawket.world`. Local development
+uses localhost. Android's start URL is checked against the official origin by
+`src/lib/native/assetlinks.test.ts`.
 
-## Security rules
-
-- A player's keys never exist here: wallets sign, the app never asks for,
-  holds or logs a seed phrase or a player's key.
-- The one key the app holds is its own: `SPONSOR_KEYPAIR`, a devnet hot
-  wallet with a small float that pays fees and rent. It is server-only, it
-  is not the program's upgrade authority, and it signs only what
-  `checkSponsorable` allows (Pawket instructions, itself as fee payer and
-  rent payer only). Never commit it; `.keys/` and `*-keypair.json` are
-  ignored.
-- Nothing sensitive reaches the client bundle: grep for `NEXT_PUBLIC_` in
-  review if a secret is ever added nearby.
+`www.pawket.world` redirects to the apex with paths and queries preserved.
+Keep `pawket-pets.vercel.app` serving older APKs and metadata URIs; redirecting
+it away breaks their trusted origin. Local pets, settings and non-extractable
+device keys are origin-scoped and cannot be copied between domains. Chain pets
+return when the same wallet connects; a device needs a new approved link.

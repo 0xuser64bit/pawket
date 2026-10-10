@@ -1,83 +1,57 @@
-# Pawket — Mainnet (v1) runbook
+# Mainnet readiness
 
-**Status:** PLAN. Everything before mainnet is v0 (`DECISIONS.md`, "Everything
-before mainnet is v0"); mainnet is v1. Nothing here runs until the team
-decides to launch, and the code never targets mainnet by default — the
-cluster comes from env.
+Pawket currently defaults to devnet. This is a release requirements document,
+not authorization to deploy, move funds or change program identities.
+Mainnet requires a separate human-approved deploy plan.
 
-## 1. What changes at v1
+## Decisions and controls required
 
-| Area | Devnet (v0) | Mainnet (v1) |
+| Area | Current behavior | Required before mainnet |
 | --- | --- | --- |
-| Program | `PawkHv…eM74`, upgradeable by one deploy wallet | the same address (its keypair is `.keys/pawket-program.json`), upgrade authority a **Squads multisig** |
-| Treasury | `SEpAw5i…vWfw`, a single key in `.keys/treasury.json` | a Squads vault; `TREASURY` in `lib.rs` and `MARKET.treasury` change together |
-| Sponsor | pays fees and rent from a devnet float | **off by default** (`sponsorState` refuses mainnet today); turning it on is a budget decision (§3) |
-| Market prices | 0.05 / 0.1 devnet SOL | set for mainnet before the build (`item_price`); only an upgrade changes them |
-| Guild coins | two presets on devnet configs | presets made on mainnet (`scripts/coin-presets.mts mainnet-beta`) **only after legal review (Q6)**; mainnet thresholds are ≥ 10 SOL so Meteora's keepers migrate them |
-| Keepsakes | a devnet collection | a new collection (`scripts/keepsake-collection.mts`), its authority separated from the sponsor's hot key |
-| RPC | public devnet endpoint | a paid provider (`SOLANA_RPC_URL`, server-only); the holder count and `/pulse` scan the chain |
-| Rate limits | per serverless instance, in memory | a shared store (e.g. Upstash Redis) behind `createLimiter` |
-| Pets | devnet pets | mainnet starts empty: devnet records do not move, and the app says so |
+| Program | Upgradeable devnet program | External review of the current source; approved program identity and multisig upgrade authority; tested upgrade and rollback procedure |
+| Treasury | Fixed devnet recipient in program and client constants | Approved recipient and signer policy; program/client changes verified together |
+| Sponsorship | Devnet-only hot key; float floor and per-instance limits | Explicit fee/rent policy, shared rate limiting, total budget enforcement, monitoring and replenishment ownership |
+| Pawket Wallet | Linked device and positive balance required for app transactions | Review all money paths, fee float, unlink/close, recovery and mainnet fee policy; no implicit owner-wallet fallback |
+| Keepsakes and coins | Keys derived from sponsor secret | Resolve derivation-secret backup/migration and collection authority separation (Q10) |
+| Guild authority | Founders retain program powers after leaving | Resolve departure, rejoin and succession semantics (Q9) |
+| Coins | Devnet preset configs only | Legal/policy approval (Q6), approved mainnet parameters and recipients (Q3), verified config accounts and pool routing |
+| Market | Prices fixed by the program | Approved real-SOL prices; source parity and treasury validation |
+| RPC and discovery | Direct scans with short shared caches | Measured capacity, provider and monitoring ownership (Q4) |
+| Persistent rent | Most account types cannot close | Approved retention/rent policy; any recovery instruction needs its own program design and review |
+| Android | Same hosted product; device checks separate | Supported consumer-wallet/WebView matrix and physical release validation |
 
-## 2. Decisions to make first
+Devnet records do not migrate automatically. Mainnet starts with different
+cluster state; player communication must distinguish those records and explain
+local pets and device links. Cosmetic prices and coin terms in devnet do not
+constitute approval for prices or launches using real SOL.
 
-1. **Who pays fees on mainnet.** A sponsored mainnet adoption costs about
-   0.004 SOL of rent (§3) plus fees. Options: keep the sponsor off (players
-   pay, the Pawket Wallet makes it prompt-free), sponsor only adoption, or
-   sponsor everything up to a daily budget.
-2. **Rent recovery.** No instruction closes a pet. Before mainnet, decide on
-   a `release_pet` that closes Pet + Passport and returns rent to whoever
-   paid it — which needs the payer recorded at adoption (a new adoption
-   instruction; the old one stays).
-3. **Market prices** in SOL (and whether to revisit them as SOL moves).
-4. **Coin presets and copy** signed off by legal review (Q6); the disclosure
-   in `src/lib/coins/copy.ts` is the text reviewed.
-5. **Audit scope.** The Pawket Wallet holds player lamports; `buy` moves
-   them to the treasury; both deserve an external review before v1.
+## Cost and availability planning
 
-## 3. What each account costs (rent, paid once)
+Query `getMinimumBalanceForRentExemption` for each current account layout on
+the target cluster. Model adoption, wallet setup, membership, closets,
+gatherings, guestbooks and keepsakes separately from recurring network fees.
+Sizes come from the program and IDL, not a copied rent estimate.
 
-Rent-exempt minimum = (size + 128) × 6,960 lamports.
+Turning the sponsor off currently prevents rent-bearing app actions; it does
+not automatically make the owner wallet pay. A mainnet launch with sponsorship
+off needs an approved product and program plan for those actions. Do not
+promise that Market revenue or coin fees will fund operations without a budget.
 
-| Account | Size | Rent | Paid by today |
-| --- | --- | --- | --- |
-| Pet | 130 | 0.0018 SOL | sponsor (adoption) |
-| PetPassport | 169 | 0.0021 SOL | sponsor (adoption) |
-| Guild | 235 | 0.0025 SOL | sponsor |
-| GuildMember | 145 | 0.0019 SOL | sponsor, returned on leave |
-| PawketWallet | 157 | 0.0020 SOL | sponsor, returned on close |
-| Closet | 83 | 0.0015 SOL | sponsor, once per buyer |
-| GuildEvent | 285 | 0.0029 SOL | sponsor |
-| EventRsvp | 146 | 0.0019 SOL | sponsor |
-| GuildPoll | 309 | 0.0030 SOL | sponsor |
-| Ballot | 146 | 0.0019 SOL | sponsor |
-| Guestbook | 365 | 0.0034 SOL | sponsor, once per pet |
+## Release gates
 
-A player who adopts, joins a guild and gets one guestbook costs the sponsor
-about 0.009 SOL in rent. The Market's margin and Pawket's share of coin fees
-are what pay for it.
+- [ ] Q6, Q9 and Q10 resolved; Q3 and Q4 settled for the planned load.
+- [ ] Program and server security review complete; findings closed or explicitly accepted.
+- [ ] Upgrade, treasury, collection and derivation authorities recorded and recoverable.
+- [ ] Fee/rent policy, shared limits, budgets and alert ownership approved.
+- [ ] Market prices, coin configs, disclosures and recipients verified against source and chain.
+- [ ] `pnpm verify`, browser checks and `pnpm program:test` pass on the release source.
+- [ ] Devnet integration tests complete on the corresponding release candidate.
+- [ ] Physical Android release checks complete if the app is included.
+- [ ] An authorized mainnet validation procedure defines funded test accounts,
+      spend limits, receipts, monitoring and rollback criteria.
+- [ ] Cluster configuration and player-facing copy agree; sponsorship and coins
+      stay disabled unless explicitly enabled by reviewed changes.
 
-## 4. Checklist
-
-**Before the build**
-- [ ] `TREASURY` / `MARKET.treasury` set to the Squads vault; `item_price` set.
-- [ ] `pnpm program:test` green; `program.test.ts` green (it holds both to each other).
-- [ ] External review of the program done, findings closed.
-- [ ] Legal sign-off on coin copy recorded in `OPEN-QUESTIONS.md` (Q6), or coins left off.
-
-**Deploy**
-- [ ] `solana program deploy target/deploy/pawket.so --program-id .keys/pawket-program.json --url mainnet-beta`
-- [ ] `solana program set-upgrade-authority <program> --new-upgrade-authority <squads multisig>`
-- [ ] Keepsake collection made on mainnet; `PAWKET_COLLECTION` per cluster.
-- [ ] Coin presets made on mainnet (if Q6 is signed); `COIN_CONFIGS["mainnet-beta"]` filled.
-
-**Environment (Vercel, production)**
-- [ ] `NEXT_PUBLIC_SOLANA_CLUSTER=mainnet-beta`, a mainnet `NEXT_PUBLIC_SOLANA_RPC_URL`.
-- [ ] `SOLANA_RPC_URL` (paid provider, server-only).
-- [ ] `SPONSOR_KEYPAIR` only if §2.1 says the sponsor pays; it is never the upgrade authority or the treasury.
-
-**After**
-- [ ] `pnpm e2e:devnet` and `pnpm e2e:coins` pointed at mainnet with a funded test wallet and tiny amounts.
-- [ ] `/pulse` reads mainnet; the landing's live strip says mainnet.
-- [ ] Monitoring: Vercel logs alerting on 5xx from `/api/sponsor` and `/api/coins/*`.
-- [ ] Program binary dumped to `.keys/backups/` before every later upgrade.
+The devnet test suites are not a mainnet smoke-test runbook. They create
+accounts and trade test SOL; do not repoint them at mainnet. Mainnet validation
+must be designed and authorized separately.

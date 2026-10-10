@@ -1,6 +1,6 @@
-# Pawket — Game Design (math, progression, retention)
+# Game design
 
-**Status:** SPEC + LOCKED VALUES. Numbers below mirror `src/lib/game/` exactly. If the Anchor program changes, math + program constants + tests move together — never one side alone. Token balances must never enter these formulas.
+Numbers below mirror `src/lib/game/` exactly. If the Anchor program changes, math + program constants + tests move together — never one side alone. Token balances must never enter these formulas.
 
 ## 1. Stats & care (locked)
 
@@ -36,15 +36,15 @@ Per hour: hunger **2.5**, happiness **1.8**, energy **1.5**, hygiene **1.2** (`S
 
 ## 3. XP, levels, mood
 
-- XP: **+10/care** (`XP_PER_CARE_ACTION`); daily-goal bonus **+25** (`DAILY_GOAL_REWARD_XP`, M4+).
+- XP: **+10/care** (`XP_PER_CARE_ACTION`); first recorded round of a UTC day **+25** (`DAILY_GOAL_REWARD_XP`).
 - Level: `floor(xp/100)+1` (`BASE_XP_PER_LEVEL=100`); the next level comes at `level*100` XP.
 - Mood priority: hunger<25→Hungry; energy<25→Tired; hygiene<25→Scruffy; happiness<25→Lonely; else avg≥88 Radiant, ≥68 Happy, else Okay. (`calculatePetMood` — exact thresholds tested.)
 
 ## 4. Passport (progression record)
 
-`PetPassport` PDA (`[passport, pet]`) holds the UTC-day streak and best streak, care and round counts, an event count, and a ring of the last eight cares. `/pet/<address>` renders it from chain for anyone. Achievements and memories (M4+) can be derived from these counts without new state. A browser pet's record is local-only and labeled as such.
+`PetPassport` PDA (`[passport, pet]`) holds the UTC-day streak and best streak, care and round counts, an event count, and a ring of the last eight cares. `/pet/<address>` renders it from chain for anyone. Stickers are derived from the record without separate entitlement state. A browser pet's record is local-only and labeled as such.
 
-## 4b. Guest record (this version)
+## Local record
 
 A browser keeps as many companions as the player adopts (`pawket.pets.v1`),
 and one is at home. Each stores a care log (latest 40), a UTC streak and its
@@ -63,7 +63,7 @@ does not already grant.
 
 1. Open Home → see mood + decay estimate.
 2. 2–4 care actions (cooldown-spaced) → XP + Passport entries.
-3. Daily goal (e.g., "3 cares + 1 playground game") → +25 XP + cosmetic fragment.
+3. Finish one playground round → +25 XP once per pet per UTC day. The care checklist grants no extra reward.
 4. Streak: consecutive-active-days counter (timezone-safe: UTC day boundaries, inject `now`); streak break is forgiving copy ("Come back anytime — no penalties").
 5. Share moment (playground result / new level) → share card.
 
@@ -102,15 +102,13 @@ Cosmetics change look/mood-display only. Forbidden fields: `statModifier`, `xpBo
 
 - Reuse on-chain cooldown as the primary throttle (can't farm faster than 30m/action on-chain).
 - Rate limits: the RPC proxy, the Actions and the coin routes limit each caller, and the rent the sponsor pays is limited per key and overall (`createLimiter`, `src/server/sponsor.ts`).
-- Anomaly flags (M4+): impossible care cadence across wallets, duplicate-device farming rings, wash-vote patterns → review queue, never auto-slash. Consequences published before enforcement.
+- There is no bot detection or review queue. Wallet and guestbook counts are not Sybil-resistant.
 - No pay-to-win also means no "energy refill for SOL" — rejected explicitly. Rest is the only energy path.
 
-## 9. Balancing log (append, never rewrite)
+## Changing the rules
 
-| Date | Change | Reason |
-| --- | --- | --- |
-| 2026-09 | Initial 72 / deltas / 30m / decay table | Pre-reset shared package + program lockstep |
-| 2026-10 | Decay computed in exact integers (same values, no float edge); decay, streak and the daily round enforced on chain | The program on devnet: the browser record and the program must agree to the point |
-| 2026-10 | `WEARABLE_COUNT` 6 → 18 (appended; the first six keep their slots). No change to vitals, XP, cooldowns or decay | The wardrobe grew; looks only |
-
-Agents: any rebalance edits `constants.ts` + program + `math.test.ts` exact values together, with a deploy-plan note and a new row here.
+A rebalance changes `src/lib/game/constants.ts`, the program, the lockstep
+fixture and both replay suites together, with an explicit deploy plan.
+Cosmetic additions do not rebalance the game. Historical balance and catalog
+changes remain in Git history; current slots and prices live in the catalog
+and program.

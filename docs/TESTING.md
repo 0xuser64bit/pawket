@@ -16,6 +16,7 @@
 | Coin presets ↔ Meteora's validation, stages, copy | `src/server/coins/curve.test.ts`, `src/lib/coins/*.test.ts` | Vitest |
 | The path through the screens   | `e2e/chain.spec.ts` + `e2e/test-wallet.ts` | `PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/chain.spec.ts` |
 | A coin's trades through its page | `e2e/coins.spec.ts` (buy and sell on a curve, buy in a graduated pool) | `PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/coins.spec.ts` |
+| Documentation links and file references | `src/config/docs.test.ts` | Vitest (node) |
 | Env / cluster / format / errors| colocated `*.test.ts`                   | Vitest   |
 | Presentational components      | `src/components/*.test.tsx`             | Vitest + Testing Library |
 | Guest record, wardrobe, games  | `src/lib/guest`, `closet`, `play`       | Vitest   |
@@ -27,7 +28,7 @@
 | Mobile touch: sheet focus/close, short viewport, Catch drag, game pause/resume and hidden-page pause | `e2e/mobile.spec.ts` | Playwright Chromium touch emulation (not physical-device proof) |
 | The page's half of the Android bridge; the app and the site agree on the package | `src/lib/native/*.test.ts` | Vitest |
 | The Android shell's checks: origin, picture, file name | `android/app/src/test/…/BoundaryTest.kt` | `cd android && ./gradlew testDebugUnitTest` |
-| The Android app on a phone: wallet, sends, bridge, lifecycle | the procedure and record in `docs/ANDROID-HANDOFF.md` | emulator or device, with a Mobile Wallet Adapter wallet |
+| The Android app on a phone: wallet, sends, bridge, lifecycle | the physical-device release checklist in `docs/ANDROID.md` | emulator or device, with a Mobile Wallet Adapter wallet |
 
 ```sh
 pnpm test       # Vitest, single run
@@ -40,12 +41,14 @@ pnpm verify     # typecheck + lint + test + build
 - Touch game math → extend `math.test.ts` (exact values, not snapshots).
 - Touch PDA/instruction code → lock seeds, account metas (order, role),
   discriminator bytes, and arg encoding in the colocated test.
+- Delete or rename a document → update its links and run `docs.test.ts`.
 - Touch a component → extend its test, or exercise manually and say so.
 - Touch layout → add the screen to `SCREENS` in `e2e/layout.spec.ts` if it
   is new; the spec fails on any page wider than a 320px phone.
-- Wallet signing is verified against devnet with `e2e/test-wallet.ts` (a
-  Wallet Standard wallet that exists only in tests) or a real wallet, never
-  mocked in unit tests. The default e2e run needs no wallet and no network.
+- Wallet compatibility is verified on devnet with `e2e/test-wallet.ts` or
+  a real wallet. Unit tests of routing and errors do not prove wallet
+  compatibility. Default browser tests do not sign; public chain pages may
+  read RPC and must also handle an unavailable network honestly.
 - Touch the program → `pnpm program:test`. Touch its math → regenerate
   nothing: change `lockstep.txt` by hand, and both replays must agree.
 - Touch the sponsor's rules → a refusal test for each new way in.
@@ -64,7 +67,10 @@ pnpm verify     # typecheck + lint + test + build
 - If a locked value changes, the seeds or encoding changed — that is a
   breaking on-chain change, not a test fix. Stop and confirm intent.
 
-## What not to test
+## Verification boundaries
 
-Pixel positions, gradient strings, RPC internals, Jupiter/Mercuryo (not
-implemented), mainnet behavior.
+Avoid tests tied only to decorative pixels or gradient strings. Test layout,
+accessibility and observable player behavior. Unit mocks do not establish RPC
+provider or consumer-wallet compatibility. Default suites do not verify mainnet
+or physical Android behavior; those need their separately authorized release
+procedures.

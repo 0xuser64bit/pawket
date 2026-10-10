@@ -1,79 +1,72 @@
-# Pawket — Open Questions (human decisions required)
+# Pending decisions
 
-**Status:** LIVING. Agents: never guess these — build only what does not depend on the answer, and name the Q ID. Humans: resolving a question means a `DECISIONS.md` entry (append, never rewrite).
+These choices are unresolved. Work that depends on them needs a product or
+operational decision before implementation. Record an accepted choice in
+`DECISIONS.md` and update the owning system document. The IDs remain stable.
 
-## Q1 — NFT standard for pets + cosmetics
+## Q1 — Transferable pet or cosmetic assets
 
-**Needed by:** pets as assets. **Recommendation:** Metaplex Core.
-**Context:** pets are PDA records today; vision requires unique NFTs. Core fits 1:1 assets + attributes/plugins with lower rent than Token Metadata stacks; PDA stays stats authority, NFT is identity wrapper.
-**Alternatives:** Token Metadata + editions (heavier; keep if marketplace tooling demands); compressed NFTs (cheaper at scale, higher indexer cost — revisit at 100k+ pets); pure-PDA (simplest, fails collectibility vision).
-**Decision needed:** standard + collection plan + PDA↔mint link direction. Until then: build off-chain `PetMetadata` shape (mint optional) so migration is mechanical.
-**Decided for this version (2026-10, `DECISIONS.md`):** Metaplex Core; one frozen keepsake per pet in Pawket's collection, linked by a `pet` attribute (asset → PDA); the PDA stays the authority. Still open: tradeable cosmetics, and whether a pet's asset is ever transferable (with Q5).
+The implemented asset is a frozen Metaplex Core keepsake pointing to a Pet PDA.
+It cannot be traded; the pet's owner does not change. Transferable pets or
+cosmetics have no approved design. A proposal must address copied ownership
+in Passports, guild membership, RSVPs and ballots, along with the product
+meaning of transferring someone else's care history. No current feature needs it.
 
-## Q2 — Backend DB + hosting
+## Q2 — Off-chain persistence
 
-**Needed by:** anything off chain that must persist. **Recommendation:** Postgres (Neon or Supabase) + Prisma, introduced at M3 not earlier.
-**Context:** registry/listings/votes/treasury-cache need relations; M1–M2 prove chain-first without DB weight. Guest→wallet linking needs server sessions (SIWS-style, no custody).
-**Decision needed:** provider, connection/pooling plan, migration runner, backup/retention, PII policy.
+The current product needs no server database or account session. Pets, guilds,
+events, polls, purchases and wallet history persist on chain or on the device.
+An approved feature requiring off-chain persistence must first define data
+ownership, retention, backups, migration and privacy requirements. No provider
+or ORM has been selected.
 
-## Q3 — Meteora SDKs + preset values
+## Q3 — Mainnet coin configuration
 
-**Needed by:** guild coins. **Recommendation:** DBC SDK + DAMM v2 SDK, 2–3 constrained presets (SOL + USDC quote), full-range compounding DAMM v2.
-**Context:** preset numbers (curve segments, fees bps, graduation threshold, limits) need ops + legal review; creators never edit raw params v1.
-**Decision needed:** SDK versions pinned, preset values + config hashes, quote-asset list, limit policy.
+Devnet SDKs, SOL quote asset, gentle/lively presets and locked-liquidity terms
+are implemented. Mainnet numbers in the preset model are provisional; no
+mainnet config addresses are enabled. Mainnet parameters, treasury recipients,
+config verification and operational ownership need approval after Q6.
 
-## Q4 — Indexer + RPC provider
+## Q4 — RPC and indexing at scale
 
-**Needed by:** guild coins at scale. **Recommendation:** custom server-side RPC poller → Postgres cache first; Helius webhooks later.
-**Context:** migration verification + lag signal must be trustworthy; client must never hammer RPC. Needs rate limits, backoff, alert thresholds, named owner.
-**Decision needed:** provider (raw RPC vs Helius vs Triton), polling cadences, lag threshold (proposed <50 slots healthy), job runner (cron/worker), local-dev story.
+Direct RPC reads with short shared caches support the current app. A paid
+provider, indexing strategy, monitoring thresholds and job ownership must be
+chosen from measured request volume and latency before expanding the load.
+No indexer or background poller is implemented.
 
-## Q5 — Marketplace settlement (secondary + cosmetics on-chain?)
+## Q5 — Secondary settlement
 
-**Needed by:** any resale. **Recommendation:** fixed-price treasury-signer settlement v1; program escrow only with audit + deploy plan.
-**Context:** `register_item`/`record_purchase` are not admin-gated and move no tokens — unwirable as a store. Cosmetic secondary needs either off-chain entitlement transfer or real escrow.
-**Decision needed:** v1 settlement model, fee splits, floor/ceiling guardrails, dispute handling.
+There is no resale of pets, keepsakes or purchased cosmetics. Any secondary
+market requires a new product decision, entitlement/ownership design,
+settlement rules and security review. Fixed-price Market purchases already
+work through Pawket Wallet and do not depend on this question.
 
-## Q6 — Legal/compliance sign-off (guild tokens + treasury)
+## Q6 — Mainnet coin policy and operations
 
-**Needed by:** guild coins on mainnet. **Blocks mainnet coins** until signed.
-**Context:** utility statements, risk disclosure copy, allocation/vesting publication, treasury multisig policy, moderation/suspension language, no-yield/no-return positioning, jurisdiction restrictions.
-**Decision needed:** approved disclosure + policy texts, review cadence, support coverage, incident comms owner.
+Mainnet coins remain blocked pending legal review of disclosure and utility,
+launch terms, jurisdiction policy, moderation, support and incident ownership.
+Devnet behavior is not evidence of mainnet readiness. See `MAINNET.md`.
 
-## Q7 — Wallet-free auth (guest → wallet)
+## Q9 — Founder powers after the founding pet leaves
 
-**Needed by:** the browser pet. **Recommendation:** localStorage guest first; server session + wallet-link at M3 (no custodial key generation, no email-password auth v1).
-**Context:** requirement: core loop usable without wallet. Options range from pure-local guest to Privy/Dynamic embedded wallets — the latter adds vendor + custody-surface review.
-**Decision needed:** session model + whether to evaluate embedded-wallet vendors (defer unless onboarding data demands it).
+The coin launch route checks the founding pet is still in the guild.
+The program still lets the founder create events and polls after that pet
+leaves, and the founder retains coin fee rights. Decide whether departure ends
+the role, whether rejoining restores it, and whether succession exists before
+an additive program upgrade. Existing RSVPs can still check in after leaving.
 
-## Q8 — Playground netcode scope
+## Q10 — Address derivation and key rotation
 
-**Needed by:** the playground. **Recommendation:** async/turn-based only for M4; real-time multiplayer deferred until retention proves.
-**Context:** real-time presence/physics is the largest frontend+ops cost with the weakest early-retention evidence.
-**Decision needed:** which 1–2 mini-games ship first + scoring formula sign-off (power-free certification).
+Keepsake and coin keys are currently derived from `SPONSOR_KEYPAIR` by HMAC.
+Changing the sponsor secret changes those derived addresses and can hide
+existing assets from the app or allow duplicate creation. The creator check
+protects coin attribution, but does not solve rotation. Decide how a separate
+derivation secret and collection authority are stored, backed up and migrated
+before rotation or mainnet. Do not treat routine sponsor rotation as safe.
 
-## Q9 — A guild's founder after their pet leaves
+## Resolved for the current product
 
-**Needed by:** mainnet (a coin carries real fees). **Recommendation:** the founder acts only while `founder_pet` is in the guild — checked first where it costs one read, the coin launch route, then in `create_event` and `create_poll` at the next additive upgrade.
-**Context:** `Guild.founder` is a wallet, set once, and no instruction hands it on. Nothing checks the founding pet is still a member, so after leaving, the founder still plans events, asks polls, and launches the guild's one coin and takes the founder's share of its fees (the audit of 8 October, `SECURITY.md`).
-**Decision needed:** whether leaving ends the role (and rejoining restores it), or founding is for good; and who, if anyone, inherits it.
-**Partly done (2026-10-09):** the coin launch route refuses once `founder_pet` is no longer in the guild. `create_event` and `create_poll` wait for the next additive upgrade.
-
-## Q10 — The secret behind keepsake and coin addresses
-
-**Needed by:** mainnet, or the first time `SPONSOR_KEYPAIR` must rotate. **Recommendation:** a separate server-only secret for both derivations — on devnet, set to the sponsor's current secret so no address moves — never rotated with the hot key; and `liveCoin` takes a pool as the guild's coin only when `poolState.creator` is its founder.
-**Context:** every card's and coin's address is an HMAC of the sponsor's secret, derived again on each read (`src/server/keepsake.ts`, `coinKeypair` in `src/server/coins/meteora.ts`). Rotating the key — the first thing to do if it leaks — loses every card and coin and lets each pet and guild make a second; a leaked key can also make any guild's coin before its founder, and Pawket's pages would show it as the guild's.
-**Decision needed:** where the secret lives and how it is backed up.
-**Partly done (2026-10-09):** the creator check landed — `liveCoin` and the guild list take a curve as a guild's coin only when `poolState.creator` is its founder, and a launch over a curve someone else made is refused. The separate secret is still open.
-
-## Resolution log
-
-| Date | Q | Decision | By |
-| --- | --- | --- | --- |
-| 2026-09 | Q7 | localStorage guest. No embedded wallet, no server session in this version. | product pass — see DECISIONS |
-| 2026-09 | Q8 | One solo gate round. No real-time netcode. Daily XP is flat, not score-scaled. | product pass — see DECISIONS |
-| 2026-10 | Q7 | Browser pet first; a Wallet Standard wallet is the identity on Solana; a server sponsor pays devnet fees. No embedded wallet, no session. | the program — see DECISIONS |
-| 2026-10 | Q2 (guilds only) | Social guilds need no database: membership is a program account per pet. Q2 stays open for anything else (listings, votes, events). | guilds on chain — see DECISIONS |
-| 2026-10 | Q8 | Four solo games; each game's daily round is one seed per UTC day, shared by everyone. Still no netcode. | playground — see DECISIONS |
-| 2026-10 | Q3 (devnet) | DBC SDK 1.5.13 + DAMM v2 SDK 1.5.1, server-side only; two presets (gentle 3×, lively 10×), SOL quote, 1% fee split Meteora/founder/Pawket, 100% liquidity locked. Mainnet presets wait on Q6. | guild coins — see DECISIONS |
-| 2026-10 | Q4 (coins) | No indexer: stages, holders and the graduated pool are read from chain on each request, and the pool is trusted only at its derived address. | guild coins — see DECISIONS |
+Q7: local pets first, Wallet Standard identity on Solana, no server session or
+embedded wallet. Q8: four solo games, shared daily seeds, flat daily XP and no
+real-time netcode. Q1's keepsake standard, Q3's devnet presets and Q4's current
+direct-read strategy are decided; their future extensions above remain open.

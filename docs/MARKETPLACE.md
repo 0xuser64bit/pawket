@@ -1,9 +1,8 @@
-# Pawket — Marketplace
+# Market
 
-**Status:** BUILT on devnet (2026-10) as the **Market**: primary sales of
-looks at fixed prices, settled by the program itself. No database, no order
-book, no resale. A secondary market and any sale of a pet stay SPEC, behind
-Q1 and Q5 (`OPEN-QUESTIONS.md`).
+The Market sells cosmetic looks at fixed prices, settled by the program.
+There is no order book or resale. A secondary market or pet transfer needs
+a separate decision under Q1 and Q5 (`OPEN-QUESTIONS.md`).
 
 ## 1. Principles (normative)
 
@@ -14,7 +13,7 @@ Q1 and Q5 (`OPEN-QUESTIONS.md`).
   `programs/pawket/src/lib.rs`), the same for everyone; only a program
   upgrade changes them. `MARKET` in `src/lib/solana/program.ts` mirrors them,
   and `program.test.ts` holds the two together.
-- **Settled on chain, in one signature.** `buy_with_wallet` moves the price from the
+- **Settled in one atomic transaction.** `buy_with_wallet` moves the price from the
   buyer's Pawket Wallet straight to Pawket's treasury and records the item in the buyer's
   `Closet` in the same instruction. There is no order, no escrow and no
   receipt to reconcile: the transaction is the receipt.
@@ -26,7 +25,7 @@ Q1 and Q5 (`OPEN-QUESTIONS.md`).
 
 | Item ids | What | Material | Price | Used with |
 | --- | --- | --- | --- | --- |
-| 4–18 | Fifteen classic pet pieces (the wardrobe's old free pieces) | Cloth | 0.02 SOL each | `dress_owned`, on the buyer's pets on Solana |
+| 4–18 | Fifteen classic pet pieces | Cloth | 0.02 SOL each | `dress_owned`, on the buyer's pets on Solana |
 | 19–28 | Ten pet pieces: halo, wizard hat, sun hat, gold crown, cowboy hat, chef hat, sunglasses, headphones, beret, necktie | Foil | 0.05 SOL each | `dress_owned` |
 | 64–75 | Twelve rooms: Blossom, Aurora, Strawberry, Honey, Matcha, Seaside, Lavender, Starlight, Terracotta, Newsprint, Cocoa, Arcade | Glass | 0.1 SOL each | the room picker |
 | 80–87 | Eight photo frames: Postcard, Film strip, Garden, Sunshine, Instant, Hearts, Starry night, Confetti | Copper | 0.025 SOL each | Home → Photo → Photo frame |
@@ -54,7 +53,7 @@ drawn on the print (`printPhoto`) and on the shelf (`FrameArt`).
 ```text
 /market → tap an item → a Paper sheet over the shelves: your own pet wearing it (or sitting
   in the room), its price, where the SOL goes, who pays the fee
-  → "Buy for 0.05 SOL" → the wallet signs → Solana confirms → the closet is read again
+  → approve the displayed purchase price → the wallet signs → Solana confirms → the closet is read again
   → every screen refreshes its closet read → the piece, room or photo frame becomes available
 ```
 
@@ -71,10 +70,11 @@ drawn on the print (`printPhoto`) and on the shelf (`FrameArt`).
 
 - Every sale lands in `PAWKET_TREASURY` (`SEpAw5i…vWfw` on devnet). The
   treasury's balance and what has been paid in are on `/pulse`, read live.
-- The treasury's key is not on the server; on mainnet it is a multisig
+- The treasury's key is not on the server; a mainnet multisig is a release requirement
   (`docs/MAINNET.md`).
-- The treasury also receives Pawket's share of guild-coin fees, and pays the
-  network fees Pawket covers for everyone's pets.
+- The treasury receives Pawket's claimed share of guild-coin fees. The
+  separate sponsor pays eligible fees from its own float; there is no automatic
+  treasury-to-sponsor funding service.
 
 ## 5. Not built (and why)
 

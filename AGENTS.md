@@ -1,6 +1,7 @@
 # Pawket — agent operating system
 
-Read this before changing code. Product context lives in `docs/PRODUCT.md`,
+Read this before changing code. The documentation index is `docs/README.md`.
+Product context lives in `docs/PRODUCT.md`,
 architecture in `docs/ARCHITECTURE.md`. This file is the contract for how an
 agent works in this repo.
 
@@ -34,7 +35,7 @@ keeps as many pets as they adopt — the connected wallet's on Solana and the
 browser's (`pawket.pets.v1`) — and one is at home (their pick, remembered on
 the device). One record shape for all of them. Home is the room across the
 whole width with a deck beneath it (care, Say, Today, Photo, Look). Profile
-(the dock slot Inventory had) is the player: their name, their 3D look with
+is the player: their name, their 3D look with
 hats, glasses and saved outfits, and what they keep — pets, the wardrobe
 (three free starter pieces and the Market's twenty-five; on Solana a
 signed `dress` or `dress_owned`), stickers read from each record
@@ -108,7 +109,7 @@ or a transaction. Inside the app a pet is kept "in this app" (`useHere()`).
 | Touching game math        | `docs/GAME-DESIGN.md` (`src/lib/game/` is lockstep)         |
 | Touching pets/keepsakes   | `docs/SOLANA.md` (Keepsakes) + `docs/OPEN-QUESTIONS.md` (Q1, Q5) |
 | Touching the 3D room      | `docs/ROOM-3D.md` + `docs/DESIGN.md` (“The room in 3D”)     |
-| Touching the Android app  | `docs/ANDROID.md` (+ `docs/ANDROID-HANDOFF.md` while it is in progress) |
+| Touching the Android app  | `docs/ANDROID.md` (including the release and device checks) |
 | Touching marketplace      | `docs/MARKETPLACE.md`                                       |
 | Touching guilds/launches  | `docs/GUILDS.md` + `docs/METEORA-INTEGRATION.md` + `docs/SAFETY-ECONOMY.md` |
 | Touching routes/API       | `docs/ROUTES.md`                                            |
@@ -116,7 +117,7 @@ or a transaction. Inside the app a pet is kept "in this app" (`useHere()`).
 | Reviewing security, or an audit | `docs/SECURITY.md`                                    |
 | Adding tests              | `docs/TESTING.md`                                           |
 | Declaring work done       | `docs/WORKFLOW.md` (Definition of Done)                     |
-| Questioning a decision    | `docs/DECISIONS.md` (history) + `docs/OPEN-QUESTIONS.md` (pending) |
+| Questioning a decision    | `docs/DECISIONS.md` (accepted choices) + `docs/OPEN-QUESTIONS.md` (pending) |
 
 ## Sources of truth
 

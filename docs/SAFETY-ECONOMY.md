@@ -1,57 +1,62 @@
-# Pawket — Safety, Fairness & Economy
+# Player protection and economy
 
-**Status:** SPEC — normative. Violations block release at any milestone. Legal review (Q6) must sign the disclosure copy + treasury policy before M6.
+These are the product's financial and fairness boundaries. Implementation
+lives in `src/lib/guilds/boundary.ts`, `src/lib/coins/copy.ts`, the program and
+`src/server/coins/`. Mainnet requirements are separate in `MAINNET.md`.
 
-## 1. Player protection (product behavior)
+## Fairness
 
-- Plain-language **risk disclosure before first token purchase per guild**, accessible afterward (`risk-disclosure.tsx`). Covers: volatility, loss of principal, no yield/returns promised, liquidity risk, smart-contract + migration risk, possibility of failed/delayed confirmation, suspension semantics (benefits can end; chain assets unaffected).
-- Every swap ticket shows: quote asset, estimated output, slippage tolerance, fees, price impact, min-received, quote expiry — **before** the wallet opens.
-- Never market tokens as investments/savings/yield/guaranteed appreciation. Banned phrases (grep-gated): `guaranteed`, `moon`, `100x`, `risk-free`, `passive income`, `yield`, `APY`, `profit share`, `price support`, `can't lose`, `to the moon`.
-- Token CTAs kept out of adoption/care loops; wallet-free path completes core play.
-- Balances refresh from source of truth; no optimistic balance patches; rejections/failures preserve input + offer safe retry only.
+Local adoption and care work without a wallet or token purchase. Cosmetics,
+guild membership and coin balances never change stats, XP, cooldowns, scores
+or the daily round bonus. Membership and coin ownership are independent.
+Holding a coin only adds a crest pin on the holder's pets on the guild page.
 
-## 2. Launch protection
+The program enforces cooldowns and daily limits. Scores are produced by local
+solo games; recording a round grants a flat bonus and is not a competitive
+score certification. There is no money prize or implemented anti-bot review
+service. Do not promise fraud detection or Sybil-resistant counts.
 
-- Publish before open: curve, supply, fee schedule, allocation, vesting, graduation conditions, DAMM v2 destination, position ownership/locks/fee recipients/withdrawal terms.
-- Constrained presets + simulation + reviewed launch flow (see `METEORA-INTEGRATION.md`).
-- Wallet/tx limits in early stages where DBC supports them; bot/sybil/wash/concentration/impersonation detection with **pre-published consequences** (review → limits → suspension; never price intervention).
-- No undisclosed mint/liquidity/price-control powers. Authorities documented; unexpected authority change → flag + suspend promotion + verify + publish status.
+## Before a financial action
 
-## 3. Allocation & liquidity protection
+The Market shows the program price, destination treasury and fee payer.
+Coin pages show supply, preset, fees, graduation terms, locked liquidity and
+risks before signing. The coin ticket shows the quote, slippage and minimum
+output; quotes expire after 20 seconds. Risk acknowledgement is remembered per
+coin per device and is required before its first launch or trade.
 
-- Public recipients for team/creator/partner/treasury/community with amounts + unlock dates; vesting/lockups published; multisig treasury (signers, threshold, replacement + decision rules published).
-- Liquidity: who owns positions, locked/vested?, who receives fees, when changeable/withdrawable — all pre-published, then read from chain.
-- Treasury dashboard (`treasury-table.tsx` + `GET /api/treasury/:slug`): wallets, signers, inflows/outflows with signatures/slots, allowed uses, decision log.
+Every spend needs the owner's approval, preflight and a visible transaction
+receipt. A device may pay a coin transaction's network fee but cannot approve
+its spending. Confirmed balances are read again; no optimistic patch invents
+a purchase, fill or entitlement. `copy.test.ts` checks the prohibited promises
+of value in coin copy. Do not describe a coin as savings, income or a guaranteed
+return.
 
-## 4. Moderation & policy boundaries
+## Supply, liquidity and fees
 
-Pawket may: delist from discovery, remove in-app benefits, hide misleading metadata, suspend creator accounts — under published policy. These are **product-surface actions**; they do not reverse chain txs or confiscate assets. Terms + launch page + support macro all carry this distinction verbatim.
+Presets govern immutable supply, no allocations or vesting, the fee split and
+permanently locked graduated liquidity. Founders and Pawket can claim their
+fees; they cannot withdraw that liquidity. The server verifies the derived
+DAMM v2 pool and its mints before routing trades. `METEORA-INTEGRATION.md`
+documents the terms; `SECURITY.md` documents authority and derivation limits.
 
-## 5. Failure modes (required handling — implement exactly)
+The Market's treasury and coin fee recipients are not a guild treasury.
+There is no guild treasury dashboard, funds proposal system or published
+multisig administration service in this version. Pulse displays chain-read
+counts and treasury information, not an accounting or investment guarantee.
 
-| Scenario | Required behavior |
+## Failures and moderation
+
+| State | Required product behavior |
 | --- | --- |
-| No graduation | Mark active/ended per published config; no implied refund/migration |
-| Threshold hit but indexing lags | `migration-pending`: pause route UI, reconcile on verified slot, then activate DAMM v2 |
-| Confirmed but client timed out | `unknown` + signature lookup + poll; never "failed" from timeout alone |
-| Reject / fail | Clear error, no phantom balance change, retry only when safe |
-| DAMM v2 init fails | Visible incident, stop route attempts, audit trail, prepublished recovery |
-| Bot/concentration spike | Review + configured protections; no price intervention |
-| Guild suspended | Delist + benefits off; retain factual non-misleading record |
-| Treasury/admin key compromised | Incident plan: verified comms, multisig recovery where pre-arranged |
-| Metadata/authority surprise | Flag, suspend promotion + eligibility, publish verified status |
+| Curve not full | Continue the verified curve route; promise no graduation date or refund |
+| Curve full, migrated pool not verifiable | Show `pending`; pause quotes and trades; offer only supported graduation actions |
+| Fill worse than minimum output | Refuse through simulation or chain rules; no phantom balance update |
+| Broadcast or confirmation reply lost | Preserve the existing signature and show `unknown`; check it before retrying |
+| Wallet rejects | Report no success and preserve the player's input |
+| Guild delisted | Stop promotion and coin trades through Pawket; chain holdings and membership remain |
 
-## 6. Metrics & launch criteria
-
-**Game/community health:** discovery→join, event + repeat participation, cosmetic/badge/space/vote use, retention (guild vs non-token), wallet-free completion rate.
-**Market/integration health:** participants, holders, concentration, volume, liquidity, slippage; migration completion + time-to-verified; quote accuracy, failures, timeouts, lag; fee/treasury accuracy.
-**Safety health:** bot/sybil/wash/impersonation signals, support contacts + disputes per launch, moderation incidents + time-to-resolve, unauthorized authority/liquidity changes.
-**Token price is not a primary metric.** Success = participation + retained social play without harming access/fairness.
-
-**Release stages:** spec + threat model → internal prototype (devnet/simulated lifecycle + failure paths) → controlled pilot (1 Pawket-controlled/trusted guild, restricted, monitored) → limited beta (small N, presets + review + support, safety/retention evaluated) → broader availability (self-service applications only after proven migration reliability + policies + monitoring + moderation capacity).
-
-**Ready-to-launch checklist (all must be true):** utility specific/documented/optional/non-pay-to-win; params/fees/allocations/vesting/threshold/destination public; lifecycle + failure paths tested in dev; authorities/treasury/wallets verified; liquidity terms published; wallet/quote/swap/index/migration/recovery tested; monitoring + thresholds live with named owner; moderation/suspension/dispute/support ready; core pet/social/progression fully usable without the token.
-
-## 7. Incident records (minimum fields)
-
-`{ id, guildSlug?, detectedAt, severity, summary, affectedState, operatorActions[], userComms[], status, resolvedAt?, postmortemUrl? }` — created for migration failures, authority surprises, compromises, suspensions. Retained + queryable; postmortems linked from guild profile where user-facing.
+Reports go to the support contact in `src/config/site.ts`. Delisting is
+maintained in `src/lib/guilds/delisted.ts`; it cannot reverse transactions or
+confiscate assets. There is no creator account suspension system. New financial
+utility or public mainnet launches require the unresolved policy and support
+decisions in Q6, along with tested recovery and incident procedures.

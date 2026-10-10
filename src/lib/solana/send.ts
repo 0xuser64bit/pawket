@@ -83,7 +83,7 @@ export class RelayError extends Error {
   }
 }
 
-export async function askSponsor(wireBase64: string): Promise<string> {
+async function askSponsor(wireBase64: string): Promise<string> {
   const response = await fetch("/api/sponsor", {
     method: "POST",
     headers: { "content-type": "application/json" },

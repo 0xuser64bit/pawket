@@ -34,11 +34,11 @@ import { DAYLIGHT, type Tone } from "./palette";
  * Room space: metres, floor at y = 0, back wall at z = BACK, camera on +Z.
  */
 
-export const BACK = -1.6;
+const BACK = -1.6;
 export const BED = { x: 1.55, z: -0.72 };
 
 /** The pet's sky, as the token each backdrop takes (`SPECIES_SKY`). */
-export const SKY_TONE: Record<Sky, Tone> = { warm: "sun-soft", cool: "pool-soft", plain: "surface-sunk" };
+const SKY_TONE: Record<Sky, Tone> = { warm: "sun-soft", cool: "pool-soft", plain: "surface-sunk" };
 
 function solid(geometry: BufferGeometry, tone: Tone, outline = true): Mesh {
   const mesh = new Mesh(geometry, toon({ color: DAYLIGHT[tone] }));

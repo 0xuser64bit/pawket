@@ -1,46 +1,56 @@
-# Pawket — Guilds (optional community layer)
+# Guilds
 
-**Status:** Guilds ship on Solana (2026-10). A guild of three pets may launch one optional coin on Meteora from Pawket's presets (devnet; `METEORA-INTEGRATION.md`). A guild's founder plans events its pets RSVP to and check in at, and asks polls each wallet with a pet in it answers once. The product hierarchy holds: pets > guilds > coins, and a coin is traded only on its own page.
+A guild is a name, motto, crest and group of pets recorded on Solana. Guilds
+support optional community participation; membership and coin holdings are
+independent. The product hierarchy is pets, guilds, then coins.
 
-## 0. What ships
+## Membership and discovery
 
-- A pet founds a guild (`found_guild`): a slug that is its address, a name, a motto and a crest (one of eight glyphs in one of six colours, bloom first). The founding pet is its first member.
-- A pet joins one guild at a time (`join_guild`) and leaves when its owner likes (`leave_guild`; the rent goes back to whoever paid it). Pawket's sponsor pays the fee and the rent.
-- `/guilds` lists every guild read live (most members first), `/guilds/[slug]` shows its pets read from their own accounts and what they have done together counted from their Passports, `/guilds/new` founds one, and a pet's Passport names its guild. The sticker book has *In a guild*.
-- `src/lib/guilds/boundary.ts` is what a guild can and can never do; `src/lib/guilds/delisted.ts` stops Pawket promoting a guild without pretending to remove it. There is no review before founding.
-- Starter guilds on devnet: Sunbeam Club, Muddy Paws, Cloud Nine (`scripts/seed-guilds.mts`), each with a coin at a different stage (`scripts/seed-coins.mts`).
-- Gatherings on a guild's page: events (`create_event`, `rsvp`, `check_in`) and polls (`create_poll`, `vote`, one ballot per wallet, no weight). The founder plans and asks; the sponsor pays the rent.
-- A guild's coin (`/guilds/[slug]/coin`): launched by the founder once three pets are in the guild, on the gentle or lively preset; holders' pets wear the crest pin on the guild's page, and nothing else. See `METEORA-INTEGRATION.md`.
+A pet founds or joins one guild at a time. Its `GuildMember` PDA records the
+pet, owner, guild and rent payer. Leaving closes that account and returns rent
+to the recorded payer; the guild remains. Non-money app actions use the linked,
+funded Pawket Wallet. Eligible fees and account rent are sponsored while
+available; rent-bearing actions wait when sponsorship is unavailable.
 
-## 1. What a guild is
+`/guilds` reads guilds from chain and orders them by member count, excluding
+test and delisted guilds. `/guilds/[slug]` reads its pets and Passport totals;
+`/guilds/new` creates one. A pet's Passport links its guild. There is no
+pre-founding approval workflow or off-chain membership database.
 
-A name, a motto and a crest kept on Solana, and the pets in it. Membership
-is a program account per pet (`GuildMember`, one guild at a time); holding
-the guild's coin is a token balance. The two are independent: a pet can be
-in a guild whose coin its owner never holds, and anyone can hold a coin
-without a pet in the guild. Holding only pins the guild's crest on the
-holder's pets, on the guild's own page.
+`src/lib/guilds/guild.ts` owns slug, name, motto and crest validation;
+`src/lib/guilds/boundary.ts` owns the community boundaries.
 
-## 2. Who can do what
+## Gatherings and permissions
 
-| Who | Can | Never |
-| --- | --- | --- |
-| A pet's owner | join or leave with that pet, RSVP and check in, answer a poll once per wallet | vote twice, or with weight |
-| The founder (a wallet, set at founding) | plan events, ask polls, launch the coin while the founding pet is in the guild, claim the founder's share of its fees | add or remove a pet, change a pet |
-| Pawket | stop promoting a guild (`src/lib/guilds/delisted.ts`), which also stops coin trades on Pawket's pages | reverse anything on chain, take a pet out, touch a coin |
+| Actor | Permissions |
+| --- | --- |
+| Pet owner or authorized device | Join/leave, RSVP, check in and vote through a pet they keep |
+| Founder | Create events and polls; launch the guild's coin while its founding pet remains a member; claim the founder's fees |
+| Pawket | Delist its product surfaces; cannot move pets, change membership or reverse chain transactions |
 
-## 3. Reports and delisting
+Events have program-checked times and RSVPs per pet. Check-in uses that RSVP
+within the allowed window. Polls accept one ballot per wallet with a pet in
+the guild; coin balance and number of pets never increase vote weight.
 
-A report about a guild (impersonation, a scam link, a misleading claim,
-abuse) is an email to hi@pawket.world from the guild's page. Pawket's one
-lever is delisting: the guild leaves discovery, its page says what Pawket
-stopped doing, and its coin's stage reads `suspended` (no trades offered).
-Everything on chain stays as it is.
+The program still permits a founder to create events and polls after the
+founding pet leaves. Existing RSVPs can also check in after membership ends.
+Founder departure and succession remain unresolved in Q9 (`OPEN-QUESTIONS.md`);
+do not describe the API's coin launch check as a general program role rule.
 
-## 4. UI hierarchy (normative)
+## Optional coins
 
-- Guild flair never outranks pet identity: the pet's face and name first,
-  the guild as a small secondary chip.
-- Launch and trade live only on the coin's page (`/guilds/[slug]/coin`),
-  never on Home, Profile, a pet's record or the Market.
-- Pets before guilds in every navigation (`ROUTES.md`).
+A guild of three pets may launch one coin on a constrained devnet preset.
+Trading is available only on `/guilds/[slug]/coin`, with disclosed terms and
+risks. Holding only adds the crest pin to the holder's pets on that guild's
+page; it grants no membership, vote weight or progression benefit.
+`METEORA-INTEGRATION.md` describes the lifecycle and `SAFETY-ECONOMY.md` the
+player protections.
+
+## Reports and delisting
+
+Guild pages link reports to the support contact in `src/config/site.ts`.
+`src/lib/guilds/delisted.ts` controls promotion. A delisted guild leaves
+discovery; its page explains the restriction and its coin is `suspended`, with
+no trades offered by Pawket. Chain membership and holdings remain unchanged.
+Pet identity stays primary; coin launch and trade controls stay off Home,
+Profile, Passports and the Market.

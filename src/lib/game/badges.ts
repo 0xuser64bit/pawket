@@ -27,7 +27,7 @@ export interface BadgeContext {
   gatherings?: number;
 }
 
-export type BadgeTone = "sun" | "sprout" | "pool" | "bloom";
+type BadgeTone = "sun" | "sprout" | "pool" | "bloom";
 
 export interface Badge {
   id: string;

@@ -1345,9 +1345,6 @@ li {
   align-items: center;
   min-width: 0;
 }
-.pk-grid {
-  display: grid;
-}
 .pk-spread {
   display: flex;
   flex-wrap: wrap;
@@ -1741,25 +1738,6 @@ li {
   letter-spacing: 0.06em;
   color: var(--ink-soft);
 }
-/* a chip that is really a filter control */
-.pk-chip--press {
-  position: relative;
-  cursor: pointer;
-  text-decoration: none;
-}
-@media (hover: hover) {
-  .pk-chip--press:not([aria-current]):hover {
-    background: var(--surface-sunk);
-  }
-}
-@media (pointer: coarse) {
-  .pk-chip--press::after {
-    content: "";
-    position: absolute;
-    inset: -7px 0;
-  }
-}
-
 /* ------------------------------------------------ pet frame: the pocket */
 
 .pk-pet {

@@ -233,7 +233,7 @@ const NO_DEVICE = "11111111111111111111111111111111";
  * Decode a `PawketWallet` account holding `lamports`. Throws on bytes that
  * are not one. `now` (seconds) decides whether today's count still stands.
  */
-export function decodeWallet(address: Address, bytes: Uint8Array, lamports: bigint, now = Date.now() / 1000): ChainWallet {
+function decodeWallet(address: Address, bytes: Uint8Array, lamports: bigint, now = Date.now() / 1000): ChainWallet {
   if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.wallet.discriminator)) {
     throw new Error(`${address} is not a Pawket Wallet`);
   }
@@ -274,7 +274,7 @@ export function displayName(name: string): string {
 }
 
 /** A stranger's words with bidi overrides and control characters dropped. */
-export function cleanText(text: string): string {
+function cleanText(text: string): string {
   return text.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, "").trim();
 }
 
@@ -499,7 +499,7 @@ export async function fetchPetsOnChain(rpc: ReadRpc, owner?: string | Address): 
     try {
       pets.push(decodePet(pubkey, Uint8Array.from(base64.encode(account.data[0]))));
     } catch {
-      // ponytail: an account that does not decode is skipped, not fatal to the list.
+      // Skip an undecodable account so one corrupt record does not break discovery.
     }
   }
   return withRecords(rpc, pets);
@@ -526,7 +526,7 @@ export async function fetchGuilds(rpc: ReadRpc): Promise<ChainGuild[]> {
     try {
       guilds.push(decodeGuild(pubkey, Uint8Array.from(base64.encode(account.data[0]))));
     } catch {
-      // ponytail: an account that does not decode is skipped, not fatal to the list.
+      // Skip an undecodable account so one corrupt record does not break discovery.
     }
   }
   return guilds;
@@ -563,7 +563,7 @@ export async function fetchGuildPets(rpc: ReadRpc, guild: string | Address): Pro
     try {
       members.push(decodeMember(pubkey, Uint8Array.from(base64.encode(account.data[0]))));
     } catch {
-      // ponytail: skipped, as above.
+      // Skip undecodable accounts, as above.
     }
   }
   const petAccounts = await readMany(rpc, members.map((member) => member.pet));
@@ -597,7 +597,7 @@ const closetDecoder = getStructDecoder([
 ]);
 
 /** Decode a `Closet`. Throws on bytes that are not one. */
-export function decodeCloset(address: Address, bytes: Uint8Array): ChainCloset {
+function decodeCloset(address: Address, bytes: Uint8Array): ChainCloset {
   if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.closet.discriminator)) throw new Error(`${address} is not a Pawket closet`);
   const raw = closetDecoder.decode(bytes);
   const items: number[] = [];
@@ -717,7 +717,7 @@ const ballotDecoder = getStructDecoder([
 ]);
 
 /** Decode a `GuildEvent`. Its title and note are the founder's words: shown without control characters. */
-export function decodeEvent(address: Address, bytes: Uint8Array): ChainEvent {
+function decodeEvent(address: Address, bytes: Uint8Array): ChainEvent {
   if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.event.discriminator)) throw new Error(`${address} is not a Pawket event`);
   const raw = eventDecoder.decode(bytes);
   return {
@@ -735,14 +735,14 @@ export function decodeEvent(address: Address, bytes: Uint8Array): ChainEvent {
   };
 }
 
-export function decodeRsvp(address: Address, bytes: Uint8Array): ChainRsvp {
+function decodeRsvp(address: Address, bytes: Uint8Array): ChainRsvp {
   if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.rsvp.discriminator)) throw new Error(`${address} is not a Pawket RSVP`);
   const raw = rsvpDecoder.decode(bytes);
   return { address, event: raw.event, pet: raw.pet, owner: raw.owner, payer: raw.payer, at: Number(raw.at), came: raw.came };
 }
 
 /** Decode a `GuildPoll`. Its question and options are the founder's words, cleaned like a motto. */
-export function decodePoll(address: Address, bytes: Uint8Array): ChainPoll {
+function decodePoll(address: Address, bytes: Uint8Array): ChainPoll {
   if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.poll.discriminator)) throw new Error(`${address} is not a Pawket poll`);
   const raw = pollDecoder.decode(bytes);
   const options = raw.options.map((option) => cleanText(option) || "…");
@@ -759,7 +759,7 @@ export function decodePoll(address: Address, bytes: Uint8Array): ChainPoll {
   };
 }
 
-export function decodeBallot(address: Address, bytes: Uint8Array): ChainBallot {
+function decodeBallot(address: Address, bytes: Uint8Array): ChainBallot {
   if (!hasDiscriminator(bytes, PAWKET_ACCOUNTS.ballot.discriminator)) throw new Error(`${address} is not a Pawket ballot`);
   const raw = ballotDecoder.decode(bytes);
   return { address, poll: raw.poll, owner: raw.owner, pet: raw.pet, option: raw.option, at: Number(raw.at) };
@@ -783,7 +783,7 @@ async function scan<T>(
     try {
       out.push(decode(pubkey, Uint8Array.from(base64.encode(found.data[0]))));
     } catch {
-      // ponytail: an account that does not decode is skipped, not fatal to the list.
+      // Skip an undecodable account so one corrupt record does not break discovery.
     }
   }
   return out;

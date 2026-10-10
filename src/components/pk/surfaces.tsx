@@ -47,23 +47,6 @@ export function Card({
   );
 }
 
-/** The inverse of a Card: for things that look carved in. */
-export function Well({
-  className,
-  style,
-  children,
-}: {
-  className?: string;
-  style?: CSSProperties;
-  children: ReactNode;
-}) {
-  return (
-    <div className={["pk-well", className].filter(Boolean).join(" ")} style={style}>
-      {children}
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------------- Paper */
 
 /**
@@ -229,32 +212,5 @@ export function Banner({
       </div>
       {action ? <div className="pk-banner__action">{action}</div> : null}
     </div>
-  );
-}
-
-/**
- * Guest is the default, is never styled as an error or an incomplete step,
- * and has no visual difference in rank anywhere in the product.
- */
-export function WalletState({
-  mode,
-  title,
-  body,
-  action,
-}: {
-  mode: "guest" | "connected";
-  title?: string;
-  body?: string;
-  action?: ReactNode;
-}) {
-  const connected = mode === "connected";
-  return (
-    <Banner
-      tone={connected ? "done" : "wait"}
-      icon={connected ? "wallet" : "paw"}
-      title={title ?? (connected ? "Wallet connected" : "Playing as a guest")}
-      body={body ?? (connected ? undefined : "No wallet needed. Everything below works as it is.")}
-      action={action}
-    />
   );
 }

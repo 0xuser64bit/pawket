@@ -41,7 +41,7 @@ export type PawketWalletNeed = "link" | "fund" | "limit";
  * the connected wallet on its own. When one is not ready, nothing is sent and
  * the player is told the next step, as a note rather than a failure.
  */
-export class PawketWalletNeeded extends Error {
+class PawketWalletNeeded extends Error {
   constructor(readonly need: PawketWalletNeed, message: string) {
     super(message);
     this.name = "PawketWalletNeeded";
@@ -121,7 +121,7 @@ export function usePawketSend() {
       by: NonNullable<TxState["by"]>,
       go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void, show: (next: Partial<TxState>) => void) => Promise<SendResult>,
     ) => {
-      // ponytail: one send per tab; use account-scoped slots only if concurrent wallets are supported.
+      // shortcut: One send per tab; use account-scoped slots if concurrent wallets are supported.
       // Never open competing wallet sessions or queue a send.
       if (sending) return null;
       setSending(true);

@@ -19,7 +19,7 @@ import { CARE_ACTION_VARIANTS, PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "
  * Nothing here is kept by Pawket; the chain is the statement.
  */
 
-export type WalletEntryKind =
+type WalletEntryKind =
   | "open"
   | "deposit"
   | "withdraw"

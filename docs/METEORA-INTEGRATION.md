@@ -1,12 +1,11 @@
-# Pawket — Meteora Integration (DBC → DAMM v2)
+# Meteora integration
 
-**Status:** BUILT on devnet (2026-10). A guild with three pets may launch one
+Implemented on devnet. A guild with three pets may launch one
 optional coin on a Pawket preset; it trades on Meteora's Dynamic Bonding
 Curve, graduates into a DAMM v2 pool with its liquidity locked for good, and
 trades there. The mechanics — accounts, routes, stages — are in
 `docs/SOLANA.md` ("Guild coins"); the decision is in `docs/DECISIONS.md`.
-This file is the contract every coin surface holds to, and what remains
-before mainnet. DLMM is **deferred** (§6).
+This file describes coin routing and the requirements before mainnet.
 
 ```text
 A guild of three pets → founder launches on a preset → DBC curve → threshold raised
@@ -50,15 +49,16 @@ one stage at a time (`LaunchStage`) and offers only what that stage allows.
 | --- | --- | --- |
 | Price along the curve | rises 3× | rises 10× |
 | Market cap start → graduation (devnet) | 2 → 6 SOL | 1 → 10 SOL |
-| Market cap start → graduation (mainnet) | 10 → 30 SOL | 5 → 50 SOL |
+| Provisional mainnet market cap start → graduation | 10 → 30 SOL | 5 → 50 SOL |
 | Supply | 1,000,000,000, immutable | same |
 | Allocations / vesting | none | none |
 | Trading fee | 1% (0.2% Meteora, 0.4% founder, 0.4% Pawket) | same |
 | Launch fee | 0.01 SOL to Pawket (a tenth to Meteora) | same |
 | Graduated pool | DAMM v2, 1% fee, 100% of liquidity permanently locked (half founder, half Pawket) | same |
 
-Mainnet thresholds are above the 10 SOL Meteora's keepers migrate at.
-Devnet's are a fifth, so a rehearsal graduates on faucet SOL.
+Devnet presets are configured for tests using faucet SOL. The mainnet numbers
+in the model are provisional; config addresses, thresholds and keeper behavior
+must be approved and verified before mainnet is enabled (Q3, Q6).
 
 ## 3. Stages (`src/lib/coins/stage.ts`)
 
@@ -88,20 +88,14 @@ Devnet's are a fifth, so a rehearsal graduates on faucet SOL.
 
 - Legal review of the coin copy, the disclosure and the asset-model row
   (Q6). Until it is signed, `COIN_CONFIGS` has no mainnet entry and the
-  coin page says coins are off there.
+  coin page says coins are off there. Address derivation and founder powers
+  also require Q10 and Q9 to be resolved.
 - `pnpm dlx tsx scripts/coin-presets.mts mainnet-beta` with a multisig as
   the treasury (`docs/MAINNET.md`), and the treasury's partner-fee claims
   run from a script, never from the server.
 - A paid RPC: the holder count is a token-program scan.
 
-## 6. DLMM: later, not launch scope
-
-DLMM (concentrated bins, dynamic fees) fits treasury-managed liquidity
-**only** with a named operator, a rebalancing runbook and monitoring. Gating
-criteria: DBC → DAMM v2 stable across launches, an operator assigned, the
-treasury policy amended, human approval.
-
-## 7. Files
+## 6. Files
 
 ```text
 src/lib/coins/presets.ts       presets, terms, config addresses, the fee split (pure)
@@ -113,7 +107,6 @@ src/server/coins/routes.ts     what the coin routes share
 app/api/coins/[slug]/*         quote, launch, trade, graduate, claim, metadata
 app/(game)/guilds/[slug]/coin  the coin's page; src/components/coins/coin-desk.tsx its controls
 scripts/coin-presets.mts       makes the preset configs on a cluster
-scripts/seed-coins.mts         the starter guilds' coins, through the routes
 scripts/claim-coin-fees.mts    Pawket's partner fees, launch fees and locked-LP fees, into the treasury
 src/server/coins/devnet.test.ts  a coin's whole life on devnet (pnpm e2e:coins)
 ```

@@ -6,7 +6,7 @@ import localFont from "next/font/local";
  * DM Mono is anything verifiable. Loaded locally so a price never reflows.
  */
 
-export const display = localFont({
+const display = localFont({
   src: "../fonts/Fraunces-Variable.woff2",
   weight: "100 900",
   display: "swap",
@@ -14,7 +14,7 @@ export const display = localFont({
   fallback: ["Georgia", "serif"],
 });
 
-export const text = localFont({
+const text = localFont({
   src: "../fonts/HankenGrotesk-Variable.woff2",
   weight: "100 900",
   display: "swap",
@@ -22,7 +22,7 @@ export const text = localFont({
   fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
 });
 
-export const mono = localFont({
+const mono = localFont({
   src: [
     { path: "../fonts/DMMono-Regular.woff2", weight: "400", style: "normal" },
     { path: "../fonts/DMMono-Medium.woff2", weight: "500", style: "normal" },

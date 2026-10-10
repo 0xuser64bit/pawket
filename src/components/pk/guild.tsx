@@ -1,5 +1,3 @@
-import Link from "next/link";
-import type { ReactNode } from "react";
 import { Icon, type IconName } from "./icon";
 import { Meter } from "./game";
 
@@ -65,69 +63,11 @@ export function OfficialMark({ official, label }: { official: boolean; label?: s
   );
 }
 
-/* --------------------------------------------------------------- GuildRow */
-
-export function GuildRow({
-  name,
-  href,
-  letter,
-  color,
-  members,
-  stage,
-  blurb,
-  official = true,
-  markLabel,
-  action,
-}: {
-  name: string;
-  href: string;
-  letter?: string;
-  color?: string;
-  /** Already formatted — "4,812". */
-  members: string;
-  stage?: string;
-  blurb: string;
-  official?: boolean;
-  /** A more precise sentence than the default when unverified. */
-  markLabel?: string;
-  action?: ReactNode;
-}) {
-  return (
-    <div className="pk-guild">
-      <Crest name={name} letter={letter} color={color} />
-      <div className="pk-fill">
-        <div className="pk-guild__head">
-          <Link href={href} className="title pk-guild__name">
-            {name}
-          </Link>
-          <OfficialMark official={official} label={markLabel} />
-        </div>
-        <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
-          {blurb}
-        </p>
-        <div className="pk-guild__foot">
-          {/* The stage travels with its dot, so a wrap never strands one. */}
-          <span className="caption pk-faint">
-            {members} members
-            {stage ? (
-              <>
-                {" "}
-                <span className="pk-nowrap">· {stage}</span>
-              </>
-            ) : null}
-          </span>
-          {action}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------ LaunchStage */
 
 /**
  * The single source of what the interface will do. Never derive the stage in
- * the client — pass what the indexer confirmed.
+ * the client — pass what the server read from chain.
  */
 export type Stage = "dbc" | "pending" | "damm" | "ended" | "suspended" | "none";
 

@@ -10,7 +10,7 @@ import { refreshPawketWallet } from "./pawket-wallet";
 import { inAndroidApp } from "@/lib/native/android";
 
 /** A link's end: a few minutes inside the program's 30 days, so a clock running ahead is not refused. */
-export const linkEnds = (days: number) => Math.floor(Date.now() / 1000) + Math.min(days * 86_400, WALLET_LIMITS.maxDeviceSeconds) - 600;
+const linkEnds = (days: number) => Math.floor(Date.now() / 1000) + Math.min(days * 86_400, WALLET_LIMITS.maxDeviceSeconds) - 600;
 
 /**
  * Linking this browser to the connected wallet's Pawket Wallet — opening it

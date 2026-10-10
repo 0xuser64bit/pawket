@@ -209,8 +209,7 @@ export function checkSponsorable(
 
 /**
  * A sliding-window limiter: true when `key` may act now.
- * ponytail: one process's memory. Per-instance on a serverless host, which is
- * enough to slow a script down; a shared store if the float ever matters.
+ * shortcut: Limits apply per instance; use a shared store before mainnet.
  */
 export function createLimiter(limit: number, windowMs: number) {
   const hits = new Map<string, number[]>();

@@ -27,7 +27,7 @@ export type PetCue = (typeof PET_CUES)[number];
  * cushion.
  */
 export const FORMATIONS = ["free", "front", "beside", "bed"] as const;
-export type Formation = (typeof FORMATIONS)[number];
+type Formation = (typeof FORMATIONS)[number];
 
 export const PROPS = ["bowl", "treat", "brush", "ball"] as const;
 export type PropKind = (typeof PROPS)[number];

@@ -1,7 +1,7 @@
 /**
  * Companion game constants.
  *
- * Preserved from the pre-reset shared package and kept in lockstep with the
+ * Shared companion rules, kept in lockstep with the
  * Anchor program (`CARE_COOLDOWN_SECONDS`, `INITIAL_STAT_VALUE`,
  * `XP_PER_CARE_ACTION`). If the on-chain program ever changes these, this
  * file and the program must move together — never one side alone.

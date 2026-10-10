@@ -50,7 +50,7 @@ function readRaw(): string | null {
   }
 }
 
-export function readProfileSnapshot(): PlayerProfile {
+function readProfileSnapshot(): PlayerProfile {
   if (typeof window === "undefined") return DEFAULT_PROFILE;
   const raw = readRaw();
   if (cache && cache.raw === raw) return cache.profile;

@@ -10,7 +10,7 @@ import { Icon, type IconName } from "./icon";
  * the only variant allowed on a Paper surface — square, hairline, mono, no
  * shelf, and deliberately unsatisfying to press.
  */
-export type ButtonTone =
+type ButtonTone =
   | "sun"
   | "sprout"
   | "pool"
@@ -20,7 +20,7 @@ export type ButtonTone =
   | "ghost"
   | "paper";
 
-export type ButtonSize = "sm" | "md" | "lg";
+type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonShape {
   label: string;
@@ -97,7 +97,7 @@ export function ButtonLink({
 
 /* -------------------------------------------------------------------- Chip */
 
-export type ChipTone = "sun" | "sprout" | "pool" | "bloom" | "alarm" | "plain" | "paper";
+type ChipTone = "sun" | "sprout" | "pool" | "bloom" | "alarm" | "plain" | "paper";
 
 interface ChipShape {
   label: string;
@@ -106,8 +106,8 @@ interface ChipShape {
   className?: string;
 }
 
-function chipClass({ tone, className }: ChipShape, extra?: string) {
-  return ["pk-chip", tone && `pk-chip--${tone}`, extra, className].filter(Boolean).join(" ");
+function chipClass({ tone, className }: ChipShape) {
+  return ["pk-chip", tone && `pk-chip--${tone}`, className].filter(Boolean).join(" ");
 }
 
 /**
@@ -121,27 +121,6 @@ export function Chip({ label, tone, icon, className }: ChipShape) {
       {icon ? <Icon name={icon} size={13} /> : null}
       <span>{label}</span>
     </span>
-  );
-}
-
-/** A filter chip that navigates. The only pressable chip in the system. */
-export function ChipLink({
-  label,
-  tone,
-  icon,
-  className,
-  href,
-  selected,
-}: ChipShape & { href: string; selected?: boolean }) {
-  return (
-    <Link
-      href={href}
-      aria-current={selected ? "true" : undefined}
-      className={chipClass({ label, tone: selected ? "sun" : tone, className }, "pk-chip--press")}
-    >
-      {icon ? <Icon name={icon} size={13} /> : null}
-      <span>{label}</span>
-    </Link>
   );
 }
 

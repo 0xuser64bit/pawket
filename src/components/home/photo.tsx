@@ -62,7 +62,7 @@ function load(src: string): Promise<HTMLImageElement> {
  * ink outline, on the room's own paper, with who is in it and the day under
  * it, and the name of the place it was taken.
  */
-export async function printPhoto(shot: string, title: string, line: string, frame?: PhotoFrameId): Promise<string> {
+async function printPhoto(shot: string, title: string, line: string, frame?: PhotoFrameId): Promise<string> {
   const image = await load(shot);
   await document.fonts.ready;
   const t = ink();

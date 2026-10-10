@@ -15,15 +15,15 @@ export const CATCH_LIVES = 3;
 export const CATCH_MOUTH = { top: 0.68, bottom: 0.9, reach: 0.1 };
 const PET_SPEED = 1.7;
 
-export type DropKind = "treat" | "star" | "cloud";
-export interface Drop {
+type DropKind = "treat" | "star" | "cloud";
+interface Drop {
   id: number;
   kind: DropKind;
   x: number;
   y: number;
   vy: number;
 }
-export type CatchEvent = { kind: "caught" | "star" | "ouch"; x: number };
+type CatchEvent = { kind: "caught" | "star" | "ouch"; x: number };
 
 export interface CatchState {
   t: number;

@@ -22,9 +22,9 @@ export const HOP = {
   speedUp: 0.011,
 };
 
-export type Obstacle = { id: number; kind: "pot" | "puddle" | "log"; x: number; w: number; h: number };
-export type Heart = { id: number; x: number; y: number };
-export type HopEvent = "jump" | "heart" | "bump";
+type Obstacle = { id: number; kind: "pot" | "puddle" | "log"; x: number; w: number; h: number };
+type Heart = { id: number; x: number; y: number };
+type HopEvent = "jump" | "heart" | "bump";
 
 const KINDS: Record<Obstacle["kind"], { w: number; h: number }> = {
   pot: { w: 0.06, h: 0.13 },

@@ -542,7 +542,7 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
 }
 
 /** One line of the history, in words. */
-export function describe(entry: WalletEntry, names: Map<string, string>): string {
+function describe(entry: WalletEntry, names: Map<string, string>): string {
   const pet = entry.pet ? (names.get(entry.pet) ?? `a pet (${truncateAddress(entry.pet)})`) : "a pet";
   const words = entry.kinds.map((kind) => {
     switch (kind) {

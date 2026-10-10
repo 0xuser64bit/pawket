@@ -20,7 +20,7 @@ import { BED } from "./set";
  * a diagonal, so when the pet looks at the player its face turns to the
  * room, and the player reads in three-quarter or profile.
  */
-export const HUMAN_HOME = new Vector3(-0.85, 0, 0.45);
+const HUMAN_HOME = new Vector3(-0.85, 0, 0.45);
 const HUMAN_REST_YAW = 0.5;
 const PET_HOME = new Vector3(0.6, 0, -0.2);
 const AREA = { minX: -0.15, maxX: 1.9, minZ: -1.0, maxZ: 0.45 };

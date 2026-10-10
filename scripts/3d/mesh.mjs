@@ -54,7 +54,7 @@ function freeze(g, idx) {
 }
 
 /** Blend two skin-weight sets, keep the four strongest, renormalise. */
-export function blendSkin(ja, wa, jb, wb, t) {
+function blendSkin(ja, wa, jb, wb, t) {
   const acc = new Map();
   for (let k = 0; k < 4; k++) {
     if (wa[k] > 0) acc.set(ja[k], (acc.get(ja[k]) ?? 0) + wa[k] * (1 - t));
@@ -71,7 +71,7 @@ export function blendSkin(ja, wa, jb, wb, t) {
   return { j, w };
 }
 
-export function vertexOf(mesh, i) {
+function vertexOf(mesh, i) {
   return {
     p: [mesh.pos[i * 3], mesh.pos[i * 3 + 1], mesh.pos[i * 3 + 2]],
     n: [mesh.nrm[i * 3], mesh.nrm[i * 3 + 1], mesh.nrm[i * 3 + 2]],
@@ -206,7 +206,7 @@ export function submesh(mesh, keep) {
 }
 
 /** Collapse vertices that share a position (UV seams) into one id each. */
-export function weldIds(pos, epsilon = 1e-5) {
+function weldIds(pos, epsilon = 1e-5) {
   const ids = new Int32Array(pos.length / 3);
   const seen = new Map();
   let next = 0;

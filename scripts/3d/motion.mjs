@@ -78,7 +78,7 @@ function basisRotation(a0, h0, a1, h1) {
 }
 
 /** Elbow or knee for a two-bone chain from `s` to `t`, bending toward `pole`. */
-export function twoBone(s, t, l1, l2, pole) {
+function twoBone(s, t, l1, l2, pole) {
   const d = t.clone().sub(s);
   const dist = Math.min(Math.max(d.length(), Math.abs(l1 - l2) + 1e-4), l1 + l2 - 1e-4);
   const dir = d.normalize();
@@ -98,7 +98,7 @@ const ARM = { l: 1, r: -1 };
  * Solve one pose to local joint rotations (and the pelvis translation) on
  * this rig. Returns Map(name → { r: Quaternion, t?: Vector3 }).
  */
-export function solve(rig, pose) {
+function solve(rig, pose) {
   const out = new Map();
   const world = new Map(); // name → { R: Quaternion, P: Vector3 }
 
@@ -236,7 +236,7 @@ export function solve(rig, pose) {
 
 /* ---------------------------------------------------------------- timing */
 
-export const ease = {
+const ease = {
   linear: (x) => x,
   inOut: (x) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2),
   out: (x) => 1 - (1 - x) ** 3,
@@ -284,7 +284,7 @@ function plus(a, b) {
 }
 
 /** The pose a clip holds at time `t`. */
-export function poseAt(clip, t) {
+function poseAt(clip, t) {
   const keys = [];
   let acc = clip.base ?? {};
   for (const key of clip.keys) {
@@ -311,7 +311,7 @@ const wave = (t, period, amp, phase = 0) => Math.sin(((t / period) * 2 + phase) 
 const env = (t, a, b, fade = 0.25) => Math.min(1, Math.max(0, (t - a) / fade)) * Math.min(1, Math.max(0, (b - t) / fade));
 
 /** Standing, relaxed: the pose every clip starts and ends in. */
-export const STAND = {
+const STAND = {
   pelvis: { at: [0, -0.012, 0], rot: [0, 0, 0] },
   spine_01: [-2, 0, 0],
   spine_02: [1, 0, 0],
@@ -647,7 +647,7 @@ const hush = {
   ],
 };
 
-export const CLIPS = [idle, hello, dance, pet, feed, treat, toss, clap, hush];
+const CLIPS = [idle, hello, dance, pet, feed, treat, toss, clap, hush];
 
 /**
  * Fists up, twice. Shipped on its own as `public/3d/emotes/cheer.glb`, the

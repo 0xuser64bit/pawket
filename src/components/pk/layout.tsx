@@ -132,33 +132,6 @@ export function Row({
   );
 }
 
-export function Grid({
-  cols = 2,
-  gap = 3,
-  className,
-  style,
-  children,
-}: {
-  cols?: number | string;
-  gap?: Space;
-  className?: string;
-  style?: CSSProperties;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      className={["pk-grid", className].filter(Boolean).join(" ")}
-      style={{
-        gridTemplateColumns: typeof cols === "string" ? cols : `repeat(${cols}, minmax(0,1fr))`,
-        gap: `var(--space-${gap})`,
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
 /** The `label` type style, used for a section heading above a list or grid. */
 export function SectionLabel({
   children,

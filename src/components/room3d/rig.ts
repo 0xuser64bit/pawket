@@ -16,7 +16,7 @@ export function worldPosition(object: Object3D, out = new Vector3()): Vector3 {
 }
 
 /** Rotate `bone` by the world-space rotation `delta` about its own pivot. */
-export function rotateWorld(bone: Object3D, delta: Quaternion): void {
+function rotateWorld(bone: Object3D, delta: Quaternion): void {
   const parent = bone.parent!;
   parent.getWorldQuaternion(_q);
   bone.getWorldQuaternion(_q2);

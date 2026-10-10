@@ -74,7 +74,7 @@ export function choosePet(id: string) {
 }
 
 /** The connected wallet's pets on Solana. Disabled while no wallet is connected. */
-export function useOwnedPets(owner: Address | null) {
+function useOwnedPets(owner: Address | null) {
   const fetcher = useCallback(
     async () =>
       (await fetchPetsOnChain(rpc, owner!)).sort((a, b) => b.pet.birthTimestamp - a.pet.birthTimestamp),

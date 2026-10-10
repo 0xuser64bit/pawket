@@ -46,7 +46,7 @@ export async function readKeepsake(pet: Address): Promise<Keepsake | null> {
 }
 
 /** The URI a card carries, on the canonical host so it outlives any one deployment. */
-export function keepsakeUri(pet: string): string {
+function keepsakeUri(pet: string): string {
   return new URL(`/api/keepsake/${pet}`, getPublicEnv().appUrl).toString();
 }
 

@@ -7,7 +7,6 @@ import {
   SOLANA_ERROR__TRANSACTION_ERROR__INSUFFICIENT_FUNDS_FOR_FEE,
   type Signature,
 } from "@solana/kit";
-import { PAWKET_ERROR_CODES } from "./program";
 
 /**
  * Transaction lifecycle standard (web). `send.ts` is the one implementation.
@@ -255,8 +254,6 @@ export function toUserFacingError(error: unknown): string {
   return "Something went wrong sending the transaction. Nothing changed.";
 }
 
-export { PAWKET_ERROR_CODES };
-
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -277,7 +274,7 @@ export type ConfirmationOutcome = "confirmed" | "unknown";
  * timeout (then `unknown` — never `failed`), or a recorded on-chain error
  * (then throw, so the caller maps it like any send failure).
  */
-// ponytail: naive 1s polling; switch to signature subscriptions if this path gets hot.
+// shortcut: Polls once a second; use signature subscriptions when request volume warrants.
 export async function waitForConfirmation(
   client: ConfirmationRpc,
   signature: string,

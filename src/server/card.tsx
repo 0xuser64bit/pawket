@@ -187,7 +187,7 @@ const mark = (text: string, fontSize: number) => (
 );
 
 export const WIDE = { width: 1200, height: 630 };
-export const SQUARE = { width: 800, height: 800 };
+const SQUARE = { width: 800, height: 800 };
 
 export async function petCard(onChain: PetOnChain | null, shape: "wide" | "square"): Promise<ImageResponse> {
   const options = { ...(shape === "wide" ? WIDE : SQUARE), fonts: await brandFonts() };

@@ -6,7 +6,7 @@ import { PAWKET_PROGRAM_ID } from "./program";
  * proxy lets browsers read and send through the server's provider — its key
  * never leaves the server — without becoming an open RPC for anything else.
  */
-export const PROXIED_METHODS: ReadonlySet<string> = new Set([
+const PROXIED_METHODS: ReadonlySet<string> = new Set([
   "getAccountInfo",
   "getBalance",
   "getLatestBlockhash",

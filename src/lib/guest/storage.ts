@@ -25,7 +25,7 @@ function remove(key: string): void {
   try {
     window.localStorage.removeItem(key);
   } catch {
-    // ponytail: absence is the desired end state anyway.
+    // Inaccessible storage retains the safe read fallback.
   }
 }
 

@@ -453,7 +453,7 @@ export function asDeviceInstruction(
 /* ------------------------------------------------------------- the Market */
 
 /** Whether the program sells `item` (`item_price` in `programs/pawket/src/lib.rs`). */
-export function isMarketItem(item: number): boolean {
+function isMarketItem(item: number): boolean {
   if (!Number.isInteger(item)) return false;
   return (
     (item > WEARABLE_COUNT && item <= WEARABLE_COUNT + MARKET.wearables) ||

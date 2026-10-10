@@ -72,7 +72,7 @@ const TOKENS: PetPaint = {
 };
 
 /** Each species' coat and patch, as token names in the paint. */
-export const PET_COATS: Record<PetForm, { coat: string; patch: string }> = {
+const PET_COATS: Record<PetForm, { coat: string; patch: string }> = {
   cat: { coat: "var(--sun)", patch: "var(--sun-edge)" },
   dog: { coat: "var(--trim-copper)", patch: "var(--pet-cocoa)" },
   bun: { coat: "var(--pet-cloud)", patch: "var(--pet-cloud-shade)" },

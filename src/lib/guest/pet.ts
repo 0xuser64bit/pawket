@@ -77,7 +77,7 @@ export const guestPetSchema = z.object({
 });
 
 export type GuestPet = z.infer<typeof guestPetSchema>;
-export type CareLogEntry = z.infer<typeof careLogEntrySchema>;
+type CareLogEntry = z.infer<typeof careLogEntrySchema>;
 
 export interface AdoptGuestInput {
   name: string;
@@ -87,7 +87,7 @@ export interface AdoptGuestInput {
 }
 
 /** Stable id so a migrated pet keeps the same profile URL across reloads. */
-export function guestIdFrom(createdAt: string, name: string): string {
+function guestIdFrom(createdAt: string, name: string): string {
   let hash = 2166136261;
   const input = `${createdAt}\0${name}`;
   for (let i = 0; i < input.length; i++) {
@@ -108,7 +108,7 @@ function previousUtcDay(day: string): string {
   return utc.toISOString().slice(0, 10);
 }
 
-export function nextStreak(
+function nextStreak(
   streak: GuestPet["streak"],
   now: Date,
 ): GuestPet["streak"] {

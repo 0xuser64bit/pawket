@@ -9,14 +9,14 @@ Pawket's presets up), and a lint rule refuses them anywhere else.
 
 ## The program
 
-The Android app routes non-money actions through its linked Pawket Wallet.
+The app routes non-money actions through its linked Pawket Wallet.
 It reads the link fresh before every action; setup, expiry, limits and a fee
 shortfall are actionable refusals, not an automatic wallet-app redirect.
 The shell keeps setup visible on every page. Purchases, deposits, withdrawals
 and prepared coin/keepsake transactions still need the owner's approval.
 One shared send slot covers preparation through confirmation across screens.
 Sponsor/preparation requests are bounded; an unanswered wallet signature
-times out after 90 seconds and any late answer is never broadcast.
+has a bounded deadline and any late answer is never broadcast.
 Device-key creation waits for the IndexedDB transaction to commit before
 linking it, so an aborted storage write cannot leave an unusable chain link.
 Connecting dismisses the chooser and returns to the action the player was
@@ -48,7 +48,7 @@ enum variant order, error codes.
 | `adopt_pet`           | owner, payer         | name 2–24 UTF-8 bytes; vitals 72; `payer` pays rent (the owner, or the sponsor) |
 | `perform_care_action` | owner                | 30-min cooldown per action; decay to now; locked deltas; +10 XP; Passport ring, counts, streak |
 | `finish_round`        | owner                | +25 XP for the first round of a UTC day; every round counts and moves the streak; vitals untouched |
-| `dress`               | owner                | 0 (nothing) or 1–18, the wardrobe in catalog order |
+| `dress`               | owner                | 0 (nothing) or the three starter slots 1–3; purchased pieces use `dress_owned` |
 | `found_guild`         | owner, payer         | slug 3–24 of `a-z0-9` and inner `-`; name 3–32 bytes; motto ≤ 80 bytes; crest < 8, colour < 6; the founding pet is the first member |
 | `join_guild`          | owner, payer         | a pet takes its member account (one guild at a time); the count goes up |
 | `leave_guild`         | owner                | the member account closes to its recorded `payer`; the count goes down; the guild stays |
@@ -70,24 +70,11 @@ enum variant order, error codes.
 | `vote`                | owner, payer         | a wallet with a pet in the guild answers once, before it closes |
 | `wave`                | visitor, payer       | anyone but the pet's owner, once a UTC day; the guestbook is made on the first wave (`payer` covers its rent) |
 
-Errors: 6000 `InvalidPetName`, 6001 `NotPetOwner`, 6002
-`CareCooldownActive`, 6003 `UnknownWearable`, 6004 `InvalidGuildSlug`, 6005
-`InvalidGuildName`, 6006 `InvalidGuildMotto`, 6007 `UnknownCrest`, 6008
-`InvalidAmount`, 6009 `InsufficientBalance`, 6010 `InvalidDeviceLink`, 6011
-`NotThisDevice`, 6012 `DeviceExpired`, 6013 `DailyLimitReached`, 6014
-`NoDeviceLinked`, 6015 `DeviceStillLinked`, 6016 `UnknownItem`, 6017
-`AlreadyOwned`, 6018 `NotInCloset`, 6019 `InvalidEvent`, 6020
-`NotGuildFounder`, 6021 `NotInGuild`, 6022 `EventOver`, 6023
-`NotCheckInTime`, 6024 `AlreadyCheckedIn`, 6025 `InvalidPoll`, 6026
-`PollClosed`, 6027 `UnknownOption`, 6028 `CannotWaveAtOwnPet`, 6029
-`AlreadyWavedToday`. Each maps
-to one sentence in `pawketErrorMessage` that says what did not change; a
-second join (the member account "already in use") has its own sentence.
-Events: `PetAdopted`, `CarePerformed`, `RoundFinished`, `PetDressed`,
-`GuildFounded`, `GuildJoined`, `GuildLeft`, `WalletOpened`,
-`WalletDeposited`, `WalletWithdrew`, `DeviceLinked`, `DeviceUnlinked`,
-`WalletClosed`, `ItemBought`, `EventCreated`, `EventRsvped`, `CheckedIn`,
-`PollCreated`, `Voted`, `Waved`.
+Error codes and events are defined in the program and the committed IDL.
+`PAWKET_ERROR_CODES` in `program.ts` is held to that IDL; `pawketErrorMessage`
+in `transactions.ts` supplies user-facing copy. A second join's existing-account
+error has its own recovery message. Do not introduce a separately maintained
+error or discriminator list in a component.
 
 ### The Pawket Wallet
 
@@ -140,10 +127,6 @@ guild, take a pet out of one or undo anything.
 Pet identity is `(owner, exact UTF-8 name bytes)`. Names are trimmed
 client-side before derivation and never case-folded.
 
-`register_item`, `record_purchase` and `GameConfig` from the pre-reset
-program are gone: neither instruction was admin-gated and neither moved
-value, so neither could ever be a store.
-
 ## Game math lockstep
 
 `src/lib/game/` mirrors the program: initial stat 72; Feed +23 hunger / +2
@@ -182,12 +165,13 @@ are none, and says Pawket is on devnet.
 ## Transaction lifecycle
 
 `send.ts` is the one path: build with the builders → the sponsor signs
-first, as fee payer → the wallet signs as owner → the message is checked to
+first, as fee payer → the authorized device or owner signs → the message is checked to
 be the one that was built → send with preflight on → confirm (`confirmed`,
 30s timeout, then "unknown", never "failed") → reload from chain →
 the send's toast (`tx-toast.tsx`, pushed by `usePawketSend`) says who paid
 and links the signature on the Explorer. When
-the player pays, the wallet is fee payer and signs alone. No optimistic
+the sponsor is unavailable, the linked device pays eligible app fees from its float.
+Owner-approved spending still requires the owner signature. No optimistic
 adopt/care state. The cooldown is checked before the wallet opens, with the
 program's own rule.
 
@@ -204,15 +188,15 @@ sends nothing.
 
 ## The sponsor
 
-`/api/sponsor` pays fees, and the rent of a new pet, a new guild or a pet's
-place in one, so the SOL a player puts in their Pawket Wallet goes only to
-what they choose to buy. Its key (`SPONSOR_KEYPAIR`, server-only) is a devnet hot wallet with a
-small float — not the upgrade authority. `checkSponsorable` signs only when:
+`/api/sponsor` pays eligible devnet fees and account rent while available.
+`SPONSOR_KEYPAIR` is a server-only devnet hot wallet with a small float,
+separate from the upgrade authority. Pawket Wallet pays device fees when
+unsponsored, as well as owner-approved purchases and coin spending. `checkSponsorable` signs only when:
 
 - every instruction is one of Pawket's, on Pawket's program — a linked
   device's twin is sponsored as its owner's instruction would be;
 - the sponsor is the fee payer, and appears in no instruction except as the
-  `payer` of `adopt_pet`, `found_guild`, `join_guild`, `open_wallet`, `buy`
+  `payer` of `adopt_pet`, `found_guild`, `join_guild`, `open_wallet`, `buy`, `buy_with_wallet`
   (the closet, never the price), `create_event`, `rsvp`, `create_poll`,
   `vote` or `wave` (rent it pays), or `leave_guild`'s `payer` (rent it gets
   back) — one account later in a device's twin;
@@ -228,18 +212,19 @@ can land one that fails, and the float pays its fee, inside the limits below.
 
 Rent — an adoption, a founding, a join, a keepsake, a closet, an event, an RSVP, a poll, a ballot or a guestbook — is limited to 20 an hour per caller (an
 IP for the web app, a wallet for a Blink) and 120 an hour in all, which
-bounds the worst case to under 0.5 SOL an hour; everything else to 240 an
-hour per caller.
+limits repeated account creation within each instance; everything else is
+limited to 240 an hour per caller.
 The limits live in one process's memory. Below 0.05 SOL, and on mainnet,
-the sponsor is off and players pay. Pawket Wallet management (open,
+the sponsor is off. A linked device pays eligible app fees; rent-bearing actions
+wait for sponsorship and never fall back to the owner wallet. Pawket Wallet management (open,
 deposit, withdraw, link, unlink, close) is sponsored like any other
-instruction, and the sponsor takes no part in any of it. GET says
+instruction; sponsorship gives it no ownership or withdrawal authority. GET says
 whether it is up; pages that say "Pawket pays" read the same state
 (`src/server/sponsor.ts`).
 
 ## Blinks (Solana Actions)
 
-Three Actions, so a pet can be adopted, cared for and join a guild from
+The Actions let a wallet adopt, care, join a guild or wave from
 wherever a Blink-aware client renders them (Phantom on X, wallets' own
 browsers):
 
@@ -258,8 +243,7 @@ the spec's CORS headers, `X-Action-Version: 2.4` and `X-Blockchain-Ids`
 `/api/actions/icon[?pet=|?guild=]`. A transaction the sponsor builds passes the
 same `checkSponsorable` as one the player built; Blink adoptions are limited
 per wallet, because a Blink client may proxy everyone through one address.
-dial.to, Dialect's interstitial, was paused when this was built, so the app
-links no renderer: the share link is the Blink.
+The app shares its canonical page URLs rather than depend on an external Blink renderer.
 
 ## Keepsakes (Metaplex Core)
 
@@ -365,16 +349,12 @@ solana program deploy target/deploy/pawket.so \
 ```
 
 The program keypair lives in `.keys/` (ignored) and is only needed for the
-first deploy; upgrades are signed by the deploy wallet. An upgrade larger
-than the program account needs `solana program extend <id> <bytes>` first
-(the guild upgrade of 2026-10-03 extended it by 120,000 bytes, the Pawket
-Wallet upgrade of 2026-10-04 by 60,000 — the binary before it is
-`.keys/backups/`, named by the date it was replaced); dump the
-deployed binary with `solana program dump` before any upgrade, so it can be
-put back. The owner-approved 8 October Market change moves former free choices into the Market without renumbering slots or stripping equipped pieces. Otherwise upgrades only ever add: an existing instruction, account layout or
-error code does not change. `pnpm dlx tsx scripts/seed-guilds.mts` founds
-the starter guilds and does only what is missing. Then
-`pnpm e2e:devnet` (the path through the sponsor code, ending with a
+first deploy; upgrades are signed by the deploy wallet. Dump and record the
+deployed binary before an upgrade, inspect the new binary size and extend the
+program account when necessary. Backups remain outside tracked source.
+An upgrade preserves existing instruction identities, account layouts, item
+slots and error codes unless its explicit deploy plan approves a migration.
+Run `pnpm e2e:devnet` (the path through the sponsor code, ending with a
 keepsake) and `PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/chain.spec.ts e2e/coins.spec.ts` (the same through
 the screens, with `e2e/test-wallet.ts`). Top the sponsor up from the deploy wallet with
 `solana transfer <sponsor> 1 --url devnet`.

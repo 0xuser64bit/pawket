@@ -6,7 +6,7 @@ import { seedFrom } from "./random";
  * sent anywhere and it changes nothing on the pet.
  */
 export type GameId = "catch" | "hop" | "copy" | "pairs";
-export const GAME_IDS: readonly GameId[] = ["catch", "hop", "copy", "pairs"];
+const GAME_IDS: readonly GameId[] = ["catch", "hop", "copy", "pairs"];
 
 const KEY = "pawket.best.v1";
 const DAILY_KEY = "pawket.daily.v1"; // gitleaks:allow (a localStorage key name)

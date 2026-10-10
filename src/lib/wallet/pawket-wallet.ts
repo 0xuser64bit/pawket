@@ -50,7 +50,7 @@ export function rentOfWallet(): Promise<bigint> {
 }
 
 /** Whether `wallet` lets `device` act now, and whether the device could pay its own fee. */
-export function deviceMayAct(wallet: ChainWallet | null, device: Address | null, deviceLamports: bigint, now = Date.now() / 1000) {
+function deviceMayAct(wallet: ChainWallet | null, device: Address | null, deviceLamports: bigint, now = Date.now() / 1000) {
   const linked = Boolean(wallet && device && wallet.device === device && wallet.deviceExpiresAt > now);
   const canAct = linked && wallet!.actionsToday < wallet!.dailyActions;
   return { linked, canAct, paysOwnWay: deviceLamports >= DEVICE_MINIMUM };

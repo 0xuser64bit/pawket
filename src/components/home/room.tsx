@@ -27,7 +27,7 @@ const loadRoom3D = () => import("@/components/room3d/room-3d");
 const Room3D = dynamic(loadRoom3D, { ssr: false });
 
 /** Start fetching the 3D room before it is asked for — under a pointer on its switch, say. */
-export function preloadRoom3D(): void {
+function preloadRoom3D(): void {
   if (canDrawRoom()) void loadRoom3D();
 }
 
@@ -135,7 +135,7 @@ export function RoomViewSwitch({ mode, state, onMode }: { mode: "3d" | "flat"; s
 let webgl: boolean | null = null;
 
 /** Whether this browser can draw the 3D room at all (WebGL 2). */
-export function canDrawRoom(): boolean {
+function canDrawRoom(): boolean {
   if (webgl === null) {
     try {
       webgl = Boolean(document.createElement("canvas").getContext("webgl2"));

@@ -38,7 +38,7 @@ const PARTS = [
 ] as const;
 
 /** A look in a sentence, for a summary line. */
-export function lookSummary(look: PlayerLook): string {
+function lookSummary(look: PlayerLook): string {
   return [
     look.hair === "none" ? "Shaved" : `${LOOK_LABEL.hairColour[look.hairColour]} ${LOOK_LABEL.hair[look.hair].toLowerCase()}`,
     `${LOOK_LABEL.cloth[look.topColour].toLowerCase()} ${LOOK_LABEL.top[look.top].toLowerCase()}`,

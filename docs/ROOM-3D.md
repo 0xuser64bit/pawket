@@ -169,6 +169,8 @@ than 70° from the camera: a pet behind them is watched over the shoulder.
 applied each frame, the right arm is re-solved so the wrist lands on the
 pet's real crown (the clip's stroke rides on top) or brings the treat to its
 real mouth, and the pet leans into the hand.
+Brush uses that same stroke, with its handle gripped in the palm and its
+bristles kept down; contact targets the brush head rather than the bare hand.
 
 **Care.** A care button saves first. Only when `saveGuestPet` returns true
 does Home cue the moment (`CARE_MOMENT`); a refusal or a storage failure

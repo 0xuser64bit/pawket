@@ -3,7 +3,7 @@ import { PetMood } from "@/lib/game/enums";
 import { findMoment, momentLength, momentSentence, type Moment } from "@/lib/room/moments";
 import type { HumanActor, HumanFrame } from "./human";
 import { PET_SCALE, type PetActor } from "./pet";
-import { makeProp, makeZ, type Prop } from "./props";
+import { brushHeadAt, makeProp, makeZ, type Prop } from "./props";
 import { angleDelta, dampAngle } from "./rig";
 import { BED } from "./set";
 
@@ -430,7 +430,12 @@ export class Director {
           // Anchored to the real crown; the clip's own stroke rides on top.
           frame.reach = (wrist) => {
             if (!run.anchor) run.anchor = wrist.clone();
-            const crown = pet.crown(new Vector3()).add(new Vector3(0, 0.06, 0));
+            const brushing = moment.prop?.kind === "brush";
+            const crown = pet.crown(new Vector3()).add(new Vector3(0, brushing ? 0.035 : 0.06, 0));
+            if (brushing) {
+              const grip = brushHeadAt(this.human.palm("r"), wrist).sub(wrist);
+              return crown.sub(grip).add(wrist.clone().sub(run.anchor));
+            }
             // The wrist sits a palm's length short of where the fingers land.
             const toward = crown.clone().sub(this.chest()).setY(0).normalize().multiplyScalar(-0.07);
             return crown.add(toward).add(wrist.clone().sub(run.anchor));
@@ -488,7 +493,11 @@ export class Director {
         const hand = human.bones.hand_r;
         o.position.copy(palm);
         o.quaternion.copy(hand.getWorldQuaternion(o.quaternion));
-        if (prop.kind === "brush") o.position.add(new Vector3(0, -0.03, 0));
+        if (prop.kind === "brush") {
+          // The hand bone's axes are the rig's, not the brush's: keep its bristles down.
+          o.position.copy(brushHeadAt(palm, hand.getWorldPosition(new Vector3())));
+          o.rotation.set(0, Math.atan2(o.position.x - palm.x, o.position.z - palm.z), 0);
+        }
         if (prop.kind === "ball") o.position.add(new Vector3(0, -0.02, 0));
       }
     } else if (run.propState === "flying" && run.flight) {

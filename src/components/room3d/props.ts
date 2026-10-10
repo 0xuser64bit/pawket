@@ -9,6 +9,7 @@ import {
   Shape,
   SphereGeometry,
   Vector2,
+  Vector3,
   type BufferGeometry,
 } from "three";
 import type { PropKind } from "@/lib/room/moments";
@@ -90,6 +91,11 @@ function brush(): Prop {
   bristles.position.y = -0.018;
   g.add(bristles);
   return { kind: "brush", object: g };
+}
+
+/** The handle is gripped in the palm; the brush head stays level, ahead of the fingers. */
+export function brushHeadAt(palm: Vector3, wrist: Vector3): Vector3 {
+  return palm.clone().add(palm.clone().sub(wrist).setY(0).normalize().multiplyScalar(0.07));
 }
 
 function ball(): Prop {

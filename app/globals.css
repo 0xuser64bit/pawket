@@ -2079,6 +2079,13 @@ li {
   display: inline;
 }
 .pk-dock__long { display: none; }
+@media (max-width: 359px) {
+  .pk-dock {
+    left: max(var(--space-2), env(safe-area-inset-left));
+    right: max(var(--space-2), env(safe-area-inset-right));
+    gap: 2px;
+  }
+}
 @media (min-width: 720px) {
   .pk-dock {
     left: 0;
@@ -5714,6 +5721,7 @@ details > .pk-risks {
   .pk-look__tabs .pk-choice { padding-inline: 0; font-size: 12px; }
 }
 @media (max-width: 359px) {
+  .pk-fold > .pk-look { padding-inline: var(--space-3); }
   .pk-look__tabs .pk-choice { font-size: 11px; }
 }
 

@@ -37,10 +37,13 @@ async function overflow(page: Page) {
 
 for (const width of [320, 375, 768]) {
   test(`nothing scrolls sideways at ${width}px`, async ({ page }) => {
+    test.slow(); // This checks nineteen routes, including live RPC reads.
     await page.setViewportSize({ width, height: 800 });
     for (const path of SCREENS) {
-      await page.goto(path);
-      expect(await overflow(page), path).toEqual([]);
+      await test.step(path, async () => {
+        await page.goto(path);
+        expect(await overflow(page), path).toEqual([]);
+      });
     }
   });
 }
@@ -73,7 +76,8 @@ test("on a desktop the dock floats at the foot, centred, and stays there", async
   await page.goto("/home");
   const dock = page.getByRole("navigation", { name: "Pawket" });
   const box = await dock.boundingBox();
-  expect(box && Math.abs(box.x + box.width / 2 - 640) <= 1).toBe(true);
+  const width = await page.evaluate(() => document.documentElement.clientWidth);
+  expect(box && Math.abs(box.x + box.width / 2 - width / 2) <= 1).toBe(true);
   expect(box && 720 - (box.y + box.height)).toBeGreaterThanOrEqual(14);
   expect(box && 720 - (box.y + box.height)).toBeLessThan(24);
   await page.mouse.wheel(0, 2000);

@@ -95,17 +95,19 @@ test("guilds are optional, read from Solana, and trade nothing outside a coin's 
 
 test("a guild's coin states its terms and what can go wrong, and asks a wallet only to trade", async ({ page }) => {
   await page.goto("/guilds/sunbeam-club/coin");
-  const read = page.getByText(/solana did not answer|guild coins are off here/i);
-  if (await read.isVisible().catch(() => false)) return;
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(/coin/i);
+  const read = page.getByText(/solana did not answer|guild coins are off here|no guild has that name/i);
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(read.or(heading)).toBeVisible();
+  // Nothing signs here without a wallet, and nothing is offered as a promise.
+  await expect(page.getByRole("button", { name: /^sign/i })).toHaveCount(0);
+  await expect(page.getByText(/guaranteed|to the moon|passive income/i)).toHaveCount(0);
+  if (await read.isVisible()) return;
+  await expect(heading).toContainText(/coin/i);
   await expect(page.getByText("The terms")).toBeVisible();
   await expect(page.getByText("What can go wrong")).toBeVisible();
   // What it does and never does is a fold away, open on a tap.
   await page.getByText("What it does, and never does").click();
   await expect(page.getByText(/never changes a pet's vitals/i)).toBeVisible();
-  // Nothing signs here without a wallet, and nothing is offered as a promise.
-  await expect(page.getByRole("button", { name: /^sign/i })).toHaveCount(0);
-  await expect(page.getByText(/guaranteed|to the moon|passive income/i)).toHaveCount(0);
 });
 
 test("the Market states its fixed prices and where the SOL goes, and asks a wallet only to buy", async ({ page }) => {

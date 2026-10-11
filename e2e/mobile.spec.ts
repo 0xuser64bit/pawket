@@ -20,7 +20,7 @@ test("adoption follows the visible pet after a swipe and viewport change, with c
   expect((await name.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await name.blur();
   const box = (await name.boundingBox())!;
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height - 3);
+  await name.tap({ position: { x: box.width / 2, y: box.height - 3 } });
   await expect(name).toBeFocused();
   const cards = page.locator(".pk-temper");
   const first = (await cards.nth(0).boundingBox())!;

@@ -20,9 +20,10 @@ const serverEnvSchema = z.object({
   solanaRpcUrl: optional,
   /**
    * The sponsor's keypair, as the JSON byte array `solana-keygen` writes.
-   * It pays fees and rent on devnet and signs nothing else (see
-   * `src/lib/solana/sponsor.ts`). Unset turns sponsorship off: players pay
-   * their own fees.
+   * It pays eligible devnet fees and rent; the same secret currently derives
+   * keepsake/coin keys and authorizes the keepsake collection (Q10).
+   * Unset disables sponsorship; linked devices pay eligible fees and
+   * rent-bearing actions wait.
    */
   sponsorKeypair: optional,
 });

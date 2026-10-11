@@ -16,7 +16,7 @@ import { createLimiter } from "@/lib/solana/sponsor";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// ponytail: one instance's memory, like the sponsor's limiter; a shared store if abuse ever matters on mainnet.
+// shortcut: Limits apply per instance; use shared enforcement before mainnet.
 const anyCall = createLimiter(200, 10_000);
 const sends = createLimiter(30, 60_000);
 

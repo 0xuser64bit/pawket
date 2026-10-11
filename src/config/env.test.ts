@@ -49,10 +49,29 @@ describe("getPublicEnv", () => {
     expect(() => getPublicEnv()).toThrow(/mainnet-beta.*devnet|devnet.*mainnet-beta/);
   });
 
-  it("refuses a provider key in a public URL: it would reach every browser", () => {
-    process.env.NEXT_PUBLIC_SOLANA_RPC_URL = "https://devnet.example-rpc.com/?api-key=not-a-real-key";
+  it.each([
+    "https://devnet.example-rpc.com/?api-key=not-a-real-key",
+    "https://devnet.example-rpc.com/?token=not-a-real-key",
+    "https://devnet.example-rpc.com/v2/not-a-real-key",
+    "https://user:password@api.devnet.solana.com",
+    "https://api.devnet.solana.com/?access_token=not-a-real-key",
+    "https://api.devnet.solana.com/#not-a-real-key",
+    "https://api.devnet.solana.com.attacker.example",
+    "//provider.example/not-a-real-key",
+    "/api/rpc?token=not-a-real-key",
+    "file:///tmp/rpc",
+    "not a URL",
+  ])("refuses unsafe public RPC configuration: %s", (url) => {
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL = url;
     __resetEnvCacheForTests();
     expect(() => getPublicEnv()).toThrow(/SOLANA_RPC_URL/);
+  });
+
+  it.each(["/api/rpc", "https://api.devnet.solana.com/", "http://localhost:8899", "http://127.0.0.1:8899", "http://[::1]:8899"])("accepts a credential-free RPC: %s", (url) => {
+    process.env.NEXT_PUBLIC_SOLANA_CLUSTER = "devnet";
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL = url;
+    __resetEnvCacheForTests();
+    expect(getPublicEnv().solanaRpcUrl).toBe(url);
   });
 });
 

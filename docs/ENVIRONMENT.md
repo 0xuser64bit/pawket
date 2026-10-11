@@ -15,8 +15,10 @@ The program ID is a source constant held to the IDL, not an environment option.
 | `SPONSOR_KEYPAIR` | Unset | Server-only devnet fee/rent sponsor JSON byte array |
 
 Use `NEXT_PUBLIC_SOLANA_RPC_URL=/api/rpc` with `SOLANA_RPC_URL` for a provider
-endpoint whose credentials must stay on the server. The public env parser
-refuses credential-bearing URLs. Prefixing a secret with `NEXT_PUBLIC_` exposes
+endpoint whose credentials must stay on the server. Direct browser RPC accepts
+only the public Solana hosts or loopback endpoints, without credentials, query
+parameters, fragments or paths. Custom providers always use the proxy; keys can
+appear in a hostname or path as well as a query. Prefixing a secret with `NEXT_PUBLIC_` exposes
 it to the browser build and is prohibited.
 
 Public values are embedded during the Next.js build. Change deployment

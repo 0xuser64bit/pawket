@@ -64,8 +64,11 @@ availability rather than assume the sponsor is online.
 ## Server and Android boundaries
 
 Server config and privileged modules import `server-only`. Public env values
-are client-safe; provider credentials belong in `SOLANA_RPC_URL`, never a
-`NEXT_PUBLIC_` URL. The RPC proxy allow-lists methods and validates requests.
+are client-safe; custom provider URLs belong in `SOLANA_RPC_URL`, with browser
+RPC set to `/api/rpc`. Direct browser RPC permits only the public Solana hosts
+or loopback endpoints without credentials or URL parameters. Coin route logs
+omit raw upstream errors, which can contain provider URLs. The RPC proxy
+allow-lists methods and validates requests.
 Meteora SDKs and web3.js v1 remain in `src/server/coins/` and operational scripts.
 Coin reads verify the pool address, mints and creator before using it.
 

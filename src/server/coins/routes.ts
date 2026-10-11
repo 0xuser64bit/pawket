@@ -39,7 +39,8 @@ export function units(value: unknown): bigint | null {
 /** A refusal the coin module raised, in its own words; anything else, as Solana not answering. */
 export function coinError(error: unknown): Response {
   if (error instanceof CoinRefusal) return actionError(error.message, error.status);
-  console.error("coin route failed", error);
+  // RPC errors can contain the server's credential-bearing endpoint.
+  console.error("coin route failed");
   return actionError("Solana did not answer. Nothing was sent — try again.", 503);
 }
 

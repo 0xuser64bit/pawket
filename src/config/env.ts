@@ -41,18 +41,24 @@ const publicEnvSchema = z
     ),
   })
   .superRefine((env, ctx) => {
-    // A provider key in a public URL is in every browser that loads the app.
-    if (/api[-_]?key=/i.test(env.solanaRpcUrl)) {
+    let rpc: URL | undefined;
+    try { rpc = new URL(env.solanaRpcUrl); } catch { /* Invalid URLs are refused below. */ }
+    const publicHost = rpc && (KNOWN_RPC_HOSTS.some(({ host }) => rpc.hostname === host) ||
+      ["localhost", "127.0.0.1", "[::1]"].includes(rpc.hostname));
+    // Unknown providers can put credentials anywhere in a URL; keep them behind the proxy.
+    if (env.solanaRpcUrl !== "/api/rpc" && (!rpc || !publicHost ||
+      !["http:", "https:"].includes(rpc.protocol) || rpc.username || rpc.password ||
+      rpc.pathname !== "/" || rpc.search || rpc.hash)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["solanaRpcUrl"],
-        message: "This URL carries a provider key, and NEXT_PUBLIC_ values reach every browser. Put it in SOLANA_RPC_URL (server-only).",
+        message: "Use a public Solana endpoint, a loopback RPC, or /api/rpc. Put provider URLs in SOLANA_RPC_URL (server-only).",
       });
     }
     for (const known of KNOWN_RPC_HOSTS) {
       if (
         env.solanaCluster !== known.cluster &&
-        env.solanaRpcUrl.includes(known.host)
+        rpc?.hostname === known.host
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

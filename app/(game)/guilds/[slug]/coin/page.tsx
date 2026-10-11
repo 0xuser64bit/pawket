@@ -105,7 +105,7 @@ export default async function CoinPage({ params }: Props) {
             <Row gap={2} wrap style={{ marginTop: "var(--space-3)", alignItems: "center" }}>
               {launched ? <Chip label={coin.symbol} tone="paper" /> : null}
               <LaunchStage stage={coin.stage} />
-              {launched ? <OfficialMark official label={`${guild.name}'s own coin`} /> : null}
+              {launched ? <OfficialMark label={`${guild.name}'s own coin`} /> : null}
               <Chip label="Optional" tone="bloom" icon="guild" />
             </Row>
             {cluster === "devnet" ? <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>{DEVNET_COIN_NOTE}</p> : null}

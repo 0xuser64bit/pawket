@@ -245,17 +245,12 @@ export function EmptyState({
 
 /* ---------------------------------------------------------------- Presence */
 
-/**
- * Who is around, in the hue Pawket reserves for being with people. Away
- * differs in fill and weight, not in hue alone.
- */
-export function Presence({ name, note, away = false }: { name: string; note?: string; away?: boolean }) {
+/** Activity read from the pets' records, always named as well as colored. */
+export function Presence({ name }: { name: string }) {
   return (
     <span className="pk-presence">
-      <span className={away ? "pk-presence__dot pk-presence__dot--away" : "pk-presence__dot"} />
+      <span className="pk-presence__dot" />
       <span className="body-sm">{name}</span>
-      {note ? <span className="caption pk-faint">{note}</span> : null}
-      {away && !note ? <span className="pk-sr">away</span> : null}
     </span>
   );
 }

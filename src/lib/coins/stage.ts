@@ -1,5 +1,3 @@
-import type { Stage } from "@/components/pk/guild";
-
 /**
  * Where a guild's coin is in its life, decided once on the server from what
  * Solana holds — the screen draws what this says and never works it out
@@ -17,7 +15,7 @@ import type { Stage } from "@/components/pk/guild";
  *   coin and everything held in it are untouched on Solana; Pawket only
  *   stops offering trades in it.
  */
-export type CoinStage = Extract<Stage, "none" | "dbc" | "pending" | "damm" | "suspended">;
+export type CoinStage = "none" | "dbc" | "pending" | "damm" | "suspended";
 
 export interface CoinFacts {
   /** False when Pawket has delisted the guild. */

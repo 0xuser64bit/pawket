@@ -30,13 +30,6 @@ describe("Button", () => {
   });
 });
 
-describe("Button meta", () => {
-  it("sets a figure beside the label apart, so it can be mono", () => {
-    const html = renderToStaticMarkup(<Button label="Feed" meta="4:59" />);
-    expect(html).toContain('<span class="pk-btn__label">Feed</span><span class="pk-btn__meta">4:59</span>');
-  });
-});
-
 describe("Card", () => {
   it("becomes one link when it has somewhere to go", () => {
     const html = renderToStaticMarkup(<Card href="/pet/pepper">Pepper</Card>);
@@ -172,7 +165,7 @@ describe("PawLoader", () => {
   });
 
   it("names the wait for anything that cannot see it", () => {
-    expect(renderToStaticMarkup(<PawLoader label="Finding a lobby" />)).toContain("Finding a lobby");
+    expect(renderToStaticMarkup(<PawLoader label="Reading your pets" />)).toContain("Reading your pets");
   });
 });
 

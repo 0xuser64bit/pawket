@@ -1,5 +1,6 @@
 import { Icon, type IconName } from "./icon";
 import { Meter } from "./game";
+import type { CoinStage } from "@/lib/coins/stage";
 
 /* ------------------------------------------------------------------ Crest */
 
@@ -40,25 +41,12 @@ export function Crest({
 
 /* ----------------------------------------------------------- OfficialMark */
 
-/**
- * Absence is the signal, not a colour. Pawket never marks an unverified link
- * in red, because a red badge invites a player to look for a green one and
- * trust it. Render this from the guild registry's approval state — never
- * from client data.
- */
-export function OfficialMark({ official, label }: { official: boolean; label?: string }) {
-  if (!official) {
-    return (
-      <span className="pk-unofficial">
-        <Icon name="info" size={13} />
-        {label ?? "Not checked by Pawket"}
-      </span>
-    );
-  }
+/** Marks a coin whose creator was verified against its guild's founder. */
+export function OfficialMark({ label }: { label: string }) {
   return (
     <span className="pk-official">
       <Icon name="shield" size={13} />
-      {label ?? "Official guild"}
+      {label}
     </span>
   );
 }
@@ -69,18 +57,15 @@ export function OfficialMark({ official, label }: { official: boolean; label?: s
  * The single source of what the interface will do. Never derive the stage in
  * the client — pass what the server read from chain.
  */
-export type Stage = "dbc" | "pending" | "damm" | "ended" | "suspended" | "none";
-
-const STAGES: Record<Stage, { dot: string; label: string }> = {
+const STAGES: Record<CoinStage, { dot: string; label: string }> = {
   dbc: { dot: "live", label: "Launch open · bonding curve" },
   pending: { dot: "wait", label: "Migration pending" },
   damm: { dot: "active", label: "Active liquidity · DAMM v2" },
-  ended: { dot: "stop", label: "Launch ended" },
   suspended: { dot: "stop", label: "Suspended under policy" },
   none: { dot: "wait", label: "No token · social guild" },
 };
 
-export function LaunchStage({ stage, label }: { stage: Stage; label?: string }) {
+export function LaunchStage({ stage, label }: { stage: CoinStage; label?: string }) {
   const s = STAGES[stage];
   return (
     <span className="pk-launch__stage">

@@ -1187,7 +1187,6 @@ li {
   font-family: var(--font-display);
   font-variation-settings: "SOFT" 64, "WONK" 1;
 }
-.title-l,
 .title,
 .body-lg,
 .body,
@@ -1196,7 +1195,6 @@ li {
 .caption {
   font-family: var(--font-text);
 }
-.amount-xl,
 .amount,
 .amount-sm,
 .receipt,
@@ -1239,12 +1237,6 @@ li {
   line-height: 26px;
   font-weight: 600;
 }
-.title-l {
-  font-size: 24px;
-  line-height: 30px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
 .title {
   font-size: 19px;
   line-height: 25px;
@@ -1275,12 +1267,6 @@ li {
   font-size: 12px;
   line-height: 17px;
   font-weight: 400;
-}
-.amount-xl {
-  font-size: 30px;
-  line-height: 32px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
 }
 .amount {
   font-size: 18px;
@@ -1567,13 +1553,6 @@ li {
 }
 .pk-btn > svg {
   flex: none;
-}
-/* a figure on a button — a countdown — is mono, like every figure */
-.pk-btn__meta {
-  font-family: var(--font-mono);
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
 }
 .pk-btn--lg {
   min-height: var(--control-lg);
@@ -2482,16 +2461,6 @@ li {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.pk-unofficial {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--ink-faint);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
 
 /* ------------------------ launch readout: Paper, never a price chart */
 
@@ -2541,10 +2510,6 @@ li {
   background: var(--pool);
   box-shadow: 0 0 0 2px var(--pool-edge);
   flex: none;
-}
-.pk-presence__dot--away {
-  background: var(--surface-sunk);
-  box-shadow: 0 0 0 2px var(--ink-faint);
 }
 
 /* ---------------------------------------------------------- empty state */

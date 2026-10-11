@@ -2,7 +2,6 @@
 <!-- Lamplight: the same room after dark (app/globals.css). -->
 <resources>
     <color name="pawket_ground">#17120E</color>
-    <color name="pawket_surface">#241D16</color>
     <color name="pawket_ink">#F6EBDA</color>
     <color name="pawket_ink_faint">#A08F7C</color>
     <color name="pawket_sun">#FF9A52</color>

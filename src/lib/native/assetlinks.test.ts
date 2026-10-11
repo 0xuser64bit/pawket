@@ -18,12 +18,6 @@ const statements = JSON.parse(readFileSync(join(root, "public/.well-known/assetl
   relation: string[];
   target: { namespace: string; package_name: string; sha256_cert_fingerprints: string[] };
 }>;
-const shell = JSON.parse(readFileSync(join(root, "android/twa-manifest.json"), "utf8")) as {
-  host: string;
-  startUrl: string;
-  packageId: string;
-};
-
 describe("the app and the site agree", () => {
   it("lets links open in the one package the build makes", () => {
     expect(statements).toHaveLength(1);
@@ -34,9 +28,8 @@ describe("the app and the site agree", () => {
     for (const fingerprint of statement.target.sha256_cert_fingerprints) expect(fingerprint).toMatch(/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
   });
 
-  it("opens the official domain, with the CLI and APK using the same origin", () => {
+  it("opens the official domain over HTTPS", () => {
     expect(gradle.SOLANA_MOBILE_URL).toBe("https://pawket.world/home");
-    expect(new URL(shell.startUrl, `https://${shell.host}`).href).toBe(gradle.SOLANA_MOBILE_URL);
-    expect(shell.packageId).toBe(gradle.SOLANA_MOBILE_APPLICATION_ID);
+    expect(new URL(gradle.SOLANA_MOBILE_URL).protocol).toBe("https:");
   });
 });

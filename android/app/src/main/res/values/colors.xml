@@ -3,7 +3,6 @@
      values-night holds Lamplight's. The mark's own inks never change with the room. -->
 <resources>
     <color name="pawket_ground">#F6EFE2</color>
-    <color name="pawket_surface">#FFFBF3</color>
     <color name="pawket_ink">#2A1E14</color>
     <color name="pawket_ink_faint">#6F5F4A</color>
     <color name="pawket_sun">#FF8A3D</color>

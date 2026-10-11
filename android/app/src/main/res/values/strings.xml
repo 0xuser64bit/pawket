@@ -7,7 +7,6 @@
     <string name="try_again">Try again</string>
     <string name="share_picture">Share the photo</string>
     <string name="share_link">Share</string>
-    <string name="https_only">This build of Pawket opens only over https.</string>
 
     <!-- Long-press the icon: straight to the place, the same page as in the dock. -->
     <string name="shortcut_home_short">Home</string>

@@ -1,9 +1,0 @@
-{
-  "fallbackType": "webview",
-  "generatorApp": "solana-mobile",
-  "host": "pawket.world",
-  "launcherName": "Pawket",
-  "name": "Pawket",
-  "packageId": "app.pawket.android",
-  "startUrl": "/home"
-}

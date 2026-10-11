@@ -7,27 +7,14 @@ plugins {
 
 fun String.escapeForBuildConfig(): String = replace("\\", "\\\\").replace("\"", "\\\"")
 
-val webShellUrl =
-    (findProperty("SOLANA_MOBILE_URL") as String?)
-        ?.trim()
-        ?.ifBlank { null }
-        ?: "https://example.com/"
-val webShellApplicationId =
-    (findProperty("SOLANA_MOBILE_APPLICATION_ID") as String?)
-        ?.trim()
-        ?.ifBlank { null }
-        ?: "com.example.webshell"
-val webShellVersionCode =
-    (findProperty("SOLANA_MOBILE_VERSION_CODE") as String?)
-        ?.trim()
-        ?.ifBlank { null }
-        ?.toIntOrNull()
-        ?: 1
-val webShellVersionName =
-    (findProperty("SOLANA_MOBILE_VERSION_NAME") as String?)
-        ?.trim()
-        ?.ifBlank { null }
-        ?: "1.0"
+val webShellUrl = providers.gradleProperty("SOLANA_MOBILE_URL").get().trim()
+val webShellApplicationId = providers.gradleProperty("SOLANA_MOBILE_APPLICATION_ID").get().trim()
+val webShellVersionCode = providers.gradleProperty("SOLANA_MOBILE_VERSION_CODE").get().trim().toInt()
+val webShellVersionName = providers.gradleProperty("SOLANA_MOBILE_VERSION_NAME").get().trim()
+require(webShellUrl.isNotEmpty() && webShellApplicationId.isNotEmpty() && webShellVersionName.isNotEmpty()) {
+    "Pawket URL, application ID and version name must not be blank."
+}
+require(webShellVersionCode > 0) { "Pawket version code must be positive." }
 val webShellSigningStoreFile =
     (findProperty("SOLANA_MOBILE_KEYSTORE_PATH") as String?)
         ?.trim()
@@ -70,8 +57,6 @@ android {
         targetSdk = 37
         versionCode = webShellVersionCode
         versionName = webShellVersionName
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "SOLANA_MOBILE_URL", "\"${webShellUrl.escapeForBuildConfig()}\"")
         // The host whose links open in the app (verified by its /.well-known/assetlinks.json).
@@ -125,9 +110,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.webkit)
-    debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
 }

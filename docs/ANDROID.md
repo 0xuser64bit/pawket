@@ -95,6 +95,9 @@ Use JDK 17 or later and the SDK/build-tools versions required by the Gradle
 project. `android/gradle/wrapper/gradle-wrapper.properties`,
 `android/gradle/libs.versions.toml` and the build files own tooling versions.
 `android/local.properties` points to the local SDK and is ignored.
+The URL, package and version properties are required; a missing or invalid
+value fails the build instead of selecting template defaults. The Gradle
+properties are the only shell identity configuration; no TWA manifest is used.
 
 ```sh
 # Local web app and debug shell on an attached device:

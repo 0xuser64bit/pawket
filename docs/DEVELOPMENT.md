@@ -26,7 +26,7 @@ Do not replace an existing local env file or commit secrets.
 | `pnpm lint` | Next.js and TypeScript ESLint rules, including the Meteora import boundary |
 | `pnpm typecheck` | Strict TypeScript, including unused locals and parameters |
 | `pnpm test` / `pnpm test:watch` | Unit and component tests; Vitest config is `vitest.config.mts` |
-| `pnpm e2e` | Playwright browser suite; `PLAYWRIGHT_PORT` selects the local port |
+| `pnpm e2e` | Playwright browser suite; `PLAYWRIGHT_PORT` selects the local port; with `CI=1`, uses the production build (run `pnpm verify` first) |
 | `pnpm verify` | Typecheck, lint, unit tests and production build |
 | `pnpm assets:3d` | Rebuild and validate the shipped GLBs |
 | `pnpm program:build` | Anchor SBF v2 build and committed IDL sync |

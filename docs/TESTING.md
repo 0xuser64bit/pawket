@@ -26,6 +26,7 @@
 | 3D room: live room, emote, care moment after save, flat choice, no-WebGL fallback, reduced motion, saved look, empty room, 320px | `e2e/room.spec.ts` | Playwright |
 | Shell, adopt, care, wardrobe, playground, guild boundary, park, passport miss, connect sheet, health | `e2e/smoke.spec.ts` | Playwright |
 | Layout: no sideways scroll at 320/375/768, dock placement | `e2e/layout.spec.ts` | Playwright |
+| Classic scrollbar space: 44px touch targets and dock centring | `e2e/scrollbars.spec.ts` | Playwright, including hosts with overlay scrollbars |
 | Mobile touch: sheet focus/close, short viewport, Catch drag, game pause/resume and hidden-page pause | `e2e/mobile.spec.ts` | Playwright Chromium touch emulation (not physical-device proof) |
 | The page's half of the Android bridge; the app and the site agree on the package | `src/lib/native/*.test.ts` | Vitest |
 | The Android shell's checks: origin, picture, file name | `android/app/src/test/…/BoundaryTest.kt` | `cd android && ./gradlew testDebugUnitTest` |
@@ -35,6 +36,7 @@
 pnpm test       # Vitest, single run
 pnpm e2e        # Playwright (starts dev server, asserts shell only)
 pnpm verify     # typecheck + lint + test + build
+CI=1 pnpm e2e --workers=2  # test the production build created by verify
 gitleaks git --redact --log-opts=--all .  # every local Git ref, including old commits
 ```
 
@@ -71,9 +73,11 @@ gitleaks git --redact --log-opts=--all .  # every local Git ref, including old c
 
 ## Verification boundaries
 
-The GitHub `Verify` workflow runs `pnpm verify`, default Chromium browser
-tests and a full fetched-history Gitleaks scan. It has no signing secrets and
-does not run opt-in devnet, LiteSVM or Android release checks. Source changes
+The GitHub `Verify` workflow runs `pnpm verify`, Chromium browser tests against
+that production build and a full fetched-history Gitleaks scan. Playwright
+starts `pnpm start` when `CI` is set; build first when reproducing CI locally.
+Without `CI`, it starts or reuses the development server. The workflow has no
+signing secrets and does not run opt-in devnet, LiteSVM or Android release checks. Source changes
 to those layers still require their owning suites. Gitleaks extends its
 default rules with Solana CLI keypair-array detection; its only value
 exceptions are two public browser-storage names from early commits.

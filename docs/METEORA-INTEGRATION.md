@@ -15,7 +15,7 @@ A guild of three pets → founder launches on a preset → DBC curve → thresho
 Players never need to understand the pool transition: the coin's page shows
 one stage at a time (`LaunchStage`) and offers only what that stage allows.
 
-## 1. Constraints (normative — all hold today)
+## Routing and approval rules
 
 1. **Presets only.** A founder picks `gentle` or `lively`
    (`src/lib/coins/presets.ts`); raw curve, fee or threshold parameters are
@@ -43,7 +43,7 @@ one stage at a time (`LaunchStage`) and offers only what that stage allows.
    banned-phrase list; a meter toward graduation is "community
    participation", never a price path.
 
-## 2. The presets
+## Presets
 
 | | Gentle | Lively |
 | --- | --- | --- |
@@ -60,7 +60,7 @@ Devnet presets are configured for tests using faucet SOL. The mainnet numbers
 in the model are provisional; config addresses, thresholds and keeper behavior
 must be approved and verified before mainnet is enabled (Q3, Q6).
 
-## 3. Stages (`src/lib/coins/stage.ts`)
+## Stages (`src/lib/coins/stage.ts`)
 
 | Stage | Quotes | Trades | Page |
 | --- | --- | --- | --- |
@@ -70,7 +70,7 @@ must be approved and verified before mainnet is enabled (Q3, Q6).
 | `damm` | verified pool | verified pool | "Active liquidity · DAMM v2", the ticket |
 | `suspended` | refused | refused | Pawket stopped offering trades; nothing changed on chain |
 
-## 4. Failure handling
+## Failure handling
 
 - **Index lag after graduation.** A migrated curve whose pool is not yet
   readable at the derived address is `pending`: trading pauses rather than
@@ -84,18 +84,18 @@ must be approved and verified before mainnet is enabled (Q3, Q6).
   graduation needs and returns the rest in the same transaction.
 - **Guild delisted.** `suspended`: trades stop here; holdings are untouched.
 
-## 5. Before mainnet
+## Mainnet requirements
 
 - Legal review of the coin copy, the disclosure and the asset-model row
   (Q6). Until it is signed, `COIN_CONFIGS` has no mainnet entry and the
   coin page says coins are off there. Address derivation and founder powers
   also require Q10 and Q9 to be resolved.
-- `pnpm dlx tsx scripts/coin-presets.mts mainnet-beta` with a multisig as
-  the treasury (`docs/MAINNET.md`), and the treasury's partner-fee claims
-  run from a script, never from the server.
+- An approved config-deployment and verification plan with reviewed preset
+  parameters and treasury authority (`MAINNET.md`). Partner-fee claims run
+  from the treasury's operational tool, never the server.
 - A paid RPC: the holder count is a token-program scan.
 
-## 6. Files
+## Sources and operational tools
 
 ```text
 src/lib/coins/presets.ts       presets, terms, config addresses, the fee split (pure)

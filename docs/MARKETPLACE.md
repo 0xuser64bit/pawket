@@ -2,9 +2,9 @@
 
 The Market sells cosmetic looks at fixed prices, settled by the program.
 There is no order book or resale. A secondary market or pet transfer needs
-a separate decision under Q1 and Q5 (`OPEN-QUESTIONS.md`).
+a separately approved product and protocol design; see `DECISIONS.md`.
 
-## 1. Principles (normative)
+## Purchase rules
 
 - **Looks only.** Everything sold is expression: a piece a pet wears, a room
   the player lives in, or a frame for their photos. Nothing sold changes a vital, XP, a cooldown, a score
@@ -18,10 +18,10 @@ a separate decision under Q1 and Q5 (`OPEN-QUESTIONS.md`).
   `Closet` in the same instruction. There is no order, no escrow and no
   receipt to reconcile: the transaction is the receipt.
 - **Nothing is resold, and nothing is bought back.** A closet is for good.
-- **Adoption stays free.** No pet is sold. A pet asset anyone can sell or
-  send is a separate decision (Q1, Q5).
+- **Adoption has no purchase price.** No pet is sold. A pet asset anyone can sell or
+  send requires a separate product and protocol design.
 
-## 2. What it sells
+## Catalog
 
 | Item ids | What | Material | Price | Used with |
 | --- | --- | --- | --- | --- |
@@ -48,7 +48,7 @@ pet (`pet-art.tsx`), as a tile (`WearableArt`) and in the 3D room
 (`room3d/wearables.ts`, held complete by `wearables.test.ts`); a frame is
 drawn on the print (`printPhoto`) and on the shelf (`FrameArt`).
 
-## 3. The flow
+## Purchase flow
 
 ```text
 /market → tap an item → a Paper sheet over the shelves: your own pet wearing it (or sitting
@@ -66,7 +66,7 @@ drawn on the print (`printPhoto`) and on the shelf (`FrameArt`).
 - A linked device can put a bought piece on (`dress_owned_by_device`); it can
   never buy.
 
-## 4. Money and transparency
+## Treasury and fees
 
 - Every sale lands in `PAWKET_TREASURY` (`SEpAw5i…vWfw` on devnet). The
   treasury's balance and what has been paid in are on `/pulse`, read live.
@@ -76,15 +76,15 @@ drawn on the print (`printPhoto`) and on the shelf (`FrameArt`).
   separate sponsor pays eligible fees from its own float; there is no automatic
   treasury-to-sponsor funding service.
 
-## 5. Not built (and why)
+## Product scope
 
-- **Secondary sales** of bought pieces: no escrow design yet (Q5), and
+- **Secondary sales** of bought pieces: outside the supported product scope, and
   nothing should invite speculation on looks.
 - **Selling pets**: the Passport is proof of care; selling it would sell
   someone else's care.
 - **USDC prices, bundles, packs with hidden odds, auctions**: never planned.
 
-## 6. Tests
+## Verification
 
 `programs/pawket/tests/program/market.rs` (purchase into the treasury and
 nowhere else, nothing bought twice, only what is sold, wearing from the

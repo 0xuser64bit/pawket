@@ -5,96 +5,25 @@ Product context lives in `docs/PRODUCT.md`,
 architecture in `docs/ARCHITECTURE.md`. This file is the contract for how an
 agent works in this repo.
 
-## What this is
+## Product context
 
-Pawket is a **web-first** living companion on Solana. A player adopts a pet
-in the browser with no wallet, cares for it (feed / play / groom / rest),
-and — when they choose — keeps it on Solana, where every care is a signed
-record anyone can check. Devnet by default; Pawket pays the fees.
+Pawket is a web-first companion game and an Android shell around the same
+hosted app. Local adoption and care need no wallet. Keeping a pet on Solana
+creates a new confirmed program record; local progression is not imported.
+Devnet is the default. `docs/PRODUCT.md` describes supported behavior and limits.
 
-**Current truth:** a pet starts in this browser. `/adopt` writes it through
-`src/lib/guest/` and `src/lib/game/`. Home runs care (feed, play, groom,
-rest) with decay, cooldowns, XP, a UTC streak and a care log, in a room
-drawn in 3D — the player and the pet in one scene (`src/components/room3d/`,
-`docs/ROOM-3D.md`), with the flat SVG room wherever 3D cannot draw.
+App transactions require a linked, funded Pawket Wallet. Its non-extractable
+device key signs program-scoped non-money actions; the owner approves setup
+and spending. `usePawketSend` and `send.ts` are the only app send path.
+Sponsorship is conditional. Coins and Market purchases spend Pawket Wallet;
+the sponsor pays only eligible fees and account rent. Nothing bought changes
+vitals, XP, cooldowns or scores. Chain care animates after confirmation and reload.
 
-"Keep Pepper on Solana" (the labelled button beside the room's name on Home, or
-the last step of adoption) carries that pet into the program in
-`programs/pawket/` (devnet `PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`): a
-`Pet` PDA holds vitals, XP, cooldowns and what it wears; its `PetPassport`
-holds the streak, counts and the last eight cares. Decay, cooldowns, XP,
-the streak and the daily round bonus are enforced on chain by the same
-integer math as `src/lib/game/` (`src/lib/game/lockstep.txt` is replayed by
-both). The sponsor (`/api/sponsor`) signs first, as fee payer and rent payer,
-and signs nothing but Pawket instructions; the wallet signs second, as
-owner. A care
-on Solana plays its moment only after it is confirmed; nothing is optimistic.
-
-`useCompanion` (`src/lib/companion/`) decides what a screen draws: a player
-keeps as many pets as they adopt — the connected wallet's on Solana and the
-browser's (`pawket.pets.v1`) — and one is at home (their pick, remembered on
-the device). One record shape for all of them. Home is the room across the
-whole width with a deck beneath it (care, Say, Today, Photo, Look). Profile
-is the player: their name, their 3D look with
-hats, glasses and saved outfits, and what they keep — pets, the wardrobe
-(three free starter pieces and the Market's twenty-five; on Solana a
-signed `dress` or `dress_owned`), stickers read from each record
-(`src/lib/game/badges.ts`), and settings, including fourteen rooms
-(`src/config/themes.ts`, twelve of them the Market's). The playground is four solo games
-(Catch, Hop, Copy, Pairs) with a daily round everyone shares; on Solana a
-finished round is kept when the player presses "Record the round".
-`/pet/<address>` is the public Passport, server-rendered from chain, with its
-guestbook: anyone but the owner waves (`wave`), once a UTC day, from the page
-or the pet's Blink. `/park` is every pet the program keeps, read live, and
-`/pulse` counts everything the program holds — pets, guilds, coins, Market
-sales — read live, nothing added by hand. Guilds are on chain: a pet founds
-or joins one (`found_guild`, `join_guild`, `leave_guild`; one guild per pet,
-rent paid by the sponsor and returned on leave), discovery and each guild's
-page are read live, and `src/lib/guilds/boundary.ts` is the rule every guild
-lives inside: nothing in it touches a pet. Its founder plans events its pets
-RSVP to and check in at, and asks polls each wallet with a pet in it answers
-once (`create_event`, `rsvp`, `check_in`, `create_poll`, `vote`; the sponsor
-pays the rent). A guild of three pets may launch one
-optional coin on Meteora (`src/lib/coins/`, `src/server/coins/`): a Dynamic
-Bonding Curve on one of Pawket's presets that graduates into a DAMM v2 pool
-with its liquidity locked for good. The server builds every coin transaction
-with Meteora's SDKs, the player approves and their Pawket Wallet pays (the sponsor never does), a
-coin is traded only on its own page, and holding one only pins the guild's
-crest on its pets there.
-A player can keep a Pawket Wallet (`/wallet`): a `PawketWallet` PDA whose
-balance only its owner fills or empties (withdrawals go only back to the
-owner), and one linked device — a non-extractable WebCrypto key made and kept
-in this browser (`src/lib/wallet/device.ts`) — that signs with no prompt
-whatever the owner signs for their pets except money: care, rounds, clothes,
-adoption, guilds, gatherings and waves (each a `*_by_device` twin;
-`DEVICE_VARIANTS` in `program.ts` is the list), until the end date and
-inside the daily limit the owner set. `usePawketSend().act` is the one way
-those are sent. The sponsor pays a device's fee and rent as it does the
-owner's; with no sponsor the device pays its own fee from a float the
-balance refills by at most that fee per action. A linked, funded Pawket Wallet is required for app transactions; no owner-wallet fallback. The owner approves Market and coin spending. Coin transactions use `fund_wallet_spend` and `settle_wallet_spend` in one atomic transaction, preserve existing owner SOL and return change and proceeds to Pawket Wallet. Its history is read from
-Solana (`src/lib/wallet/history.ts`).
-The Market (`/market`) sells looks for SOL at prices fixed in the program
-(`item_price`): twenty-five pieces for pets (fifteen classics at 0.02 SOL, ten at
-0.05), twelve rooms and eight photo frames. `buy_with_wallet` sends the price
-from the owner's Pawket Wallet straight to Pawket's treasury and records the item in the
-owner's `Closet` on Solana for good; the sponsor pays only the fee and the
-closet's rent. A bought piece goes on with `dress_owned` (the program checks
-the closet). Nothing sold changes a vital, XP, a cooldown or a score, and
-there is no resale or secondary market. A pet on Solana can have a keepsake: a card in its owner's wallet, a
-Metaplex Core asset in Pawket's collection, frozen for good, that points at
-the pet (`src/lib/solana/core.ts`, `src/server/keepsake.ts`). The pet stays
-the program's account; the card cannot be sold or sent. Do not put a
-simulated price, treasury, member count or lobby on a screen, and call a pet
-"on Solana" only when it was read from chain.
-
-Pawket is also an Android app (`android/`, `docs/ANDROID.md`): the official
-Solana Mobile webshell around the hosted app, so the pages, rules and sends
-are these ones. The wallet apps on the phone (Seed Vault, Phantom…) sign
-through Mobile Wallet Adapter, registered in `browser-client.ts` on Android
-only; `send.ts` is unchanged. The phone's share sheet, gallery, calendar,
-haptics, back gesture and bars are reached through one origin-locked bridge
-(`PawketBridge.kt` ↔ `src/lib/native/android.ts`) that never carries a key
-or a transaction. Inside the app a pet is kept "in this app" (`useHere()`).
+`useCompanion` combines local and chain pets in one record shape and selects
+one pet at home. Game math and the program replay the same `lockstep.txt`.
+The 3D room only renders; flat art is the fallback. Public Passports, discovery
+and counts read chain state. Guilds are independent of coin holdings. A
+keepsake is a frozen card pointing to the pet, never a transferable pet asset.
 
 ## Read first
 
@@ -107,7 +36,7 @@ or a transaction. Inside the app a pet is kept "in this app" (`useHere()`).
 | Changing env/config       | `docs/ENVIRONMENT.md`                                       |
 | Touching Solana / wallets | `docs/SOLANA.md`                                            |
 | Touching game math        | `docs/GAME-DESIGN.md` (`src/lib/game/` is lockstep)         |
-| Touching pets/keepsakes   | `docs/SOLANA.md` (Keepsakes) + `docs/OPEN-QUESTIONS.md` (Q1, Q5) |
+| Touching pets/keepsakes   | `docs/SOLANA.md` (Keepsakes) + `docs/DECISIONS.md` (asset model) |
 | Touching the 3D room      | `docs/ROOM-3D.md` + `docs/DESIGN.md` (“The room in 3D”)     |
 | Touching the Android app  | `docs/ANDROID.md` (including the release and device checks) |
 | Touching marketplace      | `docs/MARKETPLACE.md`                                       |
@@ -201,7 +130,7 @@ PAWKET_ANDROID_KEYSTORE=… scripts/android-release.sh   # the signed release AP
 2. Change the smallest set of layers that own the fact.
 3. Keep game math ↔ program constants ↔ tests in sync. Never "just update the UI."
 4. Add or extend a test at the layer you changed (see `docs/TESTING.md`).
-5. Run `pnpm verify`. Report what you ran, what changed, and what is stubbed.
+5. Run `pnpm verify`. Report changes, checks and remaining verification gaps.
 
 ## Hard rules
 

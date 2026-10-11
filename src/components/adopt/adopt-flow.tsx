@@ -24,6 +24,7 @@ import {
 } from "@/lib/game/appearance";
 import type { Address } from "@solana/kit";
 import { KeepSheet } from "@/components/home/keep-sheet";
+import { showToast } from "@/components/pk/toast";
 import { PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { choosePet } from "@/lib/companion/use-companion";
 import { createGuestPet, nameTaken, projectGuestPet, type GuestPet } from "@/lib/guest/pet";
@@ -457,7 +458,9 @@ export function AdoptFlow() {
                 sender={sender}
                 onDismiss={() => setKeeping(false)}
                 onCarried={(address) => {
-                  removePet(adopted.id);
+                  if (!removePet(adopted.id)) {
+                    showToast({ id: `local-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
+                  }
                   choosePet(address);
                   router.push("/home", { transitionTypes: ["nav-place"] });
                 }}

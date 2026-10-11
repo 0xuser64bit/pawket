@@ -9,15 +9,15 @@ import { guestPetSchema, migrateStoredPet, type GuestPet } from "./pet";
  * to the upgrade; the old key goes only once the list has been written.
  */
 const STORAGE_KEY = "pawket.pets.v1";
-const LEGACY_KEY = "pawket.guest-pet.v1"; // gitleaks:allow (a localStorage key name)
+const LEGACY_KEY = "pawket.guest-pet.v1";
 
 const NONE: GuestPet[] = [];
 
-function read(key: string): string | null {
+function read(key: string): string | null | undefined {
   try {
     return window.localStorage.getItem(key);
   } catch {
-    return null;
+    return undefined;
   }
 }
 
@@ -55,10 +55,11 @@ function parse(raw: unknown): GuestPet[] {
   return pets;
 }
 
-/** The pets in this browser. Empty when there are none, the data is corrupt, or server-side. */
-export function loadPets(): GuestPet[] {
+/** Null means storage could not be read; mutations must not replace it with an empty list. */
+function loadStoredPets(): GuestPet[] | null {
   if (typeof window === "undefined") return NONE;
   const raw = read(STORAGE_KEY);
+  if (raw === undefined) return null;
   if (raw !== null) {
     try {
       return parse(JSON.parse(raw));
@@ -69,6 +70,7 @@ export function loadPets(): GuestPet[] {
   }
   // The one pet from before, moved into the list.
   const legacy = read(LEGACY_KEY);
+  if (legacy === undefined) return null;
   if (legacy === null) return NONE;
   let pet: GuestPet | null = null;
   try {
@@ -84,6 +86,11 @@ export function loadPets(): GuestPet[] {
   return [pet];
 }
 
+/** The pets in this browser. Empty when none, corrupt, inaccessible, or server-side. */
+export function loadPets(): GuestPet[] {
+  return loadStoredPets() ?? NONE;
+}
+
 /**
  * Keep a pet: replaced in place when its id is already here, else added at
  * the end. False when storage is blocked or the record is invalid.
@@ -91,7 +98,8 @@ export function loadPets(): GuestPet[] {
 export function savePet(pet: GuestPet): boolean {
   if (typeof window === "undefined") return false;
   if (!guestPetSchema.safeParse(pet).success) return false;
-  const pets = loadPets();
+  const pets = loadStoredPets();
+  if (!pets) return false;
   const at = pets.findIndex((p) => p.id === pet.id);
   const next = at < 0 ? [...pets, pet] : pets.map((p, i) => (i === at ? pet : p));
   if (!write(next)) return false;
@@ -100,12 +108,14 @@ export function savePet(pet: GuestPet): boolean {
 }
 
 /** Let one pet go from this browser. The others stay as they are. */
-export function removePet(id: string): void {
-  if (typeof window === "undefined") return;
-  const pets = loadPets();
-  if (!pets.some((p) => p.id === id)) return;
-  write(pets.filter((p) => p.id !== id));
+export function removePet(id: string): boolean {
+  if (typeof window === "undefined") return false;
+  const pets = loadStoredPets();
+  if (!pets) return false;
+  if (!pets.some((p) => p.id === id)) return true;
+  if (!write(pets.filter((p) => p.id !== id))) return false;
   notify();
+  return true;
 }
 
 /** One pet in this browser, read fresh — for a care, so it starts from what was last saved. */
@@ -145,9 +155,11 @@ let snapshot: { raw: string | null; pets: GuestPet[] } | null = null;
 export function readPetsSnapshot(): GuestPet[] {
   if (typeof window === "undefined") return NONE;
   const raw = read(STORAGE_KEY);
+  if (raw === undefined) return snapshot?.pets ?? NONE;
   if (snapshot && snapshot.raw === raw) return snapshot.pets;
-  const pets = loadPets();
+  const pets = loadStoredPets();
+  if (!pets) return snapshot?.pets ?? NONE;
   // A legacy move writes the list, so cache against what is stored now.
-  snapshot = { raw: read(STORAGE_KEY), pets };
+  snapshot = { raw: read(STORAGE_KEY) ?? null, pets };
   return pets;
 }

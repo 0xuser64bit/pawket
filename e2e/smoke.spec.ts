@@ -171,6 +171,30 @@ test("adopting a pet needs no wallet and makes Home real", async ({ page }) => {
   await expect(page.getByText("95 / 100")).toBeVisible();
 });
 
+test("letting a pet go stays on its page if storage fails, and can be retried", async ({ page }) => {
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  const id = await page.evaluate(() => JSON.parse(localStorage.getItem("pawket.pets.v1")!)[0].id as string);
+  await page.goto(`/pet/${id}`);
+  await page.getByRole("button", { name: "Let Pepper go", exact: true }).click();
+  await page.evaluate(() => {
+    Storage.prototype.setItem = () => { throw new DOMException("Storage unavailable", "QuotaExceededError"); };
+  });
+  await page.getByRole("button", { name: "Let them go", exact: true }).click();
+  await expect(page.getByText("Could not save that change")).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/pet/${id}$`));
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("pawket.pets.v1")!).length)).toBe(1);
+
+  // A reload restores storage and lets the same action finish.
+  await page.reload();
+  await page.getByRole("button", { name: "Let Pepper go", exact: true }).click();
+  await page.getByRole("button", { name: "Let them go", exact: true }).click();
+  await expect(page).toHaveURL(/\/home$/);
+  await expect(page.getByRole("heading", { name: "The window is open" })).toBeVisible();
+});
+
 test("a new level is said out loud, and nothing else about the care changes", async ({ page }) => {
   await page.goto("/adopt");
   await page.getByRole("button", { name: /choose the luna cat/i }).click();

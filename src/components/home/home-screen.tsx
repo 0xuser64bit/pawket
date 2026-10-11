@@ -114,7 +114,9 @@ export function HomeScreen() {
   // A pet carried onto Solana leaves this browser once the chain copy is the one drawn.
   useEffect(() => {
     if (carried.current && active?.pet.address === carried.current.address) {
-      removePet(carried.current.id);
+      if (!removePet(carried.current.id)) {
+        showToast({ id: `local-copy-${carried.current.id}`, tone: "note", title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
+      }
       carried.current = null;
     }
   }, [active]);

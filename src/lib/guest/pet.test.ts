@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CARE_COOLDOWN_SECONDS } from "@/lib/game/constants";
 import {
   CareActionType,
@@ -19,7 +19,9 @@ import {
   streakAsOf,
   todayFor,
 } from "./pet";
-import { loadPets, readPet, readPetsSnapshot, removePet, savePet } from "./storage";
+import { loadPets, readPet, readPetsSnapshot, removePet, savePet, subscribePets } from "./storage";
+
+afterEach(() => vi.restoreAllMocks());
 
 const INPUT = {
   name: "Mochi",
@@ -330,9 +332,43 @@ describe("pet storage", () => {
     const miso = createGuestPet({ ...INPUT, name: "Miso" });
     savePet(pepper);
     savePet(miso);
-    removePet(pepper.id);
+    expect(removePet(pepper.id)).toBe(true);
     expect(loadPets().map((p) => p.name)).toEqual(["Miso"]);
     expect(readPet(pepper.id)).toBeNull();
+  });
+
+  it("reports a failed deletion without notifying subscribers or losing the pet", () => {
+    const pet = createGuestPet(INPUT);
+    savePet(pet);
+    const first = readPetsSnapshot();
+    const changed = vi.fn();
+    const unsubscribe = subscribePets(changed);
+    try {
+      vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage blocked"); });
+      expect(removePet(pet.id)).toBe(false);
+      expect(readPet(pet.id)).toEqual(pet);
+      expect(readPetsSnapshot()).toBe(first);
+      expect(changed).not.toHaveBeenCalled();
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it("refuses mutations when a read fails, preserving every pet and the last snapshot", () => {
+    const pepper = createGuestPet({ ...INPUT, name: "Pepper" });
+    const miso = createGuestPet({ ...INPUT, name: "Miso" });
+    savePet(pepper);
+    savePet(miso);
+    const first = readPetsSnapshot();
+    const read = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("Storage blocked"); });
+    const write = vi.spyOn(Storage.prototype, "setItem");
+    expect(loadPets()).toEqual([]);
+    expect(savePet({ ...pepper, xp: 40 })).toBe(false);
+    expect(removePet(pepper.id)).toBe(false);
+    expect(readPetsSnapshot()).toBe(first);
+    expect(write).not.toHaveBeenCalled();
+    read.mockRestore();
+    expect(loadPets()).toEqual([pepper, miso]);
   });
 
   it("moves the one pet from before into the list, and only then forgets the old key", () => {

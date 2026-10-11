@@ -56,8 +56,12 @@ There is no database, indexer or background worker.
 ## Writes
 
 Local care and rounds use pure game/guest functions, then save the changed
-pet. Storage failure must be visible. Keeping a local pet on Solana creates
-a new chain pet; it does not import local progression.
+pet. An inaccessible read refuses mutations rather than replacing saved pets
+with an empty list. Failed writes leave the last snapshot intact and report
+failure; letting a pet go navigates only after removal is saved. Keeping a
+local pet on Solana creates a new chain pet; it does not import local
+progression. Failed local cleanup after confirmation leaves the chain pet
+available and explains that a local copy remains.
 
 App sends use `usePawketSend` and `send.ts`. A linked, funded Pawket Wallet is
 required for app actions. Non-money instructions become program-checked device

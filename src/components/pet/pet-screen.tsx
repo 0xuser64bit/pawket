@@ -14,6 +14,7 @@ import {
   Screen,
   Stack,
   Waiting,
+  showToast,
 } from "@/components/pk";
 import { findWearable } from "@/lib/closet/catalog";
 import {
@@ -206,7 +207,10 @@ function LetGo({ pet, others }: { pet: GuestPet; others: number }) {
               size="sm"
               label="Let them go"
               onClick={() => {
-                removePet(pet.id);
+                if (!removePet(pet.id)) {
+                  showToast({ id: `let-go-${pet.id}`, tone: "risk", title: "Could not save that change", body: "Pawket could not remove the pet. Try again when storage is available." });
+                  return;
+                }
                 router.replace(others > 0 ? "/profile#shelf" : "/home");
               }}
             />

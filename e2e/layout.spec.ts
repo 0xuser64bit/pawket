@@ -76,8 +76,8 @@ test("on a desktop the dock floats at the foot, centred, and stays there", async
   await page.goto("/home");
   const dock = page.getByRole("navigation", { name: "Pawket" });
   const box = await dock.boundingBox();
-  const width = await page.evaluate(() => document.documentElement.clientWidth);
-  expect(box && Math.abs(box.x + box.width / 2 - width / 2) <= 1).toBe(true);
+  const frame = await page.locator("html").boundingBox();
+  expect(box && frame && Math.abs(box.x + box.width / 2 - (frame.x + frame.width / 2)) <= 1, JSON.stringify({ box, frame })).toBe(true);
   expect(box && 720 - (box.y + box.height)).toBeGreaterThanOrEqual(14);
   expect(box && 720 - (box.y + box.height)).toBeLessThan(24);
   await page.mouse.wheel(0, 2000);

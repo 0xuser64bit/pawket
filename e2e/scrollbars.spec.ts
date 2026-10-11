@@ -41,8 +41,11 @@ test("classic scrollbars preserve touch targets and dock centring", async ({ pag
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(305);
 
   await page.setViewportSize({ width: 1280, height: 720 });
-  const box = (await dock.boundingBox())!;
-  const width = await page.evaluate(() => document.documentElement.clientWidth);
-  expect(width).toBe(1265);
-  expect(Math.abs(box.x + box.width / 2 - width / 2)).toBeLessThanOrEqual(1);
+  expect(await page.evaluate(() => document.documentElement.clientWidth)).toBe(1265);
+  for (const overflow of ["scroll", "hidden"]) {
+    await page.evaluate((value) => { document.documentElement.style.overflowY = value; }, overflow);
+    const box = (await dock.boundingBox())!;
+    const frame = (await page.locator("html").boundingBox())!;
+    expect(Math.abs(box.x + box.width / 2 - (frame.x + frame.width / 2)), overflow).toBeLessThanOrEqual(1);
+  }
 });

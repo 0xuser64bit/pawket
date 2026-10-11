@@ -99,6 +99,15 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 - `bigint-buffer` remains a transitive dependency with a local patch removing
   the native addon. Dependency scanners may still flag its version. MWA session
   behavior also relies on local patches; keep the regression tests when upgrading.
+- `braces` arrives through ESLint's file-pattern tooling and has a published
+  stack-exhaustion advisory with no patched release in the current dependency
+  audit. It does not handle player requests. Treat lint input as repository
+  code and review its upstream fix before changing the override graph.
+- Rust's locked Solana/LiteSVM dependency graph includes maintenance advisories.
+  Its legacy `rand` version also appears in [RUSTSEC-2026-0097](https://rustsec.org/advisories/RUSTSEC-2026-0097.html),
+  through the test runtime; its required `log` feature is not enabled. Review
+  these findings when upgrading the upstream runtime, rather than suppressing
+  the advisories or replacing crypto dependencies independently.
 
 ## Verification and incident handling
 
@@ -113,7 +122,7 @@ pnpm verify
 pnpm program:test
 pnpm audit
 cargo audit
-gitleaks git --redact .
+gitleaks git --redact --log-opts=--all .
 ```
 
 Investigate a suspected compromised authority from its verified address and
@@ -124,3 +133,18 @@ preserves asset addresses. Reconcile uncertain sends by signature before retryin
 Record affected authorities, timeline, mitigation and recovery verification.
 Mainnet operational ownership and response procedures must be approved under
 `MAINNET.md` before release.
+
+## Source publication
+
+[SECURITY.md](../SECURITY.md) is the private reporting policy. The CI secret
+scan covers every fetched Git ref, not just the current files. The configured
+rules include Solana CLI keypair arrays; exact browser-storage names from
+early commits are the only value allow-list. Keys and Android signing files
+are ignored, but ignore rules do not remove anything already committed.
+
+Before changing repository visibility, scan all refs that will be published,
+check release assets separately and enable the host's secret protection where
+available. A scan cannot prove that no secret exists. If a real credential is
+found in history, stop publication, identify its authority and exposure, and
+coordinate revocation and history remediation with the operator. Sponsor
+rotation additionally requires Q10; deleting a file alone does not revoke a key.

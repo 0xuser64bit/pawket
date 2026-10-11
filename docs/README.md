@@ -4,6 +4,10 @@ These documents describe the implemented product and its operating procedures.
 Source code owns constants, account layouts, prices and validation rules; docs
 explain how those rules fit together. Pending decisions are explicitly marked.
 
+Repository policies: [contributing](../CONTRIBUTING.md),
+[private security reports](../SECURITY.md), [MIT license](../LICENSE) and
+[bundled asset notices](../THIRD_PARTY_NOTICES.md).
+
 ## Product and decisions
 
 | Document | Purpose |

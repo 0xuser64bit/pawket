@@ -2,10 +2,11 @@
   "name": "pawket",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Pawket — a living companion kept in the browser",
   "packageManager": "pnpm@10.34.6",
   "engines": {
-    "node": ">=20"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
     "dev": "next dev",

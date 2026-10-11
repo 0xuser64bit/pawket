@@ -9,7 +9,7 @@ export type GameId = "catch" | "hop" | "copy" | "pairs";
 const GAME_IDS: readonly GameId[] = ["catch", "hop", "copy", "pairs"];
 
 const KEY = "pawket.best.v1";
-const DAILY_KEY = "pawket.daily.v1"; // gitleaks:allow (a localStorage key name)
+const DAILY_KEY = "pawket.daily.v1";
 
 function readJson(key: string): Record<string, unknown> {
   try {

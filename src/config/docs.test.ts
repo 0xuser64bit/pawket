@@ -4,8 +4,7 @@ import { dirname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const documents = [
-  "README.md",
-  "AGENTS.md",
+  ...readdirSync(".").filter((name) => name.endsWith(".md")),
   "android/README.md",
   ...readdirSync("docs").filter((name) => name.endsWith(".md")).map((name) => `docs/${name}`),
 ];
@@ -27,6 +26,15 @@ describe("repository documentation", () => {
       } else if (/^(src|app|programs|scripts|e2e|android|public)\//.test(path) && !/[\s*{}<>…]|\.\.\./.test(path)) {
         expect(existsSync(path), `${file}: ${path}`).toBe(true);
       }
+    }
+  });
+
+  it("distributes the copyright and license notice for every bundled font family", () => {
+    const families = new Set(readdirSync("src/fonts").filter((name) => name.endsWith(".woff2")).map((name) => name.split("-")[0]));
+    for (const family of families) {
+      const notice = readFileSync(`src/fonts/${family}.LICENSE.txt`, "utf8");
+      expect(notice).toContain("Copyright");
+      expect(notice).toContain("SIL OPEN FONT LICENSE Version 1.1");
     }
   });
 });

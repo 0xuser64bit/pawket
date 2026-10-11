@@ -17,6 +17,7 @@
 | The path through the screens   | `e2e/chain.spec.ts` + `e2e/test-wallet.ts` | `PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/chain.spec.ts` |
 | A coin's trades through its page | `e2e/coins.spec.ts` (buy and sell on a curve, buy in a graduated pool) | `PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/coins.spec.ts` |
 | Documentation links and file references | `src/config/docs.test.ts` | Vitest (node) |
+| Bundled font copyright and licenses | `src/config/docs.test.ts` | Vitest (node) |
 | Env / cluster / format / errors| colocated `*.test.ts`                   | Vitest   |
 | Presentational components      | `src/components/*.test.tsx`             | Vitest + Testing Library |
 | Guest record, wardrobe, games  | `src/lib/guest`, `closet`, `play`       | Vitest   |
@@ -34,6 +35,7 @@
 pnpm test       # Vitest, single run
 pnpm e2e        # Playwright (starts dev server, asserts shell only)
 pnpm verify     # typecheck + lint + test + build
+gitleaks git --redact --log-opts=--all .  # every local Git ref, including old commits
 ```
 
 ## Mandatory coverage
@@ -68,6 +70,13 @@ pnpm verify     # typecheck + lint + test + build
   breaking on-chain change, not a test fix. Stop and confirm intent.
 
 ## Verification boundaries
+
+The GitHub `Verify` workflow runs `pnpm verify`, default Chromium browser
+tests and a full fetched-history Gitleaks scan. It has no signing secrets and
+does not run opt-in devnet, LiteSVM or Android release checks. Source changes
+to those layers still require their owning suites. Gitleaks extends its
+default rules with Solana CLI keypair-array detection; its only value
+exceptions are two public browser-storage names from early commits.
 
 Avoid tests tied only to decorative pixels or gradient strings. Test layout,
 accessibility and observable player behavior. Unit mocks do not establish RPC

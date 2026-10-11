@@ -27,9 +27,11 @@ market. [PRODUCT.md](docs/PRODUCT.md) defines the supported behavior and limits.
 
 ## Local development
 
-Use Node 20 or later and the pnpm version pinned in `package.json`.
+Use the Node version in `.nvmrc` and pnpm pinned in `package.json`.
+The supported Node ranges in `engines` include the requirements of the test tools.
 
 ```sh
+nvm use
 cp .env.example .env.local
 pnpm install --frozen-lockfile
 pnpm dev
@@ -55,12 +57,15 @@ Start with the [documentation index](docs/README.md). Contributors and agents
 must also read [AGENTS.md](AGENTS.md) and [WORKFLOW.md](docs/WORKFLOW.md).
 The [architecture](docs/ARCHITECTURE.md) identifies the code boundaries;
 [SECURITY.md](docs/SECURITY.md) identifies enforced rules and known limits.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for changes and
+[security reporting](SECURITY.md) for private vulnerability reports.
 
 The Android app lives in `android/` and uses the same hosted product and send
 path. Its build, release and device checks are in [ANDROID.md](docs/ANDROID.md).
 
 ## Assets
 
-Flat art is drawn in code. 3D pets use Kenney's Cube Pets and 3D people use
-Quaternius's Universal Base Characters, both CC0. The source files and the
-reproducible build pipeline are documented in [ROOM-3D.md](docs/ROOM-3D.md).
+Pawket's source is [MIT-licensed](LICENSE). Bundled fonts and models retain
+their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Flat art is drawn in code. The source assets and reproducible 3D build pipeline
+are documented in [ROOM-3D.md](docs/ROOM-3D.md).

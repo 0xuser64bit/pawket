@@ -1,0 +1,14 @@
+title = "Pawket secret detection"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public localStorage names present in early commits"
+regexTarget = "secret"
+regexes = ['''^pawket\.(daily|guest-pet)\.v1$''']
+
+[[rules]]
+id = "solana-keypair"
+description = "Solana CLI 64-byte keypair array"
+regex = '''\[\s*(?:[0-9]{1,3}\s*,\s*){63}[0-9]{1,3}\s*\]'''

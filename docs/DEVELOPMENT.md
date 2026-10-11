@@ -2,9 +2,12 @@
 
 ## Setup
 
-Use Node 20 or later and pnpm as pinned by `packageManager` in `package.json`.
+Use Node from `.nvmrc` and pnpm pinned by `packageManager` in `package.json`.
+`engines` records all supported Node ranges; Node 20 cannot run the installed
+Vitest and jsdom versions.
 
 ```sh
+nvm use
 cp .env.example .env.local
 pnpm install --frozen-lockfile
 pnpm dev
@@ -36,6 +39,11 @@ Program tooling is pinned in `rust-toolchain.toml`, `Cargo.toml` and
 program deployment. Android setup, build and release commands are in `ANDROID.md`.
 `TESTING.md` explains the opt-in network tests and their effects.
 
+For an import/dependency audit, run `pnpm dlx knip@6.41.0`. `knip.json` treats
+the documented operational scripts as entry points and Anchor as an external
+tool. Review production, test, migration and dynamic references before deleting
+a reported symbol; a protocol compatibility builder is not dead UI code.
+
 ## Change discipline
 
 Read [AGENTS.md](../AGENTS.md), `WORKFLOW.md` and the owning system document. Follow existing
@@ -49,8 +57,9 @@ the repository's installed version governs the API. Interactive leaves use
 
 ## Hosted deployment
 
-The configured production origin is `https://pawket.world`. The Vercel project
-is `pawket`; pushes to `main` deploy the hosted app. Public env values are
+The configured production origin is `https://pawket.world`. The maintained
+deployment uses the `pawket` Vercel project and its `main` integration. A fork
+needs its own deployment project and domain configuration. Public env values are
 embedded during the build. `scripts/vercel-env.sh` manages production config
 and marks the sponsor key sensitive. Preview builds default to devnet and have
 no sponsor unless configured.

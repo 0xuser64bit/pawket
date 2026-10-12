@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { getPublicEnv } from "@/config/env";
 import { fontClassNames } from "@/config/fonts";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/config/site";
@@ -56,6 +57,7 @@ export default function RootLayout({
         <BootSplash />
         <Providers>{children}</Providers>
         <Toasts />
+        <Analytics />
       </body>
     </html>
   );

@@ -105,7 +105,8 @@ pet wearing and confirmed care are inputs to rendering, never record writes.
 The view switch stays in the room's corner. A loading 3D room shows a named
 wait; failed or unsupported rendering falls back to the flat room with
 recovery controls. Flat art draws the same player, pet and selected look.
-The room's status sentence describes a moment accessibly. Rendering pauses
+The room's status sentence is announced to assistive technology, never shown:
+the room already plays the moment, on Home and on a visit. Rendering pauses
 when off screen or hidden; reduced motion renders on demand and holds a moment
 still. [ROOM-3D.md](ROOM-3D.md) owns staging, contact, loading and asset budgets.
 

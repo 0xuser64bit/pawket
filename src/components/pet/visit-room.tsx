@@ -64,8 +64,9 @@ export function VisitRoom({
           onStatus={onStatus}
           stage
         />
-        <p className="caption pk-faint" aria-live="polite">
-          {status.sentence || `${record.name} is home.`}
+        {/* The room shows the moment; only a screen reader needs it said. */}
+        <p role="status" className="pk-sr">
+          {status.sentence}
         </p>
         <div className="pk-guild-facts">
           <EmoteRow petName={record.name} playing={status.moment} onEmote={play} />

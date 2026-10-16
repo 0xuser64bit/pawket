@@ -59,7 +59,7 @@ export interface Moment {
   contact?: { from: number; to: number; at?: "crown" | "mouth" };
   /** With reduced motion the room shows this second, still, instead. */
   still: number;
-  /** What the status line says. `{pet}` is the pet's name. */
+  /** What the room announces to a screen reader; nothing shows it. `{pet}` is the pet's name. */
   says: string;
 }
 

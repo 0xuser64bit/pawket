@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { Button } from "@/components/pk";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { useConnected } from "@/lib/solana/browser-client";
@@ -10,6 +11,7 @@ export function OwnerActions({ owner, address, name }: { owner: string; address:
   const connected = useConnected();
   const { choose } = useCompanion();
   const router = useRouter();
+  const [opening, startOpening] = useTransition();
   if (connected?.account.address !== owner) return null;
   return (
     <Button
@@ -17,9 +19,10 @@ export function OwnerActions({ owner, address, name }: { owner: string; address:
       icon="home"
       tone="sun"
       size="sm"
+      busy={opening}
       onClick={() => {
         choose(address);
-        router.push("/home", { transitionTypes: ["nav-place"] });
+        startOpening(() => router.push("/home", { transitionTypes: ["nav-place"] }));
       }}
     />
   );

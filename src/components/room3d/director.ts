@@ -552,7 +552,14 @@ export class Director {
   /** Reduced motion: put everyone where the current state says, once. */
   pose(): void {
     this.human.root.rotation.y = this.humanYaw;
-    this.human.update(0, this.frame());
+    const frame = this.frame();
+    if (this.photoHold && this.run) {
+      const reduced = this.reduced;
+      this.reduced = true;
+      this.perform(0, this.run, frame);
+      this.reduced = reduced;
+    }
+    this.human.update(0, frame);
     this.pet?.update(0, true);
   }
 

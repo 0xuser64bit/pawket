@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { addTransitionType, startTransition, useEffect, useRef, useState, ViewTransition, type CSSProperties, type ReactNode, type Ref } from "react";
+import { addTransitionType, startTransition, useEffect, useRef, useState, useTransition, ViewTransition, type CSSProperties, type ReactNode, type Ref } from "react";
 import {
   ARRIVE,
   Banner,
@@ -137,6 +137,8 @@ function AdoptBack({ onBack }: { onBack: () => void }) {
  */
 export function AdoptFlow() {
   const router = useRouter();
+  const [opening, startOpening] = useTransition();
+  const goHome = () => startOpening(() => router.push("/home", { transitionTypes: ["nav-place"] }));
   const { ready, pets: residents } = usePets();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [species, setSpecies] = useState<PetSpecies>(PetSpecies.LunaCat);
@@ -439,7 +441,7 @@ export function AdoptFlow() {
               />
             </Paper>
             <div className="pk-adopt__act">
-              <Button label="Take them home" size="lg" full icon="home" onClick={() => router.push("/home", { transitionTypes: ["nav-place"] })} />
+              <Button label="Take them home" size="lg" full icon="home" busy={opening} onClick={goHome} />
             </div>
             {adopted ? (
               <div className="pk-adopt__keep">
@@ -462,7 +464,7 @@ export function AdoptFlow() {
                     showToast({ id: `local-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
                   }
                   choosePet(address);
-                  router.push("/home", { transitionTypes: ["nav-place"] });
+                  goHome();
                 }}
               />
             ) : null}

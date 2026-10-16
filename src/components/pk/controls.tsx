@@ -63,11 +63,13 @@ export function Button({
   after,
   full,
   className,
+  busy = false,
   ...rest
-}: ButtonShape & Omit<ComponentProps<"button">, "className" | "children">) {
+}: ButtonShape & { busy?: boolean } & Omit<ComponentProps<"button">, "className" | "children">) {
   return (
-    <button type="button" className={buttonClass({ label, tone, size, full, className })} {...rest}>
-      {buttonFace({ label, size, icon, after })}
+    <button type="button" className={buttonClass({ label, tone, size, full, className })} {...rest} disabled={busy || rest.disabled} aria-busy={busy || rest["aria-busy"]}>
+      {busy ? <span className="pk-spinner" aria-hidden="true" /> : null}
+      {buttonFace({ label, size, icon: busy ? undefined : icon, after })}
     </button>
   );
 }

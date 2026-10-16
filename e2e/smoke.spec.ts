@@ -290,7 +290,7 @@ test("the profile names you, counts what you have done, and keeps three outfits"
   await page.getByRole("button", { name: "Wear" }).click();
   await expect(page.getByRole("radiogroup", { name: "Top colour" }).getByRole("radio", { name: "Pool" })).toHaveAttribute("aria-checked", "true");
 
-  await page.getByRole("link", { name: "Stickers" }).click();
+  await page.getByRole("tab", { name: "Stickers", exact: true }).click();
   await expect(page.getByText("Earned by Pepper").first()).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "Arth", exact: true })).toBeVisible();

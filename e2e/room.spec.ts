@@ -26,6 +26,7 @@ test("the room comes up in 3D and an emote plays in it", async ({ page }) => {
   await expect(page.locator(".pk-room__flat")).toBeHidden();
   await page.getByRole("button", { name: "Say" }).click();
   await page.getByRole("button", { name: "Wave" }).click();
+  await expect(page.locator(".pk-home__said")).toHaveCount(0);
   await expect(page.getByRole("status").filter({ hasText: "You wave. Pepper saw." })).toBeVisible();
   await expect(page.getByText(/do not change a vital, XP or the streak/i)).toBeVisible();
 });
@@ -39,6 +40,12 @@ test("the room takes a photo of the two of you, to save or share", async ({ page
   const save = photo.getByRole("link", { name: "Save the photo" });
   await expect(save).toHaveAttribute("download", /^pawket-pepper-\d{4}-\d{2}-\d{2}\.png$/);
   await expect(save).toHaveAttribute("href", /^data:image\/png;base64,/);
+  const candid = await save.getAttribute("href");
+  const record = await page.evaluate(() => localStorage.getItem("pawket.pets.v1"));
+  await photo.getByRole("radio", { name: "Together", exact: true }).click();
+  await expect(photo.getByRole("radio", { name: "Together", exact: true })).toHaveAttribute("aria-checked", "true");
+  await expect(save).not.toHaveAttribute("href", candid!);
+  expect(await page.evaluate(() => localStorage.getItem("pawket.pets.v1"))).toBe(record);
   await photo.getByRole("button", { name: "Close", exact: true }).click();
   await expect(photo).toHaveCount(0);
 });

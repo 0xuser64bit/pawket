@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Banner, Button, Card, Field, Icon, PetArt, Stack, Waiting } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { useCompanion } from "@/lib/companion/use-companion";
@@ -27,6 +27,7 @@ export function FoundGuild() {
   const sender = usePawketSend();
   const sponsor = useSponsor();
   const router = useRouter();
+  const [opening, startOpening] = useTransition();
   const [name, setName] = useState("");
   const [motto, setMotto] = useState("");
   const [crest, setCrest] = useState(0);
@@ -59,7 +60,7 @@ export function FoundGuild() {
     ]);
     if (result?.outcome === "confirmed") {
       companion.refresh();
-      router.push(`/guilds/${slug}`, { transitionTypes: ["nav-forward"] });
+      startOpening(() => router.push(`/guilds/${slug}`, { transitionTypes: ["nav-forward"] }));
     }
   }
 
@@ -174,6 +175,7 @@ export function FoundGuild() {
           tone="bloom"
           size="lg"
           icon="guild"
+          busy={opening}
           disabled={!chosen || sender.busy || !companion.canSign}
           onClick={() => void found()}
         />

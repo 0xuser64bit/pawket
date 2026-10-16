@@ -3822,8 +3822,6 @@ li {
   max-width: calc(100% + 2 * var(--space-2));
   margin-inline: calc(-1 * var(--space-2));
 }
-.pk-home__said:empty { display: none; }
-
 /* The view switch sits in the room's top corner, on the wall, clear of the
    pet: two segments in a trough, the one in use raised on its shelf. */
 .pk-room__corner {
@@ -7637,21 +7635,18 @@ html[data-transition="room"]::view-transition-new(*) {
   background: var(--surface-sunk);
   color: var(--ink-soft);
 }
-.pk-toast--done .pk-toast__words { min-width: 0; align-self: center; }
-.pk-toast__mark {
+.pk-toast--done .pk-toast__mark {
   background: var(--pool-soft);
   color: var(--pool-text);
 }
-.pk-toast--note .pk-toast__words { min-width: 0; align-self: center; }
-.pk-toast__mark {
+.pk-toast--note .pk-toast__mark {
   background: var(--sun-soft);
   color: var(--sun-text);
 }
 .pk-toast--risk {
   border-color: var(--alarm-text);
 }
-.pk-toast--risk .pk-toast__words { min-width: 0; align-self: center; }
-.pk-toast__mark {
+.pk-toast--risk .pk-toast__mark {
   background: var(--alarm-soft);
   color: var(--alarm-text);
 }
@@ -7921,3 +7916,7 @@ button.pk-tabs__t:not(.pk-tabs__t--on) { background: transparent; }
 .pk-date-trigger > svg:last-child { transform: rotate(90deg); }
 
 .pk-room-tools { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; }
+
+@media (max-width: 400px) {
+  .pk-calendar__grid { margin-inline: calc(var(--space-1) - var(--space-5)); }
+}

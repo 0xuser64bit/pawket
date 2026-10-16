@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { NavLink } from "./nav-link";
 import { Tabs } from "./tabs";
+import { Button } from "./controls";
 
 const navigation = vi.hoisted(() => ({ pending: false }));
 vi.mock("next/link", async (original) => ({ ...await original<object>(), useLinkStatus: () => navigation }));
@@ -29,4 +30,13 @@ it("switches panels through local history and supports arrow keys", () => {
   expect(window.location.search).toBe("");
   expect(push).toHaveBeenCalledTimes(2);
   push.mockRestore();
+});
+
+it("acknowledges an action that is opening another page and blocks duplicate presses", () => {
+  const click = vi.fn();
+  render(<Button label="Take them home" busy onClick={click} />);
+  const button = screen.getByRole("button", { name: "Take them home" });
+  expect(button.getAttribute("aria-busy")).toBe("true");
+  fireEvent.click(button);
+  expect(click).not.toHaveBeenCalled();
 });

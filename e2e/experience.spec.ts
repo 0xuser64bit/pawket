@@ -55,17 +55,36 @@ test("a guild's whole card is its link, not only its name", async ({ page }) => 
     .toBe(href);
 });
 
-test("founding shares the normal page rails, and its form keeps a reading measure", async ({ page }) => {
+test("founding shares the normal page rails, its preview beside the title above a full-width form", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/guilds");
   const directory = (await page.getByRole("heading", { name: "Guilds", level: 1 }).boundingBox())!;
   await page.goto("/guilds/new");
   const found = (await page.getByRole("heading", { name: "Found a guild", level: 1 }).boundingBox())!;
   expect(found.x).toBe(directory.x);
-  // Beside the guild as it will look, not stretched across the whole place.
-  const field = (await page.getByRole("textbox", { name: "Guild name" }).boundingBox())!;
-  expect(field.width).toBeLessThan(640);
-  expect(field.x).toBeGreaterThan(found.x + 300);
+  // Title and description on the left, the guild as it will look on the right.
+  const preview = (await page.locator(".pk-guild-head").boundingBox())!;
+  expect(preview.x).toBeGreaterThan(found.x + 300);
+  // The form that makes it fills the width below the head, on the same rails.
+  const form = (await page.locator(".pk-card", { has: page.getByRole("textbox", { name: "Guild name" }) }).boundingBox())!;
+  expect(form.y).toBeGreaterThan(preview.y + preview.height);
+  expect(form.x).toBe(found.x);
+  expect(form.x + form.width).toBeCloseTo(preview.x + preview.width, 0);
+});
+
+test("on a phone the guild as it will look comes down under the title, whole", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/guilds/new");
+  const found = (await page.getByRole("heading", { name: "Found a guild", level: 1 }).boundingBox())!;
+  const line = (await page.getByText(/^Optional, like every guild/).boundingBox())!;
+  const preview = (await page.locator(".pk-guild-head").boundingBox())!;
+  // One column: the title and its line, then the guild, on the same rails.
+  expect(preview.y).toBeGreaterThanOrEqual(line.y + line.height);
+  expect(preview.x).toBe(found.x);
+  // Its crest keeps to the right edge, in line with the form under it.
+  const crest = (await page.locator(".pk-guild-head .pk-crest").boundingBox())!;
+  const form = (await page.locator(".pk-card", { has: page.getByRole("textbox", { name: "Guild name" }) }).boundingBox())!;
+  expect(crest.x + crest.width).toBeCloseTo(form.x + form.width, 0);
 });
 
 test("Home's sound is on until it is muted, and Profile's switch is the same one", async ({ page }) => {

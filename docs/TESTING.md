@@ -26,7 +26,7 @@
 | 3D room: live room, emote, care moment after save, flat choice, no-WebGL fallback, reduced motion, saved look, empty room, 320px | `e2e/room.spec.ts` | Playwright |
 | Shell, adopt, care, wardrobe, playground, guild boundary, park, passport miss, connect sheet, health | `e2e/smoke.spec.ts` | Playwright |
 | Layout: no sideways scroll at 320/375/768, dock placement | `e2e/layout.spec.ts` | Playwright |
-| Local Profile tabs/history, a slow place's top bar with the link left as it was, whole-card guild links, founding-page rails and shared Home sound | `e2e/experience.spec.ts` | Playwright |
+| Local Profile tabs/history, a slow place's top bar with the link left as it was, whole-card guild links, founding-page rails and its head stacked on a 320px phone, and shared Home sound | `e2e/experience.spec.ts` | Playwright |
 | Day/time chips and calendar (past days out of reach, keyboard, 12/24-hour), guild roles and membership grouping, camera-facing photo poses, the toast stack (fold, fan, flick, leave), the send toast's own line, Home's music box and its quiet when hidden, muted or left | colocated component tests | Vitest |
 | Classic scrollbar space: 44px touch targets and dock centring | `e2e/scrollbars.spec.ts` | Playwright, including hosts with overlay scrollbars |
 | Mobile touch: sheet focus/close, short viewport, Catch drag, game pause/resume and hidden-page pause | `e2e/mobile.spec.ts` | Playwright Chromium touch emulation (not physical-device proof) |

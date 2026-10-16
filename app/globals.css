@@ -4826,11 +4826,31 @@ li {
    colour, beside its name and motto; its pets are a shelf like any other.
    The founding form picks a glyph and a colour as radios. */
 
+/* The founding head: the title on the left, the guild as it will look on the
+   right. The guild's side takes at most half the bar, so a long name or
+   motto wraps inside it instead of squeezing the title. A phone sets the
+   guild, whole, under the title, its crest on the right edge in line with
+   the form, and the title at a guild page's phone size. */
+.pk-screen__bar:has(> .pk-guild-head) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) fit-content(50%);
+}
 .pk-guild-head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-5);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 719px) {
+  .pk-screen__bar:has(> .pk-guild-head) {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-5);
+  }
+  .pk-screen__bar:has(> .pk-guild-head) .display-l {
+    font-size: 34px;
+    line-height: 38px;
+  }
 }
 .pk-park-more {
   display: flex;

@@ -147,7 +147,8 @@ release their audio. Blocked storage keeps the choice for the current page.
 A failed read provides a disabled-while-reading retry without resetting local
 records. Copy/share failure leaves a selectable link or address. Transactions
 show one shared toast: preparation, signing, sending, confirmation or unknown
-outcome, then a signature and Explorer link. A timeout retains the existing
+outcome, then a signature and Explorer link. A care on Solana says what it
+did in that same toast, never in a second one. A timeout retains the existing
 signature; a failed send claims no record change. Storage failure also shows
 an error before a success, navigation or care moment can be shown.
 

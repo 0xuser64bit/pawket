@@ -32,6 +32,8 @@ export interface TxState {
   error?: string;
   /** Nothing was tried: the Pawket Wallet needs this first — a link, a balance, or tomorrow. */
   needs?: PawketWalletNeed;
+  /** What it did, said with the record once Solana has it: "Fed. +10 XP." One toast, not two. */
+  done?: string;
 }
 
 export type PawketWalletNeed = "link" | "fund" | "limit";
@@ -120,6 +122,7 @@ export function usePawketSend() {
       signer: TransactionSigner | null | undefined,
       by: NonNullable<TxState["by"]>,
       go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void, show: (next: Partial<TxState>) => void) => Promise<SendResult>,
+      done?: string,
     ) => {
       // shortcut: One send per tab; use account-scoped slots if concurrent wallets are supported.
       // Never open competing wallet sessions or queue a send.
@@ -127,7 +130,7 @@ export function usePawketSend() {
       setSending(true);
       // Each send is one toast, kept up to date to the end — even after the screen that sent it is gone.
       const id = `send-${++sends}`;
-      let state: TxState = { stage: "preparing", label, by };
+      let state: TxState = { stage: "preparing", label, by, done };
       const show = (next: Partial<TxState>) => {
         state = { ...state, ...next };
         setTx(state);
@@ -253,7 +256,7 @@ export function usePawketSend() {
    * actions wait for sponsorship.
    */
   const act = useCallback(
-    (label: string, instructions: SendOptions["instructions"]): Promise<SendResult | null> =>
+    (label: string, instructions: SendOptions["instructions"], done?: string): Promise<SendResult | null> =>
       run(label, connected?.signer, "device", async (walletSigner, onStage) => {
         const state = await readPawketWallet(walletSigner.address);
         if (state.error) throw new Error("Pawket could not read your Pawket Wallet. Try again once you are online. Nothing was sent.");
@@ -273,7 +276,7 @@ export function usePawketSend() {
             : "Your Pawket Wallet needs SOL for this app's network fees while sponsorship is unavailable. Add SOL and relink this app in your Pawket Wallet. Nothing was sent.");
         }
         return sendPawket({ rpc, owner: device, sponsor: sponsorAddress, instructions: ({ payer }) => twins(payer), onStage });
-      }),
+      }, done),
     [connected, run],
   );
 

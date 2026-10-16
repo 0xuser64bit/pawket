@@ -50,7 +50,7 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
         ttl: 6_000,
         body: (
           <>
-            Recorded on Solana, {paid}.{look}
+            {tx.done ? `${tx.done} ` : ""}Recorded on Solana, {paid}.{look}
           </>
         ),
       };

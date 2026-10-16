@@ -226,7 +226,12 @@ export function HomeScreen() {
     }
     const day = result.pet.streak.lastDay === utcDay(new Date()) ? ` Day ${result.pet.streak.count}.` : "";
     const level = levelUp(current.xp, result.pet.xp);
-    // A level in this browser is a level Solana has not seen: worth a word, once, at the moment it counts.
+    setNotice({
+      tone: "ok",
+      text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${earnedLine(current, result.pet)}`,
+    });
+    // A level in this browser is a level Solana has not seen: worth a word, once, at the moment it counts,
+    // in front of the care's own line.
     if (level) {
       showToast({
         id: `keep-${current.id}`,
@@ -244,10 +249,6 @@ export function HomeScreen() {
         ),
       });
     }
-    setNotice({
-      tone: "ok",
-      text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${level ? ` ${current.name} is level ${level} now.` : ""}${earnedLine(current, result.pet)}`,
-    });
     // Only now, with the care saved, does the room show it — and a new
     // level is the one thing worth a cheer.
     earned(action, result.xpGained);
@@ -265,21 +266,19 @@ export function HomeScreen() {
       return;
     }
     setNotice(undefined);
-    const result = await sender.act(`${CARE_ACTION_LABEL[action]} ${pet.name}`, ({ owner }) => [
-      getCareInstruction({ owner, pet: active.pet.address, passport: active.passport.address, action }),
-    ]);
+    const level = levelUp(pet.xp, check.pet.xp);
+    // Said in the send's own toast, with its record: one toast for one care.
+    const done = `${CARE_DONE_LABEL[action]}.${level ? ` ${pet.name} is level ${level} now.` : ""}${earnedLine(pet, check.pet, { onChain: true, guild: Boolean(active.member) })}`;
+    const result = await sender.act(
+      `${CARE_ACTION_LABEL[action]} ${pet.name}`,
+      ({ owner }) => [getCareInstruction({ owner, pet: active.pet.address, passport: active.passport.address, action })],
+      done,
+    );
     if (!result) return;
     companion.refresh();
     // Only now, with the care confirmed, does the room show it.
     if (result.outcome === "confirmed") {
-      const level = check.ok ? levelUp(pet.xp, check.pet.xp) : null;
-      setNotice({
-        tone: "ok",
-        text: `${CARE_DONE_LABEL[action]}. Kept on Solana.${level ? ` ${pet.name} is level ${level} now.` : ""}${
-          check.ok ? earnedLine(pet, check.pet, { onChain: true, guild: Boolean(active.member) }) : ""
-        }`,
-      });
-      if (check.ok) earned(action, check.xpGained);
+      earned(action, check.xpGained);
       ask(level ? "cheer" : CARE_MOMENT[action]);
     }
   }

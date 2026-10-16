@@ -46,7 +46,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
 
   await page.getByRole("button", { name: "Feed" }).click();
   await expect(page.getByText(`Feed ${name}`)).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText(/^Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText(/Recorded on Solana, no pop-up/).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
 
@@ -64,7 +64,7 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
 
   // The keepsake: a card in the owner's wallet, made by the server, signed here.
   await page.getByRole("button", { name: "Keep the card" }).click();
-  await expect(page.getByText(/^Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText(/Pawket paid the fee/).first()).toBeVisible();
   // Read again from chain, the record now lists it.
   // Read again from the server's node until it has the card; each reload closes the fold, so open it each time.

@@ -8221,6 +8221,43 @@ button.pk-tabs__t:not(.pk-tabs__t--on) { background: transparent; }
   grid-template-columns: repeat(2, 48px);
 }
 
-.pk-room-tools { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; }
+/* The room's corner: its sound and its view, two small things on the wall. */
+.pk-room-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+/* The sound is one press in the view switch's own trough: raised and inked
+   while it plays, sunk and faint while muted. */
+.pk-soundswitch {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  color: var(--ink-faint);
+  box-shadow: var(--shadow-sticker-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-swap) var(--ease-swap),
+    color var(--dur-swap) var(--ease-swap);
+}
+.pk-soundswitch[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+}
+.pk-soundswitch:active {
+  transform: scale(0.95);
+}
+@media (any-pointer: coarse), (max-width: 719px) {
+  .pk-soundswitch {
+    width: 44px;
+    height: 44px;
+  }
+}
 
 

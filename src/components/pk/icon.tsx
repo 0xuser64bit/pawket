@@ -3,8 +3,9 @@
  * `currentColor`. The stroke weight matches `stroke-line`, which is why an
  * icon sits correctly inside a chip, a button and the dock.
  *
- * An icon that carries meaning always sits beside a word. The one exception
- * is the dock in compact mode, where each slot carries an accessible name.
+ * An icon that carries meaning always sits beside a word. The exceptions
+ * carry an accessible name instead: the dock in compact mode, and the few
+ * glyphs everyone reads alone — close, and the room's sound.
  */
 
 const ICONS = {
@@ -82,6 +83,8 @@ const ICONS = {
   headphones: "M4.8 15.2V12a7.2 7.2 0 0 1 14.4 0v3.2M3.4 13.4h3.2v6.2H3.4zM17.4 13.4h3.2v6.2h-3.2z",
   beret: "M4 13.6c-1.4-4.6 9.4-7.6 15-3.6 2 1.8.4 4.6-2.6 5.2-3.8.8-9.4.6-12.4-1.6zM11.6 7.4l.4-2.2",
   tie: "M10 3.6h4l-.8 2.8h-2.4zM10.8 6.4h2.4l2.2 9.4L12 19.4l-3.4-3.6z",
+  sound: "M4.4 9.6h3.4l4.6-3.8v12.4l-4.6-3.8H4.4zM15.6 9.4a3.8 3.8 0 0 1 0 5.2M18.2 7a7.2 7.2 0 0 1 0 10",
+  mute: "M4.4 9.6h3.4l4.6-3.8v12.4l-4.6-3.8H4.4zM16 9.8l4.4 4.4M20.4 9.8 16 14.2",
 } as const;
 
 export type IconName = keyof typeof ICONS;

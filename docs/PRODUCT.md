@@ -64,11 +64,12 @@ wait. Solana Actions have their own owner-approved flow (`SOLANA.md`).
 
 Cosmetics and coin balances never change vitals, XP, cooldowns or scores.
 Photos can be posed (Wave, Cheer, Cuddle, Dance), both of you facing the
-camera, using the room's existing animations. Home has
-optional, quiet synthesised chimes and action sounds, sharing the existing
-device sound preference with Playground and Settings. Sound defaults off,
-requires a gesture after reload, and pauses when the page is hidden or Home
-is left. Neither poses nor sound change a saved pet record.
+camera, using the room's existing animations. Home plays a
+quiet music-box lullaby, and a little tune for each emote and saved care,
+all synthesised on the device; the room's speaker switch mutes it, and the
+same device preference covers the Playground and Settings. Sound is on until
+muted, starts only after a tap (fading in), and stops when the page is
+hidden or Home is left. Neither poses nor sound change a saved pet record.
 Coin holdings only add the guild's crest pin on that guild's page.
 A local pet is labelled "in this browser" or "in this app"; "on Solana"
 requires a chain-read record. Guestbooks retain eight recent waves; their

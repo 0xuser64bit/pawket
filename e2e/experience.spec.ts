@@ -68,12 +68,14 @@ test("founding shares the normal page rails, and its form keeps a reading measur
   expect(field.x).toBeGreaterThan(found.x + 300);
 });
 
-test("Home sound is optional and shares its device setting with Profile", async ({ page }) => {
+test("Home's sound is on until it is muted, and Profile's switch is the same one", async ({ page }) => {
   await page.goto("/home");
-  await page.getByRole("button", { name: "Sound off", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Sound on", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const sound = page.getByRole("button", { name: "Room sound" });
+  await expect(sound).toHaveAttribute("aria-pressed", "true");
+  await sound.click();
+  await expect(sound).toHaveAttribute("aria-pressed", "false");
   await page.goto("/profile?tab=settings#shelf");
-  await page.getByRole("button", { name: "Pawket sound on" }).click();
+  await page.getByRole("button", { name: "Pawket sound off" }).click();
   await page.goto("/home");
-  await expect(page.getByRole("button", { name: "Sound off", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: "Room sound" })).toHaveAttribute("aria-pressed", "true");
 });

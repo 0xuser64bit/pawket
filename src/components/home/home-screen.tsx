@@ -23,7 +23,7 @@ import { RemindMe } from "@/components/home/remind-me";
 import { CARE_ICON, Deck, type Gain, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
 import { PhotoDialog } from "@/components/home/photo";
-import { blip } from "@/lib/play/sound";
+import { chime } from "@/lib/play/sound";
 import { RoomSound } from "./room-sound";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { Room, RoomViewSwitch, useRoomMode, type RoomState } from "@/components/home/room";
@@ -101,7 +101,11 @@ export function HomeScreen() {
   const [mode, setMode] = useRoomMode();
   const onStatus = useCallback((next: DirectorStatus) => setStatus(next), []);
   const lookShown = roomState === "live" || roomState === "loading";
-  const ask = (moment: string) => { setCue({ moment, nonce: Date.now() }); blip(587, 180, "sine", 0.025); };
+  // The room plays the moment, and the music box its little tune.
+  const ask = (moment: string) => {
+    setCue({ moment, nonce: Date.now() });
+    chime(moment);
+  };
   const earned = (action: CareActionType, xp: number) => setGain({ action, xp, at: Date.now() });
 
   useEffect(() => {

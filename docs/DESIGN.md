@@ -151,10 +151,13 @@ the connected wallet founded, or one of its pets is in, come first under
 faces and the role in a word (Founder, Member). The guild's own page leads
 its facts with the same role. Both wait for the wallet's pets to be read, so
 the page drawn on the server and in the browser agree.
-Home's sound switch stays beside the room-view switch, including in the flat
-room. A remembered sound preference waits for a gesture after reload; mute
-stops both future chimes and notes already playing. Hidden or unmounted rooms
-release their audio. Blocked storage keeps the choice for the current page.
+Home's sound is a speaker in the room's corner beside the view switch, in
+its trough: raised while it plays, sunk and faint while muted, in the 3D and
+the flat room. It plays a music box (bell-like tines, a soft echo, a lullaby
+in three) and a short tune per moment. Sound is on until muted and never
+starts before a tap; it fades in, muting silences what is already ringing,
+and a hidden or left Home goes quiet. Blocked storage keeps the choice for
+the page.
 
 A failed read provides a disabled-while-reading retry without resetting local
 records. Copy/share failure leaves a selectable link or address. Transactions

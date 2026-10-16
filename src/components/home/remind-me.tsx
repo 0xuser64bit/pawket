@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Row } from "@/components/pk";
+import { Button, Row, TimeField } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { remindDaily, useAndroidApp } from "@/lib/native/android";
 import { reminderIcs, reminderNotes, reminderTitle } from "@/lib/reminders/ics";
@@ -46,16 +46,14 @@ export function RemindMe({ name }: { name: string }) {
   return (
     <div className="pk-foot">
       <Row gap={2} wrap style={{ alignItems: "center" }}>
-        <label className="caption pk-faint" htmlFor="pk-remind-time">
+        <span className="caption pk-faint" aria-hidden="true">
           Remind me daily at
-        </label>
-        <input
-          id="pk-remind-time"
-          type="time"
-          className="pk-time"
+        </span>
+        <TimeField
+          label="Remind me daily at"
           value={time}
-          onChange={(event) => {
-            setTime(event.target.value);
+          onChange={(next) => {
+            setTime(next);
             setSaved(false);
           }}
         />

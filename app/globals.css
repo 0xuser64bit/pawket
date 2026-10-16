@@ -4875,19 +4875,6 @@ li {
   box-shadow: var(--shadow-sticker-sm);
 }
 
-.pk-time {
-  padding: var(--space-1) var(--space-2);
-  border: var(--stroke-line) solid var(--edge-soft);
-  border-radius: var(--radius-md);
-  background: var(--surface-sunk);
-  color: var(--ink);
-  font: inherit;
-  font-family: var(--font-mono);
-}
-.pk-time:focus-visible {
-  outline: var(--stroke-line) solid var(--focus);
-  outline-offset: 2px;
-}
 
 /* ------------------------------------------------------- the Market
 
@@ -8055,6 +8042,10 @@ button.pk-tabs__t:not(.pk-tabs__t--on) { background: transparent; }
   color: var(--on-bloom);
 }
 
+/* A day and a time, picked in the room's own sheet rather than the
+   browser's: the month and its days — the chosen one lifted like any
+   choice, today marked with a dot, the past out of reach — then the hour
+   and the quarter hour as chips. Nothing to type. */
 .pk-date-trigger {
   display: flex;
   align-items: center;
@@ -8069,33 +8060,145 @@ button.pk-tabs__t:not(.pk-tabs__t--on) { background: transparent; }
   border-radius: var(--radius-md);
   cursor: pointer;
 }
-.pk-date-trigger > span { flex: 1; }
-.pk-calendar { display: grid; gap: var(--space-4); }
-.pk-calendar > .pk-spread { display: grid; grid-template-columns: 44px 1fr 44px; text-align: center; }
-.pk-calendar > .pk-spread .pk-btn { width: 44px; padding: 0; }
-.pk-calendar > .pk-spread .pk-btn__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.pk-calendar__week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; }
+.pk-date-trigger > span {
+  flex: 1;
+}
+.pk-date-trigger > svg:last-child {
+  transform: rotate(90deg);
+  color: var(--ink-soft);
+}
+/* The time of a daily reminder: a field of its own size, inline with its words. */
+.pk-date-trigger--time {
+  display: inline-flex;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+@media (any-pointer: coarse), (max-width: 719px) {
+  .pk-date-trigger--time {
+    min-height: var(--touch-target);
+  }
+}
+.pk-calendar {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+.pk-calendar__month {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  text-align: center;
+}
+.pk-calendar__month .pk-btn {
+  width: 44px;
+  padding: 0;
+}
+.pk-calendar__month .pk-btn__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.pk-calendar__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+}
+.pk-calendar__week + .pk-calendar__week {
+  margin-top: 2px;
+}
 .pk-calendar__day {
+  position: relative;
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   font: inherit;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   border: var(--stroke-line) solid transparent;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
+  transition:
+    background-color var(--dur-swap) var(--ease-swap),
+    border-color var(--dur-swap) var(--ease-swap),
+    box-shadow var(--dur-swap) var(--ease-swap),
+    transform var(--dur-swap) var(--ease-spring);
 }
-.pk-calendar__day[data-outside] { color: var(--ink-faint); }
-.pk-calendar__day[aria-current="date"] { text-decoration: underline; text-underline-offset: 4px; }
-[aria-selected="true"] > .pk-calendar__day { background: var(--sun); color: var(--on-sun); border-color: var(--edge); }
-.pk-calendar__day:hover { border-color: var(--edge); }
-.pk-calendar__clock { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
-
-.pk-date-trigger > svg:last-child { transform: rotate(90deg); }
+.pk-calendar__day[data-outside] {
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+.pk-calendar__day:disabled {
+  color: var(--ink-faint);
+  font-weight: 400;
+  opacity: 0.45;
+  cursor: default;
+}
+.pk-calendar__day[aria-current="date"]::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 2px);
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--sun);
+}
+[aria-selected="true"] > .pk-calendar__day {
+  background: var(--surface);
+  border-color: var(--edge);
+  box-shadow: var(--shadow-sticker-sm);
+  transform: translateY(-1px);
+}
+@media (hover: hover) {
+  [aria-selected="false"] > .pk-calendar__day:not(:disabled):hover {
+    background: var(--surface-sunk);
+  }
+}
+.pk-calendar__day:active:not(:disabled) {
+  transform: scale(0.95);
+  transition-duration: var(--dur-press);
+}
+.pk-calendar__when {
+  margin-top: var(--space-4);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pk-clock {
+  display: grid;
+  gap: var(--space-3);
+}
+.pk-clock .pk-choice {
+  padding-inline: 0;
+  font-variant-numeric: tabular-nums;
+}
+.pk-clock__hours .pk-choices {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.pk-clock__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+/* The quarters and AM/PM share a row on a phone; a narrower one stacks them. */
+.pk-clock__quarters .pk-choices,
+.pk-clock__half .pk-choices {
+  display: grid;
+  grid-template-columns: repeat(4, 48px);
+}
+.pk-clock__half .pk-choices {
+  grid-template-columns: repeat(2, 48px);
+}
 
 .pk-room-tools { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; }
 
-@media (max-width: 400px) {
-  .pk-calendar__grid { margin-inline: calc(var(--space-1) - var(--space-5)); }
-}
+

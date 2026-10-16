@@ -11,7 +11,7 @@ export { Mark, PAW, PawArt, PawGlyph, PlayerArt, type GlassesName, type HatName 
 export { PetArt, WearableArt, type Feeling, type PetForm, type Temper } from "./pet-art";
 export { Button, ButtonLink, Chip, Field, Tabs } from "./controls";
 export { Choice } from "./choice";
-export { DateTimeField } from "./datetime-field";
+export { DateTimeField, TimeField } from "./datetime-field";
 export { ReadFailure } from "./read-failure";
 export { Banner, Card, Paper, Receipt, type ReceiptRow } from "./surfaces";
 export { Sheet } from "./sheet";

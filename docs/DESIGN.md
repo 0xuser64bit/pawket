@@ -135,9 +135,12 @@ with their text at the leading edge.
 Short selections use the shared labelled Choice group, including event
 durations, poll lengths, photo poses and frames; no native select remains.
 A consent box is a Paper box with an ink tick, and a disclosure inside a
-card (`.pk-more`) shows the fold's chevron, never the browser's triangle. Event times use a themed calendar
-with keyboard day/month navigation, a local-time clock and explicit Apply
-and Cancel. Invalid, skipped and past times cannot be confirmed. Guilds
+card (`.pk-more`) shows the fold's chevron, never the browser's triangle. Days and times are picked in Pawket's
+own sheet, never the browser's: a month whose chosen day is lifted like any
+choice, today dotted and past days out of reach, with arrow and Page keys;
+then the hour, quarter hour and (where the device uses it) AM/PM as chips,
+in local time, with explicit Use this time and Cancel. Skipped and past
+times cannot be confirmed. A daily reminder's time uses the same chips. Guilds
 the connected wallet founded, or one of its pets is in, come first under
 "Your guilds": a bloom card edge and shadow, and a badge with those pets'
 faces and the role in a word (Founder, Member). The guild's own page leads

@@ -14,6 +14,7 @@ export function Choice<T extends string | number>({
   onPick,
   swatch,
   className,
+  hideLabel,
 }: {
   label: string;
   /** An icon beside a word helps a row read at a glance; a swatch has none. */
@@ -23,6 +24,8 @@ export function Choice<T extends string | number>({
   /** Draw each option as a colour dot instead of a word. */
   swatch?: (value: T) => string;
   className?: string;
+  /** Said to a screen reader only, when the choices already say what they are (AM, PM). */
+  hideLabel?: boolean;
 }) {
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
   const id = useId();
@@ -36,7 +39,7 @@ export function Choice<T extends string | number>({
   }
   return (
     <div className={["pk-look__row", className].filter(Boolean).join(" ")}>
-      <span className="label pk-faint" id={id}>
+      <span className={hideLabel ? "pk-sr" : "label pk-faint"} id={id}>
         {label}
       </span>
       <div role="radiogroup" aria-labelledby={id} className="pk-choices">

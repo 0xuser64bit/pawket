@@ -371,7 +371,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               {state.balance > 0n ? <ButtonLink label="Back to your pets" icon="home" size="sm" href="/home" /> : null}
               <Button label={`Unlink ${place}`} tone="quiet" size="sm" disabled={sender.busy} onClick={() => void unlinkHere()} />
             </Row>
-            <details className="pk-wallet-more">
+            <details className="pk-more">
               <summary className="body-sm">Change how long, or how much a day</summary>
               <Stack gap={3} style={{ marginTop: "var(--space-3)" }}>
                 {limits}

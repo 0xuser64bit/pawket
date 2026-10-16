@@ -5223,12 +5223,36 @@ details > .pk-risks {
   font-family: var(--font-text);
   cursor: pointer;
 }
+/* A Paper box, not the browser's: small corners, an ink line, an ink tick. */
 .pk-consent input {
+  appearance: none;
   flex: none;
-  width: 18px;
-  height: 18px;
-  margin: 2px 0 0;
-  accent-color: var(--ink);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-paper);
+  background: var(--paper);
+  cursor: pointer;
+  transition: background-color var(--dur-press) var(--ease-press);
+}
+.pk-consent input::after {
+  content: "";
+  width: 6px;
+  height: 11px;
+  margin-top: -2px;
+  border: solid var(--paper);
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform var(--dur-press) var(--ease-spring);
+}
+.pk-consent input:checked {
+  background: var(--ink);
+}
+.pk-consent input:checked::after {
+  transform: rotate(45deg) scale(1);
 }
 .pk-coin-pin {
   display: inline-flex;
@@ -7831,9 +7855,32 @@ html[data-transition="room"]::view-transition-new(*) {
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
-.pk-wallet-more summary {
-  cursor: pointer;
+/* A disclosure inside a card: one quiet line and the fold's chevron, never
+   the browser's triangle, with a whole finger's height to press. */
+.pk-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
   color: var(--ink-soft);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.pk-more > summary::-webkit-details-marker {
+  display: none;
+}
+.pk-more > summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: var(--stroke-line) solid currentColor;
+  border-bottom: var(--stroke-line) solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--dur-press) var(--ease-press);
+}
+.pk-more[open] > summary::after {
+  transform: translateY(2px) rotate(225deg);
 }
 
 /* A ledger: one line a transaction, what it was on the left, how the

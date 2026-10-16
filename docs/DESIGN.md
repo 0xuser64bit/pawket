@@ -129,7 +129,9 @@ compact, top-centred at every width, with a full touch target to dismiss.
 The founding page shares the directory's page rails; record portraits align
 with their text at the leading edge.
 Short selections use the shared labelled Choice group, including event
-durations, poll lengths and photo frames. Event times use a themed calendar
+durations, poll lengths, photo poses and frames; no native select remains.
+A consent box is a Paper box with an ink tick, and a disclosure inside a
+card (`.pk-more`) shows the fold's chevron, never the browser's triangle. Event times use a themed calendar
 with keyboard day/month navigation, a local-time clock and explicit Apply
 and Cancel. Invalid, skipped and past times cannot be confirmed. Guilds
 the connected wallet founded, or one of its pets is in, come first under

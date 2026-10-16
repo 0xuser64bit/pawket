@@ -169,7 +169,7 @@ function useConsent(mint: string): [boolean, () => void] {
 function RiskGate({ agreed, onAgree }: { agreed: boolean; onAgree: () => void }) {
   if (agreed) {
     return (
-      <details className="body-sm pk-muted">
+      <details className="pk-more body-sm">
         <summary>What can go wrong</summary>
         <ol className="pk-risks">
           {COIN_RISKS.map((risk) => (

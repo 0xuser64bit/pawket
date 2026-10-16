@@ -9,7 +9,7 @@ import type { Sky } from "@/components/pk";
 import { SPECIES_MODEL } from "@/lib/game/appearance";
 import type { PetMood, PetSpecies } from "@/lib/game/enums";
 import type { PlayerLook } from "@/lib/player/look";
-import type { RoomCue } from "@/lib/room/moments";
+import type { PhotoPose, RoomCue } from "@/lib/room/moments";
 import { Director, type DirectorStatus } from "./director";
 import { HumanActor } from "./human";
 import { outlineUniforms } from "./materials";
@@ -22,6 +22,7 @@ export interface RoomView {
   reset: () => void;
   /** The room as it is now, as a PNG data URL: drawn and read in the same frame. */
   snap: () => string | null;
+  pose: (id: PhotoPose | null) => void;
 }
 
 export interface Room3DProps {
@@ -285,6 +286,7 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
   // The view: a gentle drag turns the room, and it springs back.
   const orbit = useRef({ az: 0, el: 0, wantAz: 0, wantEl: 0, lastTouch: -10, drag: null as null | { x: number; y: number; az: number; el: number } });
   useImperativeHandle(view, () => ({
+    pose: (id) => { director.holdPhoto(id); invalidate(); },
     nudge: (direction) => {
       const o = orbit.current;
       o.wantAz = Math.max(-0.45, Math.min(0.45, o.wantAz + direction * 0.14));

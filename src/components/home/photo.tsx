@@ -6,6 +6,7 @@ import { useConnected } from "@/lib/solana/browser-client";
 import { useCloset } from "@/lib/market/use-closet";
 import { PHOTO_FRAMES, type PhotoFrameId } from "@/lib/market/frames";
 import { Button, Choice, Sheet } from "@/components/pk";
+import { PHOTO_POSES, type PhotoPose } from "@/lib/room/moments";
 import { savePicture, sharePicture, useAndroidApp } from "@/lib/native/android";
 
 /** The tokens a photo is printed in, read from the room the player is in. */
@@ -204,6 +205,7 @@ export function PhotoDialog({
   line,
   file,
   onClose,
+  onPose,
 }: {
   shot: string;
   title: string;
@@ -211,7 +213,10 @@ export function PhotoDialog({
   /** The saved file's name, without the extension. */
   file: string;
   onClose: () => void;
+  onPose?: (pose: PhotoPose | null) => string | null;
 }) {
+  const [rawShot, setRawShot] = useState(shot);
+  const [pose, setPose] = useState<PhotoPose | "">("");
   const connected = useConnected();
   const closet = useCloset((connected?.account.address as Address | undefined) ?? null);
   const [frame, setFrame] = useState<PhotoFrameId>();
@@ -223,14 +228,14 @@ export function PhotoDialog({
   const inApp = useAndroidApp();
   useEffect(() => {
     let alive = true;
-    printPhoto(shot, title, line, selected).then(
+    printPhoto(rawShot, title, line, selected).then(
       (url) => alive && setPrint(url),
-      () => alive && setPrint(shot),
+      () => alive && setPrint(rawShot),
     );
     return () => {
       alive = false;
     };
-  }, [shot, title, line, selected]);
+  }, [rawShot, title, line, selected]);
 
   /** To the phone: its gallery, or its share sheet. It says what happened, and what did not. */
   async function toPhone(how: "save" | "share") {
@@ -283,6 +288,15 @@ export function PhotoDialog({
         </>
       )}
     >
+      {onPose ? <Choice label="Strike a pose" value={pose} options={[{ value: "", label: "As you are" }, ...PHOTO_POSES]}
+        onPick={(next) => {
+          const picture = onPose(next || null);
+          if (!picture) { setSaid("The camera could not take that photo. Your last photo is still here."); return; }
+          setPrint(null);
+          setRawShot(picture);
+          setPose(next);
+          setSaid(undefined);
+        }} /> : null}
       {available.length ? <Choice label="Photo frame" value={selected ?? ""}
         onPick={(value) => { setPrint(null); setFrame(value ? value as PhotoFrameId : undefined); }}
         options={[{ value: "", label: "Classic · free" }, ...available.map((option) => ({ value: option.id, label: option.name }))]} /> : null}

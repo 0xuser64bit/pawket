@@ -1,6 +1,6 @@
 import { Group, Vector3, type AnimationClip, type Camera, type Mesh } from "three";
 import { PetMood } from "@/lib/game/enums";
-import { findMoment, momentLength, momentSentence, type Moment } from "@/lib/room/moments";
+import { findMoment, momentLength, momentSentence, PHOTO_POSES, type PhotoPose, type Moment } from "@/lib/room/moments";
 import type { HumanActor, HumanFrame } from "./human";
 import { PET_SCALE, type PetActor } from "./pet";
 import { brushHeadAt, makeProp, makeZ, type Prop } from "./props";
@@ -126,6 +126,7 @@ export class Director {
   private napUntil = 0;
   private stillHold = 0;
   private greeted = false;
+  private photoHold = false;
   private readonly zs: Array<{ mesh: Mesh; born: number; drift: number }> = [];
   private lastZ = 0;
   private readonly windowPoint: Vector3;
@@ -174,6 +175,7 @@ export class Director {
   /** Ask for a moment. One can wait while another plays; a newer ask replaces it. */
   play(id: string): void {
     if (!findMoment(id)) return;
+    if (this.photoHold) this.holdPhoto(null);
     if (this.run || this.cooldown > 0) {
       this.queued = id;
       return;
@@ -183,7 +185,7 @@ export class Director {
 
   /** Tap the pet: a happy wiggle, and the player looks. */
   boop(): void {
-    if (!this.pet || this.run) return;
+    if (!this.pet || this.run || this.photoHold) return;
     this.pet.wake();
     this.pet.cue("happy");
     this.pet.faceTowards(this.human.root.position);
@@ -710,7 +712,30 @@ export class Director {
     }
   }
 
+  /** Stage an existing still immediately; the saved game record is never involved. */
+  holdPhoto(id: PhotoPose | null): void {
+    if (id && !PHOTO_POSES.some((pose) => pose.value === id)) return;
+    if (!id && !this.photoHold) return;
+    this.photoHold = false;
+    this.queued = null;
+    if (this.run) this.finish();
+    this.cooldown = 0;
+    const reduced = this.reduced;
+    if (id) {
+      this.reduced = true;
+      this.start(id);
+      this.update(0);
+      this.update(0);
+      this.reduced = reduced;
+      this.photoHold = true;
+    } else {
+      this.human.play("Idle", { fade: 0, loop: true });
+    }
+    this.pose();
+  }
+
   update(dt: number): void {
+    if (this.photoHold) { this.pose(); return; }
     this.clock += dt;
     if (this.cooldown > 0) {
       this.cooldown -= dt;

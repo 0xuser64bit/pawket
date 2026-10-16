@@ -143,6 +143,13 @@ channels that never leave rest.
 
 ## The runtime
 
+Photos can hold Together, Wave or A little cuddle at an existing moment's
+authored `still` frame. Choosing a pose stages both actors before capture,
+keeps the room still until the sheet closes, and changes no saved record.
+The camera retains the last good photo if another capture fails. Closing the
+photo sheet releases the pose. Emote status is announced to assistive
+technology without adding a visible sentence beneath Home's deck.
+
 | File | Job |
 | --- | --- |
 | `src/components/home/room.tsx` | The Room: 3D or flat, WebGL check, error boundary, context-loss recovery, off-screen pause, keyboard turning |

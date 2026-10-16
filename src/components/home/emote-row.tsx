@@ -7,7 +7,7 @@ const glyph = (name: string): IconName | undefined => (ICON_NAMES as string[]).i
 
 /**
  * Things to do together that are not care: a wave, a dance, a pat, a
- * treat. The room plays each one, and says so on its own line; nothing
+ * treat. The room plays each one and announces it accessibly; nothing
  * here touches the record.
  */
 export function EmoteRow({

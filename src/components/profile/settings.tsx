@@ -13,7 +13,7 @@ import { useAndroidApp, useHaptics, useHere } from "@/lib/native/android";
 
 /**
  * The room you live in and how this device plays: the rooms, 3D or flat,
- * and the playground's sound. All of it is saved here, and none of it
+ * and Pawket's sound. All of it is saved here, and none of it
  * changes a pet.
  */
 export function Settings({ form }: { form?: PetForm }) {
@@ -59,7 +59,7 @@ export function Settings({ form }: { form?: PetForm }) {
             onClick={() => setMode(mode === "3d" ? "flat" : "3d")}
           />
           <Button
-            label={sound ? "Playground sound on" : "Playground sound off"}
+            label={sound ? "Pawket sound on" : "Pawket sound off"}
             icon="music"
             tone="quiet"
             size="sm"

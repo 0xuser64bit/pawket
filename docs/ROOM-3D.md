@@ -143,12 +143,18 @@ channels that never leave rest.
 
 ## The runtime
 
-Photos can hold Together, Wave or A little cuddle at an existing moment's
-authored `still` frame. Choosing a pose stages both actors before capture,
-keeps the room still until the sheet closes, and changes no saved record.
-The camera retains the last good photo if another capture fails. Closing the
-photo sheet releases the pose. Emote status is announced to assistive
-technology without adding a visible sentence beneath Home's deck.
+A photo can be posed: Wave, Cheer, Cuddle or Dance (`PHOTO_POSES` in
+`src/lib/room/moments.ts`). A pose borrows a moment's clip but is staged for
+the camera — the player turned to it and looking into it, the pet beside
+them facing it (in their arms for Cuddle) — and both hold one frame, the pet
+a frame of its own clip and, for Cheer and Dance, the top of a hop. A held
+frame looks straight at its target: a still has no time to turn a head.
+The photo is the next frame drawn after staging, so shadows and the camera
+have moved with it; a pose whose clip ships in its own file loads first,
+and the latest pose asked for wins. The room holds still until the sheet
+closes or another pose is chosen; Candid lets it live. If the room cannot
+draw, the last photo stays. Nothing saved changes. Emote status is announced
+to assistive technology without a visible sentence.
 
 | File | Job |
 | --- | --- |

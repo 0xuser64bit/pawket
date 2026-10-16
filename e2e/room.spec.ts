@@ -42,8 +42,10 @@ test("the room takes a photo of the two of you, to save or share", async ({ page
   await expect(save).toHaveAttribute("href", /^data:image\/png;base64,/);
   const candid = await save.getAttribute("href");
   const record = await page.evaluate(() => localStorage.getItem("pawket.pets.v1"));
-  await photo.getByRole("radio", { name: "Together", exact: true }).click();
-  await expect(photo.getByRole("radio", { name: "Together", exact: true })).toHaveAttribute("aria-checked", "true");
+  // Five poses in one row, Candid first; a pose is a new photo, and the record is untouched.
+  await expect(photo.getByRole("radiogroup", { name: "Pose" }).getByRole("radio")).toHaveText(["Candid", "Wave", "Cheer", "Cuddle", "Dance"]);
+  await photo.getByRole("radio", { name: "Wave", exact: true }).click();
+  await expect(photo.getByRole("radio", { name: "Wave", exact: true })).toHaveAttribute("aria-checked", "true");
   await expect(save).not.toHaveAttribute("href", candid!);
   expect(await page.evaluate(() => localStorage.getItem("pawket.pets.v1"))).toBe(record);
   await photo.getByRole("button", { name: "Close", exact: true }).click();

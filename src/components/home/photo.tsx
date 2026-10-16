@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Address } from "@solana/kit";
 import { useConnected } from "@/lib/solana/browser-client";
 import { useCloset } from "@/lib/market/use-closet";
 import { PHOTO_FRAMES, type PhotoFrameId } from "@/lib/market/frames";
-import { Button, Choice, Sheet } from "@/components/pk";
+import { Button, Choice, Sheet, Stack } from "@/components/pk";
 import { PHOTO_POSES, type PhotoPose } from "@/lib/room/moments";
 import { savePicture, sharePicture, useAndroidApp } from "@/lib/native/android";
 
@@ -213,24 +213,31 @@ export function PhotoDialog({
   /** The saved file's name, without the extension. */
   file: string;
   onClose: () => void;
-  onPose?: (pose: PhotoPose | null) => string | null;
+  /** Strike a pose in the room (or let it go) and return the photo of it. */
+  onPose?: (pose: PhotoPose | null) => Promise<string | null>;
 }) {
   const [rawShot, setRawShot] = useState(shot);
   const [pose, setPose] = useState<PhotoPose | "">("");
+  const [posing, setPosing] = useState(false);
+  /** The latest pose asked for; an earlier one that answers late is dropped. */
+  const asked = useRef(0);
   const connected = useConnected();
   const closet = useCloset((connected?.account.address as Address | undefined) ?? null);
   const [frame, setFrame] = useState<PhotoFrameId>();
   const available = PHOTO_FRAMES.filter((option) => closet.data?.items.includes(option.item));
   const selected = available.some((option) => option.id === frame) ? frame : undefined;
-  const [print, setPrint] = useState<string | null>(null);
+  /** The print on show, and what it was printed from: a stale one stays up, faded, until the next is ready. */
+  const [printed, setPrinted] = useState<{ url: string; from: string; frame?: PhotoFrameId } | null>(null);
+  const fresh = printed?.from === rawShot && printed.frame === selected;
+  const print = fresh && !posing ? printed.url : null;
   const [said, setSaid] = useState<string>();
   const [handing, setHanding] = useState(false);
   const inApp = useAndroidApp();
   useEffect(() => {
     let alive = true;
     printPhoto(rawShot, title, line, selected).then(
-      (url) => alive && setPrint(url),
-      () => alive && setPrint(rawShot),
+      (url) => alive && setPrinted({ url, from: rawShot, frame: selected }),
+      () => alive && setPrinted({ url: rawShot, from: rawShot, frame: selected }),
     );
     return () => {
       alive = false;
@@ -247,6 +254,19 @@ export function PhotoDialog({
     if (answer.ok) setSaid(how === "save" ? "Saved to your gallery, in Pictures › Pawket." : undefined);
     else if (answer.reason === "no-target") setSaid("Nothing on this phone can take a picture to share. Save it instead.");
     else setSaid(how === "save" ? "This phone did not save it. Nothing was kept." : "The share sheet did not open. Nothing was sent.");
+  }
+
+  async function strike(next: PhotoPose | "") {
+    if (!onPose) return;
+    const ask = ++asked.current;
+    setPose(next);
+    setPosing(true);
+    const picture = await onPose(next || null);
+    if (ask !== asked.current) return;
+    setPosing(false);
+    if (!picture) return setSaid("The camera could not take that one. Your last photo is still here.");
+    setSaid(undefined);
+    setRawShot(picture);
   }
 
   async function share() {
@@ -274,13 +294,14 @@ export function PhotoDialog({
           <div className="pk-spread">
             <Button label="Close" tone="ghost" size="sm" onClick={dismiss} />
             <Button label="Share" tone="quiet" size="sm" icon="out" disabled={!print || handing} onClick={() => void share()} />
-            {print && inApp ? (
-              <Button label="Save the photo" size="sm" disabled={handing} onClick={() => void toPhone("save")} />
-            ) : print ? (
+            {print && !inApp ? (
               <a href={print} download={`${file}.png`} className="pk-btn pk-btn--sm">
                 <span className="pk-btn__label">Save the photo</span>
               </a>
-            ) : null}
+            ) : (
+              // Held in place, not hidden, while a photo develops: nothing under a finger moves.
+              <Button label="Save the photo" size="sm" disabled={!print || handing} onClick={() => void toPhone("save")} />
+            )}
           </div>
           <p role="status" className="caption pk-faint" style={{ marginTop: said ? "var(--space-2)" : 0 }}>
             {said}
@@ -288,25 +309,34 @@ export function PhotoDialog({
         </>
       )}
     >
-      {onPose ? <Choice label="Strike a pose" value={pose} options={[{ value: "", label: "As you are" }, ...PHOTO_POSES]}
-        onPick={(next) => {
-          const picture = onPose(next || null);
-          if (!picture) { setSaid("The camera could not take that photo. Your last photo is still here."); return; }
-          setPrint(null);
-          setRawShot(picture);
-          setPose(next);
-          setSaid(undefined);
-        }} /> : null}
-      {available.length ? <Choice label="Photo frame" value={selected ?? ""}
-        onPick={(value) => { setPrint(null); setFrame(value ? value as PhotoFrameId : undefined); }}
-        options={[{ value: "", label: "Classic · free" }, ...available.map((option) => ({ value: option.id, label: option.name }))]} /> : null}
-      {print ? (
-        // A data URL made on this device: there is nothing for the image optimiser to fetch.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={print} alt={`${title}, ${line}`} className="pk-photo__print" />
-      ) : (
-        <div className="pk-photo__print pk-photo__print--wait" />
-      )}
+      <Stack gap={4}>
+      <div className="pk-photo" aria-busy={!print}>
+        {printed ? (
+          // A data URL made on this device: there is nothing for the image optimiser to fetch.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={printed.url} src={printed.url} alt={`${title}, ${line}`} className="pk-photo__print" />
+        ) : (
+          <div className="pk-photo__print pk-photo__print--wait" />
+        )}
+      </div>
+      {onPose ? (
+        <Choice
+          label="Pose"
+          className="pk-photo__poses"
+          value={pose}
+          onPick={(next) => void strike(next)}
+          options={[{ value: "", label: "Candid", icon: "camera" }, ...PHOTO_POSES.map(({ value, label, icon }) => ({ value, label, icon }))]}
+        />
+      ) : null}
+      {available.length ? (
+        <Choice
+          label="Frame"
+          value={selected ?? ""}
+          onPick={(value) => setFrame(value ? (value as PhotoFrameId) : undefined)}
+          options={[{ value: "", label: "Classic · free" }, ...available.map((option) => ({ value: option.id, label: option.name }))]}
+        />
+      ) : null}
+      </Stack>
     </Sheet>
   );
 }

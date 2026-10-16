@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, type KeyboardEvent } from "react";
+import { Icon, type IconName } from "./icon";
 
 /**
  * One choice from a short list, as a radio group: arrow keys move the
@@ -12,13 +13,16 @@ export function Choice<T extends string | number>({
   value,
   onPick,
   swatch,
+  className,
 }: {
   label: string;
-  options: ReadonlyArray<{ value: T; label: string }>;
+  /** An icon beside a word helps a row read at a glance; a swatch has none. */
+  options: ReadonlyArray<{ value: T; label: string; icon?: IconName }>;
   value: T;
   onPick: (value: T) => void;
   /** Draw each option as a colour dot instead of a word. */
   swatch?: (value: T) => string;
+  className?: string;
 }) {
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
   const id = useId();
@@ -31,7 +35,7 @@ export function Choice<T extends string | number>({
     refs.current[next]?.focus();
   }
   return (
-    <div className="pk-look__row">
+    <div className={["pk-look__row", className].filter(Boolean).join(" ")}>
       <span className="label pk-faint" id={id}>
         {label}
       </span>
@@ -55,7 +59,12 @@ export function Choice<T extends string | number>({
               onClick={() => onPick(option.value)}
               onKeyDown={(event) => onKeyDown(event, index)}
             >
-              {swatch ? null : option.label}
+              {swatch ? null : (
+                <>
+                  {option.icon ? <Icon name={option.icon} size={16} /> : null}
+                  {option.label}
+                </>
+              )}
             </button>
           );
         })}

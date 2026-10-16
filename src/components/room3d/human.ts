@@ -253,12 +253,13 @@ export class HumanActor {
     this.model.updateMatrixWorld(true);
 
     if (frame.look && frame.lookWeight > 0) {
-      if (!this.gazeReady) {
+      // Eyes lead, the head follows: the gaze point moves smoothly. A still
+      // (reduced motion, a photo pose) has no time to turn in, so it looks
+      // straight at its point rather than wherever the head last was.
+      if (!this.gazeReady || dt === 0) {
         this.gaze.copy(frame.look);
         this.gazeReady = true;
-      }
-      // Eyes lead, the head follows: the gaze point moves smoothly.
-      dampVector(this.gaze, frame.look, 5, dt);
+      } else dampVector(this.gaze, frame.look, 5, dt);
       const w = frame.lookWeight;
       aimBone(this.bones.neck_01, this.neckAxis, this.gaze, w * 0.35, 0.45);
       aimBone(this.bones.Head, this.faceAxis, this.gaze, w * 0.8, 0.8);

@@ -25,6 +25,8 @@ const MOUTH = new Vector3(0, 0.46, 0.72);
 const WALK_SPEED = 0.55;
 const RUN_SPEED = 1.7;
 const TURN_RATE = 7;
+/** A hop, from leaving the floor to landing. */
+const HOP_SECONDS = 0.42;
 
 type Mode = "idle" | "eat" | "nibble" | "dance" | "sleep" | "happy" | "no";
 
@@ -61,6 +63,8 @@ export class PetActor {
   private lean = 0;
   private sleep = 0;
   private sleeping = false;
+  /** A clip held at one frame for a photo; while set, nothing else plays. */
+  private held: string | null = null;
   private readonly carried = new Group();
   private readonly bodyRest: { position: Vector3; quaternion: Quaternion };
   breathe = true;
@@ -107,11 +111,36 @@ export class PetActor {
     this.base = action;
   }
 
+  /**
+   * Hold one frame of a clip — and, if asked, the top of a hop — for a
+   * photo, at once: no blend to wait for. `null` lets the pet live again.
+   */
+  hold(name: string | null, at = 0, hop = false): void {
+    const action = name ? this.actions.get(name) : undefined;
+    if (this.held) this.actions.get(this.held)!.paused = false;
+    this.held = action ? name : null;
+    if (!action) return;
+    this.wake();
+    this.stop();
+    this.play(name!, 0);
+    action.time = at;
+    action.paused = true;
+    this.hopAt = hop ? this.clock - HOP_SECONDS / 2 : -1;
+  }
+
   place(at: Vector3, yaw: number): void {
+    this.stop();
     this.root.position.copy(at);
     this.yaw = yaw;
     this.root.rotation.y = yaw;
+  }
+
+  /** Stand still: a walk under way ends where it is, and whoever waits on it hears so. */
+  private stop(): void {
+    const trip = this.trip;
     this.trip = null;
+    this.faceTo = null;
+    trip?.done();
   }
 
   /** Walk or run to a spot, then turn to `face` (radians) if given. */
@@ -262,7 +291,7 @@ export class PetActor {
               : this.mode === "nibble"
                 ? "idle"
                 : this.mode;
-    this.play(want);
+    this.play(this.held ?? want);
     const walk = this.actions.get("walk");
     if (walk) walk.timeScale = this.trip ? Math.max(0.6, speed / WALK_SPEED) : 0.8;
 
@@ -291,8 +320,8 @@ export class PetActor {
     let lift = 0;
     let squash = 0;
     const h = this.clock - this.hopAt;
-    if (this.hopAt >= 0 && h < 0.42) {
-      const x = h / 0.42;
+    if (this.hopAt >= 0 && h < HOP_SECONDS) {
+      const x = h / HOP_SECONDS;
       lift = 4 * 0.13 * x * (1 - x);
       squash = x > 0.85 ? (x - 0.85) / 0.15 : x < 0.12 ? 1 - x / 0.12 : 0;
     }

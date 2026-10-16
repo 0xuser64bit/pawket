@@ -22,7 +22,12 @@ export interface RoomView {
   reset: () => void;
   /** The room as it is now, as a PNG data URL: drawn and read in the same frame. */
   snap: () => string | null;
-  pose: (id: PhotoPose | null) => void;
+  /**
+   * Strike a photo pose, or let it go with `null`, then take the photo: the
+   * next frame drawn, once the shadows and the camera have moved with it.
+   * Null if the room does not draw (off screen, hidden) or cannot be read.
+   */
+  pose: (id: PhotoPose | null) => Promise<string | null>;
 }
 
 export interface Room3DProps {
@@ -46,6 +51,15 @@ export interface Room3DProps {
 }
 
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+
+/** The canvas as a PNG, read before the browser shows the frame (the buffer is not kept). */
+function picture(canvas: HTMLCanvasElement): string | null {
+  try {
+    return canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
+}
 type File = Promise<GLTF> & { status?: "fulfilled" | "rejected"; value?: GLTF; reason?: unknown };
 const files = new Map<string, File>();
 
@@ -285,8 +299,25 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
 
   // The view: a gentle drag turns the room, and it springs back.
   const orbit = useRef({ az: 0, el: 0, wantAz: 0, wantEl: 0, lastTouch: -10, drag: null as null | { x: number; y: number; az: number; el: number } });
+  /** Waiting for the next frame drawn, to take it as a photo. */
+  const shutter = useRef<((url: string | null) => void) | null>(null);
   useImperativeHandle(view, () => ({
-    pose: (id) => { director.holdPhoto(id); invalidate(); },
+    pose: async (id) => {
+      await director.holdPhoto(id);
+      // A pose faces the camera square on; a candid photo keeps the turn the player gave the room.
+      if (id) Object.assign(orbit.current, { az: 0, el: 0, wantAz: 0, wantEl: 0 });
+      shutter.current?.(null);
+      return new Promise<string | null>((resolve) => {
+        const take = (url: string | null) => {
+          window.clearTimeout(late);
+          if (shutter.current === take) shutter.current = null;
+          resolve(url);
+        };
+        const late = window.setTimeout(() => take(null), 2000);
+        shutter.current = take;
+        invalidate();
+      });
+    },
     nudge: (direction) => {
       const o = orbit.current;
       o.wantAz = Math.max(-0.45, Math.min(0.45, o.wantAz + direction * 0.14));
@@ -299,13 +330,8 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
       invalidate();
     },
     snap: () => {
-      // The drawing buffer is not kept between frames, so draw one and read it before the browser shows it.
       gl.render(scene, camera);
-      try {
-        return gl.domElement.toDataURL("image/png");
-      } catch {
-        return null;
-      }
+      return picture(gl.domElement);
     },
   }));
   useEffect(() => {
@@ -400,6 +426,7 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
     outlineUniforms.uWidth.value = 1.5 * state.gl.getPixelRatio();
 
     state.gl.render(state.scene, state.camera);
+    shutter.current?.(picture(state.gl.domElement));
     if (!started.current) {
       started.current = true;
       requestAnimationFrame(() => ready.current());

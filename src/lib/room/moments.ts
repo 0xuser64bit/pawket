@@ -214,13 +214,39 @@ export const MOMENTS: readonly Moment[] = [
 /** The emote row: moments a player can start at any time. */
 export const EMOTES = ["wave", "dance", "pet", "treat", "cheer"] as const;
 
-/** Existing, already-loaded clips held at their authored still frame for a photo. */
+/**
+ * Poses for a photo: a moment's own clip, staged for the camera instead of
+ * for each other — both of you turned to it, the pet at your side or in
+ * your arms — and held at one second while the photo is taken. The pet
+ * holds a frame of its own clip, mid-hop if it is cheering. Expression
+ * only, like every moment: nothing saved changes.
+ */
+export interface PhotoPoseSpec {
+  value: string;
+  label: string;
+  icon: string;
+  /** The moment whose clip it borrows. */
+  moment: string;
+  /** Staging that replaces the moment's own, so faces show to the camera. */
+  stage?: Pick<Moment, "formation" | "facing" | "lookAt">;
+  /** The second of the moment the player holds. */
+  still: number;
+  pet: { clip: "idle" | "gesture-positive" | "dance"; at: number; hop?: boolean };
+}
+
+const TO_CAMERA = { formation: "beside", facing: 8, lookAt: "room" } as const;
+
 export const PHOTO_POSES = [
-  { value: "dance", label: "Together" },
-  { value: "wave", label: "Wave" },
-  { value: "pet", label: "A little cuddle" },
-] as const;
+  { value: "wave", label: "Wave", icon: "paw", moment: "wave", stage: TO_CAMERA, still: 1.0, pet: { clip: "gesture-positive", at: 0.9 } },
+  { value: "cheer", label: "Cheer", icon: "spark", moment: "cheer", stage: TO_CAMERA, still: 0.9, pet: { clip: "gesture-positive", at: 0.3, hop: true } },
+  { value: "cuddle", label: "Cuddle", icon: "heart", moment: "pet", still: 2.2, pet: { clip: "idle", at: 0.6 } },
+  { value: "dance", label: "Dance", icon: "music", moment: "dance", stage: { ...TO_CAMERA, facing: 14 }, still: 0.3, pet: { clip: "dance", at: 1.2, hop: true } },
+] as const satisfies readonly PhotoPoseSpec[];
 export type PhotoPose = (typeof PHOTO_POSES)[number]["value"];
+
+export function findPhotoPose(id: string): PhotoPoseSpec | undefined {
+  return PHOTO_POSES.find((pose) => pose.value === id);
+}
 
 /** The moment each care action shows, once that care has been saved. */
 export const CARE_MOMENT: Record<CareActionType, string> = {

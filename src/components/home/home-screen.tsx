@@ -88,13 +88,11 @@ export function HomeScreen() {
   const [gain, setGain] = useState<Gain | null>(null);
   const [shot, setShot] = useState<string | null>(null);
   const roomView = useRef<RoomView>(null);
-  const closePhoto = useCallback(() => { roomView.current?.pose(null); setShot(null); }, []);
-  const poseForPhoto = useCallback((id: PhotoPose | null) => {
-    const view = roomView.current;
-    if (!view) return null;
-    view.pose(id);
-    return view.snap();
+  const closePhoto = useCallback(() => {
+    void roomView.current?.pose(null);
+    setShot(null);
   }, []);
+  const poseForPhoto = useCallback((id: PhotoPose | null) => roomView.current?.pose(id) ?? Promise.resolve(null), []);
   /** A browser pet on its way onto Solana: its id here, and its address there. */
   const carried = useRef<{ id: string; address: Address } | null>(null);
   const [cue, setCue] = useState<RoomCue | null>(null);

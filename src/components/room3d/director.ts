@@ -1,6 +1,6 @@
 import { Group, Vector3, type AnimationClip, type Camera, type Mesh } from "three";
 import { PetMood } from "@/lib/game/enums";
-import { findMoment, momentLength, momentSentence, PHOTO_POSES, type PhotoPose, type Moment } from "@/lib/room/moments";
+import { findMoment, findPhotoPose, momentLength, momentSentence, type Moment } from "@/lib/room/moments";
 import type { HumanActor, HumanFrame } from "./human";
 import { PET_SCALE, type PetActor } from "./pet";
 import { brushHeadAt, makeProp, makeZ, type Prop } from "./props";
@@ -127,6 +127,8 @@ export class Director {
   private stillHold = 0;
   private greeted = false;
   private photoHold = false;
+  /** The latest pose asked for: a slower one that finishes loading later never wins. */
+  private poseAsk = 0;
   private readonly zs: Array<{ mesh: Mesh; born: number; drift: number }> = [];
   private lastZ = 0;
   private readonly windowPoint: Vector3;
@@ -175,12 +177,12 @@ export class Director {
   /** Ask for a moment. One can wait while another plays; a newer ask replaces it. */
   play(id: string): void {
     if (!findMoment(id)) return;
-    if (this.photoHold) this.holdPhoto(null);
+    if (this.photoHold) void this.holdPhoto(null);
     if (this.run || this.cooldown > 0) {
       this.queued = id;
       return;
     }
-    this.start(id);
+    this.start(findMoment(id)!);
   }
 
   /** Tap the pet: a happy wiggle, and the player looks. */
@@ -194,8 +196,7 @@ export class Director {
     this.petBusyUntil = this.clock + 1.6;
   }
 
-  private start(id: string): void {
-    const moment = findMoment(id)!;
+  private start(moment: Moment): void {
     // Only a free moment makes sense in an empty room; the rest need the pet.
     if (moment.formation !== "free" && !this.pet) return;
     const facing = this.facingFor(moment);
@@ -719,25 +720,54 @@ export class Director {
     }
   }
 
-  /** Stage an existing still immediately; the saved game record is never involved. */
-  holdPhoto(id: PhotoPose | null): void {
-    if (id && !PHOTO_POSES.some((pose) => pose.value === id)) return;
-    if (!id && !this.photoHold) return;
+  /**
+   * Strike a photo pose (`PHOTO_POSES`), or let it go with `null`. Both turn
+   * to the camera and hold one frame until released; a pose whose clip
+   * ships in its own file waits for it first. Nothing saved is touched.
+   */
+  async holdPhoto(id: string | null): Promise<void> {
+    const spec = id ? findPhotoPose(id) : undefined;
+    if (id && !spec) return;
+    const ask = ++this.poseAsk;
+    const base = spec ? findMoment(spec.moment) : undefined;
+    for (const clip of base?.clips ?? []) {
+      if (!clip.src || this.human.hasClip(clip.name)) continue;
+      try {
+        const clips = await this.loadClips(clip.src);
+        this.extraClips.push(...clips);
+        this.human.addClips(clips);
+      } catch {
+        // Without its clip the player keeps idling; the pet still poses.
+      }
+    }
+    if (ask !== this.poseAsk || (!spec && !this.photoHold)) return;
     this.photoHold = false;
     this.queued = null;
     if (this.run) this.finish();
     this.cooldown = 0;
-    const reduced = this.reduced;
-    if (id) {
-      this.reduced = true;
-      this.start(id);
-      this.update(0);
-      this.update(0);
-      this.reduced = reduced;
-      this.photoHold = true;
-    } else {
+    if (!spec || !base) {
+      this.pet?.hold(null);
       this.human.play("Idle", { fade: 0, loop: true });
+      this.pose();
+      return;
     }
+    const reduced = this.reduced;
+    this.reduced = true;
+    // An empty room has nobody to stand beside: the player poses alone.
+    const stage = this.pet ? spec.stage : { ...spec.stage, formation: "free" as const };
+    this.start({ ...base, ...stage, still: spec.still, pet: [], says: "You and {pet} pose for a photo." });
+    this.update(0);
+    this.update(0);
+    this.reduced = reduced;
+    if (this.pet) {
+      if (stage) this.pet.place(this.pet.root.position, yawToward(this.pet.root.position, this.camera.position) - 0.25);
+      this.pet.hold(spec.pet.clip, spec.pet.at, spec.pet.hop);
+      // Posed and moved before anything is drawn: a hand reaching for it needs where it is now.
+      this.pet.update(0, true);
+      this.pet.root.updateMatrixWorld(true);
+    }
+    this.photoHold = true;
+    this.updateFocus(1);
     this.pose();
   }
 
@@ -749,7 +779,7 @@ export class Director {
       if (this.cooldown <= 0 && this.queued) {
         const next = this.queued;
         this.queued = null;
-        this.start(next);
+        this.start(findMoment(next)!);
       }
     }
 
@@ -834,7 +864,7 @@ export class Director {
     } else {
       target.copy(this.human.root.position).setY(0.95);
     }
-    const k = 1 - Math.exp(-(this.reduced ? 60 : 1.6) * dt);
+    const k = 1 - Math.exp(-(this.reduced || this.photoHold ? 60 : 1.6) * dt);
     this.focus.lerp(target, k);
     this.zoom += (zoom - this.zoom) * k;
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { useRouter } from "next/navigation";
 import { Button, ButtonLink, Card, Chip, Icon, PetFrame, Row, SectionLabel, Stack } from "@/components/pk";
 import type { CompanionState } from "@/lib/companion/use-companion";

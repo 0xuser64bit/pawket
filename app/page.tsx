@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { Suspense } from "react";
 import {
   Banner,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Field, Screen, ScreenBar, Stack, Tabs, Waiting } from "@/components/pk";
 import { Room, type RoomState } from "@/components/home/room";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
@@ -39,7 +39,9 @@ const TABS: Array<{ key: ProfileTab; label: string; href: string }> = [
  * Then everything you keep: your pets, the wardrobe, the stickers their
  * records have earned, and the rooms and settings of this device.
  */
-export function ProfileScreen({ tab }: { tab: ProfileTab }) {
+export function ProfileScreen() {
+  const queryTab = useSearchParams().get("tab");
+  const tab = TABS.find((item) => item.key === queryTab)?.key ?? "pets";
   const companion = useCompanion();
   const { ready, pet } = companion;
   const look = usePlayerLook();
@@ -163,7 +165,7 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
             </span>
           </div>
           <Tabs label="What you keep" active={tab} items={TABS} />
-          <div key={tab} className="pk-swap-in">
+          <div key={tab} id={`pk-panel-${tab}`} role="tabpanel" aria-labelledby={`pk-tab-${tab}`} tabIndex={0} className="pk-swap-in">
             {tab === "pets" ? pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : <EmptyShelf /> : null}
             {tab === "wardrobe" ? pet ? <Wardrobe companion={companion} sender={sender} /> : <EmptyShelf /> : null}
             {tab === "stickers" ? <StickerBook pets={pets} onChain={onChain} inGuild={inGuild} social={social.data} /> : null}

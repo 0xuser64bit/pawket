@@ -121,6 +121,12 @@ on close. Escape, Cancel and backdrop dismissal agree. On phones the header
 supports downward dismissal and the footer keeps the main action under the
 thumb; the body scrolls independently. Paper sheets use Paper actions.
 Tabs support arrow keys and one keyboard stop. Photos use the shared sheet.
+Profile tabs update local history immediately, preserve deep links and browser
+Back/Forward, and keep the room mounted. Navigation links show a small wait
+inside their own hit target when a route takes time to arrive. Toasts are
+compact, top-centred at every width, with a full touch target to dismiss.
+The founding page shares the directory's page rails; record portraits align
+with their text at the leading edge.
 
 A failed read provides a disabled-while-reading retry without resetting local
 records. Copy/share failure leaves a selectable link or address. Transactions

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "@solana/kit";
 import {

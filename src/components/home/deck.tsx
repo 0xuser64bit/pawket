@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { Icon, type IconName } from "@/components/pk";
 import { CARE_ACTION_LABEL, MOOD_LABEL } from "@/lib/game/appearance";
 import { CareActionType, type PetMood, type PetStats } from "@/lib/game/enums";

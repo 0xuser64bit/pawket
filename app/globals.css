@@ -2773,10 +2773,10 @@ li {
   border-radius: var(--radius-room);
 }
 
-/* A pocket portrait sits centred in whatever column it is given. */
+/* A record portrait shares the page’s leading edge. */
 .pk-portrait {
   display: grid;
-  justify-items: center;
+  justify-items: start;
 }
 /* Rows of the same kind — guilds, events, games — run in one column until
    a desktop gives them two. */
@@ -7598,38 +7598,27 @@ html[data-transition="room"]::view-transition-new(*) {
   animation: pk-vt-fade-in var(--dur-room) var(--ease-swap) both;
 }
 
-/* Toasts: what a send is doing, in the corner and over the page — never in
-   it. A sticker card like any other, small: the mark says wait, done or
-   refused; the words say what; a toast that is done goes by itself. Above
-   the shell bar on a phone, where the dock is not; top right where there is
-   room. */
+/* Compact notices stay centred and clear of the dock at every width. */
 .pk-toasts {
   position: fixed;
   z-index: 40;
   top: max(var(--space-3), env(safe-area-inset-top));
-  left: max(var(--gutter), env(safe-area-inset-left));
-  right: max(var(--gutter), env(safe-area-inset-right));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(340px, calc(100% - 2 * max(var(--gutter), env(safe-area-inset-left), env(safe-area-inset-right))));
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: var(--space-2);
   pointer-events: none;
-}
-@media (min-width: 720px) {
-  .pk-toasts {
-    left: auto;
-    width: 380px;
-    top: calc(var(--space-10) + var(--space-2));
-  }
 }
 .pk-toast {
   pointer-events: auto;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
-  gap: var(--space-3);
+  gap: var(--space-2);
   width: 100%;
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
   background: var(--surface);
   color: var(--ink);
   border: var(--stroke-line) solid var(--edge);
@@ -7637,43 +7626,47 @@ html[data-transition="room"]::view-transition-new(*) {
   box-shadow: var(--shadow-sticker);
   animation: pk-toast-in var(--dur-sheet) var(--ease-press);
 }
+.pk-toast__words { min-width: 0; align-self: center; }
 .pk-toast__mark {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  margin-top: 1px;
+  width: 22px;
+  height: 22px;
+  margin-top: 10px;
   border-radius: var(--radius-pill);
   background: var(--surface-sunk);
   color: var(--ink-soft);
 }
-.pk-toast--done .pk-toast__mark {
+.pk-toast--done .pk-toast__words { min-width: 0; align-self: center; }
+.pk-toast__mark {
   background: var(--pool-soft);
   color: var(--pool-text);
 }
-.pk-toast--note .pk-toast__mark {
+.pk-toast--note .pk-toast__words { min-width: 0; align-self: center; }
+.pk-toast__mark {
   background: var(--sun-soft);
   color: var(--sun-text);
 }
 .pk-toast--risk {
   border-color: var(--alarm-text);
 }
-.pk-toast--risk .pk-toast__mark {
+.pk-toast--risk .pk-toast__words { min-width: 0; align-self: center; }
+.pk-toast__mark {
   background: var(--alarm-soft);
   color: var(--alarm-text);
 }
 .pk-toast__title {
   font-family: var(--font-text);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 13px;
+  line-height: 18px;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 .pk-toast__body {
   margin-top: 2px;
   font-family: var(--font-text);
-  font-size: 13px;
-  line-height: 19px;
+  font-size: 12px;
+  line-height: 17px;
   color: var(--ink-soft);
   overflow-wrap: anywhere;
 }
@@ -7684,8 +7677,8 @@ html[data-transition="room"]::view-transition-new(*) {
 .pk-toast__close {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   margin: -2px -2px 0 0;
   border: 0;
   border-radius: var(--radius-pill);
@@ -7865,3 +7858,21 @@ html[data-transition="room"]::view-transition-new(*) {
 /* A photo frame on the shelf: a small print in that frame (FrameArt). */
 .pk-tile__art .pk-market-frame { width: 74%; height: auto; }
 .pk-market-try .pk-market-frame { width: auto; height: 196px; align-self: center; }
+
+/* Pending navigation covers only its own hit target, without shifting its label. */
+[data-navigation] { position: relative; }
+.pk-link-pending {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  animation: pk-pending-in 120ms var(--ease-swap) 100ms forwards;
+}
+@keyframes pk-pending-in { to { opacity: .92; } }
+button.pk-tabs__t { font-family: var(--font-text); }
+button.pk-tabs__t:not(.pk-tabs__t--on) { background: transparent; }

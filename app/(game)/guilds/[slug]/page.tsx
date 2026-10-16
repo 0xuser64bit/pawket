@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { BackLink, Banner, ButtonLink, Card, Chip, LaunchStage, PetArt, Presence, ReadFailure, Row, Screen, Stack } from "@/components/pk";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { GuildMembership } from "@/components/guilds/membership";

@@ -104,7 +104,7 @@ export function Sheet({
     const overflow = root.style.overflow;
     root.style.overflow = "hidden";
     const before = document.activeElement as HTMLElement | null;
-    sheet.current?.focus();
+    (sheet.current?.querySelector<HTMLElement>("[data-autofocus]") ?? sheet.current)?.focus();
     return () => {
       for (const el of behind) el.inert = false;
       root.style.overflow = overflow;

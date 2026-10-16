@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { useRequest } from "@solana/react";
 import { fetchEncodedAccounts, type Address } from "@solana/kit";
-import { Button, Chip, Field, Row, Stack } from "@/components/pk";
+import { Choice, DateTimeField, Button, Chip, Field, Row, Stack } from "@/components/pk";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { fetchPetRsvps, type ChainEvent, type ChainPoll, type ChainRsvp } from "@/lib/solana/accounts";
 import { rpc } from "@/lib/solana/browser-client";
@@ -314,20 +314,8 @@ function FounderDesk({
         <Stack gap={3}>
           <Field label="What it is" icon="star" placeholder="Sunday nap in the sun" maxLength={GATHERING_LIMITS.maxTitle} value={title} onChange={(e) => setTitle(e.target.value)} />
           <Field label="A line about it" icon="chat" placeholder="By the big window. Bring a blanket." maxLength={GATHERING_LIMITS.maxNote} value={note} onChange={(e) => setNote(e.target.value)} />
-          <label className="pk-field">
-            <span className="label pk-faint">Starts</span>
-            <input className="pk-field__input" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
-          </label>
-          <label className="pk-field">
-            <span className="label pk-faint">Hours</span>
-            <select className="pk-field__input" value={hours} onChange={(e) => setHours(e.target.value)}>
-              {["1", "2", "3", "6", "24"].map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </label>
+          <DateTimeField label="Starts" value={start} onChange={setStart} />
+          <Choice label="Duration" value={hours} onPick={setHours} options={["1", "2", "3", "6", "24"].map((value) => ({ value, label: `${value} ${value === "1" ? "hour" : "hours"}` }))} />
           <div>
             <Button label="Plan it" tone="bloom" size="sm" icon="guild" disabled={sender.busy || title.trim().length < 3 || !start} onClick={() => void plan()} />
           </div>
@@ -351,20 +339,9 @@ function FounderDesk({
               onChange={(e) => setOptions(options.map((o, j) => (j === i ? e.target.value : o)))}
             />
           ))}
-          <label className="pk-field">
-            <span className="label pk-faint">Open for</span>
-            <select className="pk-field__input" value={days} onChange={(e) => setDays(e.target.value)}>
-              {[
-                ["1", "a day"],
-                ["3", "three days"],
-                ["7", "a week"],
-              ].map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Choice label="Open for" value={days} onPick={setDays} options={[
+            { value: "1", label: "A day" }, { value: "3", label: "Three days" }, { value: "7", label: "A week" },
+          ]} />
           <div>
             <Button
               label="Ask it"

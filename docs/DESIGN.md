@@ -127,6 +127,12 @@ inside their own hit target when a route takes time to arrive. Toasts are
 compact, top-centred at every width, with a full touch target to dismiss.
 The founding page shares the directory's page rails; record portraits align
 with their text at the leading edge.
+Short selections use the shared labelled Choice group, including event
+durations, poll lengths and photo frames. Event times use a themed calendar
+with keyboard day/month navigation, a local-time clock and explicit Apply
+and Cancel. Invalid, skipped and past times cannot be confirmed. Guilds
+founded by the connected wallet and confirmed memberships appear first,
+with written status as well as a bloom surface.
 
 A failed read provides a disabled-while-reading retry without resetting local
 records. Copy/share failure leaves a selectable link or address. Transactions

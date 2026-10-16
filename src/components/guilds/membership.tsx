@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { NavLink as Link } from "@/components/pk/nav-link";
-import { Button, PetArt, Waiting } from "@/components/pk";
+import { Button, Chip, PetArt, Waiting } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { petLook } from "@/lib/game/appearance";
@@ -19,7 +19,7 @@ import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
  * browser linked to them, with no pop-up); Pawket pays the fee while it
  * can. The page is read again from Solana once a send is confirmed.
  */
-export function GuildMembership({ guild }: { guild: { address: string; name: string } }) {
+export function GuildMembership({ guild }: { guild: { address: string; name: string; founder: string } }) {
   const companion = useCompanion();
   const sender = usePawketSend();
   const sponsor = useSponsor();
@@ -53,6 +53,7 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
 
   return (
     <div className="pk-join">
+      {companion.owner === guild.founder ? <Chip label="You founded this guild" tone="bloom" icon="guild" /> : companion.owned.some((entry) => entry.member?.guild === guild.address) ? <Chip label="Your pet is a member" tone="bloom" icon="check" /> : null}
       {!companion.owner ? (
         <>
           <Button label="Connect to join" icon="wallet" tone="bloom" size="sm" onClick={() => setConnecting(true)} />
@@ -82,7 +83,7 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
                   </span>
                   <span className="body-sm">
                     <b>{entry.pet.name}</b>
-                    {here ? " is in" : elsewhere ? " · in another guild" : ""}
+                    {here ? " · member" : elsewhere ? " · in another guild" : ""}
                   </span>
                   {here ? (
                     <Button label="Leave" tone="ghost" size="sm" disabled={sender.busy} onClick={() => void leave(entry)} />

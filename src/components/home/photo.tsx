@@ -5,7 +5,7 @@ import type { Address } from "@solana/kit";
 import { useConnected } from "@/lib/solana/browser-client";
 import { useCloset } from "@/lib/market/use-closet";
 import { PHOTO_FRAMES, type PhotoFrameId } from "@/lib/market/frames";
-import { Button, Sheet } from "@/components/pk";
+import { Button, Choice, Sheet } from "@/components/pk";
 import { savePicture, sharePicture, useAndroidApp } from "@/lib/native/android";
 
 /** The tokens a photo is printed in, read from the room the player is in. */
@@ -283,13 +283,9 @@ export function PhotoDialog({
         </>
       )}
     >
-      {available.length ? <label className="pk-stack label">
-        Photo frame
-        <select className="pk-input" value={selected ?? ""} onChange={(event) => { setPrint(null); setFrame(event.target.value ? event.target.value as PhotoFrameId : undefined); }}>
-          <option value="">Classic · free</option>
-          {available.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
-        </select>
-      </label> : null}
+      {available.length ? <Choice label="Photo frame" value={selected ?? ""}
+        onPick={(value) => { setPrint(null); setFrame(value ? value as PhotoFrameId : undefined); }}
+        options={[{ value: "", label: "Classic · free" }, ...available.map((option) => ({ value: option.id, label: option.name }))]} /> : null}
       {print ? (
         // A data URL made on this device: there is nothing for the image optimiser to fetch.
         // eslint-disable-next-line @next/next/no-img-element

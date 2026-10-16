@@ -110,7 +110,7 @@ export default async function GuildPage({ params }: Props) {
             </Row>
             {/* Facts above, the ways in below: joining, and passing the page on. */}
             <div className="pk-guild-hero__join">
-              {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name }} />}
+              {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name, founder: guild.founder }} />}
               <ShareButton name={guild.name} label="Share this guild" text={`${guild.name}: an optional guild of pets on Pawket, kept on Solana.`} />
             </div>
           </div>

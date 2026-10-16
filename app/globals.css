@@ -7876,3 +7876,46 @@ html[data-transition="room"]::view-transition-new(*) {
 @keyframes pk-pending-in { to { opacity: .92; } }
 button.pk-tabs__t { font-family: var(--font-text); }
 button.pk-tabs__t:not(.pk-tabs__t--on) { background: transparent; }
+
+.pk-guild--yours { background: var(--bloom-soft); border-color: var(--bloom-edge); }
+.pk-guild--yours .pk-guild__head { flex-wrap: wrap; gap: var(--space-2); }
+.pk-guild--yours .pk-guild__name { color: var(--bloom-text); }
+
+.pk-date-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-sunk);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.pk-date-trigger > span { flex: 1; }
+.pk-calendar { display: grid; gap: var(--space-4); }
+.pk-calendar > .pk-spread { display: grid; grid-template-columns: 44px 1fr 44px; text-align: center; }
+.pk-calendar > .pk-spread .pk-btn { width: 44px; padding: 0; }
+.pk-calendar > .pk-spread .pk-btn__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.pk-calendar__week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; }
+.pk-calendar__day {
+  width: 100%;
+  min-height: 44px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  border: var(--stroke-line) solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.pk-calendar__day[data-outside] { color: var(--ink-faint); }
+.pk-calendar__day[aria-current="date"] { text-decoration: underline; text-underline-offset: 4px; }
+[aria-selected="true"] > .pk-calendar__day { background: var(--sun); color: var(--on-sun); border-color: var(--edge); }
+.pk-calendar__day:hover { border-color: var(--edge); }
+.pk-calendar__clock { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+
+.pk-date-trigger > svg:last-child { transform: rotate(90deg); }

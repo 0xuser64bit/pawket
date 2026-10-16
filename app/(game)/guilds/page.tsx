@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { NavLink as Link } from "@/components/pk/nav-link";
-import { ButtonLink, Card, LaunchStage, ReadFailure, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
-import { GuildCrest } from "@/components/guilds/guild-crest";
+import { ButtonLink, Card, ReadFailure, Screen, ScreenBar, Stack } from "@/components/pk";
+import { GuildDirectory } from "@/components/guilds/directory";
 import { GUILD_CAN, GUILD_CANNOT } from "@/lib/guilds/boundary";
 import { isListed } from "@/lib/guilds/delisted";
 import type { ChainGuild } from "@/lib/solana/accounts";
-import { formatUtcDate } from "@/lib/utils/format";
 import type { CoinStage } from "@/lib/coins/stage";
 import { readGuilds } from "@/server/solana";
 
@@ -27,31 +25,6 @@ function Bounds({ items, mark, color }: { items: string[]; mark: string; color: 
         </li>
       ))}
     </ul>
-  );
-}
-
-function GuildCard({ guild, coin }: { guild: ChainGuild; coin?: CoinStage }) {
-  return (
-    <div className="pk-guild">
-      <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} />
-      <div className="pk-fill">
-        <div className="pk-guild__head">
-          <Link href={`/guilds/${guild.slug}`} className="title pk-guild__name" transitionTypes={["nav-forward"]}>
-            {guild.name}
-          </Link>
-        </div>
-        <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
-          {guild.motto || "No motto yet."}
-        </p>
-        <div className="pk-guild__foot">
-          <span className="caption pk-faint">
-            {guild.memberCount} {guild.memberCount === 1 ? "pet" : "pets"}{" "}
-            <span className="pk-nowrap">· since {formatUtcDate(new Date(guild.createdAt * 1000).toISOString())}</span>
-          </span>
-          {coin && coin !== "none" ? <LaunchStage stage={coin} /> : null}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -98,16 +71,7 @@ export default async function GuildsPage() {
             </p>
           </Card>
         ) : (
-          <Stack gap={3}>
-            <SectionLabel tone="bloom" count={`${guilds.length}`}>
-              On Solana now
-            </SectionLabel>
-            <div className="pk-rows">
-              {guilds.map((guild) => (
-                <GuildCard key={guild.address} guild={guild} coin={coins.get(guild.slug)} />
-              ))}
-            </div>
-          </Stack>
+          <GuildDirectory guilds={guilds} coins={coins} />
         )}
 
         <details className="pk-fold">

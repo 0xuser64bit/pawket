@@ -240,8 +240,8 @@ export function HomeScreen() {
         ttl: 14_000,
         body: (
           <>
-            Levels here live in {here}. Kept on Solana, {current.name} would start over at level 1 — the sooner,
-            the less to redo.{" "}
+            This level lives in {here}. On Solana, {current.name} starts at level 1 — the sooner, the less to
+            redo.{" "}
             <button type="button" className="pk-linkish" onClick={() => setKeeping(readPet(current.id) ?? current)}>
               Keep {current.name} on Solana
             </button>

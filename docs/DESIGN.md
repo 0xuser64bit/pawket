@@ -125,7 +125,11 @@ Tabs support arrow keys and one keyboard stop. Photos use the shared sheet.
 Profile tabs update local history immediately, preserve deep links and browser
 Back/Forward, and keep the room mounted. Navigation links show a small wait
 inside their own hit target when a route takes time to arrive. Toasts are
-compact, top-centred at every width, with a full touch target to dismiss.
+small sticker cards, top-centred at every width and above sheets. The newest
+is in front and up to two older ones tuck in under it, a sliver each, so a
+few at once never cover the screen; hover, focus or a tap fans them out.
+A finger flicks one away up or to either side, and its close keeps a 44px
+target behind a small mark. A wait's mark becomes a tick that pops in.
 The founding page shares the directory's page rails; record portraits align
 with their text at the leading edge.
 Short selections use the shared labelled Choice group, including event

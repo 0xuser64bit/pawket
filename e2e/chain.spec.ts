@@ -45,9 +45,9 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
   await expect(page.getByText(`Keep ${name} on Solana`).first()).toBeVisible();
 
   await page.getByRole("button", { name: "Feed" }).click();
-  await expect(page.getByText(`Feed ${name}`)).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText(/Recorded on Solana/).first()).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText(/Recorded on Solana, no pop-up/).first()).toBeVisible();
+  // One toast for the care, in front of any older one: what it did, then its record.
+  const fed = page.locator(".pk-toast", { hasText: `Feed ${name}` });
+  await expect(fed.getByText(/^Fed\..*Recorded on Solana, no pop-up\./)).toBeVisible({ timeout: 120_000 });
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
 
   await page.getByRole("link", { name: `${name}'s record` }).click();

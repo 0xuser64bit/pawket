@@ -7650,44 +7650,77 @@ html[data-transition="room"]::view-transition-new(*) {
   animation: pk-vt-fade-in var(--dur-room) var(--ease-swap) both;
 }
 
-/* Compact notices stay centred and clear of the dock at every width. */
+/* Toasts: what happened off to the side, top centre at every width, over
+   the page and never in it — the shell bar scrolls away, the dock is at the
+   foot. Small sticker cards: a mark that says wait, done, a note or refused,
+   the words, a close. The newest is in front and the rest tuck in under it,
+   a sliver of each showing, so a few at once never cover a screen; hover,
+   focus or a tap fans them out. A finger flicks one away. */
 .pk-toasts {
   position: fixed;
   z-index: 40;
   top: max(var(--space-3), env(safe-area-inset-top));
   left: 50%;
-  transform: translateX(-50%);
-  width: min(340px, calc(100% - 2 * max(var(--gutter), env(safe-area-inset-left), env(safe-area-inset-right))));
+  translate: -50% 0;
+  width: min(360px, calc(100% - 2 * max(var(--gutter), env(safe-area-inset-left), env(safe-area-inset-right))));
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: var(--space-2);
   pointer-events: none;
 }
 .pk-toast {
+  position: relative;
+  z-index: 1;
   pointer-events: auto;
+  touch-action: none;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 26px minmax(0, 1fr) 26px;
   align-items: start;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  gap: 10px;
+  padding: 9px;
   background: var(--surface);
   color: var(--ink);
   border: var(--stroke-line) solid var(--edge);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sticker);
-  animation: pk-toast-in var(--dur-sheet) var(--ease-press);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sticker-sm);
+  transform-origin: bottom center;
+  transition:
+    transform var(--dur-swap) var(--ease-spring),
+    translate var(--dur-swap) var(--ease-swap),
+    opacity var(--dur-swap) var(--ease-swap);
+  animation: pk-toast-in 320ms var(--ease-spring);
 }
-.pk-toast__words { min-width: 0; align-self: center; }
+/* Folded: under the one in front, the older ones show a sliver each. */
+.pk-toasts:not([data-open]) .pk-toast[data-depth]:not([data-depth="0"]) {
+  position: absolute;
+  inset: 0;
+  z-index: calc(-1 * var(--depth));
+  transform: translateY(calc(var(--depth) * 10px)) scale(calc(1 - var(--depth) * 0.05));
+}
+.pk-toasts:not([data-open]) .pk-toast[data-depth]:not([data-depth="0"]) > * {
+  visibility: hidden;
+}
+.pk-toasts:not([data-open]) .pk-toast[data-leaving] {
+  position: absolute;
+  inset: 0 0 auto;
+}
+.pk-toast[data-leaving] {
+  pointer-events: none;
+  animation: pk-toast-out 200ms var(--ease-swap) forwards;
+}
+.pk-toast__words {
+  min-width: 0;
+}
 .pk-toast__mark {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
-  margin-top: 10px;
+  width: 26px;
+  height: 26px;
+  margin-top: -4px;
   border-radius: var(--radius-pill);
   background: var(--surface-sunk);
   color: var(--ink-soft);
+  animation: pk-toast-pop 360ms var(--ease-spring) 60ms both;
 }
 .pk-toast--done .pk-toast__mark {
   background: var(--pool-soft);
@@ -7706,15 +7739,15 @@ html[data-transition="room"]::view-transition-new(*) {
 }
 .pk-toast__title {
   font-family: var(--font-text);
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 18px;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 .pk-toast__body {
-  margin-top: 2px;
+  margin-top: 1px;
   font-family: var(--font-text);
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 17px;
   color: var(--ink-soft);
   overflow-wrap: anywhere;
@@ -7723,17 +7756,26 @@ html[data-transition="room"]::view-transition-new(*) {
   color: var(--ink);
   font-weight: 600;
 }
+/* Small to the eye, a whole finger to press. */
 .pk-toast__close {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  margin: -2px -2px 0 0;
+  width: 26px;
+  height: 26px;
+  margin-top: -4px;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-soft);
   cursor: pointer;
+}
+.pk-toast__close::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: inherit;
 }
 @media (hover: hover) {
   .pk-toast__close:hover {
@@ -7744,6 +7786,25 @@ html[data-transition="room"]::view-transition-new(*) {
 .pk-toast__close:focus-visible {
   outline: var(--stroke-line) solid var(--focus);
   outline-offset: 1px;
+}
+@keyframes pk-toast-in {
+  from {
+    opacity: 0;
+    translate: 0 -14px;
+    scale: 0.94;
+  }
+}
+@keyframes pk-toast-out {
+  to {
+    opacity: 0;
+    scale: 0.92;
+  }
+}
+@keyframes pk-toast-pop {
+  from {
+    scale: 0.3;
+    opacity: 0;
+  }
 }
 .pk-spinner {
   width: 14px;
@@ -7756,12 +7817,6 @@ html[data-transition="room"]::view-transition-new(*) {
 @keyframes pk-turn {
   to {
     transform: rotate(1turn);
-  }
-}
-@keyframes pk-toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
   }
 }
 @media (prefers-reduced-motion: reduce) {

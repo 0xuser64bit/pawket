@@ -213,9 +213,12 @@ test("a new level is said out loud, and nothing else about the care changes", as
   await page.reload();
   await expect(page.getByText("95 / 100 XP")).toBeVisible();
   await page.getByRole("button", { name: "Feed" }).click();
-  // The level is its own toast, in front of the care's line, which no longer repeats it.
+  // The level is its own toast, in front of the care's line, which no longer repeats it;
+  // the line is tucked under it until the stack is fanned out.
   await expect(page.getByText("Pepper is level 2!")).toBeVisible();
   const care = page.getByText(/^Fed\. \+10 XP\. Day 1\./);
+  await expect(care).toBeHidden();
+  await page.getByText("Pepper is level 2!").hover();
   await expect(care).toBeVisible();
   await expect(care).not.toContainText("level");
   await expect(page.getByRole("img", { name: /^Level 2,/ })).toBeVisible();

@@ -55,14 +55,17 @@ test("a guild's whole card is its link, not only its name", async ({ page }) => 
     .toBe(href);
 });
 
-test("founding shares the normal page rails", async ({ page }) => {
+test("founding shares the normal page rails, and its form keeps a reading measure", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto("/home");
-  const home = await page.getByRole("main").boundingBox();
+  await page.goto("/guilds");
+  const directory = (await page.getByRole("heading", { name: "Guilds", level: 1 }).boundingBox())!;
   await page.goto("/guilds/new");
-  const found = await page.getByRole("main").boundingBox();
-  expect(found?.x).toBe(home?.x);
-  expect(found?.width).toBe(home?.width);
+  const found = (await page.getByRole("heading", { name: "Found a guild", level: 1 }).boundingBox())!;
+  expect(found.x).toBe(directory.x);
+  // Beside the guild as it will look, not stretched across the whole place.
+  const field = (await page.getByRole("textbox", { name: "Guild name" }).boundingBox())!;
+  expect(field.width).toBeLessThan(640);
+  expect(field.x).toBeGreaterThan(found.x + 300);
 });
 
 test("Home sound is optional and shares its device setting with Profile", async ({ page }) => {

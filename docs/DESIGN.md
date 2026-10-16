@@ -134,8 +134,9 @@ is in front and up to two older ones tuck in under it, a sliver each, so a
 few at once never cover the screen; hover, focus or a tap fans them out.
 A finger flicks one away up or to either side, and its close keeps a 44px
 target behind a small mark. A wait's mark becomes a tick that pops in.
-The founding page shares the directory's page rails; record portraits align
-with their text at the leading edge.
+The founding page shares the directory's page rails and head; on a desktop
+the guild as it will look stays pinned beside its form, which keeps a reading
+measure. Record portraits align with their text at the leading edge.
 Short selections use the shared labelled Choice group, including event
 durations, poll lengths, photo poses and frames; no native select remains.
 A consent box is a Paper box with an ink tick, and a disclosure inside a

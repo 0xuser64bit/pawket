@@ -5259,6 +5259,12 @@ details > .pk-risks {
   padding: 0;
   border: 0;
 }
+/* A legend is not a flex item, so the gap never reaches it: it keeps a
+   field label's own distance from what it names. */
+.pk-fieldset > legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+}
 .pk-crests {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));

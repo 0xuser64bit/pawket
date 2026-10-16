@@ -3,6 +3,7 @@ import { NavLink as Link } from "@/components/pk/nav-link";
 import { BackLink, Banner, ButtonLink, Card, Chip, LaunchStage, PetArt, Presence, ReadFailure, Row, Screen, Stack } from "@/components/pk";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { GuildMembership } from "@/components/guilds/membership";
+import { GuildRole } from "@/components/guilds/yours";
 import { GuildGatherings } from "@/components/guilds/gatherings";
 import { ShareButton } from "@/components/pet/share-button";
 import { AddressLine } from "@/components/wallet/address";
@@ -104,13 +105,14 @@ export default async function GuildPage({ params }: Props) {
             </h1>
             {guild.motto ? <p className="body-lg pk-muted">{guild.motto}</p> : null}
             <Row gap={2} wrap style={{ marginTop: "var(--space-3)", alignItems: "center" }}>
+              <GuildRole guild={guild} />
               <Chip label={`${guild.memberCount} ${guild.memberCount === 1 ? "pet" : "pets"}`} tone="pool" icon="users" />
               <Chip label="Optional" tone="bloom" icon="guild" />
               <Chip label={`Since ${since(guild.createdAt)}`} tone="plain" />
             </Row>
             {/* Facts above, the ways in below: joining, and passing the page on. */}
             <div className="pk-guild-hero__join">
-              {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name, founder: guild.founder }} />}
+              {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name }} />}
               <ShareButton name={guild.name} label="Share this guild" text={`${guild.name}: an optional guild of pets on Pawket, kept on Solana.`} />
             </div>
           </div>

@@ -7902,9 +7902,56 @@ html[data-transition="room"]::view-transition-new(*) {
 button.pk-tabs__t { font-family: var(--font-text); }
 button.pk-tabs__t:not(.pk-tabs__t--on) { background: transparent; }
 
-.pk-guild--yours { background: var(--bloom-soft); border-color: var(--bloom-edge); }
-.pk-guild--yours .pk-guild__head { flex-wrap: wrap; gap: var(--space-2); }
-.pk-guild--yours .pk-guild__name { color: var(--bloom-text); }
+/* Yours — a guild you founded, or one a pet of yours is in: the guild's hue
+   at its edge and under it, and a badge with your pets' faces and your role
+   in a word, so it reads at a glance without leaning on the colour. */
+.pk-guild--yours {
+  background: var(--bloom-soft);
+  border-color: var(--bloom-edge);
+  box-shadow: 2px 2px 0 var(--bloom-edge);
+}
+@media (hover: hover) {
+  .pk-guild--yours:has(.pk-guild__name:hover) {
+    box-shadow: 3px 3px 0 var(--bloom-edge);
+  }
+}
+.pk-guild--yours:has(.pk-guild__name:active) {
+  box-shadow: 1px 1px 0 var(--bloom-edge);
+}
+.pk-guild__you {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+  padding: 2px var(--space-2) 2px 2px;
+  border: var(--stroke-line) solid var(--bloom-text);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--bloom-text);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pk-guild__you .pk-avatar {
+  width: 24px;
+  height: 24px;
+  border-width: 1.5px;
+}
+.pk-guild__you .pk-avatar + .pk-avatar {
+  margin-left: -10px;
+}
+.pk-guild__you > :not(.pk-avatar):first-child {
+  padding-left: var(--space-1);
+}
+/* On the guild's page the same role leads its facts, filled so it is found first. */
+.pk-chip--yours {
+  background: var(--bloom);
+  border-color: var(--edge);
+  color: var(--on-bloom);
+}
 
 .pk-date-trigger {
   display: flex;

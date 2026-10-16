@@ -132,8 +132,11 @@ Short selections use the shared labelled Choice group, including event
 durations, poll lengths and photo frames. Event times use a themed calendar
 with keyboard day/month navigation, a local-time clock and explicit Apply
 and Cancel. Invalid, skipped and past times cannot be confirmed. Guilds
-founded by the connected wallet and confirmed memberships appear first,
-with written status as well as a bloom surface.
+the connected wallet founded, or one of its pets is in, come first under
+"Your guilds": a bloom card edge and shadow, and a badge with those pets'
+faces and the role in a word (Founder, Member). The guild's own page leads
+its facts with the same role. Both wait for the wallet's pets to be read, so
+the page drawn on the server and in the browser agree.
 Home's sound switch stays beside the room-view switch, including in the flat
 room. A remembered sound preference waits for a gesture after reload; mute
 stops both future chimes and notes already playing. Hidden or unmounted rooms

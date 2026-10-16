@@ -6,6 +6,7 @@ import { useRequest } from "@solana/react";
 import { fetchEncodedAccounts, type Address } from "@solana/kit";
 import { Choice, DateTimeField, Button, Chip, Field, Row, Stack } from "@/components/pk";
 import { useCompanion } from "@/lib/companion/use-companion";
+import { yourPlace } from "./yours";
 import { fetchPetRsvps, type ChainEvent, type ChainPoll, type ChainRsvp } from "@/lib/solana/accounts";
 import { rpc } from "@/lib/solana/browser-client";
 import {
@@ -55,7 +56,8 @@ export function GuildGatherings({
   const [now] = useState(() => Math.floor(Date.now() / 1000));
   const owner = companion.owner;
   const mine = useMemo(() => companion.owned.filter((entry) => entry.member?.guild === guild.address), [companion.owned, guild.address]);
-  const founder = owner !== null && owner === guild.founder;
+  // Like "your place" (yours.tsx): only once the wallet's pets are read, so the first draw matches the server's.
+  const founder = yourPlace(companion, guild).founded;
 
   // What this wallet's pets have RSVPed to, and which polls it has answered: read from Solana.
   const readMine = useCallback(async () => {

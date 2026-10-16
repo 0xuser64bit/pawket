@@ -79,6 +79,6 @@ test("in a browser nothing is asked of a phone, and the words say this browser",
   await page.getByRole("button", { name: /take them home/i }).click();
   await expect(page.getByText(/In this browser/)).toBeVisible();
   await page.goto("/profile?tab=settings");
-  await expect(page.getByRole("button", { name: /Playground sound/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Pawket sound/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Haptics/ })).toHaveCount(0);
 });

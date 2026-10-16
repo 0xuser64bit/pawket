@@ -2,7 +2,8 @@
 
 import { NavLink as Link } from "@/components/pk/nav-link";
 import { useRouter } from "next/navigation";
-import { Button, ButtonLink, Card, Chip, Icon, PetFrame, Row, SectionLabel, Stack } from "@/components/pk";
+import { useTransition } from "react";
+import { Button, ButtonLink, Card, Chip, Icon, PetFrame, Row, SectionLabel, Stack, Waiting } from "@/components/pk";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
@@ -15,18 +16,20 @@ import { useHere } from "@/lib/native/android";
  */
 export function PetsShelf({ companion, onConnect }: { companion: CompanionState; onConnect: () => void }) {
   const router = useRouter();
+  const [opening, startOpening] = useTransition();
   const { here } = useHere();
   const home = companion.pet?.id;
   const onChain = new Set<string>(companion.owned.map((entry) => entry.pet.address));
 
   function bringHome(id: string) {
     companion.choose(id);
-    router.push("/home", { transitionTypes: ["nav-place"] });
+    startOpening(() => router.push("/home", { transitionTypes: ["nav-place"] }));
   }
 
   return (
     <Stack gap={4}>
       <SectionLabel count={`${companion.all.length}`}>Your pets</SectionLabel>
+      {opening ? <Waiting label="Opening the room" inline /> : null}
       <div className="pk-cards">
         {companion.all.map((pet) => (
           <PetCard key={pet.id} pet={pet} onChain={onChain.has(pet.id)} home={pet.id === home} onHome={() => bringHome(pet.id)} />

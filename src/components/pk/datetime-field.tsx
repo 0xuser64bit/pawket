@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { localMinute, parseLocalMinute } from "@/lib/utils/local-datetime";
 import { Button, Field } from "./controls";
 import { Icon } from "./icon";
@@ -12,16 +12,17 @@ const clockLabel = (date: Date) => date.toLocaleString(undefined, { dateStyle: "
 /** A local event time, picked in the room's own calendar and confirmed as one change. */
 export function DateTimeField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   const [open, setOpen] = useState(false);
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const id = useId();
   const chosen = parseLocalMinute(value);
   return <div className="pk-stack">
     <span id={id} className="label pk-faint">{label}</span>
     <button type="button" className="pk-date-trigger" aria-labelledby={`${id} ${id}-value`} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
       <Icon name="clock" size={18} />
-      <span id={`${id}-value`}>{chosen ? clockLabel(chosen) : "Choose a date and time"}</span>
+      <span id={`${id}-value`}>{chosen ? mounted ? clockLabel(chosen) : value.replace("T", " · ") : "Choose a date and time"}</span>
       <Icon name="right" size={14} />
     </button>
-    <span className="caption pk-faint">Your local time · {Intl.DateTimeFormat().resolvedOptions().timeZone}</span>
+    <span className="caption pk-faint">Your local time{mounted ? ` · ${Intl.DateTimeFormat().resolvedOptions().timeZone}` : ""}</span>
     {open ? <Calendar value={value} label={label} onClose={() => setOpen(false)} onApply={(next) => { onChange(next); setOpen(false); }} /> : null}
   </div>;
 }
@@ -57,7 +58,7 @@ function Calendar({ value, label, onClose, onApply }: { value: string; label: st
       setDay(new Date(date.getFullYear(), date.getMonth(), date.getDate() + (event.key === "Home" ? -weekday : 6 - weekday), 12));
     }
   }
-  return <Sheet title={`Choose ${label.toLowerCase()}`} register="room" onDismiss={onClose}
+  return <Sheet title={`Choose date and time: ${label.toLowerCase()}`} register="room" onDismiss={onClose}
     foot={(dismiss) => <div className="pk-spread"><Button label="Cancel" tone="ghost" onClick={dismiss} /><Button label="Use this time" icon="check" disabled={Boolean(problem)} onClick={() => { if (candidate && candidate.getTime() > Date.now()) onApply(localMinute(candidate)); else setNow(Date.now()); }} /></div>}>
     <div className="pk-calendar">
       <div className="pk-spread">

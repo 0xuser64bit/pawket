@@ -192,8 +192,11 @@ test("room settings show two compact choices per row and remember a touch select
   await page.goto("/profile?tab=settings#shelf");
   const rooms = page.getByRole("radiogroup", { name: "Rooms" });
   const choices = rooms.locator(".pk-theme");
-  const daylight = (await choices.nth(1).boundingBox())!;
-  const lamplight = (await choices.nth(2).boundingBox())!;
+  await expect(choices.nth(2)).toBeVisible();
+  const [daylight, lamplight] = await choices.evaluateAll((nodes) => nodes.slice(1, 3).map((node) => {
+    const { x, y, width } = node.getBoundingClientRect();
+    return { x, y, width };
+  }));
   expect(daylight.y).toBe(lamplight.y);
   expect(lamplight.x).toBeGreaterThan(daylight.x + daylight.width);
   expect((await rooms.boundingBox())!.height).toBeLessThan(1100);

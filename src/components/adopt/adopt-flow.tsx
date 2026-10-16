@@ -139,6 +139,10 @@ export function AdoptFlow() {
   const router = useRouter();
   const [opening, startOpening] = useTransition();
   const goHome = () => startOpening(() => router.push("/home", { transitionTypes: ["nav-place"] }));
+  // Adoption has no dock to fetch Home ahead, so it asks for it: "Take them home" is then instant.
+  useEffect(() => {
+    router.prefetch("/home");
+  }, [router]);
   const { ready, pets: residents } = usePets();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [species, setSpecies] = useState<PetSpecies>(PetSpecies.LunaCat);

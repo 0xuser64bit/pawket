@@ -7973,21 +7973,37 @@ html[data-transition="room"]::view-transition-new(*) {
 .pk-tile__art .pk-market-frame { width: 74%; height: auto; }
 .pk-market-try .pk-market-frame { width: auto; height: 196px; align-self: center; }
 
-/* Pending navigation covers only its own hit target, without shifting its label. */
-[data-navigation] { position: relative; }
-.pk-link-pending {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: var(--surface);
-  color: var(--ink);
-  border-radius: inherit;
-  pointer-events: none;
+/* A place on its way that was not fetched ahead: one sun line across the
+   top of the screen, shown only past the first 150ms, growing toward an end
+   it does not promise. The link that was pressed, and the page, stay as
+   they are. Most of the time the place's own still placeholder comes first. */
+.pk-nav-progress {
+  position: fixed;
+  z-index: 50;
+  top: env(safe-area-inset-top, 0);
+  left: 0;
+  width: 100%;
+  height: 3px;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: var(--sun);
+  transform: scaleX(0);
+  transform-origin: left;
   opacity: 0;
-  animation: pk-pending-in 120ms var(--ease-swap) 100ms forwards;
+  pointer-events: none;
+  transition: opacity var(--dur-swap) var(--ease-swap);
 }
-@keyframes pk-pending-in { to { opacity: .92; } }
+.pk-nav-progress[data-on] {
+  opacity: 1;
+  animation: pk-nav-grow 10s cubic-bezier(0.1, 0.8, 0.2, 1) 150ms both;
+}
+@keyframes pk-nav-grow {
+  from {
+    transform: scaleX(0.08);
+  }
+  to {
+    transform: scaleX(0.94);
+  }
+}
 button.pk-tabs__t { font-family: var(--font-text); }
 button.pk-tabs__t:not(.pk-tabs__t--on) { background: transparent; }
 

@@ -123,8 +123,12 @@ supports downward dismissal and the footer keeps the main action under the
 thumb; the body scrolls independently. Paper sheets use Paper actions.
 Tabs support arrow keys and one keyboard stop. Photos use the shared sheet.
 Profile tabs update local history immediately, preserve deep links and browser
-Back/Forward, and keep the room mounted. Navigation links show a small wait
-inside their own hit target when a route takes time to arrive. Toasts are
+Back/Forward, and keep the room mounted. Going somewhere commits at once
+to the place's still placeholder: every segment whose pages change under it
+has a `loading.tsx`, so Back from a guild or a record never waits on the
+server with the old screen up. A link is never painted over; if a place was
+not fetched ahead, one sun line at the top of the screen says it is on its
+way (only past 150ms). A pressed tab lights at once. Toasts are
 small sticker cards, top-centred at every width and above sheets. The newest
 is in front and up to two older ones tuck in under it, a sliver each, so a
 few at once never cover the screen; hover, focus or a tap fans them out.

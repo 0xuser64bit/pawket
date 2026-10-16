@@ -21,17 +21,38 @@ test("profile tabs switch locally, preserve history and support the keyboard", a
   expect(requests).toEqual([]);
 });
 
-test("a delayed back link acknowledges navigation before the destination arrives", async ({ page }) => {
+test("a place that is slow to arrive says so at the top, and leaves the link as it was", async ({ page }) => {
   let release = () => {};
   const held = new Promise<void>((resolve) => { release = resolve; });
   await page.route((url) => url.pathname === "/guilds" && url.searchParams.has("_rsc"), async (route) => { await held; await route.continue(); });
   await page.goto("/guilds/new");
   const back = page.getByRole("link", { name: "Guilds", exact: true }).filter({ has: page.locator(".pk-btn__label") });
+  const bar = page.locator(".pk-nav-progress[data-on]");
   try {
     await back.click();
-    await expect(back.getByRole("status")).toContainText("Opening page");
+    await expect(bar).toHaveCount(1);
+    // Nothing is painted over the link: its arrow and its word are still there.
+    await expect(back).toHaveText("Guilds");
+    await expect(back.locator(".pk-spinner")).toHaveCount(0);
   } finally { release(); }
   await expect(page).toHaveURL(/\/guilds$/);
+  await expect(bar).toHaveCount(0);
+});
+
+test("a guild's whole card is its link, not only its name", async ({ page }) => {
+  await page.goto("/guilds");
+  const card = page.locator(".pk-guild").first();
+  test.skip(!(await card.count()), "Solana did not answer with any guild");
+  const href = await card.locator(".pk-guild__name").getAttribute("href");
+  // What a finger on the crest presses, once the page has arrived: the guild's own link.
+  await expect
+    .poll(() =>
+      card.evaluate((el) => {
+        const crest = el.querySelector(".pk-crest")!.getBoundingClientRect();
+        return document.elementFromPoint(crest.x + crest.width / 2, crest.y + crest.height / 2)?.closest("a")?.getAttribute("href");
+      }),
+    )
+    .toBe(href);
 });
 
 test("founding shares the normal page rails", async ({ page }) => {

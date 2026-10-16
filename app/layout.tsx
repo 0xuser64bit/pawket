@@ -6,6 +6,7 @@ import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/config/site";
 import { THEME_SCRIPT } from "@/config/themes";
 import { BootSplash } from "@/components/pk/boot-splash";
 import { Toasts } from "@/components/pk/toast";
+import { NavProgress } from "@/components/pk/nav-link";
 import "./globals.css";
 import Providers from "./providers";
 
@@ -55,6 +56,7 @@ export default function RootLayout({
       </head>
       <body>
         <BootSplash />
+        <NavProgress />
         <Providers>{children}</Providers>
         <Toasts />
         <Analytics />

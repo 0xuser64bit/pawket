@@ -4,7 +4,11 @@ test("profile tabs switch locally, preserve history and support the keyboard", a
   await page.goto("/profile#shelf");
   await expect(page.getByRole("tab", { name: "Pets", exact: true })).toHaveAttribute("aria-selected", "true");
   const requests: string[] = [];
-  page.on("request", (request) => { if (new URL(request.url()).pathname === "/profile" && request.headers()["rsc"]) requests.push(request.url()); });
+  page.on("request", (request) => {
+    const headers = request.headers();
+    // Visible dock links prefetch independently of tab changes and browser history.
+    if (new URL(request.url()).pathname === "/profile" && headers["rsc"] && !headers["next-router-prefetch"]) requests.push(request.url());
+  });
   await page.getByRole("tab", { name: "Settings", exact: true }).click();
   await expect(page.getByRole("tabpanel", { name: "Settings" })).toBeVisible();
   await expect(page).toHaveURL(/tab=settings#shelf/);

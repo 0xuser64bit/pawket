@@ -23,6 +23,8 @@ import { RemindMe } from "@/components/home/remind-me";
 import { CARE_ICON, Deck, type Gain, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
 import { PhotoDialog } from "@/components/home/photo";
+import { blip } from "@/lib/play/sound";
+import { RoomSound } from "./room-sound";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { Room, RoomViewSwitch, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";
@@ -58,7 +60,7 @@ import { haptic, useHere } from "@/lib/native/android";
 import { describeLook } from "@/lib/player/look";
 import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
-import { CARE_MOMENT, type RoomCue } from "@/lib/room/moments";
+import { CARE_MOMENT, type PhotoPose, type RoomCue } from "@/lib/room/moments";
 import { getCareInstruction } from "@/lib/solana/instructions";
 import { usePawketSend } from "@/lib/solana/use-send";
 
@@ -86,7 +88,13 @@ export function HomeScreen() {
   const [gain, setGain] = useState<Gain | null>(null);
   const [shot, setShot] = useState<string | null>(null);
   const roomView = useRef<RoomView>(null);
-  const closePhoto = useCallback(() => setShot(null), []);
+  const closePhoto = useCallback(() => { roomView.current?.pose(null); setShot(null); }, []);
+  const poseForPhoto = useCallback((id: PhotoPose | null) => {
+    const view = roomView.current;
+    if (!view) return null;
+    view.pose(id);
+    return view.snap();
+  }, []);
   /** A browser pet on its way onto Solana: its id here, and its address there. */
   const carried = useRef<{ id: string; address: Address } | null>(null);
   const [cue, setCue] = useState<RoomCue | null>(null);
@@ -95,7 +103,7 @@ export function HomeScreen() {
   const [mode, setMode] = useRoomMode();
   const onStatus = useCallback((next: DirectorStatus) => setStatus(next), []);
   const lookShown = roomState === "live" || roomState === "loading";
-  const ask = (moment: string) => setCue({ moment, nonce: Date.now() });
+  const ask = (moment: string) => { setCue({ moment, nonce: Date.now() }); blip(587, 180, "sine", 0.025); };
   const earned = (action: CareActionType, xp: number) => setGain({ action, xp, at: Date.now() });
 
   useEffect(() => {
@@ -150,7 +158,7 @@ export function HomeScreen() {
             description={`${describeLook(look)}, in an empty room with the window open.`}
             onState={setRoomState}
             stage
-            corner={<RoomViewSwitch mode={mode} state={roomState} onMode={setMode} />}
+            corner={<div className="pk-room-tools"><RoomSound /><RoomViewSwitch mode={mode} state={roomState} onMode={setMode} /></div>}
           />
           <Card>
             <h2 className="title">The window is open</h2>
@@ -324,7 +332,7 @@ export function HomeScreen() {
           onState={setRoomState}
           stage
           viewRef={roomView}
-          corner={<RoomViewSwitch mode={mode} state={roomState} onMode={setMode} />}
+          corner={<div className="pk-room-tools"><RoomSound /><RoomViewSwitch mode={mode} state={roomState} onMode={setMode} /></div>}
         />
         <Deck
           name={pet.name}
@@ -343,8 +351,7 @@ export function HomeScreen() {
           onPanel={setPanel}
           onSnap={roomState === "live" ? () => setShot(roomView.current?.snap() ?? null) : undefined}
         />
-        {/* What the room is doing, said under the deck so nothing above a finger moves. */}
-        <p role="status" className="body-sm pk-muted pk-home__said">
+        <p role="status" className="pk-sr">
           {status.sentence}
         </p>
 
@@ -395,6 +402,7 @@ export function HomeScreen() {
       {shot ? (
         <PhotoDialog
           shot={shot}
+          onPose={poseForPhoto}
           title={`${pet.name} and ${profile.name.trim() || "me"}`}
           line={`${PERSONALITY_LABEL[pet.personality]} ${SPECIES_LABEL[pet.species].toLowerCase()} · level ${projected.level} · ${utcDay(now)}`}
           file={`pawket-${pet.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${utcDay(now)}`}

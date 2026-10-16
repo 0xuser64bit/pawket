@@ -214,6 +214,14 @@ export const MOMENTS: readonly Moment[] = [
 /** The emote row: moments a player can start at any time. */
 export const EMOTES = ["wave", "dance", "pet", "treat", "cheer"] as const;
 
+/** Existing, already-loaded clips held at their authored still frame for a photo. */
+export const PHOTO_POSES = [
+  { value: "dance", label: "Together" },
+  { value: "wave", label: "Wave" },
+  { value: "pet", label: "A little cuddle" },
+] as const;
+export type PhotoPose = (typeof PHOTO_POSES)[number]["value"];
+
 /** The moment each care action shows, once that care has been saved. */
 export const CARE_MOMENT: Record<CareActionType, string> = {
   [CareActionType.Feed]: "feed",

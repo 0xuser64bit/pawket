@@ -133,6 +133,10 @@ with keyboard day/month navigation, a local-time clock and explicit Apply
 and Cancel. Invalid, skipped and past times cannot be confirmed. Guilds
 founded by the connected wallet and confirmed memberships appear first,
 with written status as well as a bloom surface.
+Home's sound switch stays beside the room-view switch, including in the flat
+room. A remembered sound preference waits for a gesture after reload; mute
+stops both future chimes and notes already playing. Hidden or unmounted rooms
+release their audio. Blocked storage keeps the choice for the current page.
 
 A failed read provides a disabled-while-reading retry without resetting local
 records. Copy/share failure leaves a selectable link or address. Transactions

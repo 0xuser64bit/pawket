@@ -63,6 +63,11 @@ wait. Solana Actions have their own owner-approved flow (`SOLANA.md`).
 | Android | Wallet app integration, gallery and native sharing, calendar editor, haptics, back behavior, shortcuts and App Links |
 
 Cosmetics and coin balances never change vitals, XP, cooldowns or scores.
+Photos offer held poses made from the existing room animations. Home has
+optional, quiet synthesised chimes and action sounds, sharing the existing
+device sound preference with Playground and Settings. Sound defaults off,
+requires a gesture after reload, and pauses when the page is hidden or Home
+is left. Neither poses nor sound change a saved pet record.
 Coin holdings only add the guild's crest pin on that guild's page.
 A local pet is labelled "in this browser" or "in this app"; "on Solana"
 requires a chain-read record. Guestbooks retain eight recent waves; their

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import type { CSSProperties } from "react";
 import { PetArt, type Feeling, type PetForm, type Temper } from "@/components/pk";
 

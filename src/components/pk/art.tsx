@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { Fragment, type CSSProperties, type ReactNode } from "react";
 
 /**

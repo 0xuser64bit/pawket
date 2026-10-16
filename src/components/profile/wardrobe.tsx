@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { Button, ButtonLink, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt } from "@/components/pk";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { MARKET_WEARABLES, WEARABLES, findWearable, wearableItem } from "@/lib/closet/catalog";

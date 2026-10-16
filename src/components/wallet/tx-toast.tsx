@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import type { Toast } from "@/components/pk/toast";
 import type { SolanaCluster } from "@/config/env";
 import { explorerTxUrl } from "@/lib/solana/cluster";

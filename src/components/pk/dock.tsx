@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { usePathname } from "next/navigation";
 import { useLayoutEffect, useRef } from "react";
 import { Icon, type IconName } from "./icon";

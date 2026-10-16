@@ -13,7 +13,7 @@ import {
 import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
 import { toCompanionRecord, type ChainGuestbook, type ChainGuild, type PetOnChain } from "@/lib/solana/accounts";
 import { GuildCrest } from "@/components/guilds/guild-crest";
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { formatUtcDate } from "@/lib/utils/format";

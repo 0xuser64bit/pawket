@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { useId, type ComponentProps } from "react";
 import { Icon, type IconName } from "./icon";
 
@@ -176,36 +176,4 @@ export function Field({
   );
 }
 
-/* -------------------------------------------------------------------- Tabs */
-
-/**
- * Segmented switching within a single view, four options at most. It changes
- * elevation, not colour, so tabs never compete with the `sun` action on the
- * same screen. Moving between places uses the Dock instead.
- */
-export function Tabs({
-  items,
-  active,
-  label,
-  className,
-}: {
-  items: Array<{ key: string; label: string; href: string }>;
-  active: string;
-  label: string;
-  className?: string;
-}) {
-  return (
-    <nav className={["pk-tabs", className].filter(Boolean).join(" ")} aria-label={label}>
-      {items.map((item) => (
-        <Link
-          key={item.key}
-          href={item.href}
-          aria-current={item.key === active ? "page" : undefined}
-          className={["pk-tabs__t", item.key === active && "pk-tabs__t--on"].filter(Boolean).join(" ")}
-        >
-          {item.label}
-        </Link>
-      ))}
-    </nav>
-  );
-}
+export { Tabs } from "./tabs";

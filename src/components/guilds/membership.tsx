@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { Button, PetArt, Waiting } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { useCompanion } from "@/lib/companion/use-companion";

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Address } from "@solana/kit";
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { Button, ButtonLink, Card, Row, ThemePicker } from "@/components/pk";
 import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";

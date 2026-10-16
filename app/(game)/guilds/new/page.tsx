@@ -4,10 +4,10 @@ import { FoundGuild } from "@/components/guilds/found-guild";
 
 export const metadata: Metadata = { title: "Found a guild" };
 
-/** Founding is one decision, so it keeps a reading measure. */
+/** Founding uses the same page rails as the guild directory. */
 export default function FoundGuildPage() {
   return (
-    <Screen width="narrow">
+    <Screen>
       <BackLink label="Guilds" href="/guilds" />
       <h1 className="display-l" style={{ margin: "var(--space-3) 0 var(--space-2)" }}>
         Found a guild

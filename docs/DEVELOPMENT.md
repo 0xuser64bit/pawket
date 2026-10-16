@@ -67,9 +67,9 @@ no sponsor unless configured.
 ### Development during the hackathon freeze
 
 Keep `main` and its production deployment frozen for the submission. Work on
-`codex/dev`; Vercel assigns that branch's Preview deployments to
+`dev`; Vercel assigns that branch's Preview deployments to
 `https://dev.pawket.world`. Pushes to this branch update the development site.
-Development pull requests target `codex/dev`, and merging or pushing to `main`
+Development pull requests target `dev`, and merging or pushing to `main`
 requires the user's explicit release authorization.
 
 The branch starts at production commit `9748288d956bb9608a2d5061891f4d80cdaf7319`.

@@ -9,8 +9,8 @@ agent works in this repo.
 
 `main` serves the submitted version at `https://pawket.world`. Do not merge
 into or push to `main` until the user explicitly authorizes a release.
-Continue development on `codex/dev`, which deploys to `https://dev.pawket.world`.
-Target `codex/dev` when opening development pull requests. See
+Continue development on `dev`, which deploys to `https://dev.pawket.world`.
+Target `dev` when opening development pull requests. See
 `docs/DEVELOPMENT.md` for the deployment boundaries.
 
 ## Product context

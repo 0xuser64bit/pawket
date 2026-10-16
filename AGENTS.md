@@ -5,6 +5,14 @@ Product context lives in `docs/PRODUCT.md`,
 architecture in `docs/ARCHITECTURE.md`. This file is the contract for how an
 agent works in this repo.
 
+## Hackathon submission freeze
+
+`main` serves the submitted version at `https://pawket.world`. Do not merge
+into or push to `main` until the user explicitly authorizes a release.
+Continue development on `codex/dev`, which deploys to `https://dev.pawket.world`.
+Target `codex/dev` when opening development pull requests. See
+`docs/DEVELOPMENT.md` for the deployment boundaries.
+
 ## Product context
 
 Pawket is a web-first companion game and an Android shell around the same

@@ -46,6 +46,11 @@ Production uses `NEXT_PUBLIC_APP_URL=https://pawket.world`. Local development
 uses localhost. Android's start URL is checked against the official origin by
 `src/lib/native/assetlinks.test.ts`.
 
+The `codex/dev` branch uses a branch-specific Vercel Preview value of
+`NEXT_PUBLIC_APP_URL=https://dev.pawket.world`; production values stay scoped
+to Production. Its public RPC and cluster are devnet, with no preview sponsor
+key configured. See `DEVELOPMENT.md` for the hackathon freeze workflow.
+
 `www.pawket.world` redirects to the apex with paths and queries preserved.
 Keep `pawket-pets.vercel.app` serving older APKs and metadata URIs; redirecting
 it away breaks their trusted origin. Local pets, settings and non-extractable

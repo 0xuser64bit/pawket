@@ -122,6 +122,18 @@ it("goes quiet while the page is hidden, when it is muted, and when Home is left
   expect(audio.oscillators).toBe(before);
 });
 
+it("lets the audio rest once Home is left and its last note has rung", async () => {
+  const audio = fakeAudio();
+  const view = await room();
+  fireEvent.pointerDown(window);
+  view.unmount();
+  vi.advanceTimersByTime(600);
+  expect(audio.ctx!.suspend).not.toHaveBeenCalled();
+  audio.time = 5;
+  vi.advanceTimersByTime(5_000);
+  expect(audio.ctx!.suspend).toHaveBeenCalledTimes(1);
+});
+
 it("gives each moment its own little tune, and none while muted", async () => {
   const audio = fakeAudio();
   const { chime } = await import("./sound");

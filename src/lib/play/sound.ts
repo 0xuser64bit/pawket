@@ -50,6 +50,8 @@ function subscribe(listener: () => void) {
 let context: AudioContext | null = null;
 /** Everything goes through here, so one switch silences what is already ringing. */
 let out: GainNode | null = null;
+/** When, on the audio clock, the last sound set to play has finished ringing. */
+let quietAt = 0;
 
 /** The audio, made on the first sound after a tap; null where a device has none. */
 function audio(): { ctx: AudioContext; out: GainNode } | null {
@@ -104,6 +106,7 @@ function tine(ctx: AudioContext, to: AudioNode, midi: number, at: number, volume
     };
     osc.start(at);
     osc.stop(end + 0.05);
+    quietAt = Math.max(quietAt, end + 0.05);
   }
 }
 
@@ -145,6 +148,7 @@ export function blip(frequency: number, ms = 90, type: OscillatorType = "triangl
     };
     osc.start(at);
     osc.stop(at + ms / 1000 + 0.02);
+    quietAt = Math.max(quietAt, at + ms / 1000 + 0.02);
   } catch {
     // This device can still play without audio.
   }
@@ -289,6 +293,12 @@ export function useRoomMusic(on: boolean) {
       window.removeEventListener("pointerdown", play);
       window.removeEventListener("keydown", play);
       document.removeEventListener("visibilitychange", visibility);
+      // Home left or muted: once the last note has rung, the phone's audio rests until the next sound
+      // wakes it. A sound set since then is someone else's, and keeps it awake.
+      const rest = () => {
+        if (context?.state === "running" && context.currentTime >= quietAt) void context.suspend().catch(() => {});
+      };
+      setTimeout(rest, context ? Math.max(700, (quietAt - context.currentTime) * 1000 + 50) : 700);
     };
   }, [on]);
 }

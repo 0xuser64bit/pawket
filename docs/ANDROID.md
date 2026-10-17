@@ -133,8 +133,10 @@ publisher's keystore, with passwords supplied through its supported environment
 or local Keychain. Never commit or include the keystore/password in a source
 archive, APK or release evidence. Back up both securely under owner control.
 
-Verify that the release signer matches `assetlinks.json` and the package,
-version and trusted origin match `android/gradle.properties`. Store the signed
+The script refuses uncommitted changes under `android/` or `public/.well-known/`,
+an APK whose package or version differs from `android/gradle.properties`, and
+a signer `assetlinks.json` does not list; it prints the shell commit and the
+hosted web commit (`/api/health`). Store the signed
 APK with its SHA-256, signer fingerprint, shell source commit, hosted web commit,
 cluster, device matrix, results and public receipts. Keep that evidence with
 the release artifacts outside tracked product documentation. Publication

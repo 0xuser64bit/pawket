@@ -366,6 +366,13 @@ export function usePawketSend() {
             }
             return body.transaction;
           },
+        }).catch((error: unknown) => {
+          // A coin's bracket holds the owner's SOL to the lamport it was when the server built the trade; any change
+          // in between (a transfer in, another send) refuses it all with 6008, which here means only that.
+          if (!sponsored && extractProgramErrorCode(error) === 6008) {
+            throw Object.assign(new Error("Your wallet's SOL changed between the quote and your signature, so nothing moved. Quote it again."), { signature: (error as { signature?: string }).signature });
+          }
+          throw error;
         });
       }),
     [run, connected],

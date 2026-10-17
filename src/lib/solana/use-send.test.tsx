@@ -4,13 +4,13 @@ import { createNoopSigner, type Address } from "@solana/kit";
 import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
 const owner = "11111111111111111111111111111111" as Address;
-const mock = vi.hoisted(() => ({ read: vi.fn(), refresh: vi.fn(), send: vi.fn(), record: vi.fn(), settle: vi.fn(), toast: vi.fn(), pets: vi.fn(), app: false }));
+const mock = vi.hoisted(() => ({ read: vi.fn(), refresh: vi.fn(), send: vi.fn(), record: vi.fn(), settle: vi.fn(), toast: vi.fn(), pets: vi.fn(), prepared: vi.fn(), app: false }));
 vi.mock("./transactions", async (original) => ({ ...(await original<object>()), settleSignature: mock.settle }));
 vi.mock("@/lib/companion/use-companion", () => ({ refreshOwnedPets: mock.pets }));
 vi.mock("@/lib/analytics/events", () => ({ record: mock.record }));
 vi.mock("./browser-client", () => ({ rpc: {}, useConnected: () => ({ account: { address: "11111111111111111111111111111111" }, signer: createNoopSigner("11111111111111111111111111111111" as Address) }) }));
 vi.mock("@/lib/wallet/pawket-wallet", () => ({ usePawketWallet: () => null, readPawketWallet: mock.read, refreshPawketWallet: mock.refresh }));
-vi.mock("./send", () => ({ sendPawket: mock.send, sendPrepared: vi.fn(), RelayError: Error }));
+vi.mock("./send", () => ({ sendPawket: mock.send, sendPrepared: mock.prepared, RelayError: Error }));
 vi.mock("@/lib/native/android", () => ({ haptic: vi.fn(), inAndroidApp: () => mock.app }));
 vi.mock("@/components/pk/toast", () => ({ dismissToast: vi.fn(), showToast: mock.toast }));
 import { CareActionType } from "@/lib/game/enums";
@@ -149,5 +149,14 @@ describe("send routing (no wallet signing)", () => {
     const last = mock.toast.mock.calls.at(-1)![0] as { title: string; tone: string };
     expect(last).toMatchObject({ title: "Feed Mango: it did not go through", tone: "risk" });
     expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
+  });
+  it("says a coin trade refused because the wallet's SOL moved meanwhile is to be quoted again", async () => {
+    sponsor(); mock.app = true;
+    const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);
+    mock.read.mockResolvedValue({ ...empty, linked: true, balance: 1n, device, wallet: { address: owner, device: device.address, deviceExpiresAt: Number.MAX_SAFE_INTEGER, actionsToday: 0, dailyActions: 100 } });
+    mock.prepared.mockRejectedValue(Object.assign(new Error("refused"), { programError: 6008 }));
+    const hook = renderHook(usePawketSend);
+    await act(async () => { await hook.result.current.sendFromServer("Buy SEAT", "/api/coins/seat/trade", {}, { sponsored: false }); });
+    expect(hook.result.current.tx.error).toMatch(/SOL changed between the quote and your signature.*Quote it again/);
   });
 });

@@ -28,7 +28,15 @@ const SECTIONS: Array<{ title: string; body: string[] }> = [
     body: [
       "Pawket's pages come from pawket.world, hosted on Vercel. To load them, read Solana, prepare the transactions you ask for and pay sponsored fees, the server receives your requests, which can include public wallet and pet addresses, the action asked for and its transaction.",
       "Solana RPC providers receive the reads and the transactions sent. A guild coin's quotes and transactions are built with Meteora's software and run on Meteora's programs.",
-      "Hosting and network providers process connection data such as IP addresses and request logs under their own policies. Pawket has no player accounts, no database of players, no advertising and no analytics service, and does not sell or share personal data.",
+      "Hosting and network providers process connection data such as IP addresses and request logs under their own policies. Pawket has no player accounts, no database of players and no advertising, and does not sell or share personal data.",
+    ],
+  },
+  {
+    title: "What Pawket counts",
+    body: [
+      "Pawket uses Vercel Web Analytics to count page views and a few moments of the game: an adoption, a care, a finished round, a return to Home (by how many days old your pets are, never a date), a reminder added, a copy of your pets saved or brought back, and how far a step onto Solana got. Each count is one or two fixed words. None carries your name, a wallet or pet address, a signature, a score or anything you type, and a page is counted without its query or any Solana address in it.",
+      "Vercel Web Analytics sets no cookie and tells one visit from another only within a day. Vercel processes connection data, such as your IP address, to count a visit, under its own policy.",
+      "Turn counting off in Profile, Settings, or have your browser send Global Privacy Control or Do Not Track, and Pawket counts nothing, page views included.",
     ],
   },
   {
@@ -41,7 +49,7 @@ const SECTIONS: Array<{ title: string; body: string[] }> = [
   {
     title: "Your choices",
     body: [
-      "Play without a wallet. Choose whether to keep a pet on Solana, link a device, share a photo or save a reminder. Delete local data in your browser or Android settings, and unlink a device before you give it away. What is already on Solana stays there.",
+      "Play without a wallet. Choose whether to keep a pet on Solana, link a device, share a photo, save a reminder, or be counted. Keep a copy of the pets in this browser from Profile; it stays wherever you put it. Delete local data in your browser or Android settings, and unlink a device before you give it away. What is already on Solana stays there.",
     ],
   },
 ];
@@ -77,7 +85,7 @@ export default function PrivacyPage() {
             <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
           </p>
           <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
-            Updated 9 October 2026.
+            Updated 17 October 2026.
           </p>
         </section>
       </Stack>

@@ -35,10 +35,27 @@ function publish(next: Shown[]) {
   for (const listener of listeners) listener();
 }
 
+/**
+ * Room for one more: past three, the oldest that matters least goes first —
+ * a record or a note, then a refusal — and a send still waiting goes last,
+ * since it may hold the only way to its receipt.
+ */
+const EVICT_FIRST: ReadonlyArray<Toast["tone"]> = ["done", "note", "risk", "wait"];
+function admit(list: Shown[]): Shown[] {
+  const next = [...list];
+  while (next.filter((shown) => !shown.leaving).length > MAX) {
+    const victim = EVICT_FIRST.map((tone) => next.findIndex((shown) => shown.tone === tone && !shown.leaving)).find((at) => at >= 0) ?? 0;
+    const [gone] = next.splice(victim, 1);
+    clearTimeout(timers.get(gone.id));
+    timers.delete(gone.id);
+  }
+  return next;
+}
+
 /** Show `toast`, or update the one with its id in place. */
 export function showToast(toast: Toast) {
   const at = toasts.findIndex((shown) => shown.id === toast.id);
-  publish(at >= 0 ? toasts.map((shown, i) => (i === at ? toast : shown)) : [...toasts, toast].slice(-MAX));
+  publish(at >= 0 ? toasts.map((shown, i) => (i === at ? toast : shown)) : admit([...toasts, toast]));
   clearTimeout(timers.get(toast.id));
   timers.delete(toast.id);
   if (toast.ttl) timers.set(toast.id, setTimeout(() => dismissToast(toast.id), toast.ttl));

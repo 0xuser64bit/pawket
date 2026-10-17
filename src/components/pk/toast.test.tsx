@@ -27,6 +27,15 @@ it("keeps the newest in front and at most three, the rest tucked behind it", () 
   act(() => vi.runAllTimers());
 });
 
+it("never pushes out a send that is still waiting for a newer word", () => {
+  render(<Toasts />);
+  act(() => showToast({ id: "waiting", tone: "wait", title: "Feed Mango: still waiting" }));
+  show("one", "two", "three");
+  expect(cards().map((card) => card.textContent)).toEqual(["Feed Mango: still waiting", "two", "three"]);
+  for (const title of ["waiting", "two", "three"]) dismissToast(title);
+  act(() => vi.runAllTimers());
+});
+
 it("leaves before it is gone, and a tap fans the stack out", () => {
   render(<Toasts />);
   show("older", "newer");

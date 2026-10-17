@@ -19,6 +19,7 @@ import {
 import { deriveBallotPda, deriveEventPda, deriveMemberPda, derivePollPda, deriveRsvpPda } from "@/lib/solana/pda";
 import { GATHERING_LIMITS, PAWKET_ACCOUNTS } from "@/lib/solana/program";
 import { rentWaits, useSponsor, usePawketSend } from "@/lib/solana/use-send";
+import { useMounted } from "@/lib/utils/use-mounted";
 
 /**
  * A guild's gatherings: events its founder plans and its pets go to, and
@@ -31,13 +32,19 @@ import { rentWaits, useSponsor, usePawketSend } from "@/lib/solana/use-send";
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "Sun 12 Oct, 18:00 UTC": UTC, like the streak's day, so server and client agree. */
+/** "Sun 12 Oct, 18:00 UTC": what the server draws, so the first draw matches it; then `localWhen`. */
 function when(seconds: number): string {
   const d = new Date(seconds * 1000);
   const hh = String(d.getUTCHours()).padStart(2, "0");
   const mm = String(d.getUTCMinutes()).padStart(2, "0");
   return `${WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}, ${hh}:${mm} UTC`;
 }
+
+/** "Sun, Oct 12, 11:00 AM PDT": the viewer's own clock, named, once the page is in the browser. */
+const localWhen = (seconds: number) =>
+  new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(
+    new Date(seconds * 1000),
+  );
 
 export function GuildGatherings({
   guild,
@@ -52,6 +59,8 @@ export function GuildGatherings({
   const sender = usePawketSend();
   const sponsor = useSponsor();
   const waits = rentWaits(sponsor.data);
+  const mounted = useMounted();
+  const at = (seconds: number) => (mounted ? localWhen(seconds) : when(seconds));
   const router = useRouter();
   // The page's moment: events open and close against it until the page is read again.
   const [now] = useState(() => Math.floor(Date.now() / 1000));
@@ -150,7 +159,7 @@ export function GuildGatherings({
               </div>
               {event.note ? <p className="body-sm pk-muted">{event.note}</p> : null}
               <p className="caption pk-faint">
-                {when(event.startsAt)} until {when(event.endsAt)} · {event.going} going · {event.came} came
+                {at(event.startsAt)} until {at(event.endsAt)} · {event.going} going · {event.came} came
               </p>
               {mine.length ? (
                 <Row gap={2} wrap>
@@ -199,7 +208,7 @@ export function GuildGatherings({
           <article key={poll.address} className="pk-poll">
             <div className="pk-spread">
               <h3 className="title">{poll.question}</h3>
-              <Chip label={shut ? "Closed" : `Until ${when(poll.closesAt)}`} icon="vote" />
+              <Chip label={shut ? "Closed" : `Until ${at(poll.closesAt)}`} icon="vote" />
             </div>
             <ul className="pk-poll__options">
               {poll.options.map((option, i) => {

@@ -35,7 +35,13 @@ source files; do not add another store of those facts.
 ## Persistence and reads
 
 Local pets live in the `pawket.pets.v1` list. The former single-pet record is
-migrated only after the new list is written successfully. Player settings,
+migrated only after the new list is written successfully. Entries a version
+cannot read are written back verbatim; a list it cannot read at all is set
+aside under `pawket.pets.v1.unreadable.<time>`, never deleted. After an
+adoption or a device link the app asks the browser to keep its storage
+(`navigator.storage.persist`). Profile saves a copy of the browser's pets as
+text or a file and brings them back (`src/lib/guest/copy.ts`); a copy's
+progress stays local and never reaches Solana. Player settings,
 looks, best scores and active pet selection also stay on the device, scoped
 to the origin. `useSyncExternalStore` provides cached snapshots and storage
 change notifications. Android uses its own WebView storage.

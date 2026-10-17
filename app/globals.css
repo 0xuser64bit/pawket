@@ -3818,6 +3818,23 @@ li {
 .pk-home-screen h1 { overflow-wrap: anywhere; }
 .pk-home__pets { min-width: 0; margin-bottom: var(--space-3); }
 .pk-home__signing { display: flex; align-items: flex-start; gap: var(--space-2); }
+.pk-paste {
+  width: 100%;
+  min-height: calc(var(--control-md) * 2);
+  padding: var(--space-3) var(--space-4);
+  resize: vertical;
+  color: var(--ink);
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-well);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: max(16px, 0.8rem);
+  overflow-wrap: anywhere;
+}
+.pk-paste:focus-visible { outline: var(--stroke-line) solid var(--focus); outline-offset: 2px; }
+.pk-paste__file { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.pk-paste__file input { max-width: 100%; }
 .pk-home__signing > svg { flex: none; margin-top: 2px; }
 /* The ring's room is the strip's padding: the faces start on the column's edge. */
 .pk-home__pets > .pk-switch {

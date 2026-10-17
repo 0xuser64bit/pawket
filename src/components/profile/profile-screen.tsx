@@ -18,6 +18,7 @@ import { usePawketSend } from "@/lib/solana/use-send";
 import { formatUtcDate } from "@/lib/utils/format";
 import { LookEditor } from "./look-editor";
 import { EmptyShelf, PetsShelf } from "./pets-shelf";
+import { PetCopy } from "./pet-copy";
 import { Settings } from "./settings";
 import { StickerBook } from "./sticker-book";
 import { Wardrobe } from "./wardrobe";
@@ -166,7 +167,12 @@ export function ProfileScreen() {
           </div>
           <Tabs label="What you keep" active={tab} items={TABS} />
           <div key={tab} id={`pk-panel-${tab}`} role="tabpanel" aria-labelledby={`pk-tab-${tab}`} tabIndex={0} className="pk-swap-in">
-            {tab === "pets" ? pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : <EmptyShelf /> : null}
+            {tab === "pets" ? (
+              <Stack gap={4}>
+                {pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : <EmptyShelf />}
+                <PetCopy companion={companion} />
+              </Stack>
+            ) : null}
             {tab === "wardrobe" ? pet ? <Wardrobe companion={companion} sender={sender} /> : <EmptyShelf /> : null}
             {tab === "stickers" ? <StickerBook pets={pets} onChain={onChain} inGuild={inGuild} social={social.data} /> : null}
             {tab === "settings" ? <Settings form={pet ? SPECIES_ART[pet.species] : undefined} /> : null}

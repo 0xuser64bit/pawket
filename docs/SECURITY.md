@@ -98,9 +98,21 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   from the sponsor's balance, which every instance sees, plus the rents an
   instance signed in the last two minutes. Shared enforcement and budget
   monitoring are mainnet work.
-- A stolen linked device can act within its expiry and limit, including its
-  permitted fee float. Unlinking ends its authorization; local deletion alone
-  does not revoke it on chain.
+- A stolen linked device acts until its link ends (30 days at most) or the
+  owner unlinks it: up to its daily limit (500 at most) of non-money actions a
+  UTC day, for the owner's pets only. Each action refills at most one
+  5,000-lamport fee from the balance, so it can draw at most `daily_actions ×
+  5,000` lamports a day (2,500,000 at the maximum limit), and each coin trade
+  the owner approves tops its float back up to 1,000,000 lamports. It cannot
+  withdraw, buy or send the balance anywhere. Unlinking ends its authorization;
+  local deletion alone does not revoke it on chain.
+- `finish_round` has no daily cap on chain. Only a pet's first round of a UTC
+  day earns XP, so repeating it changes nothing in the game; its cost is fees,
+  bounded by the sponsor's per-caller limits and a device's daily limit.
+- Guild slugs are first come, first served and never freed: a guild has no
+  close instruction, and the program reserves no names (the app refuses `new`,
+  its own create route). Delisting (`src/lib/guilds/delisted.ts`) hides a guild
+  from Pawket's surfaces; it cannot return a slug. Squatting is unresolved (Q9).
 - Pets, Passports, closets, events, RSVPs, polls, ballots and guestbooks have no
   close instruction. Their rent remains locked. Guild membership and Pawket
   Wallet have their own closure rules.

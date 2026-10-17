@@ -42,7 +42,7 @@ A declined, closed or missing wallet sends nothing. Uncertain broadcast or
 confirmation replies preserve the existing signature for lookup, without
 resending. Care moments and haptics wait for confirmation. Local MWA patches
 close sessions after failure, retry expired authorization within the same
-session, reject account changes and bound waiting; `mobile-session.test.ts`
+session, reject account changes and bound waiting; `src/lib/solana/mobile-session.test.ts`
 holds those behaviors. Consumer-wallet compatibility requires device testing.
 
 Back closes the latest page overlay, then page history, then backgrounds the

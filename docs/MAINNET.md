@@ -25,6 +25,21 @@ cluster state; player communication must distinguish those records and explain
 local pets and device links. Cosmetic prices and coin terms in devnet do not
 constitute approval for prices or launches using real SOL.
 
+## The next program upgrade
+
+Main and the devnet program are frozen in review. These changes wait for the
+next authorized upgrade, each with its LiteSVM test written first and no seed or
+discriminator change; listing them here authorizes none of them.
+
+- Guild roles and names: what a founder keeps after the founding pet leaves,
+  check-in after leaving, and reserved or disputed slugs (Q9).
+- Coin-trade float: `fund_wallet_spend` tops a device back up to its whole
+  float each trade; refilling only the fee paid would match `act`.
+- Rounds: an optional daily cap on `finish_round`, which earns XP once a day.
+- Guestbooks: the once-a-day wave check reaches only the last eight visitors.
+- Rent: close instructions for the account types that have none, under an
+  approved retention policy.
+
 ## Cost and availability planning
 
 Query `getMinimumBalanceForRentExemption` for each current account layout on

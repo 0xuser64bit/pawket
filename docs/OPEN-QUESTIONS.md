@@ -32,6 +32,12 @@ leaves, and the founder retains coin fee rights. Decide whether departure ends
 the role, whether rejoining restores it, and whether succession exists before
 an additive program upgrade. Existing RSVPs can still check in after leaving.
 
+The same upgrade should settle who may hold a name. Slugs are first come,
+first served and never freed, and the program reserves none: anyone can found
+a slug another community is known by, or `new`, which the app's create route
+uses. Delisting only hides a guild from Pawket. Decide on reserved names, a
+dispute path, or neither, before mainnet.
+
 ## Q10 — Address derivation and key rotation
 
 Keepsake and coin keys are currently derived from `SPONSOR_KEYPAIR` by HMAC.

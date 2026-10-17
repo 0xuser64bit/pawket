@@ -30,6 +30,7 @@
 | Local Profile tabs/history, a slow place's top bar with the link left as it was, whole-card guild links, founding-page rails and its head stacked on a 320px phone, and shared Home sound | `e2e/experience.spec.ts` | Playwright |
 | Day/time chips and calendar (past days out of reach, keyboard, 12/24-hour), guild roles and membership grouping, camera-facing photo poses, the toast stack (fold, fan, flick, leave), the send toast's own line, Home's music box and its quiet when hidden, muted or left | colocated component tests | Vitest |
 | Classic scrollbar space: 44px touch targets and dock centring | `e2e/scrollbars.spec.ts` | Playwright, including hosts with overlay scrollbars |
+| The page in the Android app, its bridge faked: Back keeps a draft, "in this app", a care felt, bars following the room; nothing asked in a browser | `e2e/android.spec.ts` | Playwright (not the native shell) |
 | Mobile touch: sheet focus/close, short viewport, Catch drag, game pause/resume and hidden-page pause | `e2e/mobile.spec.ts` | Playwright Chromium touch emulation (not physical-device proof) |
 | The page's half of the Android bridge; the app and the site agree on the package | `src/lib/native/*.test.ts` | Vitest |
 | When the care reminder comes (the program's decay, waking hours) | `src/lib/reminders/care.test.ts` | Vitest |

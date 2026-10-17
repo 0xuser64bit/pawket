@@ -6,9 +6,11 @@ import { inAndroidApp } from "@/lib/native/android";
  * WebCrypto, as a non-extractable Ed25519 key: its secret half cannot be
  * read, exported or sent anywhere — by Pawket's own code included — only
  * asked to sign. It is kept in this browser's IndexedDB, one per owner, and
- * never leaves it. What it may sign is the program's call: care, rounds and
- * clothes for its owner's pets, inside the end date and the daily limit the
- * owner set when they linked it (`programs/pawket/src/lib.rs`).
+ * never leaves it. What it may sign is the program's call: the non-money
+ * actions its owner signs for — care, rounds, clothes, adoption, guilds,
+ * gatherings and waves — for its owner's pets, inside the end date and the
+ * daily limit the owner set when they linked it (`programs/pawket/src/lib.rs`).
+ * It never moves the balance.
  *
  * Clearing the site's data forgets the key. Nothing is lost but the small
  * fee float it held: the owner unlinks it from anywhere, and links another.

@@ -153,7 +153,10 @@ PAWKET_ANDROID_KEYSTORE=… scripts/android-release.sh   # the signed release AP
   non-extractable, kept in that browser's IndexedDB, never read, exported
   or uploaded, linked only by the owner's own signature, and able to do only
   what `PawketWallet` lets a device do — never move the balance. Do not
-  widen what a device may sign without a program change.
+  widen what a device may sign without a program change. The one thing it
+  signs outside the program is sending its own leftover fee float home to
+  its owner's Pawket Wallet (`getReturnFloatInstruction`, destination
+  derived from the owner), from its own screen, when its link is gone.
 - **No hand-rolled instruction bytes in components.** Use
   `src/lib/solana/instructions.ts`. Never invent discriminators;
   `program.test.ts` holds them to the IDL.

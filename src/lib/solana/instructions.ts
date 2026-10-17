@@ -19,7 +19,8 @@ import {
   PetPersonality,
   PetSpecies,
 } from "@/lib/game/enums";
-import { normalizePetName, parseAddress } from "./pda";
+import { getTransferSolInstruction } from "@solana-program/system";
+import { deriveWalletPda, normalizePetName, parseAddress } from "./pda";
 import {
   CARE_ACTION_VARIANTS,
   DEVICE_VARIANTS,
@@ -755,4 +756,21 @@ export function getWalletSpendInstruction(input: {
       ? concatBytes(PAWKET_DISCRIMINATORS.settleWalletSpend, u64.encode(input.keep))
       : concatBytes(PAWKET_DISCRIMINATORS.fundWalletSpend, u64.encode(input.amount), u64.encode(input.keep)),
   };
+}
+
+/**
+ * A device key handing back what it holds — the fee float left on it when
+ * its link was replaced, or removed by the owner — to its owner's Pawket
+ * Wallet. No Pawket instruction can: only the linked device may unlink
+ * itself. It is a plain transfer the key signs for itself, paying its own
+ * fee, so `lamports` is what it holds less that fee, and the key is left
+ * empty. Never sponsored: the sponsor signs only Pawket's instructions.
+ *
+ * The one thing a device key signs outside the program (AGENTS.md): only
+ * its own lamports, and only to the Pawket Wallet derived here from its
+ * owner, never an address passed in.
+ */
+export async function getReturnFloatInstruction({ device, owner, lamports }: { device: TransactionSigner; owner: Address; lamports: bigint }) {
+  const wallet = (await deriveWalletPda(owner)).address;
+  return getTransferSolInstruction({ source: device, destination: wallet, amount: lamports });
 }

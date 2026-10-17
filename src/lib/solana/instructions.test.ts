@@ -6,9 +6,11 @@ import {
   getCareInstruction,
   getDressInstruction,
   getFinishRoundInstruction,
+  getReturnFloatInstruction,
 } from "./instructions";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID, WEARABLE_COUNT } from "./program";
+import { deriveWalletPda } from "./pda";
 
 const OWNER = "11111111111111111111111111111111";
 const SPONSOR = "SysvarRent111111111111111111111111111111111";
@@ -166,5 +168,21 @@ describe("getDressInstruction", () => {
     expect(() => getDressInstruction({ owner: OWNER, pet: PET, wearing: WEARABLE_COUNT + 1 })).toThrow();
     expect(() => getDressInstruction({ owner: OWNER, pet: PET, wearing: -1 })).toThrow();
     expect(getDressInstruction({ owner: OWNER, pet: PET, wearing: 0 }).data?.[8]).toBe(0);
+  });
+});
+
+describe("getReturnFloatInstruction", () => {
+  it("is a plain system transfer from the device's own key to its owner's Pawket Wallet, nothing of Pawket's", async () => {
+    const device = createNoopSigner(address("So11111111111111111111111111111111111111112"));
+    const owner = address("SysvarRent111111111111111111111111111111111");
+    const ix = await getReturnFloatInstruction({ device, owner, lamports: 995_000n });
+    expect(ix.programAddress).toBe("11111111111111111111111111111111");
+    // Its destination is always the owner's own Pawket Wallet, derived, never passed in.
+    expect(ix.accounts?.map((meta) => [meta.address, meta.role])).toEqual([
+      [device.address, AccountRole.WRITABLE_SIGNER],
+      [(await deriveWalletPda(owner)).address, AccountRole.WRITABLE],
+    ]);
+    // The system program's Transfer: index 2, then the lamports, little-endian.
+    expect(Array.from(ix.data ?? [])).toEqual([2, 0, 0, 0, ...Array.from(new Uint8Array(new BigUint64Array([995_000n]).buffer))]);
   });
 });

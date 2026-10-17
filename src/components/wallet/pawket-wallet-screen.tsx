@@ -29,9 +29,11 @@ import { useCompanion } from "@/lib/companion/use-companion";
 import { CARE_DONE_LABEL } from "@/lib/game/appearance";
 import { rpc, wallet as walletClient } from "@/lib/solana/browser-client";
 import { explorerAddressUrl, explorerTxUrl } from "@/lib/solana/cluster";
+import { WALLET_LIMITS } from "@/lib/solana/program";
 import {
   getCloseWalletInstruction,
   getDepositInstruction,
+  getReturnFloatInstruction,
   getUnlinkDeviceInstruction,
   getWithdrawInstruction,
 } from "@/lib/solana/instructions";
@@ -330,6 +332,19 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
     }
   }
 
+  /** A key here that is no longer the linked one, still holding a float it can send home: what it holds, less its fee. */
+  const stranded = state.device && wallet.device !== state.device.address && state.deviceLamports > WALLET_LIMITS.feePerSignature
+    ? state.deviceLamports - WALLET_LIMITS.feePerSignature
+    : 0n;
+
+  async function returnFloat() {
+    if (!state.device || stranded <= 0n) return;
+    const device = state.device;
+    const home = await getReturnFloatInstruction({ device, owner, lamports: stranded });
+    const result = await sender.asDevice(`Return ${sol(stranded)} from ${place}`, device, () => [home]);
+    if (result?.outcome === "confirmed") await refreshPawketWallet(owner);
+  }
+
   async function unlinkElsewhere() {
     if (!wallet.device) return;
     const result = await sender.send("Unlink the other device", ({ owner: signer }) => [
@@ -393,7 +408,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               {expired
                 ? `Its link ran out on ${until}. Link it again to continue without pop-ups.`
                 : elsewhere
-                  ? `Another browser (${truncateAddress(wallet.device!)}) is linked. Linking this one takes its place; the other keeps what it holds for fees until it unlinks itself.`
+                  ? `Another browser (${truncateAddress(wallet.device!)}) is linked. Linking this one takes its place; the other can hand back what it holds for fees from its own Pawket Wallet screen.`
                   : `Pawket acts on Solana through a linked device. Link ${place}, and it signs what your pets do with no pop-up.`}
             </p>
             {limits}
@@ -401,6 +416,15 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               <Button label={expired ? "Link it again" : `Link ${place}`} icon="bolt" tone="sun" disabled={sender.busy || linking.busy} onClick={() => void link()} />
               {elsewhere ? <Button label="Unlink the other device" tone="ghost" size="sm" disabled={sender.busy} onClick={() => void unlinkElsewhere()} /> : null}
             </Row>
+            {stranded > 0n ? (
+              <p className="caption pk-faint">
+                {Place}&apos;s old key still holds {sol(stranded + WALLET_LIMITS.feePerSignature)} from its fee float.{" "}
+                <button type="button" className="pk-linkish" disabled={sender.busy} onClick={() => void returnFloat()}>
+                  Send {sol(stranded)} back to your Pawket Wallet
+                </button>{" "}
+                (it pays its own fee; no pop-up).
+              </p>
+            ) : null}
           </>
         )}
         {problem ? <Banner tone="risk" title="Nothing was linked" body={problem} /> : null}

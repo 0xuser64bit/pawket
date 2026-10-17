@@ -14,7 +14,7 @@ vi.mock("./send", () => ({ sendPawket: mock.send, sendPrepared: mock.prepared, R
 vi.mock("@/lib/native/android", () => ({ haptic: vi.fn(), inAndroidApp: () => mock.app }));
 vi.mock("@/components/pk/toast", () => ({ dismissToast: vi.fn(), showToast: mock.toast }));
 import { CareActionType } from "@/lib/game/enums";
-import { getBuyWithWalletInstruction, getCareInstruction, getDepositInstruction } from "./instructions";
+import { getBuyWithWalletInstruction, getCareInstruction, getDepositInstruction, getReturnFloatInstruction } from "./instructions";
 import { render } from "@testing-library/react";
 import { ResumeSends, usePawketSend } from "./use-send";
 
@@ -158,5 +158,16 @@ describe("send routing (no wallet signing)", () => {
     const hook = renderHook(usePawketSend);
     await act(async () => { await hook.result.current.sendFromServer("Buy SEAT", "/api/coins/seat/trade", {}, { sponsored: false }); });
     expect(hook.result.current.tx.error).toMatch(/SOL changed between the quote and your signature.*Quote it again/);
+  });
+  it("sends a device's own transfer home without asking the sponsor, who signs only Pawket's", async () => {
+    sponsor();
+    const device = await import("@solana/kit").then(({ generateKeyPairSigner }) => generateKeyPairSigner());
+    mock.send.mockResolvedValue({ outcome: "confirmed", signature: "receipt", sponsored: false, blockhash: "hash" });
+    const hook = renderHook(usePawketSend);
+    const home = await getReturnFloatInstruction({ device, owner, lamports: 995_000n });
+    await act(async () => {
+      await hook.result.current.asDevice("Return the float", device, () => [home]);
+    });
+    expect(mock.send).toHaveBeenCalledWith(expect.objectContaining({ owner: device, sponsor: null }));
   });
 });

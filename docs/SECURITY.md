@@ -10,7 +10,7 @@ in `src/lib/solana/send.ts`. [AGENTS.md](../AGENTS.md) is the change contract.
 | Authority | Scope |
 | --- | --- |
 | Owner wallet | Approves wallet management and spending; owns the pet and Pawket Wallet |
-| Linked device | Non-extractable WebCrypto key; program-limited non-money actions until expiry and daily limit; can unlink itself |
+| Linked device | Non-extractable WebCrypto key; program-limited non-money actions until expiry and daily limit; can unlink itself; once unlinked or replaced, can send its own leftover float to its owner's Pawket Wallet and nowhere else |
 | Sponsor | Server-only devnet fee/rent payer; also current keepsake collection authority and source of derived asset keys |
 | Program upgrade authority | Separate deploy wallet; never the sponsor |
 | Treasury | Receives Market purchases and partner coin fees; its signing key is not on the server |

@@ -316,7 +316,8 @@ export function usePawketSend() {
           }
           // Outside managing the wallet, the owner signs only a Market purchase, which spends it.
           const state = by === "wallet" && !management ? await requirePawketWallet(owner.address, { spends: true }) : null;
-          const sponsor = await fetchSponsor();
+          // The sponsor signs Pawket's instructions only: anything else (a device handing back its float) pays its own way.
+          const sponsor = built.every((ix) => ix.programAddress === PAWKET_PROGRAM_ID) ? await fetchSponsor() : { available: false };
           if (state && !sponsor.available && !state.paysOwnWay) throw new Error("Add SOL and relink this device in your Pawket Wallet to cover its network fee. Nothing was sent.");
           return sendPawket({
             rpc,

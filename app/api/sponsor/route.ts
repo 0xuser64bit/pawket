@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { scrub } from "@/lib/analytics/scrub";
 import { cosign, SponsorRefusal } from "@/lib/solana/sponsor";
 import { caller as callerOf } from "@/server/actions";
 import { actionLimit, mayPayRent, sponsorAddress, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
@@ -14,6 +15,11 @@ import { actionLimit, mayPayRent, sponsorAddress, sponsorSpent, sponsorState, ty
  */
 
 export const runtime = "nodejs";
+
+/** One line in the logs for a failure the player only sees as "cannot reach the network": never the key, never a URL. */
+function logged(where: string, error: unknown) {
+  console.error(JSON.stringify({ pawket: "sponsor", where, name: error instanceof Error ? error.name : typeof error, message: error instanceof Error ? scrub(error.message) : undefined }));
+}
 export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({ transaction: z.string().min(1).max(2_000) });
@@ -25,7 +31,8 @@ export async function GET() {
       current.available ? { available: true, address: current.address } : current,
       { headers: { "cache-control": "no-store" } },
     );
-  } catch {
+  } catch (error) {
+    logged("status", error);
     // The address is public: a history can still tell the fees Pawket paid while the network is down.
     const address = await sponsorAddress();
     return NextResponse.json(
@@ -43,7 +50,8 @@ export async function POST(request: Request) {
   let current: SponsorState;
   try {
     current = await sponsorState();
-  } catch {
+  } catch (error) {
+    logged("state", error);
     return NextResponse.json({ error: "The sponsor cannot reach the network. Nothing was sent." }, { status: 503 });
   }
   if (!current.available) return NextResponse.json({ error: current.reason }, { status: 503 });
@@ -59,6 +67,7 @@ export async function POST(request: Request) {
     if (error instanceof SponsorRefusal) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
+    logged("cosign", error);
     return NextResponse.json({ error: "The sponsor could not sign it. Nothing changed." }, { status: 502 });
   }
 }

@@ -438,12 +438,16 @@ test("look tabs and colour choices have one keyboard stop and follow navigation 
   await expect(tones.getByRole("radio").first()).toBeFocused();
 });
 
-test("health endpoint reports ok", async ({ request }) => {
+test("health endpoint says whether Solana and the sponsor answer, and nothing secret", async ({ request }) => {
   const res = await request.get("/api/health");
   expect(res.ok()).toBe(true);
   const body = await res.json();
-  expect(body.status).toBe("ok");
+  expect(["ok", "degraded"]).toContain(body.status);
   expect(body.service).toBe("pawket-web");
+  expect(body.rpc).toEqual({ ok: expect.any(Boolean), ms: expect.any(Number) });
+  expect(typeof body.sponsor.available).toBe("boolean");
+  // No URL, key or balance ever leaves in it.
+  expect(JSON.stringify(body)).not.toMatch(/https?:|api-key|lamports/i);
 });
 
 test("no page can be framed by another site, and responses carry the basic headers", async ({ request }) => {

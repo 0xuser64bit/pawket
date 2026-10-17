@@ -495,8 +495,8 @@ function MoveMoney({ state, owner }: { state: PawketWalletState; owner: Address 
   );
 }
 
-/** Every line of the statement, read from Solana, newest first. */
-function History({ state, owner, now }: { state: PawketWalletState; owner: Address; now: number }) {
+/** Every line of the statement, read from Solana, newest first. Exported for its test. */
+export function History({ state, owner, now }: { state: PawketWalletState; owner: Address; now: number }) {
   const wallet = state.wallet!;
   const cluster = getPublicEnv().solanaCluster;
   const companion = useCompanion();
@@ -521,6 +521,7 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
   const page = useRequest(rent.data === undefined ? null : first);
   const [older, setOlder] = useState<{ version: string; entries: WalletEntry[]; next: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [missed, setMissed] = useState(false);
   const extra = older?.version === version ? older : null;
   const entries = [...(page.data?.entries ?? []), ...(extra?.entries ?? [])];
   const next = extra ? extra.next : (page.data?.next ?? null);
@@ -528,9 +529,12 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
   async function more() {
     if (!next) return;
     setLoading(true);
+    setMissed(false);
     try {
       const read = await fetchWalletHistory(rpc, wallet.address, { before: next, rent: rent.data });
       setOlder({ version, entries: [...(extra?.entries ?? []), ...read.entries], next: read.next });
+    } catch {
+      setMissed(true);
     } finally {
       setLoading(false);
     }
@@ -568,6 +572,11 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
         {next ? (
           <div style={{ marginTop: "var(--space-3)" }}>
             <Button tone="paper" label={loading ? "Reading…" : "Older"} disabled={loading} onClick={() => void more()} />
+            {missed ? (
+              <p role="status" className="caption pk-muted" style={{ marginTop: "var(--space-2)" }}>
+                Solana did not answer, so the older history could not be read. Nothing in it changed; try again.
+              </p>
+            ) : null}
           </div>
         ) : null}
       </Paper>

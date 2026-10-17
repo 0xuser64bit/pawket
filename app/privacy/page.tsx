@@ -36,7 +36,8 @@ const SECTIONS: Array<{ title: string; body: string[] }> = [
     body: [
       "Pawket uses Vercel Web Analytics to count page views and a few moments of the game: an adoption, a care, a finished round, a return to Home (by how many days old your pets are, never a date), a reminder added, a copy of your pets saved or brought back, and how far a step onto Solana got. Each count is one or two fixed words. None carries your name, a wallet or pet address, a signature, a score or anything you type, and a page is counted without its query or any Solana address in it.",
       "Vercel Web Analytics sets no cookie and tells one visit from another only within a day. Vercel processes connection data, such as your IP address, to count a visit, under its own policy.",
-      "Turn counting off in Profile, Settings, or have your browser send Global Privacy Control or Do Not Track, and Pawket counts nothing, page views included.",
+      "When a screen breaks while you are counted, the page tells Pawket's own server which page broke and the kind of error, with any link or address taken out, so it can be fixed.",
+      "Turn counting off in Profile, Settings, or have your browser send Global Privacy Control or Do Not Track, and Pawket counts nothing, page views included, and sends no error reports.",
     ],
   },
   {

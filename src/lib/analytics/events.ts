@@ -137,3 +137,22 @@ export function plainUrl(url: string): string {
     return url;
   }
 }
+
+/**
+ * A screen that broke here, told to Pawket's own server (`/api/report`) so it
+ * can be fixed: its path, its kind of error and message, scrubbed there of
+ * URLs and addresses. Only while the player is counted; never throws.
+ */
+export function reportError(error: Error & { digest?: string }): void {
+  if (!counting()) return;
+  try {
+    void fetch("/api/report", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ path: window.location.pathname, name: error.name, message: String(error.message).slice(0, 1000), digest: error.digest }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // Reporting is never in the way.
+  }
+}

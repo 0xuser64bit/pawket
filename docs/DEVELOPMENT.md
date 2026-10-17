@@ -90,3 +90,14 @@ deploy, check `/api/health`, the configured cluster, sponsor availability,
 public reads and the changed player flow. A web release also changes the
 Android app's hosted content; validate it in the release APK when relevant.
 A program upgrade or native Android change has its own release procedure.
+
+## Watching it run
+
+`/api/health` answers whether the server's Solana RPC responds and how fast,
+whether the sponsor is paying, and which commit is deployed; it never shows a
+secret, a balance or a provider URL. Server errors log one JSON line
+(`"pawket":"server-error"`, from `instrumentation.ts`), a screen that broke in
+a browser logs `"pawket":"client-error"` through `/api/report` while its player
+is counted, and sponsor failures log `"pawket":"sponsor"`; each message is
+scrubbed of URLs and addresses (`src/lib/analytics/scrub.ts`). Search a
+deployment's runtime logs for those keys.

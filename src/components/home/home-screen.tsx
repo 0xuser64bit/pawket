@@ -25,6 +25,7 @@ import { EmoteRow } from "@/components/home/emote-row";
 import { PhotoDialog } from "@/components/home/photo";
 import { chime } from "@/lib/play/sound";
 import { RoomSound } from "./room-sound";
+import { SigningNote } from "./signing-note";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { Room, RoomViewSwitch, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";
@@ -352,6 +353,7 @@ export function HomeScreen() {
           onPanel={setPanel}
           onSnap={roomState === "live" ? () => setShot(roomView.current?.snap() ?? null) : undefined}
         />
+        {onChain ? <SigningNote state={sender.pawketWallet} name={pet.name} /> : null}
         <p role="status" className="pk-sr">
           {status.sentence}
         </p>

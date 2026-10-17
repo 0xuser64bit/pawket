@@ -3817,6 +3817,8 @@ li {
 .pk-home-screen .pk-screen__bar > :is(.pk-chip, .pk-btn) { flex-shrink: 0; white-space: nowrap; }
 .pk-home-screen h1 { overflow-wrap: anywhere; }
 .pk-home__pets { min-width: 0; margin-bottom: var(--space-3); }
+.pk-home__signing { display: flex; align-items: flex-start; gap: var(--space-2); }
+.pk-home__signing > svg { flex: none; margin-top: 2px; }
 /* The ring's room is the strip's padding: the faces start on the column's edge. */
 .pk-home__pets > .pk-switch {
   max-width: calc(100% + 2 * var(--space-2));

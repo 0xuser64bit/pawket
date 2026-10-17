@@ -48,8 +48,8 @@ The `(game)` group owns the shell: the label-sized bar (the wallet chip,
 once a wallet is connected, and the room switch) and the floating Dock. The
 dock is Home, Park, Playground, Market, Guilds, Profile. A pet on Solana and
 the Pulse light Park; a browser pet lights Profile, and so does the Pawket
-Wallet (reached from the wallet chip, Home's line under a pet on Solana, and
-Settings).
+Wallet (reached from the wallet chip, Home's line under a pet on Solana whose
+care this device cannot sign yet, and Settings).
 
 ## Server and client (normative)
 

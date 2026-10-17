@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRequest } from "@solana/react";
 import type { Address } from "@solana/kit";
 import { Banner, Button, ButtonLink, Card, Choice, Field, Paper, Receipt, Row, Stack, type ReceiptRow } from "@/components/pk";
@@ -302,7 +302,7 @@ function LaunchPanel({
 
 type Side = "buy" | "sell";
 
-function TradeTicket({
+export function TradeTicket({
   guild,
   coin,
   balances,
@@ -318,13 +318,21 @@ function TradeTicket({
   const [side, setSide] = useState<Side>("buy");
   const [amount, setAmount] = useState("");
   const [slippage, setSlippage] = useState(100);
-  const [quote, setQuote] = useState<CoinQuote | null>(null);
+  const [answer, setQuote] = useState<CoinQuote | null>(null);
   const [quoting, setQuoting] = useState(false);
   const [problem, setProblem] = useState<string>();
   const [agreed, agree] = useConsent(coin.mint);
   const [now, setNow] = useState(() => Date.now());
+  // Each ask is numbered, and any change to what is asked retires the ones still out, so an
+  // answer that comes back late can never stand for inputs it was not asked for.
+  const asked = useRef(0);
   const decimals = side === "buy" ? SOL : COIN_TERMS.decimals;
   const units = amount.trim() ? parseUnits(amount, decimals) : null;
+  // A quote stands only for what it was asked: this side, this amount, this slippage.
+  const quote =
+    answer && answer.side === side && units !== null && answer.amountIn === units.toString() && answer.slippageBps === slippage
+      ? answer
+      : null;
   const age = quote ? Math.floor((now - quote.quotedAt) / 1000) : 0;
   const stale = age >= QUOTE_SECONDS;
   const route = coin.stage === "damm" ? "Meteora DAMM v2 pool" : "Meteora bonding curve";
@@ -336,35 +344,41 @@ function TradeTicket({
   }, [quote]);
 
   function change(next: () => void) {
+    asked.current += 1;
     next();
     setQuote(null);
+    setQuoting(false);
     setProblem(undefined);
   }
 
   async function ask() {
     if (!units) return;
+    const ticket = ++asked.current;
     setQuoting(true);
     setProblem(undefined);
     try {
       const response = await fetch(`/api/coins/${guild.slug}/quote?side=${side}&amount=${units}&slippage=${slippage}`, { cache: "no-store" });
       const body = (await response.json()) as CoinQuote & { message?: string };
+      if (ticket !== asked.current) return;
       if (!response.ok) throw new Error(body.message ?? "No quote came back. Nothing was sent.");
       setQuote(body);
       setNow(Date.now());
     } catch (error) {
+      if (ticket !== asked.current) return;
       setQuote(null);
       setProblem(error instanceof Error ? error.message : "No quote came back. Nothing was sent.");
     } finally {
-      setQuoting(false);
+      if (ticket === asked.current) setQuoting(false);
     }
   }
 
   async function sign() {
     if (!quote) return;
+    // Everything signed comes from the quote itself: its side, its amount, its least.
     const result = await sender.sendFromServer(
-      `${side === "buy" ? "Buy" : "Sell"} ${coin.symbol}`,
+      `${quote.side === "buy" ? "Buy" : "Sell"} ${coin.symbol}`,
       `/api/coins/${guild.slug}/trade`,
-      { side, amount: quote.amountIn, minimumOut: quote.minimumOut },
+      { side: quote.side, amount: quote.amountIn, minimumOut: quote.minimumOut },
       { sponsored: false },
     );
     if (result?.outcome === "confirmed") {
@@ -378,17 +392,17 @@ function TradeTicket({
   const over = units !== null && held !== null && units > held;
   const rows: ReceiptRow[] = quote
     ? [
-        { k: "You pay", v: side === "buy" ? sol(quote.amountUsed) : `${formatUnits(quote.amountUsed, COIN_TERMS.decimals, 2)} ${coin.symbol}` },
+        { k: "You pay", v: quote.side === "buy" ? sol(quote.amountUsed) : `${formatUnits(quote.amountUsed, COIN_TERMS.decimals, 2)} ${coin.symbol}` },
         ...(BigInt(quote.amountIn) > BigInt(quote.amountUsed)
-          ? [{ k: "Comes back", v: side === "buy" ? sol(BigInt(quote.amountIn) - BigInt(quote.amountUsed)) : `${formatUnits(BigInt(quote.amountIn) - BigInt(quote.amountUsed), COIN_TERMS.decimals, 2)} ${coin.symbol}` }]
+          ? [{ k: "Comes back", v: quote.side === "buy" ? sol(BigInt(quote.amountIn) - BigInt(quote.amountUsed)) : `${formatUnits(BigInt(quote.amountIn) - BigInt(quote.amountUsed), COIN_TERMS.decimals, 2)} ${coin.symbol}` }]
           : []),
         {
           k: "You get, about",
-          v: side === "buy" ? `${formatUnits(quote.amountOut, COIN_TERMS.decimals, 2)} ${coin.symbol}` : sol(quote.amountOut),
+          v: quote.side === "buy" ? `${formatUnits(quote.amountOut, COIN_TERMS.decimals, 2)} ${coin.symbol}` : sol(quote.amountOut),
         },
         {
           k: "At least",
-          v: side === "buy" ? `${formatUnits(quote.minimumOut, COIN_TERMS.decimals, 2)} ${coin.symbol}` : sol(quote.minimumOut),
+          v: quote.side === "buy" ? `${formatUnits(quote.minimumOut, COIN_TERMS.decimals, 2)} ${coin.symbol}` : sol(quote.minimumOut),
           tone: "warn",
         },
         { k: "Fee", v: sol(quote.fee, 6) },
@@ -438,7 +452,7 @@ function TradeTicket({
         />
         {problem ? <Banner tone="risk" title="No quote" body={problem} /> : null}
         {quote ? (
-          <Paper title={stale ? "This quote is old" : `Quoted ${age}s ago`} meta={`${side === "buy" ? "Buy" : "Sell"} · ${coin.symbol}`}>
+          <Paper title={stale ? "This quote is old" : `Quoted ${age}s ago`} meta={`${quote.side === "buy" ? "Buy" : "Sell"} · ${coin.symbol}`}>
             <Receipt
               rows={rows}
               note={
@@ -459,7 +473,7 @@ function TradeTicket({
           />
           {quote ? (
             <Button
-              label={`Sign: ${side === "buy" ? "buy" : "sell"} ${coin.symbol}`}
+              label={`Sign: ${quote.side === "buy" ? "buy" : "sell"} ${coin.symbol}`}
               tone="paper"
               disabled={stale || !agreed || sender.busy}
               onClick={() => void sign()}

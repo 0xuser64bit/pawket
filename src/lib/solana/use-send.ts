@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useRequest } from "@solana/react";
 import { address, createNoopSigner, type Address, type Instruction, type KeyPairSigner, type TransactionSigner } from "@solana/kit";
 import { record, type SendKind, type SendOutcome } from "@/lib/analytics/events";
@@ -13,7 +13,8 @@ import { rpc, useConnected } from "./browser-client";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID, type PawketInstructionName } from "./program";
 import { asDeviceInstruction } from "./instructions";
 import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
-import { extractProgramErrorCode, isActiveStage, isUserRejection, toUserFacingError, type TransactionStage } from "./transactions";
+import { refreshOwnedPets } from "@/lib/companion/use-companion";
+import { extractProgramErrorCode, isActiveStage, isUserRejection, settleSignature, toUserFacingError, type TransactionStage } from "./transactions";
 
 /** What a send is, for its count: read from its instructions, never from its words. */
 const KIND: Partial<Record<PawketInstructionName, SendKind>> = {
@@ -120,6 +121,79 @@ async function requirePawketWallet(owner: Address, { spends }: { spends: boolean
   return state;
 }
 
+/**
+ * A send whose answer was lost, kept for this tab until it is known: if the
+ * page is replaced meanwhile — a reload, a link opened in the Android app —
+ * the next page looks into it again (`ResumeSends`) rather than leave the
+ * player to guess whether to try once more.
+ */
+interface Pending {
+  signature: string;
+  blockhash: string;
+  label: string;
+  owner: string | null;
+}
+const PENDING_KEY = "pawket.pending-sends";
+function pendingSends(): Pending[] {
+  try {
+    const list: unknown = JSON.parse(window.sessionStorage.getItem(PENDING_KEY) ?? "[]");
+    return Array.isArray(list) ? (list as Pending[]).filter((each) => typeof each?.signature === "string" && typeof each?.blockhash === "string") : [];
+  } catch {
+    return [];
+  }
+}
+function keepPending(list: Pending[]) {
+  try {
+    if (list.length) window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(list.slice(-5)));
+    else window.sessionStorage.removeItem(PENDING_KEY);
+  } catch {
+    // Blocked storage: this page still settles it; only a reload forgets it.
+  }
+}
+
+/**
+ * Look into a send that came back unknown until Solana says how it ended:
+ * its toast says so, and what it changed is read again. Sends nothing.
+ */
+async function settleLater(pending: Pending, show: (next: Partial<TxState>) => void) {
+  keepPending([...pendingSends().filter((each) => each.signature !== pending.signature), pending]);
+  try {
+    const settled = await settleSignature({ rpc }, pending.signature, pending.blockhash);
+    if (settled === "confirmed") {
+      show({ stage: "confirmed" });
+      haptic("done");
+      if (pending.owner) {
+        await refreshPawketWallet(pending.owner as Address);
+        void refreshOwnedPets(pending.owner as Address);
+      }
+    } else if (settled === "expired") {
+      show({ stage: "failed", error: "It never reached Solana, so nothing changed. Try again." });
+    }
+  } catch (error) {
+    show({ stage: "failed", error: toUserFacingError(error) });
+  } finally {
+    keepPending(pendingSends().filter((each) => each.signature !== pending.signature));
+  }
+}
+
+/** On a new page, the sends a replaced page left unknown, each with its own toast until it is known. */
+export function ResumeSends() {
+  useEffect(() => {
+    for (const pending of pendingSends()) {
+      const id = `settle-${pending.signature.slice(0, 16)}`;
+      let state: TxState = { stage: "confirming", label: pending.label, signature: pending.signature };
+      const show = (next: Partial<TxState>) => {
+        state = { ...state, ...next };
+        const toast = txToast(id, state, getPublicEnv().solanaCluster);
+        if (toast) showToast(toast);
+      };
+      show({});
+      void settleLater(pending, show);
+    }
+  }, []);
+  return null;
+}
+
 let sends = 0;
 let sending = false;
 const sendListeners = new Set<() => void>();
@@ -197,8 +271,9 @@ export function usePawketSend() {
         const result = await go(signer, (stage) => show({ stage }), show);
         show({ stage: result.outcome, signature: result.signature, sponsored: result.sponsored });
         record({ name: "send_outcome", kind, outcome: outcomeOf(result) });
-        // Felt when Solana has it, never before: "unknown" is still waiting.
+        // Felt when Solana has it, never before: "unknown" is still waiting, and is looked into until it is not.
         if (result.outcome === "confirmed") haptic("done");
+        else void settleLater({ signature: result.signature, blockhash: result.blockhash, label, owner }, show);
         return result;
       } catch (error) {
         record({ name: "send_outcome", kind, outcome: outcomeOf(null, error) });

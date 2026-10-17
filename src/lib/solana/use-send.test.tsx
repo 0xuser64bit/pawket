@@ -4,19 +4,22 @@ import { createNoopSigner, type Address } from "@solana/kit";
 import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
 const owner = "11111111111111111111111111111111" as Address;
-const mock = vi.hoisted(() => ({ read: vi.fn(), refresh: vi.fn(), send: vi.fn(), record: vi.fn(), app: false }));
+const mock = vi.hoisted(() => ({ read: vi.fn(), refresh: vi.fn(), send: vi.fn(), record: vi.fn(), settle: vi.fn(), toast: vi.fn(), pets: vi.fn(), app: false }));
+vi.mock("./transactions", async (original) => ({ ...(await original<object>()), settleSignature: mock.settle }));
+vi.mock("@/lib/companion/use-companion", () => ({ refreshOwnedPets: mock.pets }));
 vi.mock("@/lib/analytics/events", () => ({ record: mock.record }));
 vi.mock("./browser-client", () => ({ rpc: {}, useConnected: () => ({ account: { address: "11111111111111111111111111111111" }, signer: createNoopSigner("11111111111111111111111111111111" as Address) }) }));
 vi.mock("@/lib/wallet/pawket-wallet", () => ({ usePawketWallet: () => null, readPawketWallet: mock.read, refreshPawketWallet: mock.refresh }));
 vi.mock("./send", () => ({ sendPawket: mock.send, sendPrepared: vi.fn(), RelayError: Error }));
 vi.mock("@/lib/native/android", () => ({ haptic: vi.fn(), inAndroidApp: () => mock.app }));
-vi.mock("@/components/pk/toast", () => ({ dismissToast: vi.fn(), showToast: vi.fn() }));
+vi.mock("@/components/pk/toast", () => ({ dismissToast: vi.fn(), showToast: mock.toast }));
 import { CareActionType } from "@/lib/game/enums";
 import { getBuyWithWalletInstruction, getCareInstruction, getDepositInstruction } from "./instructions";
-import { usePawketSend } from "./use-send";
+import { render } from "@testing-library/react";
+import { ResumeSends, usePawketSend } from "./use-send";
 
 const empty = { owner, status: "ready", wallet: null, device: null, balance: 0n } as PawketWalletState;
-afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); mock.app = false; });
+afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); mock.app = false; window.sessionStorage.clear(); });
 function sponsor(available = true) { vi.stubGlobal("fetch", vi.fn(async () => ({ json: async () => ({ available, address: owner }) }))); }
 
 describe("send routing (no wallet signing)", () => {
@@ -119,5 +122,32 @@ describe("send routing (no wallet signing)", () => {
     mock.send.mockResolvedValue({ outcome: "confirmed", signature: "receipt", sponsored: true });
     await act(async () => { await hook.result.current.act("Feed Mango", feed); });
     expect(mock.record).toHaveBeenLastCalledWith({ name: "send_outcome", kind: "care", outcome: "confirmed" });
+  });
+  it("looks into an unknown send until Solana says how it ended, and reads the wallet again", async () => {
+    sponsor(); mock.app = true;
+    const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);
+    mock.read.mockResolvedValue({ ...empty, balance: 1n, device, wallet: { address: owner, device: device.address, deviceExpiresAt: Number.MAX_SAFE_INTEGER, actionsToday: 0, dailyActions: 100 } });
+    mock.send.mockResolvedValue({ outcome: "unknown", signature: "sig", sponsored: true, blockhash: "hash" });
+    let answer!: (settled: string) => void;
+    mock.settle.mockReturnValue(new Promise((resolve) => { answer = resolve; }));
+    const hook = renderHook(usePawketSend);
+    await act(async () => { await hook.result.current.act("Feed Mango", () => []); });
+    expect(hook.result.current.tx.stage).toBe("unknown");
+    expect(mock.settle).toHaveBeenCalledWith(expect.anything(), "sig", "hash");
+    expect(JSON.parse(window.sessionStorage.getItem("pawket.pending-sends")!)).toMatchObject([{ signature: "sig", label: "Feed Mango" }]);
+    await act(async () => { answer("confirmed"); });
+    expect(hook.result.current.tx.stage).toBe("confirmed");
+    expect(mock.pets).toHaveBeenCalledWith(owner);
+    expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
+  });
+
+  it("picks up, on a new page, a send the last one left unknown, and says it never landed", async () => {
+    window.sessionStorage.setItem("pawket.pending-sends", JSON.stringify([{ signature: "lost", blockhash: "hash", label: "Feed Mango", owner }]));
+    mock.settle.mockResolvedValue("expired");
+    await act(async () => { render(<ResumeSends />); });
+    expect(mock.settle).toHaveBeenCalledWith(expect.anything(), "lost", "hash");
+    const last = mock.toast.mock.calls.at(-1)![0] as { title: string; tone: string };
+    expect(last).toMatchObject({ title: "Feed Mango: it did not go through", tone: "risk" });
+    expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
   });
 });

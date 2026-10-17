@@ -205,7 +205,9 @@ solana program deploy target/deploy/pawket.so \
 The program keypair is needed for initial deployment; upgrades use the deploy
 wallet's authority. Verify the source identity against the intended account.
 After an authorized upgrade, run `pnpm e2e:devnet` and the opt-in browser signing
-suites from [TESTING.md](TESTING.md). These create accounts and spend test SOL.
+suites from [TESTING.md](TESTING.md). These create accounts and spend test SOL:
+a separate test funder pays the test wallets, and the sponsor pays what it
+sponsors ([ENVIRONMENT.md](ENVIRONMENT.md), "Devnet test keys").
 [MAINNET.md](MAINNET.md) requires a separate release plan; do not repoint tests.
 
 For localnet, run a validator, set the cluster to `localnet` and public RPC to

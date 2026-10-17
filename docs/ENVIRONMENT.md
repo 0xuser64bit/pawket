@@ -40,6 +40,16 @@ and authorities. Keep server keys out of logs, source, client bundles and APKs.
 Operational scripts document their own local key inputs; do not put a player's
 wallet secret in an application environment variable.
 
+## Devnet test keys
+
+The opt-in devnet suites fund their test wallets from `PAWKET_TEST_FUNDER` (a
+keypair's JSON array) or `.keys/test-funder.json`; make one with
+`solana-keygen new -o .keys/test-funder.json` and fund it from a devnet faucet.
+They refuse a funder that is the sponsor, and never use the deploy wallet.
+Their sponsored actions still spend the sponsor's float, because its key is
+the keepsake collection's authority (Q10), so each run first requires the
+sponsor to hold at least 2 SOL (`e2e/devnet.ts`).
+
 ## Origins
 
 Production uses `NEXT_PUBLIC_APP_URL=https://pawket.world`. Local development

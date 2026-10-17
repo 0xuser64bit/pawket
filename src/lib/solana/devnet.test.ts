@@ -1,6 +1,4 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import {
   createKeyPairSignerFromBytes,
   createNoopSigner,
@@ -75,12 +73,14 @@ import { sendPawket, sendPrepared } from "./send";
 import { cosign } from "./sponsor";
 import { extractProgramErrorCode } from "./transactions";
 import { TEST_GUILD_NAME } from "@/lib/guilds/delisted";
+import { assertSponsorHasRoom, sponsorKeypairJson } from "../../../e2e/devnet";
 
 /**
  * The whole path on devnet, run by `pnpm e2e:devnet` and skipped otherwise:
  * a brand-new wallet with no SOL adopts, cares, plays and dresses through
  * the sponsor, and every number comes back from the chain. The sponsor key
- * is SPONSOR_KEYPAIR or .keys/sponsor.json.
+ * is SPONSOR_KEYPAIR or .keys/sponsor.json, and the run refuses to start
+ * while its float is too low to share with the live site (`e2e/devnet.ts`).
  */
 const RUN = process.env.PAWKET_DEVNET === "1";
 const RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
@@ -108,7 +108,8 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     });
 
   beforeAll(async () => {
-    const raw = process.env.SPONSOR_KEYPAIR ?? readFileSync(path.join(process.cwd(), ".keys/sponsor.json"), "utf8");
+    await assertSponsorHasRoom();
+    const raw = sponsorKeypairJson();
     sponsor = await createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(raw) as number[]));
     process.env.SPONSOR_KEYPAIR = raw; // the keepsake's key comes from the sponsor's
     owner = await generateKeyPairSigner();

@@ -1,12 +1,11 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { getOpenWalletInstruction, getDepositInstruction, getLinkDeviceInstruction } from "@/lib/solana/instructions";
 import { deriveWalletPda } from "@/lib/solana/pda";
 import { type Address } from "@solana/kit";
 import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction, TransactionInstruction, sendAndConfirmTransaction } from "@solana/web3.js";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { ChainGuild } from "@/lib/solana/accounts";
+import { assertSponsorHasRoom, sponsorKeypairJson, testFunderKeypairJson } from "../../../e2e/devnet";
 
 /**
  * A guild coin's whole life on devnet, run by `pnpm e2e:coins` and skipped
@@ -17,8 +16,9 @@ import type { ChainGuild } from "@/lib/solana/accounts";
  * the player signed, every number read back from Solana.
  *
  * The coin's key comes from the sponsor's (SPONSOR_KEYPAIR or
- * .keys/sponsor.json); the deploy wallet (~/.config/solana/id.json) funds
- * the founder. The guild is a stand-in with a fresh slug: a coin needs only
+ * .keys/sponsor.json); the test funder (PAWKET_TEST_FUNDER or
+ * .keys/test-funder.json, never the sponsor or the deploy wallet) funds the
+ * founder. The guild is a stand-in with a fresh slug: a coin needs only
  * the guild's name and slug, and the routes check the rest.
  */
 const RUN = process.env.PAWKET_DEVNET === "1";
@@ -46,11 +46,10 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
   };
 
   beforeAll(async () => {
-    process.env.SPONSOR_KEYPAIR ??= readFileSync(".keys/sponsor.json", "utf8");
+    await assertSponsorHasRoom();
+    process.env.SPONSOR_KEYPAIR ??= sponsorKeypairJson();
     coins = await import("./meteora");
-    const funder = Keypair.fromSecretKey(
-      Uint8Array.from(JSON.parse(readFileSync(`${homedir()}/.config/solana/id.json`, "utf8")) as number[]),
-    );
+    const funder = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(await testFunderKeypairJson()) as number[]));
     await sendAndConfirmTransaction(
       connection,
       new Transaction().add(SystemProgram.transfer({ fromPubkey: funder.publicKey, toPubkey: founder.publicKey, lamports: 3 * LAMPORTS_PER_SOL })),

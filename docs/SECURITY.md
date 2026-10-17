@@ -64,7 +64,10 @@ availability rather than assume the sponsor is online.
 
 ## Server and Android boundaries
 
-Server config and privileged modules import `server-only`. Public env values
+Server config and privileged modules import `server-only`. Every response
+forbids framing (`frame-ancestors 'none'`, `X-Frame-Options`), because a linked
+device signs some actions without a prompt; it also sends `nosniff`, a
+referrer policy and a permissions policy (`next.config.ts`). Public env values
 are client-safe; custom provider URLs belong in `SOLANA_RPC_URL`, with browser
 RPC set to `/api/rpc`. Direct browser RPC permits only the public Solana hosts
 or loopback endpoints without credentials or URL parameters. Coin route logs

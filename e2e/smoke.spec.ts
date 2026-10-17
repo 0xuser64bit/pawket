@@ -423,3 +423,13 @@ test("health endpoint reports ok", async ({ request }) => {
   expect(body.status).toBe("ok");
   expect(body.service).toBe("pawket-web");
 });
+
+test("no page can be framed by another site, and responses carry the basic headers", async ({ request }) => {
+  for (const path of ["/", "/home", "/api/health"]) {
+    const headers = (await request.get(path)).headers();
+    expect(headers["content-security-policy"], path).toContain("frame-ancestors 'none'");
+    expect(headers["x-frame-options"], path).toBe("DENY");
+    expect(headers["x-content-type-options"], path).toBe("nosniff");
+    expect(headers["referrer-policy"], path).toBe("strict-origin-when-cross-origin");
+  }
+});

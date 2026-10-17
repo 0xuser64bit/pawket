@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { serverRpcUrl } from "@/config/server-env";
 import { checkRpcRequest } from "@/lib/solana/rpc-proxy";
 import { createLimiter } from "@/lib/solana/sponsor";
+import { caller as callerOf } from "@/server/actions";
 
 /**
  * Pawket's RPC, for browsers: each request checked (`checkRpcRequest`) and
@@ -35,14 +36,16 @@ export async function POST(request: Request) {
   const id = (body as { id?: unknown } | null)?.id;
   const check = checkRpcRequest(body);
   if (!check.ok) return refuse(id, check.reason, 400);
-  const caller = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const caller = callerOf(request);
   if (!anyCall(caller) || (check.method === "sendTransaction" && !sends(caller))) return refuse(id, "Too many in a row. Ask again in a moment.", 429);
 
+  // What was checked is what is sent: the parsed request, never the raw text, which a second parser could read differently.
   const upstream = await fetch(serverRpcUrl(), {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: text,
+    body: JSON.stringify(body),
     cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
   }).catch(() => null);
   if (!upstream) return refuse(id, "The server's RPC did not answer.", 502);
   const retry = upstream.headers.get("retry-after");

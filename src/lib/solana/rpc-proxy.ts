@@ -1,4 +1,20 @@
-import { PAWKET_PROGRAM_ID } from "./program";
+import { getBase58Decoder } from "@solana/kit";
+import { PAWKET_ACCOUNTS, PAWKET_PROGRAM_ID } from "./program";
+
+/** Each of Pawket's account kinds, as a scan names it: its discriminator, in base58, at offset 0. */
+const KINDS: ReadonlySet<string> = new Set(
+  Object.values(PAWKET_ACCOUNTS).map((account) => getBase58Decoder().decode(Uint8Array.from(account.discriminator))),
+);
+
+/** A scan of one of Pawket's account kinds, never of the whole program: a memcmp at offset 0 on a known discriminator. */
+function namesAKind(config: unknown): boolean {
+  const filters = (config as { filters?: unknown } | null)?.filters;
+  if (!Array.isArray(filters)) return false;
+  return filters.some((filter) => {
+    const memcmp = (filter as { memcmp?: { offset?: unknown; bytes?: unknown } } | null)?.memcmp;
+    return memcmp !== undefined && Number(memcmp.offset) === 0 && typeof memcmp.bytes === "string" && KINDS.has(memcmp.bytes);
+  });
+}
 
 /**
  * What a browser may ask Pawket's RPC proxy (`/api/rpc`): the calls the app
@@ -31,6 +47,9 @@ export function checkRpcRequest(body: unknown, programId: string = PAWKET_PROGRA
   if (params !== undefined && !Array.isArray(params)) return { ok: false, reason: "Params are a list." };
   const first = (params as unknown[] | undefined)?.[0];
   if (method === "getProgramAccounts" && first !== programId) return { ok: false, reason: "Only Pawket's program is scanned here." };
+  if (method === "getProgramAccounts" && !namesAKind((params as unknown[])[1])) {
+    return { ok: false, reason: "A scan names one of Pawket's account kinds." };
+  }
   if (method === "getMultipleAccounts" && (!Array.isArray(first) || first.length > 100)) {
     return { ok: false, reason: "At most 100 accounts at a time." };
   }

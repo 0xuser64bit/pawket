@@ -47,7 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      SOLANA_VERSION: 3.1.15
+      # The newest 3.1 release Anza still publishes (3.1.15, on some local machines, is no longer served).
+      SOLANA_VERSION: 3.1.14
       ANCHOR_VERSION: 1.2.0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -67,8 +68,11 @@ jobs:
       - name: Solana CLI and its SBF platform tools
         run: |
           if [ ! -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
-            sh -c "$(curl -sSfL "https://release.anza.xyz/v${SOLANA_VERSION}/install")"
+            # Downloaded first, so a missing release fails here rather than installing nothing.
+            curl -sSfL "https://release.anza.xyz/v${SOLANA_VERSION}/install" -o "$RUNNER_TEMP/solana-install.sh"
+            sh "$RUNNER_TEMP/solana-install.sh"
           fi
+          "$HOME/.local/share/solana/install/active_release/bin/cargo-build-sbf" --version
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
       - name: Anchor CLI
         # Outside the checkout, with the runner's own stable rustc: rust-toolchain.toml pins the

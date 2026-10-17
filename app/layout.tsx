@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Analytics } from "@vercel/analytics/next";
 import { getPublicEnv } from "@/config/env";
 import { fontClassNames } from "@/config/fonts";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/config/site";
 import { THEME_SCRIPT } from "@/config/themes";
+import { PawketAnalytics } from "@/components/analytics";
 import { BootSplash } from "@/components/pk/boot-splash";
 import { Toasts } from "@/components/pk/toast";
 import { NavProgress } from "@/components/pk/nav-link";
@@ -59,7 +59,7 @@ export default function RootLayout({
         <NavProgress />
         <Providers>{children}</Providers>
         <Toasts />
-        <Analytics />
+        <PawketAnalytics />
       </body>
     </html>
   );

@@ -83,6 +83,26 @@ decide the stage and verify the derived pool. The server checks the coin's
 creator matches the founder and requires the founding pet's membership for
 launch; founder powers in the program still need a decision (Q9).
 
+## Aggregate counts of the core loop
+
+Nothing measured whether browser players come back, so Pawket counts its own
+loop with Vercel Web Analytics custom events (`src/lib/analytics/events.ts`):
+adoptions, cares, rounds, a daily Home open bucketed by the oldest pet's age
+and the time since any care, the Keep on Solana steps, device links and their
+failure class, each send's kind and outcome, reminders and pet copies. Every
+property is a fixed word; no event carries a name, address, signature, score
+or free text, and counted page addresses lose their query and any Solana
+address. A Settings choice turns counting off, page views included, and a
+browser sending Global Privacy Control or Do Not Track is never counted.
+`/privacy` lists what is counted.
+
+The counts are proxies, not cohorts. Day-one returns are `home_opened` with
+`petAge=1` over the previous day's `pet_adopted`; week-one returns use
+`petAge=7-13` against adoptions a week earlier. Several pets or devices blur
+them; nothing identifies a player to make them exact. Chain pets also have
+their own record in Pulse. Custom events record only on Vercel plans that
+include them; without one, the calls are inert.
+
 ## Chain reads precede infrastructure
 
 The app reads program and token accounts directly, with bounded shared caches

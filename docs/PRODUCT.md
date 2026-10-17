@@ -33,7 +33,8 @@ lead the experience; guilds support community; coins remain optional.
 The default cluster is devnet. Public configuration is validated in
 `src/config/env.ts`; server secrets are read through `getServerEnv()`.
 Deployment and environment procedures live in `DEVELOPMENT.md` and
-`ENVIRONMENT.md`.
+`ENVIRONMENT.md`. Pawket counts its own loop anonymously, in fixed words, and
+a player can turn that off (`DECISIONS.md`, `/privacy`).
 
 A pet starts in browser storage, or in the Android app's WebView storage.
 Keeping it on Solana creates a new program record with the chosen name,

@@ -19,6 +19,7 @@
 | Documentation links and file references | `src/config/docs.test.ts` | Vitest (node) |
 | Bundled font copyright and licenses | `src/config/docs.test.ts` | Vitest (node) |
 | Env / cluster / format / errors| colocated `*.test.ts`                   | Vitest   |
+| Counts carry only fixed words, honour the opt-out, GPC and DNT, and keep addresses out of page URLs | `src/lib/analytics/events.test.ts` | Vitest |
 | Presentational components      | `src/components/*.test.tsx`             | Vitest + Testing Library |
 | Guest record, wardrobe, games  | `src/lib/guest`, `closet`, `play`       | Vitest   |
 | Player look, moment registry (checked against the shipped GLBs' clips) | `src/lib/player`, `src/lib/room` | Vitest |

@@ -57,7 +57,9 @@ within a process and twenty seconds through Next's Data Cache; Pulse caches
 its measurements for thirty seconds. Failed reads are not cached as successful
 records. Cached discovery counts are chain-derived snapshots, not immediate
 transaction receipts. Confirmation refreshes use the relevant source read.
-There is no database, indexer or background worker.
+There is no database, indexer or background worker. Aggregate counts of the
+loop go to Vercel Web Analytics through `src/lib/analytics/events.ts`, held to
+fixed words and the player's choice (`DECISIONS.md`).
 
 ## Writes
 

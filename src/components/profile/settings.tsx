@@ -2,7 +2,8 @@
 
 import type { Address } from "@solana/kit";
 import { NavLink as Link } from "@/components/pk/nav-link";
-import { Button, ButtonLink, Card, Row, ThemePicker } from "@/components/pk";
+import { Button, ButtonLink, Card, Choice, Row, ThemePicker } from "@/components/pk";
+import { useCounting } from "@/lib/analytics/events";
 import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";
 import { useSponsor } from "@/lib/solana/use-send";
@@ -25,6 +26,7 @@ export function Settings({ form }: { form?: PetForm }) {
   const inApp = useAndroidApp();
   const [haptics, setHaptics] = useHaptics();
   const sponsor = useSponsor();
+  const counts = useCounting();
   return (
     <div className="pk-stack" style={{ gap: "var(--space-5)" }}>
       <Card>
@@ -77,9 +79,28 @@ export function Settings({ form }: { form?: PetForm }) {
             />
           ) : null}
         </Row>
+        <div style={{ marginTop: "var(--space-4)" }}>
+          {counts.browserDeclines ? (
+            <p className="caption pk-faint">
+              This browser asks sites not to track it, so Pawket counts nothing here.
+            </p>
+          ) : (
+            <Choice
+              label="Anonymous counts"
+              options={[
+                { value: "on", label: "Counted" },
+                { value: "off", label: "Not counted" },
+              ]}
+              value={counts.on ? "on" : "off"}
+              onPick={(next) => counts.set(next === "on")}
+            />
+          )}
+        </div>
         <p className="caption pk-faint" style={{ marginTop: "var(--space-4)" }}>
-          Your name, your look, your outfits, your room and the pets in {here} are saved on this device and
-          nowhere else.
+          Pawket counts how its own loop is used — adoptions, cares, rounds, returns and the steps onto Solana — to
+          learn what to make better. A count carries a few fixed words and never a name, a wallet, an address or a
+          score; there is no cookie and no profile of anyone. Your name, your look, your outfits, your room and the
+          pets in {here} are saved on this device and nowhere else.
           {inApp ? " Uninstalling Pawket or clearing its storage takes them with it, and a browser on this phone keeps its own." : ""}{" "}
           Pets on Solana are read from your wallet&apos;s accounts each time. <Link href="/privacy">Privacy</Link>
         </p>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useConnect, useWallets } from "@solana/kit-plugin-wallet/react";
 import { Button, Sheet, Stack } from "@/components/pk";
+import { getPublicEnv } from "@/config/env";
 import { wallet } from "@/lib/solana/browser-client";
 import { isUserRejection, mobileWalletProblem } from "@/lib/solana/transactions";
 import { useSponsor } from "@/lib/solana/use-send";
@@ -36,6 +37,7 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
   const wallets = useWallets(wallet);
   const connect = useConnect(wallet);
   const sponsor = useSponsor();
+  const cluster = getPublicEnv().solanaCluster;
   const declined = connect.isError && isUserRejection(connect.error);
   // The sheet opens only after a tap, so the page and the hand are known here.
   const [where] = useState(() => ({ page: window.location.href, ref: window.location.origin, phone: window.matchMedia("(pointer: coarse)").matches }));
@@ -44,7 +46,7 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
     <Sheet
       register="room"
       title="Connect a wallet"
-      meta="Solana devnet"
+      meta={`Solana ${cluster}`}
       onDismiss={onDismiss}
       foot={(dismiss) => <Button tone="quiet" size="sm" label="Not now" full onClick={dismiss} />}
     >
@@ -103,12 +105,13 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
           </p>
         ) : null}
         <p className="caption pk-faint">
-          Pawket is on devnet, Solana&apos;s test network, so set your wallet to devnet (in Phantom: Settings,
-          Developer settings, Testnet mode).{" "}
+          {cluster === "devnet"
+            ? "Pawket is on devnet, Solana's test network, so set your wallet to devnet (in Phantom: Settings, Developer settings, Testnet mode). "
+            : null}
           {sponsor.data?.available
-            ? "Pawket covers pet-action fees. Link and fund Pawket Wallet before taking actions on Solana."
-            : "Each record costs a small network fee in devnet SOL."}
-          <DevnetFaucet />
+            ? "Pawket covers pet-action fees. Link Pawket Wallet before taking actions on Solana."
+            : "Each record costs a small network fee from your Pawket Wallet."}
+          {cluster === "devnet" ? <DevnetFaucet /> : null}
         </p>
       </Stack>
     </Sheet>

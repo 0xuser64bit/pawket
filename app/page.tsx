@@ -18,6 +18,7 @@ import {
 } from "@/components/pk";
 import { HeroPets } from "@/components/landing/hero-pets";
 import { NetworkBadge } from "@/components/network-badge";
+import { getPublicEnv } from "@/config/env";
 import { SUPPORT_EMAIL } from "@/config/site";
 import { Obstacle, Star, Treat } from "@/components/play/game-art";
 import { PERSONALITY_LABEL, SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
@@ -93,7 +94,7 @@ export default function LandingPage() {
           <div className="pk-hero">
             <Stack gap={6}>
               <div className="pk-hero__chip">
-                <Chip label="Live on Solana devnet" tone="pool" icon="check" />
+                <Chip label={`Live on Solana ${getPublicEnv().solanaCluster}`} tone="pool" icon="check" />
               </div>
               <h1 className="display-hero pk-hero__title" style={{ maxWidth: "12ch" }}>
                 Raise a pet. Keep every paw print.
@@ -334,7 +335,7 @@ async function LiveStrip() {
     return <p className="body-sm pk-muted">Solana did not answer just now. The record is unchanged.</p>;
   }
   return (
-    <Paper title="On Solana devnet, right now" meta="Read from the program">
+    <Paper title={`On Solana ${getPublicEnv().solanaCluster}, right now`} meta="Read from the program">
       <dl className="pk-live">
         {figures.map((figure) => (
           <div key={figure.k} className="pk-live__fig">

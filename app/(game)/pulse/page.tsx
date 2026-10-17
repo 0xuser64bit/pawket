@@ -114,7 +114,7 @@ export default async function PulsePage() {
                 { k: "Pawket Wallets opened", v: n(pulse.wallets.opened) },
                 { k: "Done by a linked browser", v: n(pulse.wallets.deviceActions) },
               ]}
-              note="The treasury also receives Pawket's share of guild-coin fees, claimed from Meteora. It pays the network fees Pawket covers for everyone's pets."
+              note="The treasury also receives Pawket's share of guild-coin fees, claimed from Meteora. The network fees Pawket covers come from a separate sponsor key, never from the treasury."
             />
             <div className="pk-receipt" style={{ marginTop: "var(--space-3)" }}>
               <div className="pk-receipt__row">

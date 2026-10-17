@@ -38,8 +38,11 @@ export function RemindMe({ name }: { name: string }) {
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
     link.download = `pawket-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "pet"}.ics`;
+    // In the page, and let go only later: some browsers start a download after the click returns.
+    document.body.append(link);
     link.click();
-    URL.revokeObjectURL(link.href);
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
     setSaved(true);
   }
 

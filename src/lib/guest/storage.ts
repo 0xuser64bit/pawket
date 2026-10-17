@@ -10,6 +10,8 @@ import { guestPetSchema, migrateStoredPet, type GuestPet } from "./pet";
  */
 const STORAGE_KEY = "pawket.pets.v1";
 const LEGACY_KEY = "pawket.guest-pet.v1";
+/** Where a list this version cannot read at all is set aside, never deleted, one key per time it happened. */
+const UNREADABLE_KEY = "pawket.pets.v1.unreadable";
 
 const NONE: GuestPet[] = [];
 
@@ -29,9 +31,9 @@ function remove(key: string): void {
   }
 }
 
-function write(pets: GuestPet[]): boolean {
+function write(pets: GuestPet[], kept: readonly unknown[] = []): boolean {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(pets));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...pets, ...kept]));
     return true;
   } catch {
     // Storage full or blocked (private mode). The caller has to say so —
@@ -40,38 +42,65 @@ function write(pets: GuestPet[]): boolean {
   }
 }
 
-/** Each stored blob as a pet, damaged ones dropped, one entry per id. */
-function parse(raw: unknown): GuestPet[] {
-  if (!Array.isArray(raw)) return NONE;
+interface Stored {
+  pets: GuestPet[];
+  /**
+   * Entries this version cannot read — a newer release's species, say, seen by
+   * a tab left open across a deploy, or a damaged one — written back as they
+   * were on every save, so an older page never deletes a pet it cannot draw.
+   */
+  kept: unknown[];
+}
+
+const EMPTY: Stored = { pets: NONE, kept: [] };
+
+/** Each stored blob as a pet, one entry per id; what cannot be read is kept aside, verbatim. */
+function parse(raw: unknown[]): Stored {
   const seen = new Set<string>();
   const pets: GuestPet[] = [];
+  const kept: unknown[] = [];
   for (const item of raw) {
     const pet = migrateStoredPet(item);
-    if (pet && !seen.has(pet.id)) {
+    if (!pet) kept.push(item);
+    else if (!seen.has(pet.id)) {
       seen.add(pet.id);
       pets.push(pet);
     }
   }
-  return pets;
+  return { pets, kept };
+}
+
+/** Set a list this version cannot read aside before starting a new one, so it can still be recovered. */
+function setAside(raw: string): void {
+  try {
+    window.localStorage.setItem(`${UNREADABLE_KEY}.${Date.now()}`, raw);
+  } catch {
+    // Storage full or blocked: the list stays where it is, unread, and nothing is written over it.
+    return;
+  }
+  remove(STORAGE_KEY);
 }
 
 /** Null means storage could not be read; mutations must not replace it with an empty list. */
-function loadStoredPets(): GuestPet[] | null {
-  if (typeof window === "undefined") return NONE;
+function loadStored(): Stored | null {
+  if (typeof window === "undefined") return EMPTY;
   const raw = read(STORAGE_KEY);
   if (raw === undefined) return null;
   if (raw !== null) {
+    let list: unknown;
     try {
-      return parse(JSON.parse(raw));
+      list = JSON.parse(raw);
     } catch {
-      remove(STORAGE_KEY);
-      return NONE;
+      list = undefined;
     }
+    if (Array.isArray(list)) return parse(list);
+    setAside(raw);
+    return read(STORAGE_KEY) === null ? EMPTY : null;
   }
   // The one pet from before, moved into the list.
   const legacy = read(LEGACY_KEY);
   if (legacy === undefined) return null;
-  if (legacy === null) return NONE;
+  if (legacy === null) return EMPTY;
   let pet: GuestPet | null = null;
   try {
     pet = migrateStoredPet(JSON.parse(legacy));
@@ -80,15 +109,15 @@ function loadStoredPets(): GuestPet[] | null {
   }
   if (!pet) {
     remove(LEGACY_KEY);
-    return NONE;
+    return EMPTY;
   }
   if (write([pet])) remove(LEGACY_KEY);
-  return [pet];
+  return { pets: [pet], kept: [] };
 }
 
 /** The pets in this browser. Empty when none, corrupt, inaccessible, or server-side. */
 export function loadPets(): GuestPet[] {
-  return loadStoredPets() ?? NONE;
+  return loadStored()?.pets ?? NONE;
 }
 
 /**
@@ -98,11 +127,12 @@ export function loadPets(): GuestPet[] {
 export function savePet(pet: GuestPet): boolean {
   if (typeof window === "undefined") return false;
   if (!guestPetSchema.safeParse(pet).success) return false;
-  const pets = loadStoredPets();
-  if (!pets) return false;
+  const stored = loadStored();
+  if (!stored) return false;
+  const { pets, kept } = stored;
   const at = pets.findIndex((p) => p.id === pet.id);
   const next = at < 0 ? [...pets, pet] : pets.map((p, i) => (i === at ? pet : p));
-  if (!write(next)) return false;
+  if (!write(next, kept)) return false;
   notify();
   return true;
 }
@@ -110,12 +140,53 @@ export function savePet(pet: GuestPet): boolean {
 /** Let one pet go from this browser. The others stay as they are. */
 export function removePet(id: string): boolean {
   if (typeof window === "undefined") return false;
-  const pets = loadStoredPets();
-  if (!pets) return false;
+  const stored = loadStored();
+  if (!stored) return false;
+  const { pets, kept } = stored;
   if (!pets.some((p) => p.id === id)) return true;
-  if (!write(pets.filter((p) => p.id !== id))) return false;
+  if (!write(pets.filter((p) => p.id !== id), kept)) return false;
   notify();
   return true;
+}
+
+export interface Brought {
+  /** Pets that were not here, now added. */
+  added: GuestPet[];
+  /** Pets that were here, replaced by a copy with later care. */
+  updated: GuestPet[];
+  /** Pets already here as new as the copy, left as they were. */
+  same: number;
+}
+
+/**
+ * Pets from a saved copy, in one write: a pet not here is added; one here
+ * already is replaced only by a copy whose vitals were saved later. Null when
+ * storage cannot be read or written — then nothing changed.
+ */
+export function bringBackPets(incoming: readonly GuestPet[]): Brought | null {
+  if (typeof window === "undefined") return null;
+  const stored = loadStored();
+  if (!stored) return null;
+  const pets = [...stored.pets];
+  const result: Brought = { added: [], updated: [], same: 0 };
+  for (const pet of incoming) {
+    if (!guestPetSchema.safeParse(pet).success) continue;
+    const at = pets.findIndex((p) => p.id === pet.id);
+    if (at < 0) {
+      pets.push(pet);
+      result.added.push(pet);
+    } else if (Date.parse(pet.statsUpdatedAt) > Date.parse(pets[at].statsUpdatedAt)) {
+      pets[at] = pet;
+      result.updated.push(pet);
+    } else {
+      result.same++;
+    }
+  }
+  if (result.added.length || result.updated.length) {
+    if (!write(pets, stored.kept)) return null;
+    notify();
+  }
+  return result;
 }
 
 /** One pet in this browser, read fresh — for a care, so it starts from what was last saved. */
@@ -157,9 +228,9 @@ export function readPetsSnapshot(): GuestPet[] {
   const raw = read(STORAGE_KEY);
   if (raw === undefined) return snapshot?.pets ?? NONE;
   if (snapshot && snapshot.raw === raw) return snapshot.pets;
-  const pets = loadStoredPets();
-  if (!pets) return snapshot?.pets ?? NONE;
+  const stored = loadStored();
+  if (!stored) return snapshot?.pets ?? NONE;
   // A legacy move writes the list, so cache against what is stored now.
-  snapshot = { raw: read(STORAGE_KEY) ?? null, pets };
-  return pets;
+  snapshot = { raw: read(STORAGE_KEY) ?? null, pets: stored.pets };
+  return stored.pets;
 }

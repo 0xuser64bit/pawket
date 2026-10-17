@@ -11,7 +11,9 @@ import {
   SkinnedMesh,
   Vector2,
   type BufferGeometry,
+  type Material,
   type MeshToonMaterialParameters,
+  type Object3D,
   type Texture,
 } from "three";
 
@@ -32,6 +34,25 @@ function toonRamp(): DataTexture {
     ramp.needsUpdate = true;
   }
   return ramp;
+}
+
+/**
+ * Gives the GPU back what a piece taken off built for itself: its
+ * geometries and materials, each once. The toon ramp and the outline
+ * uniforms are shared, and a material's dispose leaves textures and
+ * uniforms alone.
+ */
+export function disposeTree(root: Object3D): void {
+  const geometries = new Set<BufferGeometry>();
+  const materials = new Set<Material>();
+  root.traverse((node) => {
+    const mesh = node as Mesh;
+    if (!mesh.isMesh) return;
+    geometries.add(mesh.geometry);
+    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+  });
+  for (const geometry of geometries) geometry.dispose();
+  for (const material of materials) material.dispose();
 }
 
 export function toon(params: MeshToonMaterialParameters = {}): MeshToonMaterial {

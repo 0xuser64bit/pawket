@@ -11,7 +11,7 @@ import {
   type Object3D,
 } from "three";
 import type { PetCue } from "@/lib/room/moments";
-import { addOutline, toon } from "./materials";
+import { addOutline, disposeTree, toon } from "./materials";
 import { angleDelta, dampAngle } from "./rig";
 import { wearableFor } from "./wearables";
 
@@ -96,7 +96,11 @@ export class PetActor {
 
   /** Put on the wardrobe item, if there is one, in 3D. */
   wear(id: string | null): void {
-    this.body.getObjectByName("wearable")?.removeFromParent();
+    const worn = this.body.getObjectByName("wearable");
+    if (worn) {
+      worn.removeFromParent();
+      disposeTree(worn);
+    }
     const item = id ? wearableFor(id) : null;
     if (item) this.body.add(item);
   }

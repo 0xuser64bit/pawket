@@ -19,7 +19,7 @@ import {
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { SKIN_TONES, type PlayerLook } from "@/lib/player/look";
 import { accessoriesFor } from "./accessories";
-import { addOutline, skinMaterial, toon } from "./materials";
+import { addOutline, disposeTree, skinMaterial, toon } from "./materials";
 import { clothHex, DAYLIGHT, hairHex } from "./palette";
 import { aimBone, dampVector, reach, worldPosition } from "./rig";
 
@@ -178,7 +178,12 @@ export class HumanActor {
     this.model.position.y = look.shoes === "none" ? 0 : this.sole;
     // A hat and glasses hang from the head, measured from this body's own eyes.
     const head = this.bones.Head;
-    head.getObjectByName("accessory")?.removeFromParent();
+    const worn = head.getObjectByName("accessory");
+    if (worn) {
+      worn.removeFromParent();
+      // Each look builds its hat and glasses afresh: the old ones go, GPU buffers and all.
+      disposeTree(worn);
+    }
     const eyes = { l: this.bones.eye_l?.position.clone() ?? new Vector3(0.034, 0.1, 0.08), r: this.bones.eye_r?.position.clone() ?? new Vector3(-0.034, 0.1, 0.08) };
     head.add(accessoriesFor(look, eyes));
   }

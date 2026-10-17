@@ -177,7 +177,7 @@ export function HomeScreen() {
               <ButtonLink label="Change your look" href="/profile#look" tone="ghost" size="sm" className="pk-btn--flush" />
             </div>
           </Card>
-          <ChainTrouble error={companion.chainError} onRetry={companion.refresh} />
+          <ChainTrouble error={companion.chainError} kept={companion.owned.length > 0} onRetry={companion.refresh} />
         </Stack>
         {connecting ? (
           <WalletSheet
@@ -383,7 +383,7 @@ export function HomeScreen() {
           ) : null}
         </div>
 
-        <ChainTrouble error={companion.chainError} onRetry={companion.refresh} />
+        <ChainTrouble error={companion.chainError} kept={companion.owned.length > 0} onRetry={companion.refresh} />
 
         <TodayStrip name={pet.name} today={today} />
         <HomeFoot pet={pet} onChain={onChain} others={companion.all.length - 1} />
@@ -430,14 +430,18 @@ function levelUp(before: number, after: number): number | null {
 }
 
 /** Solana did not answer: say what is shown instead, and offer to ask again. */
-function ChainTrouble({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+function ChainTrouble({ error, kept, onRetry }: { error: unknown; kept: boolean; onRetry: () => void }) {
   const { here } = useHere();
   if (!error) return null;
   return (
     <Banner
       tone="wait"
       title="Solana did not answer"
-      body={`Your pets there are unchanged; this screen could not read them just now. What you see is ${here}'s.`}
+      body={
+        kept
+          ? "Your pets there are unchanged; this screen could not read them again just now, so what it shows of them may be behind."
+          : `Your pets there are unchanged; this screen could not read them just now. What you see is ${here}'s.`
+      }
       action={<Button label="Try again" tone="quiet" size="sm" onClick={onRetry} />}
     />
   );

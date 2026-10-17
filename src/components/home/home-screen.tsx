@@ -65,6 +65,7 @@ import { usePlayerLook } from "@/lib/player/use-player-look";
 import { CARE_MOMENT, type PhotoPose, type RoomCue } from "@/lib/room/moments";
 import { getCareInstruction } from "@/lib/solana/instructions";
 import { usePawketSend } from "@/lib/solana/use-send";
+import { record, recordHomeOpened } from "@/lib/analytics/events";
 import { dayTurnsAt } from "@/lib/utils/format";
 import { localMinute } from "@/lib/utils/local-datetime";
 
@@ -97,6 +98,11 @@ export function HomeScreen() {
     setShot(null);
   }, []);
   const poseForPhoto = useCallback((id: PhotoPose | null) => roomView.current?.pose(id) ?? Promise.resolve(null), []);
+  // A return is counted once a day, by how old the pets are: nobody is named.
+  const allPets = companion.all;
+  useEffect(() => {
+    if (ready) recordHomeOpened(allPets);
+  }, [ready, allPets]);
   /** A browser pet on its way onto Solana: its id here, and its address there. */
   const carried = useRef<{ id: string; address: Address } | null>(null);
   const [cue, setCue] = useState<RoomCue | null>(null);
@@ -260,6 +266,7 @@ export function HomeScreen() {
     // Only now, with the care saved, does the room show it — and a new
     // level is the one thing worth a cheer.
     earned(action, result.xpGained);
+    record({ name: "care_saved", where: "browser", action });
     ask(level ? "cheer" : CARE_MOMENT[action]);
     haptic(level ? "cheer" : "done");
   }
@@ -287,6 +294,7 @@ export function HomeScreen() {
     // Only now, with the care confirmed, does the room show it.
     if (result.outcome === "confirmed") {
       earned(action, check.xpGained);
+      record({ name: "care_saved", where: "solana", action });
       ask(level ? "cheer" : CARE_MOMENT[action]);
     }
   }

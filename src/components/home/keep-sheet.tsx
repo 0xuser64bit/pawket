@@ -14,6 +14,7 @@ import { getAdoptPetInstruction } from "@/lib/solana/instructions";
 import { derivePassportPda, derivePetPda } from "@/lib/solana/pda";
 import { useSponsor, type PawketSender } from "@/lib/solana/use-send";
 import { useHere } from "@/lib/native/android";
+import { record } from "@/lib/analytics/events";
 
 /**
  * Keeping the pet in this browser on Solana, from Home's labelled control.
@@ -50,8 +51,10 @@ export function KeepSheet({
 
   async function carry() {
     if (!owner) return;
+    record({ name: "keep_started" });
     const petPda = (await derivePetPda(owner, pet.name)).address;
     if (await fetchPetOnChain(rpc, petPda).catch(() => null)) {
+      record({ name: "keep_blocked", reason: "name-taken" });
       setTaken(true);
       return;
     }
@@ -68,6 +71,7 @@ export function KeepSheet({
       }),
     ]);
     if (result?.outcome === "confirmed") {
+      record({ name: "keep_confirmed" });
       onCarried(petPda);
       onDismiss();
     }
@@ -92,7 +96,7 @@ export function KeepSheet({
         <div className="pk-spread">
           <Button tone="ghost" size="sm" label="Not now" onClick={dismiss} />
           {owner && canSign && !ready ? (
-            <ButtonLink label="Set up Pawket Wallet" icon="wallet" href="/wallet" />
+            <ButtonLink label="Set up Pawket Wallet" icon="wallet" href="/wallet" onClick={() => record({ name: "keep_blocked", reason: "needs-wallet" })} />
           ) : owner && canSign ? (
             <Button
               label="Keep on Solana"
@@ -101,7 +105,14 @@ export function KeepSheet({
               onClick={() => void carry()}
             />
           ) : owner ? null : (
-            <Button label="Connect a wallet" icon="wallet" onClick={() => setConnecting(true)} />
+            <Button
+              label="Connect a wallet"
+              icon="wallet"
+              onClick={() => {
+                record({ name: "keep_blocked", reason: "no-wallet" });
+                setConnecting(true);
+              }}
+            />
           )}
         </div>
       )}

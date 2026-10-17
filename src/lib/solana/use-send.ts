@@ -2,17 +2,50 @@
 
 import { useCallback, useState, useSyncExternalStore } from "react";
 import { useRequest } from "@solana/react";
-import { createNoopSigner, type Address, type KeyPairSigner, type TransactionSigner } from "@solana/kit";
+import { address, createNoopSigner, type Address, type Instruction, type KeyPairSigner, type TransactionSigner } from "@solana/kit";
+import { record, type SendKind, type SendOutcome } from "@/lib/analytics/events";
 import { dismissToast, showToast } from "@/components/pk/toast";
 import { txToast } from "@/components/wallet/tx-toast";
 import { getPublicEnv } from "@/config/env";
 import { haptic } from "@/lib/native/android";
 import { readPawketWallet, refreshPawketWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
 import { rpc, useConnected } from "./browser-client";
-import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
+import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID, type PawketInstructionName } from "./program";
 import { asDeviceInstruction } from "./instructions";
 import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
-import { isActiveStage, isUserRejection, toUserFacingError, type TransactionStage } from "./transactions";
+import { extractProgramErrorCode, isActiveStage, isUserRejection, toUserFacingError, type TransactionStage } from "./transactions";
+
+/** What a send is, for its count: read from its instructions, never from its words. */
+const KIND: Partial<Record<PawketInstructionName, SendKind>> = {
+  adoptPet: "adopt", performCareAction: "care", finishRound: "round", dress: "dress", dressOwned: "dress",
+  foundGuild: "guild", joinGuild: "guild", leaveGuild: "guild",
+  createEvent: "gathering", rsvp: "gathering", checkIn: "gathering", createPoll: "gathering", vote: "gathering",
+  wave: "wave", buy: "market", buyWithWallet: "market",
+  openWallet: "wallet", deposit: "wallet", withdraw: "wallet", linkDevice: "wallet", unlinkDevice: "wallet", closeWallet: "wallet",
+};
+const NOBODY = createNoopSigner(address("11111111111111111111111111111111"));
+function kindOf(instructions: SendOptions["instructions"]): SendKind {
+  let built: Instruction[] = [];
+  try {
+    built = instructions({ owner: NOBODY, payer: NOBODY });
+  } catch {
+    return "wallet";
+  }
+  for (const ix of built) {
+    for (const [name, kind] of Object.entries(KIND) as Array<[PawketInstructionName, SendKind]>) {
+      if (PAWKET_DISCRIMINATORS[name].every((byte, i) => ix.data?.[i] === byte)) return kind;
+    }
+  }
+  return "wallet";
+}
+
+/** How a send ended, as one fixed word. */
+function outcomeOf(result: SendResult | null, error?: unknown): SendOutcome {
+  if (result) return result.outcome;
+  if (error instanceof PawketWalletNeeded) return "needs-wallet";
+  if (isUserRejection(error)) return "declined";
+  return extractProgramErrorCode(error) !== null ? "refused" : "failed";
+}
 
 export interface SponsorStatus {
   available: boolean;
@@ -126,6 +159,7 @@ export function usePawketSend() {
   const run = useCallback(
     async (
       label: string,
+      kind: SendKind,
       signer: TransactionSigner | null | undefined,
       by: NonNullable<TxState["by"]>,
       go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void, show: (next: Partial<TxState>) => void) => Promise<SendResult>,
@@ -153,10 +187,12 @@ export function usePawketSend() {
       try {
         const result = await go(signer, (stage) => show({ stage }), show);
         show({ stage: result.outcome, signature: result.signature, sponsored: result.sponsored });
+        record({ name: "send_outcome", kind, outcome: outcomeOf(result) });
         // Felt when Solana has it, never before: "unknown" is still waiting.
         if (result.outcome === "confirmed") haptic("done");
         return result;
       } catch (error) {
+        record({ name: "send_outcome", kind, outcome: outcomeOf(null, error) });
         if (error instanceof PawketWalletNeeded) {
           show({ stage: "failed", error: error.message, needs: error.need });
           return null;
@@ -184,6 +220,7 @@ export function usePawketSend() {
     ) =>
       run(
         label,
+        kindOf(instructions),
         signer,
         by,
         async (owner, onStage) => {
@@ -222,7 +259,7 @@ export function usePawketSend() {
    */
   const sendFromServer = useCallback(
     (label: string, path: string, fields: Record<string, unknown> = {}, { sponsored = true } = {}): Promise<SendResult | null> =>
-      run(label, connected?.signer, "wallet", async (owner, onStage) => {
+      run(label, path.startsWith("/api/keepsake/") ? "keepsake" : "coin", connected?.signer, "wallet", async (owner, onStage) => {
         const state = await requirePawketWallet(owner.address);
         return sendPrepared({
           rpc,
@@ -264,7 +301,7 @@ export function usePawketSend() {
    */
   const act = useCallback(
     (label: string, instructions: SendOptions["instructions"], done?: string): Promise<SendResult | null> =>
-      run(label, connected?.signer, "device", async (walletSigner, onStage) => {
+      run(label, kindOf(instructions), connected?.signer, "device", async (walletSigner, onStage) => {
         const state = await readPawketWallet(walletSigner.address);
         if (state.error) throw new Error("Pawket could not read your Pawket Wallet. Try again once you are online. Nothing was sent.");
         const fallback = deviceFallback(state);

@@ -7,6 +7,7 @@ import { MAX_COPY_LENGTH, petsCopy, readPetsCopy } from "@/lib/guest/copy";
 import { bringBackPets } from "@/lib/guest/storage";
 import { useAndroidApp, useHere } from "@/lib/native/android";
 import { askBrowserToKeep } from "@/lib/utils/persist";
+import { record } from "@/lib/analytics/events";
 
 const pets = (n: number) => `${n} ${n === 1 ? "pet" : "pets"}`;
 const names = (list: readonly { name: string }[]) =>
@@ -34,6 +35,7 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
       await navigator.clipboard.writeText(copy);
       setManual(undefined);
       setSaved(`A copy of ${pets(local.length)} is on your clipboard. Keep it somewhere safe, like a note.`);
+      record({ name: "pets_copied", how: "text" });
     } catch {
       setManual(copy);
       setSaved("The clipboard did not take it, so the copy is in the box below: select it all and keep it somewhere safe.");
@@ -50,6 +52,7 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
     // The download reads the file after the click returns; letting it go at once can cancel it.
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     setSaved(`A copy of ${pets(local.length)} is in your downloads, as ${name}.`);
+    record({ name: "pets_copied", how: "file" });
   }
 
   async function chooseFile(file: File | undefined) {
@@ -85,6 +88,7 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
     setBrought(parts.join(" "));
     if (result.added.length || result.updated.length) {
       setText("");
+      record({ name: "pets_brought_back" });
       void askBrowserToKeep();
     }
   }

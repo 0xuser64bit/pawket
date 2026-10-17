@@ -26,6 +26,7 @@ import { useCompanion } from "@/lib/companion/use-companion";
 import { recordPlay, utcDay, type GuestPet } from "@/lib/guest/pet";
 import { dayTurnsAt } from "@/lib/utils/format";
 import { useMounted } from "@/lib/utils/use-mounted";
+import { record } from "@/lib/analytics/events";
 import { readPet, savePet } from "@/lib/guest/storage";
 import { getFinishRoundInstruction } from "@/lib/solana/instructions";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
@@ -131,6 +132,7 @@ export function PlaygroundScreen() {
       }
       const result = recordPlay(current, new Date());
       const saved = savePet(result.pet);
+      if (saved) record({ name: "round_finished", where: "browser", game });
       setOutcome({ ...base, xpGained: result.xpGained, saved, onChain: false });
     },
     [game, pet, chain, daily, day],
@@ -141,6 +143,7 @@ export function PlaygroundScreen() {
     const result = await sender.act(`Finish a round with ${pet.name}`, ({ owner }) => [
       getFinishRoundInstruction({ owner, pet: chain.pet.address, passport: chain.passport.address }),
     ]);
+    if (result?.outcome === "confirmed" && game) record({ name: "round_finished", where: "solana", game });
     if (result) refresh();
   }
 

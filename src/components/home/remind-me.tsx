@@ -5,6 +5,7 @@ import { Button, Row, TimeField } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { remindDaily, useAndroidApp } from "@/lib/native/android";
 import { reminderIcs, reminderNotes, reminderTitle } from "@/lib/reminders/ics";
+import { record } from "@/lib/analytics/events";
 
 const DAYS = 30;
 
@@ -30,7 +31,10 @@ export function RemindMe({ name }: { name: string }) {
     setProblem(undefined);
     if (inApp) {
       const answer = await remindDaily({ title: reminderTitle(name), notes: reminderNotes(name, url), url, at, days: DAYS });
-      if (answer.ok) setSaved(true);
+      if (answer.ok) {
+        setSaved(true);
+        record({ name: "reminder_added", platform: "android" });
+      }
       else setProblem(answer.reason === "no-calendar" ? "No calendar app on this phone took it. Nothing was added." : "The calendar did not open. Nothing was added.");
       return;
     }
@@ -44,6 +48,7 @@ export function RemindMe({ name }: { name: string }) {
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
     setSaved(true);
+    record({ name: "reminder_added", platform: "web" });
   }
 
   return (

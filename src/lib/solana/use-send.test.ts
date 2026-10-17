@@ -4,13 +4,15 @@ import { createNoopSigner, type Address } from "@solana/kit";
 import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
 const owner = "11111111111111111111111111111111" as Address;
-const mock = vi.hoisted(() => ({ read: vi.fn(), refresh: vi.fn(), send: vi.fn(), app: false }));
+const mock = vi.hoisted(() => ({ read: vi.fn(), refresh: vi.fn(), send: vi.fn(), record: vi.fn(), app: false }));
+vi.mock("@/lib/analytics/events", () => ({ record: mock.record }));
 vi.mock("./browser-client", () => ({ rpc: {}, useConnected: () => ({ account: { address: "11111111111111111111111111111111" }, signer: createNoopSigner("11111111111111111111111111111111" as Address) }) }));
 vi.mock("@/lib/wallet/pawket-wallet", () => ({ usePawketWallet: () => null, readPawketWallet: mock.read, refreshPawketWallet: mock.refresh }));
 vi.mock("./send", () => ({ sendPawket: mock.send, sendPrepared: vi.fn(), RelayError: Error }));
 vi.mock("@/lib/native/android", () => ({ haptic: vi.fn(), inAndroidApp: () => mock.app }));
 vi.mock("@/components/pk/toast", () => ({ dismissToast: vi.fn(), showToast: vi.fn() }));
-import { getBuyWithWalletInstruction, getDepositInstruction } from "./instructions";
+import { CareActionType } from "@/lib/game/enums";
+import { getBuyWithWalletInstruction, getCareInstruction, getDepositInstruction } from "./instructions";
 import { usePawketSend } from "./use-send";
 
 const empty = { owner, status: "ready", wallet: null, device: null, balance: 0n } as PawketWalletState;
@@ -94,4 +96,18 @@ describe("send routing (no wallet signing)", () => {
     expect(mock.send).toHaveBeenCalledOnce();
   });
 
+  it("counts each send by what it is and how it ended, in fixed words only", async () => {
+    sponsor(); mock.app = true; mock.read.mockResolvedValue(empty);
+    const hook = renderHook(usePawketSend);
+    const feed: Parameters<typeof hook.result.current.act>[1] = ({ owner: signer }) => [
+      getCareInstruction({ owner: signer, pet: owner, passport: owner, action: CareActionType.Feed }),
+    ];
+    await act(async () => { await hook.result.current.act("Feed Mango", feed); });
+    expect(mock.record).toHaveBeenLastCalledWith({ name: "send_outcome", kind: "care", outcome: "needs-wallet" });
+    const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);
+    mock.read.mockResolvedValue({ ...empty, balance: 1n, device, wallet: { address: owner, device: device.address, deviceExpiresAt: Number.MAX_SAFE_INTEGER, actionsToday: 0, dailyActions: 100 } });
+    mock.send.mockResolvedValue({ outcome: "confirmed", signature: "receipt", sponsored: true });
+    await act(async () => { await hook.result.current.act("Feed Mango", feed); });
+    expect(mock.record).toHaveBeenLastCalledWith({ name: "send_outcome", kind: "care", outcome: "confirmed" });
+  });
 });

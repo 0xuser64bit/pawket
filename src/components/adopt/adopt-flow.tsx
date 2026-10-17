@@ -30,6 +30,7 @@ import { choosePet } from "@/lib/companion/use-companion";
 import { createGuestPet, nameTaken, projectGuestPet, type GuestPet } from "@/lib/guest/pet";
 import { removePet, savePet } from "@/lib/guest/storage";
 import { askBrowserToKeep } from "@/lib/utils/persist";
+import { record } from "@/lib/analytics/events";
 import { usePets } from "@/lib/guest/use-pets";
 import { useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend } from "@/lib/solana/use-send";
@@ -228,6 +229,7 @@ export function AdoptFlow() {
       const saved = savePet(created);
       if (saved) {
         choosePet(created.id);
+        record({ name: "pet_adopted" });
         // The pet lives only in this browser: ask it to keep the storage rather than clear it.
         void askBrowserToKeep();
       }
@@ -248,6 +250,7 @@ export function AdoptFlow() {
     const saved = savePet(adopted);
     if (saved) {
       choosePet(adopted.id);
+      record({ name: "pet_adopted" });
       void askBrowserToKeep();
     }
     setStored(saved);

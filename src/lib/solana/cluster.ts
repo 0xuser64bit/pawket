@@ -16,6 +16,15 @@ export const CLUSTER_CAIP2: Record<SolanaCluster, string> = {
   localnet: "solana:localnet",
 };
 
+/**
+ * Whether a node's genesis hash is `cluster`'s. A script asks the node it was
+ * pointed at before it signs anything: a URL from the shell can name another
+ * cluster than the one the script was told.
+ */
+export function isGenesisOf(cluster: SolanaCluster, genesisHash: string): boolean {
+  return CLUSTER_CAIP2[cluster] === `solana:${genesisHash}`;
+}
+
 export const DEFAULT_RPC_URLS: Record<SolanaCluster, string> = {
   devnet: "https://api.devnet.solana.com",
   testnet: "https://api.testnet.solana.com",

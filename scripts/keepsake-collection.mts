@@ -4,7 +4,7 @@
  *
  *   pnpm dlx tsx scripts/keepsake-collection.mts https://pawket.world
  *
- * Reads .keys/sponsor.json and prints the collection's address, for
+ * Devnet only. Reads .keys/sponsor.json and prints the collection's address, for
  * `PAWKET_COLLECTION` in src/lib/solana/core.ts. The collection's own key
  * signs its creation and is never needed again, so it is not kept.
  */
@@ -23,10 +23,13 @@ import {
   signTransactionMessageWithSigners,
 } from "@solana/kit";
 import { getCreateCollectionInstruction } from "../src/lib/solana/core";
+import { isGenesisOf } from "../src/lib/solana/cluster";
 
 const appUrl = process.argv[2];
 if (!appUrl) throw new Error("usage: tsx scripts/keepsake-collection.mts https://<app host>");
 const rpc = createSolanaRpc(process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com");
+// The sponsor is a devnet key: the collection is made on devnet, whatever the shell's URL says.
+if (!isGenesisOf("devnet", await rpc.getGenesisHash().send())) throw new Error("SOLANA_RPC_URL is not devnet. Nothing was signed.");
 
 const sponsor = await createKeyPairSignerFromBytes(
   Uint8Array.from(JSON.parse(readFileSync(".keys/sponsor.json", "utf8")) as number[]),

@@ -19,11 +19,13 @@ import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from "@sola
 import { DynamicBondingCurveClient } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { COIN_CONFIGS, COIN_PRESETS, PAWKET_TREASURY, type CoinCluster, type PresetId } from "../src/lib/coins/presets";
 import { presetParameters } from "../src/server/coins/curve";
+import { isGenesisOf } from "../src/lib/solana/cluster";
 
 const cluster = (process.argv[2] ?? "devnet") as CoinCluster;
 if (cluster !== "devnet" && cluster !== "mainnet-beta") throw new Error("usage: tsx scripts/coin-presets.mts [devnet|mainnet-beta]");
 const url = process.env.SOLANA_RPC_URL ?? (cluster === "devnet" ? "https://api.devnet.solana.com" : "https://api.mainnet-beta.solana.com");
 const connection = new Connection(url, "confirmed");
+if (!isGenesisOf(cluster, await connection.getGenesisHash())) throw new Error(`${url} is not ${cluster}. Nothing was signed.`);
 const client = new DynamicBondingCurveClient(connection, "confirmed");
 const payer = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(readFileSync(process.env.PAYER ?? `${homedir()}/.config/solana/id.json`, "utf8")) as number[]),

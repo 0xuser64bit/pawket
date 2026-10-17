@@ -16,10 +16,13 @@ import { Connection, Keypair, sendAndConfirmTransaction, type Transaction } from
 import { DynamicBondingCurveClient, U64_MAX } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { CpAmm, getTokenProgram, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
 import { COIN_CONFIGS, PAWKET_TREASURY, type CoinCluster } from "../src/lib/coins/presets";
+import { isGenesisOf } from "../src/lib/solana/cluster";
 
 const cluster = (process.argv[2] ?? "devnet") as CoinCluster;
+if (cluster !== "devnet" && cluster !== "mainnet-beta") throw new Error("usage: tsx scripts/claim-coin-fees.mts [devnet|mainnet-beta]");
 const url = process.env.SOLANA_RPC_URL ?? (cluster === "devnet" ? "https://api.devnet.solana.com" : "https://api.mainnet-beta.solana.com");
 const connection = new Connection(url, "confirmed");
+if (!isGenesisOf(cluster, await connection.getGenesisHash())) throw new Error(`${url} is not ${cluster}. Nothing was signed.`);
 const dbc = new DynamicBondingCurveClient(connection, "confirmed");
 const damm = new CpAmm(connection);
 const treasury = Keypair.fromSecretKey(

@@ -26,7 +26,7 @@ import type { Address } from "@solana/kit";
 import { KeepSheet } from "@/components/home/keep-sheet";
 import { showToast } from "@/components/pk/toast";
 import { PetPersonality, PetSpecies } from "@/lib/game/enums";
-import { choosePet } from "@/lib/companion/use-companion";
+import { choosePet, useCompanion } from "@/lib/companion/use-companion";
 import { createGuestPet, nameTaken, projectGuestPet, type GuestPet } from "@/lib/guest/pet";
 import { removePet, savePet } from "@/lib/guest/storage";
 import { askBrowserToKeep } from "@/lib/utils/persist";
@@ -146,6 +146,8 @@ export function AdoptFlow() {
     router.prefetch("/home");
   }, [router]);
   const { ready, pets: residents } = usePets();
+  // A connected wallet's pets on Solana: a name it keeps there could never be kept again from here.
+  const { owned } = useCompanion();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [species, setSpecies] = useState<PetSpecies>(PetSpecies.LunaCat);
   const [hop, setHop] = useState(0);
@@ -221,6 +223,11 @@ export function AdoptFlow() {
   function commit() {
     if (nameTaken(residents, name)) {
       setError(`You already have a pet called ${typed}. Each of yours needs their own name.`);
+      nameInput.current?.focus();
+      return;
+    }
+    if (nameTaken(owned.map((entry) => entry.pet), name)) {
+      setError(`Your wallet already keeps a pet called ${typed} on Solana. Give this one their own name, so they can be kept there too.`);
       nameInput.current?.focus();
       return;
     }

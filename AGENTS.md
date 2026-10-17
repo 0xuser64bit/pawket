@@ -20,7 +20,8 @@ hosted app. Local adoption and care need no wallet. Keeping a pet on Solana
 creates a new confirmed program record; local progression is not imported.
 Devnet is the default. `docs/PRODUCT.md` describes supported behavior and limits.
 
-App transactions require a linked, funded Pawket Wallet. Its non-extractable
+App transactions require a linked Pawket Wallet; while Pawket sponsors it may
+be empty, and Market looks, coins and unsponsored fees need SOL in it. Its non-extractable
 device key signs program-scoped non-money actions; the owner approves setup
 and spending. `usePawketSend` and `send.ts` are the only app send path.
 Sponsorship is conditional. Coins and Market purchases spend Pawket Wallet;

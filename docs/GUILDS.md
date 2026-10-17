@@ -8,8 +8,8 @@ independent. The product hierarchy is pets, guilds, then coins.
 
 A pet founds or joins one guild at a time. Its `GuildMember` PDA records the
 pet, owner, guild and rent payer. Leaving closes that account and returns rent
-to the recorded payer; the guild remains. Non-money app actions use the linked,
-funded Pawket Wallet. Eligible fees and account rent are sponsored while
+to the recorded payer; the guild remains. Non-money app actions use the linked
+Pawket Wallet. Eligible fees and account rent are sponsored while
 available; rent-bearing actions wait when sponsorship is unavailable.
 
 `/guilds` reads guilds from chain and orders them by member count, excluding

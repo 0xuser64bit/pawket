@@ -67,12 +67,16 @@ const DAILY = [
   { value: 100, label: "100 a day" },
   { value: 250, label: "250 a day" },
 ] as const;
-/** A starting balance; a linked Pawket Wallet must hold SOL before it acts. */
+/**
+ * A starting balance. While Pawket sponsors, a linked device acts with none;
+ * the balance pays for Market looks and coins, and for fees when Pawket does not.
+ */
 const PUT = [
   { value: 10_000_000, label: "0.01 SOL" },
   { value: 100_000_000, label: "0.1 SOL" },
   { value: 250_000_000, label: "0.25 SOL" },
 ] as const;
+const NOTHING_YET = { value: 0, label: "Nothing yet" } as const;
 const sol = (lamports: bigint) => `${formatSol(lamports)} SOL`;
 
 
@@ -206,7 +210,9 @@ function SetUp() {
   const rent = useRequest(rentOfWallet);
   const cluster = getPublicEnv().solanaCluster;
   const sponsored = Boolean(sponsor.data?.available);
-  const [put, setPut] = useState<number>(PUT[0].value);
+  // Until the player picks, nothing while Pawket sponsors; the smallest amount while it does not.
+  const [picked, setPut] = useState<number | null>(null);
+  const put = picked ?? (sponsored ? NOTHING_YET.value : PUT[0].value);
   const [days, setDays] = useState<number>(30);
   const [daily, setDaily] = useState<number>(100);
   const deposit = BigInt(put);
@@ -215,18 +221,18 @@ function SetUp() {
     <Card>
       <h2 className="title">Set up your Pawket Wallet</h2>
       <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-        Pawket acts on Solana only through it. Your wallet approves once — opening it, putting SOL in and linking{" "}
-        {here}. After that {here} signs what your pets do — care, rounds, outfits, guilds, gatherings and waves —
-        with no pop-up, and Market looks and guild coins spend this balance once your wallet approves. Every one of
-        them is in the history here.
+        Pawket acts on Solana only through it. Your wallet approves once — opening it, linking {here}, and putting
+        SOL in if you like. After that {here} signs what your pets do — care, rounds, outfits, guilds, gatherings
+        and waves — with no pop-up, and Market looks and guild coins spend this balance once your wallet approves.
+        Every one of them is in the history here.
       </p>
       <Stack gap={4} style={{ marginTop: "var(--space-4)" }}>
         <Choice label={`Link ${here} for`} options={DAYS} value={days} onPick={setDays} />
         <Choice label="At most" options={DAILY} value={daily} onPick={setDaily} />
-        <Choice label="Put in" options={PUT} value={put} onPick={setPut} />
+        <Choice label="Put in" options={sponsored ? [NOTHING_YET, ...PUT] : PUT} value={put} onPick={setPut} />
         <p className="caption pk-faint" style={{ marginTop: "calc(-1 * var(--space-2))" }}>
           {sponsored
-            ? "Pawket pays the network fees for your pets. The balance pays for Market looks and guild coins, with your approval; take out what is left whenever you like."
+            ? "Pawket pays the network fees for your pets, so the wallet can start empty. A balance pays for Market looks and guild coins, with your approval, and for fees if Pawket stops paying; take out what is left whenever you like."
             : `Pawket is not paying fees right now, so ${here} pays its own from what you put in — one fee an action, and the rest back whenever you like.`}
           <DevnetFaucet />
         </p>
@@ -368,7 +374,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
             ) : null}
             <Row gap={2} wrap>
               {/* Set up, the way back to what it is for: the pets. */}
-              {state.balance > 0n ? <ButtonLink label="Back to your pets" icon="home" size="sm" href="/home" /> : null}
+              {state.linked ? <ButtonLink label="Back to your pets" icon="home" size="sm" href="/home" /> : null}
               <Button label={`Unlink ${place}`} tone="quiet" size="sm" disabled={sender.busy} onClick={() => void unlinkHere()} />
             </Row>
             <details className="pk-more">

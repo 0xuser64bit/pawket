@@ -12,7 +12,7 @@ import { fetchPetOnChain } from "@/lib/solana/accounts";
 import { rpc } from "@/lib/solana/browser-client";
 import { getAdoptPetInstruction } from "@/lib/solana/instructions";
 import { derivePassportPda, derivePetPda } from "@/lib/solana/pda";
-import { useSponsor, type PawketSender } from "@/lib/solana/use-send";
+import { needsSol, useSponsor, type PawketSender } from "@/lib/solana/use-send";
 import { useHere } from "@/lib/native/android";
 import { record } from "@/lib/analytics/events";
 
@@ -47,7 +47,7 @@ export function KeepSheet({
   const cluster = getPublicEnv().solanaCluster;
   const level = calculateLevelFromXp(pet.xp);
   const fresh = pet.xp === 0;
-  const ready = sender.pawketWallet?.linked && sender.pawketWallet.balance > 0n;
+  const ready = Boolean(sender.pawketWallet?.linked) && !needsSol(sender.pawketWallet?.balance ?? 0n, Boolean(sponsor.data?.available));
 
   async function carry() {
     if (!owner) return;
@@ -136,7 +136,7 @@ export function KeepSheet({
           A record nobody can edit or erase: every care from now on, the streak and the level, kept on Solana where
           anyone can look it up — long after {here}.{" "}
           {sponsor.data?.available ? "Pawket pays the fee." : "Keeping a new pet on Solana waits until Pawket can cover its account rent."}
-          {" "}A linked, funded Pawket Wallet signs for your pet without pop-ups.
+          {" "}A browser linked to your Pawket Wallet signs for your pet without pop-ups.
         </p>
         <p className="body-sm pk-keep__note">
           {fresh

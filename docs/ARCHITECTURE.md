@@ -71,8 +71,8 @@ local pet on Solana creates a new chain pet; it does not import local
 progression. Failed local cleanup after confirmation leaves the chain pet
 available and explains that a local copy remains.
 
-App sends use `usePawketSend` and `send.ts`. A linked, funded Pawket Wallet is
-required for app actions. Non-money instructions become program-checked device
+App sends use `usePawketSend` and `send.ts`. A linked Pawket Wallet is
+required for app actions, holding SOL only where it is spent (`needsSol`). Non-money instructions become program-checked device
 twins; owner approval remains mandatory for wallet management and spending.
 The sponsor signs eligible devnet transactions first. The client verifies the
 message, sends with preflight, waits for confirmation, then reloads the record.

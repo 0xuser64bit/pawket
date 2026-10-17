@@ -29,7 +29,13 @@ read again before care animation or success is shown. Pets are not transferable.
 
 ## Pawket Wallet is required for app transactions
 
-A linked, funded Pawket Wallet is required for app actions. No owner-wallet
+A linked Pawket Wallet is required for app actions. Until 17 October 2026 it
+also had to hold SOL even while Pawket sponsored, though the program never
+needed a balance for a sponsored device action; 74 wallets kept pets on
+Solana and 12 had a Pawket Wallet. The balance is now required only where it
+is spent: Market looks, coins, and the device's fees while sponsorship is
+unavailable. The sponsor's own per-caller limits and hourly budget bound
+what empty wallets can cost it. No owner-wallet
 fallback spends from the external balance. Non-money actions use the device's
 program-checked instruction twins; money always requires the owner's approval.
 Coin spending is bracketed atomically by `fund_wallet_spend` and

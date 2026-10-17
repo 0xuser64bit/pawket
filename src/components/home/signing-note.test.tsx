@@ -4,6 +4,8 @@ import type { Address, KeyPairSigner } from "@solana/kit";
 import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
 vi.mock("@/lib/solana/browser-client", () => ({ rpc: {}, useConnected: () => null }));
+const sponsor = vi.hoisted(() => ({ data: { available: false } as { available: boolean } | undefined }));
+vi.mock("@/lib/solana/use-send", async (original) => ({ ...(await original<object>()), useSponsor: () => sponsor }));
 import { SigningNote } from "./signing-note";
 
 const device = { address: "Device1111111111111111111111111111111111111" } as KeyPairSigner;
@@ -32,9 +34,19 @@ it.each([
   ["not linked here", ready(null), /signed by a linked browser/, "Link this browser"],
   ["its link ran out", ready({ deviceExpiresAt: 1 }), /link ran out/, "Link it again"],
   ["today's limit is used", ready({ actionsToday: 100 }), /used today's limit/, "Change it"],
-  ["the balance is empty", ready({}, 0n), /Pawket Wallet is empty/, "Add a little SOL"],
+  ["the balance is empty while Pawket is not paying", ready({}, 0n), /Pawket Wallet is empty/, "Add a little SOL"],
 ])("says why before a tap when %s, with the way to fix it", (_case, state, line, fix) => {
+  sponsor.data = { available: false };
   render(<SigningNote state={state} name="Mango" />);
   expect(screen.getByText(line)).toBeTruthy();
   expect(screen.getByRole("link", { name: fix }).getAttribute("href")).toBe("/wallet");
+});
+
+it("asks for no SOL while Pawket sponsors, or before the sponsor has answered", () => {
+  sponsor.data = { available: true };
+  const { container, rerender } = render(<SigningNote state={ready({}, 0n)} name="Mango" />);
+  expect(container.textContent).toBe("");
+  sponsor.data = undefined;
+  rerender(<SigningNote state={ready({}, 0n)} name="Mango" />);
+  expect(container.textContent).toBe("");
 });

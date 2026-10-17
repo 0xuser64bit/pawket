@@ -67,7 +67,9 @@ and a fresh read, not a cached discovery total.
 
 ## The Pawket Wallet
 
-App actions require a linked, funded Pawket Wallet. There is no owner-wallet
+App actions require a linked Pawket Wallet. While Pawket sponsors, it may be
+empty; Market looks, coins and the device's unsponsored fees spend its
+balance. There is no owner-wallet
 fallback. Wallet Standard supplies owner identity and signing; Android
 registers Mobile Wallet Adapter only in its shell. Connecting alone sends
 nothing. Wallet setup remains available through the shell and `/wallet`.
@@ -93,7 +95,7 @@ action with recovery instructions.
 The device receives a bounded fee float when linked. Without sponsorship,
 eligible non-rent actions use that float; each refill is capped at one network
 fee and the float's ceiling. Rent-bearing app actions wait for sponsorship.
-A positive Pawket Wallet balance is required even while sponsored. History
+While sponsored, a linked device acts with an empty balance. History
 comes from confirmed Solana transactions (`src/lib/wallet/history.ts`).
 
 ## Transaction lifecycle

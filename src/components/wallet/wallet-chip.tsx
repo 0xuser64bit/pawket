@@ -8,7 +8,7 @@ import { Button, ButtonLink, Icon, Sheet, Stack } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { wallet } from "@/lib/solana/browser-client";
-import { deviceFallback } from "@/lib/solana/use-send";
+import { deviceFallback, needsSol, useSponsor } from "@/lib/solana/use-send";
 import { formatUtcDate, truncateAddress } from "@/lib/utils/format";
 import { useMounted } from "@/lib/utils/use-mounted";
 import { useLinkBrowser } from "@/lib/wallet/link";
@@ -50,7 +50,7 @@ export function WalletChip() {
   }
 
   const address = connected.account.address as Address;
-  const signsHere = deviceFallback(linking.state) === null && (linking.state?.balance ?? 0n) > 0n && !linking.state?.error;
+  const signsHere = deviceFallback(linking.state) === null && !linking.state?.error;
   return (
     <>
       <button
@@ -95,6 +95,8 @@ function WalletPanel({
   const state = linking.state;
   const why = deviceFallback(state);
   const linkedWallet = state?.wallet;
+  const sponsor = useSponsor();
+  const sponsored = Boolean(sponsor.data?.available);
 
   return (
     <Sheet
@@ -135,11 +137,12 @@ function WalletPanel({
             <p className="body-sm pk-muted pk-fill">Reading your Pawket Wallet…</p>
           ) : state.error ? (
             <p className="body-sm pk-muted pk-fill">Pawket Wallet could not be read. Open it and try again.</p>
-          ) : state.balance <= 0n && why === null ? (
+          ) : needsSol(state.balance, sponsored) && why === null ? (
             <div className="pk-fill">
               <p className="title">Add SOL to Pawket Wallet</p>
               <p className="caption pk-muted">
-                {Here} is linked. Pawket acts on Solana from this balance — add some before caring, playing or buying.
+                {Here} is linked. Pawket is not paying fees right now, so {here} pays them from this balance: add some
+                before caring or playing.
                 <DevnetFaucet />
               </p>
               <div style={{ marginTop: "var(--space-3)" }}>
@@ -180,9 +183,9 @@ function WalletPanel({
                   tone="sun"
                   size="sm"
                   icon="bolt"
-                  label={state.balance <= 0n ? "Link + add 0.01 SOL" : why === "expired" ? "Link it again" : `Link ${here}`}
-                  disabled={linking.busy}
-                  onClick={() => void linking.link({ deposit: state.balance > 0n ? 0n : 10_000_000n })}
+                  label={needsSol(state.balance, sponsored) ? "Link + add 0.01 SOL" : why === "expired" ? "Link it again" : `Link ${here}`}
+                  disabled={linking.busy || !sponsor.data}
+                  onClick={() => void linking.link({ deposit: needsSol(state.balance, sponsored) ? 10_000_000n : 0n })}
                 />
               </div>
               {linking.problem ? (

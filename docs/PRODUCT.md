@@ -42,7 +42,8 @@ species and personality; browser progression is not imported. The confirmation
 flow explains the reset. Solana care changes the screen after confirmation
 and a fresh read. A keepsake is a frozen card pointing to the pet's account.
 
-App transactions require a linked, funded Pawket Wallet. Its non-extractable
+App transactions require a linked Pawket Wallet. While Pawket sponsors it may
+be empty; Market looks, coins and fees without sponsorship need SOL in it. Its non-extractable
 device key signs non-money actions within the owner's expiry and daily limit.
 The owner approves setup, deposits, withdrawals, purchases and coin spending.
 Pawket sponsors eligible devnet fees and rent while sponsorship is available;

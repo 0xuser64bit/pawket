@@ -33,8 +33,8 @@ export const revalidate = 60;
 
 const ON_SOLANA: Array<{ icon: IconName; title: string; body: string }> = [
   { icon: "paw", title: "One signature to move in", body: "Keep the pet you raised in this browser on Solana. Its name, species and temperament go with it." },
-  { icon: "spark", title: "Sponsored network fees", body: "While the sponsor is available, it covers pet-action fees and account rent. Link and fund Pawket Wallet to play on Solana; browser pets need no wallet." },
-  { icon: "bolt", title: "One approval, then no pop-ups", body: "Link and fund Pawket Wallet once, and this browser signs care, rounds, outfits, guilds and waves inside your limits. Purchases and coins use its balance and still ask your wallet to approve." },
+  { icon: "spark", title: "Sponsored network fees", body: "While the sponsor is available, it covers pet-action fees and account rent, so a linked Pawket Wallet can start empty. Browser pets need no wallet." },
+  { icon: "bolt", title: "One approval, then no pop-ups", body: "Link Pawket Wallet once, and this browser signs care, rounds, outfits, guilds and waves inside your limits. Purchases and coins use its balance and still ask your wallet to approve." },
   { icon: "doc", title: "A Passport anyone can open", body: "Every care, round and outfit is a signed record: the streak, the counts and the last eight cares, public at the pet's address." },
   { icon: "image", title: "A card in your wallet", body: "A keepsake that points at the pet, frozen for good: it cannot be sold or sent, because the pet is not for sale." },
 ];

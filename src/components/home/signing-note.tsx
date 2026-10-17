@@ -3,7 +3,7 @@
 import { Icon } from "@/components/pk";
 import { NavLink as Link } from "@/components/pk/nav-link";
 import { useAndroidApp, useHere } from "@/lib/native/android";
-import { deviceFallback } from "@/lib/solana/use-send";
+import { deviceFallback, needsSol, useSponsor } from "@/lib/solana/use-send";
 import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
 /**
@@ -15,8 +15,10 @@ import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
 export function SigningNote({ state, name }: { state: PawketWalletState | null; name: string }) {
   const { here, Here } = useHere();
   const app = useAndroidApp();
+  const sponsor = useSponsor();
   if (!state || state.status !== "ready" || state.error) return null;
-  const why = deviceFallback(state) ?? (state.balance <= 0n ? "fund" : null);
+  // An empty balance matters only while Pawket is not paying, and only once the sponsor has said so.
+  const why = deviceFallback(state) ?? (sponsor.data && needsSol(state.balance, sponsor.data.available) ? "fund" : null);
   if (why === null) return null;
   const line =
     why === "expired" ? (
@@ -29,7 +31,8 @@ export function SigningNote({ state, name }: { state: PawketWalletState | null; 
       </>
     ) : why === "fund" ? (
       <>
-        Your Pawket Wallet is empty. <Link href="/wallet">Add a little SOL</Link> to care for {name} on Solana.
+        Pawket is not paying fees right now and your Pawket Wallet is empty. <Link href="/wallet">Add a little SOL</Link>{" "}
+        to care for {name} on Solana.
       </>
     ) : (
       <>

@@ -29,8 +29,8 @@ Release start URLs require HTTPS. Cleartext is allowed only for localhost and
 
 Android registers Mobile Wallet Adapter as a Wallet Standard wallet. Wallet
 apps authorize and return signed transactions through the shared `send.ts`;
-the bridge never signs. Every Solana app action requires a linked, funded
-Pawket Wallet. Setup and money require owner approval; non-money actions use
+the bridge never signs. Every Solana app action requires a linked Pawket
+Wallet, holding SOL where it is spent. Setup and money require owner approval; non-money actions use
 the non-extractable device key within its expiry and daily limit.
 
 A declined, closed or missing wallet sends nothing. Uncertain broadcast or

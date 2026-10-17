@@ -28,8 +28,9 @@ prevents a client import of privileged modules.
 
 ## Sponsorship
 
-An unset key disables sponsorship. A linked, funded device pays eligible app
-fees from its Pawket Wallet float; rent-bearing actions wait for sponsorship.
+An unset key disables sponsorship. A linked device then pays eligible app
+fees from its Pawket Wallet float, so the wallet must hold SOL; rent-bearing
+actions wait for sponsorship.
 Mainnet sponsorship is disabled. The sponsor signs only approved Pawket roles,
 never acts as program upgrade authority, and is not the treasury.
 

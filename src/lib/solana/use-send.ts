@@ -72,7 +72,7 @@ export interface TxState {
 export type PawketWalletNeed = "link" | "fund" | "limit";
 
 /**
- * Pawket acts on Solana only through a linked, funded Pawket Wallet, never
+ * Pawket acts on Solana only through a linked Pawket Wallet, never
  * the connected wallet on its own. When one is not ready, nothing is sent and
  * the player is told the next step, as a note rather than a failure.
  */
@@ -111,11 +111,12 @@ async function fetchSponsor(signal?: AbortSignal): Promise<SponsorStatus> {
   }
 }
 
-async function requirePawketWallet(owner: Address) {
+/** A linked Pawket Wallet, read fresh; one that will be spent from must hold something. */
+async function requirePawketWallet(owner: Address, { spends }: { spends: boolean }) {
   const state = await readPawketWallet(owner);
   if (state.error) throw new Error("Pawket could not read your Pawket Wallet. Try again once you are online. Nothing was sent.");
   if (!state.wallet || !state.device || !state.linked) throw needed("link");
-  if (state.balance <= 0n) throw needed("fund");
+  if (spends && state.balance <= 0n) throw needed("fund");
   return state;
 }
 
@@ -135,6 +136,14 @@ function setSending(value: boolean) {
 export function useSponsor() {
   return useRequest(fetchSponsor);
 }
+
+/**
+ * Whether a Pawket Wallet must hold SOL before its device acts: only while
+ * Pawket is not paying, since then the device's fees come from it. While
+ * Pawket sponsors, a linked wallet with nothing in it acts as well as a full
+ * one; Market looks and coins still spend what is in it.
+ */
+export const needsSol = (balance: bigint, sponsored: boolean) => balance <= 0n && !sponsored;
 
 /**
  * Whether actions that open an account wait: the sponsor has answered, and is
@@ -230,7 +239,8 @@ export function usePawketSend() {
           if (by === "wallet" && !management && built.some((ix) => ix.programAddress !== PAWKET_PROGRAM_ID || !PAWKET_DISCRIMINATORS.buyWithWallet.every((byte, i) => ix.data?.[i] === byte))) {
             throw new Error("Pet actions must use your linked Pawket Wallet. Nothing was sent.");
           }
-          const state = by === "wallet" && !management ? await requirePawketWallet(owner.address) : null;
+          // Outside managing the wallet, the owner signs only a Market purchase, which spends it.
+          const state = by === "wallet" && !management ? await requirePawketWallet(owner.address, { spends: true }) : null;
           const sponsor = await fetchSponsor();
           if (state && !sponsor.available && !state.paysOwnWay) throw new Error("Add SOL and relink this device in your Pawket Wallet to cover its network fee. Nothing was sent.");
           return sendPawket({
@@ -260,7 +270,8 @@ export function usePawketSend() {
   const sendFromServer = useCallback(
     (label: string, path: string, fields: Record<string, unknown> = {}, { sponsored = true } = {}): Promise<SendResult | null> =>
       run(label, path.startsWith("/api/keepsake/") ? "keepsake" : "coin", connected?.signer, "wallet", async (owner, onStage) => {
-        const state = await requirePawketWallet(owner.address);
+        // A keepsake is Pawket's to pay for; a coin spends the wallet.
+        const state = await requirePawketWallet(owner.address, { spends: !sponsored });
         return sendPrepared({
           rpc,
           owner,
@@ -295,9 +306,9 @@ export function usePawketSend() {
   /**
    * Anything for the connected wallet's pets that costs no money — care,
    * rounds, clothes, adoption, guilds, gatherings, waves — built as the owner
-   * would sign it. Only a linked, funded device acts; there is no owner-wallet
-   * fallback. Without sponsorship the device pays its fee; rent-bearing
-   * actions wait for sponsorship.
+   * would sign it. Only a linked device acts; there is no owner-wallet
+   * fallback. While Pawket sponsors, the wallet needs no balance; without
+   * sponsorship the device pays its fee from it, and rent-bearing actions wait.
    */
   const act = useCallback(
     (label: string, instructions: SendOptions["instructions"], done?: string): Promise<SendResult | null> =>
@@ -308,7 +319,7 @@ export function usePawketSend() {
         const sponsor = await fetchSponsor();
         const sponsorAddress = sponsor.available && sponsor.address ? sponsor.address as Address : null;
         if (fallback || !state.device || !state.wallet) throw needed(fallback === "limit" ? "limit" : "link");
-        if (state.balance <= 0n) throw needed("fund");
+        if (needsSol(state.balance, sponsorAddress !== null)) throw needed("fund");
         const device = state.device;
         const forOwner = createNoopSigner(walletSigner.address);
         const twins = (payer: TransactionSigner) => instructions({ owner: forOwner, payer })
@@ -333,8 +344,6 @@ export function usePawketSend() {
     sendFromServer,
     reset,
     busy: busy || isActiveStage(tx.stage),
-    /** This device can act for the connected wallet with no prompt. */
-    noPrompt: !pawketWallet?.error && deviceFallback(pawketWallet) === null && (pawketWallet?.balance ?? 0n) > 0n,
     /** The connected wallet's Pawket Wallet, as every screen sees it. */
     pawketWallet,
   };

@@ -186,7 +186,7 @@ PAWKET_ANDROID_KEYSTORE=… scripts/android-release.sh   # the signed release AP
   carries what can go wrong (`src/lib/coins/copy.ts`).
 - **The Android bridge stays narrow.** `PawketBridge.kt` is injected into
   Pawket's origin only, answers the main frame only, and takes pictures,
-  links, a reminder, a haptic and colours — never a key, a transaction, a
+  links, reminders, a haptic and colours — never a key, a transaction, a
   file path or a URL to load. Signing on a phone is the wallet app's, through
   Mobile Wallet Adapter and `send.ts`. A new request is a review like a new
   thing the sponsor signs: checked fields, a JVM test, no new permission

@@ -43,8 +43,8 @@ const SECTIONS: Array<{ title: string; body: string[] }> = [
   {
     title: "Photos, sharing and reminders",
     body: [
-      "A room photo is drawn on your device; saving or sharing it sends it only where you choose. Pawket does not upload it. A shared link goes through your device's share sheet, and a reminder is a calendar event you decide whether to save.",
-      "The Android app asks for no permission but the internet: not your calendar, contacts, location, camera or microphone.",
+      "A room photo is drawn on your device; saving or sharing it sends it only where you choose. Pawket does not upload it. A shared link goes through your device's share sheet, and a reminder is a calendar event you decide whether to save. A care reminder in the Android app is worked out and scheduled on the phone, from your pets' records; nothing about it reaches Pawket.",
+      "The Android app asks for the internet and, only if you turn care reminders on, to post notifications. It never asks for your calendar, contacts, location, camera or microphone.",
     ],
   },
   {
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
             <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
           </p>
           <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
-            Updated 17 October 2026.
+            Updated 18 October 2026.
           </p>
         </section>
       </Stack>

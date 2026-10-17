@@ -1,9 +1,10 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
+import type { CareReminder } from "@/lib/reminders/care";
 
 /**
  * The phone around the page, when Pawket runs in its Android app
- * (`android/`): the share sheet, the gallery, the calendar, haptics, the
- * back gesture and the system bars, through `window.PawketAndroid` — which
+ * (`android/`): the share sheet, the gallery, the calendar, a care
+ * reminder, haptics, the back gesture and the system bars, through `window.PawketAndroid` — which
  * the app injects into Pawket's own origin only (`PawketBridge.kt` lists
  * what it accepts). Outside the app nothing here exists: every request
  * answers that it was not made, and the page does what a browser can.
@@ -58,7 +59,7 @@ const waiting = new Map<string, (answer: Answer) => void>();
 const heard = new WeakSet<Bridge>();
 let asked = 0;
 
-function ask(op: string, fields: Record<string, unknown>): Promise<Answer> {
+function ask(op: string, fields: Record<string, unknown>, wait = ANSWER_WAIT_MS): Promise<Answer> {
   const app = bridge();
   if (!app) return Promise.resolve({ ok: false, reason: "no-app" });
   if (!heard.has(app)) {
@@ -80,7 +81,7 @@ function ask(op: string, fields: Record<string, unknown>): Promise<Answer> {
       resolve(answer);
     };
     // An answer that never comes (an older app) is a no, not a page that waits forever.
-    const timer = window.setTimeout(() => done({ ok: false, reason: "no-answer" }), ANSWER_WAIT_MS);
+    const timer = window.setTimeout(() => done({ ok: false, reason: "no-answer" }), wait);
     waiting.set(id, done);
     try {
       app.postMessage(JSON.stringify({ id, op, ...fields }));
@@ -108,6 +109,69 @@ export function shareLink(link: { url: string; text?: string; title?: string }):
 /** A daily reminder, opened in the phone's calendar app for the player to save; nothing is scheduled here. */
 export function remindDaily(reminder: { title: string; notes: string; url: string; at: Date; days: number }): Promise<Answer> {
   return ask("remind", { ...reminder, at: reminder.at.getTime() });
+}
+
+/* ------------------------------------------------------------ reminders */
+
+const REMINDERS_KEY = "pawket.care-reminders";
+const reminderListeners = new Set<() => void>();
+/** The phone's permission prompt waits on the player, who may read it a while. */
+const ALLOW_WAIT_MS = 120_000;
+
+function remindersOn(): boolean {
+  try {
+    return window.localStorage.getItem(REMINDERS_KEY) === "on";
+  } catch {
+    return false;
+  }
+}
+
+function keepReminders(on: boolean): void {
+  try {
+    if (on) window.localStorage.setItem(REMINDERS_KEY, "on");
+    else window.localStorage.removeItem(REMINDERS_KEY);
+  } catch {
+    // Blocked storage: the choice lasts until the page reloads.
+  }
+  for (const listener of reminderListeners) listener();
+}
+
+/**
+ * Care reminders, off until the player turns them on: then the app says
+ * once when a pet will first need care (`src/lib/reminders/care.ts`).
+ * Turning them on asks the phone (Android 13 and later ask the player);
+ * they stay off unless it agrees. Turning them off clears the one waiting.
+ */
+export function useCareReminders(): [boolean, (on: boolean) => Promise<Answer>] {
+  const on = useSyncExternalStore(
+    (listener) => {
+      reminderListeners.add(listener);
+      return () => reminderListeners.delete(listener);
+    },
+    remindersOn,
+    () => false,
+  );
+  const set = async (next: boolean) => {
+    if (!next) {
+      keepReminders(false);
+      return ask("care-reminder", { on: false });
+    }
+    const answer = await ask("allow-reminders", {}, ALLOW_WAIT_MS);
+    if (answer.ok) keepReminders(true);
+    return answer;
+  };
+  return [on, set];
+}
+
+/** Sets the one care reminder, replacing the one before, or clears it. Never asks the player anything. */
+export async function setCareReminder(reminder: CareReminder | null): Promise<void> {
+  if (!remindersOn()) return;
+  const answer = await ask(
+    "care-reminder",
+    reminder ? { on: true, at: reminder.at.getTime(), title: reminder.title, text: reminder.text } : { on: false },
+  );
+  // The phone took its permission back: the setting says so too.
+  if (answer.reason === "not-allowed") keepReminders(false);
 }
 
 /* -------------------------------------------------------------- haptics */

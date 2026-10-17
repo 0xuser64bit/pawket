@@ -11,6 +11,7 @@ import { useRoomMode } from "@/components/home/room";
 import { useSound } from "@/lib/play/sound";
 import type { PetForm } from "@/components/pk";
 import { useAndroidApp, useHaptics, useHere } from "@/lib/native/android";
+import { CareReminderSetting } from "@/components/home/remind-me";
 
 /**
  * The room you live in and how this device plays: the rooms, 3D or flat,
@@ -79,6 +80,11 @@ export function Settings({ form }: { form?: PetForm }) {
             />
           ) : null}
         </Row>
+        {inApp ? (
+          <div style={{ marginTop: "var(--space-4)" }}>
+            <CareReminderSetting />
+          </div>
+        ) : null}
         <div style={{ marginTop: "var(--space-4)" }}>
           {counts.browserDeclines ? (
             <p className="caption pk-faint">

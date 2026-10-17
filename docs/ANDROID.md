@@ -13,8 +13,9 @@ player key or transaction engine.
 | `android/app/src/main/java/app/pawket/android/MainActivity.kt` | WebView lifecycle, back, splash/offline screens, renderer recovery, shortcuts and App Links |
 | `WebShellViewClient.kt` / `WebShellChromeClient.kt` | Trusted-origin navigation, wallet intents, new windows and permission refusal |
 | `PawketBridge.kt` | Validated native operations for the trusted main frame |
+| `CareReminder.kt` | The one care reminder: checked fields, an inexact alarm and its notification |
 | `ShellRules.kt` | What a frame or a page reached without a link may load; when a dying renderer waits for the player |
-| `android/app/src/test/…/BoundaryTest.kt` / `ShellRulesTest.kt` | Origin, image, filename, frame, posted-page and renderer-retry tests |
+| `android/app/src/test/…/BoundaryTest.kt` / `ShellRulesTest.kt` / `CareReminderTest.kt` | Origin, image, filename, frame, posted-page, renderer-retry and reminder tests |
 | `src/lib/native/android.ts` | Page bridge and "this app"/"this browser" wording |
 | `src/lib/solana/browser-client.ts` | Android-only Mobile Wallet Adapter registration |
 | `public/.well-known/assetlinks.json` | Package and release signer permitted to open site links |
@@ -65,14 +66,23 @@ a JVM boundary test and a documented permission reason.
 | `save-image` | MediaStore image in `Pictures/Pawket`; failed writes remove partial images | None on minSdk 29+ |
 | `share-link` | Pawket-origin link through the share sheet | None |
 | `remind` | Calendar editor with a daily reminder for 30 days; the player saves it | None |
+| `allow-reminders` | Asked when the player turns care reminders on (Home or Settings); answers whether the phone lets Pawket post | `POST_NOTIFICATIONS` on Android 13+, asked only here |
+| `care-reminder` | Sets or clears the one care reminder: a time within three days and plain words (control characters removed, lengths capped), as an inexact alarm; tapping it opens the app where it was left | None more |
 | `haptic` | Done, cheer or refusal feedback respecting phone and app settings | None |
 | `room` | Validated ground color and day/night system bars | None |
 
 The bridge accepts no key, transaction, filesystem path or URL to load.
 External intent URLs become fresh restricted navigation intents, without
-supplied components, selectors, extras or permission flags. The only Android
-capability permission is INTERNET; AndroidX's app-private signature permission
-adds no runtime prompt or data access.
+supplied components, selectors, extras or permission flags. The app's
+permissions are INTERNET and POST_NOTIFICATIONS. The second is the care
+reminder's, the one thing the app says while it is closed; Android 13 and later
+ask for it only when the player turns care reminders on, and refusing leaves
+them off. The page works out when a pet will first need care
+(`src/lib/reminders/care.ts`, from the program's decay, moved to 09:00–21:00 on
+the phone's clock) and sets one reminder, replaced whenever a record changes;
+nothing about it leaves the phone, and a restart clears it until Pawket is
+opened again. AndroidX's app-private signature permission adds no runtime
+prompt or data access.
 
 ## Storage and recovery
 
@@ -165,6 +175,7 @@ TalkBack pass; emulator results do not close that gate.
 | Passport and App Links | Same wallet's chain pet returns; trusted public links open in release |
 | Back, keyboard, large text, TalkBack, games and 3D/flat | Controls remain accessible; no gesture reloads a send |
 | Haptic setting and calendar editor | Preference persists; player controls calendar save; no new runtime permissions |
+| Care reminders | Turning on asks once on Android 13+, and a refusal leaves them off; a pet left alone is named at the predicted waking hour; tapping opens the app without reloading it; off clears it |
 | Offline cold open and uncertain send | Retry screen; recover known signature before a new action |
 
 Reproduce failures with the recorded versions, fix the owning layer and rerun

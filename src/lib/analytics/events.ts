@@ -35,7 +35,7 @@ export type PawketEvent =
   | { name: "wallet_linked"; deposit: "none" | "some" }
   | { name: "device_link_failed"; reason: "webview" | "storage" | "other" }
   | { name: "send_outcome"; kind: SendKind; outcome: SendOutcome }
-  | { name: "reminder_added"; platform: "web" | "android" }
+  | { name: "reminder_added"; platform: "web" | "android"; how: "calendar" | "care" }
   | { name: "pets_copied"; how: "file" | "text" }
   | { name: "pets_brought_back" };
 

@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { haptic, inAndroidApp, savePicture, shareLink, sharePicture, useBackCloses, useHaptics } from "./android";
+import { haptic, inAndroidApp, savePicture, setCareReminder, shareLink, sharePicture, useBackCloses, useCareReminders, useHaptics } from "./android";
 
 type Request = Record<string, unknown>;
 
@@ -89,5 +89,52 @@ describe("in the app", () => {
     first.unmount();
     expect(window.pawketBack?.()).toBe(false);
     expect(closed).toEqual(["photo", "wallet"]);
+  });
+});
+
+describe("care reminders", () => {
+  const reminder = { at: new Date("2026-10-19T09:00:00.000Z"), title: "Mango is hungry. A meal would help.", text: "An estimate of time away." };
+
+  it("stay off unless the phone agrees, and turning them off clears the one waiting", async () => {
+    let allow = false;
+    const posted = app((request) => (request.op === "allow-reminders" ? { ok: allow, reason: allow ? undefined : "denied" } : { ok: true }));
+    const { result } = renderHook(() => useCareReminders());
+    await act(async () => {
+      await expect(result.current[1](true)).resolves.toEqual({ ok: false, reason: "denied" });
+    });
+    expect(result.current[0]).toBe(false);
+    allow = true;
+    await act(async () => {
+      await result.current[1](true);
+    });
+    expect(result.current[0]).toBe(true);
+    await act(async () => {
+      await result.current[1](false);
+    });
+    expect(result.current[0]).toBe(false);
+    expect(posted.map(({ op, on }) => [op, on])).toEqual([
+      ["allow-reminders", undefined],
+      ["allow-reminders", undefined],
+      ["care-reminder", false],
+    ]);
+  });
+
+  it("are set only while on, and turn off when the phone takes its permission back", async () => {
+    let allowed = true;
+    const posted = app((request) => (request.op === "care-reminder" && !allowed ? { ok: false, reason: "not-allowed" } : { ok: true }));
+    await setCareReminder(reminder);
+    expect(posted).toEqual([]);
+    const { result } = renderHook(() => useCareReminders());
+    await act(async () => {
+      await result.current[1](true);
+    });
+    await setCareReminder(reminder);
+    expect(posted.at(-1)).toEqual({ id: expect.any(String), op: "care-reminder", on: true, at: reminder.at.getTime(), title: reminder.title, text: reminder.text });
+    allowed = false;
+    await act(async () => {
+      await setCareReminder(null);
+    });
+    expect(posted.at(-1)).toMatchObject({ op: "care-reminder", on: false });
+    expect(result.current[0]).toBe(false);
   });
 });

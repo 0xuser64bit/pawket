@@ -30,9 +30,9 @@ import java.util.Base64
 /**
  * The page's one way to ask the phone for something: `window.PawketAndroid`,
  * injected only into Pawket's own origin and heard only from its main frame.
- * It knows six requests — share or save a photo, share a link, set a daily
- * reminder in the calendar, a haptic, the room's colours — and checks every
- * field of each. It never carries a key, a transaction, a file path or a URL
+ * It knows eight requests — share or save a photo, share a link, set a daily
+ * reminder in the calendar, allow and set the one care reminder, a haptic,
+ * the room's colours — and checks every field of each. It never carries a key, a transaction, a file path or a URL
  * to load: a wallet is the wallet app's, and Solana is the page's.
  *
  * Requests are JSON `{ id, op, … }`; the answer, for those that have one, is
@@ -76,6 +76,8 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
             "save-image" -> picture(request, share = false, answer)
             "share-link" -> shareLink(request, answer)
             "remind" -> remind(request, answer)
+            "allow-reminders" -> activity.allowNotifications { allowed -> answer(allowed, "denied") }
+            "care-reminder" -> careReminder(request, answer)
             else -> answer(false, "unknown")
         }
     }
@@ -241,6 +243,27 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
                 .putExtra(CalendarContract.Events.DESCRIPTION, if (notes.isBlank()) "$url" else "$notes\n$url")
                 .putExtra(CalendarContract.Events.RRULE, "FREQ=DAILY;COUNT=$days")
         answer(activity.launch(insert), "no-calendar")
+    }
+
+    /** The one care reminder, set for the time the page worked out, or cleared. Never asks the player anything. */
+    private fun careReminder(
+        request: JSONObject,
+        answer: (Boolean, String?) -> Unit,
+    ) {
+        if (!request.optBoolean("on")) {
+            CareReminder.cancel(activity)
+            return answer(true, null)
+        }
+        val reminder =
+            CareReminder.checked(request.optLong("at"), System.currentTimeMillis(), request.optString("title"), request.optString("text"))
+                ?: return answer(false, "invalid")
+        if (!CareReminder.allowed(activity)) {
+            // The phone took its permission back: the one set before goes too.
+            CareReminder.cancel(activity)
+            return answer(false, "not-allowed")
+        }
+        CareReminder.schedule(activity, reminder)
+        answer(true, null)
     }
 
     companion object {

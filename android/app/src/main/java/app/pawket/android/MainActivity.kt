@@ -1,11 +1,13 @@
 package app.pawket.android
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color as AndroidColor
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
@@ -18,6 +20,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -78,6 +81,12 @@ class MainActivity : ComponentActivity() {
     private var painted by mutableStateOf(false)
     private var failed by mutableStateOf(false)
     private var progress by mutableFloatStateOf(0f)
+    private var notificationAnswer: ((Boolean) -> Unit)? = null
+    private val askNotifications =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            notificationAnswer?.invoke(CareReminder.allowed(this))
+            notificationAnswer = null
+        }
     /** The room the page is in, as it last said: its ground colour and whether it is a dark one. */
     private var ground by mutableStateOf<Pair<Int, Boolean>?>(null)
     private var created = 0L
@@ -191,6 +200,18 @@ class MainActivity : ComponentActivity() {
     }
 
     fun isTrusted(url: Uri): Boolean = url.origin() == origin
+
+    /**
+     * Whether care reminders may be posted, asking the player where the phone
+     * asks (Android 13 and later). Earlier, and once asked, the answer is the
+     * phone's: the app's notification switch in its settings.
+     */
+    fun allowNotifications(answer: (Boolean) -> Unit) {
+        if (CareReminder.allowed(this) || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return answer(CareReminder.allowed(this))
+        notificationAnswer?.invoke(false)
+        notificationAnswer = answer
+        askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
 
     /** Back to where Pawket starts. */
     fun loadStart() {

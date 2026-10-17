@@ -32,7 +32,8 @@
 | Classic scrollbar space: 44px touch targets and dock centring | `e2e/scrollbars.spec.ts` | Playwright, including hosts with overlay scrollbars |
 | Mobile touch: sheet focus/close, short viewport, Catch drag, game pause/resume and hidden-page pause | `e2e/mobile.spec.ts` | Playwright Chromium touch emulation (not physical-device proof) |
 | The page's half of the Android bridge; the app and the site agree on the package | `src/lib/native/*.test.ts` | Vitest |
-| The Android shell's checks: origin, picture, file name, frames, posted pages, renderer retries | `android/app/src/test/…/BoundaryTest.kt`, `ShellRulesTest.kt` | `cd android && ./gradlew testDebugUnitTest` |
+| When the care reminder comes (the program's decay, waking hours) | `src/lib/reminders/care.test.ts` | Vitest |
+| The Android shell's checks: origin, picture, file name, frames, posted pages, renderer retries, reminder fields | `android/app/src/test/…/BoundaryTest.kt`, `ShellRulesTest.kt`, `CareReminderTest.kt` | `cd android && ./gradlew testDebugUnitTest` |
 | The Android app on a phone: wallet, sends, bridge, lifecycle | the physical-device release checklist in `docs/ANDROID.md` | emulator or device, with a Mobile Wallet Adapter wallet |
 
 ```sh

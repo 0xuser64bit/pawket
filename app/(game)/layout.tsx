@@ -3,6 +3,7 @@ import { Dock, Mark } from "@/components/pk";
 import { RoomButton } from "@/components/market/room-button";
 import { WalletChip } from "@/components/wallet/wallet-chip";
 import { ResumeSends } from "@/lib/solana/use-send";
+import { CareReminderSync } from "@/components/home/remind-me";
 
 /**
  * The app shell: the mark, the Dock, and the two facts about this session.
@@ -30,6 +31,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <ResumeSends />
+      <CareReminderSync />
       {children}
     </>
   );

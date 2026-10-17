@@ -78,7 +78,8 @@ Coin reads verify the pool address, mints and creator before using it.
 
 The Android bridge accepts only checked requests from the trusted origin's
 main frame. It carries photos, links, reminders, haptics and colors, never keys
-or transactions. External intents are restricted and rebuilt without supplied
+or transactions. A care reminder is a time within three days and capped plain
+words; its notification only opens the app. External intents are restricted and rebuilt without supplied
 components, extras or permission flags. Release WebView debugging and backups
 are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 

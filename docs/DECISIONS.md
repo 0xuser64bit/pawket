@@ -122,6 +122,14 @@ Catch, Hop, Copy and Pairs use pure seeded steps. Each game has a shared daily
 UTC seed. The first recorded round per pet per UTC day earns a flat XP bonus;
 score never scales it. There is no real-time multiplayer or money prize.
 
+## Care reminders stay on the phone
+
+The Android app's care reminder is a local notification, not a push service:
+the page works out from the pets' records when the first need begins and the
+phone keeps one inexact alarm for it. No server holds a list of who wants
+reminding, a device token or a schedule. It is off until the player turns it
+on, and it reaches only phones with the app; the web keeps calendar reminders.
+
 ## Stable origin and release signer
 
 `pawket.world` is the official origin. The previous Vercel origin remains

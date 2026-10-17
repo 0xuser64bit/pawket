@@ -66,6 +66,7 @@ import { CARE_MOMENT, type PhotoPose, type RoomCue } from "@/lib/room/moments";
 import { getCareInstruction } from "@/lib/solana/instructions";
 import { usePawketSend } from "@/lib/solana/use-send";
 import { dayTurnsAt } from "@/lib/utils/format";
+import { localMinute } from "@/lib/utils/local-datetime";
 
 /**
  * The room you actually live in, and the whole width of the screen: you and
@@ -409,8 +410,8 @@ export function HomeScreen() {
           shot={shot}
           onPose={poseForPhoto}
           title={`${pet.name} and ${profile.name.trim() || "me"}`}
-          line={`${PERSONALITY_LABEL[pet.personality]} ${SPECIES_LABEL[pet.species].toLowerCase()} · level ${projected.level} · ${utcDay(now)}`}
-          file={`pawket-${pet.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${utcDay(now)}`}
+          line={`${PERSONALITY_LABEL[pet.personality]} ${SPECIES_LABEL[pet.species].toLowerCase()} · level ${projected.level} · ${localMinute(now).slice(0, 10)}`}
+          file={`pawket-${pet.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${localMinute(now).slice(0, 10)}`}
           onClose={closePhoto}
         />
       ) : null}

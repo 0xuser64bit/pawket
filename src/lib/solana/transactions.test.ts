@@ -168,6 +168,15 @@ describe("waitForConfirmation", () => {
     await expect(waitForConfirmation(client, "sig")).rejects.toThrow();
   });
 
+  it("a landed program refusal keeps its code, so the player reads its sentence rather than JSON", async () => {
+    for (const code of [6013, 6013n]) {
+      const client = stubRpc([{ confirmationStatus: "confirmed", err: { InstructionError: [0, { Custom: code }] } }]);
+      const error = await waitForConfirmation(client, "sig").catch((caught: unknown) => caught);
+      expect(extractProgramErrorCode(error)).toBe(6013);
+      expect(toUserFacingError(error)).toBe(pawketErrorMessage(6013));
+    }
+  });
+
   it("resolves unknown when the timeout elapses", async () => {
     const client = stubRpc([null]);
     await expect(waitForConfirmation(client, "sig", 10)).resolves.toBe("unknown");

@@ -298,8 +298,12 @@ export async function waitForConfirmation(
         status.confirmationStatus === "finalized")
     ) {
       if (status.err !== undefined && status.err !== null) {
-        throw new Error(
-          typeof status.err === "string" ? status.err : JSON.stringify(status.err),
+        // `{ InstructionError: [index, { Custom: code }] }`: keep the program's code, so it reads as its sentence.
+        const custom = (status.err as { InstructionError?: [unknown, { Custom?: unknown } | string] }).InstructionError?.[1];
+        const code = typeof custom === "object" && custom ? Number(custom.Custom) : NaN;
+        throw Object.assign(
+          new Error(typeof status.err === "string" ? status.err : JSON.stringify(status.err, (_key, value) => (typeof value === "bigint" ? Number(value) : value))),
+          Number.isInteger(code) ? { programError: code } : {},
         );
       }
       return "confirmed";

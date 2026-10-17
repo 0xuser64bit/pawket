@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { cosign, SponsorRefusal } from "@/lib/solana/sponsor";
+import { caller as callerOf } from "@/server/actions";
 import { actionLimit, mayPayRent, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
 
 /**
@@ -42,10 +43,10 @@ export async function POST(request: Request) {
   }
   if (!current.available) return NextResponse.json({ error: current.reason }, { status: 503 });
 
-  const caller = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const caller = callerOf(request);
   try {
     const { transaction } = await cosign(current.signer, body.data.transaction, ({ rent }) =>
-      actionLimit(caller) && (rent === 0 || mayPayRent(caller)),
+      actionLimit(caller) && (rent === 0 || mayPayRent([caller])),
     );
     sponsorSpent();
     return NextResponse.json({ transaction });

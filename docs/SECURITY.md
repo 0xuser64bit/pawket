@@ -56,8 +56,9 @@ preserves the known signature and yields `unknown`; no replacement is sent
 automatically. A chain care animates only after confirmation and reload.
 
 The sponsor accepts only the approved Pawket instruction/account roles,
-bounded signatures, no priority-fee instructions and no lookup tables. Its
-float floor and request limits bound abuse within each server instance.
+bounded signatures, no priority-fee instructions, no lookup tables and at
+most one rent-paying instruction a transaction. Its float floor, per-caller
+limits and an hourly rent budget measured from its own balance bound abuse.
 `SPONSOR_SLOTS` is held to the IDL. Sponsored claims must use current
 availability rather than assume the sponsor is online.
 
@@ -88,8 +89,11 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   (Q9). A pet with an RSVP can still check in after leaving.
 - Guestbooks check one wave per UTC day against the last eight visitors. After
   eight other waves a visitor can wave again. Counts are not Sybil-resistant.
-- Sponsor and API rate limits are in process memory; multiple instances each
-  allow their share. Shared enforcement and budget monitoring are mainnet work.
+- Per-caller limits are in process memory, so multiple instances each allow
+  their share; an IPv6 caller counts by its /64. The hourly rent budget is read
+  from the sponsor's balance, which every instance sees, plus the rents an
+  instance signed in the last two minutes. Shared enforcement and budget
+  monitoring are mainnet work.
 - A stolen linked device can act within its expiry and limit, including its
   permitted fee float. Unlinking ends its authorization; local deletion alone
   does not revoke it on chain.

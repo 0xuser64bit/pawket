@@ -71,7 +71,8 @@ export async function POST(request: Request, { params }: Props) {
 
   const transaction = await sponsoredForPlayer(sponsor.signer, chainPet.owner, ({ owner }) => [
     getCareInstruction({ owner, pet: chainPet.address, passport: passport.address, action }),
-  ]);
+  ]).catch(() => null);
+  if (!transaction) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   return actionJson({
     type: "transaction",
     transaction,

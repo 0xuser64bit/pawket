@@ -57,6 +57,8 @@ export async function POST(request: Request, { params }: Props) {
   const { pet } = await params;
   const account = await postedAccount(request);
   if (!account || !isAddress(account)) return actionError("That is not a wallet address. Nothing was sent.");
+  const who = caller(request);
+  if (!actionLimit(who)) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
   const onChain = isAddress(pet) ? await readPet(pet).catch(() => null) : null;
   if (!onChain) return actionError("No pet lives at that address.", 404);
   const { name, owner } = onChain.pet;
@@ -69,11 +71,12 @@ export async function POST(request: Request, { params }: Props) {
   const keepsake = await readKeepsake(onChain.pet.address).catch(() => null);
   if (!keepsake) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   if (keepsake.made) return actionError(`${name}'s card is already in this wallet. Nothing was sent.`, 409);
-  if (!mayPayRent(account) || !actionLimit(caller(request))) {
+  if (!mayPayRent([account, who])) {
     return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
   }
 
-  const transaction = await keepsakeTransaction(sponsor.signer, onChain);
+  const transaction = await keepsakeTransaction(sponsor.signer, onChain).catch(() => null);
+  if (!transaction) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   sponsorSpent();
   return actionJson({
     type: "transaction",

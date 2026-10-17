@@ -57,6 +57,7 @@ export async function sponsorState(): Promise<SponsorState> {
   if (!float || Date.now() - float.checkedAt > 30_000) {
     const { value } = await sponsorRpc().getBalance(sponsor.address, { commitment: "confirmed" }).send();
     float = { checkedAt: Date.now(), lamports: value };
+    noteFloat(value);
   }
   if (float.lamports < MIN_FLOAT_LAMPORTS) {
     return { available: false, reason: "Pawket's fee float is empty for now." };
@@ -70,15 +71,39 @@ export const actionLimit = createLimiter(240, HOUR);
 // Rent is the real cost — a new pet, a keepsake — so it is the scarce one. A
 // venue shares one IP between many players, so the per-key limit is generous.
 const rentPerKey = createLimiter(20, HOUR);
-const allRent = createLimiter(120, HOUR);
+
+/** What the sponsor may spend in an hour, measured by how far its balance falls. */
+const RENT_BUDGET_LAMPORTS = 500_000_000n;
+/** About the most one sponsored instruction's rent costs on devnet: a guild and its first member. */
+const ONE_RENT_LAMPORTS = 3_500_000n;
+/** How long a signed transaction can still land: a blockhash's life, with room to spare. */
+const IN_FLIGHT_MS = 120_000;
+
+/** This hour's spending, from the balance the sponsor started it with; rents signed lately count until they could no longer land. */
+let spend: { since: number; from: bigint; now: bigint; signed: number[] } | null = null;
+
+/** The sponsor's balance as just read. A refill, or a new hour, starts the count again. */
+export function noteFloat(lamports: bigint, at = Date.now()) {
+  if (!spend || at - spend.since >= HOUR || lamports > spend.from) spend = { since: at, from: lamports, now: lamports, signed: [] };
+  else spend.now = lamports;
+}
 
 /**
- * Whether the sponsor may pay one more rent, for this caller key. Keys are
- * cheap to change (a new keypair, a proxy's shared IP), so a cap on all of
- * it bounds the worst case: 120 an hour is under 0.5 SOL.
+ * Whether the sponsor may sign one more rent, for every key the caller goes
+ * by (its address, the wallet it names). Keys are cheap to change, so the
+ * whole is bounded too — by what the sponsor actually spends, read from its
+ * balance, plus the rents signed in the last two minutes that may still land.
+ * A request that never lands spends nothing, so asking alone cannot use the
+ * budget up for everyone. Until the balance has been read, nothing is paid.
  */
-export function mayPayRent(key: string): boolean {
-  return rentPerKey(key) && allRent("all");
+export function mayPayRent(keys: readonly string[], at = Date.now()): boolean {
+  if (!keys.every((key) => rentPerKey(key, at))) return false;
+  if (!spend) return false;
+  spend.signed = spend.signed.filter((signedAt) => at - signedAt < IN_FLIGHT_MS);
+  const committed = spend.from - spend.now + BigInt(spend.signed.length + 1) * ONE_RENT_LAMPORTS;
+  if (committed > RENT_BUDGET_LAMPORTS) return false;
+  spend.signed.push(at);
+  return true;
 }
 
 /** A transaction the sponsor builds and signs first, as fee payer, with any signer the instructions carry. */

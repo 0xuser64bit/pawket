@@ -48,7 +48,8 @@ must update rather than create exportable keys or fall back to owner signing.
 The devnet sponsor signs first as fee and approved rent payer. The client
 checks that the message is unchanged, simulates and sends through `send.ts`.
 The sponsor is neither the program upgrade authority nor the treasury. It
-has a float floor and per-instance request limits. Sponsorship is conditional,
+has a float floor, per-caller limits and an hourly rent budget read from its
+own balance. Sponsorship is conditional,
 and mainnet sponsorship is disabled.
 
 ## A keepsake is a frozen card

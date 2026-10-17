@@ -128,9 +128,11 @@ bounded signatures, no lookup tables and no compute-budget instructions.
 `SPONSOR_SLOTS` is held to the IDL. Rent returned when leaving a guild or
 closing a wallet goes to the recorded payer.
 
-The sponsor stops below its float floor. Per-instance limits cap actions and
-rent-bearing requests; caller and aggregate rent limits share the same server
-module. Multiple instances each have their own allowance. Shared budget and
+The sponsor stops below its float floor. It pays at most one new account's
+rent a transaction. Per-instance limits cap each caller's actions and rents
+(Actions count the posted wallet as well as the address); the hourly rent
+budget is what the sponsor's balance has lost, plus rents signed in the last
+two minutes, so requests that never land cannot use it up. Shared budget and
 rate enforcement are mainnet requirements. UI copy must read current
 availability before saying Pawket pays. [SECURITY.md](SECURITY.md) records limits.
 

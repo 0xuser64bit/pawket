@@ -45,8 +45,20 @@ export async function postedAccount(request: Request): Promise<string | null> {
   return typeof body?.account === "string" ? body.account : null;
 }
 
+/**
+ * Who is asking, for a limit: the client's address as the platform reports it
+ * (Vercel sets `x-forwarded-for`). An IPv6 address counts by its /64, the
+ * block one subscriber holds whole; an IPv4 one, mapped or not, as itself.
+ */
 export function caller(request: Request): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const v4 = /(\d{1,3}(?:\.\d{1,3}){3})$/.exec(ip);
+  if (v4 || !ip.includes(":")) return v4 ? v4[1] : ip;
+  const [head, tail = ""] = ip.toLowerCase().split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const groups = [...left, ...Array<string>(Math.max(0, 8 - left.length - right.length)).fill("0"), ...right];
+  return `${groups.slice(0, 4).map((group) => group.replace(/^0+(?=.)/, "")).join(":")}::/64`;
 }
 
 /**

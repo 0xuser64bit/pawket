@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
-import { useConnectedWallet, useIsWalletReady } from "@solana/kit-plugin-wallet/react";
+import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import type { Address } from "@solana/kit";
 import type { GuestPet } from "@/lib/guest/pet";
 import { usePets } from "@/lib/guest/use-pets";
 import { fetchPetsOnChain, toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
-import { rpc, wallet } from "@/lib/solana/browser-client";
+import { rpc, wallet, useWalletReady } from "@/lib/solana/browser-client";
 
 /**
  * The pet a screen draws, and every pet the player keeps. A player keeps as
@@ -172,7 +172,7 @@ const usePatienceOver = () => useSyncExternalStore(subscribePatience, () => pati
 
 export function useCompanion(): CompanionState {
   const { ready: guestReady, pets: guests } = usePets();
-  const walletReady = useIsWalletReady(wallet);
+  const walletReady = useWalletReady();
   const connected = useConnectedWallet(wallet);
   const owner = (connected?.account.address as Address | undefined) ?? null;
   const pets = useOwnedPets(owner);

@@ -14,7 +14,7 @@ vi.mock("@solana/kit-plugin-wallet/react", () => ({
   useIsWalletReady: () => mock.walletReady,
   useConnectedWallet: () => (mock.owner ? { account: { address: mock.owner }, signer: {} } : null),
 }));
-vi.mock("@/lib/solana/browser-client", () => ({ rpc: {}, wallet: {} }));
+vi.mock("@/lib/solana/browser-client", () => ({ rpc: {}, wallet: {}, useWalletReady: () => mock.walletReady }));
 vi.mock("@/lib/guest/use-pets", () => ({ usePets: () => ({ ready: true, pets: mock.guests }) }));
 vi.mock("@/lib/solana/accounts", () => ({
   fetchPetsOnChain: mock.fetch,

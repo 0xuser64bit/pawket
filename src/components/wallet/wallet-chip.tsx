@@ -3,14 +3,13 @@
 import { NavLink as Link } from "@/components/pk/nav-link";
 import { useState } from "react";
 import type { Address } from "@solana/kit";
-import { useConnectedWallet, useDisconnect, useIsWalletReady } from "@solana/kit-plugin-wallet/react";
+import { useConnectedWallet, useDisconnect } from "@solana/kit-plugin-wallet/react";
 import { Button, ButtonLink, Icon, Sheet, Stack } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
-import { wallet } from "@/lib/solana/browser-client";
+import { wallet, useWalletReady } from "@/lib/solana/browser-client";
 import { deviceFallback, needsSol, useSponsor } from "@/lib/solana/use-send";
 import { formatUtcDate, truncateAddress } from "@/lib/utils/format";
-import { useMounted } from "@/lib/utils/use-mounted";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { AddressLine } from "./address";
 import { WalletSheet } from "./wallet-sheet";
@@ -25,15 +24,14 @@ import { DevnetFaucet } from "@/components/wallet/faucet";
  * browser's link (or one approval to make it), and the way out.
  */
 export function WalletChip() {
-  const mounted = useMounted();
-  const ready = useIsWalletReady(wallet);
+  const ready = useWalletReady();
   const connected = useConnectedWallet(wallet);
   // Which sheet is open: choosing a wallet, or the wallet you are. Connecting from the first never opens the second.
   const [open, setOpen] = useState<"connect" | "panel" | null>(null);
   const linking = useLinkBrowser();
   const { Here } = useHere();
   // Nothing until the wallet has had its chance to reconnect: never a "Connect" that turns into an address.
-  if (!mounted || !ready) return <span className="pk-shell-btn pk-shell-btn--hold" aria-hidden="true" />;
+  if (!ready) return <span className="pk-shell-btn pk-shell-btn--hold" aria-hidden="true" />;
 
   if (!connected) {
     return (

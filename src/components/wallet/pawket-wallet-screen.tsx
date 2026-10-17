@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { Address } from "@solana/kit";
-import { useConnectedWallet, useIsWalletReady } from "@solana/kit-plugin-wallet/react";
+import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
 import {
   Banner,
@@ -27,7 +27,7 @@ import { getPublicEnv } from "@/config/env";
 import { findWearable } from "@/lib/closet/catalog";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { CARE_DONE_LABEL } from "@/lib/game/appearance";
-import { rpc, wallet as walletClient } from "@/lib/solana/browser-client";
+import { rpc, wallet as walletClient, useWalletReady } from "@/lib/solana/browser-client";
 import { explorerAddressUrl, explorerTxUrl } from "@/lib/solana/cluster";
 import { WALLET_LIMITS } from "@/lib/solana/program";
 import {
@@ -39,7 +39,6 @@ import {
 } from "@/lib/solana/instructions";
 import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
 import { formatAgo, formatSol, formatUtcDate, parseSolToLamports, truncateAddress } from "@/lib/utils/format";
-import { useMounted } from "@/lib/utils/use-mounted";
 import { forgetDevice } from "@/lib/wallet/device";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { fetchWalletHistory, type WalletEntry } from "@/lib/wallet/history";
@@ -84,9 +83,7 @@ const sol = (lamports: bigint) => `${formatSol(lamports)} SOL`;
 
 export function PawketWalletScreen() {
   // The wallet is only known in the browser, after hydration.
-  const mounted = useMounted();
-  const walletReady = useIsWalletReady(walletClient);
-  const ready = mounted && walletReady;
+  const ready = useWalletReady();
   const connected = useConnectedWallet(walletClient);
   const owner = (connected?.account.address as Address | undefined) ?? null;
   const { here, Here } = useHere();

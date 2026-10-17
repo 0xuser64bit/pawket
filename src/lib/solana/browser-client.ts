@@ -2,7 +2,7 @@
 
 import { createClient } from "@solana/kit";
 import { walletWithoutSigner } from "@solana/kit-plugin-wallet";
-import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
+import { useConnectedWallet, useIsWalletReady } from "@solana/kit-plugin-wallet/react";
 import { getPublicEnv } from "@/config/env";
 import { APP_NAME } from "@/config/site";
 import { useMounted } from "@/lib/utils/use-mounted";
@@ -73,4 +73,15 @@ export function useConnected() {
   const mounted = useMounted();
   const connected = useConnectedWallet(wallet);
   return mounted ? connected : null;
+}
+
+/**
+ * Whether the wallet has had its chance to reconnect, for the same reason:
+ * false on the server and the first render, so nothing draws "Connect"
+ * that turns into an address a moment later.
+ */
+export function useWalletReady(): boolean {
+  const mounted = useMounted();
+  const ready = useIsWalletReady(wallet);
+  return mounted && ready;
 }

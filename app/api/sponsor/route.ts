@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { cosign, RENT_KINDS, SponsorRefusal } from "@/lib/solana/sponsor";
+import { cosign, SponsorRefusal } from "@/lib/solana/sponsor";
 import { actionLimit, mayPayRent, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
 
 /**
@@ -44,8 +44,8 @@ export async function POST(request: Request) {
 
   const caller = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   try {
-    const { transaction } = await cosign(current.signer, body.data.transaction, (kinds) =>
-      (kinds.some((kind) => RENT_KINDS.includes(kind)) ? mayPayRent(caller) : true) && actionLimit(caller),
+    const { transaction } = await cosign(current.signer, body.data.transaction, ({ rent }) =>
+      actionLimit(caller) && (rent === 0 || mayPayRent(caller)),
     );
     sponsorSpent();
     return NextResponse.json({ transaction });

@@ -137,13 +137,20 @@ export const RENT_KINDS: readonly SponsoredKind[] = ["adopt", "found", "join", "
 
 const MAX_INSTRUCTIONS = 4;
 /**
+ * Rent is the scarce part of the float, and a limit is charged per transaction: so at most one
+ * instruction a transaction may have the sponsor pay rent. No app action needs more — the
+ * largest, a wallet's setup, opens one account.
+ */
+const MAX_RENT_INSTRUCTIONS = 1;
+/**
  * Each signature is a fee the sponsor pays, and Anchor takes extra signer accounts without a
  * word: so no more than a Pawket transaction needs — the sponsor, the owner, a device being linked.
  */
 const MAX_SIGNATURES = 3;
 
 export type SponsorCheck =
-  | { ok: true; kinds: SponsoredKind[] }
+  /** `rent`: how many of the instructions have the sponsor pay an account's rent (0 or 1). */
+  | { ok: true; kinds: SponsoredKind[]; rent: number }
   | { ok: false; reason: string };
 
 /**
@@ -190,6 +197,7 @@ export function checkSponsorable(
   }
 
   const kinds: SponsoredKind[] = [];
+  let rent = 0;
   for (const ix of message.instructions) {
     if (accounts[ix.programAddressIndex] !== programId) {
       return refuse("Only Pawket instructions are sponsored.");
@@ -198,13 +206,15 @@ export function checkSponsorable(
     if (!found) return refuse("That is not a Pawket instruction.");
     const { kind, shift } = found;
     if (kind === "fund" || kind === "settle") return refuse("Coin spending is never sponsored.");
-    const misplaced = (ix.accountIndices ?? []).some(
-      (index, position) => index === 0 && !SPONSOR_SLOTS[kind].includes(position - shift),
-    );
+    const indices = ix.accountIndices ?? [];
+    const misplaced = indices.some((index, position) => index === 0 && !SPONSOR_SLOTS[kind].includes(position - shift));
     if (misplaced) return refuse("The sponsor only pays; it takes no other part.");
+    // In a rent kind's payer slot the sponsor pays; in leave's and close's it is paid back.
+    if (RENT_KINDS.includes(kind) && indices.some((index) => index === 0)) rent++;
     kinds.push(kind);
   }
-  return { ok: true, kinds };
+  if (rent > MAX_RENT_INSTRUCTIONS) return refuse("The sponsor pays one new account's rent a transaction. Send them one at a time.");
+  return { ok: true, kinds, rent };
 }
 
 /**
@@ -245,7 +255,7 @@ export class SponsorRefusal extends Error {
 export async function cosign(
   sponsor: KeyPairSigner,
   wireBase64: string,
-  limit?: (kinds: SponsoredKind[]) => boolean,
+  limit?: (check: { kinds: SponsoredKind[]; rent: number }) => boolean,
 ): Promise<{ transaction: string; kinds: SponsoredKind[] }> {
   let transaction: Transaction;
   try {
@@ -255,7 +265,7 @@ export async function cosign(
   }
   const check = checkSponsorable(transaction, sponsor.address);
   if (!check.ok) throw new SponsorRefusal(check.reason, 403);
-  if (limit && !limit(check.kinds)) {
+  if (limit && !limit(check)) {
     throw new SponsorRefusal("Too many in a row. Nothing was sent — try again in a while.", 429);
   }
   const signed = await partiallySignTransaction([sponsor.keyPair], transaction);

@@ -99,13 +99,14 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(await built((payer) => [adopt(payer)]), sponsor.address)).toEqual({
       ok: true,
       kinds: ["adopt"],
+      rent: 1,
     });
     expect(
       checkSponsorable(
         await built(() => [care(), getDressInstruction({ owner, pet: PET, wearing: 2 })]),
         sponsor.address,
       ),
-    ).toEqual({ ok: true, kinds: ["care", "dress"] });
+    ).toEqual({ ok: true, kinds: ["care", "dress"], rent: 0 });
   });
 
   it("refuses to be anything but the fee payer", async () => {
@@ -163,17 +164,17 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(await built(() => [padded]), sponsor.address)).toMatchObject({ ok: false });
     // Linking a device is the most any asks: the sponsor, the owner and the device.
     const link = await built(() => [getLinkDeviceInstruction({ owner, wallet: WALLET, device: DEVICE, expiresAt: 1_790_848_800, dailyActions: 200 })]);
-    expect(checkSponsorable(link, sponsor.address)).toEqual({ ok: true, kinds: ["link"] });
+    expect(checkSponsorable(link, sponsor.address)).toEqual({ ok: true, kinds: ["link"], rent: 0 });
   });
 
   it("pays the rent of a new guild and of a pet's place in one, and takes it back when the pet leaves", async () => {
     const found = (payer: TransactionSigner) =>
       getFoundGuildInstruction({ owner, payer, pet: PET, guild: GUILD, member: MEMBER, slug: "sunbeam-club", name: "Sunbeam Club", motto: "", crest: 0, colour: 0 });
     const join = (payer: TransactionSigner) => getJoinGuildInstruction({ owner, payer, pet: PET, guild: GUILD, member: MEMBER });
-    expect(checkSponsorable(await built((payer) => [found(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["found"] });
-    expect(checkSponsorable(await built((payer) => [join(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["join"] });
+    expect(checkSponsorable(await built((payer) => [found(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["found"], rent: 1 });
+    expect(checkSponsorable(await built((payer) => [join(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["join"], rent: 1 });
     const leave = await built((payer) => [getLeaveGuildInstruction({ owner, pet: PET, member: MEMBER, guild: GUILD, payer: payer.address })]);
-    expect(checkSponsorable(leave, sponsor.address)).toEqual({ ok: true, kinds: ["leave"] });
+    expect(checkSponsorable(leave, sponsor.address)).toEqual({ ok: true, kinds: ["leave"], rent: 0 });
   });
 
   it("refuses to stand in for a guild's founder, a member, or its pet", async () => {
@@ -193,22 +194,22 @@ describe("checkSponsorable", () => {
       getDepositInstruction({ owner, wallet: WALLET, amount: 50_000_000n }),
       getLinkDeviceInstruction({ owner, wallet: WALLET, device: DEVICE, expiresAt: 1_790_848_800, dailyActions: 200 }),
     ]);
-    expect(checkSponsorable(tending, sponsor.address)).toEqual({ ok: true, kinds: ["open-wallet", "deposit", "link"] });
+    expect(checkSponsorable(tending, sponsor.address)).toEqual({ ok: true, kinds: ["open-wallet", "deposit", "link"], rent: 0 });
     const leaving = await built(() => [
       getWithdrawInstruction({ owner, wallet: WALLET, amount: 1n }),
       getUnlinkDeviceInstruction({ authority: owner, wallet: WALLET, device: DEVICE, deviceSigns: false }),
       getCloseWalletInstruction({ owner, wallet: WALLET, rentPayer: owner.address }),
     ]);
-    expect(checkSponsorable(leaving, sponsor.address)).toEqual({ ok: true, kinds: ["withdraw", "unlink", "close-wallet"] });
+    expect(checkSponsorable(leaving, sponsor.address)).toEqual({ ok: true, kinds: ["withdraw", "unlink", "close-wallet"], rent: 0 });
   });
 
   it("pays a wallet's rent, never takes its money, and never stands in for its device", async () => {
     // The rent comes back to the sponsor when the wallet closes (`close = rent_payer`).
     const rent = await built((payer) => [getOpenWalletInstruction({ owner, payer, wallet: WALLET })]);
-    expect(checkSponsorable(rent, sponsor.address)).toEqual({ ok: true, kinds: ["open-wallet"] });
+    expect(checkSponsorable(rent, sponsor.address)).toEqual({ ok: true, kinds: ["open-wallet"], rent: 1 });
     // Closing hands the sponsor back the rent it paid (the program holds it to `rent_payer`).
     const asRentPayer = await built((payer) => [getCloseWalletInstruction({ owner, wallet: WALLET, rentPayer: payer.address })]);
-    expect(checkSponsorable(asRentPayer, sponsor.address)).toEqual({ ok: true, kinds: ["close-wallet"] });
+    expect(checkSponsorable(asRentPayer, sponsor.address)).toEqual({ ok: true, kinds: ["close-wallet"], rent: 0 });
     // A withdrawal to the sponsor, or the sponsor as the wallet's owner, is a part it does not take.
     const asOwner = await built((payer) => [getWithdrawInstruction({ owner: payer, wallet: WALLET, amount: 1n })]);
     expect(checkSponsorable(asOwner, sponsor.address)).toMatchObject({ ok: false });
@@ -224,13 +225,17 @@ describe("checkSponsorable", () => {
     const byDevice = await built((payer) => [
       asDeviceInstruction(getCareInstruction({ owner: owner.address, pet: PET, passport: PASSPORT, action: CareActionType.Feed }), linked),
       asDeviceInstruction(getJoinGuildInstruction({ owner: owner.address, payer, pet: PET, guild: GUILD, member: MEMBER }), linked),
+    ]);
+    expect(checkSponsorable(byDevice, sponsor.address)).toEqual({ ok: true, kinds: ["care", "join"], rent: 1 });
+    const twoRents = await built((payer) => [
+      asDeviceInstruction(getJoinGuildInstruction({ owner: owner.address, payer, pet: PET, guild: GUILD, member: MEMBER }), linked),
       asDeviceInstruction(getWaveInstruction({ visitor: owner.address, payer, pet: PET, guestbook: WALLET }), linked),
     ]);
-    expect(checkSponsorable(byDevice, sponsor.address)).toEqual({ ok: true, kinds: ["care", "join", "wave"] });
+    expect(checkSponsorable(twoRents, sponsor.address)).toEqual({ ok: false, reason: expect.stringMatching(/one new account's rent a transaction/) });
     const leave = await built((payer) => [
       asDeviceInstruction(getLeaveGuildInstruction({ owner: owner.address, pet: PET, member: MEMBER, guild: GUILD, payer: payer.address }), linked),
     ]);
-    expect(checkSponsorable(leave, sponsor.address)).toEqual({ ok: true, kinds: ["leave"] });
+    expect(checkSponsorable(leave, sponsor.address)).toEqual({ ok: true, kinds: ["leave"], rent: 0 });
     // The sponsor as the device, or as the owner's wallet account, is a part it does not take.
     const asTheDevice = await built((payer) => [
       asDeviceInstruction(getCareInstruction({ owner: owner.address, pet: PET, passport: PASSPORT, action: CareActionType.Feed }), { device: payer, wallet: WALLET }),
@@ -252,7 +257,7 @@ describe("checkSponsorable", () => {
   it("pays the fee and the closet's rent for a purchase, never its price, and the fee to wear what was bought", async () => {
     const CLOSET = "7preVB3hcxXBLoAxefPgUfB9Hd62GsLkN9PTqG763MVc";
     const buy = await built((payer) => [getBuyWithWalletInstruction({ owner, payer, closet: CLOSET, wallet: WALLET, item: 19 })]);
-    expect(checkSponsorable(buy, sponsor.address)).toEqual({ ok: true, kinds: ["buy"] });
+    expect(checkSponsorable(buy, sponsor.address)).toEqual({ ok: true, kinds: ["buy"], rent: 1 });
     const asWallet = await built((payer) => [getBuyWithWalletInstruction({ owner, payer, closet: CLOSET, wallet: payer.address, item: 19 })]);
     expect(checkSponsorable(asWallet, sponsor.address)).toMatchObject({ ok: false });
     const coin = await built(() => [getWalletSpendInstruction({ owner, wallet: WALLET, device: DEVICE, amount: 1n, keep: 10n })]);
@@ -261,12 +266,12 @@ describe("checkSponsorable", () => {
     const asBuyer = await built((payer) => [getBuyInstruction({ owner: payer, payer, closet: CLOSET, item: 19 })]);
     expect(checkSponsorable(asBuyer, sponsor.address)).toMatchObject({ ok: false });
     const wear = await built(() => [getDressOwnedInstruction({ owner, pet: PET, closet: CLOSET, wearing: 19 })]);
-    expect(checkSponsorable(wear, sponsor.address)).toEqual({ ok: true, kinds: ["dress-owned"] });
+    expect(checkSponsorable(wear, sponsor.address)).toEqual({ ok: true, kinds: ["dress-owned"], rent: 0 });
     const device = createNoopSigner(DEVICE as KeyPairSigner["address"]);
     const byDevice = await built(() => [
       asDeviceInstruction(getDressOwnedInstruction({ owner: owner.address, pet: PET, closet: CLOSET, wearing: 19 }), { device, wallet: WALLET }),
     ]);
-    expect(checkSponsorable(byDevice, sponsor.address)).toEqual({ ok: true, kinds: ["dress-owned"] });
+    expect(checkSponsorable(byDevice, sponsor.address)).toEqual({ ok: true, kinds: ["dress-owned"], rent: 0 });
   });
 
   it("pays the rent of a guild's events, RSVPs, polls and ballots, and of a guestbook, and stands in for nobody", async () => {
@@ -279,11 +284,15 @@ describe("checkSponsorable", () => {
     const vote = (payer: TransactionSigner, who: TransactionSigner = owner) =>
       getVoteInstruction({ owner: who, payer, pet: PET, member: MEMBER, poll: EVENT, ballot: WALLET, option: 1 });
     const wave = (payer: TransactionSigner, who: TransactionSigner = owner) => getWaveInstruction({ visitor: who, payer, pet: PET, guestbook: WALLET });
-    const kinds = await built((payer) => [event(payer), rsvp(payer), poll(payer), vote(payer)]);
-    expect(checkSponsorable(kinds, sponsor.address)).toEqual({ ok: true, kinds: ["event", "rsvp", "poll", "vote"] });
+    // Each rent alone; never four in one transaction for the price of one limit.
+    for (const [one, kind] of [[event, "event"], [rsvp, "rsvp"], [poll, "poll"], [vote, "vote"]] as const) {
+      expect(checkSponsorable(await built((payer) => [one(payer)]), sponsor.address)).toEqual({ ok: true, kinds: [kind], rent: 1 });
+    }
+    const four = await built((payer) => [event(payer), rsvp(payer), poll(payer), vote(payer)]);
+    expect(checkSponsorable(four, sponsor.address)).toEqual({ ok: false, reason: expect.stringMatching(/one new account's rent a transaction/) });
     const checkIn = await built(() => [getCheckInInstruction({ owner, pet: PET, event: EVENT, rsvp: WALLET }), getWaveInstruction({ visitor: owner, payer: owner, pet: PET, guestbook: WALLET })]);
-    expect(checkSponsorable(checkIn, sponsor.address)).toEqual({ ok: true, kinds: ["check-in", "wave"] });
-    expect(checkSponsorable(await built((payer) => [wave(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["wave"] });
+    expect(checkSponsorable(checkIn, sponsor.address)).toEqual({ ok: true, kinds: ["check-in", "wave"], rent: 0 });
+    expect(checkSponsorable(await built((payer) => [wave(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["wave"], rent: 1 });
     for (const asSomeone of [(p: TransactionSigner) => event(p, p), (p: TransactionSigner) => vote(p, p), (p: TransactionSigner) => wave(p, p)]) {
       expect(checkSponsorable(await built((payer) => [asSomeone(payer)]), sponsor.address)).toMatchObject({ ok: false });
     }

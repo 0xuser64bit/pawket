@@ -60,7 +60,10 @@ it("never lets a read that began before a refresh overwrite the refresh", async 
   const late = deferred();
   mock.fetch.mockReturnValueOnce(early.promise).mockReturnValueOnce(late.promise);
   const hook = renderHook(useCompanion);
-  act(() => hook.result.current.refresh());
+  // Started, not awaited: the read it begins answers only when the test says so.
+  act(() => {
+    void hook.result.current.refresh();
+  });
   await act(async () => late.answer([chainPet("Mango"), chainPet("Joined", 2)]));
   await act(async () => early.answer([chainPet("Mango")]));
   expect(hook.result.current.owned.map((e) => e.pet.address)).toEqual(["Joined", "Mango"]);

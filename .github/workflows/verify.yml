@@ -71,6 +71,9 @@ jobs:
           fi
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
       - name: Anchor CLI
+        # Outside the checkout, with the runner's own stable rustc: rust-toolchain.toml pins the
+        # program's 1.89, older than anchor-cli's locked dependencies accept.
+        working-directory: ${{ runner.temp }}
         run: |
           if ! anchor --version 2>/dev/null | grep -q "$ANCHOR_VERSION"; then
             cargo install anchor-cli --version "$ANCHOR_VERSION" --locked --force

@@ -8,7 +8,7 @@ The program ID is a source constant held to the IDL, not an environment option.
 
 | Name | Default | Purpose |
 | --- | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Canonical page and metadata origin |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Canonical page and metadata origin; must be an http(s) origin, and https (not localhost) on a Vercel production build, because keepsake and coin metadata URIs carry it onto Solana |
 | `NEXT_PUBLIC_SOLANA_CLUSTER` | `devnet` | `devnet`, `testnet`, `mainnet-beta` or `localnet`; mainnet remains separately gated |
 | `NEXT_PUBLIC_SOLANA_RPC_URL` | Public devnet RPC | Browser-safe endpoint; `/api/rpc` uses Pawket's allow-listed proxy |
 | `SOLANA_RPC_URL` | Public endpoint for the selected cluster when the browser uses `/api/rpc`; otherwise the public RPC value | Server RPC; may contain a provider credential |

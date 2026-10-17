@@ -41,6 +41,14 @@ const publicEnvSchema = z
     ),
   })
   .superRefine((env, ctx) => {
+    // The origin keepsake and coin metadata URIs are written with, on Solana, where they stay.
+    let app: URL | undefined;
+    try { app = new URL(env.appUrl); } catch { /* Refused below. */ }
+    if (!app || !["http:", "https:"].includes(app.protocol)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["appUrl"], message: "NEXT_PUBLIC_APP_URL must be an http(s) origin, like https://pawket.world." });
+    } else if (process.env.VERCEL_ENV === "production" && (app.protocol !== "https:" || ["localhost", "127.0.0.1", "[::1]"].includes(app.hostname))) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["appUrl"], message: "A production build needs NEXT_PUBLIC_APP_URL set to its https origin; it is written into metadata on Solana." });
+    }
     let rpc: URL | undefined;
     try { rpc = new URL(env.solanaRpcUrl); } catch { /* Invalid URLs are refused below. */ }
     const publicHost = rpc && (KNOWN_RPC_HOSTS.some(({ host }) => rpc.hostname === host) ||

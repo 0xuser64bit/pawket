@@ -13,7 +13,8 @@ player key or transaction engine.
 | `android/app/src/main/java/app/pawket/android/MainActivity.kt` | WebView lifecycle, back, splash/offline screens, renderer recovery, shortcuts and App Links |
 | `WebShellViewClient.kt` / `WebShellChromeClient.kt` | Trusted-origin navigation, wallet intents, new windows and permission refusal |
 | `PawketBridge.kt` | Validated native operations for the trusted main frame |
-| `android/app/src/test/…/BoundaryTest.kt` | Origin, image and filename boundary tests |
+| `ShellRules.kt` | What a frame or a page reached without a link may load; when a dying renderer waits for the player |
+| `android/app/src/test/…/BoundaryTest.kt` / `ShellRulesTest.kt` | Origin, image, filename, frame, posted-page and renderer-retry tests |
 | `src/lib/native/android.ts` | Page bridge and "this app"/"this browser" wording |
 | `src/lib/solana/browser-client.ts` | Android-only Mobile Wallet Adapter registration |
 | `public/.well-known/assetlinks.json` | Package and release signer permitted to open site links |
@@ -22,6 +23,9 @@ player key or transaction engine.
 The current release opens `https://pawket.world/home`. Only its exact scheme,
 host and port load inside. External sites open in a browser; wallet intents
 start the wallet app. File, content and data URLs cannot navigate the WebView.
+Frames load only that origin or an empty document. A page reached without a
+link — a form posted to another site — opens in the browser, and the app goes
+back to where it was.
 Release start URLs require HTTPS. Cleartext is allowed only for localhost and
 127.0.0.1, including Mobile Wallet Adapter's local connection.
 
@@ -44,7 +48,8 @@ Back closes the latest page overlay, then page history, then backgrounds the
 root app. Configuration changes do not reload a waiting send. The WebView
 pauses when hidden without stopping wallet-response timers. Saved navigation
 is restored only within the current trusted origin; renderer loss creates a
-new WebView. There is no pull-to-refresh. Insets account for system bars and
+new WebView, and a second loss within a minute waits on the retry screen, which
+starts again from the first page. There is no pull-to-refresh. Insets account for system bars and
 the keyboard; text follows the phone's font setting.
 
 ## Native bridge

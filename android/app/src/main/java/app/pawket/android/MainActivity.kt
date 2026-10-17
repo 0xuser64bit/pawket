@@ -70,6 +70,7 @@ class MainActivity : ComponentActivity() {
     /** Where Pawket is served from; nothing else loads inside the app. */
     lateinit var origin: String
         private set
+    private val crashes = CrashWindow()
     private lateinit var startUrl: String
     private lateinit var bridge: PawketBridge
 
@@ -191,6 +192,11 @@ class MainActivity : ComponentActivity() {
 
     fun isTrusted(url: Uri): Boolean = url.origin() == origin
 
+    /** Back to where Pawket starts. */
+    fun loadStart() {
+        webView?.loadUrl(startUrl)
+    }
+
     /** Opens a link that is not Pawket's in the app that handles it — the browser, the Explorer, a wallet's site. */
     fun openOutside(url: Uri) {
         if (url.scheme != "http" && url.scheme != "https") return
@@ -259,7 +265,11 @@ class MainActivity : ComponentActivity() {
         (view.parent as? ViewGroup)?.removeView(view)
         view.destroy()
         painted = false
-        webView = makeWebView().also { it.loadUrl(url) }
+        // A page that kills the renderer every time is not brought straight back into the same crash: the retry
+        // screen waits for the player, and Try again starts from Pawket's first page.
+        val again = crashes.bringBack(SystemClock.elapsedRealtime())
+        webView = makeWebView().also { if (again) it.loadUrl(url) }
+        if (!again) failed = true
     }
 
     private fun retry() {

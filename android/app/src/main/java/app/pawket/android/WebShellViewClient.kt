@@ -20,9 +20,10 @@ class WebShellViewClient(private val activity: MainActivity) : WebViewClient() {
         view: WebView,
         request: WebResourceRequest,
     ): Boolean {
-        // Pawket has no frames of its own; a frame never reaches the bridge either (it is main-frame only).
-        if (!request.isForMainFrame) return false
         val url = request.url
+        // Pawket has no frames of its own, and a frame never reaches the bridge (it is main-frame only); still,
+        // nothing from another site is drawn inside the app, where no address bar would say whose it is.
+        if (!request.isForMainFrame) return !ShellRules.frameAllowed(url.scheme, url.origin(), activity.origin)
         when (url.scheme?.lowercase()) {
             "http", "https" -> {
                 if (activity.isTrusted(url)) return false
@@ -64,6 +65,14 @@ class WebShellViewClient(private val activity: MainActivity) : WebViewClient() {
         url: String?,
         favicon: Bitmap?,
     ) {
+        // A navigation shouldOverrideUrlLoading never sees — a form posted to another site — still never stays inside.
+        val page = url?.toUri()
+        if (page != null && !ShellRules.pageAllowed(page.scheme, page.origin(), activity.origin)) {
+            view.stopLoading()
+            activity.openOutside(page)
+            if (view.canGoBack()) view.goBack() else activity.loadStart()
+            return
+        }
         activity.pageStarted()
     }
 

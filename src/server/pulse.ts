@@ -3,7 +3,7 @@ import "server-only";
 import { address, getBase58Decoder, getBase64Encoder, type Base58EncodedBytes } from "@solana/kit";
 import { serverRpcUrl } from "@/config/server-env";
 import { isListed } from "@/lib/guilds/delisted";
-import { toCompanionRecord } from "@/lib/solana/accounts";
+import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { createPatientRpc } from "@/lib/solana/rpc";
 import { MARKET, PAWKET_ACCOUNTS, PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { shared } from "./cache";
@@ -15,8 +15,14 @@ import { readAllPets, readGuilds } from "./solana";
  * devnet the counts include the runs of Pawket's own tests, said on the
  * page. One read answers for thirty seconds, so a crowd is one scan.
  */
+/** Of the pets adopted at least that many days ago, how many were looked after on a later day. */
+export interface Returns {
+  day: { back: number; of: number };
+  week: { back: number; of: number };
+}
+
 export interface Pulse {
-  pets: { kept: number; outToday: number; cares: number; rounds: number; bestRun: number; owners: number };
+  pets: { kept: number; outToday: number; cares: number; rounds: number; bestRun: number; owners: number; returned: Returns };
   guilds: { listed: number; pets: number; events: number; going: number; came: number; polls: number; votes: number };
   coins: { launched: number; onCurve: number; graduating: number; graduated: number } | null;
   /** Lamports as decimal strings: the pulse is cached as plain JSON. */
@@ -50,14 +56,34 @@ async function every(account: { discriminator: readonly number[]; size: number }
   return accounts.map(({ account: found }) => Uint8Array.from(base64.encode(found.data[0])));
 }
 
+/**
+ * Whether pets come back, from their own records and nothing else: a pet is
+ * back after `n` days when its Passport's last active UTC day (its last care
+ * or round) is at least `n` days after the day it was adopted. Counted among
+ * the pets old enough to have had the chance.
+ */
+export function returnsOf(pets: readonly PetOnChain[], todayUtc: number): Returns {
+  const born = (entry: PetOnChain) => Math.floor(entry.pet.birthTimestamp / 86_400);
+  const after = (days: number) => {
+    const old = pets.filter((entry) => todayUtc - born(entry) >= days);
+    return { of: old.length, back: old.filter((entry) => entry.passport.lastActiveDay >= born(entry) + days).length };
+  };
+  return { day: after(1), week: after(7) };
+}
+
 const u16 = (bytes: Uint8Array, at: number) => new DataView(bytes.buffer, bytes.byteOffset).getUint16(at, true);
 const u32 = (bytes: Uint8Array, at: number) => new DataView(bytes.buffer, bytes.byteOffset).getUint32(at, true);
 const u64 = (bytes: Uint8Array, at: number) => new DataView(bytes.buffer, bytes.byteOffset).getBigUint64(at, true);
 
 let cached: { at: number; pulse: Promise<Pulse> } | null = null;
 
-/** Thirty seconds of the Data Cache across instances, and the same in this process. */
-const measured = shared(() => measure(), "pulse", 30);
+/**
+ * Thirty seconds of the Data Cache across instances, and the same in this
+ * process. The Data Cache outlives a deploy, so its key names the shape of
+ * what it holds: change the shape, change the name, or a new page reads an
+ * old entry that lacks what it draws.
+ */
+const measured = shared(() => measure(), "pulse:returns", 30);
 
 export function readPulse(): Promise<Pulse> {
   const now = Date.now();
@@ -106,6 +132,7 @@ async function measure(): Promise<Pulse> {
       rounds: pets.reduce((sum, entry) => sum + entry.passport.plays, 0),
       bestRun: Math.max(0, ...pets.map((entry) => entry.passport.bestStreak)),
       owners: new Set(pets.map((entry) => entry.pet.owner)).size,
+      returned: returnsOf(pets, Math.floor(Date.now() / 86_400_000)),
     },
     guilds: {
       listed: listed.length,

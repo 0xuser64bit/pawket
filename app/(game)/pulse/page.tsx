@@ -72,8 +72,11 @@ export default async function PulsePage() {
                 { k: "Cares recorded", v: n(pulse.pets.cares) },
                 { k: "Rounds played", v: n(pulse.pets.rounds) },
                 { k: "Longest run", v: `${n(pulse.pets.bestRun)} days` },
+                { k: "Back a day after adoption", v: `${n(pulse.pets.returned.day.back)} of ${n(pulse.pets.returned.day.of)}` },
+                { k: "Back a week on", v: `${n(pulse.pets.returned.week.back)} of ${n(pulse.pets.returned.week.of)}` },
                 { k: "Waves in guestbooks", v: n(pulse.guestbook.waves) },
               ]}
+              note="Back: cared for or played with on a later UTC day than the one it was adopted, read from each Passport, among the pets old enough to have had the chance."
             />
           </Paper>
           <Paper title="Guilds" meta="Guild, event and poll accounts">

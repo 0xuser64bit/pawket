@@ -94,7 +94,9 @@ test("Home's sound is on until it is muted, and Profile's switch is the same one
   await sound.click();
   await expect(sound).toHaveAttribute("aria-pressed", "false");
   await page.goto("/profile?tab=settings#shelf");
-  await page.getByRole("button", { name: "Pawket sound off" }).click();
+  const setting = page.getByRole("button", { name: "Pawket sound" });
+  await expect(setting).toHaveAttribute("aria-pressed", "false");
+  await setting.click();
   await page.goto("/home");
   await expect(page.getByRole("button", { name: "Room sound" })).toHaveAttribute("aria-pressed", "true");
 });

@@ -67,7 +67,7 @@ test("in the app a pet lives in this app, a care is felt, and the bars follow th
   expect(requests.some((request) => request.op === "room")).toBe(true);
 
   await page.goto("/profile?tab=settings");
-  await expect(page.getByRole("button", { name: "Haptics on" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Haptics" })).toHaveAttribute("aria-pressed", "true");
   expect(problems.filter((text) => /hydrat|did not match/i.test(text))).toEqual([]);
 });
 

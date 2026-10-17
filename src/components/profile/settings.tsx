@@ -54,7 +54,8 @@ export function Settings({ form }: { form?: PetForm }) {
         <h2 className="title">On this device</h2>
         <Row gap={3} wrap style={{ marginTop: "var(--space-4)" }}>
           <Button
-            label={mode === "3d" ? "The room is 3D" : "The room is flat"}
+            label="3D room"
+            className="pk-btn--toggle"
             icon="home"
             tone="quiet"
             size="sm"
@@ -62,7 +63,8 @@ export function Settings({ form }: { form?: PetForm }) {
             onClick={() => setMode(mode === "3d" ? "flat" : "3d")}
           />
           <Button
-            label={sound ? "Pawket sound on" : "Pawket sound off"}
+            label="Pawket sound"
+            className="pk-btn--toggle"
             icon="music"
             tone="quiet"
             size="sm"
@@ -71,7 +73,8 @@ export function Settings({ form }: { form?: PetForm }) {
           />
           {inApp ? (
             <Button
-              label={haptics ? "Haptics on" : "Haptics off"}
+              label="Haptics"
+              className="pk-btn--toggle"
               icon="spark"
               tone="quiet"
               size="sm"

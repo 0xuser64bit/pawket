@@ -1641,10 +1641,18 @@ li {
   }
 }
 .pk-btn[disabled],
-.pk-btn[aria-disabled="true"],
-.pk-btn--off {
+.pk-btn[aria-disabled="true"] {
   opacity: var(--opacity-disabled);
   pointer-events: none;
+}
+/* A toggle keeps its words, so a screen reader hears one name and its state;
+   off is shown the way the room's sound switch shows it: sunk and faint. */
+.pk-btn--toggle[aria-pressed="false"] {
+  --pk-face: var(--surface-sunk);
+  --pk-on: var(--ink-faint);
+}
+.pk-btn--ghost.pk-btn--toggle[aria-pressed="false"] {
+  color: var(--ink-faint);
 }
 
 /* ------------------------------------------------------------------ chip */

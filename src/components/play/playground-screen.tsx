@@ -160,11 +160,11 @@ export function PlaygroundScreen() {
         </div>
         <Row gap={2}>
           <Button
-            label={sound ? "Sound on" : "Sound off"}
+            label="Sound"
             icon="music"
             tone="ghost"
             size="sm"
-            className="pk-btn--flush"
+            className="pk-btn--flush pk-btn--toggle"
             aria-pressed={sound}
             onClick={() => setSound(!sound)}
           />

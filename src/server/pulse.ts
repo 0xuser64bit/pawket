@@ -71,6 +71,21 @@ export function returnsOf(pets: readonly PetOnChain[], todayUtc: number): Return
   return { day: after(1), week: after(7) };
 }
 
+/**
+ * Where Pulse reads each count, in bytes from an account's start (its 8-byte
+ * discriminator first). Read by hand to keep the scan light; `pulse.test.ts`
+ * holds every offset to the IDL, so a layout change cannot skew a public count.
+ */
+export const AT = {
+  eventGoing: 100,
+  eventCame: 104,
+  pollVotes: 92,
+  closetCount: 72,
+  closetSpent: 74,
+  guestbookWaves: 40,
+  walletActions: 88,
+} as const;
+
 const u16 = (bytes: Uint8Array, at: number) => new DataView(bytes.buffer, bytes.byteOffset).getUint16(at, true);
 const u32 = (bytes: Uint8Array, at: number) => new DataView(bytes.buffer, bytes.byteOffset).getUint32(at, true);
 const u64 = (bytes: Uint8Array, at: number) => new DataView(bytes.buffer, bytes.byteOffset).getBigUint64(at, true);
@@ -138,30 +153,25 @@ async function measure(): Promise<Pulse> {
       listed: listed.length,
       pets: listed.reduce((sum, guild) => sum + guild.memberCount, 0),
       events: events.length,
-      // GuildEvent: discriminator 8, guild 32, creator 32, id 4, starts 8, ends 8, created 8, going u32, came u32.
-      going: events.reduce((sum, bytes) => sum + u32(bytes, 100), 0),
-      came: events.reduce((sum, bytes) => sum + u32(bytes, 104), 0),
+      going: events.reduce((sum, bytes) => sum + u32(bytes, AT.eventGoing), 0),
+      came: events.reduce((sum, bytes) => sum + u32(bytes, AT.eventCame), 0),
       polls: polls.length,
-      // GuildPoll: discriminator 8, guild 32, creator 32, id 4, created 8, closes 8, then four u32 counts.
-      votes: polls.reduce((sum, bytes) => sum + [0, 1, 2, 3].reduce((s, i) => s + u32(bytes, 92 + 4 * i), 0), 0),
+      votes: polls.reduce((sum, bytes) => sum + [0, 1, 2, 3].reduce((s, i) => s + u32(bytes, AT.pollVotes + 4 * i), 0), 0),
     },
     coins,
     market: {
       closets: closets.length,
-      // Closet: discriminator 8, owner 32, items 32, count u16, spent u64.
-      sold: closets.reduce((sum, bytes) => sum + u16(bytes, 72), 0),
-      paid: closets.reduce((sum, bytes) => sum + u64(bytes, 74), 0n).toString(),
+      sold: closets.reduce((sum, bytes) => sum + u16(bytes, AT.closetCount), 0),
+      paid: closets.reduce((sum, bytes) => sum + u64(bytes, AT.closetSpent), 0n).toString(),
       treasury: treasury.value.toString(),
     },
     guestbook: {
       books: books.length,
-      // Guestbook: discriminator 8, pet 32, waves u32.
-      waves: books.reduce((sum, bytes) => sum + u32(bytes, 40), 0),
+      waves: books.reduce((sum, bytes) => sum + u32(bytes, AT.guestbookWaves), 0),
     },
     wallets: {
       opened: wallets.length,
-      // PawketWallet: discriminator 8, owner 32, device 32, expires 8, daily u16, day u32, today u16, actions u32.
-      deviceActions: wallets.reduce((sum, bytes) => sum + u32(bytes, 88), 0),
+      deviceActions: wallets.reduce((sum, bytes) => sum + u32(bytes, AT.walletActions), 0),
     },
     readAt: Date.now(),
   };

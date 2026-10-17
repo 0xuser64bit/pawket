@@ -93,3 +93,16 @@ export function formatAgo(seconds: number): string {
   const days = Math.floor(s / 86_400);
   return `${days} ${days === 1 ? "day" : "days"} ago`;
 }
+
+/**
+ * When Pawket's day turns over, in the viewer's own clock: streaks, today's
+ * round and the daily bonus all count the UTC day, as the program does, so
+ * for most of the world it does not end at local midnight. "at midnight"
+ * where local time is UTC, else "at 5:00 PM here".
+ */
+export function dayTurnsAt(now: Date = new Date(), options: { locale?: string; timeZone?: string } = {}): string {
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+  const clock = new Intl.DateTimeFormat(options.locale, { hour: "numeric", minute: "2-digit", hourCycle: "h23", timeZone: options.timeZone }).format(next);
+  if (/^0?0:00$/.test(clock)) return "at midnight";
+  return `at ${new Intl.DateTimeFormat(options.locale, { hour: "numeric", minute: "2-digit", timeZone: options.timeZone }).format(next)} here`;
+}

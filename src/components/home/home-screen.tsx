@@ -65,6 +65,7 @@ import { usePlayerLook } from "@/lib/player/use-player-look";
 import { CARE_MOMENT, type PhotoPose, type RoomCue } from "@/lib/room/moments";
 import { getCareInstruction } from "@/lib/solana/instructions";
 import { usePawketSend } from "@/lib/solana/use-send";
+import { dayTurnsAt } from "@/lib/utils/format";
 
 /**
  * The room you actually live in, and the whole width of the screen: you and
@@ -502,7 +503,9 @@ function TodayStrip({ name, today }: { name: string; today: TodayGoals }) {
         </li>
       </ul>
       <p className="caption pk-faint pk-today__line">
-        {today.done === today.of ? `All of it, today. ${name} is well looked after.` : "Any one keeps the streak; all five make a good day."}
+        {today.done === today.of
+          ? `All of it, today. ${name} is well looked after. A new day starts ${dayTurnsAt()}.`
+          : `Any one keeps the streak; all five make a good day. The day turns ${dayTurnsAt()}.`}
       </p>
     </section>
   );

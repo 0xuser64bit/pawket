@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  dayTurnsAt,
   formatAgo,
   formatCountdown,
   formatSol,
@@ -98,5 +99,20 @@ describe("parseUnits / formatUnits", () => {
     expect(formatUnits("1000000000", 9)).toBe("1");
     expect(formatUnits(1_500_000n, 6)).toBe("1.5");
     expect(formatUnits(999n, 6, 2)).toBe("0");
+  });
+});
+
+describe("dayTurnsAt", () => {
+  const evening = new Date("2026-10-17T15:20:00Z");
+  it("says the UTC rollover in the viewer's own clock", () => {
+    expect(dayTurnsAt(evening, { locale: "en-US", timeZone: "America/Los_Angeles" })).toBe("at 5:00 PM here");
+    expect(dayTurnsAt(evening, { locale: "en-GB", timeZone: "Asia/Kolkata" })).toBe("at 5:30 here");
+  });
+  it("is midnight where local time is UTC", () => {
+    expect(dayTurnsAt(evening, { locale: "en-GB", timeZone: "UTC" })).toBe("at midnight");
+  });
+  it("counts from the UTC day it is now, even late in the local evening", () => {
+    // 01:00 UTC on the 18th is still the 17th in Los Angeles; the next turn is the 19th's UTC midnight.
+    expect(dayTurnsAt(new Date("2026-10-18T01:00:00Z"), { locale: "en-US", timeZone: "America/Los_Angeles" })).toBe("at 5:00 PM here");
   });
 });

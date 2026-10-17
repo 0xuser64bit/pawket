@@ -24,6 +24,8 @@ import { DAILY_GOAL_REWARD_XP } from "@/lib/game/constants";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { recordPlay, utcDay, type GuestPet } from "@/lib/guest/pet";
+import { dayTurnsAt } from "@/lib/utils/format";
+import { useMounted } from "@/lib/utils/use-mounted";
 import { readPet, savePet } from "@/lib/guest/storage";
 import { getFinishRoundInstruction } from "@/lib/solana/instructions";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
@@ -77,17 +79,20 @@ export function PlaygroundScreen() {
   const [game, setGame] = useState<GameId | null>(null);
   const [daily, setDaily] = useState(true);
   const [round, setRound] = useState(randomSeed);
+  // The UTC day a round began on: its seed and its daily best stay that day's, even across midnight.
+  const [day, setDay] = useState(() => utcDay(new Date()));
   const [outcome, setOutcome] = useState<Outcome>();
   const [paused, setPaused] = useState(false);
   const field = useRef<HTMLDivElement>(null);
   const [sound, setSound] = useSound();
+  const mounted = useMounted();
   const today = utcDay(new Date());
   const stored = useSyncExternalStore(noop, () => JSON.stringify([readBest(), readDaily(today)]), () => "[{},{}]");
   const [bests, todays] = JSON.parse(stored) as [Partial<Record<GameId, number>>, Partial<Record<GameId, number>>];
 
   const pet = companion.all.find((p) => p.id === chosen) ?? companion.pet;
   const chain = companion.owned.find((entry) => entry.pet.address === pet?.id) ?? null;
-  const seed = game && daily ? dailySeed(game, today) : round;
+  const seed = game && daily ? dailySeed(game, day) : round;
 
   function play(id: GameId, asDaily = daily) {
     sender.reset();
@@ -95,6 +100,7 @@ export function PlaygroundScreen() {
     setPaused(false);
     setDaily(asDaily);
     setRound(randomSeed());
+    setDay(utcDay(new Date()));
     setGame(id);
   }
 
@@ -111,7 +117,7 @@ export function PlaygroundScreen() {
     (score: number) => {
       if (!game || !pet) return;
       const isBest = keepBest(game, score);
-      const dailyBest = daily ? keepDaily(game, today, score) : false;
+      const dailyBest = daily ? keepDaily(game, day, score) : false;
       const base = { game, score, best: isBest, daily, dailyBest };
       if (chain) {
         // Kept on Solana only when the player records it; the bonus is the program's call.
@@ -127,7 +133,7 @@ export function PlaygroundScreen() {
       const saved = savePet(result.pet);
       setOutcome({ ...base, xpGained: result.xpGained, saved, onChain: false });
     },
-    [game, pet, chain, daily, today],
+    [game, pet, chain, daily, day],
   );
 
   async function recordRound() {
@@ -145,7 +151,9 @@ export function PlaygroundScreen() {
       <ScreenBar>
         <div>
           <h1 className="display-l">Playground</h1>
-          <p className="caption pk-faint">Four games. Any one of them is today&apos;s round.</p>
+          <p className="caption pk-faint">
+            Four games. Any one of them is today&apos;s round{mounted ? `, and a new one comes ${dayTurnsAt()}` : ""}.
+          </p>
         </div>
         <Row gap={2}>
           <Button
@@ -189,7 +197,7 @@ export function PlaygroundScreen() {
             <div>
               <Row gap={2} wrap>
                 <h2 className="display-m">{current.name}</h2>
-                <Chip label={daily ? `Today's round · ${today}` : "Practice"} tone={daily ? "sun" : undefined} icon={daily ? "star" : "ball"} />
+                <Chip label={daily ? "Today's round" : "Practice"} tone={daily ? "sun" : undefined} icon={daily ? "star" : "ball"} />
               </Row>
               <p className="body-sm pk-muted">{current.line}</p>
             </div>
@@ -214,7 +222,7 @@ export function PlaygroundScreen() {
                 name={current.name}
                 unit={current.unit}
                 bestScore={bests[current.id]}
-                day={today}
+                day={day}
                 sender={sender}
                 onRecord={() => void recordRound()}
                 onAgain={() => play(current.id)}

@@ -11,7 +11,7 @@ import { useConnected } from "@/lib/solana/browser-client";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { getWaveInstruction } from "@/lib/solana/instructions";
 import { deriveGuestbookPda } from "@/lib/solana/pda";
-import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
+import { rentWaits, usePawketSend, useSponsor } from "@/lib/solana/use-send";
 import { formatUtcDate } from "@/lib/utils/format";
 
 /**
@@ -44,6 +44,7 @@ export function Guestbook({
   const me = (connected?.account.address as Address | undefined) ?? null;
   const sender = usePawketSend();
   const sponsor = useSponsor();
+  const waits = rentWaits(sponsor.data);
   const router = useRouter();
   const [connecting, setConnecting] = useState(false);
   const cluster = getPublicEnv().solanaCluster;
@@ -91,18 +92,21 @@ export function Guestbook({
             icon="paw"
             tone="pool"
             size="sm"
-            disabled={sender.busy || !connected?.signer}
+            disabled={sender.busy || !connected?.signer || waits}
             onClick={() => void wave()}
           />
         )}
       </div>
       <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
-        Once a day, from any wallet but the owner&apos;s.{" "}
-        {sponsor.data?.available ? "Pawket pays the fee." : "It costs a little devnet SOL."} A wave changes nothing about{" "}
-        {name}.
+        Once a day, from any wallet but the owner&apos;s, signed by its linked Pawket Wallet.{" "}
+        {sponsor.data?.available ? "Pawket pays the fee." : waits ? "Waves wait until Pawket can pay for them again." : null} A
+        wave changes nothing about {name}.
       </p>
       {connecting ? (
-        <WalletSheet why={`Connect any wallet to wave at ${name}. It signs only the wave.`} onDismiss={() => setConnecting(false)} />
+        <WalletSheet
+          why={`Connect your wallet to wave at ${name}. The browser linked to your Pawket Wallet signs the wave; connecting signs nothing.`}
+          onDismiss={() => setConnecting(false)}
+        />
       ) : null}
     </Card>
   );

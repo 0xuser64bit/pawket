@@ -10,7 +10,7 @@ import { petLook } from "@/lib/game/appearance";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { getJoinGuildInstruction, getLeaveGuildInstruction } from "@/lib/solana/instructions";
 import { deriveMemberPda } from "@/lib/solana/pda";
-import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
+import { rentWaits, usePawketSend, useSponsor } from "@/lib/solana/use-send";
 
 /**
  * Your pets and this guild, in the guild's head: each pet on Solana with
@@ -25,6 +25,7 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
   const sponsor = useSponsor();
   const router = useRouter();
   const [connecting, setConnecting] = useState(false);
+  const waits = rentWaits(sponsor.data);
 
   async function join(entry: PetOnChain) {
     const member = (await deriveMemberPda(entry.pet.address)).address;
@@ -87,7 +88,7 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
                   {here ? (
                     <Button label="Leave" tone="ghost" size="sm" disabled={sender.busy} onClick={() => void leave(entry)} />
                   ) : elsewhere ? null : (
-                    <Button label="Join" tone="bloom" size="sm" icon="guild" disabled={sender.busy || !companion.canSign} onClick={() => void join(entry)} />
+                    <Button label="Join" tone="bloom" size="sm" icon="guild" disabled={sender.busy || !companion.canSign || waits} onClick={() => void join(entry)} />
                   )}
                 </div>
               );
@@ -95,7 +96,11 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
           </div>
           <p className="caption pk-faint">
             One guild per pet; joining changes nothing about it.{" "}
-            {sponsor.data?.available ? "Pawket pays the fee and the rent." : "It costs a little devnet SOL; leaving gives the rent back."}
+            {sponsor.data?.available
+              ? "Pawket pays the fee and the rent, and gets the rent back when a pet leaves."
+              : waits
+                ? "Joining waits until Pawket can cover a new place's rent again. Leaving works now."
+                : null}
           </p>
         </>
       )}

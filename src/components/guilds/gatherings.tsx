@@ -18,7 +18,7 @@ import {
 } from "@/lib/solana/instructions";
 import { deriveBallotPda, deriveEventPda, deriveMemberPda, derivePollPda, deriveRsvpPda } from "@/lib/solana/pda";
 import { GATHERING_LIMITS, PAWKET_ACCOUNTS } from "@/lib/solana/program";
-import { useSponsor, usePawketSend } from "@/lib/solana/use-send";
+import { rentWaits, useSponsor, usePawketSend } from "@/lib/solana/use-send";
 
 /**
  * A guild's gatherings: events its founder plans and its pets go to, and
@@ -51,6 +51,7 @@ export function GuildGatherings({
   const companion = useCompanion();
   const sender = usePawketSend();
   const sponsor = useSponsor();
+  const waits = rentWaits(sponsor.data);
   const router = useRouter();
   // The page's moment: events open and close against it until the page is read again.
   const [now] = useState(() => Math.floor(Date.now() / 1000));
@@ -119,7 +120,7 @@ export function GuildGatherings({
           What&apos;s on
         </h2>
         <span className="caption pk-faint">
-          Kept on Solana · {sponsor.data?.available ? "Pawket pays the fee" : "a little devnet SOL each"}
+          Kept on Solana{sponsor.data?.available ? " · Pawket pays the fee" : waits ? " · new RSVPs and votes wait for Pawket's sponsor" : ""}
         </span>
       </div>
 
@@ -176,7 +177,7 @@ export function GuildGatherings({
                         label={`Going with ${entry.pet.name}`}
                         tone="quiet"
                         size="sm"
-                        disabled={sender.busy || !companion.canSign}
+                        disabled={sender.busy || !companion.canSign || waits}
                         onClick={() => void going(event, entry.pet.address)}
                       />
                     );
@@ -218,7 +219,7 @@ export function GuildGatherings({
                       <button
                         type="button"
                         className="pk-poll__option pk-poll__option--vote"
-                        disabled={sender.busy || !companion.canSign}
+                        disabled={sender.busy || !companion.canSign || waits}
                         aria-label={`Vote ${option}, ${poll.votes[i]} so far`}
                         onClick={() => void vote(poll, i)}
                       >
@@ -266,6 +267,8 @@ function FounderDesk({
   const [options, setOptions] = useState(["", "", "", ""]);
   const [days, setDays] = useState("3");
   const [problem, setProblem] = useState<string>();
+  // Every plan and poll opens an account: they wait while Pawket cannot pay its rent.
+  const waits = rentWaits(useSponsor().data);
 
   async function plan() {
     const startsAt = Math.floor(new Date(start).getTime() / 1000);
@@ -319,7 +322,7 @@ function FounderDesk({
           <DateTimeField label="Starts" value={start} onChange={setStart} />
           <Choice label="Duration" value={hours} onPick={setHours} options={["1", "2", "3", "6", "24"].map((value) => ({ value, label: `${value} ${value === "1" ? "hour" : "hours"}` }))} />
           <div>
-            <Button label="Plan it" tone="bloom" size="sm" icon="guild" disabled={sender.busy || title.trim().length < 3 || !start} onClick={() => void plan()} />
+            <Button label="Plan it" tone="bloom" size="sm" icon="guild" disabled={sender.busy || waits || title.trim().length < 3 || !start} onClick={() => void plan()} />
           </div>
         </Stack>
       </details>
@@ -350,12 +353,13 @@ function FounderDesk({
               tone="bloom"
               size="sm"
               icon="vote"
-              disabled={sender.busy || question.trim().length < 3 || options.filter((o) => o.trim()).length < 2}
+              disabled={sender.busy || waits || question.trim().length < 3 || options.filter((o) => o.trim()).length < 2}
               onClick={() => void ask()}
             />
           </div>
         </Stack>
       </details>
+      {waits ? <p className="caption pk-faint">New events and polls wait until Pawket can cover their rent again.</p> : null}
       {problem ? (
         <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
           {problem}

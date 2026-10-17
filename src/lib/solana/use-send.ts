@@ -104,6 +104,13 @@ export function useSponsor() {
 }
 
 /**
+ * Whether actions that open an account wait: the sponsor has answered, and is
+ * not paying. A linked device never pays rent itself (`act` refuses), so a
+ * screen disables those actions and says they wait, rather than promising a cost.
+ */
+export const rentWaits = (status: SponsorStatus | undefined) => status !== undefined && !status.available;
+
+/**
  * Sends through `sendPawket` with the connected wallet as the owner and the
  * sponsor as fee payer while it is up — asked fresh at each send, so a
  * sponsor that went down is never relied on. One send at a time; the state

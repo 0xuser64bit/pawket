@@ -118,10 +118,13 @@ export function HomeScreen() {
   };
   const earned = (action: CareActionType, xp: number) => setGain({ action, xp, at: Date.now() });
 
+  // A resting care counts down by the second; otherwise vitals move a point in tens of minutes, and
+  // the whole room need not redraw every second to show it.
+  const resting = pet ? Object.values(cooldownsFor(pet, now)).some((left) => left > 0) : false;
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000);
+    const id = window.setInterval(() => setNow(new Date()), resting ? 1_000 : 30_000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [resting]);
 
   // A tool's panel opens under the deck; on a phone that is below the fold,
   // so it comes up to meet the tap rather than opening out of sight.

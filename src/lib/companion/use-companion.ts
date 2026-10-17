@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import { useConnectedWallet, useIsWalletReady } from "@solana/kit-plugin-wallet/react";
-import { useRequest } from "@solana/react";
 import type { Address } from "@solana/kit";
 import type { GuestPet } from "@/lib/guest/pet";
 import { usePets } from "@/lib/guest/use-pets";
@@ -73,15 +72,104 @@ export function choosePet(id: string) {
   for (const listener of activeListeners) listener();
 }
 
-/** The connected wallet's pets on Solana. Disabled while no wallet is connected. */
-function useOwnedPets(owner: Address | null) {
-  const fetcher = useCallback(
-    async () =>
-      (await fetchPetsOnChain(rpc, owner!)).sort((a, b) => b.pet.birthTimestamp - a.pet.birthTimestamp),
-    [owner],
-  );
-  return useRequest(owner ? fetcher : null);
+/**
+ * The connected wallet's pets on Solana, read once and shared by every screen
+ * that asks. A refresh reads again for all of them, and the newest read wins,
+ * so a read started before a confirmation never overwrites one after it.
+ * What was known stays shown when a read fails; the failure is said beside it.
+ */
+interface OwnedRead {
+  status: "loading" | "success" | "error";
+  data?: PetOnChain[];
+  error?: unknown;
+  /** When the read that answered began. */
+  at?: number;
 }
+
+/** Past this a read is given up on, so a screen is never held by a node that will not answer. */
+const READ_DEADLINE_MS = 12_000;
+/** A screen arriving later than this after the last read asks again, as each screen used to on its own. */
+const FRESH_MS = 15_000;
+const ownedReads = new Map<Address, OwnedRead>();
+const ownedListeners = new Map<Address, Set<() => void>>();
+const generations = new Map<Address, number>();
+
+function publishOwned(owner: Address, read: OwnedRead) {
+  ownedReads.set(owner, read);
+  for (const listener of ownedListeners.get(owner) ?? []) listener();
+}
+
+/** Read `owner`'s pets again, for every screen showing them. */
+export function refreshOwnedPets(owner: Address): Promise<void> {
+  const generation = (generations.get(owner) ?? 0) + 1;
+  generations.set(owner, generation);
+  const at = Date.now();
+  if (!ownedReads.has(owner)) publishOwned(owner, { status: "loading" });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Solana did not answer in time.")), READ_DEADLINE_MS);
+  });
+  return Promise.race([fetchPetsOnChain(rpc, owner), deadline])
+    .then(
+      (pets) => {
+        if (generations.get(owner) !== generation) return;
+        publishOwned(owner, { status: "success", data: pets.sort((a, b) => b.pet.birthTimestamp - a.pet.birthTimestamp), at });
+      },
+      (error: unknown) => {
+        if (generations.get(owner) !== generation) return;
+        publishOwned(owner, { status: "error", data: ownedReads.get(owner)?.data, error, at });
+      },
+    )
+    .finally(() => clearTimeout(timer));
+}
+
+function subscribeOwned(owner: Address | null, listener: () => void) {
+  if (!owner) return () => {};
+  const set = ownedListeners.get(owner) ?? new Set();
+  set.add(listener);
+  ownedListeners.set(owner, set);
+  // The first screen to ask starts the read; the rest share it, unless it has grown old.
+  const read = ownedReads.get(owner);
+  if (!read || (read.at !== undefined && Date.now() - read.at > FRESH_MS)) void refreshOwnedPets(owner);
+  return () => {
+    set.delete(listener);
+  };
+}
+
+function useOwnedPets(owner: Address | null) {
+  const read = useSyncExternalStore(
+    (listener) => subscribeOwned(owner, listener),
+    () => (owner ? ownedReads.get(owner) : undefined),
+    () => undefined,
+  );
+  const refresh = useCallback(() => {
+    if (owner) void refreshOwnedPets(owner);
+  }, [owner]);
+  return { status: read?.status, data: read?.data, error: read?.error, refresh };
+}
+
+/**
+ * How long a screen waits for a wallet's pets before it shows the browser's:
+ * local play never waits on Solana, and a chain pet swaps in when it arrives.
+ */
+const PATIENCE_MS = 4_000;
+let patienceOver = false;
+let patienceStarted = false;
+const patienceListeners = new Set<() => void>();
+function subscribePatience(listener: () => void) {
+  patienceListeners.add(listener);
+  if (!patienceStarted) {
+    patienceStarted = true;
+    setTimeout(() => {
+      patienceOver = true;
+      for (const each of patienceListeners) each();
+    }, PATIENCE_MS);
+  }
+  return () => {
+    patienceListeners.delete(listener);
+  };
+}
+const usePatienceOver = () => useSyncExternalStore(subscribePatience, () => patienceOver, () => false);
 
 export function useCompanion(): CompanionState {
   const { ready: guestReady, pets: guests } = usePets();
@@ -107,12 +195,15 @@ export function useCompanion(): CompanionState {
   const all = useMemo(() => [...records, ...guests], [records, guests]);
   const chainSettled = !owner || pets.status === "success" || pets.status === "error" || pets.data !== undefined;
   const settled = guestReady && walletReady && chainSettled;
+  const patient = usePatienceOver();
+  // A browser pet never waits on Solana: one chosen here shows at once, and any shows after a few seconds.
+  const localFirst = guestReady && guests.length > 0 && (guests.some((each) => each.id === chosen) || patient);
   useEffect(() => {
     if (settled) settledOnce = true;
   }, [settled]);
 
   return {
-    ready: settled || (settledOnce && guestReady),
+    ready: settled || localFirst || (settledOnce && guestReady),
     reading: Boolean(owner) && !chainSettled,
     pet: record ?? guest,
     active,

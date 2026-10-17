@@ -3,13 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Button } from "@/components/pk";
-import { useCompanion } from "@/lib/companion/use-companion";
+import { choosePet } from "@/lib/companion/use-companion";
 import { useConnected } from "@/lib/solana/browser-client";
 
 /** On your own pet's record, the way home. Anyone else sees the record and nothing to press. */
 export function OwnerActions({ owner, address, name }: { owner: string; address: string; name: string }) {
   const connected = useConnected();
-  const { choose } = useCompanion();
   const router = useRouter();
   const [opening, startOpening] = useTransition();
   if (connected?.account.address !== owner) return null;
@@ -21,7 +20,7 @@ export function OwnerActions({ owner, address, name }: { owner: string; address:
       size="sm"
       busy={opening}
       onClick={() => {
-        choose(address);
+        choosePet(address);
         startOpening(() => router.push("/home", { transitionTypes: ["nav-place"] }));
       }}
     />

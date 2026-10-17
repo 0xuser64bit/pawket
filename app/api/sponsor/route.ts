@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { cosign, SponsorRefusal } from "@/lib/solana/sponsor";
 import { caller as callerOf } from "@/server/actions";
-import { actionLimit, mayPayRent, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
+import { actionLimit, mayPayRent, sponsorAddress, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
 
 /**
  * The sponsor: pays the network fee, and the rent of a new pet, a new guild
@@ -26,7 +26,12 @@ export async function GET() {
       { headers: { "cache-control": "no-store" } },
     );
   } catch {
-    return NextResponse.json({ available: false, reason: "The sponsor cannot reach the network." });
+    // The address is public: a history can still tell the fees Pawket paid while the network is down.
+    const address = await sponsorAddress();
+    return NextResponse.json(
+      { available: false, reason: "The sponsor cannot reach the network.", ...(address ? { address } : {}) },
+      { headers: { "cache-control": "no-store" } },
+    );
   }
 }
 

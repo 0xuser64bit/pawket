@@ -475,8 +475,15 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
   const companion = useCompanion();
   const sponsor = useSponsor();
   const names = new Map(companion.owned.map((entry) => [entry.pet.address as string, entry.pet.name]));
+  // Until the sponsor has answered, a fee another key paid is not yet told apart from a device's.
   const paidBy = (entry: WalletEntry) =>
-    entry.feePayer === owner ? "paid by you" : entry.feePayer === sponsor.data?.address ? "paid by Pawket" : "paid by a device, from your balance";
+    entry.feePayer === owner
+      ? " · fee paid by you"
+      : sponsor.data?.address && entry.feePayer === sponsor.data.address
+        ? " · fee paid by Pawket"
+        : sponsor.data
+          ? " · fee paid by a device, from your balance"
+          : "";
   const rent = useRequest(rentOfWallet);
   // Read again whenever the wallet moves; the rent first, since it is never the balance.
   const version = `${wallet.address}:${wallet.actions}:${wallet.deposited}:${wallet.withdrawn}:${wallet.spent}:${wallet.device}`;
@@ -519,7 +526,7 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
                 <span className="pk-ledger__what">
                   <span className="body-sm">{describe(entry, names)}</span>
                   <span className="caption pk-faint">
-                    {entry.at ? formatAgo(now - entry.at) : "time unknown"} · fee {paidBy(entry)}
+                    {entry.at ? formatAgo(now - entry.at) : "time unknown"}{paidBy(entry)}
                     {entry.ok ? "" : " · refused, nothing changed"}
                   </span>
                 </span>

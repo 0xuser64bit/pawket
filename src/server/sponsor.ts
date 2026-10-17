@@ -32,7 +32,8 @@ const MIN_FLOAT_LAMPORTS = 50_000_000n;
 
 export type SponsorState =
   | { available: true; address: string; signer: KeyPairSigner }
-  | { available: false; reason: string };
+  /** `address`, when a key is set: its public half, so a history can still say which fees Pawket paid. */
+  | { available: false; reason: string; address?: string };
 
 let signer: Promise<KeyPairSigner> | null = null;
 let float: { checkedAt: number; lamports: bigint } | null = null;
@@ -52,7 +53,14 @@ export async function sponsorState(): Promise<SponsorState> {
   }
   const keypair = getServerEnv().sponsorKeypair;
   if (!keypair) return { available: false, reason: "Fees are not covered on this deployment." };
-  signer ??= createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(keypair) as number[]));
+  signer ??= Promise.resolve()
+    .then(() => createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(keypair) as number[])))
+    .catch((error: unknown) => {
+      // Never kept: a deployment fixed without a restart reads the key again. The key itself is never logged.
+      signer = null;
+      console.error("[sponsor] SPONSOR_KEYPAIR is not a valid keypair:", error instanceof Error ? error.name : "unknown");
+      throw new Error("The sponsor's key is not valid on this deployment.");
+    });
   const sponsor = await signer;
   if (!float || Date.now() - float.checkedAt > 30_000) {
     const { value } = await sponsorRpc().getBalance(sponsor.address, { commitment: "confirmed" }).send();
@@ -60,9 +68,18 @@ export async function sponsorState(): Promise<SponsorState> {
     noteFloat(value);
   }
   if (float.lamports < MIN_FLOAT_LAMPORTS) {
-    return { available: false, reason: "Pawket's fee float is empty for now." };
+    return { available: false, reason: "Pawket's fee float is empty for now.", address: sponsor.address };
   }
   return { available: true, address: sponsor.address, signer: sponsor };
+}
+
+/** The sponsor's public address, without asking the network; null without a usable key. */
+export async function sponsorAddress(): Promise<string | null> {
+  const keypair = getServerEnv().sponsorKeypair;
+  if (!keypair) return null;
+  return createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(keypair) as number[]))
+    .then((key) => key.address)
+    .catch(() => null);
 }
 
 const HOUR = 60 * 60 * 1000;

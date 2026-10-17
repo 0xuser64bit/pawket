@@ -25,6 +25,7 @@ import { EmoteRow } from "@/components/home/emote-row";
 import { PhotoDialog } from "@/components/home/photo";
 import { chime } from "@/lib/play/sound";
 import { RoomSound } from "./room-sound";
+import { HomeScreenTip } from "./home-screen-tip";
 import { SigningNote } from "./signing-note";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { Room, RoomViewSwitch, useRoomMode, type RoomState } from "@/components/home/room";
@@ -588,6 +589,7 @@ function HomeFoot({ pet, onChain, others }: { pet: GuestPet; onChain: boolean; o
   const { here } = useHere();
   return (
     <div className="pk-home__foot">
+      {onChain ? null : <HomeScreenTip name={pet.name} />}
       <Card href={`/pet/${pet.id}`} className="pk-rowcard">
         <span className="pk-rowcard__words">
           <span className="title">{pet.name}&apos;s record</span>

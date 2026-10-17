@@ -106,6 +106,8 @@ export function Toasts() {
       className="pk-toasts"
       data-toasts
       data-open={fanned ? "" : undefined}
+      // The one live region, there before any toast is: a toast inside it is not another, or a
+      // screen reader would say it twice (and an alert inside it, out of turn).
       aria-live="polite"
       onPointerEnter={(event) => event.pointerType === "mouse" && setOpen(true)}
       onPointerLeave={(event) => event.pointerType === "mouse" && setOpen(false)}
@@ -153,7 +155,6 @@ function ToastCard({ toast, depth, onTap }: { toast: Shown; depth: number; onTap
     <div
       ref={card}
       className={`pk-toast pk-toast--${toast.tone}`}
-      role={toast.tone === "risk" ? "alert" : "status"}
       data-depth={depth < 0 ? undefined : depth}
       data-leaving={toast.leaving ? "" : undefined}
       style={depth > 0 ? ({ "--depth": depth } as CSSProperties) : undefined}

@@ -66,3 +66,13 @@ it("goes when a finger flicks it up or aside, and springs back from a nudge", ()
   fireEvent.pointerUp(card, { pointerType: "touch", pointerId: 3, clientX: 100, clientY: 40 });
   expect(card.hasAttribute("data-leaving")).toBe(true);
 });
+
+it("is one live region, so a toast is said once, a refusal included", () => {
+  render(<Toasts />);
+  act(() => showToast({ id: "refused", tone: "risk", title: "Feed Mango: refused" }));
+  show("kept");
+  expect(document.querySelector(".pk-toasts")!.getAttribute("aria-live")).toBe("polite");
+  expect(document.querySelectorAll(".pk-toasts [aria-live], .pk-toasts [role=status], .pk-toasts [role=alert]")).toHaveLength(0);
+  for (const title of ["refused", "kept"]) dismissToast(title);
+  act(() => vi.runAllTimers());
+});

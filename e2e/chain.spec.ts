@@ -198,7 +198,7 @@ test("a Pawket Wallet links this browser, and a care on Solana asks the wallet n
   await page.goto("/home");
   const before = await signedByWallet(page);
   await page.getByRole("button", { name: "Feed" }).click();
-  const careReceipt = page.getByRole("status").filter({ has: page.getByText(`Feed ${name}`, { exact: true }) });
+  const careReceipt = page.locator(".pk-toast").filter({ has: page.getByText(`Feed ${name}`, { exact: true }) });
   await expect(careReceipt.getByText(/Recorded on Solana, no pop-up/)).toBeVisible({ timeout: 120_000 });
   expect(await signedByWallet(page)).toBe(before);
 

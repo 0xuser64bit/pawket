@@ -35,6 +35,8 @@ test("a browser pet moves onto Solana, is fed there, and has a public record", a
 
   await page.goto("/wallet");
   await expect(page.getByRole("heading", { name: "Set up your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
+  // While Pawket sponsors the wallet can start empty; this run puts a little in, as before.
+  await page.getByRole("radio", { name: "0.01 SOL", exact: true }).click();
   await page.getByRole("button", { name: "Link this browser" }).click();
   await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
   await page.goto("/home");
@@ -94,6 +96,8 @@ test("a pet on Solana founds a guild, and the guild shows it", async ({ page }) 
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await page.goto("/wallet");
   await expect(page.getByRole("heading", { name: "Set up your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
+  // While Pawket sponsors the wallet can start empty; this run puts a little in, as before.
+  await page.getByRole("radio", { name: "0.01 SOL", exact: true }).click();
   await page.getByRole("button", { name: "Link this browser" }).click();
   await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
   await page.goto("/home");
@@ -181,6 +185,8 @@ test("a Pawket Wallet links this browser, and a care on Solana asks the wallet n
   await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet" }).click();
   await page.goto("/wallet");
   await expect(page.getByRole("heading", { name: "Set up your Pawket Wallet" })).toBeVisible({ timeout: 60_000 });
+  // While Pawket sponsors the wallet can start empty; this run puts a little in, as before.
+  await page.getByRole("radio", { name: "0.01 SOL", exact: true }).click();
   await page.getByRole("button", { name: "Link this browser" }).click();
   await expect(page.getByText("This browser is linked")).toBeVisible({ timeout: 120_000 });
   await page.goto("/home");

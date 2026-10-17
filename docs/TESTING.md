@@ -77,11 +77,15 @@ gitleaks git --redact --log-opts=--all .  # every local Git ref, including old c
 ## Verification boundaries
 
 The GitHub `Verify` workflow runs `pnpm verify`, Chromium browser tests against
-that production build and a full fetched-history Gitleaks scan. Playwright
-starts `pnpm start` when `CI` is set; build first when reproducing CI locally.
-Without `CI`, it starts or reuses the development server. The workflow has no
-signing secrets and does not run opt-in devnet, LiteSVM or Android release checks. Source changes
-to those layers still require their owning suites. Gitleaks extends its
+that production build, a full fetched-history Gitleaks scan, the program's
+build and LiteSVM suite (failing when the built IDL differs from the committed
+one), the Android shell's unit tests and lint, and `pnpm audit` and `cargo
+audit`. Playwright starts `pnpm start` when `CI` is set; build first when
+reproducing CI locally. Without `CI`, it starts or reuses the development
+server. The workflow has no signing secrets and does not run the opt-in devnet
+suites or the Android release and device checks; changes to those layers still
+require their owning checks. The `Watch` workflow checks the live site, its RPC
+and the sponsor's float every four hours once `main` carries it. Gitleaks extends its
 default rules with Solana CLI keypair-array detection; its only value
 exceptions are two public browser-storage names from early commits.
 

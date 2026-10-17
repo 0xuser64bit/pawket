@@ -1,5 +1,12 @@
 packages:
   - "."
+# The two advisories docs/SECURITY.md accepts, neither with a fixed release: bigint-buffer
+# (CVE-2025-3194, patched locally) and braces (CVE-2026-93687, lint tooling only). Any other
+# high or critical one fails `pnpm audit --audit-level high` in CI.
+auditConfig:
+  ignoreCves:
+    - CVE-2025-3194
+    - CVE-2026-93687
 
 ignoredOptionalDependencies:
   - "@react-native-async-storage/async-storage"

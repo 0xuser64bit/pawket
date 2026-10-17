@@ -40,3 +40,88 @@ jobs:
       - name: Scan all fetched history
         # Gitleaks 8.30.1, linux/amd64; pin the image as well as the actions.
         run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks@sha256:b109bc5f8f76a38196a3e413704fc5b9e3c32360bce4e4b603bd6f45b3721dbb git --config=/repo/.gitleaks.toml --redact --log-opts=--all /repo
+
+  program:
+    # The program's own suite (LiteSVM, the lockstep replay included) and the IDL it builds,
+    # held to the one committed beside the client.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SOLANA_VERSION: 3.1.15
+      ANCHOR_VERSION: 1.2.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/bin/anchor
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.local/share/solana
+            ~/.cache/solana
+            target
+          key: program-${{ runner.os }}-${{ env.SOLANA_VERSION }}-${{ env.ANCHOR_VERSION }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: program-${{ runner.os }}-${{ env.SOLANA_VERSION }}-${{ env.ANCHOR_VERSION }}-
+      - name: Solana CLI and its SBF platform tools
+        run: |
+          if [ ! -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
+            sh -c "$(curl -sSfL "https://release.anza.xyz/v${SOLANA_VERSION}/install")"
+          fi
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+      - name: Anchor CLI
+        run: |
+          if ! anchor --version 2>/dev/null | grep -q "$ANCHOR_VERSION"; then
+            cargo install anchor-cli --version "$ANCHOR_VERSION" --locked --force
+          fi
+      - name: Build the program and its IDL
+        run: |
+          anchor build --arch v2
+          cp target/idl/pawket.json src/lib/solana/idl/pawket.json
+      - name: The committed IDL is the one the source builds
+        run: git diff --exit-code src/lib/solana/idl/pawket.json
+      - name: LiteSVM suite
+        run: cargo test -p pawket
+
+  android:
+    # The shell's own checks: origin, picture and file-name boundaries, and lint.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Unit tests and lint
+        run: ./gradlew --no-daemon testDebugUnitTest lintDebug
+
+  audit:
+    # Advisories in what ships: any high or critical one beyond the two docs/SECURITY.md
+    # accepts (pnpm-workspace.yaml) fails, and so does any Rust vulnerability.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+      - run: pnpm audit --audit-level high
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cargo/bin/cargo-audit
+          key: cargo-audit-${{ runner.os }}-0.22
+      - name: cargo audit
+        run: |
+          command -v cargo-audit >/dev/null || cargo install cargo-audit --version "^0.22" --locked
+          cargo audit

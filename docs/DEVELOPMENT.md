@@ -100,4 +100,7 @@ secret, a balance or a provider URL. Server errors log one JSON line
 a browser logs `"pawket":"client-error"` through `/api/report` while its player
 is counted, and sponsor failures log `"pawket":"sponsor"`; each message is
 scrubbed of URLs and addresses (`src/lib/analytics/scrub.ts`). Search a
-deployment's runtime logs for those keys.
+deployment's runtime logs for those keys. The `Watch` workflow
+(`.github/workflows/watch.yml`) checks pawket.world's health and that the
+sponsor holds more than 2 SOL every four hours, and a failed run notifies the
+repository's owner; GitHub runs it only from the default branch.

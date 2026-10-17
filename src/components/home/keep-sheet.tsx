@@ -14,6 +14,7 @@ import { getAdoptPetInstruction } from "@/lib/solana/instructions";
 import { derivePassportPda, derivePetPda } from "@/lib/solana/pda";
 import { needsSol, useSponsor, type PawketSender } from "@/lib/solana/use-send";
 import { useHere } from "@/lib/native/android";
+import { useLinkBrowser } from "@/lib/wallet/link";
 import { record } from "@/lib/analytics/events";
 
 /**
@@ -23,6 +24,9 @@ import { record } from "@/lib/analytics/events";
  * saw, so the record there starts today, at level 1 — said here, with the
  * pet's own level beside it, before the wallet opens rather than after.
  */
+/** How recently a chain pet must have been born to be taken for this browser pet's own keep. */
+const LATELY_MS = 6 * 60 * 60 * 1000;
+
 export function KeepSheet({
   pet,
   owner,
@@ -47,13 +51,34 @@ export function KeepSheet({
   const cluster = getPublicEnv().solanaCluster;
   const level = calculateLevelFromXp(pet.xp);
   const fresh = pet.xp === 0;
-  const ready = Boolean(sender.pawketWallet?.linked) && !needsSol(sender.pawketWallet?.balance ?? 0n, Boolean(sponsor.data?.available));
+  const sponsored = Boolean(sponsor.data?.available);
+  const linked = Boolean(sender.pawketWallet?.linked);
+  const ready = linked && !needsSol(sender.pawketWallet?.balance ?? 0n, sponsored);
+  const linking = useLinkBrowser();
+  // While Pawket sponsors, linking needs no SOL: one approval links this browser, and it keeps the pet at once.
+  const linkHere = sponsored && !linked;
+
+  /** This browser pet's keep, already on Solana: its name, species and temperament, born there since it was here, and lately. */
+  const isThisKeep = (found: NonNullable<Awaited<ReturnType<typeof fetchPetOnChain>>>) =>
+    found.pet.species === pet.species &&
+    found.pet.personality === pet.personality &&
+    found.pet.birthTimestamp * 1000 >= Date.parse(pet.createdAt) &&
+    Date.now() - found.pet.birthTimestamp * 1000 < LATELY_MS;
+
+  function carried(address: Awaited<ReturnType<typeof derivePetPda>>["address"]) {
+    record({ name: "keep_confirmed" });
+    onCarried(address);
+    onDismiss();
+  }
 
   async function carry() {
     if (!owner) return;
     record({ name: "keep_started" });
     const petPda = (await derivePetPda(owner, pet.name)).address;
-    if (await fetchPetOnChain(rpc, petPda).catch(() => null)) {
+    const existing = await fetchPetOnChain(rpc, petPda).catch(() => null);
+    if (existing) {
+      // A keep that landed while this sheet could not hear back — a lost answer, a reload — is not a clash.
+      if (isThisKeep(existing)) return carried(petPda);
       record({ name: "keep_blocked", reason: "name-taken" });
       setTaken(true);
       return;
@@ -70,11 +95,20 @@ export function KeepSheet({
         personality: pet.personality,
       }),
     ]);
-    if (result?.outcome === "confirmed") {
-      record({ name: "keep_confirmed" });
-      onCarried(petPda);
-      onDismiss();
+    if (result?.outcome === "confirmed") return carried(petPda);
+    if (result?.outcome === "unknown") {
+      // The answer was lost, not the pet: look for the pet itself before anyone tries again.
+      for (let tries = 0; tries < 6; tries++) {
+        await new Promise((resolve) => setTimeout(resolve, 5_000));
+        const found = await fetchPetOnChain(rpc, petPda).catch(() => null);
+        if (found && isThisKeep(found)) return carried(petPda);
+      }
     }
+  }
+
+  async function linkThenCarry() {
+    const result = await linking.link({ deposit: 0n });
+    if (result?.outcome === "confirmed") await carry();
   }
 
   if (connecting) {
@@ -96,7 +130,16 @@ export function KeepSheet({
         <div className="pk-spread">
           <Button tone="ghost" size="sm" label="Not now" onClick={dismiss} />
           {owner && canSign && !ready ? (
-            <ButtonLink label="Set up Pawket Wallet" icon="wallet" href="/wallet" onClick={() => record({ name: "keep_blocked", reason: "needs-wallet" })} />
+            linkHere ? (
+              <Button
+                label={`Link ${here}, then keep`}
+                icon="bolt"
+                disabled={linking.busy || sender.busy || taken}
+                onClick={() => void linkThenCarry()}
+              />
+            ) : (
+              <ButtonLink label="Set up Pawket Wallet" icon="wallet" href="/wallet" onClick={() => record({ name: "keep_blocked", reason: "needs-wallet" })} />
+            )
           ) : owner && canSign ? (
             <Button
               label="Keep on Solana"
@@ -143,6 +186,17 @@ export function KeepSheet({
             ? `${pet.name} is brand new, so nothing is lost: their record starts today either way.`
             : `Psst — Solana only keeps what it sees, so ${pet.name} starts there at level 1 with a fresh streak. Their name, look and personality come along; the sooner, the less there is to start over.`}
         </p>
+        {owner && canSign && linkHere ? (
+          <p className="body-sm pk-muted">
+            Your wallet approves once, to link {here} to your Pawket Wallet. Pawket pays the fees and the rent, and {here}{" "}
+            keeps {pet.name} on Solana straight after, with no second pop-up.
+          </p>
+        ) : null}
+        {linking.problem ? (
+          <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
+            {linking.problem}
+          </p>
+        ) : null}
         {owner && !canSign ? <p className="body-sm pk-muted">This wallet can only be read, not signed with. Connect one that signs.</p> : null}
         {taken ? (
           <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>

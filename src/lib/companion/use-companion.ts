@@ -43,7 +43,8 @@ export interface CompanionState {
   canSign: boolean;
   /** Solana did not answer; the screen falls back to the browser pets. */
   chainError: unknown;
-  refresh: () => void;
+  /** Read the wallet's pets again, for every screen; resolves once they are read. */
+  refresh: () => Promise<void>;
   /** Bring a pet home, by its id (a browser id or an address). Remembered on this device. */
   choose: (id: string) => void;
 }
@@ -142,9 +143,7 @@ function useOwnedPets(owner: Address | null) {
     () => (owner ? ownedReads.get(owner) : undefined),
     () => undefined,
   );
-  const refresh = useCallback(() => {
-    if (owner) void refreshOwnedPets(owner);
-  }, [owner]);
+  const refresh = useCallback(() => (owner ? refreshOwnedPets(owner) : Promise.resolve()), [owner]);
   return { status: read?.status, data: read?.data, error: read?.error, refresh };
 }
 

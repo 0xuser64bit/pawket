@@ -409,7 +409,14 @@ export function HomeScreen() {
           onCarried={(address) => {
             carried.current = { id: keeping.id, address };
             companion.choose(address);
-            companion.refresh();
+            // A node can answer a moment before it has the new pet: read again until it does, then the browser copy goes.
+            void (async () => {
+              for (let tries = 0; tries < 6 && carried.current?.address === address; tries++) {
+                await companion.refresh();
+                if (carried.current?.address !== address) return;
+                await new Promise((resolve) => setTimeout(resolve, 2_000));
+              }
+            })();
           }}
         />
       ) : null}

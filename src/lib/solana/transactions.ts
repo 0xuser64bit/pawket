@@ -312,3 +312,36 @@ export async function waitForConfirmation(
     await sleep(1000);
   }
 }
+
+interface SettleRpc {
+  rpc: ConfirmationRpc["rpc"] & {
+    isBlockhashValid: (blockhash: never, config?: { commitment?: "processed" | "confirmed" | "finalized" }) => {
+      send: (options?: { abortSignal?: AbortSignal }) => Promise<{ value: boolean }>;
+    };
+  };
+}
+
+/** How an uncertain send ended, once looked into: recorded, never landing, or still not known. */
+export type Settled = "confirmed" | "expired" | "unknown";
+
+/**
+ * After the first wait came back "unknown": keep looking up the signature
+ * until Solana records it, or its blockhash has expired with nothing
+ * recorded (then it can never land, and nothing changed), or `timeoutMs`
+ * passes. A recorded refusal throws, as in `waitForConfirmation`. Never
+ * sends anything.
+ */
+export async function settleSignature(client: SettleRpc, signature: string, blockhash: string, timeoutMs = 120_000): Promise<Settled> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    if ((await waitForConfirmation(client, signature, 0)) === "confirmed") return "confirmed";
+    const valid = await client.rpc
+      .isBlockhashValid(blockhash as never, { commitment: "processed" })
+      .send({ abortSignal: AbortSignal.timeout(10_000) })
+      .then(({ value }) => value, () => true);
+    // Expired, and still nothing recorded: one last look, so a landing at the very end is not missed.
+    if (!valid) return (await waitForConfirmation(client, signature, 0)) === "confirmed" ? "confirmed" : "expired";
+    if (Date.now() >= deadline) return "unknown";
+    await sleep(3000);
+  }
+}

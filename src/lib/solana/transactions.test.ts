@@ -3,7 +3,7 @@ import {
   SolanaError,
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
 } from "@solana/kit";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   extractProgramErrorCode,
   isActiveStage,
@@ -12,6 +12,7 @@ import {
   mobileWalletErrorCode,
   mobileWalletProblem,
   pawketErrorMessage,
+  settleSignature,
   toUserFacingError,
   waitForConfirmation,
 } from "./transactions";
@@ -197,5 +198,38 @@ describe("waitForConfirmation", () => {
       throw new TypeError("Failed to fetch");
     } }) } };
     await expect(waitForConfirmation(client, "sig", 0)).resolves.toBe("unknown");
+  });
+});
+
+describe("settleSignature", () => {
+  const client = (statuses: unknown[], valid: boolean[]) => {
+    let looked = 0;
+    let asked = 0;
+    return {
+      rpc: {
+        getSignatureStatuses: () => ({ send: async () => ({ value: [statuses[Math.min(looked++, statuses.length - 1)]] }) }),
+        isBlockhashValid: () => ({ send: async () => ({ value: valid[Math.min(asked++, valid.length - 1)] }) }),
+      },
+    };
+  };
+
+  it("is confirmed once Solana records it, however late", async () => {
+    vi.useFakeTimers();
+    const settling = settleSignature(client([null, null, { confirmationStatus: "confirmed", err: null }], [true]), "sig", "hash");
+    await vi.advanceTimersByTimeAsync(10_000);
+    await expect(settling).resolves.toBe("confirmed");
+    vi.useRealTimers();
+  });
+
+  it("is expired when its blockhash ran out with nothing recorded: it can never land", async () => {
+    await expect(settleSignature(client([null], [false]), "sig", "hash")).resolves.toBe("expired");
+  });
+
+  it("is still unknown when the node keeps not knowing until the deadline", async () => {
+    await expect(settleSignature(client([null], [true]), "sig", "hash", 0)).resolves.toBe("unknown");
+  });
+
+  it("throws a refusal that landed, like a first confirmation would", async () => {
+    await expect(settleSignature(client([{ confirmationStatus: "confirmed", err: { InstructionError: [0, { Custom: 6002 }] } }], [true]), "sig", "hash")).rejects.toMatchObject({ programError: 6002 });
   });
 });

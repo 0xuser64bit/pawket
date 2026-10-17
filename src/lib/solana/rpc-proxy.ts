@@ -17,6 +17,7 @@ const PROXIED_METHODS: ReadonlySet<string> = new Set([
   "getSignaturesForAddress",
   "getTokenAccountsByOwner",
   "getTransaction",
+  "isBlockhashValid",
   "sendTransaction",
 ]);
 

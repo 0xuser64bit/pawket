@@ -7,7 +7,7 @@ const SYSTEM = "11111111111111111111111111111111";
 
 describe("checkRpcRequest", () => {
   it("passes the calls the app makes", () => {
-    for (const method of ["getBalance", "getLatestBlockhash", "sendTransaction", "getSignatureStatuses", "getTransaction"]) {
+    for (const method of ["getBalance", "getLatestBlockhash", "sendTransaction", "getSignatureStatuses", "getTransaction", "isBlockhashValid"]) {
       expect(checkRpcRequest(call(method, []))).toEqual({ ok: true, method });
     }
     expect(checkRpcRequest(call("getProgramAccounts", [PAWKET_PROGRAM_ID, {}]))).toMatchObject({ ok: true });

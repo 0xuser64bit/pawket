@@ -127,7 +127,7 @@ describe("broadcast uncertainty", () => {
       } }),
     } as unknown as SendRpc;
     await expect(sendPawket({ rpc, owner, sponsor: null, instructions: () => [] })).resolves.toEqual({
-      signature: expect.any(String), outcome: "confirmed", sponsored: false,
+      signature: expect.any(String), outcome: "confirmed", sponsored: false, blockhash: "11111111111111111111111111111111",
     });
     expect(sent).toBe(1);
   });

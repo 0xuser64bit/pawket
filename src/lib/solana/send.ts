@@ -70,6 +70,8 @@ export interface SendResult {
   signature: string;
   outcome: ConfirmationOutcome;
   sponsored: boolean;
+  /** The blockhash it was signed against: when it expires, an unconfirmed send can no longer land. */
+  blockhash: string;
 }
 
 /** A failure the sponsor reported, carrying what the UI needs to say it. */
@@ -241,6 +243,7 @@ async function land(
   onStage?.("sending");
   const wire = getBase64EncodedWireTransaction(signed);
   const signature = getSignatureFromTransaction(signed);
+  const blockhash = getCompiledTransactionMessageDecoder().decode(signed.messageBytes).lifetimeToken;
   try {
     await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" })
       .send({ abortSignal: AbortSignal.timeout(CONFIRMATION_TIMEOUT_MS) });
@@ -259,5 +262,5 @@ async function land(
     throw Object.assign(error instanceof Error ? error : new Error(String(error)), { signature });
   }
   onStage?.(outcome);
-  return { signature, outcome, sponsored };
+  return { signature, outcome, sponsored, blockhash };
 }

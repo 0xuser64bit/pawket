@@ -24,8 +24,10 @@ type Props = { params: Promise<{ pet: string }> };
 
 export async function GET(_request: Request, { params }: Props) {
   const { pet } = await params;
-  const onChain = isAddress(pet) ? await readPet(pet).catch(() => null) : null;
   const headers = { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300, s-maxage=300" };
+  // A wallet reads this the moment a card is made: Solana not answering is said and never cached as "no such pet".
+  const onChain = isAddress(pet) ? await readPet(pet).catch(() => undefined) : null;
+  if (onChain === undefined) return NextResponse.json({ error: "Solana did not answer. Try again." }, { status: 503, headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" } });
   if (!onChain) return NextResponse.json({ error: "No pet lives at that address." }, { status: 404, headers });
 
   const app = getPublicEnv().appUrl;

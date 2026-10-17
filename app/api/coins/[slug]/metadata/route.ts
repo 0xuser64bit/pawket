@@ -16,8 +16,10 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function GET(_request: Request, { params }: Props) {
   const { slug } = await params;
-  const guild = isValidSlug(slug) ? await readGuild(slug).catch(() => null) : null;
   const headers = { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300, s-maxage=300" };
+  // Only a read that answered "no such guild" is a 404 worth keeping; Solana not answering is said and never cached.
+  const guild = isValidSlug(slug) ? await readGuild(slug).catch(() => undefined) : null;
+  if (guild === undefined) return NextResponse.json({ error: "Solana did not answer. Try again." }, { status: 503, headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" } });
   if (!guild) return NextResponse.json({ error: "No guild has that name." }, { status: 404, headers });
   const app = getPublicEnv().appUrl;
   return NextResponse.json(

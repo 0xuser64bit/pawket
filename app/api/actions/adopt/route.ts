@@ -77,7 +77,7 @@ export async function POST(request: Request) {
           type: "completed",
           icon: absolute(request, `/api/actions/icon?pet=${pet}`),
           title: `${name} is yours`,
-          description: `Kept on Solana devnet. Their record is at ${absolute(request, `/pet/${pet}`)} — open it, care for them, show them to the park.`,
+          description: `Kept on Solana devnet. Care for them at ${absolute(request, "/home")}: connect this wallet and link your browser once, and their care needs no more pop-ups. Their record is at ${absolute(request, `/pet/${pet}`)}.`,
           label: "Adopted",
         },
       },

@@ -29,6 +29,7 @@ import { PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { choosePet } from "@/lib/companion/use-companion";
 import { createGuestPet, nameTaken, projectGuestPet, type GuestPet } from "@/lib/guest/pet";
 import { removePet, savePet } from "@/lib/guest/storage";
+import { askBrowserToKeep } from "@/lib/utils/persist";
 import { usePets } from "@/lib/guest/use-pets";
 import { useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend } from "@/lib/solana/use-send";
@@ -225,7 +226,11 @@ export function AdoptFlow() {
     try {
       const created = createGuestPet({ name, species, personality });
       const saved = savePet(created);
-      if (saved) choosePet(created.id);
+      if (saved) {
+        choosePet(created.id);
+        // The pet lives only in this browser: ask it to keep the storage rather than clear it.
+        void askBrowserToKeep();
+      }
       setAdopted(created);
       setStored(saved);
       setError(undefined);
@@ -241,7 +246,10 @@ export function AdoptFlow() {
   function retrySave() {
     if (!adopted) return;
     const saved = savePet(adopted);
-    if (saved) choosePet(adopted.id);
+    if (saved) {
+      choosePet(adopted.id);
+      void askBrowserToKeep();
+    }
     setStored(saved);
   }
 

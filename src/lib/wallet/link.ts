@@ -8,6 +8,7 @@ import { usePawketSend } from "@/lib/solana/use-send";
 import { loadDevice, makeDevice } from "./device";
 import { refreshPawketWallet } from "./pawket-wallet";
 import { inAndroidApp } from "@/lib/native/android";
+import { askBrowserToKeep } from "@/lib/utils/persist";
 
 /** A link's end: a few minutes inside the program's 30 days, so a clock running ahead is not refused. */
 const linkEnds = (days: number) => Math.floor(Date.now() / 1000) + Math.min(days * 86_400, WALLET_LIMITS.maxDeviceSeconds) - 600;
@@ -48,7 +49,11 @@ export function useLinkBrowser() {
         ...(deposit > 0n ? [getDepositInstruction({ owner: signer, wallet, amount: deposit })] : []),
         getLinkDeviceInstruction({ owner: signer, wallet, device, expiresAt: linkEnds(days), dailyActions: daily }),
       ]);
-      if (result) await refreshPawketWallet(owner);
+      if (result) {
+        await refreshPawketWallet(owner);
+        // The device key is in this browser's storage: losing it means linking again.
+        if (result.outcome === "confirmed") void askBrowserToKeep();
+      }
       return result;
     } finally { setPreparing(false); }
   }

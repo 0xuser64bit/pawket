@@ -233,20 +233,33 @@ fn owner_approved_external_spending_returns_change_and_sale_proceeds_to_pawket_w
     ok(env.send(&[fund.clone(), transfer(&recipient.pubkey(), &owner.pubkey(), 30_000_000), settle.clone()], &device, &[&owner, &recipient]));
     assert_eq!(env.lamports(&owner.pubkey()), keep);
     assert_eq!(env.balance(&owner.pubkey()) - before, 30_000_000 - 15_000);
-    // Consuming any preexisting owner SOL rolls every transfer back.
+    // Consuming any preexisting owner SOL rolls every transfer back: the settlement says so.
     let before = env.balance(&owner.pubkey());
-    expect_pawket(&env.send(&[fund.clone(), transfer(&owner.pubkey(), &recipient.pubkey(), 20_000_001), settle.clone()], &device, &[&owner]), PawketError::InsufficientBalance);
+    let overspend = transfer(&owner.pubkey(), &recipient.pubkey(), 20_000_001);
+    expect_pawket_at(&env.send(&[fund.clone(), overspend, settle.clone()], &device, &[&owner]), 2, PawketError::InsufficientBalance);
     assert_eq!(env.lamports(&owner.pubkey()), keep);
     assert_eq!(env.balance(&owner.pubkey()), before);
-    // The brackets are mandatory, in order, same owner, same reserved balance.
-    expect_pawket(&env.send(&[fund.clone()], &device, &[&owner]), PawketError::InvalidAmount);
-    expect_pawket(&env.send(&[settle.clone()], &device, &[&owner]), PawketError::InvalidAmount);
+    // The brackets are mandatory, in order, same owner, same reserved balance: each refusal is the
+    // half that finds the other missing or different.
+    expect_pawket_at(&env.send(&[fund.clone()], &device, &[&owner]), 0, PawketError::InvalidAmount);
+    expect_pawket_at(&env.send(&[settle.clone()], &device, &[&owner]), 0, PawketError::InvalidAmount);
     let wrong_keep = wallet_spend_ix(&owner.pubkey(), &device.pubkey(), keep - 1, None);
-    expect_pawket(&env.send(&[fund.clone(), wrong_keep], &device, &[&owner]), PawketError::InvalidAmount);
+    expect_pawket_at(&env.send(&[fund.clone(), wrong_keep], &device, &[&owner]), 0, PawketError::InvalidAmount);
     let mut foreign = settle.clone();
     foreign.accounts[1].pubkey = wallet_pda(&recipient.pubkey());
-    expect_pawket(&env.send(&[fund.clone(), foreign], &device, &[&owner]), PawketError::InvalidAmount);
-    expect_pawket(&env.send(&[transfer(&recipient.pubkey(), &owner.pubkey(), 1), fund, settle], &device, &[&owner, &recipient]), PawketError::InvalidAmount);
+    expect_pawket_at(&env.send(&[fund.clone(), foreign], &device, &[&owner]), 0, PawketError::InvalidAmount);
+    let first = transfer(&recipient.pubkey(), &owner.pubkey(), 1);
+    expect_pawket_at(&env.send(&[first, fund.clone(), settle.clone()], &device, &[&owner, &recipient]), 1, PawketError::InvalidAmount);
+    // A settlement before the last instruction leaves room after it: it refuses, whatever follows.
+    let pay = transfer(&owner.pubkey(), &recipient.pubkey(), 1_000);
+    expect_pawket_at(&env.send(&[fund.clone(), pay, settle.clone(), settle.clone()], &device, &[&owner]), 2, PawketError::InvalidAmount);
+    // Only the linked device's float is refilled, and only while its link lasts.
+    let stranger = env.broke();
+    let elsewhere = wallet_spend_ix(&owner.pubkey(), &stranger.pubkey(), keep, Some(20_000_000));
+    let settle_elsewhere = wallet_spend_ix(&owner.pubkey(), &stranger.pubkey(), keep, None);
+    expect_pawket_at(&env.send(&[elsewhere, settle_elsewhere], &device, &[&owner]), 0, PawketError::NotThisDevice);
+    env.warp(2 * DAY);
+    expect_pawket_at(&env.send(&[fund, settle], &device, &[&owner]), 0, PawketError::DeviceExpired);
     assert_eq!(env.lamports(&owner.pubkey()), keep);
     assert_eq!(env.balance(&owner.pubkey()), before);
 }

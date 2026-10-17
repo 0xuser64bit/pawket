@@ -13,6 +13,8 @@ use solana_signer::Signer;
 
 use crate::harness::*;
 
+type Instruction = anchor_lang::solana_program::instruction::Instruction;
+
 struct Linked {
     owner: Keypair,
     sponsor: Keypair,
@@ -38,7 +40,7 @@ fn linked(env: &mut Env, daily: u16) -> Linked {
 
 impl Linked {
     /// `owners_ix`, as the device signs it, with the sponsor paying the fee.
-    fn send(&self, env: &mut Env, owners_ix: anchor_lang::solana_program::instruction::Instruction, discriminator: &[u8]) -> TxResult {
+    fn send(&self, env: &mut Env, owners_ix: Instruction, discriminator: &[u8]) -> TxResult {
         let device_ix = by_device(owners_ix, &self.device.pubkey(), &self.owner.pubkey(), discriminator);
         env.send(&[device_ix], &self.sponsor, &[&self.device])
     }
@@ -290,4 +292,96 @@ fn a_device_acts_only_through_its_owners_wallet_at_the_wallets_own_address() {
     care.accounts[1].pubkey = elsewhere;
     expect_anchor(&env.send(&[care], &attacker, &[]), ErrorCode::ConstraintSeeds);
     assert_eq!(env.passport(&pet).care_count, 0);
+}
+
+/// Each of the fourteen things a device signs, as its owner would sign it, in a state where the
+/// owner's own signature lands: so a refusal can only be about the key that signed.
+fn every_twin(env: &mut Env, d: &Linked) -> Vec<(&'static str, Instruction, &'static [u8])> {
+    let (owner, sponsor, o) = (d.owner.pubkey(), d.sponsor.pubkey(), &d.owner);
+    // Tofu is in no guild, to found and join with; Clover is in Pepper's, to leave it.
+    let tofu = env.adopt(o, "Tofu");
+    let clover = env.adopt(o, "Clover");
+    ok(env.send(&[found_ix(&owner, &owner, &d.pet, "sunbeam-club")], o, &[]));
+    let guild = guild_pda("sunbeam-club");
+    ok(env.send(&[join_ix(&owner, &owner, &clover, &guild)], o, &[]));
+    // One event to say Pepper is going to, and one Pepper is already going to, to check in at.
+    let starts = env.now() + HOUR;
+    let plans = [1, 2].map(|id| create_event_ix(&owner, &owner, &guild, id, "Nap", "", starts, starts + HOUR));
+    ok(env.send(&plans, o, &[]));
+    let (open, going) = (event_pda(&guild, 1), event_pda(&guild, 2));
+    ok(env.send(&[rsvp_ix(&owner, &owner, &d.pet, &going)], o, &[]));
+    ok(env.send(&[create_poll_ix(&owner, &owner, &guild, 1, "Where?", &["Rug", "Sun"], starts + DAY)], o, &[]));
+    let poll = poll_pda(&guild, 1);
+    ok(env.send(&[buy_ix(&owner, &owner, WEARABLE_COUNT + 1)], o, &[]));
+    let neighbour = env.player();
+    let mochi = env.adopt(&neighbour, "Mochi");
+    vec![
+        ("adopt", adopt_ix(&owner, &sponsor, "Biscuit"), ix::AdoptPetByDevice::DISCRIMINATOR),
+        ("found", found_ix(&owner, &sponsor, &tofu, "tofu-club"), ix::FoundGuildByDevice::DISCRIMINATOR),
+        ("join", join_ix(&owner, &sponsor, &tofu, &guild), ix::JoinGuildByDevice::DISCRIMINATOR),
+        ("leave", leave_ix(&owner, &clover, &guild, &owner), ix::LeaveGuildByDevice::DISCRIMINATOR),
+        ("care", care_ix(&owner, &d.pet, CareActionType::Play), ix::CareByDevice::DISCRIMINATOR),
+        ("round", round_ix(&owner, &d.pet), ix::FinishRoundByDevice::DISCRIMINATOR),
+        ("dress", dress_ix(&owner, &d.pet, 1), ix::DressByDevice::DISCRIMINATOR),
+        ("dress owned", dress_owned_ix(&owner, &d.pet, WEARABLE_COUNT + 1), ix::DressOwnedByDevice::DISCRIMINATOR),
+        ("plan", create_event_ix(&owner, &sponsor, &guild, 3, "Picnic", "", starts, starts + HOUR), ix::CreateEventByDevice::DISCRIMINATOR),
+        ("go", rsvp_ix(&owner, &sponsor, &d.pet, &open), ix::RsvpByDevice::DISCRIMINATOR),
+        ("check in", check_in_ix(&owner, &d.pet, &going), ix::CheckInByDevice::DISCRIMINATOR),
+        ("ask", create_poll_ix(&owner, &sponsor, &guild, 2, "When?", &["Now", "Later"], starts + DAY), ix::CreatePollByDevice::DISCRIMINATOR),
+        ("vote", vote_ix(&owner, &sponsor, &d.pet, &poll, 0), ix::VoteByDevice::DISCRIMINATOR),
+        ("wave", wave_ix(&owner, &sponsor, &mochi), ix::WaveByDevice::DISCRIMINATOR),
+    ]
+}
+
+/// `signer` tries every twin for the owner and each is refused with `error`, leaving the wallet's
+/// counts and spending as they were.
+fn all_refused(env: &mut Env, d: &Linked, twins: &[(&'static str, Instruction, &'static [u8])], signer: &Keypair, error: PawketError) {
+    let owner = d.owner.pubkey();
+    let before = env.wallet(&owner);
+    for (what, owners_ix, discriminator) in twins {
+        eprintln!("{what}, signed by {}", signer.pubkey());
+        let tried = by_device(owners_ix.clone(), &signer.pubkey(), &owner, discriminator);
+        expect_pawket(&env.send(&[tried], &d.sponsor, &[signer]), error);
+    }
+    let after = env.wallet(&owner);
+    assert_eq!((after.actions, after.actions_today, after.spent), (before.actions, before.actions_today, before.spent));
+}
+
+#[test]
+fn every_twin_refuses_any_key_but_the_linked_device_and_any_device_past_its_link() {
+    let mut env = Env::new();
+    let d = linked(&mut env, 50);
+    let owner = d.owner.pubkey();
+    let twins = every_twin(&mut env, &d);
+    assert_eq!(twins.len(), 14);
+
+    // A key that is not the linked device, whatever it claims.
+    let impostor = env.broke();
+    all_refused(&mut env, &d, &twins, &impostor, PawketError::NotThisDevice);
+
+    // A day's actions, used up: one a day, and it is spent.
+    let week = env.now() + 7 * DAY;
+    ok(env.send(&[link_ix(&owner, &d.device.pubkey(), week, 1)], &d.sponsor, &[&d.owner, &d.device]));
+    ok(d.send(&mut env, care_ix(&owner, &d.pet, CareActionType::Feed), ix::CareByDevice::DISCRIMINATOR));
+    all_refused(&mut env, &d, &twins, &d.device, PawketError::DailyLimitReached);
+
+    // The link's week, over.
+    env.warp(8 * DAY);
+    all_refused(&mut env, &d, &twins, &d.device, PawketError::DeviceExpired);
+
+    // Replaced by another device: the old key is no one now, and the new one acts.
+    let next = env.broke();
+    let week = env.now() + 7 * DAY;
+    ok(env.send(&[link_ix(&owner, &next.pubkey(), week, 50)], &d.sponsor, &[&d.owner, &next]));
+    all_refused(&mut env, &d, &twins, &d.device, PawketError::NotThisDevice);
+    let care = by_device(care_ix(&owner, &d.pet, CareActionType::Feed), &next.pubkey(), &owner, ix::CareByDevice::DISCRIMINATOR);
+    ok(env.send(&[care], &d.sponsor, &[&next]));
+
+    // Unlinked: no key acts at all.
+    ok(env.send(&[unlink_ix(&owner, &owner, &next.pubkey(), false)], &d.sponsor, &[&d.owner]));
+    all_refused(&mut env, &d, &twins, &next, PawketError::NotThisDevice);
+
+    // Nothing the refusals tried is there.
+    assert!(!env.exists(&pet_pda(&owner, "Biscuit")) && !env.exists(&guild_pda("tofu-club")) && !env.exists(&member_pda(&pet_pda(&owner, "Tofu"))));
+    assert_eq!(env.wallet(&owner).actions, 2);
 }

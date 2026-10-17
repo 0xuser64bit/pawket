@@ -687,6 +687,22 @@ pub fn expect_pawket(result: &TxResult, error: PawketError) {
     expect_custom(result, anchor_lang::error::ERROR_CODE_OFFSET + error as u32);
 }
 
+/// `expect_pawket`, said by the instruction at `index`: so a refusal is known to come from the half
+/// of a bracket that should refuse, not from whichever check happened to run first.
+pub fn expect_pawket_at(result: &TxResult, index: u8, error: PawketError) {
+    use anchor_lang::solana_program::instruction::error::InstructionError;
+    let code = anchor_lang::error::ERROR_CODE_OFFSET + error as u32;
+    match result {
+        Err(failed) => assert_eq!(
+            failed.err,
+            TransactionError::InstructionError(index, InstructionError::Custom(code)),
+            "logs:\n{}",
+            failed.meta.pretty_logs()
+        ),
+        Ok(meta) => panic!("expected error {code} at instruction {index}, but it succeeded:\n{}", meta.pretty_logs()),
+    }
+}
+
 pub fn expect_anchor(result: &TxResult, error: anchor_lang::error::ErrorCode) {
     expect_custom(result, error as u32);
 }

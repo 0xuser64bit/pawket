@@ -156,9 +156,12 @@ export function Deck({
               key={action}
               type="button"
               className={["pk-care", action === wanted && "pk-care--wanted"].filter(Boolean).join(" ")}
-              disabled={left > 0 || busy}
+              // Resting or busy, it keeps focus (aria-disabled, not disabled): the countdown is read in place.
+              aria-disabled={left > 0 || busy || undefined}
               aria-label={left > 0 ? `${label}, resting for ${formatCountdown(left)}` : label}
-              onClick={() => onCare(action)}
+              onClick={() => {
+                if (left <= 0 && !busy) onCare(action);
+              }}
             >
               <span className="pk-care__face">
                 {left > 0 ? (

@@ -55,6 +55,12 @@ function buttonFace({ label, size = "md", icon, after }: ButtonShape) {
   );
 }
 
+/**
+ * An unavailable button stays focusable: it is `aria-disabled` and ignores a
+ * press, rather than `disabled`, because disabling the focused button — a
+ * send that has started, a care cooling down — drops keyboard focus to the
+ * page, and a screen reader loses its place.
+ */
 export function Button({
   label,
   tone,
@@ -64,10 +70,23 @@ export function Button({
   full,
   className,
   busy = false,
+  disabled = false,
+  onClick,
   ...rest
 }: ButtonShape & { busy?: boolean } & Omit<ComponentProps<"button">, "className" | "children">) {
+  const off = busy || disabled;
   return (
-    <button type="button" className={buttonClass({ label, tone, size, full, className })} {...rest} disabled={busy || rest.disabled} aria-busy={busy || rest["aria-busy"]}>
+    <button
+      type="button"
+      className={buttonClass({ label, tone, size, full, className })}
+      {...rest}
+      aria-disabled={off || undefined}
+      aria-busy={busy || rest["aria-busy"]}
+      onClick={(event) => {
+        if (off) event.preventDefault();
+        else onClick?.(event);
+      }}
+    >
       {busy ? <span className="pk-spinner" aria-hidden="true" /> : null}
       {buttonFace({ label, size, icon: busy ? undefined : icon, after })}
     </button>

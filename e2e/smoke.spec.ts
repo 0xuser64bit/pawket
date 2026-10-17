@@ -143,6 +143,28 @@ test("a guild nobody founded is a plain miss", async ({ page }) => {
   await expect(page.getByText(/no guild has that name|solana did not answer/i)).toBeVisible();
 });
 
+test("a care pressed from the keyboard keeps focus on its button, resting", async ({ page }) => {
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await page.getByRole("button", { name: /take them home/i }).click();
+  const feed = page.getByRole("button", { name: "Feed" });
+  await feed.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
+  const resting = page.getByRole("button", { name: /Feed, resting for/ });
+  await expect(resting).toBeFocused();
+  await expect(resting).toBeDisabled();
+  // Browsers that follow the HTML focus-fixup rule drop focus from a button once it is
+  // `disabled`; Chromium may keep it, so the markup that avoids the drop is held here too.
+  await expect(resting).toHaveAttribute("aria-disabled", "true");
+  await expect(resting).not.toHaveAttribute("disabled");
+  // Pressing it again while it rests does nothing.
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(/Fed\. \+10 XP/)).toHaveCount(1);
+});
+
 test("adopting a pet needs no wallet and makes Home real", async ({ page }) => {
   await page.goto("/adopt");
   await expect(page.getByText(/wallet|connect|solana|token/i)).toHaveCount(0);
@@ -342,7 +364,7 @@ test("today's Pairs is the same round for everyone, and a perfect one is sixty",
   await page.getByRole("button", { name: /take them home/i }).click();
   await page.goto("/playground");
   await page.getByRole("button", { name: /^Play Pairs/ }).click();
-  await expect(page.getByText(/Today's round ·/)).toBeVisible();
+  await expect(page.getByText("Today's round", { exact: true })).toBeVisible();
 
   // The deal is the day's, so the test can know it — as anyone could.
   const today = new Date().toISOString().slice(0, 10);

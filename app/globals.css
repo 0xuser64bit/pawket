@@ -4256,30 +4256,30 @@ li {
   border-bottom-color: var(--sun-edge);
 }
 @media (hover: hover) {
-  .pk-care:not([disabled]):hover .pk-care__face {
+  .pk-care:not([disabled], [aria-disabled="true"]):hover .pk-care__face {
     transform: translateY(-1px);
     border-bottom-width: calc(var(--stroke-line) + var(--stroke-shelf) + 1px);
     margin-bottom: -1px;
   }
 }
-.pk-care:not([disabled]):active .pk-care__face {
+.pk-care:not([disabled], [aria-disabled="true"]):active .pk-care__face {
   transform: translateY(var(--stroke-shelf));
   border-bottom-width: var(--stroke-line);
   margin-bottom: var(--stroke-shelf);
 }
-.pk-care[disabled] {
+.pk-care:is([disabled], [aria-disabled="true"]) {
   cursor: default;
 }
 /* Resting: the shelf drops away, the edge breaks into dashes and the face
    counts down in full ink, so the time left is read, not squinted at. */
-.pk-care[disabled] .pk-care__face {
+.pk-care:is([disabled], [aria-disabled="true"]) .pk-care__face {
   --pk-face: var(--surface-sunk);
   border-style: dashed;
   border-color: var(--edge-soft);
   border-bottom-width: var(--stroke-line);
   color: var(--ink-soft);
 }
-.pk-care[disabled] .pk-care__label {
+.pk-care:is([disabled], [aria-disabled="true"]) .pk-care__label {
   color: var(--ink-faint);
 }
 .pk-care__label {

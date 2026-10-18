@@ -31,7 +31,8 @@ if [ -n "$(git status --porcelain -- android public/.well-known)" ]; then
   exit 1
 fi
 commit="$(git rev-parse HEAD)"
-prop() { sed -n "s/^$1=//p" android/gradle.properties; }
+# By its full path: the build below runs from android/, and the checks after it read this too.
+prop() { sed -n "s/^$1=//p" "$root/android/gradle.properties"; }
 
 cd "$root/android"
 ./gradlew --console=plain clean assembleRelease \

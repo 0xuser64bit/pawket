@@ -82,7 +82,8 @@ gitleaks git --redact --log-opts=--all .  # every local Git ref, including old c
 The GitHub `Verify` workflow runs `pnpm verify`, Chromium browser tests against
 that production build, a full fetched-history Gitleaks scan, the program's
 build and LiteSVM suite (failing when the built IDL differs from the committed
-one), the Android shell's unit tests and lint, and `pnpm audit` and `cargo
+one), the Android shell's unit tests and lint, the release script
+run to its signer check with a throwaway key, and `pnpm audit` and `cargo
 audit`. Playwright starts `pnpm start` when `CI` is set; build first when
 reproducing CI locally. Without `CI`, it starts or reuses the development
 server. The workflow has no signing secrets and does not run the opt-in devnet

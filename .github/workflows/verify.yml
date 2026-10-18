@@ -92,7 +92,7 @@ jobs:
         run: cargo test -p pawket
 
   android:
-    # The shell's own checks: origin, picture and file-name boundaries, and lint.
+    # The shell's own checks: origin, picture and file-name boundaries, lint, and the release script.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -109,6 +109,17 @@ jobs:
       - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       - name: Unit tests and lint
         run: ./gradlew --no-daemon testDebugUnitTest lintDebug
+      - name: The release script runs through to its signer check
+        # With a throwaway key the site does not list, the script must build and sign the APK, read
+        # its version, and refuse it at the signer: every step before a real release, held each push.
+        run: |
+          keytool -genkeypair -keystore "$RUNNER_TEMP/throwaway.jks" -storetype PKCS12 -alias pawket -keyalg RSA \
+            -keysize 2048 -validity 1 -storepass throwaway -keypass throwaway -dname "CN=CI throwaway" > /dev/null
+          if PAWKET_ANDROID_KEYSTORE="$RUNNER_TEMP/throwaway.jks" SOLANA_MOBILE_KEYSTORE_PASSWORD=throwaway \
+            ../scripts/android-release.sh > "$RUNNER_TEMP/release.log" 2>&1; then
+            echo "A signer the site does not list was accepted."; exit 1
+          fi
+          grep -q "is not in public/.well-known/assetlinks.json" "$RUNNER_TEMP/release.log" || { cat "$RUNNER_TEMP/release.log"; exit 1; }
 
   audit:
     # Advisories in what ships: any high or critical one beyond the two docs/SECURITY.md

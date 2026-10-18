@@ -146,7 +146,8 @@ archive, APK or release evidence. Back up both securely under owner control.
 The script refuses uncommitted changes under `android/` or `public/.well-known/`,
 an APK whose package or version differs from `android/gradle.properties`, and
 a signer `assetlinks.json` does not list; it prints the shell commit and the
-hosted web commit (`/api/health`). Store the signed
+hosted web commit (`/api/health`). CI runs it on every push with a throwaway key,
+which it must build, sign and refuse at the signer check. Store the signed
 APK with its SHA-256, signer fingerprint, shell source commit, hosted web commit,
 cluster, device matrix, results and public receipts. Keep that evidence with
 the release artifacts outside tracked product documentation. Publication

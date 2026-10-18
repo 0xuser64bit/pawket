@@ -11,6 +11,7 @@
 | `program.ts` against the IDL   | `src/lib/solana/program.test.ts`        | Vitest   |
 | Account decoding (hand-laid bytes) | `src/lib/solana/accounts.test.ts`   | Vitest   |
 | What the sponsor signs         | `src/lib/solana/sponsor.test.ts`        | Vitest (node) |
+| The sponsor route: what it refuses before signing, the limits it hands the co-signer, its scrubbed log | `app/api/sponsor/route.test.ts` | Vitest (node) |
 | The whole path on devnet       | `src/lib/solana/devnet.test.ts`         | `pnpm e2e:devnet` (skipped otherwise; needs the test funder and a sponsor above 2 SOL, `docs/ENVIRONMENT.md`) |
 | A guild coin's life on devnet  | `src/server/coins/devnet.test.ts`       | `pnpm e2e:coins` (skipped otherwise) |
 | Coin presets ↔ Meteora's validation, stages, copy | `src/server/coins/curve.test.ts`, `src/lib/coins/*.test.ts` | Vitest |

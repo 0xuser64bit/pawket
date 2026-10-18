@@ -49,7 +49,8 @@ export function ShareButton({
         await navigator.share({ url: link, title, ...(text ? { text } : {}) });
       }
     } catch (error) {
-      if (!(error instanceof Error && error.name === "AbortError")) setSaid("The link could not be shared. Copy it instead.");
+      // Closing the share sheet is not a failure. Told by name: a DOMException from another realm is no Error here.
+      if ((error as { name?: unknown } | null)?.name !== "AbortError") setSaid("The link could not be shared. Copy it instead.");
     } finally {
       setBusy(false);
     }

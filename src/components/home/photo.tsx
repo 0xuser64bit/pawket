@@ -279,8 +279,9 @@ export function PhotoDialog({
         await navigator.share({ files: [photo], title });
         setSaid("Shared.");
       } else setSaid("This browser cannot share a picture. Save it instead.");
-    } catch {
-      setSaid(undefined);
+    } catch (error) {
+      // Closing the share sheet says nothing; a share the phone refused says so.
+      setSaid((error as { name?: unknown } | null)?.name === "AbortError" ? undefined : "The photo could not be shared. Save it instead.");
     }
   }
 

@@ -30,10 +30,11 @@ describe("read and share recovery", () => {
     vi.stubGlobal("navigator", { clipboard: { writeText: copy } });
     render(<><AddressLine value="FullAddressThatMustBeReachable" label="address" /><Toasts /></>);
     fireEvent.click(screen.getByRole("button", { name: "Copy address" }));
-    const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toContain("FullAddressThatMustBeReachable");
+    // Said in the toasts' one live region, the whole value selectable there.
+    const refused = await screen.findByText("address could not be copied");
+    expect(refused.closest(".pk-toast")!.textContent).toContain("FullAddressThatMustBeReachable");
     fireEvent.click(screen.getByRole("button", { name: "Copy address" }));
-    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    await waitFor(() => expect(screen.queryByText("address could not be copied")).toBeNull());
     expect(screen.getByRole("button", { name: "address copied" })).toBeTruthy();
   });
 
@@ -56,7 +57,8 @@ describe("read and share recovery", () => {
     fireEvent.click(button);
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     await waitFor(() => expect(share).toHaveBeenCalledOnce());
-    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText(/could not be shared/)).toBeNull();
+    expect(document.querySelector(".pk-toast")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     expect((await screen.findByRole("status")).textContent).toContain("The link could not be shared");
   });

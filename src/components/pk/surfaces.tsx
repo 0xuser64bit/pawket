@@ -214,3 +214,15 @@ export function Banner({
     </div>
   );
 }
+
+/**
+ * A refusal or failure, said beside what it is about: the alarm's ink, and
+ * announced at once. `small` sets it at caption size, under a small control.
+ */
+export function Problem({ children, small, id, style }: { children: ReactNode; small?: boolean; id?: string; style?: CSSProperties }) {
+  return (
+    <p id={id} role="alert" className={small ? "caption" : "body-sm"} style={{ color: "var(--alarm-text)", ...style }}>
+      {children}
+    </p>
+  );
+}

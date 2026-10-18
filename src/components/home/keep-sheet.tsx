@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Address } from "@solana/kit";
-import { Button, ButtonLink, PetArt, Sheet, Stack } from "@/components/pk";
+import { Button, ButtonLink, PetArt, Sheet, Stack, Problem } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { getPublicEnv } from "@/config/env";
 import { petLook } from "@/lib/game/appearance";
@@ -193,15 +193,15 @@ export function KeepSheet({
           </p>
         ) : null}
         {linking.problem ? (
-          <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
+          <Problem>
             {linking.problem}
-          </p>
+          </Problem>
         ) : null}
         {owner && !canSign ? <p className="body-sm pk-muted">This wallet can only be read, not signed with. Connect one that signs.</p> : null}
         {taken ? (
-          <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
+          <Problem>
             This wallet already keeps a pet named {pet.name}. Nothing changed.
-          </p>
+          </Problem>
         ) : null}
       </Stack>
     </Sheet>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Row, Stack } from "@/components/pk";
+import { Button, Card, Row, Stack, Problem } from "@/components/pk";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { MAX_COPY_LENGTH, petsCopy, readPetsCopy } from "@/lib/guest/copy";
 import { bringBackPets } from "@/lib/guest/storage";
@@ -145,9 +145,9 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
               <Button label="Bring them back" icon="paw" size="sm" disabled={!text.trim()} onClick={bringBack} />
             </div>
             {problem ? (
-              <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
+              <Problem>
                 {problem}
-              </p>
+              </Problem>
             ) : null}
             {brought ? (
               <p role="status" className="body-sm">

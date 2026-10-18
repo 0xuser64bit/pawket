@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Choice, Row, TimeField } from "@/components/pk";
+import { Button, Choice, Row, TimeField, Problem } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { remindDaily, setCareReminder, useAndroidApp, useCareReminders, type Answer } from "@/lib/native/android";
@@ -83,9 +83,9 @@ export function RemindMe({ name }: { name: string }) {
           : `A repeating event in your own calendar for the next ${DAYS} days. Pawket keeps no list and sends nothing.`}
       </p>
       {problem ? (
-        <p role="alert" className="caption" style={{ color: "var(--alarm-text)", marginTop: "var(--space-2)" }}>
+        <Problem small style={{ marginTop: "var(--space-2)" }}>
           {problem}
-        </p>
+        </Problem>
       ) : null}
     </div>
   );
@@ -131,9 +131,9 @@ function CareReminderOffer({ name }: { name: string }) {
         </>
       )}
       {problem ? (
-        <p role="alert" className="caption" style={{ color: "var(--alarm-text)", marginTop: "var(--space-2)" }}>
+        <Problem small style={{ marginTop: "var(--space-2)" }}>
           {problem}
-        </p>
+        </Problem>
       ) : null}
     </div>
   );
@@ -155,9 +155,9 @@ export function CareReminderSetting() {
       />
       <p className="caption pk-faint">{CARE_REMINDER_ABOUT}</p>
       {problem ? (
-        <p role="alert" className="caption" style={{ color: "var(--alarm-text)" }}>
+        <Problem small>
           {problem}
-        </p>
+        </Problem>
       ) : null}
     </div>
   );

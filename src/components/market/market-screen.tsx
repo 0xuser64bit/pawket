@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Address } from "@solana/kit";
-import { Button, ButtonLink, ItemTile, PetArt, RARITY_LABEL, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice, type Rarity } from "@/components/pk";
+import { Button, ButtonLink, ItemTile, PetArt, RARITY_LABEL, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice, type Rarity, Problem } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
@@ -257,9 +257,9 @@ function ItemSheet({
         {has && item.kind === "frame" ? <p className="body-sm pk-muted">Ready for your next photo. Open Photo on Home and choose this frame.</p> : null}
         {has && item.piece ? <p className="body-sm pk-muted">Yours. Put it on from the wardrobe in Profile.</p> : null}
         {!has && short ? (
-          <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
+          <Problem>
             Your Pawket Wallet holds {sol(balance ?? 0n)}. Add SOL there before buying.<DevnetFaucet /> Nothing was sent.
-          </p>
+          </Problem>
         ) : null}
       </Stack>
     </Sheet>

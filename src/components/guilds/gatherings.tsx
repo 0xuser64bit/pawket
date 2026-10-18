@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { useRequest } from "@solana/react";
 import { fetchEncodedAccounts, type Address } from "@solana/kit";
-import { Choice, DateTimeField, Button, Chip, Field, Row, Stack } from "@/components/pk";
+import { Choice, DateTimeField, Button, Chip, Field, Row, Stack, Problem } from "@/components/pk";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { yourPlace } from "./yours";
 import { fetchPetRsvps, type ChainEvent, type ChainPoll, type ChainRsvp } from "@/lib/solana/accounts";
@@ -370,9 +370,9 @@ function FounderDesk({
       </details>
       {waits ? <p className="caption pk-faint">New events and polls wait until Pawket can cover their rent again.</p> : null}
       {problem ? (
-        <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
+        <Problem>
           {problem}
-        </p>
+        </Problem>
       ) : null}
     </Stack>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useConnect, useWallets } from "@solana/kit-plugin-wallet/react";
-import { Button, Sheet, Stack } from "@/components/pk";
+import { Button, Sheet, Stack, Problem } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { wallet } from "@/lib/solana/browser-client";
 import { isUserRejection, mobileWalletProblem } from "@/lib/solana/transactions";
@@ -98,11 +98,11 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
           </Stack>
         )}
         {connect.isError ? (
-          <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
+          <Problem>
             {declined
               ? "You declined in your wallet. Nothing changed."
               : `${mobileWalletProblem(connect.error) ?? "That wallet did not connect."} Nothing changed.`}
-          </p>
+          </Problem>
         ) : null}
         <p className="caption pk-faint">
           {cluster === "devnet"

@@ -4,7 +4,7 @@ import { NavLink as Link } from "@/components/pk/nav-link";
 import { useState } from "react";
 import type { Address } from "@solana/kit";
 import { useConnectedWallet, useDisconnect } from "@solana/kit-plugin-wallet/react";
-import { Button, ButtonLink, Icon, Sheet, Stack } from "@/components/pk";
+import { Button, ButtonLink, Icon, Sheet, Stack, Problem } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { wallet, useWalletReady } from "@/lib/solana/browser-client";
@@ -187,9 +187,9 @@ function WalletPanel({
                 />
               </div>
               {linking.problem ? (
-                <p role="alert" className="caption" style={{ color: "var(--alarm-text)", marginTop: "var(--space-2)" }}>
+                <Problem small style={{ marginTop: "var(--space-2)" }}>
                   {linking.problem}
-                </p>
+                </Problem>
               ) : null}
             </div>
           )}

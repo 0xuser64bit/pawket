@@ -13,7 +13,7 @@ export { Button, ButtonLink, Chip, Field, Tabs } from "./controls";
 export { Choice } from "./choice";
 export { DateTimeField, TimeField } from "./datetime-field";
 export { ReadFailure } from "./read-failure";
-export { Banner, Card, Paper, Receipt, type ReceiptRow } from "./surfaces";
+export { Banner, Card, Paper, Problem, Receipt, type ReceiptRow } from "./surfaces";
 export { Sheet } from "./sheet";
 export {
   EmptyState,

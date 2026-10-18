@@ -1,4 +1,5 @@
 import { NavLink as Link } from "@/components/pk/nav-link";
+import { Problem } from "./surfaces";
 import { useId, type ComponentProps } from "react";
 import { Icon, type IconName } from "./icon";
 
@@ -185,9 +186,9 @@ export function Field({
         {suffix ? <span className="amount-sm pk-faint">{suffix}</span> : null}
       </div>
       {error ? (
-        <p id={describedBy} role="alert" className="body-sm" style={{ color: "var(--alarm-text)", marginTop: "var(--space-2)" }}>
+        <Problem id={describedBy} style={{ marginTop: "var(--space-2)" }}>
           {error}
-        </p>
+        </Problem>
       ) : helper ? (
         <p id={describedBy} className="body-sm pk-faint" style={{ marginTop: "var(--space-2)" }}>
           {helper}

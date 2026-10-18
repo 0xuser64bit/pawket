@@ -362,7 +362,6 @@ export function AdoptFlow() {
                   maxLength={24}
                   value={name}
                   onChange={(event) => { setName(event.target.value); setError(undefined); }}
-                  placeholder={NAMES[species][0]}
                   error={error}
                   helper="Up to 24 plain letters; accents and emoji use more room. It is theirs for good."
                 />

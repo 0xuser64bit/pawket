@@ -30,3 +30,14 @@ it("plays a cue in the flat room: the player says it in a bubble and the room sa
   expect(container.querySelector(".pk-room__said")).toBeNull();
   expect(onStatus).toHaveBeenLastCalledWith({ moment: null, sentence: "" });
 });
+
+it("lets the pet in the flat room be booped: a button that makes it hop, saving nothing", () => {
+  vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+  vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
+  const onStatus = vi.fn();
+  const { container, getByRole } = render(<Room pet={pet} look={DEFAULT_LOOK} sky="warm" description="Pepper's room" cue={null} onStatus={onStatus} />);
+  expect(container.querySelector(".pk-room__pet--hop")).toBeNull();
+  act(() => getByRole("button", { name: "Boop Pepper" }).click());
+  expect(container.querySelector(".pk-room__pet--hop")).not.toBeNull();
+  expect(onStatus).not.toHaveBeenCalled();
+});

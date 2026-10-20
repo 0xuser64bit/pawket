@@ -367,7 +367,7 @@ export function Room({
           Leaving 3D, it is back at once under the canvas fading off it. */}
       <div className="pk-room__flat" aria-hidden={flatShown ? undefined : true}>
         <FlatRoom
-          pet={pet ? { form: pet.form, temper: pet.temper, feeling: pet.feeling, wearing: pet.wearing, seed: pet.name, coat: pet.coat?.coat, patch: pet.coat?.patch } : null}
+          pet={pet ? { name: pet.name, form: pet.form, temper: pet.temper, feeling: pet.feeling, wearing: pet.wearing, seed: pet.name, coat: pet.coat?.coat, patch: pet.coat?.patch } : null}
           colour={PEG_COLOUR[look.topColour]}
           hop={hop}
           said={said}

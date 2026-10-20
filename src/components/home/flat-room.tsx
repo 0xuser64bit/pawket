@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Icon, PetArt, PlayerArt, type Feeling, type GlassesName, type HatName, type IconName, type PetForm, type Temper } from "@/components/pk";
 import type { RoomDecor } from "@/lib/room/decor";
 import { BedBack, BedFront, FlatDecor } from "./decor-art";
@@ -8,7 +8,7 @@ const DAY = { opacity: "var(--pk-day)" };
 const NIGHT = { opacity: "var(--pk-night)" };
 const GLOW = { opacity: "calc(var(--pk-night) * 0.24)" };
 
-export type FlatPet = { form: PetForm; temper: Temper; feeling: Feeling; wearing: string | null; seed: string; coat?: string; patch?: string };
+export type FlatPet = { name: string; form: PetForm; temper: Temper; feeling: Feeling; wearing: string | null; seed: string; coat?: string; patch?: string };
 
 /**
  * The room drawn flat: what shows before the 3D room is ready, and instead
@@ -47,6 +47,16 @@ export function FlatRoom({
   decor: RoomDecor;
 }) {
   const id = useId().replace(/:/g, "");
+  // A tap on the pet (or its bed) is a boop, as in the 3D room: it hops and beams for a moment, and nothing is saved.
+  const [booped, setBooped] = useState(0);
+  const [beaming, setBeaming] = useState(false);
+  const beam = useRef(0);
+  function boop() {
+    setBooped((n) => n + 1);
+    setBeaming(true);
+    window.clearTimeout(beam.current);
+    beam.current = window.setTimeout(() => setBeaming(false), 1400);
+  }
   // The doll changing clothes squashes and stretches once; arriving, it does not.
   const dress = `${colour}|${hat ?? ""}|${hatColour ?? ""}|${glasses ?? ""}`;
   const [arrived] = useState(dress);
@@ -130,19 +140,28 @@ export function FlatRoom({
       </div>
 
       {/* The basket is there before the pet is: an empty one is waiting. */}
-      <div className="pk-room__nook">
+      {pet ? (
+        <button type="button" className="pk-room__nook pk-room__nook--boop" aria-label={`Boop ${pet.name}`} onClick={boop}>
           <svg className="pk-room__bed" viewBox="0 0 120 120" aria-hidden="true">
             <BedBack id={decor.bed ?? "basket"} />
           </svg>
-          {pet ? (
-            <div key={hop} className={["pk-room__pet", hop ? "pk-room__pet--hop" : ""].join(" ")}>
-              <PetArt {...pet} />
-            </div>
-          ) : null}
+          <div key={`${hop}-${booped}`} className={["pk-room__pet", hop || booped ? "pk-room__pet--hop" : ""].join(" ")}>
+            <PetArt form={pet.form} temper={pet.temper} wearing={pet.wearing} seed={pet.seed} coat={pet.coat} patch={pet.patch} feeling={beaming ? "radiant" : pet.feeling} />
+          </div>
+          <svg className="pk-room__bed" viewBox="0 0 120 120" aria-hidden="true">
+            <BedFront id={decor.bed ?? "basket"} />
+          </svg>
+        </button>
+      ) : (
+        <div className="pk-room__nook">
+          <svg className="pk-room__bed" viewBox="0 0 120 120" aria-hidden="true">
+            <BedBack id={decor.bed ?? "basket"} />
+          </svg>
           <svg className="pk-room__bed" viewBox="0 0 120 120" aria-hidden="true">
             <BedFront id={decor.bed ?? "basket"} />
           </svg>
         </div>
+      )}
     </>
   );
 }

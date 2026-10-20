@@ -277,3 +277,18 @@ test("starter choices stay small and every Market category opens a readable shar
   await expect(sheet.getByRole("button", { name: "Connect a wallet" })).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });
+
+test("on a phone each Market shelf is a row to swipe, and opens whole on asking", async ({ page }) => {
+  await page.goto("/market");
+  const pets = page.locator(".pk-tiles").first();
+  await expect(pets).toHaveClass(/pk-tiles--row/);
+  // Seventy-six things no longer make one column several screens long.
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThan(3000);
+  expect(await pets.evaluate((row) => row.scrollWidth > row.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole("button", { name: "See all 25: for your pets" }).tap();
+  await expect(pets).not.toHaveClass(/pk-tiles--row/);
+  // A search always shows all it found, as a grid.
+  await page.getByRole("searchbox", { name: "Search the Market" }).fill("bed");
+  await expect(page.locator(".pk-tiles--row")).toHaveCount(0);
+});

@@ -137,17 +137,21 @@ export function SectionLabel({
   children,
   count,
   tone,
+  action,
 }: {
   children: ReactNode;
   count?: string;
   tone?: "bloom";
+  /** A small control at the row's end, after the count. */
+  action?: ReactNode;
 }) {
   return (
     <div className="pk-spread">
       <span className="label" style={tone === "bloom" ? { color: "var(--bloom-text)" } : { color: "var(--ink-faint)" }}>
         {children}
       </span>
-      {count ? <span className="amount-sm pk-faint">{count}</span> : null}
+      {count ? <span className="amount-sm pk-faint pk-section-count">{count}</span> : null}
+      {action}
     </div>
   );
 }

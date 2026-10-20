@@ -60,8 +60,10 @@ drawn on the print (`printPhoto`) and on the shelf (`FrameArt`).
 
 The shelves can be searched by any word a thing is known by (its name, its
 line, where it is worn, its material, a room's colours) and narrowed to hats,
-glasses, neck, back, rooms, frames or what the closet holds. The address keeps
+glasses, neck, back, rooms, decor, frames or what the closet holds. The address keeps
 the shelf, so `/market#room` opens on the rooms (`src/lib/market/shelf.ts`).
+On a phone an untouched shelf is a row to swipe, the next tile peeking in, and
+"See all" opens it as a grid; a search or a filter always shows the grid.
 
 ```text
 /market → tap an item → a Paper sheet over the shelves: your own pet wearing it (or sitting

@@ -144,6 +144,8 @@ export function MarketScreen() {
   /** Whether the closet holds it: a room's thing once the room is there; a free thing is nobody's purchase. */
   const holds = (item: Item) => (item.decor ? Boolean(item.decor.room) && decorOpen(item.decor, owned) : owned.has(item.id as number));
   const [query, setQuery] = useState("");
+  /** Shelves opened whole on a phone; untouched, each is a row to swipe. */
+  const [opened, setOpened] = useState<readonly string[]>([]);
   const fragment = useFragment();
   const filter: ShelfFilter = isShelfFilter(fragment) ? fragment : "all";
   const narrowing = query.trim() !== "" || filter !== "all";
@@ -226,15 +228,36 @@ export function MarketScreen() {
           action={<Button label="Show everything" tone="quiet" size="sm" onClick={showEverything} />}
         />
       ) : (
-        shelves.map((shelf) =>
-          shelf.shown.length ? (
-            <Stack key={shelf.label} gap={3}>
-              <SectionLabel count={narrowing ? `${shelf.shown.length} of ${shelf.items.length}` : `${shelf.items.length}`}>{shelf.label}</SectionLabel>
+        shelves.map((shelf) => {
+          if (!shelf.shown.length) return null;
+          // On a phone the whole Market was one long column. An untouched shelf
+          // is a row to swipe there instead, and opens whole from its head;
+          // a search or a filter always shows everything it found.
+          const row = !narrowing && !opened.includes(shelf.label);
+          return (
+            <Stack key={shelf.label} gap={3} className={row ? "pk-shelf--row" : undefined}>
+              <SectionLabel
+                count={narrowing ? `${shelf.shown.length} of ${shelf.items.length}` : `${shelf.items.length}`}
+                action={
+                  row ? (
+                    <button
+                      type="button"
+                      className="pk-linkish pk-shelf__all"
+                      aria-label={`See all ${shelf.items.length}: ${shelf.label.toLowerCase()}`}
+                      onClick={() => setOpened([...opened, shelf.label])}
+                    >
+                      See all {shelf.items.length}
+                    </button>
+                  ) : null
+                }
+              >
+                {shelf.label}
+              </SectionLabel>
               {shelf.note && !narrowing ? <p className="body-sm pk-muted">{shelf.note}</p> : null}
-              <div className="pk-tiles">{shelf.shown.map(tile)}</div>
+              <div className={row ? "pk-tiles pk-tiles--row" : "pk-tiles"}>{shelf.shown.map(tile)}</div>
             </Stack>
-          ) : null,
-        )
+          );
+        })
       )}
 
       <details className="pk-fold">

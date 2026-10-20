@@ -30,7 +30,7 @@ import { SigningNote } from "./signing-note";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { DecorPanel } from "@/components/home/decor-panel";
 import { shownDecor, useRoomDecor } from "@/lib/room/decor";
-import { useCoats } from "@/lib/player/coats";
+import { useCoats } from "@/lib/player/use-coats";
 import { useCloset } from "@/lib/market/use-closet";
 import { Room, RoomViewSwitch, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";

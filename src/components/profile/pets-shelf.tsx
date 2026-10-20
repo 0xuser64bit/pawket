@@ -4,7 +4,7 @@ import { NavLink as Link, useNavigationWait } from "@/components/pk/nav-link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Button, ButtonLink, Card, Chip, Icon, PetFrame, Row, SectionLabel, Stack } from "@/components/pk";
-import { useCoats } from "@/lib/player/coats";
+import { useCoats } from "@/lib/player/use-coats";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";

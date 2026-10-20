@@ -96,6 +96,14 @@ the buyer's preview, fixed price, treasury and current fee payer. A room
 thing's sheet has no price and no Paper: it places the thing, or opens the
 room it comes with.
 
+The front door leads with the pets, then real figures read from the program,
+then a room that is theirs: three prints taken with Home's Photo tool in the
+3D room (`public/landing/`, retaken when the room or its things change) and a
+few of the room's things. A day with them, the Market's looks at their fixed
+prices, the ink band for Solana and three plain columns of what is owned
+follow; the whole asset table stays one fold away. On a phone the prints,
+the day and the shelf are rows to swipe, so the page stays short.
+
 Adoption uses a species row that follows the visible choice on a phone.
 Playground cards open daily rounds or practice; Pause remains reachable beside
 the game. The Park draws chain-read pets and provides a readable list. Guilds

@@ -3,7 +3,8 @@
 import { useRef, useState } from "react";
 import { NavLink as Link } from "@/components/pk/nav-link";
 import { Button, ButtonLink, Choice, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt } from "@/components/pk";
-import { COATS, chooseCoat, useCoats } from "@/lib/player/coats";
+import { COATS } from "@/lib/player/coats";
+import { chooseCoat, useCoats } from "@/lib/player/use-coats";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { MARKET_WEARABLES, WEARABLES, findWearable, wearableItem } from "@/lib/closet/catalog";
 import type { CompanionState } from "@/lib/companion/use-companion";

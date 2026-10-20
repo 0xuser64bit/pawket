@@ -2,7 +2,8 @@ import { afterEach, expect, it } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { DAYLIGHT } from "@/components/room3d/palette";
 import { PetSpecies } from "@/lib/game/enums";
-import { BAKED, COATS, chooseCoat, findCoat, useCoats } from "./coats";
+import { BAKED, COATS, findCoat } from "./coats";
+import { chooseCoat, useCoats } from "./use-coats";
 
 afterEach(() => window.localStorage.clear());
 

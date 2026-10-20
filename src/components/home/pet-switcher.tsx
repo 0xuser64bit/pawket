@@ -4,7 +4,7 @@ import { NavLink as Link } from "@/components/pk/nav-link";
 import { Icon, PetArt } from "@/components/pk";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
-import { useCoats } from "@/lib/player/coats";
+import { useCoats } from "@/lib/player/use-coats";
 
 const SKY_CLASS = { warm: "pk-sky--warm", cool: "pk-sky", plain: "pk-sky--plain" } as const;
 const NONE: ReadonlySet<string> = new Set();

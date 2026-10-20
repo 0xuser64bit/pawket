@@ -3294,10 +3294,11 @@ li {
 
 /* ------------------------------------------------------- the landing page
 
-   The order is the argument: hero, the loop as six pills, four pillars, an
-   ink band for the Playground, a full bloom-soft band for guilds, then a
-   Paper block stating the asset model, then the footer. Its widths are the
-   product's: one column below 1024px, two from there. */
+   The order is the argument: the pets, live figures read from the program,
+   a room that is theirs (photos taken in it, and its things), a day with
+   them, the Market's looks, the ink band for Solana, what is owned in three
+   plain columns (the whole table folded), and the last word. Its widths are
+   the product's: one column below 1024px, two from there. */
 
 .pk-landing__head {
   display: flex;
@@ -3384,12 +3385,16 @@ li {
   .pk-hero > .pk-stack {
     display: contents;
   }
-  .pk-hero__chip { order: 1; }
-  .pk-hero__title { order: 2; }
-  .pk-heroscene { order: 3; aspect-ratio: 4 / 3; }
-  .pk-hero__go { order: 4; }
-  .pk-hero__lede { order: 5; }
-  .pk-hero__note { order: 6; }
+  .pk-hero__title { order: 1; }
+  .pk-heroscene { order: 2; aspect-ratio: 4 / 3; }
+  .pk-hero__go { order: 3; }
+  .pk-hero__lede { order: 4; }
+  .pk-hero__note { order: 5; }
+}
+.pk-hero__note {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
 }
 @media (max-width: 719px) {
   .pk-hero__go {
@@ -3428,10 +3433,6 @@ li {
   }
   .pk-split--wide-left {
     grid-template-columns: 1.1fr 1fr;
-    align-items: start;
-  }
-  .pk-split--table {
-    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.6fr);
     align-items: start;
   }
 }
@@ -7346,7 +7347,7 @@ details > .pk-risks {
 }
 @media (min-width: 720px) {
   .pk-live {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 }
 .pk-live__fig {
@@ -7368,6 +7369,27 @@ details > .pk-risks {
   display: grid;
   gap: var(--space-5);
   grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+}
+/* On a phone the four are a row to swipe, a little of the next one showing. */
+@media (max-width: 719px) {
+  .pk-days {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: min(78%, 320px);
+    gap: var(--space-4);
+    margin-inline: calc(-1 * var(--gutter));
+    padding: var(--space-1) var(--gutter) var(--space-4);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+  }
+  .pk-days::-webkit-scrollbar {
+    display: none;
+  }
+  .pk-day {
+    scroll-snap-align: start;
+  }
 }
 .pk-day {
   display: grid;
@@ -7472,6 +7494,249 @@ details > .pk-risks {
   aspect-ratio: 1;
   translate: -50% 0;
   rotate: -8deg;
+}
+
+/* Every band after the hero breathes the same way. */
+.pk-landing__band {
+  padding-bottom: var(--space-9);
+}
+
+/* A room that is theirs: three photos taken in Pawket, pinned up like
+   prints — fanned and overlapping on a wide screen, a row to swipe on a
+   phone — beside a few of the room's things, drawn as the Market draws them. */
+.pk-roomshow {
+  display: grid;
+  gap: var(--space-6);
+}
+.pk-roomshow__head {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .pk-roomshow__head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 56px;
+  }
+}
+.pk-roomshow__photos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5) var(--space-2) var(--space-6);
+}
+.pk-roomshow__print {
+  position: relative;
+  flex: 0 0 34%;
+  margin: 0;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker);
+  rotate: -4deg;
+  transition:
+    rotate var(--dur-swap) var(--ease-spring),
+    translate var(--dur-swap) var(--ease-spring);
+}
+.pk-roomshow__print + .pk-roomshow__print {
+  margin-inline-start: -2%;
+}
+.pk-roomshow__print:nth-child(2) {
+  z-index: 1;
+  rotate: 2deg;
+  translate: 0 -10px;
+}
+.pk-roomshow__print:nth-child(3) {
+  rotate: 5deg;
+}
+/* A strip of tape holds each print to the page. */
+.pk-roomshow__print::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -10px;
+  left: 50%;
+  width: 72px;
+  height: 22px;
+  translate: -50% 0;
+  rotate: -3deg;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--sun-soft) 78%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--edge) 14%, transparent);
+}
+.pk-roomshow__print img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--radius-md) - 2px);
+}
+@media (hover: hover) {
+  .pk-roomshow__print:hover {
+    z-index: 2;
+    rotate: 0deg;
+    translate: 0 -6px;
+  }
+}
+@media (max-width: 1023px) {
+  /* Wide enough margins that the first print can sit in the middle, its neighbour peeking. */
+  .pk-roomshow__photos {
+    justify-content: flex-start;
+    gap: var(--space-4);
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: max(var(--gutter), calc((100% - min(78%, 420px)) / 2));
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+  }
+  .pk-roomshow__photos::-webkit-scrollbar {
+    display: none;
+  }
+  .pk-roomshow__print {
+    flex-basis: min(78%, 420px);
+    scroll-snap-align: center;
+  }
+  .pk-roomshow__print + .pk-roomshow__print {
+    margin-inline-start: 0;
+  }
+  .pk-roomshow__print:nth-child(2) {
+    translate: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pk-roomshow__print {
+    transition: none;
+  }
+}
+.pk-roomshow__things {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (max-width: 479px) {
+  .pk-roomshow__things {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.pk-roomshow__things li {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-well);
+}
+.pk-roomshow__things svg {
+  width: 74%;
+  height: 74%;
+}
+
+/* Five coats, as the adoption swatches draw them, tucked in the corner. */
+.pk-day__coats {
+  position: absolute;
+  right: 6%;
+  bottom: 7%;
+  display: flex;
+  gap: 3px;
+}
+.pk-day__coats span {
+  width: 9cqh;
+  aspect-ratio: 1;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+}
+
+/* Looks, never power: the words, then a shelf of real things at their fixed prices. */
+.pk-shelfshow {
+  display: grid;
+  gap: var(--space-5);
+}
+.pk-shelfshow__tiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(156px, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-1) var(--space-3);
+  color: inherit;
+  text-decoration: none;
+}
+@media (max-width: 1023px) {
+  .pk-shelfshow__tiles {
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: var(--gutter);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .pk-shelfshow__tiles::-webkit-scrollbar {
+    display: none;
+  }
+  .pk-shelfshow__tiles > * {
+    scroll-snap-align: start;
+  }
+}
+@media (hover: hover) {
+  .pk-shelfshow__tiles:hover .pk-tile {
+    translate: 0 -2px;
+  }
+}
+
+/* What you actually own: three plain columns; money's own column wears Paper. */
+.pk-owned {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 720px) {
+  .pk-owned {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.pk-owned__col {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-owned__col ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pk-owned__col li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: var(--space-2);
+}
+.pk-owned__col li::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-top: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--sprout);
+  box-shadow: 0 0 0 2px var(--edge);
+}
+.pk-owned__col--paper {
+  border: var(--stroke-hair) solid var(--rule);
+  border-radius: var(--radius-paper);
+  background: var(--paper);
+  box-shadow: none;
+}
+.pk-owned__col--paper li::before {
+  border-radius: 1px;
+  background: var(--trim-foil);
+}
+.pk-owned__more {
+  margin-top: var(--space-5);
 }
 
 /* Keep them on Solana: the one inverted band, ink for the layer underneath. */

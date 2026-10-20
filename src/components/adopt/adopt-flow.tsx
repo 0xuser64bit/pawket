@@ -38,7 +38,8 @@ import { usePawketSend } from "@/lib/solana/use-send";
 import { formatUtcDate } from "@/lib/utils/format";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 import { useBackCloses, useHere } from "@/lib/native/android";
-import { COATS, chooseCoat, findCoat } from "@/lib/player/coats";
+import { COATS, findCoat } from "@/lib/player/coats";
+import { chooseCoat } from "@/lib/player/use-coats";
 
 const SPECIES = [PetSpecies.LunaCat, PetSpecies.MossPup, PetSpecies.CloudBun];
 

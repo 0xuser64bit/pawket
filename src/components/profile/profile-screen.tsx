@@ -22,7 +22,7 @@ import { PetCopy } from "./pet-copy";
 import { Settings } from "./settings";
 import { StickerBook } from "./sticker-book";
 import { Wardrobe } from "./wardrobe";
-import { useCoats } from "@/lib/player/coats";
+import { useCoats } from "@/lib/player/use-coats";
 import { useHere } from "@/lib/native/android";
 
 export type ProfileTab = "pets" | "wardrobe" | "stickers" | "settings";

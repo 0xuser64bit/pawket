@@ -5,12 +5,18 @@ import { dealPairs } from "../src/lib/play/pairs";
 test("landing leads with the pet and closes with the rules", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Raise a pet. Keep every paw print." })).toBeVisible();
-  await expect(page.getByText(/no wallet, no token, no solana knowledge needed/i)).toBeVisible();
+  await expect(page.getByText(/no wallet, no token/i).first()).toBeVisible();
   await expect(page.getByRole("link", { name: /adopt a pet/i }).first()).toBeVisible();
+  // The room, as photos taken in it, and its things.
+  await expect(page.getByRole("heading", { name: "A room that is theirs" })).toBeVisible();
+  await expect(page.getByRole("img", { name: /Pepper, a ginger cat/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: "See the room's things" })).toHaveAttribute("href", "/market#decor");
 
   await expect(page.getByRole("heading", { name: "What you actually own" })).toBeVisible();
+  await expect(page.getByText(/can fall to nothing/).first()).toBeVisible();
+  await page.getByText("The whole asset model").click();
   await expect(page.getByRole("cell", { name: "A guild's coin" })).toBeVisible();
-  await expect(page.getByText(/adds? nothing to a pet/i).first()).toBeVisible();
+  await expect(page.getByText(/never touches a pet/i).first()).toBeVisible();
   await expect(page.getByText(/design preview|demo data/i)).toHaveCount(0);
 });
 

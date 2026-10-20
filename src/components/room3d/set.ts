@@ -77,7 +77,7 @@ export interface RoomSet {
   window: { x: number; y: number; z: number };
 }
 
-export function buildRoom(): RoomSet {
+export function buildRoom(decor?: RoomDecor): RoomSet {
   const group = new Group();
   group.name = "room";
 
@@ -148,6 +148,7 @@ export function buildRoom(): RoomSet {
   const tick = (now: Date) => {
     for (const slot of DECOR_SLOTS) places[slot].built?.tick?.(now);
   };
+  if (decor) dress(decor);
 
   // A shelf with three books.
   const shelf = new Group();

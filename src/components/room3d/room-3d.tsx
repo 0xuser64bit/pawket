@@ -184,7 +184,10 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
   const petGltf = pet ? use(load(petFile(pet.species))) : null;
   const { camera, size, invalidate, gl, scene } = useThree();
 
-  const room = useMemo(() => buildRoom(), []);
+  // Dressed as it is built, so its things are in the scene when the shaders compile ahead of the first frame;
+  // a thing placed later compiles when it arrives.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const room = useMemo(() => buildRoom(decor), []);
   const world = useMemo(() => new Group(), []);
   const human = useMemo(() => new HumanActor(body.scene, body.animations), [body]);
   const petActor = useMemo(

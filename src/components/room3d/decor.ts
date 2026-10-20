@@ -596,7 +596,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     const group = new Group();
     const profile = [new Vector2(0, 0), new Vector2(0.36, 0), new Vector2(0.42, 0.04), new Vector2(0.45, 0.17), new Vector2(0.41, 0.18), new Vector2(0.38, 0.06), new Vector2(0, 0.06)];
     const basket = solid(new LatheGeometry(profile, 36), "trim-copper");
-    (basket.material as MeshToonMaterial).side = DoubleSide;
     group.add(basket);
     const weave = [0.06, 0.11].map((y) => placed(new TorusGeometry(0.43 + y * 0.12, 0.007, 6, 48).rotateX(Math.PI / 2), 0, y, 0));
     group.add(many(weave, "sun-edge", false));
@@ -695,7 +694,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     const group = new Group();
     const profile = [new Vector2(0, 0), new Vector2(0.4, 0), new Vector2(0.42, 0.24), new Vector2(0.38, 0.24), new Vector2(0.36, 0.04), new Vector2(0, 0.04)];
     const mug = solid(new LatheGeometry(profile, 36), "surface");
-    (mug.material as MeshToonMaterial).side = DoubleSide;
     group.add(mug);
     group.add(at(solid(new CylinderGeometry(0.424, 0.42, 0.05, 36, 1, true), "sun", false), 0, 0.14, 0));
     const handle = solid(new TorusGeometry(0.1, 0.03, 10, 24, Math.PI * 1.2), "surface");
@@ -778,7 +776,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     const top = new Group();
     const profile = [new Vector2(0, 0), new Vector2(0.18, 0), new Vector2(0.22, 0.03), new Vector2(0.23, 0.09), new Vector2(0.2, 0.09), new Vector2(0.18, 0.03), new Vector2(0, 0.03)];
     const cup = solid(new LatheGeometry(profile, 28), "trim-cloth");
-    (cup.material as MeshToonMaterial).side = DoubleSide;
     top.add(cup);
     group.add(at(top, -0.08, 1.1, 0));
     group.add(at(solid(new CylinderGeometry(0.003, 0.003, 0.28, 4), "edge", false), 0.2, 0.47, 0.06));

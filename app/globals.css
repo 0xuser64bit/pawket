@@ -4119,10 +4119,23 @@ li {
   }
 }
 
-/* Five tools share the row: each shrinks before any wraps, down to a 320px phone. */
+/* Five tools share the row: each shrinks to the 44px touch minimum before any
+   wraps, and on a 320px phone they stand closer together. */
+.pk-deck__tools {
+  flex-wrap: wrap;
+}
 .pk-deck__tools > .pk-tool {
-  flex: 0 1 64px;
-  min-width: 48px;
+  flex: 1 1 0;
+  min-width: var(--touch-target);
+  max-width: 72px;
+}
+@media (max-width: 359px) {
+  .pk-deck__tools {
+    gap: var(--space-1);
+  }
+  .pk-deck__tools > .pk-tool {
+    padding-inline: 0;
+  }
 }
 
 /* Decorating, under the deck: the places in the room, then the things that

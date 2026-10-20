@@ -50,6 +50,11 @@ drawn on the print (`printPhoto`) and on the shelf (`FrameArt`).
 
 ## Purchase flow
 
+The shelves can be searched by any word a thing is known by (its name, its
+line, where it is worn, its material, a room's colours) and narrowed to hats,
+glasses, neck, back, rooms, frames or what the closet holds. The address keeps
+the shelf, so `/market#room` opens on the rooms (`src/lib/market/shelf.ts`).
+
 ```text
 /market → tap an item → a Paper sheet over the shelves: your own pet wearing it (or sitting
   in the room), its price, where the SOL goes, who pays the fee

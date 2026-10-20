@@ -131,6 +131,23 @@ test("the Market states its fixed prices and where the SOL goes, and asks a wall
   await expect(sheet.getByRole("button", { name: "Connect a wallet" })).toBeVisible();
 });
 
+test("the Market can be searched and narrowed, and a narrowed shelf can be linked to", async ({ page }) => {
+  await page.goto("/market");
+  await page.getByRole("searchbox", { name: "Search the Market" }).fill("glasses");
+  await expect(page.locator(".pk-tiles button")).toHaveCount(3);
+  await page.getByRole("searchbox", { name: "Search the Market" }).fill("pink room");
+  await expect(page.locator(".pk-tiles button")).toHaveCount(2);
+  await page.getByRole("searchbox", { name: "Search the Market" }).fill("nothing called this");
+  await page.getByRole("button", { name: "Show everything" }).click();
+  await expect(page.locator(".pk-tiles button")).toHaveCount(45);
+  await page.getByRole("radio", { name: "Rooms" }).click();
+  await expect(page).toHaveURL(/#room$/);
+  await expect(page.locator(".pk-tiles button")).toHaveCount(12);
+  await page.goto("/market#eyes");
+  await expect(page.getByRole("radio", { name: "Glasses" })).toBeChecked();
+  await expect(page.locator(".pk-tiles button")).toHaveCount(3);
+});
+
 test("the pulse is counted from the program, or says plainly that Solana did not answer", async ({ page }) => {
   await page.goto("/pulse");
   await expect(page.getByRole("heading", { name: "Pulse" })).toBeVisible();

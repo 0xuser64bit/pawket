@@ -4928,6 +4928,38 @@ li {
    A room for sale is drawn as itself: a swatch in its own tokens, the
    ground with a card on it, like the room picker's. */
 
+/* The Market's search: a field, then the shelves to narrow to, in one line
+   that slides sideways on a phone and fades at the edge it goes on past. */
+.pk-market-find {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.pk-market-filters .pk-choices {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-inline: calc(-1 * var(--gutter));
+  padding: var(--space-1) var(--gutter) var(--space-2);
+  scroll-padding-inline: var(--gutter);
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, transparent, #000 var(--space-4), #000 calc(100% - var(--space-7)), transparent);
+}
+.pk-market-filters .pk-choices::-webkit-scrollbar {
+  display: none;
+}
+.pk-market-filters .pk-choice {
+  flex: none;
+}
+@media (min-width: 720px) {
+  .pk-market-filters .pk-choices {
+    flex-wrap: wrap;
+    overflow: visible;
+    margin-inline: 0;
+    padding-inline: 0;
+    mask-image: none;
+  }
+}
 .pk-market-room {
   display: block;
   width: 100%;

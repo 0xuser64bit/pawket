@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { Address } from "@solana/kit";
-import { Button, ButtonLink, ItemTile, PetArt, RARITY_LABEL, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice, type Rarity, Problem } from "@/components/pk";
+import { Button, ButtonLink, Choice, EmptyState, Field, ItemTile, PetArt, RARITY_LABEL, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice, type Rarity, Problem } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
@@ -12,6 +12,7 @@ import { useCompanion } from "@/lib/companion/use-companion";
 import { petLook } from "@/lib/game/appearance";
 import { projectGuestPet } from "@/lib/guest/pet";
 import { PHOTO_FRAMES } from "@/lib/market/frames";
+import { SHELF_FILTERS, isShelfFilter, onShelf, type ShelfEntry, type ShelfFilter } from "@/lib/market/shelf";
 import { FrameArt } from "./frame-art";
 import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";
@@ -34,11 +35,8 @@ import { DevnetFaucet } from "@/components/wallet/faucet";
  * XP, a cooldown or a score, and nothing is resold.
  */
 
-interface Item {
+interface Item extends ShelfEntry {
   id: number;
-  name: string;
-  line: string;
-  kind: "piece" | "room" | "frame";
   art: React.ReactNode;
   /** The catalog id of a piece, to try it on. */
   piece?: string;
@@ -50,6 +48,7 @@ const PIECES: Item[] = MARKET_WEARABLES.map((piece) => ({
   name: piece.name,
   line: "For any of your pets on Solana. Looks only.",
   kind: "piece",
+  tags: [piece.place, piece.kind, piece.price === MARKET.classicPrice ? "cloth" : "foil"],
   piece: piece.id,
   art: <WearableArt id={piece.id} className="pk-tile__piece" />,
 }));
@@ -59,16 +58,35 @@ const ROOMS: Item[] = THEMES.filter((theme) => roomItem(theme.id) !== null).map(
   name: theme.name,
   line: theme.line,
   kind: "room",
+  tags: [theme.scheme, "glass"],
   room: theme.id,
   art: <span className="pk-market-room" data-theme-preview={theme.id} aria-hidden="true" />,
 }));
 
 const FRAMES: Item[] = PHOTO_FRAMES.map((frame) => ({
-  id: frame.item, name: frame.name, line: frame.line, kind: "frame",
+  id: frame.item, name: frame.name, line: frame.line, kind: "frame", tags: ["copper", "photo"],
   art: <FrameArt id={frame.id} className="pk-market-frame" />,
 }));
 
+const SHELVES: ReadonlyArray<{ label: string; items: Item[]; note?: string }> = [
+  { label: "For your pets", items: PIECES },
+  { label: "Rooms", items: ROOMS },
+  { label: "For your photos", items: FRAMES, note: "Frame a moment with your pet. Save it or share it from Home." },
+];
+
 const sol = (lamports: bigint | string) => `${formatUnits(lamports, 9, 4)} SOL`;
+
+/** The address's #fragment, so a link can open the Market narrowed (`/market#room`); "" on the server. */
+function useFragment(): string {
+  return useSyncExternalStore(
+    (changed) => {
+      window.addEventListener("hashchange", changed);
+      return () => window.removeEventListener("hashchange", changed);
+    },
+    () => window.location.hash.slice(1),
+    () => "",
+  );
+}
 
 /**
  * Each shelf's material, so the trim says what kind of thing it is: the
@@ -89,6 +107,23 @@ export function MarketScreen() {
   const choice = useThemeChoice();
   const [picked, setPicked] = useState<Item | null>(null);
   const owned = new Set(closet.data?.items ?? []);
+  const [query, setQuery] = useState("");
+  const fragment = useFragment();
+  const filter: ShelfFilter = isShelfFilter(fragment) ? fragment : "all";
+  const narrowing = query.trim() !== "" || filter !== "all";
+  const shelves = SHELVES.map((shelf) => ({ ...shelf, shown: shelf.items.filter((item) => onShelf(item, query, filter, owned.has(item.id))) }));
+  const found = shelves.reduce((sum, shelf) => sum + shelf.shown.length, 0);
+
+  /** The address holds the shelf, so a narrowed Market can be linked to, and comes back on reload. */
+  function narrow(next: ShelfFilter) {
+    window.history.replaceState(window.history.state, "", next === "all" ? window.location.pathname : `#${next}`);
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  }
+
+  function showEverything() {
+    setQuery("");
+    narrow("all");
+  }
 
   const tile = (item: Item) => {
     const has = owned.has(item.id);
@@ -108,20 +143,47 @@ export function MarketScreen() {
 
   return (
     <Stack gap={6}>
-      <Stack gap={3}>
-        <SectionLabel count={`${MARKET.wearables}`}>For your pets</SectionLabel>
-        <div className="pk-tiles">{PIECES.map(tile)}</div>
-      </Stack>
-      <Stack gap={3}>
-        <SectionLabel count={`${MARKET.rooms}`}>Rooms</SectionLabel>
-        <div className="pk-tiles">{ROOMS.map(tile)}</div>
-      </Stack>
+      <search className="pk-market-find" aria-label="Find in the Market">
+        <Field
+          label="Search the Market"
+          type="search"
+          placeholder="Hats, pink rooms, glasses…"
+          enterKeyHint="search"
+          autoComplete="off"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <Choice label="Show" hideLabel className="pk-market-filters" options={SHELF_FILTERS} value={filter} onPick={narrow} />
+        {/* Said once the shelves settle, not drawn: the counts beside each shelf already show it. */}
+        <p className="pk-sr" role="status">
+          {narrowing ? `${found} ${found === 1 ? "thing" : "things"} on the shelves` : ""}
+        </p>
+      </search>
 
-      <Stack gap={3}>
-        <SectionLabel count={`${FRAMES.length}`}>For your photos</SectionLabel>
-        <p className="body-sm pk-muted">Frame a moment with your pet. Save it or share it from Home.</p>
-        <div className="pk-tiles">{FRAMES.map(tile)}</div>
-      </Stack>
+      {found === 0 ? (
+        <EmptyState
+          icon="search"
+          title={filter === "yours" && !owner ? "Your closet is on Solana" : "Nothing on the shelves matches"}
+          body={
+            filter === "yours" && !owner
+              ? "Connect the wallet that bought them, and what is yours shows here."
+              : filter === "yours" && !query.trim()
+                ? "Nothing bought yet. Everything you buy stays in your closet, for any of your pets."
+                : `Nothing here is called “${query.trim() || "that"}”${filter === "all" ? "" : ` in ${SHELF_FILTERS.find((each) => each.value === filter)!.label.toLowerCase()}`}. Try a shorter word, or another shelf.`
+          }
+          action={<Button label="Show everything" tone="quiet" size="sm" onClick={showEverything} />}
+        />
+      ) : (
+        shelves.map((shelf) =>
+          shelf.shown.length ? (
+            <Stack key={shelf.label} gap={3}>
+              <SectionLabel count={narrowing ? `${shelf.shown.length} of ${shelf.items.length}` : `${shelf.items.length}`}>{shelf.label}</SectionLabel>
+              {shelf.note && !narrowing ? <p className="body-sm pk-muted">{shelf.note}</p> : null}
+              <div className="pk-tiles">{shelf.shown.map(tile)}</div>
+            </Stack>
+          ) : null,
+        )
+      )}
 
       <details className="pk-fold">
         <summary>

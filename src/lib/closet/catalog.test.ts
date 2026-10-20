@@ -9,7 +9,7 @@ describe("wearable catalog", () => {
     const ids = WEARABLES.map((item) => item.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const item of WEARABLES) {
-      expect(Object.keys(item).filter((key) => key !== "price").sort()).toEqual(["icon", "id", "kind", "name"]);
+      expect(Object.keys(item).filter((key) => key !== "price").sort()).toEqual(["icon", "id", "kind", "name", "place"]);
       for (const key of Object.keys(item)) {
         expect(key).not.toMatch(POWER_KEYS);
       }

@@ -12,10 +12,14 @@
  * with `dress_owned`. Existing slot numbers stay unchanged. Every piece is
  * expression only.
  */
+export type WearablePlace = "head" | "eyes" | "neck" | "back";
+
 export interface Wearable {
   id: string;
   name: string;
   kind: string;
+  /** Where a pet wears it: on its head, over its eyes, at its neck or on its back. */
+  place: WearablePlace;
   /** The piece's own glyph, for a chip beside the pet's name. */
   icon:
     | "scarf"
@@ -51,36 +55,36 @@ export interface Wearable {
 }
 
 export const WEARABLES: readonly Wearable[] = [
-  { id: "wool-scarf", name: "Wool scarf", kind: "Scarf", icon: "scarf" },
-  { id: "paper-crown", name: "Paper crown", kind: "Crown", icon: "crown" },
-  { id: "red-collar", name: "Red collar", kind: "Collar", icon: "collar" },
-  { id: "star-pin", name: "Star pin", kind: "Pin", icon: "star", price: 20_000_000n },
-  { id: "rain-cape", name: "Rain cape", kind: "Cape", icon: "cape", price: 20_000_000n },
-  { id: "nap-ribbon", name: "Nap ribbon", kind: "Ribbon", icon: "ribbon", price: 20_000_000n },
-  { id: "bow-tie", name: "Bow tie", kind: "Bow tie", icon: "bowtie", price: 20_000_000n },
-  { id: "round-glasses", name: "Round glasses", kind: "Glasses", icon: "glasses", price: 20_000_000n },
-  { id: "party-hat", name: "Party hat", kind: "Hat", icon: "partyhat", price: 20_000_000n },
-  { id: "bandana", name: "Bandana", kind: "Kerchief", icon: "bandana", price: 20_000_000n },
-  { id: "knit-beanie", name: "Knit beanie", kind: "Hat", icon: "beanie", price: 20_000_000n },
-  { id: "heart-glasses", name: "Heart glasses", kind: "Glasses", icon: "hearts", price: 20_000_000n },
-  { id: "bee-wings", name: "Bee wings", kind: "Wings", icon: "wings", price: 20_000_000n },
-  { id: "little-backpack", name: "Little backpack", kind: "Pack", icon: "backpack", price: 20_000_000n },
-  { id: "strawberry-hat", name: "Strawberry hat", kind: "Hat", icon: "strawberry", price: 20_000_000n },
-  { id: "bell-collar", name: "Bell collar", kind: "Collar", icon: "bell", price: 20_000_000n },
-  { id: "flower-crown", name: "Flower crown", kind: "Crown", icon: "flower", price: 20_000_000n },
-  { id: "leaf-sprout", name: "Leaf sprout", kind: "Sprout", icon: "sprout", price: 20_000_000n },
+  { id: "wool-scarf", name: "Wool scarf", place: "neck", kind: "Scarf", icon: "scarf" },
+  { id: "paper-crown", name: "Paper crown", place: "head", kind: "Crown", icon: "crown" },
+  { id: "red-collar", name: "Red collar", place: "neck", kind: "Collar", icon: "collar" },
+  { id: "star-pin", name: "Star pin", place: "neck", kind: "Pin", icon: "star", price: 20_000_000n },
+  { id: "rain-cape", name: "Rain cape", place: "back", kind: "Cape", icon: "cape", price: 20_000_000n },
+  { id: "nap-ribbon", name: "Nap ribbon", place: "head", kind: "Ribbon", icon: "ribbon", price: 20_000_000n },
+  { id: "bow-tie", name: "Bow tie", place: "neck", kind: "Bow tie", icon: "bowtie", price: 20_000_000n },
+  { id: "round-glasses", name: "Round glasses", place: "eyes", kind: "Glasses", icon: "glasses", price: 20_000_000n },
+  { id: "party-hat", name: "Party hat", place: "head", kind: "Hat", icon: "partyhat", price: 20_000_000n },
+  { id: "bandana", name: "Bandana", place: "neck", kind: "Kerchief", icon: "bandana", price: 20_000_000n },
+  { id: "knit-beanie", name: "Knit beanie", place: "head", kind: "Hat", icon: "beanie", price: 20_000_000n },
+  { id: "heart-glasses", name: "Heart glasses", place: "eyes", kind: "Glasses", icon: "hearts", price: 20_000_000n },
+  { id: "bee-wings", name: "Bee wings", place: "back", kind: "Wings", icon: "wings", price: 20_000_000n },
+  { id: "little-backpack", name: "Little backpack", place: "back", kind: "Pack", icon: "backpack", price: 20_000_000n },
+  { id: "strawberry-hat", name: "Strawberry hat", place: "head", kind: "Hat", icon: "strawberry", price: 20_000_000n },
+  { id: "bell-collar", name: "Bell collar", place: "neck", kind: "Collar", icon: "bell", price: 20_000_000n },
+  { id: "flower-crown", name: "Flower crown", place: "head", kind: "Crown", icon: "flower", price: 20_000_000n },
+  { id: "leaf-sprout", name: "Leaf sprout", place: "head", kind: "Sprout", icon: "sprout", price: 20_000_000n },
   // The Market's, from slot 19: their price is the program's (`WEARABLE_PRICE_LAMPORTS`).
-  { id: "halo", name: "Halo", kind: "Halo", icon: "halo", price: 50_000_000n },
-  { id: "wizard-hat", name: "Wizard hat", kind: "Hat", icon: "wizard", price: 50_000_000n },
-  { id: "sun-hat", name: "Sun hat", kind: "Hat", icon: "sunhat", price: 50_000_000n },
-  { id: "gold-crown", name: "Gold crown", kind: "Crown", icon: "goldcrown", price: 50_000_000n },
+  { id: "halo", name: "Halo", place: "head", kind: "Halo", icon: "halo", price: 50_000_000n },
+  { id: "wizard-hat", name: "Wizard hat", place: "head", kind: "Hat", icon: "wizard", price: 50_000_000n },
+  { id: "sun-hat", name: "Sun hat", place: "head", kind: "Hat", icon: "sunhat", price: 50_000_000n },
+  { id: "gold-crown", name: "Gold crown", place: "head", kind: "Crown", icon: "goldcrown", price: 50_000_000n },
   // Added with the Market's second shelf, from slot 23.
-  { id: "cowboy-hat", name: "Cowboy hat", kind: "Hat", icon: "cowboy", price: 50_000_000n },
-  { id: "chef-hat", name: "Chef hat", kind: "Hat", icon: "chef", price: 50_000_000n },
-  { id: "sunglasses", name: "Sunglasses", kind: "Glasses", icon: "shades", price: 50_000_000n },
-  { id: "headphones", name: "Headphones", kind: "Headphones", icon: "headphones", price: 50_000_000n },
-  { id: "beret", name: "Beret", kind: "Hat", icon: "beret", price: 50_000_000n },
-  { id: "necktie", name: "Necktie", kind: "Tie", icon: "tie", price: 50_000_000n },
+  { id: "cowboy-hat", name: "Cowboy hat", place: "head", kind: "Hat", icon: "cowboy", price: 50_000_000n },
+  { id: "chef-hat", name: "Chef hat", place: "head", kind: "Hat", icon: "chef", price: 50_000_000n },
+  { id: "sunglasses", name: "Sunglasses", place: "eyes", kind: "Glasses", icon: "shades", price: 50_000_000n },
+  { id: "headphones", name: "Headphones", place: "head", kind: "Headphones", icon: "headphones", price: 50_000_000n },
+  { id: "beret", name: "Beret", place: "head", kind: "Hat", icon: "beret", price: 50_000_000n },
+  { id: "necktie", name: "Necktie", place: "neck", kind: "Tie", icon: "tie", price: 50_000_000n },
 ];
 
 const WEARABLE_IDS = new Set(WEARABLES.map((item) => item.id));

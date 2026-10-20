@@ -15,7 +15,8 @@ import { PHOTO_FRAMES } from "@/lib/market/frames";
 import { SHELF_FILTERS, isShelfFilter, onShelf, type ShelfEntry, type ShelfFilter } from "@/lib/market/shelf";
 import { FrameArt } from "./frame-art";
 import { DecorArt } from "@/components/home/decor-art";
-import { DECOR, SLOT_LABEL, decorOpen, placeDecor, useRoomDecor, type DecorPiece } from "@/lib/room/decor";
+import { DECOR, SLOT_LABEL, decorOpen, isNewDecor, placeDecor, useRoomDecor, type DecorPiece } from "@/lib/room/decor";
+import { useMounted } from "@/lib/utils/use-mounted";
 import { useHere } from "@/lib/native/android";
 import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";
@@ -139,6 +140,8 @@ export function MarketScreen() {
   const closet = useCloset(owner);
   const choice = useThemeChoice();
   const decor = useRoomDecor();
+  /** Whether "new" can be decided: by this device's clock, once it is here. */
+  const mounted = useMounted();
   const [picked, setPicked] = useState<Item | null>(null);
   const owned = new Set(closet.data?.items ?? []);
   /** Whether the closet holds it: a room's thing once the room is there; a free thing is nobody's purchase. */
@@ -176,6 +179,7 @@ export function MarketScreen() {
             price={piece.room ? undefined : "Free"}
             art={item.art}
             equipped={decor[piece.slot] === piece.id}
+            fresh={mounted && isNewDecor(piece, new Date())}
           />
         </button>
       );

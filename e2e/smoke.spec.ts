@@ -143,6 +143,8 @@ test("the Market can be searched and narrowed, and a narrowed shelf can be linke
   await expect(page.locator(".pk-tiles button")).toHaveCount(3);
   await page.getByRole("searchbox", { name: "Search the Market" }).fill("pink room");
   await expect(page.locator(".pk-tiles button")).toHaveCount(2);
+  // Wide, every shelf is already its whole grid: nothing to open.
+  await expect(page.getByRole("button", { name: /^See all/ })).toHaveCount(0);
   await page.getByRole("searchbox", { name: "Search the Market" }).fill("nothing called this");
   await page.getByRole("button", { name: "Show everything" }).click();
   await expect(page.locator(".pk-tiles button")).toHaveCount(79);

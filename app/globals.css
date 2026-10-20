@@ -2278,6 +2278,12 @@ li {
   right: -6px;
   top: -6px;
 }
+.pk-tile__new {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  z-index: 1;
+}
 
 /* --------------------------------------------------------------- receipt */
 
@@ -3275,7 +3281,7 @@ li {
   }
 }
 @media (min-width: 720px) {
-  .pk-shelf__all {
+  .pk-linkish.pk-shelf__all {
     display: none;
   }
 }
@@ -4268,6 +4274,11 @@ li {
 }
 .pk-decor__thing--locked .pk-decor__art svg {
   opacity: 0.5;
+}
+.pk-decor__new {
+  position: absolute;
+  top: 4px;
+  left: 4px;
 }
 .pk-decor__lock {
   position: absolute;

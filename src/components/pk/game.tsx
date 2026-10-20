@@ -172,6 +172,7 @@ export function ItemTile({
   rarity = "cloth",
   price,
   equipped = false,
+  fresh = false,
   icon = "spark",
   art,
 }: {
@@ -181,6 +182,8 @@ export function ItemTile({
   /** Already formatted in SOL. The tile does no maths. */
   price?: string;
   equipped?: boolean;
+  /** Just arrived in the Market: marked new. */
+  fresh?: boolean;
   icon?: IconName;
   /** The thing itself, drawn; an icon stands in when there is no drawing. */
   art?: ReactNode;
@@ -190,6 +193,11 @@ export function ItemTile({
       {equipped ? (
         <span className="pk-tile__on">
           <Chip label="On" tone="sprout" />
+        </span>
+      ) : null}
+      {fresh ? (
+        <span className="pk-tile__new">
+          <Chip label="New" tone="sun" />
         </span>
       ) : null}
       <div className="pk-tile__art">

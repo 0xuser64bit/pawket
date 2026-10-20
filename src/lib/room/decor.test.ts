@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { THEMES, roomItem } from "@/config/themes";
-import { DECOR, DECOR_SLOTS, DEFAULT_DECOR, decorOpen, findDecor, parseDecor, placeDecor, shownDecor, useRoomDecor } from "./decor";
+import { DECOR, DECOR_SLOTS, DEFAULT_DECOR, decorOpen, findDecor, isNewDecor, parseDecor, placeDecor, shownDecor, useRoomDecor } from "./decor";
 
 const POWER_KEYS = /stat|xp|cooldown|boost|power|weight|priority|speed|price/i;
 
@@ -64,5 +64,15 @@ describe("what the room shows", () => {
       placeDecor("wall", null);
     });
     expect(result.current.wall).toBeNull();
+  });
+});
+
+describe("new things", () => {
+  it("are marked new for thirty days after they arrive, and never before or after", () => {
+    const leaves = findDecor("leaf-pile")!;
+    expect(isNewDecor(leaves, new Date("2026-10-21T12:00:00Z"))).toBe(true);
+    expect(isNewDecor(leaves, new Date("2026-11-19T12:00:00Z"))).toBe(true);
+    expect(isNewDecor(leaves, new Date("2026-11-21T12:00:00Z"))).toBe(false);
+    expect(isNewDecor(findDecor("fern")!, new Date("2026-10-21T12:00:00Z"))).toBe(false);
   });
 });

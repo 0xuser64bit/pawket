@@ -36,7 +36,9 @@ are free. Each Market room brings one of its own — the Blossom scroll, the
 northern lights, a strawberry rug, a honeycomb rug, a bonsai, a seashell bed,
 lavender, moon and stars, a sun mirror, a framed front page, a cocoa mug, a
 neon heart — open once the closet holds that room. Where they stand is kept on
-the device; the Market's "For your room" shelf places them too.
+the device; the Market's "For your room" shelf places them too. A thing is
+marked "New" for thirty days after it arrives (`since`, `isNewDecor`), on its
+tile and in Home's Decor panel.
 
 Each shelf's material is its tile's trim, and the word is written beside the
 price ("Cloth piece", "Glass room"). The material says what kind of thing it

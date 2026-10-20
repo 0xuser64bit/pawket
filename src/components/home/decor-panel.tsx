@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { NavLink as Link } from "@/components/pk/nav-link";
-import { Choice, Icon, type IconName } from "@/components/pk";
+import { Chip, Choice, Icon, type IconName } from "@/components/pk";
 import { THEMES } from "@/config/themes";
-import { DECOR, MAY_BE_EMPTY, SLOT_LABEL, decorOpen, placeDecor, type DecorSlot, type RoomDecor } from "@/lib/room/decor";
+import { DECOR, MAY_BE_EMPTY, SLOT_LABEL, decorOpen, isNewDecor, placeDecor, type DecorSlot, type RoomDecor } from "@/lib/room/decor";
+import { useMounted } from "@/lib/utils/use-mounted";
 import { useHere } from "@/lib/native/android";
 import { DecorArt } from "./decor-art";
 
@@ -27,6 +28,8 @@ export function DecorPanel({ shown, owned }: { shown: RoomDecor; owned: Readonly
   const [slot, setSlot] = useState<DecorSlot>("wall");
   const [said, setSaid] = useState<string>();
   const { here } = useHere();
+  /** Whether "new" can be decided: by this device's clock, once it is here. */
+  const mounted = useMounted();
   const pieces = DECOR.filter((piece) => piece.slot === slot);
 
   function place(id: string | null) {
@@ -58,6 +61,7 @@ export function DecorPanel({ shown, owned }: { shown: RoomDecor; owned: Readonly
             >
               <span className="pk-decor__art">
                 <DecorArt id={piece.id} />
+                {mounted && isNewDecor(piece, new Date()) ? <Chip label="New" tone="sun" className="pk-decor__new" /> : null}
                 {open ? null : (
                   <span className="pk-decor__lock">
                     <Icon name="lock" size={13} />

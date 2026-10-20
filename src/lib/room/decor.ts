@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { z } from "zod";
+import * as z from "@/lib/zod";
 import { roomItem, type ThemeId } from "@/config/themes";
 
 /**

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "@/lib/zod";
 import { isWearableId } from "@/lib/closet/catalog";
 import {
   BASE_XP_PER_LEVEL,

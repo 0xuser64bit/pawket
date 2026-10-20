@@ -17,10 +17,24 @@ const LEGACY_SOLANA = {
   ],
 };
 
+/**
+ * Zod's `z` namespace also holds every one of its locales, and the bundler
+ * keeps them all in the browser's shared code. Code a page can load names
+ * what it uses through `@/lib/zod`; server-only code may import `zod`.
+ */
+const BROWSER_ZOD = {
+  paths: [{ name: "zod", message: "Import Zod from @/lib/zod in code a page can load: \"zod\" brings all its locales into the browser." }],
+};
+
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
   { files: ["**/*.{ts,tsx,mts,mjs}"], rules: { "no-restricted-imports": ["error", LEGACY_SOLANA] } },
+  {
+    files: ["src/components/**", "src/lib/**", "src/config/env.ts"],
+    ignores: ["src/lib/zod.ts"],
+    rules: { "no-restricted-imports": ["error", { ...LEGACY_SOLANA, ...BROWSER_ZOD }] },
+  },
   { files: ["src/server/coins/**", "scripts/**"], rules: { "no-restricted-imports": "off" } },
   globalIgnores([
     ".next/**",

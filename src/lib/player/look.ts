@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "@/lib/zod";
 
 /**
  * How the player looks in the 3D room. Expression only: nothing here is

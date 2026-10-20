@@ -42,3 +42,10 @@ it("shows a keepsake as its own card, not as the Action's icon of the pet's mood
   expect(metadata.image).toMatch(new RegExp(`/api/keepsake/${PET}/card$`));
   expect(metadata.properties.files[0].uri).toBe(metadata.image);
 });
+
+it("draws a keepsake's picture once per address: a query is sent to the plain one", async () => {
+  const response = await keepsakePicture(new Request(`http://localhost/api/keepsake/${PET}/card?v=1`), { params: Promise.resolve({ pet: PET }) });
+  expect(response.status).toBe(308);
+  expect(response.headers.get("location")).toBe(`http://localhost/api/keepsake/${PET}/card`);
+  expect(read.pet).not.toHaveBeenCalled();
+});

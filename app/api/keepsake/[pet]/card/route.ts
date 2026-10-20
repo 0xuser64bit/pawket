@@ -9,7 +9,10 @@ export const runtime = "nodejs";
 
 type Props = { params: Promise<{ pet: string }> };
 
-export async function GET(_request: Request, { params }: Props) {
+export async function GET(request: Request, { params }: Props) {
+  // The edge caches one picture per address: any query goes to the plain one, so made-up queries cannot each draw one.
+  const url = new URL(request.url);
+  if (url.search) return Response.redirect(new URL(url.pathname, url), 308);
   const { pet } = await params;
   // Solana not answering is said and never cached as "no such pet".
   const onChain = isAddress(pet) ? await readPet(pet).catch(() => undefined) : null;

@@ -76,7 +76,7 @@ a JVM boundary test and a documented permission reason.
 | `remind` | Calendar editor with a daily reminder for 30 days; the player saves it | None |
 | `allow-reminders` | Asked when the player turns care reminders on (Home or Settings); answers whether the phone lets Pawket post | `POST_NOTIFICATIONS` on Android 13+, asked only here |
 | `care-reminder` | Sets or clears the one care reminder: a time within three days and plain words (control characters removed, lengths capped), as an inexact alarm; tapping it opens the app where it was left | None more |
-| `haptic` | Done, cheer or refusal feedback respecting phone and app settings | None |
+| `haptic` | Done, cheer, refusal or a boop's light tap, respecting phone and app settings (an older app ignores a kind it does not know) | None |
 | `room` | Validated ground color and day/night system bars | None |
 
 The bridge accepts no key, transaction, filesystem path or URL to load.

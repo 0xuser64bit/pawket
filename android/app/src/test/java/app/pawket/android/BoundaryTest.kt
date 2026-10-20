@@ -1,5 +1,6 @@
 package app.pawket.android
 
+import android.view.HapticFeedbackConstants
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -14,6 +15,16 @@ class BoundaryTest {
         bytes: ByteArray,
         type: String = "image/png",
     ) = "data:$type;base64," + Base64.getEncoder().encodeToString(bytes)
+
+    @Test
+    fun aHapticIsOneOfTheKindsTheSystemAlreadyHasAndNothingElse() {
+        assertEquals(HapticFeedbackConstants.CLOCK_TICK, PawketBridge.hapticEffect("tap", true))
+        assertEquals(HapticFeedbackConstants.CONFIRM, PawketBridge.hapticEffect("done", true))
+        assertEquals(HapticFeedbackConstants.VIRTUAL_KEY, PawketBridge.hapticEffect("cheer", false))
+        assertEquals(HapticFeedbackConstants.REJECT, PawketBridge.hapticEffect("refuse", true))
+        assertNull(PawketBridge.hapticEffect("buzz", true))
+        assertNull(PawketBridge.hapticEffect("", false))
+    }
 
     @Test
     fun anOriginIsSchemeHostAndAPortThatIsNotTheDefault() {

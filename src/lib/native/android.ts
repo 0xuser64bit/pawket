@@ -223,7 +223,7 @@ export function useHaptics(): [boolean, (on: boolean) => void] {
  * ("cheer"), a care or send refused ("refuse"). Called when the thing has
  * happened — after the save, or after Solana confirmed — never while signing.
  */
-export function haptic(kind: "done" | "cheer" | "refuse"): void {
+export function haptic(kind: "done" | "cheer" | "refuse" | "tap"): void {
   const app = bridge();
   if (!app || !hapticsOn()) return;
   try {

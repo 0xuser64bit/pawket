@@ -100,18 +100,12 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         }
     }
 
-    /** A care kept, a level, a refusal: the system's own feedback, so the phone's touch-feedback setting decides. */
+    /** A care kept, a level, a refusal, a boop: the system's own feedback, so the phone's touch-feedback setting decides. */
     private fun haptic(
         view: WebView,
         kind: String,
     ) {
-        val modern = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-        val effect =
-            when (kind) {
-                "done", "cheer" -> if (modern) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
-                "refuse" -> if (modern) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
-                else -> return
-            }
+        val effect = hapticEffect(kind, Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ?: return
         view.performHapticFeedback(effect)
         if (kind == "cheer") view.postDelayed({ view.performHapticFeedback(effect) }, CHEER_GAP_MS)
     }
@@ -294,6 +288,19 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         private val HEX_COLOUR = Regex("^#[0-9a-fA-F]{6}$")
         private val PNG_SIGNATURE = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
         private const val PNG_DATA_URL = "data:image/png;base64,"
+
+        /** The system's own feedback for a kind the page names, or null for any other kind. */
+        fun hapticEffect(
+            kind: String,
+            modern: Boolean,
+        ): Int? =
+            when (kind) {
+                "done", "cheer" -> if (modern) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+                "refuse" -> if (modern) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
+                // A boop: the lightest tick the phone has.
+                "tap" -> HapticFeedbackConstants.CLOCK_TICK
+                else -> null
+            }
 
         /** A PNG, from a data URL, or null for anything else or anything too large. */
         fun decodePng(data: String): ByteArray? {

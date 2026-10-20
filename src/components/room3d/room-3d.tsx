@@ -17,6 +17,7 @@ import { HumanActor } from "./human";
 import { outlineUniforms } from "./materials";
 import { PetActor } from "./pet";
 import { blobShadow, buildRoom } from "./set";
+import { chime } from "@/lib/play/sound";
 
 export interface RoomView {
   /** Turn the view a step left (-1) or right (1). */
@@ -471,7 +472,7 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
             object={petActor.root}
             onClick={(event: { stopPropagation: () => void }) => {
               event.stopPropagation();
-              director.boop();
+              if (director.boop()) chime("boop");
             }}
             onPointerOver={() => pointAt(gl.domElement, true)}
             onPointerOut={() => pointAt(gl.domElement, false)}

@@ -186,14 +186,16 @@ export class Director {
   }
 
   /** Tap the pet: a happy wiggle, and the player looks. */
-  boop(): void {
-    if (!this.pet || this.run || this.photoHold) return;
+  /** A tap on the pet: it wakes and is glad. False when it is busy with a moment or a photo, and ignores it. */
+  boop(): boolean {
+    if (!this.pet || this.run || this.photoHold) return false;
     this.pet.wake();
     this.pet.cue("happy");
     this.pet.faceTowards(this.human.root.position);
     this.gaze = "pet";
     this.gazeUntil = this.clock + 3;
     this.petBusyUntil = this.clock + 1.6;
+    return true;
   }
 
   private start(moment: Moment): void {

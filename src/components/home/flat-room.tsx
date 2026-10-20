@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from "react";
 import { useMounted } from "@/lib/utils/use-mounted";
+import { chime } from "@/lib/play/sound";
 import { Icon, PetArt, PlayerArt, type Feeling, type GlassesName, type HatName, type IconName, type PetForm, type Temper } from "@/components/pk";
 import type { RoomDecor } from "@/lib/room/decor";
 import { BedBack, BedFront, FlatDecor } from "./decor-art";
@@ -58,6 +59,7 @@ export function FlatRoom({
   const [beaming, setBeaming] = useState(false);
   const beam = useRef(0);
   function boop() {
+    chime("boop");
     setBooped((n) => n + 1);
     setBeaming(true);
     window.clearTimeout(beam.current);

@@ -8,7 +8,7 @@ const mock = vi.hoisted(() => ({ read: vi.fn(), refresh: vi.fn(), send: vi.fn(),
 vi.mock("./transactions", async (original) => ({ ...(await original<object>()), settleSignature: mock.settle }));
 vi.mock("@/lib/companion/use-companion", () => ({ refreshOwnedPets: mock.pets }));
 vi.mock("@/lib/analytics/events", () => ({ record: mock.record }));
-vi.mock("./browser-client", () => ({ rpc: {}, useConnected: () => ({ account: { address: "11111111111111111111111111111111" }, signer: createNoopSigner("11111111111111111111111111111111" as Address) }) }));
+vi.mock("./browser-client", () => ({ rpc: {}, PHONE_WALLETS: "Mobile Wallet Adapter", useConnected: () => ({ account: { address: "11111111111111111111111111111111" }, signer: createNoopSigner("11111111111111111111111111111111" as Address) }) }));
 vi.mock("@/lib/wallet/pawket-wallet", () => ({ usePawketWallet: () => null, readPawketWallet: mock.read, refreshPawketWallet: mock.refresh }));
 vi.mock("./send", () => ({ sendPawket: mock.send, sendPrepared: mock.prepared, RelayError: Error }));
 vi.mock("@/lib/native/android", () => ({ haptic: vi.fn(), inAndroidApp: () => mock.app }));

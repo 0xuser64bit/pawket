@@ -9,7 +9,7 @@ import { txToast } from "@/components/wallet/tx-toast";
 import { getPublicEnv } from "@/config/env";
 import { haptic } from "@/lib/native/android";
 import { readPawketWallet, refreshPawketWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
-import { rpc, useConnected } from "./browser-client";
+import { PHONE_WALLETS, rpc, useConnected } from "./browser-client";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID, type PawketInstructionName } from "./program";
 import { asDeviceInstruction } from "./instructions";
 import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
@@ -63,6 +63,8 @@ export interface TxState {
   sponsored?: boolean;
   /** Who signed: the wallet (with a prompt), or this device, linked to the Pawket Wallet (without one). */
   by?: "wallet" | "device";
+  /** The wallet is an app on this phone (Mobile Wallet Adapter): its wait can be stopped from here. */
+  phone?: boolean;
   error?: string;
   /** Nothing was tried: the Pawket Wallet needs this first — a link, a balance, or tomorrow. */
   needs?: PawketWalletNeed;
@@ -254,7 +256,7 @@ export function usePawketSend() {
       setSending(true);
       // Each send is one toast, kept up to date to the end — even after the screen that sent it is gone.
       const id = `send-${++sends}`;
-      let state: TxState = { stage: "preparing", label, by, done };
+      let state: TxState = { stage: "preparing", label, by, done, phone: by === "wallet" && connected?.wallet?.name === PHONE_WALLETS };
       const show = (next: Partial<TxState>) => {
         state = { ...state, ...next };
         setTx(state);
@@ -291,7 +293,7 @@ export function usePawketSend() {
         setSending(false);
       }
     },
-    [owner],
+    [owner, connected],
   );
 
   /** `instructions`, signed by `signer` — the wallet, or this device — with the sponsor paying while it is up. */

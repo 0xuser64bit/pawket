@@ -1,17 +1,23 @@
 diff --git a/lib/cjs/index.browser.js b/lib/cjs/index.browser.js
-index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..1561ba9b59a1b28603d915f9562710bd14282810 100644
+index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..bfecd067354bf03b8f835f16e954ea60fe56ee05 100644
 --- a/lib/cjs/index.browser.js
 +++ b/lib/cjs/index.browser.js
-@@ -1192,7 +1192,7 @@ const DEFAULT_FEATURES = [
+@@ -1192,7 +1192,13 @@ const DEFAULT_FEATURES = [
  	_solana_wallet_standard_features.SolanaSignMessage,
  	_solana_wallet_standard_features.SolanaSignIn
  ];
 -const WALLET_ASSOCIATION_TIMEOUT = 3e4;
 +const WALLET_ASSOCIATION_TIMEOUT = 6e4;
++/**
++* Pawket: how long a wallet's token is sent for a silent re-authorization. Phantom's lapse within
++* hours and Solflare's within days, and a wallet sent one it no longer honours can show nothing at
++* all; past this, a session asks afresh first, then signs, in the same visit.
++*/
++const TRUSTED_TOKEN_MS = 45 * 6e4;
  function getErrorMessage(error) {
  	return error instanceof Error ? error.message : "Unknown error";
  }
-@@ -1329,11 +1329,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1329,19 +1335,21 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  			}
  			const selectedChain = await this.#chainSelector.select(this.#chains);
  			return await this.#transact(async (wallet) => {
@@ -26,16 +32,18 @@ index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..1561ba9b59a1b28603d915f9562710bd
  				const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
  				const authorization = {
  					...mwaAuthorizationResult,
-@@ -1341,7 +1342,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					accounts,
  					chain: selectedChain,
- 					capabilities
+-					capabilities
++					capabilities,
++					authorizedAt: Date.now()
  				};
 -				Promise.all([
 +				await Promise.all([
  					this.#handleWalletCapabilitiesResult(capabilities),
  					this.#authorizationCache.set(authorization),
  					this.#handleAuthorizationResult(authorization)
-@@ -1377,11 +1378,24 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1377,24 +1385,59 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  	};
  	#performReauthorization = async (wallet, authToken, chain) => {
  		try {
@@ -45,14 +53,24 @@ index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..1561ba9b59a1b28603d915f9562710bd
 -				chain
 -			})]);
 +			let mwaAuthorizationResult;
-+			try {
-+				mwaAuthorizationResult = await wallet.authorize({
-+					auth_token: authToken,
-+					identity: this.#appIdentity,
-+					chain
-+				});
-+			} catch (e) {
-+				if (!(e instanceof Error && e.name === "SolanaMobileWalletAdapterProtocolError" && e.code === -1)) throw e;
++			if (this.#trusted()) {
++				try {
++					mwaAuthorizationResult = await wallet.authorize({
++						auth_token: authToken,
++						identity: this.#appIdentity,
++						chain
++					});
++				} catch (e) {
++					if (!(e instanceof Error && e.name === "SolanaMobileWalletAdapterProtocolError" && e.code === -1)) throw e;
++					// The wallet no longer honours its token. Some wallets then show nothing for a second ask in
++					// the same visit, so this visit ends here, and the next one asks afresh before it signs.
++					await this.#distrust();
++					throw Object.assign(new Error("The wallet asked to approve the app again."), {
++						name: "SolanaMobileWalletAdapterError",
++						code: "ERROR_REAUTHORIZE"
++					});
++				}
++			} else {
 +				const before = this.#authorization?.accounts.map((account) => account.address) ?? [];
 +				mwaAuthorizationResult = await wallet.authorize({
 +					identity: this.#appIdentity,
@@ -65,16 +83,35 @@ index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..1561ba9b59a1b28603d915f9562710bd
  			const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
  			const authorization = {
  				...mwaAuthorizationResult,
-@@ -1389,7 +1403,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 				accounts,
  				chain,
- 				capabilities
+-				capabilities
++				capabilities,
++				authorizedAt: Date.now()
  			};
 -			Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
 +			await Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
  		} catch (e) {
- 			this.#disconnect();
+-			this.#disconnect();
++			if (e?.code !== "ERROR_REAUTHORIZE") this.#disconnect();
  			throw new Error(getErrorMessage(e), { cause: e });
-@@ -1405,11 +1419,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 		}
+ 	};
++	/** Pawket: whether this authorization's token is young enough to send, and not refused. */
++	#trusted = () => !this.#authorization?.distrusted && Date.now() - (this.#authorization?.authorizedAt ?? 0) < TRUSTED_TOKEN_MS;
++	/** Pawket: the next session asks afresh instead of sending this token. */
++	#distrust = async () => {
++		if (!this.#authorization) return;
++		this.#authorization = {
++			...this.#authorization,
++			distrusted: true
++		};
++		await this.#authorizationCache.set(this.#authorization);
++	};
+ 	#disconnect = async () => {
+ 		this.#authorizationCache.clear();
+ 		this.#connecting = false;
+@@ -1405,11 +1448,21 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  	#transact = async (callback) => {
  		const walletUriBase = this.#authorization?.wallet_uri_base;
  		const config = walletUriBase ? { baseUri: walletUriBase } : void 0;
@@ -84,13 +121,22 @@ index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..1561ba9b59a1b28603d915f9562710bd
 +		let rejectDeadline;
 +		let closeSession;
 +		let ended = false;
++		// Pawket: the page ends a visit the player gave up on (a wallet showing nothing); the next asks afresh.
++		const cancel = () => {
++			this.#distrust();
++			rejectDeadline?.(Object.assign(new Error("Wallet request cancelled by user"), {
++				name: "SolanaMobileWalletAdapterError",
++				code: "ERROR_ASSOCIATION_CANCELLED"
++			}));
++		};
++		window.addEventListener("pawket:wallet-cancel", cancel);
  		try {
 -			let associating = true;
 -			let timeout = void 0;
  			const useWebSocket = await isLocalWebSocketAvailable();
  			const result = await Promise.race([(async () => {
  				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
-@@ -1420,27 +1435,44 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1420,27 +1473,45 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  					connectionType: "local",
  					relayDomain: this.#nostrRelay
  				}) : await (0, _solana_mobile_mobile_wallet_adapter_protocol.startScenario)(config);
@@ -137,6 +183,7 @@ index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..1561ba9b59a1b28603d915f9562710bd
  			if (e instanceof Error && e.name === "SolanaMobileWalletAdapterError" && e.code === "ERROR_WALLET_NOT_FOUND") await this.#onWalletNotFound(this);
  			throw e;
 +		} finally {
++			window.removeEventListener("pawket:wallet-cancel", cancel);
 +			ended = true;
 +			clearTimeout(timeout);
 +			loadingSpinner.close();
@@ -144,20 +191,36 @@ index 9a624cc96b6783a06a4de2377c47101ffb3f3b52..1561ba9b59a1b28603d915f9562710bd
  		}
  	};
  	#assertIsAuthorized = () => {
+@@ -1706,7 +1777,8 @@ var RemoteSolanaMobileWalletAdapterWallet = class {
+ 					...mwaAuthorizationResult,
+ 					accounts,
+ 					chain: selectedChain,
+-					capabilities
++					capabilities,
++					authorizedAt: Date.now()
+ 				};
+ 				Promise.all([
+ 					this.#handleWalletCapabilitiesResult(capabilities),
 diff --git a/lib/cjs/index.js b/lib/cjs/index.js
-index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..f91bd31cc35d1f2ca3bb4957e79da84c607d8f36 100644
+index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..595917f0a5528f14e65ea9c021f6499e4b935d68 100644
 --- a/lib/cjs/index.js
 +++ b/lib/cjs/index.js
-@@ -1192,7 +1192,7 @@ const DEFAULT_FEATURES = [
+@@ -1192,7 +1192,13 @@ const DEFAULT_FEATURES = [
  	_solana_wallet_standard_features.SolanaSignMessage,
  	_solana_wallet_standard_features.SolanaSignIn
  ];
 -const WALLET_ASSOCIATION_TIMEOUT = 3e4;
 +const WALLET_ASSOCIATION_TIMEOUT = 6e4;
++/**
++* Pawket: how long a wallet's token is sent for a silent re-authorization. Phantom's lapse within
++* hours and Solflare's within days, and a wallet sent one it no longer honours can show nothing at
++* all; past this, a session asks afresh first, then signs, in the same visit.
++*/
++const TRUSTED_TOKEN_MS = 45 * 6e4;
  function getErrorMessage(error) {
  	return error instanceof Error ? error.message : "Unknown error";
  }
-@@ -1329,11 +1329,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1329,19 +1335,21 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  			}
  			const selectedChain = await this.#chainSelector.select(this.#chains);
  			return await this.#transact(async (wallet) => {
@@ -172,16 +235,18 @@ index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..f91bd31cc35d1f2ca3bb4957e79da84c
  				const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
  				const authorization = {
  					...mwaAuthorizationResult,
-@@ -1341,7 +1342,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					accounts,
  					chain: selectedChain,
- 					capabilities
+-					capabilities
++					capabilities,
++					authorizedAt: Date.now()
  				};
 -				Promise.all([
 +				await Promise.all([
  					this.#handleWalletCapabilitiesResult(capabilities),
  					this.#authorizationCache.set(authorization),
  					this.#handleAuthorizationResult(authorization)
-@@ -1377,11 +1378,24 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1377,24 +1385,59 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  	};
  	#performReauthorization = async (wallet, authToken, chain) => {
  		try {
@@ -191,14 +256,24 @@ index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..f91bd31cc35d1f2ca3bb4957e79da84c
 -				chain
 -			})]);
 +			let mwaAuthorizationResult;
-+			try {
-+				mwaAuthorizationResult = await wallet.authorize({
-+					auth_token: authToken,
-+					identity: this.#appIdentity,
-+					chain
-+				});
-+			} catch (e) {
-+				if (!(e instanceof Error && e.name === "SolanaMobileWalletAdapterProtocolError" && e.code === -1)) throw e;
++			if (this.#trusted()) {
++				try {
++					mwaAuthorizationResult = await wallet.authorize({
++						auth_token: authToken,
++						identity: this.#appIdentity,
++						chain
++					});
++				} catch (e) {
++					if (!(e instanceof Error && e.name === "SolanaMobileWalletAdapterProtocolError" && e.code === -1)) throw e;
++					// The wallet no longer honours its token. Some wallets then show nothing for a second ask in
++					// the same visit, so this visit ends here, and the next one asks afresh before it signs.
++					await this.#distrust();
++					throw Object.assign(new Error("The wallet asked to approve the app again."), {
++						name: "SolanaMobileWalletAdapterError",
++						code: "ERROR_REAUTHORIZE"
++					});
++				}
++			} else {
 +				const before = this.#authorization?.accounts.map((account) => account.address) ?? [];
 +				mwaAuthorizationResult = await wallet.authorize({
 +					identity: this.#appIdentity,
@@ -211,16 +286,35 @@ index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..f91bd31cc35d1f2ca3bb4957e79da84c
  			const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
  			const authorization = {
  				...mwaAuthorizationResult,
-@@ -1389,7 +1403,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 				accounts,
  				chain,
- 				capabilities
+-				capabilities
++				capabilities,
++				authorizedAt: Date.now()
  			};
 -			Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
 +			await Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
  		} catch (e) {
- 			this.#disconnect();
+-			this.#disconnect();
++			if (e?.code !== "ERROR_REAUTHORIZE") this.#disconnect();
  			throw new Error(getErrorMessage(e), { cause: e });
-@@ -1405,11 +1419,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 		}
+ 	};
++	/** Pawket: whether this authorization's token is young enough to send, and not refused. */
++	#trusted = () => !this.#authorization?.distrusted && Date.now() - (this.#authorization?.authorizedAt ?? 0) < TRUSTED_TOKEN_MS;
++	/** Pawket: the next session asks afresh instead of sending this token. */
++	#distrust = async () => {
++		if (!this.#authorization) return;
++		this.#authorization = {
++			...this.#authorization,
++			distrusted: true
++		};
++		await this.#authorizationCache.set(this.#authorization);
++	};
+ 	#disconnect = async () => {
+ 		this.#authorizationCache.clear();
+ 		this.#connecting = false;
+@@ -1405,11 +1448,21 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  	#transact = async (callback) => {
  		const walletUriBase = this.#authorization?.wallet_uri_base;
  		const config = walletUriBase ? { baseUri: walletUriBase } : void 0;
@@ -230,13 +324,22 @@ index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..f91bd31cc35d1f2ca3bb4957e79da84c
 +		let rejectDeadline;
 +		let closeSession;
 +		let ended = false;
++		// Pawket: the page ends a visit the player gave up on (a wallet showing nothing); the next asks afresh.
++		const cancel = () => {
++			this.#distrust();
++			rejectDeadline?.(Object.assign(new Error("Wallet request cancelled by user"), {
++				name: "SolanaMobileWalletAdapterError",
++				code: "ERROR_ASSOCIATION_CANCELLED"
++			}));
++		};
++		window.addEventListener("pawket:wallet-cancel", cancel);
  		try {
 -			let associating = true;
 -			let timeout = void 0;
  			const useWebSocket = await isLocalWebSocketAvailable();
  			const result = await Promise.race([(async () => {
  				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
-@@ -1420,27 +1435,44 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1420,27 +1473,45 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  					connectionType: "local",
  					relayDomain: this.#nostrRelay
  				}) : await (0, _solana_mobile_mobile_wallet_adapter_protocol.startScenario)(config);
@@ -283,6 +386,7 @@ index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..f91bd31cc35d1f2ca3bb4957e79da84c
  			if (e instanceof Error && e.name === "SolanaMobileWalletAdapterError" && e.code === "ERROR_WALLET_NOT_FOUND") await this.#onWalletNotFound(this);
  			throw e;
 +		} finally {
++			window.removeEventListener("pawket:wallet-cancel", cancel);
 +			ended = true;
 +			clearTimeout(timeout);
 +			loadingSpinner.close();
@@ -290,20 +394,36 @@ index 414fa3d0aa96b92ff9dcacbae0879454ac1127b8..f91bd31cc35d1f2ca3bb4957e79da84c
  		}
  	};
  	#assertIsAuthorized = () => {
+@@ -1706,7 +1777,8 @@ var RemoteSolanaMobileWalletAdapterWallet = class {
+ 					...mwaAuthorizationResult,
+ 					accounts,
+ 					chain: selectedChain,
+-					capabilities
++					capabilities,
++					authorizedAt: Date.now()
+ 				};
+ 				Promise.all([
+ 					this.#handleWalletCapabilitiesResult(capabilities),
 diff --git a/lib/esm/index.browser.js b/lib/esm/index.browser.js
-index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..fb13548024a3168d514cacdc09c8c4af42789c9b 100644
+index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..ce15a6733e52bf0084bb2ec9498cdeeb5208258e 100644
 --- a/lib/esm/index.browser.js
 +++ b/lib/esm/index.browser.js
-@@ -1168,7 +1168,7 @@ const DEFAULT_FEATURES = [
+@@ -1168,7 +1168,13 @@ const DEFAULT_FEATURES = [
  	SolanaSignMessage,
  	SolanaSignIn
  ];
 -const WALLET_ASSOCIATION_TIMEOUT = 3e4;
 +const WALLET_ASSOCIATION_TIMEOUT = 6e4;
++/**
++* Pawket: how long a wallet's token is sent for a silent re-authorization. Phantom's lapse within
++* hours and Solflare's within days, and a wallet sent one it no longer honours can show nothing at
++* all; past this, a session asks afresh first, then signs, in the same visit.
++*/
++const TRUSTED_TOKEN_MS = 45 * 6e4;
  function getErrorMessage(error) {
  	return error instanceof Error ? error.message : "Unknown error";
  }
-@@ -1305,11 +1305,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1305,19 +1311,21 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  			}
  			const selectedChain = await this.#chainSelector.select(this.#chains);
  			return await this.#transact(async (wallet) => {
@@ -318,16 +438,18 @@ index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..fb13548024a3168d514cacdc09c8c4af
  				const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
  				const authorization = {
  					...mwaAuthorizationResult,
-@@ -1317,7 +1318,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					accounts,
  					chain: selectedChain,
- 					capabilities
+-					capabilities
++					capabilities,
++					authorizedAt: Date.now()
  				};
 -				Promise.all([
 +				await Promise.all([
  					this.#handleWalletCapabilitiesResult(capabilities),
  					this.#authorizationCache.set(authorization),
  					this.#handleAuthorizationResult(authorization)
-@@ -1353,11 +1354,24 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1353,24 +1361,59 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  	};
  	#performReauthorization = async (wallet, authToken, chain) => {
  		try {
@@ -337,14 +459,24 @@ index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..fb13548024a3168d514cacdc09c8c4af
 -				chain
 -			})]);
 +			let mwaAuthorizationResult;
-+			try {
-+				mwaAuthorizationResult = await wallet.authorize({
-+					auth_token: authToken,
-+					identity: this.#appIdentity,
-+					chain
-+				});
-+			} catch (e) {
-+				if (!(e instanceof Error && e.name === "SolanaMobileWalletAdapterProtocolError" && e.code === -1)) throw e;
++			if (this.#trusted()) {
++				try {
++					mwaAuthorizationResult = await wallet.authorize({
++						auth_token: authToken,
++						identity: this.#appIdentity,
++						chain
++					});
++				} catch (e) {
++					if (!(e instanceof Error && e.name === "SolanaMobileWalletAdapterProtocolError" && e.code === -1)) throw e;
++					// The wallet no longer honours its token. Some wallets then show nothing for a second ask in
++					// the same visit, so this visit ends here, and the next one asks afresh before it signs.
++					await this.#distrust();
++					throw Object.assign(new Error("The wallet asked to approve the app again."), {
++						name: "SolanaMobileWalletAdapterError",
++						code: "ERROR_REAUTHORIZE"
++					});
++				}
++			} else {
 +				const before = this.#authorization?.accounts.map((account) => account.address) ?? [];
 +				mwaAuthorizationResult = await wallet.authorize({
 +					identity: this.#appIdentity,
@@ -357,16 +489,35 @@ index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..fb13548024a3168d514cacdc09c8c4af
  			const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
  			const authorization = {
  				...mwaAuthorizationResult,
-@@ -1365,7 +1379,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 				accounts,
  				chain,
- 				capabilities
+-				capabilities
++				capabilities,
++				authorizedAt: Date.now()
  			};
 -			Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
 +			await Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
  		} catch (e) {
- 			this.#disconnect();
+-			this.#disconnect();
++			if (e?.code !== "ERROR_REAUTHORIZE") this.#disconnect();
  			throw new Error(getErrorMessage(e), { cause: e });
-@@ -1381,11 +1395,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 		}
+ 	};
++	/** Pawket: whether this authorization's token is young enough to send, and not refused. */
++	#trusted = () => !this.#authorization?.distrusted && Date.now() - (this.#authorization?.authorizedAt ?? 0) < TRUSTED_TOKEN_MS;
++	/** Pawket: the next session asks afresh instead of sending this token. */
++	#distrust = async () => {
++		if (!this.#authorization) return;
++		this.#authorization = {
++			...this.#authorization,
++			distrusted: true
++		};
++		await this.#authorizationCache.set(this.#authorization);
++	};
+ 	#disconnect = async () => {
+ 		this.#authorizationCache.clear();
+ 		this.#connecting = false;
+@@ -1381,11 +1424,21 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  	#transact = async (callback) => {
  		const walletUriBase = this.#authorization?.wallet_uri_base;
  		const config = walletUriBase ? { baseUri: walletUriBase } : void 0;
@@ -376,13 +527,22 @@ index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..fb13548024a3168d514cacdc09c8c4af
 +		let rejectDeadline;
 +		let closeSession;
 +		let ended = false;
++		// Pawket: the page ends a visit the player gave up on (a wallet showing nothing); the next asks afresh.
++		const cancel = () => {
++			this.#distrust();
++			rejectDeadline?.(Object.assign(new Error("Wallet request cancelled by user"), {
++				name: "SolanaMobileWalletAdapterError",
++				code: "ERROR_ASSOCIATION_CANCELLED"
++			}));
++		};
++		window.addEventListener("pawket:wallet-cancel", cancel);
  		try {
 -			let associating = true;
 -			let timeout = void 0;
  			const useWebSocket = await isLocalWebSocketAvailable();
  			const result = await Promise.race([(async () => {
  				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
-@@ -1396,27 +1411,44 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1396,27 +1449,45 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  					connectionType: "local",
  					relayDomain: this.#nostrRelay
  				}) : await startScenario(config);
@@ -429,6 +589,7 @@ index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..fb13548024a3168d514cacdc09c8c4af
  			if (e instanceof Error && e.name === "SolanaMobileWalletAdapterError" && e.code === "ERROR_WALLET_NOT_FOUND") await this.#onWalletNotFound(this);
  			throw e;
 +		} finally {
++			window.removeEventListener("pawket:wallet-cancel", cancel);
 +			ended = true;
 +			clearTimeout(timeout);
 +			loadingSpinner.close();
@@ -436,20 +597,36 @@ index 13cb4efb579df5e3ea5fa3377c5a8d4ae3319ccc..fb13548024a3168d514cacdc09c8c4af
  		}
  	};
  	#assertIsAuthorized = () => {
+@@ -1682,7 +1753,8 @@ var RemoteSolanaMobileWalletAdapterWallet = class {
+ 					...mwaAuthorizationResult,
+ 					accounts,
+ 					chain: selectedChain,
+-					capabilities
++					capabilities,
++					authorizedAt: Date.now()
+ 				};
+ 				Promise.all([
+ 					this.#handleWalletCapabilitiesResult(capabilities),
 diff --git a/lib/esm/index.js b/lib/esm/index.js
-index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..ad8e87067a4498169dabbc419a7c140c6c0bc418 100644
+index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..8288ae8be01a5b4c79849fac90b60aaec134e961 100644
 --- a/lib/esm/index.js
 +++ b/lib/esm/index.js
-@@ -1168,7 +1168,7 @@ const DEFAULT_FEATURES = [
+@@ -1168,7 +1168,13 @@ const DEFAULT_FEATURES = [
  	SolanaSignMessage,
  	SolanaSignIn
  ];
 -const WALLET_ASSOCIATION_TIMEOUT = 3e4;
 +const WALLET_ASSOCIATION_TIMEOUT = 6e4;
++/**
++* Pawket: how long a wallet's token is sent for a silent re-authorization. Phantom's lapse within
++* hours and Solflare's within days, and a wallet sent one it no longer honours can show nothing at
++* all; past this, a session asks afresh first, then signs, in the same visit.
++*/
++const TRUSTED_TOKEN_MS = 45 * 6e4;
  function getErrorMessage(error) {
  	return error instanceof Error ? error.message : "Unknown error";
  }
-@@ -1305,11 +1305,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1305,19 +1311,21 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  			}
  			const selectedChain = await this.#chainSelector.select(this.#chains);
  			return await this.#transact(async (wallet) => {
@@ -464,16 +641,18 @@ index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..ad8e87067a4498169dabbc419a7c140c
  				const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
  				const authorization = {
  					...mwaAuthorizationResult,
-@@ -1317,7 +1318,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 					accounts,
  					chain: selectedChain,
- 					capabilities
+-					capabilities
++					capabilities,
++					authorizedAt: Date.now()
  				};
 -				Promise.all([
 +				await Promise.all([
  					this.#handleWalletCapabilitiesResult(capabilities),
  					this.#authorizationCache.set(authorization),
  					this.#handleAuthorizationResult(authorization)
-@@ -1353,11 +1354,24 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1353,24 +1361,59 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  	};
  	#performReauthorization = async (wallet, authToken, chain) => {
  		try {
@@ -483,14 +662,24 @@ index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..ad8e87067a4498169dabbc419a7c140c
 -				chain
 -			})]);
 +			let mwaAuthorizationResult;
-+			try {
-+				mwaAuthorizationResult = await wallet.authorize({
-+					auth_token: authToken,
-+					identity: this.#appIdentity,
-+					chain
-+				});
-+			} catch (e) {
-+				if (!(e instanceof Error && e.name === "SolanaMobileWalletAdapterProtocolError" && e.code === -1)) throw e;
++			if (this.#trusted()) {
++				try {
++					mwaAuthorizationResult = await wallet.authorize({
++						auth_token: authToken,
++						identity: this.#appIdentity,
++						chain
++					});
++				} catch (e) {
++					if (!(e instanceof Error && e.name === "SolanaMobileWalletAdapterProtocolError" && e.code === -1)) throw e;
++					// The wallet no longer honours its token. Some wallets then show nothing for a second ask in
++					// the same visit, so this visit ends here, and the next one asks afresh before it signs.
++					await this.#distrust();
++					throw Object.assign(new Error("The wallet asked to approve the app again."), {
++						name: "SolanaMobileWalletAdapterError",
++						code: "ERROR_REAUTHORIZE"
++					});
++				}
++			} else {
 +				const before = this.#authorization?.accounts.map((account) => account.address) ?? [];
 +				mwaAuthorizationResult = await wallet.authorize({
 +					identity: this.#appIdentity,
@@ -503,16 +692,35 @@ index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..ad8e87067a4498169dabbc419a7c140c
  			const accounts = this.#accountsToWalletStandardAccounts(mwaAuthorizationResult.accounts);
  			const authorization = {
  				...mwaAuthorizationResult,
-@@ -1365,7 +1379,7 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 				accounts,
  				chain,
- 				capabilities
+-				capabilities
++				capabilities,
++				authorizedAt: Date.now()
  			};
 -			Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
 +			await Promise.all([this.#authorizationCache.set(authorization), this.#handleAuthorizationResult(authorization)]);
  		} catch (e) {
- 			this.#disconnect();
+-			this.#disconnect();
++			if (e?.code !== "ERROR_REAUTHORIZE") this.#disconnect();
  			throw new Error(getErrorMessage(e), { cause: e });
-@@ -1381,11 +1395,12 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+ 		}
+ 	};
++	/** Pawket: whether this authorization's token is young enough to send, and not refused. */
++	#trusted = () => !this.#authorization?.distrusted && Date.now() - (this.#authorization?.authorizedAt ?? 0) < TRUSTED_TOKEN_MS;
++	/** Pawket: the next session asks afresh instead of sending this token. */
++	#distrust = async () => {
++		if (!this.#authorization) return;
++		this.#authorization = {
++			...this.#authorization,
++			distrusted: true
++		};
++		await this.#authorizationCache.set(this.#authorization);
++	};
+ 	#disconnect = async () => {
+ 		this.#authorizationCache.clear();
+ 		this.#connecting = false;
+@@ -1381,11 +1424,21 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  	#transact = async (callback) => {
  		const walletUriBase = this.#authorization?.wallet_uri_base;
  		const config = walletUriBase ? { baseUri: walletUriBase } : void 0;
@@ -522,13 +730,22 @@ index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..ad8e87067a4498169dabbc419a7c140c
 +		let rejectDeadline;
 +		let closeSession;
 +		let ended = false;
++		// Pawket: the page ends a visit the player gave up on (a wallet showing nothing); the next asks afresh.
++		const cancel = () => {
++			this.#distrust();
++			rejectDeadline?.(Object.assign(new Error("Wallet request cancelled by user"), {
++				name: "SolanaMobileWalletAdapterError",
++				code: "ERROR_ASSOCIATION_CANCELLED"
++			}));
++		};
++		window.addEventListener("pawket:wallet-cancel", cancel);
  		try {
 -			let associating = true;
 -			let timeout = void 0;
  			const useWebSocket = await isLocalWebSocketAvailable();
  			const result = await Promise.race([(async () => {
  				if (!useWebSocket && !this.#nostrRelay) await checkLocalNetworkAccessPermission();
-@@ -1396,27 +1411,44 @@ var LocalSolanaMobileWalletAdapterWallet = class {
+@@ -1396,27 +1449,45 @@ var LocalSolanaMobileWalletAdapterWallet = class {
  					connectionType: "local",
  					relayDomain: this.#nostrRelay
  				}) : await startScenario(config);
@@ -575,6 +792,7 @@ index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..ad8e87067a4498169dabbc419a7c140c
  			if (e instanceof Error && e.name === "SolanaMobileWalletAdapterError" && e.code === "ERROR_WALLET_NOT_FOUND") await this.#onWalletNotFound(this);
  			throw e;
 +		} finally {
++			window.removeEventListener("pawket:wallet-cancel", cancel);
 +			ended = true;
 +			clearTimeout(timeout);
 +			loadingSpinner.close();
@@ -582,3 +800,13 @@ index 6055daeb868e7def09b6983c7c163bcf7ec5caeb..ad8e87067a4498169dabbc419a7c140c
  		}
  	};
  	#assertIsAuthorized = () => {
+@@ -1682,7 +1753,8 @@ var RemoteSolanaMobileWalletAdapterWallet = class {
+ 					...mwaAuthorizationResult,
+ 					accounts,
+ 					chain: selectedChain,
+-					capabilities
++					capabilities,
++					authorizedAt: Date.now()
+ 				};
+ 				Promise.all([
+ 					this.#handleWalletCapabilitiesResult(capabilities),

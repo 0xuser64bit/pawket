@@ -4,6 +4,7 @@ import type { SolanaCluster } from "@/config/env";
 import { explorerTxUrl } from "@/lib/solana/cluster";
 import type { TxState } from "@/lib/solana/use-send";
 import { inAndroidApp } from "@/lib/native/android";
+import { stopWaitingForPhoneWallet } from "@/lib/solana/browser-client";
 import { DevnetFaucet } from "@/components/wallet/faucet";
 
 /** Where a linked device key lives, said as the player sees it: this app, or this browser. Toasts are made at run time, never on the server. */
@@ -35,7 +36,20 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
         id,
         tone: "wait",
         title,
-        body: tx.by === "device" ? `Signing in ${here()}.` : "Approve it in your wallet. Nothing is sent until you do.",
+        body:
+          tx.by === "device" ? (
+            `Signing in ${here()}.`
+          ) : tx.phone ? (
+            <>
+              Approve it in your wallet app. Nothing is sent until you do.{" "}
+              {/* A wallet showing nothing, or one left open: stop waiting, and the next try asks it afresh. */}
+              <button type="button" className="pk-linkish" onClick={stopWaitingForPhoneWallet}>
+                Nothing there? Stop waiting
+              </button>
+            </>
+          ) : (
+            "Approve it in your wallet. Nothing is sent until you do."
+          ),
       };
     case "sending":
       return { id, tone: "wait", title, body: "On its way to Solana." };

@@ -59,6 +59,19 @@ function registerPhoneWallets(): void {
 }
 registerPhoneWallets();
 
+/** The name Mobile Wallet Adapter registers under (its SolanaMobileWalletAdapterWalletName); a constant, so screens need not load the adapter. */
+export const PHONE_WALLETS = "Mobile Wallet Adapter";
+
+/**
+ * Ends the wallet app's visit the page is waiting on — one showing nothing,
+ * or left open — signing nothing; the next visit asks the wallet afresh. The
+ * patched adapter (`patches/@solana-mobile__wallet-standard-mobile@0.6.0.patch`)
+ * listens for it.
+ */
+export function stopWaitingForPhoneWallet(): void {
+  window.dispatchEvent(new Event("pawket:wallet-cancel"));
+}
+
 export const wallet = createClient().use(
   walletWithoutSigner({ chain: CLUSTER_CHAINS[env.solanaCluster], storageKey: "pawket.wallet" }),
 );

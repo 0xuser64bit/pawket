@@ -4,13 +4,10 @@ import { useState } from "react";
 import { useConnect, useWallets } from "@solana/kit-plugin-wallet/react";
 import { Button, Sheet, Stack, Problem } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
-import { wallet } from "@/lib/solana/browser-client";
+import { PHONE_WALLETS, wallet } from "@/lib/solana/browser-client";
 import { isUserRejection, mobileWalletProblem } from "@/lib/solana/transactions";
 import { useSponsor } from "@/lib/solana/use-send";
 import { DevnetFaucet } from "@/components/wallet/faucet";
-
-/** The name Mobile Wallet Adapter registers under (its SolanaMobileWalletAdapterWalletName), kept here so the sheet does not pull the adapter into every bundle. */
-const PHONE_WALLETS = "Mobile Wallet Adapter";
 
 const INSTALL = [
   { name: "Phantom", href: "https://phantom.com/download" },

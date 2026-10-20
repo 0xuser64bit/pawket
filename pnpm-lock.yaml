@@ -19,7 +19,7 @@ patchedDependencies:
     hash: d3bac104df0ea85121551a76d2478704c71389c99872bca518fbb11eb73216bf
     path: patches/@solana-mobile__mobile-wallet-adapter-protocol@2.3.0.patch
   '@solana-mobile/wallet-standard-mobile@0.6.0':
-    hash: 2e70bac78e1e2757cdbea4a140278edaaea3d6f531933494d68ecd4cdde3e0ec
+    hash: a9080c05c315dd0769645af9d31d84f55b333d49b614dbccd5c8e950a4404309
     path: patches/@solana-mobile__wallet-standard-mobile@0.6.0.patch
   bigint-buffer@1.1.5:
     hash: de6d38284595c375b5b40aa887953d16b61b660cb4e2f56d7280b92409115d51
@@ -40,7 +40,7 @@ importers:
         version: 9.8.1(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(three@0.186.1)
       '@solana-mobile/wallet-standard-mobile':
         specifier: 0.6.0
-        version: 0.6.0(patch_hash=2e70bac78e1e2757cdbea4a140278edaaea3d6f531933494d68ecd4cdde3e0ec)(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
+        version: 0.6.0(patch_hash=a9080c05c315dd0769645af9d31d84f55b333d49b614dbccd5c8e950a4404309)(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@solana-program/system':
         specifier: 0.14.1
         version: 0.14.1(@solana/kit@8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))
@@ -4910,7 +4910,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@solana-mobile/wallet-standard-mobile@0.6.0(patch_hash=2e70bac78e1e2757cdbea4a140278edaaea3d6f531933494d68ecd4cdde3e0ec)(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)':
+  '@solana-mobile/wallet-standard-mobile@0.6.0(patch_hash=a9080c05c315dd0769645af9d31d84f55b333d49b614dbccd5c8e950a4404309)(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@solana-mobile/mobile-wallet-adapter-protocol': 2.3.0(patch_hash=d3bac104df0ea85121551a76d2478704c71389c99872bca518fbb11eb73216bf)(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@solana/wallet-standard-chains': 1.1.2

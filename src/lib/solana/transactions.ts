@@ -103,6 +103,8 @@ export function mobileWalletProblem(error: unknown): string | null {
       return "Your wallet closed before it answered.";
     case "ERROR_SESSION_TIMEOUT":
       return "Your wallet did not answer in time.";
+    case "ERROR_REAUTHORIZE":
+      return "Your wallet app wanted to approve Pawket again before signing. Try once more: it asks, then signs.";
     case "ERROR_ASSOCIATION_CANCELLED":
       return /timed? out|timeout/i.test(messageOf(error)) ? "Your wallet app did not open in time." : null;
     case "ERROR_LOOPBACK_ACCESS_BLOCKED":

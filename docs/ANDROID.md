@@ -41,9 +41,16 @@ the non-extractable device key within its expiry and daily limit.
 A declined, closed or missing wallet sends nothing. Uncertain broadcast or
 confirmation replies preserve the existing signature for lookup, without
 resending. Care moments and haptics wait for confirmation. Local MWA patches
-close sessions after failure, retry expired authorization within the same
-session, reject account changes and bound waiting; `src/lib/solana/mobile-session.test.ts`
-holds those behaviors. Consumer-wallet compatibility requires device testing.
+close sessions after failure, reject account changes and bound waiting. A
+wallet's token is sent for a silent re-authorization only while it is under
+45 minutes old: Phantom's lapse within hours and Solflare's within days, and a
+wallet sent a lapsed one can open with nothing to sign. Past that, the visit
+asks the wallet afresh, then signs. A token the wallet refuses ends the visit
+at once, and the next visit asks afresh; no second ask is made in the same
+visit. While a wallet app is open, the send's toast offers "Stop waiting",
+which ends the visit, signs nothing and also makes the next visit ask afresh.
+`src/lib/solana/mobile-session.test.ts` holds those behaviors. Consumer-wallet
+compatibility requires device testing.
 
 Back closes the latest page overlay, then page history, then backgrounds the
 root app. Configuration changes do not reload a waiting send. The WebView

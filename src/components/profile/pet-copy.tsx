@@ -5,6 +5,7 @@ import { Button, Card, Row, Stack, Problem } from "@/components/pk";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { MAX_COPY_LENGTH, petsCopy, readPetsCopy } from "@/lib/guest/copy";
 import { bringBackPets } from "@/lib/guest/storage";
+import { chooseCoat, readCoatChoices } from "@/lib/player/use-coats";
 import { useAndroidApp, useHere } from "@/lib/native/android";
 import { askBrowserToKeep } from "@/lib/utils/persist";
 import { record } from "@/lib/analytics/events";
@@ -30,7 +31,7 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
   const [brought, setBrought] = useState<string>();
 
   async function copyText() {
-    const copy = petsCopy(local);
+    const copy = petsCopy(local, new Date(), readCoatChoices());
     try {
       await navigator.clipboard.writeText(copy);
       setManual(undefined);
@@ -44,7 +45,7 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
 
   function saveFile() {
     const name = `pawket-pets-${new Date().toISOString().slice(0, 10)}.json`;
-    const url = URL.createObjectURL(new Blob([petsCopy(local)], { type: "application/json" }));
+    const url = URL.createObjectURL(new Blob([petsCopy(local, new Date(), readCoatChoices())], { type: "application/json" }));
     const link = Object.assign(document.createElement("a"), { href: url, download: name });
     document.body.append(link);
     link.click();
@@ -86,6 +87,8 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
       read.unreadable ? `${pets(read.unreadable)} in the copy could not be read.` : "",
     ].filter(Boolean);
     setBrought(parts.join(" "));
+    // A pet that came back wears the coat it wore in the copy.
+    for (const pet of [...result.added, ...result.updated]) if (read.coats[pet.id]) chooseCoat(pet.id, read.coats[pet.id]);
     if (result.added.length || result.updated.length) {
       setText("");
       record({ name: "pets_brought_back" });

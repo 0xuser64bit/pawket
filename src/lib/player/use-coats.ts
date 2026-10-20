@@ -36,6 +36,11 @@ function readCoats(): Readonly<Record<string, string>> {
   return coats;
 }
 
+/** Every coat chosen on this device, by pet: what a copy of the pets carries. */
+export function readCoatChoices(): Readonly<Record<string, string>> {
+  return readCoats();
+}
+
 /** Dress `pet` (a local id, or an address on Solana) in coat `id`. False when storage is blocked. */
 export function chooseCoat(pet: string, id: string): boolean {
   const next = { ...readCoats(), [pet]: id };

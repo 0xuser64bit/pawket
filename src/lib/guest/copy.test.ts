@@ -7,12 +7,20 @@ const pet = (name: string) => createGuestPet({ name, species: PetSpecies.MossPup
 
 it("reads back exactly the pets it wrote", () => {
   const pets = [pet("Pepper"), pet("Miso")];
-  expect(readPetsCopy(petsCopy(pets))).toEqual({ pets, unreadable: 0 });
+  expect(readPetsCopy(petsCopy(pets))).toEqual({ pets, unreadable: 0, coats: {} });
+});
+
+it("carries each pet's coat, and reads back only a coat its species has", () => {
+  const [pepper, miso] = [pet("Pepper"), pet("Miso")];
+  const copy = petsCopy([pepper, miso], new Date(), { [pepper.id]: "golden", [miso.id]: "lilac", someoneElse: "ash" });
+  expect(JSON.parse(copy).coats).toEqual({ [pepper.id]: "golden", [miso.id]: "lilac" });
+  // A pup has no lilac coat: Miso comes back in the classic one.
+  expect(readPetsCopy(copy)).toMatchObject({ coats: { [pepper.id]: "golden" } });
 });
 
 it("reads a bare list of records too, and counts what it could not read", () => {
   const pepper = pet("Pepper");
-  expect(readPetsCopy(JSON.stringify([pepper, { name: 3 }]))).toEqual({ pets: [pepper], unreadable: 1 });
+  expect(readPetsCopy(JSON.stringify([pepper, { name: 3 }]))).toEqual({ pets: [pepper], unreadable: 1, coats: {} });
 });
 
 it("refuses what is not a copy, in words, and never anything too large", () => {

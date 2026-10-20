@@ -274,6 +274,32 @@ const BUILD: Record<string, () => BuiltDecor> = {
     return { object: group };
   },
 
+  "bat-garland": () => {
+    const group = new Group();
+    const string = (x: number) => 0.08 + 0.12 * (x / 0.52) ** 2;
+    group.add(tube([-0.52, -0.26, 0, 0.26, 0.52].map((x) => [x, string(x), 0.03]), 0.006, "edge"));
+    // One bat, wings out: a scalloped wing drawn once and mirrored, a round body, two ears.
+    const wing = new Shape();
+    wing.moveTo(0, 0.012);
+    wing.quadraticCurveTo(0.04, 0.042, 0.078, 0.02);
+    wing.quadraticCurveTo(0.068, 0.002, 0.06, -0.008);
+    wing.quadraticCurveTo(0.052, 0.002, 0.044, -0.012);
+    wing.quadraticCurveTo(0.034, -0.002, 0.024, -0.016);
+    wing.quadraticCurveTo(0.012, -0.006, 0, -0.012);
+    wing.closePath();
+    const bats: BufferGeometry[] = [];
+    for (const [i, x] of [-0.38, -0.19, 0, 0.19, 0.38].entries()) {
+      const y = string(x) - 0.045;
+      const tilt = (i % 2 ? 1 : -1) * 0.12;
+      bats.push(placed(flat(wing, 0.008), x + 0.012, y, 0.03, tilt));
+      bats.push(placed(flat(wing, 0.008).scale(-1, 1, 1), x - 0.012, y, 0.03, tilt));
+      bats.push(placed(new SphereGeometry(0.022, 12, 10).scale(1, 1.15, 0.6), x, y, 0.034));
+      for (const side of [-1, 1]) bats.push(placed(new ConeGeometry(0.008, 0.02, 4), x + side * 0.01, y + 0.03, 0.034, -side * 0.25));
+    }
+    group.add(many(bats, "navy"));
+    return { object: group };
+  },
+
   "blossom-scroll": () => {
     const group = new Group();
     group.add(at(solid(flat(roundedRect(0.34, 0.62, 0.01), 0.01), "surface"), 0, 0, 0.01));
@@ -471,6 +497,47 @@ const BUILD: Record<string, () => BuiltDecor> = {
     head.rotation.y = 0.5;
     group.add(at(head, 0, 1.12, 0.07));
     return { object: group };
+  },
+
+  "pumpkin-lantern": () => {
+    const group = new Group();
+    // As tall as a potted plant: a pumpkin of 0.3 m radius, its face to scale.
+    const k = 1.5;
+    const r = 0.2 * k;
+    // Ribbed: six lobes around the middle, one paint, one outline.
+    const lobes = Array.from({ length: 6 }, (_, i) => {
+      const a = (i / 6) * Math.PI * 2;
+      return placed(new SphereGeometry(r * 0.62, 18, 12).scale(0.62, 0.84, 1), Math.sin(a) * r * 0.36, r * 0.86, Math.cos(a) * r * 0.36, 0, a);
+    });
+    group.add(many(lobes, "sun"));
+    group.add(at(solid(new CylinderGeometry(0.022 * k, 0.03 * k, 0.09 * k, 10), "sprout-edge"), 0.01, r * 1.72, 0));
+    // The carved face, lit from inside: two eyes and a grin, on the front.
+    const eye = new Shape();
+    eye.moveTo(-0.028, 0);
+    eye.lineTo(0.028, 0);
+    eye.lineTo(0, 0.04);
+    eye.closePath();
+    const grin = new Shape();
+    grin.moveTo(-0.075, 0.012);
+    grin.quadraticCurveTo(0, -0.07, 0.075, 0.012);
+    grin.lineTo(0.045, 0.004);
+    grin.lineTo(0.03, 0.026);
+    grin.lineTo(0.012, 0.0);
+    grin.lineTo(-0.012, 0.0);
+    grin.lineTo(-0.03, 0.026);
+    grin.lineTo(-0.045, 0.004);
+    grin.closePath();
+    const face = many(
+      [
+        placed(flat(eye, 0.01).scale(k, k, 1), -0.055 * k, r * 1.0, r * 0.98, 0, 0, -0.12),
+        placed(flat(eye, 0.01).scale(k, k, 1), 0.055 * k, r * 1.0, r * 0.98, 0, 0, -0.12),
+        placed(flat(grin, 0.01).scale(k, k, 1), 0, r * 0.72, r * 1.0, 0, 0, 0.1),
+      ],
+      "sunny",
+      false,
+    );
+    group.add(face);
+    return { object: group, evening: glow([face], 1.3, 0.25) };
   },
 
   bonsai: () => {
@@ -780,6 +847,29 @@ const BUILD: Record<string, () => BuiltDecor> = {
     group.add(at(top, -0.08, 1.1, 0));
     group.add(at(solid(new CylinderGeometry(0.003, 0.003, 0.28, 4), "edge", false), 0.2, 0.47, 0.06));
     group.add(at(blob(0.04, [1, 1, 1], "pet-blush"), 0.2, 0.31, 0.06));
+    return { object: group };
+  },
+
+  "leaf-pile": () => {
+    const group = new Group();
+    // A low mound, half in the floor, under a scatter of leaves laid on its slope.
+    group.add(blob(0.42, [1, 0.42, 0.74], "sun-edge"));
+    const leaf = new Shape();
+    leaf.moveTo(0, -0.07);
+    leaf.quadraticCurveTo(0.055, -0.014, 0, 0.07);
+    leaf.quadraticCurveTo(-0.055, -0.014, 0, -0.07);
+    const paints: Paint[] = ["sun", "sunny", "berry", "sun-edge"];
+    const leaves: BufferGeometry[][] = paints.map(() => []);
+    for (let i = 0; i < 40; i++) {
+      // The golden angle spreads them evenly round the pile, without chance.
+      const around = i * 2.39996;
+      const up = 0.12 + (i % 7) * 0.2;
+      const x = Math.cos(around) * Math.cos(up) * 0.42;
+      const z = Math.sin(around) * Math.cos(up) * 0.31;
+      const y = Math.sin(up) * 0.176 + 0.004;
+      leaves[i % paints.length].push(placed(flat(leaf, 0.006), x, y, z, around, around * 0.5, -Math.PI / 2 + up * 0.8));
+    }
+    paints.forEach((paint, i) => group.add(many(leaves[i], paint, false)));
     return { object: group };
   },
 };

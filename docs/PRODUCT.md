@@ -59,7 +59,7 @@ wait. Solana Actions have their own owner-approved flow (`SOLANA.md`).
 | Profile | Player name, look and outfits; pets, wardrobe and coats, record-derived stickers and settings; a copy of the browser's pets to keep and bring back |
 | Playground | Catch, Hop, Copy, Pairs; shared daily seeds; one flat daily XP bonus per pet; explicit recording for Solana rounds |
 | Public record | Server-read Passport and visit room, guestbook waves, Park discovery and Pulse counts |
-| Market | Three free pet pieces; 25 bought pieces, 12 bought rooms and 8 photo frames; 31 room things, free or with a Market room; search and shelves; fixed program prices and chain-read closet entitlements |
+| Market | Three free pet pieces; 25 bought pieces, 12 bought rooms and 8 photo frames; 34 room things, free or with a Market room; search and shelves; fixed program prices and chain-read closet entitlements |
 | Guilds | One guild per pet; founding, joining, leaving, events, RSVPs, check-ins and one ballot per wallet per poll |
 | Coins | One optional coin per eligible guild; two devnet Meteora presets; quotes, trades, graduation and fee claims on its own page; permanently locked graduated liquidity |
 | Android | Wallet app integration, gallery and native sharing, calendar editor, haptics, back behavior, shortcuts and App Links |

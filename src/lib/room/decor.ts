@@ -46,6 +46,7 @@ export const DECOR: readonly DecorPiece[] = [
   { id: "paw-portrait", name: "Paw portrait", slot: "wall", line: "The paw, framed, like a family crest." },
   { id: "wall-clock", name: "Wall clock", slot: "wall", line: "A round clock that keeps this device's time." },
   { id: "bunting", name: "Bunting", slot: "wall", line: "A string of little flags, for every day." },
+  { id: "bat-garland", name: "Bat garland", slot: "wall", line: "Little paper bats on a string, for autumn." },
   { id: "blossom-scroll", name: "Blossom scroll", slot: "wall", line: "A hanging scroll with a cherry branch.", room: "blossom" },
   { id: "aurora-print", name: "Northern lights", slot: "wall", line: "A print of a green-lit sky.", room: "aurora" },
   { id: "star-chart", name: "Moon and stars", slot: "wall", line: "A round night sky with a gold moon.", room: "starlight" },
@@ -57,6 +58,7 @@ export const DECOR: readonly DecorPiece[] = [
   { id: "cactus", name: "Cactus", slot: "corner", line: "Round, prickly, and never thirsty." },
   { id: "monstera", name: "Monstera", slot: "corner", line: "Big leaves with holes in them." },
   { id: "sunflower", name: "Sunflower", slot: "corner", line: "One tall flower that faces the window." },
+  { id: "pumpkin-lantern", name: "Pumpkin lantern", slot: "corner", line: "A carved autumn pumpkin that grins, and glows after dark." },
   { id: "bonsai", name: "Bonsai", slot: "corner", line: "A small, patient tree.", room: "matcha" },
   { id: "lavender-pot", name: "Lavender", slot: "corner", line: "A pot of lilac stems, a little sleepy.", room: "lavender" },
   // Under the two of them.
@@ -77,6 +79,7 @@ export const DECOR: readonly DecorPiece[] = [
   { id: "floor-lamp", name: "Floor lamp", slot: "side", line: "A tall lamp that is lit after dark." },
   { id: "bookcase", name: "Bookcase", slot: "side", line: "Three shelves of books and a plant." },
   { id: "cat-tree", name: "Climbing tree", slot: "side", line: "Posts, platforms and a dangling toy." },
+  { id: "leaf-pile", name: "Leaf pile", slot: "side", line: "A heap of autumn leaves, for jumping in." },
 ];
 
 /** A slot's thing when nothing is chosen; a slot with null can stand empty. */

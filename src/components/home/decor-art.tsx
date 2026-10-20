@@ -147,6 +147,23 @@ const DRAW: Record<string, Drawing> = {
       </>
     ),
   },
+  "bat-garland": {
+    box: [-54, -30, 108, 52],
+    draw: () => (
+      <>
+        <path d="M-50-22Q0 2 50-22" fill="none" strokeWidth="2.6" />
+        {[-36, -18, 0, 18, 36].map((x, i) => {
+          const y = -22 + 24 * (1 - (x / 50) ** 2) * 0.5 + 7;
+          return (
+            <g key={x} transform={`translate(${x} ${y}) rotate(${i % 2 ? 7 : -7}) scale(1.3)`} fill={OWN.navy} strokeWidth="1.4">
+              <path d="M2.6-1C5.6-4 9-4.4 11.6-3 10.6-1.2 10-.2 9 .8 8.2 0 7.2 .2 6.6 1.4 6 .4 5 .4 4.2 1.6 3.6.6 3 .6 2.6 1.2zM-2.6-1C-5.6-4-9-4.4-11.6-3-10.6-1.2-10-.2-9 .8-8.2 0-7.2.2-6.6 1.4-6 .4-5 .4-4.2 1.6-3.6.6-3 .6-2.6 1.2z" />
+              <path d="M-2.4-3.2l.6-3 1.4 2.2h.8l1.4-2.2.6 3c.8 1 1 2.6.4 4.2-.6 1.4-1.8 2.2-2.8 2.2s-2.2-.8-2.8-2.2c-.6-1.6-.4-3.2.4-4.2z" />
+            </g>
+          );
+        })}
+      </>
+    ),
+  },
   "blossom-scroll": {
     box: [-34, -48, 68, 96],
     draw: () => (
@@ -288,6 +305,22 @@ const DRAW: Record<string, Drawing> = {
       </>
     ),
   },
+  "pumpkin-lantern": {
+    box: [-52, -84, 104, 88],
+    draw: () => (
+      <>
+        <circle cy="-32" r="46" fill={OWN.sunny} stroke="none" opacity="0.22" style={NIGHT} />
+        <ellipse cx="-16" cy="-30" rx="20" ry="27" fill="var(--sun)" />
+        <ellipse cx="16" cy="-30" rx="20" ry="27" fill="var(--sun)" />
+        <ellipse cy="-30" rx="19" ry="30" fill="var(--sun)" />
+        <path d="M0-59c0-8 3-12 9-15" fill="none" stroke="var(--sprout-edge)" strokeWidth="6" />
+        <g fill={OWN.sunny} strokeWidth="2.6">
+          <path d="M-17-37l6-10 6 10zM5-37l6-10 6 10z" />
+          <path d="M-17-21q17 12 34 0l-4-1-4 4-4-4h-9l-4 4-4-4z" />
+        </g>
+      </>
+    ),
+  },
   bonsai: {
     box: [-46, -70, 92, 74],
     draw: () => (
@@ -420,6 +453,25 @@ const DRAW: Record<string, Drawing> = {
         <g transform="translate(26 -142) scale(0.5)" strokeWidth="5">
           {pot(30, 24, "var(--surface)", "var(--sprout)")}
           <path d="M0-24c-6-14-16-18-24-12 6 10 14 14 24 12zM0-24c4-16 14-20 22-14-4 10-12 14-22 14z" fill="var(--sprout)" />
+        </g>
+      </>
+    ),
+  },
+  "leaf-pile": {
+    box: [-62, -48, 124, 52],
+    draw: () => (
+      <>
+        <path d="M-56 0c4-24 28-38 56-38s52 14 56 38z" fill="var(--trim-copper)" />
+        <g strokeWidth="2">
+          {(
+            [
+              [-38, -10, -30, "var(--sun)"], [-22, -22, 20, OWN.sunny], [-6, -30, -10, OWN.berry], [10, -27, 35, "var(--sun)"], [26, -18, -25, OWN.sunny],
+              [42, -8, 15, OWN.berry], [-30, -4, 50, OWN.berry], [-8, -14, -40, "var(--sun-edge)"], [14, -12, 60, OWN.sunny], [32, -4, -15, "var(--sun)"],
+              [-50, 2, 80, OWN.sunny], [52, 1, -70, "var(--sun)"],
+            ] as const
+          ).map(([x, y, a, fill]) => (
+            <ellipse key={`${x}${y}`} cx={x} cy={y} rx="8" ry="4" transform={`rotate(${a} ${x} ${y})`} fill={fill} />
+          ))}
         </g>
       </>
     ),

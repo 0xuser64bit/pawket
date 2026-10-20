@@ -170,7 +170,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <p className="body-sm pk-muted">
-                  Thirty-one things, most of them free; each room in the Market brings one of its own. Looks
+                  Thirty-four things, most of them free; each room in the Market brings one of its own. Looks
                   only: none of it changes a vital or a score.
                 </p>
                 <Row gap={3} wrap>

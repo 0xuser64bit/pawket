@@ -268,8 +268,8 @@ test("starter choices stay small and every Market category opens a readable shar
   await page.goto("/profile?tab=settings#shelf");
   await expect(page.getByRole("radiogroup", { name: "Rooms" }).getByRole("radio")).toHaveCount(3);
   await page.goto("/market");
-  // 25 pieces, 12 rooms, 31 things for the room and 8 frames.
-  await expect(page.locator(".pk-tiles button")).toHaveCount(76);
+  // 25 pieces, 12 rooms, 34 things for the room and 8 frames.
+  await expect(page.locator(".pk-tiles button")).toHaveCount(79);
   await page.getByRole("button", { name: /Sunshine/ }).tap();
   const sheet = page.getByRole("dialog", { name: "Sunshine" });
   await expect(sheet.getByText("0.025 SOL", { exact: true })).toBeVisible();
@@ -282,7 +282,7 @@ test("on a phone each Market shelf is a row to swipe, and opens whole on asking"
   await page.goto("/market");
   const pets = page.locator(".pk-tiles").first();
   await expect(pets).toHaveClass(/pk-tiles--row/);
-  // Seventy-six things no longer make one column several screens long.
+  // Seventy-nine things no longer make one column several screens long.
   expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThan(3000);
   expect(await pets.evaluate((row) => row.scrollWidth > row.clientWidth)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

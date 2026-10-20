@@ -145,7 +145,7 @@ test("the Market can be searched and narrowed, and a narrowed shelf can be linke
   await expect(page.locator(".pk-tiles button")).toHaveCount(2);
   await page.getByRole("searchbox", { name: "Search the Market" }).fill("nothing called this");
   await page.getByRole("button", { name: "Show everything" }).click();
-  await expect(page.locator(".pk-tiles button")).toHaveCount(76);
+  await expect(page.locator(".pk-tiles button")).toHaveCount(79);
   await page.getByRole("radio", { name: "Rooms" }).click();
   await expect(page).toHaveURL(/#room$/);
   await expect(page.locator(".pk-tiles button")).toHaveCount(12);
@@ -156,7 +156,7 @@ test("the Market can be searched and narrowed, and a narrowed shelf can be linke
 
 test("the room's things are in the Market: free ones placed at once, a room's own one shown with its room", async ({ page }) => {
   await page.goto("/market#decor");
-  await expect(page.locator(".pk-tiles button")).toHaveCount(31);
+  await expect(page.locator(".pk-tiles button")).toHaveCount(34);
   await page.getByRole("button", { name: /^Blossom scroll/ }).click();
   const scroll = page.getByRole("dialog", { name: "Blossom scroll" });
   await expect(scroll.getByText(/comes with the Blossom room/)).toBeVisible();

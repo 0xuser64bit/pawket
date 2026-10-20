@@ -114,6 +114,9 @@ export function Settings({ form }: { form?: PetForm }) {
           Pets on Solana are read from your wallet&apos;s accounts each time. <Link href="/privacy">Privacy</Link>
         </p>
       </Card>
+      <p className="caption pk-faint">
+        Pawket is built a little at a time: <Link href="/new">what&apos;s new</Link>.
+      </p>
     </div>
   );
 }

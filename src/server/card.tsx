@@ -163,6 +163,14 @@ function Pocket({ look, size }: { look: Look; size: number }) {
   );
 }
 
+/**
+ * A name's size on a card: smaller as it grows, so the longest a name may be
+ * (24 characters for a pet, 32 for a guild) still fits its column, on two
+ * lines at most.
+ */
+const nameSize = (name: string, [roomy, longer, longest]: readonly [number, number, number]) =>
+  name.length <= 10 ? roomy : name.length <= 18 ? longer : longest;
+
 function facts(onChain: PetOnChain): string[] {
   const { pet, passport } = onChain;
   return [
@@ -217,7 +225,7 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
               ))}
             </div>
           )}
-          <div style={{ fontFamily: "Fraunces", fontSize: name.length > 12 ? 64 : 84, lineHeight: 1 }}>{name}</div>
+          <div style={{ fontFamily: "Fraunces", fontSize: nameSize(name, [84, 64, 52]), lineHeight: 1.05, maxWidth: 700, textAlign: "center" }}>{name}</div>
           <div style={{ fontSize: 30, color: DAYLIGHT["trim-cloth"] }}>{lines[onChain ? 1 : 0]}</div>
           {mark(onChain ? "ON SOLANA · PAWKET" : "ON SOLANA DEVNET", 24)}
         </div>
@@ -253,8 +261,8 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
     (
       <div style={{ ...base, alignItems: "center", padding: 72 }}>
         <Pocket look={lookOf(onChain)} size={440} />
-        <div style={{ display: "flex", flexDirection: "column", marginLeft: 64, gap: 20 }}>
-          <div style={{ fontFamily: "Fraunces", fontSize: name.length > 12 ? 72 : 104, lineHeight: 1 }}>{name}</div>
+        <div style={{ display: "flex", flexDirection: "column", marginLeft: 64, gap: 20, width: 552 }}>
+          <div style={{ fontFamily: "Fraunces", fontSize: nameSize(name, [104, 76, 56]), lineHeight: 1.05 }}>{name}</div>
           {lines.map((line) => (
             <div key={line} style={{ fontSize: 34, color: DAYLIGHT["trim-cloth"] }}>
               {line}
@@ -302,7 +310,7 @@ export async function keepsakeCard(onChain: PetOnChain, cluster: string): Promis
           }}
         >
           <Pocket look={look} size={320} />
-          <div style={{ fontFamily: "Fraunces", fontSize: pet.name.length > 12 ? 58 : 76, lineHeight: 1, marginTop: 26 }}>{pet.name}</div>
+          <div style={{ fontFamily: "Fraunces", fontSize: nameSize(pet.name, [76, 58, 46]), lineHeight: 1.05, marginTop: 26, maxWidth: 560, textAlign: "center" }}>{pet.name}</div>
           <div style={{ fontSize: 28, color: DAYLIGHT["trim-cloth"], marginTop: 12 }}>
             {`${SPECIES_LABEL[pet.species]} · ${PERSONALITY_LABEL[pet.personality]}`}
           </div>
@@ -377,9 +385,9 @@ export async function guildCard(guild: ChainGuild, shape: "square" | "wide" = "s
       (
         <div style={{ ...base, alignItems: "center", padding: "0 88px", gap: 72 }}>
           {crest}
-          <div style={{ display: "flex", flexDirection: "column", gap: 22, minWidth: 0 }}>
-            <div style={{ fontFamily: "Fraunces", fontSize: guild.name.length > 16 ? 76 : 100, lineHeight: 1 }}>{guild.name}</div>
-            {guild.motto ? <div style={{ fontSize: 34, color: DAYLIGHT["trim-cloth"], maxWidth: 640 }}>{guild.motto}</div> : null}
+          <div style={{ display: "flex", flexDirection: "column", gap: 22, width: 652 }}>
+            <div style={{ fontFamily: "Fraunces", fontSize: nameSize(guild.name, [100, 80, 60]), lineHeight: 1.05 }}>{guild.name}</div>
+            {guild.motto ? <div style={{ fontSize: 34, color: DAYLIGHT["trim-cloth"] }}>{guild.motto}</div> : null}
             <div style={{ display: "flex", marginTop: 14 }}>{mark(count, 24)}</div>
           </div>
         </div>
@@ -392,7 +400,7 @@ export async function guildCard(guild: ChainGuild, shape: "square" | "wide" = "s
     (
       <div style={{ ...base, flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 26 }}>
         {crest}
-        <div style={{ fontFamily: "Fraunces", fontSize: guild.name.length > 16 ? 60 : 80, lineHeight: 1 }}>{guild.name}</div>
+        <div style={{ fontFamily: "Fraunces", fontSize: nameSize(guild.name, [80, 64, 48]), lineHeight: 1.05, maxWidth: 700, textAlign: "center" }}>{guild.name}</div>
         {guild.motto ? <div style={{ fontSize: 30, color: DAYLIGHT["trim-cloth"], maxWidth: 680, textAlign: "center" }}>{guild.motto}</div> : null}
         {mark(count, 24)}
       </div>

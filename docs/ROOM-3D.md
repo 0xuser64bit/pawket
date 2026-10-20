@@ -215,8 +215,8 @@ are the player's (`src/lib/room/decor.ts`). `set.ts` keeps a place for each
 places whose thing changed, giving the old one's geometry back to the GPU.
 Every thing is built from primitives in the room's toon-and-ink language;
 small repeated parts (beans, petals, seeds, sprinkles) are merged into one
-mesh each. A lamp and the neon heart light up after dark, and the clock keeps
-the device's time (`tick`). Beds stay inside the old cushion's footprint and
+mesh each. A lamp, the neon heart and the pumpkin lantern's grin light up after dark,
+and the clock keeps the device's time (`tick`). Beds stay inside the old cushion's footprint and
 low enough that a napping pet is seen; `decor.test.ts` holds every thing to
 the catalog, the flat drawings (`src/components/home/decor-art.tsx`) and
 those limits. The flat room places the same things: a picture between the

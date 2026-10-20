@@ -54,8 +54,10 @@ the wallet's pets and local pets, then resolves the device's active selection.
 
 Large public scans have bounded caches: pet/guild scans share eight seconds
 within a process and twenty seconds through Next's Data Cache; Pulse caches
-its measurements for thirty seconds. Failed reads are not cached as successful
-records. Cached discovery counts are chain-derived snapshots, not immediate
+its measurements for thirty seconds. The Data Cache answers an expired entry
+while it refreshes, so each entry carries when it was read and one older than
+twice its life is read again instead (`src/server/cache.ts`). Failed reads are
+not cached as successful records. Cached discovery counts are chain-derived snapshots, not immediate
 transaction receipts. Confirmation refreshes use the relevant source read.
 There is no database, indexer or background worker. Aggregate counts of the
 loop go to Vercel Web Analytics through `src/lib/analytics/events.ts`, held to

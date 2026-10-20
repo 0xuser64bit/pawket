@@ -188,6 +188,12 @@ test.describe("without WebGL", () => {
     // Care still works exactly as before.
     await page.getByRole("button", { name: "Feed" }).click();
     await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
+    // An emote plays here too: a bubble over the player, said aloud, then gone.
+    await page.getByRole("button", { name: "Say" }).click();
+    await page.getByRole("button", { name: "Wave" }).click();
+    await expect(page.locator(".pk-room__said")).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "You wave. Pepper saw." })).toBeVisible();
+    await expect(page.locator(".pk-room__said")).toHaveCount(0);
     // And the look says plainly where it is worn.
     await page.goto("/profile#look");
     await expect(page.getByText(/the flat room shows your top colour/i)).toBeVisible();

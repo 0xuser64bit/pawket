@@ -13,14 +13,14 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { Button, PawGlyph, useTheme, useToken, type Feeling, type PetForm, type Sky, type Temper } from "@/components/pk";
+import { Button, ICON_NAMES, PawGlyph, useTheme, useToken, type Feeling, type IconName, type PetForm, type Sky, type Temper } from "@/components/pk";
 import { FlatRoom } from "@/components/home/flat-room";
 import type { RoomView } from "@/components/room3d/room-3d";
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { PetMood, PetSpecies } from "@/lib/game/enums";
 import type { ClothColour, PlayerLook } from "@/lib/player/look";
 import { DEFAULT_DECOR, DECOR_SLOTS, type RoomDecor } from "@/lib/room/decor";
-import type { RoomCue } from "@/lib/room/moments";
+import { findMoment, momentSentence, type RoomCue } from "@/lib/room/moments";
 import type { Coat } from "@/lib/player/coats";
 import { useReducedMotion } from "@/lib/utils/use-reduced-motion";
 
@@ -35,6 +35,8 @@ function preloadRoom3D(): void {
 
 /** How long the 3D room takes to fade in over the flat one, or out from over it: `--dur-room`. */
 const ROOM_FADE_MS = 420;
+/** How long the flat room shows a cue: the bubble over the player, and the sentence it says. */
+const FLAT_CUE_MS = 1800;
 
 /* ----------------------------------------------------- the flat room */
 
@@ -321,6 +323,28 @@ export function Room({
 
   // The flat room answers a cue too: the pet hops once (a new key replays it).
   const hop = cue && !live && !reduced ? cue.nonce : 0;
+  // A cue that arrives while the room is flat is shown there too: the player
+  // says it in a bubble, and the room says it aloud as the 3D one does, then
+  // lets it go. A cue from before (the room was 3D, or the page just came)
+  // is not played again.
+  const [seen, setSeen] = useState(cue?.nonce ?? 0);
+  const [shown, setShown] = useState<number | null>(null);
+  if ((cue?.nonce ?? 0) !== seen) {
+    setSeen(cue?.nonce ?? 0);
+    if (cue && flatShown) setShown(cue.nonce);
+  }
+  const flatMoment = cue && shown === cue.nonce ? findMoment(cue.moment) : undefined;
+  const flatSentence = flatMoment && pet ? momentSentence(flatMoment, pet.name) : "";
+  useEffect(() => {
+    if (shown === null) return;
+    if (flatMoment) statusRef.current?.({ moment: flatMoment.id, sentence: flatSentence });
+    const timer = window.setTimeout(() => {
+      setShown(null);
+      statusRef.current?.({ moment: null, sentence: "" });
+    }, FLAT_CUE_MS);
+    return () => window.clearTimeout(timer);
+  }, [shown, flatMoment, flatSentence]);
+  const said = flatMoment && (ICON_NAMES as string[]).includes(flatMoment.icon) ? { icon: flatMoment.icon as IconName, key: shown! } : null;
   return (
     <>
     <div
@@ -346,6 +370,7 @@ export function Room({
           pet={pet ? { form: pet.form, temper: pet.temper, feeling: pet.feeling, wearing: pet.wearing, seed: pet.name, coat: pet.coat?.coat, patch: pet.coat?.patch } : null}
           colour={PEG_COLOUR[look.topColour]}
           hop={hop}
+          said={said}
           hat={look.headwear === "none" ? undefined : look.headwear}
           hatColour={PEG_COLOUR[look.headwearColour]}
           glasses={look.eyewear === "none" ? undefined : look.eyewear}

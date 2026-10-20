@@ -120,7 +120,6 @@ export function HomeScreen() {
   const [roomState, setRoomState] = useState<RoomState>("loading");
   const [mode, setMode] = useRoomMode();
   const onStatus = useCallback((next: DirectorStatus) => setStatus(next), []);
-  const lookShown = roomState === "live" || roomState === "loading";
   // The room plays the moment, and the music box its little tune.
   const ask = (moment: string) => {
     setCue({ moment, nonce: Date.now() });
@@ -386,15 +385,7 @@ export function HomeScreen() {
         </p>
 
         <div id="pk-deck-panel" className="pk-deck__panel" hidden={panel === null}>
-          {panel === "say" ? (
-            lookShown ? (
-              <EmoteRow petName={pet.name} playing={status.moment} onEmote={ask} />
-            ) : (
-              <Card variant="quiet">
-                <p className="body-sm pk-muted">Emotes play in the 3D room. The flat room shows the care itself.</p>
-              </Card>
-            )
-          ) : null}
+          {panel === "say" ? <EmoteRow petName={pet.name} playing={status.moment} onEmote={ask} /> : null}
           {panel === "decor" ? <DecorPanel shown={decor} owned={owned} /> : null}
           {panel === "today" ? (
             <TodayCard

@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { PetArt, PlayerArt, type Feeling, type GlassesName, type HatName, type PetForm, type Temper } from "@/components/pk";
+import { Icon, PetArt, PlayerArt, type Feeling, type GlassesName, type HatName, type IconName, type PetForm, type Temper } from "@/components/pk";
 import type { RoomDecor } from "@/lib/room/decor";
 import { BedBack, BedFront, FlatDecor } from "./decor-art";
 
@@ -29,6 +29,7 @@ export function FlatRoom({
   pet,
   colour,
   hop,
+  said,
   hat,
   hatColour,
   glasses,
@@ -37,6 +38,8 @@ export function FlatRoom({
   pet: FlatPet | null;
   colour: string;
   hop: number;
+  /** What the player just did, shown in a bubble over them while it plays; a new key replays it. */
+  said?: { icon: IconName; key: number } | null;
   /** What the player wears on the head, if anything; the peg doll wears the same. */
   hat?: HatName;
   hatColour?: string;
@@ -116,7 +119,14 @@ export function FlatRoom({
       </svg>
 
       <div key={dress} className={dress === arrived ? "pk-room__who" : "pk-room__who pk-room__who--dressed"}>
-        <PlayerArt color={colour} hat={hat} hatColor={hatColour} glasses={glasses} />
+        <div key={`doll-${said?.key ?? 0}`} className={said ? "pk-room__doll pk-room__doll--hop" : "pk-room__doll"}>
+          <PlayerArt color={colour} hat={hat} hatColor={hatColour} glasses={glasses} />
+        </div>
+        {said ? (
+          <span key={`said-${said.key}`} className="pk-room__said" aria-hidden="true">
+            <Icon name={said.icon} size={24} weight={2.2} />
+          </span>
+        ) : null}
       </div>
 
       {/* The basket is there before the pet is: an empty one is waiting. */}

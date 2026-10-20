@@ -5883,6 +5883,57 @@ details > .pk-risks {
     transform: none;
   }
 }
+/* The player answers with the pet: they hop too, and what they did rises
+   over them in a bubble while the room says it aloud. */
+.pk-room__doll--hop {
+  animation: pk-hop 460ms var(--ease-press);
+  transform-origin: 50% 100%;
+}
+.pk-room__said {
+  position: absolute;
+  z-index: 2;
+  left: 64%;
+  top: -14%;
+  display: grid;
+  place-items: center;
+  width: 34%;
+  aspect-ratio: 1;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: 50% 50% 50% 14%;
+  background: var(--surface);
+  color: var(--sun-edge);
+  box-shadow: var(--shadow-sticker);
+  animation: pk-said 1800ms var(--ease-swap) both;
+}
+.pk-room__said svg {
+  width: 58%;
+  height: 58%;
+}
+@keyframes pk-said {
+  0% {
+    opacity: 0;
+    transform: translateY(14%) scale(0.5);
+  }
+  12% {
+    opacity: 1;
+    transform: none;
+  }
+  82% {
+    opacity: 1;
+    transform: translateY(-8%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18%);
+  }
+}
+/* Still, the bubble is simply there while the cue plays, and gone after. */
+@media (prefers-reduced-motion: reduce) {
+  .pk-room__said,
+  .pk-room__doll--hop {
+    animation: none !important;
+  }
+}
 
 /* ------------------------------------------------ how you look
 

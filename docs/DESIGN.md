@@ -119,7 +119,10 @@ pet wearing and confirmed care are inputs to rendering, never record writes.
 
 The view switch stays in the room's corner. A loading 3D room shows a named
 wait; failed or unsupported rendering falls back to the flat room with
-recovery controls. Flat art draws the same player, pet and selected look.
+recovery controls. Flat art draws the same player, pet and selected look,
+and plays the same moments in its own way: the pet hops, the player hops
+with it, and what they did rises over them in a bubble with the moment's
+glyph (still under reduced motion), for as long as the room says it.
 The room's status sentence is announced to assistive technology, never shown:
 the room already plays the moment, on Home and on a visit. Rendering pauses
 when off screen or hidden; reduced motion renders on demand and holds a moment

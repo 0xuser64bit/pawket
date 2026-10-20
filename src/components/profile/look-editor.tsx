@@ -144,7 +144,7 @@ export function LookEditor({
         <p className="body-sm pk-muted">
           {shown
             ? "Saved on this device. It changes how you look, nothing else."
-            : "You wear it in the 3D room; the flat room shows your top colour."}
+            : "You wear it in the 3D room; the flat room shows your top colour, hat and glasses."}
         </p>
         <Button label="Surprise me" icon="spark" tone="quiet" size="sm" onClick={surprise} />
       </div>

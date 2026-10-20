@@ -30,6 +30,17 @@ function part(geometry: BufferGeometry, colour: string, outline = true): Mesh {
 
 const tone = (name: Tone) => DAYLIGHT[name];
 
+function star(size: number, depth: number): ExtrudeGeometry {
+  const s = new Shape();
+  for (let k = 0; k < 10; k++) {
+    const a = Math.PI / 2 + (k * Math.PI) / 5;
+    const r = k % 2 ? size * 0.45 : size;
+    if (k) s.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    else s.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  return new ExtrudeGeometry(s, { depth, bevelEnabled: false });
+}
+
 function heart(size: number, depth: number): ExtrudeGeometry {
   const s = new Shape();
   s.moveTo(0, -size);
@@ -70,6 +81,16 @@ const EYEWEAR: Record<Exclude<PlayerLook["eyewear"], "none">, (eyes: { l: Vector
         return lens;
       },
       tone("pet-blush"),
+    ),
+  stars: (eyes) =>
+    frames(
+      eyes,
+      () => {
+        const lens = part(star(0.03, 0.006), tone("sun"));
+        lens.position.z -= 0.003;
+        return lens;
+      },
+      tone("sun-edge"),
     ),
   shades: (eyes) =>
     frames(
@@ -141,6 +162,61 @@ const HEADWEAR: Record<Exclude<PlayerLook["headwear"], "none">, (crown: number, 
     g.add(centre);
     g.position.set(0.075, crown + 0.02, 0.05);
     g.rotation.y = 0.9;
+    return g;
+  },
+  bow: (crown, colour) => {
+    // A big bow worn to one side of the crown: two loops and a knot.
+    const g = new Group();
+    for (const side of [-1, 1]) {
+      const loop = part(new SphereGeometry(0.05, 16, 12), colour);
+      loop.scale.set(1.2, 0.8, 0.45);
+      loop.position.x = side * 0.052;
+      loop.rotation.z = side * 0.35;
+      g.add(loop);
+    }
+    g.add(part(new SphereGeometry(0.022, 12, 10), colour));
+    g.position.set(0.05, crown + 0.03, 0.03);
+    g.rotation.set(-0.25, 0, -0.4);
+    return g;
+  },
+  cat: (crown, colour) => {
+    // A headband with two pointed ears, their insides blush, like the pet's own.
+    const g = new Group();
+    const band = part(new TorusGeometry(0.104, 0.008, 6, 32, Math.PI), colour);
+    band.position.y = crown - 0.02;
+    g.add(band);
+    for (const side of [-1, 1]) {
+      const ear = part(new ConeGeometry(0.036, 0.07, 4), colour);
+      ear.scale.set(1, 1, 0.45);
+      ear.position.set(side * 0.055, crown + 0.085, 0);
+      ear.rotation.z = side * -0.45;
+      g.add(ear);
+      const inner = part(new ConeGeometry(0.02, 0.04, 4), tone("pet-blush"), false);
+      inner.scale.set(1, 1, 0.3);
+      inner.position.set(side * 0.055, crown + 0.08, 0.009);
+      inner.rotation.z = side * -0.45;
+      g.add(inner);
+    }
+    return g;
+  },
+  headphones: (crown, colour) => {
+    // A band from ear to ear over the crown, and a cup on each ear.
+    const g = new Group();
+    const ears = crown - 0.085;
+    const band = part(new TorusGeometry(0.114, 0.011, 8, 36, Math.PI), colour);
+    band.position.y = ears;
+    band.scale.y = 0.9;
+    g.add(band);
+    for (const side of [-1, 1]) {
+      const cup = part(new CylinderGeometry(0.038, 0.038, 0.034, 20), colour);
+      cup.rotation.z = Math.PI / 2;
+      cup.position.set(side * 0.114, ears, 0);
+      g.add(cup);
+      const pad = part(new CylinderGeometry(0.026, 0.026, 0.01, 16), tone("edge"), false);
+      pad.rotation.z = Math.PI / 2;
+      pad.position.set(side * 0.134, ears, 0);
+      g.add(pad);
+    }
     return g;
   },
   bunny: (crown, colour) => {

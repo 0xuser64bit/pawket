@@ -214,6 +214,21 @@ const HATS = {
       <circle r="3" fill="var(--trim-foil)" strokeWidth="2" />
     </g>
   ),
+  cat: (color: string) => (
+    <>
+      <path d="M40 24 37 4l17 12zM80 24 83 4 66 16z" fill={color} />
+      <path d="M42.4 17.6 40.8 9.6l7.6 5.4zM77.6 17.6 79.2 9.6l-7.6 5.4z" fill="var(--pet-blush)" stroke="none" />
+      <path d="M36 28c6-10 14-14 24-14s18 4 24 14" strokeWidth="4" fill="none" />
+    </>
+  ),
+  headphones: (color: string) => (
+    <>
+      <path d="M33 42C31 4 89 4 87 42" strokeWidth="9" fill="none" />
+      <path d="M33 42C31 4 89 4 87 42" stroke={color} strokeWidth="4" fill="none" />
+      <rect x="27" y="34" width="11" height="18" rx="5" fill={color} />
+      <rect x="82" y="34" width="11" height="18" rx="5" fill={color} />
+    </>
+  ),
   bunny: (color: string) => (
     <>
       <path d="M48 20c-6-12-6-26 0-28s10 14 8 28M72 20c6-12 6-26 0-28s-10 14-8 28" fill={color} />
@@ -223,7 +238,7 @@ const HATS = {
   ),
 };
 
-/** Glasses on the peg doll: round, hearts or shades. */
+/** Glasses on the peg doll: round, hearts, stars or shades. */
 const GLASSES = {
   round: (
     <g fill="none" strokeWidth="2.4">
@@ -237,6 +252,13 @@ const GLASSES = {
       <path d="M52 48c-9-5-9-13-4-13 2 0 3 1 4 3 1-2 2-3 4-3 5 0 5 8-4 13z" fill="var(--pet-blush)" />
       <path d="M68 48c-9-5-9-13-4-13 2 0 3 1 4 3 1-2 2-3 4-3 5 0 5 8-4 13z" fill="var(--pet-blush)" />
       <path d="M57.6 39.6h4.8" fill="none" />
+    </g>
+  ),
+  stars: (
+    <g strokeWidth="2.2" fill="var(--sun)">
+      <path d="M52 35.1 53.9 39.8 59 40.2 55.1 43.5 56.3 48.5 52 45.8 47.7 48.5 48.9 43.5 45 40.2 50.1 39.8z" />
+      <path d="M68 35.1 69.9 39.8 75 40.2 71.1 43.5 72.3 48.5 68 45.8 63.7 48.5 64.9 43.5 61 40.2 66.1 39.8z" />
+      <path d="M59 40.6h2" fill="none" />
     </g>
   ),
   shades: (
@@ -280,6 +302,8 @@ export function PlayerArt({
     party: "var(--sun)",
     flower: "var(--pet-blush)",
     bunny: "var(--surface)",
+    cat: "var(--surface-ink)",
+    headphones: "var(--pool)",
   };
   return (
     <svg

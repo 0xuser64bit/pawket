@@ -19,8 +19,8 @@ export const TOPS = ["tee", "long", "tank"] as const;
 export const BOTTOMS = ["trousers", "shorts"] as const;
 export const SHOES = ["sneakers", "boots", "none"] as const;
 /** What sits on the head, and on the nose: built in the room (`room3d/accessories.ts`), drawn on the peg doll too. */
-export const HEADWEAR = ["none", "beanie", "cap", "party", "flower", "bunny"] as const;
-export const EYEWEAR = ["none", "round", "hearts", "shades"] as const;
+export const HEADWEAR = ["none", "beanie", "cap", "party", "flower", "bunny", "bow", "cat", "headphones"] as const;
+export const EYEWEAR = ["none", "round", "hearts", "shades", "stars"] as const;
 
 /**
  * Skin tones, as the average colour the skin should land on. The pack
@@ -140,8 +140,8 @@ export const LOOK_LABEL = {
   top: { tee: "Tee", long: "Long sleeve", tank: "Tank" },
   bottom: { trousers: "Trousers", shorts: "Shorts" },
   shoes: { sneakers: "Sneakers", boots: "Boots", none: "Barefoot" },
-  headwear: { none: "Nothing", beanie: "Beanie", cap: "Cap", party: "Party hat", flower: "Flower clip", bunny: "Bunny ears" },
-  eyewear: { none: "Nothing", round: "Round glasses", hearts: "Heart glasses", shades: "Shades" },
+  headwear: { none: "Nothing", beanie: "Beanie", cap: "Cap", party: "Party hat", flower: "Flower clip", bunny: "Bunny ears", bow: "Hair bow", cat: "Cat ears", headphones: "Headphones" },
+  eyewear: { none: "Nothing", round: "Round glasses", hearts: "Heart glasses", shades: "Shades", stars: "Star glasses" },
   skin: ["Tone one", "Tone two", "Tone three", "Tone four", "Tone five", "Tone six"],
   cloth: {
     pool: "Pool",
@@ -202,8 +202,14 @@ export function twinWith(wearing: string | null): Partial<Pick<PlayerLook, "head
       return { headwear: "flower", headwearColour: "blush" };
     case "strawberry-hat":
       return { headwear: "beanie", headwearColour: "blush" };
+    case "nap-ribbon":
+      return { headwear: "bow", headwearColour: "sprout" };
+    case "headphones":
+      return { headwear: "headphones", headwearColour: "pool" };
     case "round-glasses":
       return { eyewear: "round" };
+    case "sunglasses":
+      return { eyewear: "shades" };
     case "heart-glasses":
       return { eyewear: "hearts" };
     default:

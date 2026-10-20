@@ -5935,6 +5935,30 @@ details > .pk-risks {
     transform: none;
   }
 }
+/* Autumn past the flat room's window: a few leaves fall, sway and turn,
+   and stay where they hang when motion is reduced. */
+.pk-room__leaf {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pk-leaf-fall 9s linear infinite;
+}
+@keyframes pk-leaf-fall {
+  from {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(14px, 100px) rotate(170deg);
+  }
+  to {
+    transform: translate(-8px, 200px) rotate(340deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pk-room__leaf {
+    animation: none !important;
+    transform: translate(0, 60px);
+  }
+}
 /* The player answers with the pet: they hop too, and what they did rises
    over them in a bubble while the room says it aloud. */
 .pk-room__doll--hop {

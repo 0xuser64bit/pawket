@@ -216,7 +216,9 @@ places whose thing changed, giving the old one's geometry back to the GPU.
 Every thing is built from primitives in the room's toon-and-ink language;
 small repeated parts (beans, petals, seeds, sprinkles) are merged into one
 mesh each. A lamp, the neon heart and the pumpkin lantern's grin light up after dark,
-and the clock keeps the device's time (`tick`). Beds stay inside the old cushion's footprint and
+and the clock keeps the device's time (`tick`). From September to November a
+few leaves drift down past the window, in 3D (`AUTUMN` in `set.ts`) and flat,
+and hang still when motion is reduced. Beds stay inside the old cushion's footprint and
 low enough that a napping pet is seen; `decor.test.ts` holds every thing to
 the catalog, the flat drawings (`src/components/home/decor-art.tsx`) and
 those limits. The flat room places the same things: a picture between the

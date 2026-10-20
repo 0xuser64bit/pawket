@@ -39,6 +39,8 @@ import { DAYLIGHT, type Tone } from "./palette";
 
 const BACK = -1.6;
 export const BED = { x: SLOT_AT.bed.x, z: SLOT_AT.bed.z };
+/** September to November: leaves go past the window. */
+export const AUTUMN: ReadonlySet<number> = new Set([8, 9, 10]);
 
 /** The pet's sky, as the token each backdrop takes (`SPECIES_SKY`). */
 const SKY_TONE: Record<Sky, Tone> = { warm: "sun-soft", cool: "pool-soft", plain: "surface-sunk" };
@@ -118,6 +120,23 @@ export function buildRoom(decor?: RoomDecor): RoomSet {
   sill.position.set(win.x, win.y - 0.02, win.z + 0.07);
   group.add(sill);
 
+  // In autumn a few leaves drift down past the glass, between it and the
+  // mullion; the frame hides them at its edges. Only the month says when.
+  const leafShape = new Shape();
+  leafShape.moveTo(0, -0.035);
+  leafShape.quadraticCurveTo(0.028, -0.005, 0, 0.035);
+  leafShape.quadraticCurveTo(-0.028, -0.005, 0, -0.035);
+  const leafGeometry = new ExtrudeGeometry(leafShape, { depth: 0.002, bevelEnabled: false });
+  const leaves = (["sun", "sun-edge", "trim-copper", "trim-foil", "sun", "sun-edge"] as const).map((tone) => {
+    const leaf = new Mesh(leafGeometry, new MeshBasicMaterial({ color: DAYLIGHT[tone] }));
+    leaf.name = "leaf";
+    leaf.visible = false;
+    group.add(leaf);
+    return leaf;
+  });
+  const glassTop = win.y + 0.06 + 0.84;
+  const glassBottom = win.y + 0.06;
+
   // The player's things, each in its place: dressed by `dress`.
   const places = {} as Record<DecorSlot, { group: Group; id: string | null; built: BuiltDecor | null }>;
   for (const slot of DECOR_SLOTS) {
@@ -147,6 +166,20 @@ export function buildRoom(decor?: RoomDecor): RoomSet {
   };
   const tick = (now: Date) => {
     for (const slot of DECOR_SLOTS) places[slot].built?.tick?.(now);
+    const autumn = AUTUMN.has(now.getMonth());
+    const t = now.getTime() / 1000;
+    leaves.forEach((leaf, i) => {
+      leaf.visible = autumn;
+      if (!autumn) return;
+      // Each crosses the glass in seven to twelve seconds, swaying, turning over as it goes.
+      const fall = (t / (7 + i) + i / leaves.length) % 1;
+      leaf.position.set(
+        win.x - 0.34 + (i / (leaves.length - 1)) * 0.68 + Math.sin(t * 1.3 + i * 2) * 0.05,
+        glassTop + 0.05 - fall * (glassTop - glassBottom + 0.1),
+        win.z + 0.012,
+      );
+      leaf.rotation.z = t * (0.8 + i * 0.1) + i;
+    });
   };
   if (decor) dress(decor);
 

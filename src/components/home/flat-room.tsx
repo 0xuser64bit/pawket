@@ -1,7 +1,11 @@
 import { useId, useRef, useState } from "react";
+import { useMounted } from "@/lib/utils/use-mounted";
 import { Icon, PetArt, PlayerArt, type Feeling, type GlassesName, type HatName, type IconName, type PetForm, type Temper } from "@/components/pk";
 import type { RoomDecor } from "@/lib/room/decor";
 import { BedBack, BedFront, FlatDecor } from "./decor-art";
+
+/** Two leaf colours of their own, the decor's (`decor-art.tsx`). */
+const OWN_LEAF = { gold: "#ffc84a", berry: "#e2434b" };
 
 /** Day things show in Daylight, night things in Lamplight (`--pk-day` / `--pk-night`). */
 const DAY = { opacity: "var(--pk-day)" };
@@ -47,6 +51,8 @@ export function FlatRoom({
   decor: RoomDecor;
 }) {
   const id = useId().replace(/:/g, "");
+  // September to November, leaves go past the window: drawn once this device's month is known.
+  const autumn = useMounted() && [8, 9, 10].includes(new Date().getMonth());
   // A tap on the pet (or its bed) is a boop, as in the 3D room: it hops and beams for a moment, and nothing is saved.
   const [booped, setBooped] = useState(0);
   const [beaming, setBeaming] = useState(false);
@@ -64,6 +70,9 @@ export function FlatRoom({
     <>
       <svg className="pk-room__scene" viewBox="-300 0 1200 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
         <defs>
+          <clipPath id={`${id}-glass`}>
+            <rect x="66" y="56" width="180" height="168" rx="20" />
+          </clipPath>
           <pattern id={`${id}-paper`} width="36" height="36" patternUnits="userSpaceOnUse">
             <circle cx="9" cy="9" r="2.2" fill="var(--edge)" opacity="0.07" />
             <circle cx="27" cy="27" r="2.2" fill="var(--edge)" opacity="0.07" />
@@ -89,6 +98,21 @@ export function FlatRoom({
             </g>
             <path d="M92 160c0-10 9-16 18-14 4-9 17-11 23-3 9-2 16 5 15 13 7 1 10 6 9 11H92c-6 0-7-6 0-7z" fill="var(--surface)" style={DAY} />
           </g>
+          {autumn ? (
+            <g clipPath={`url(#${id}-glass)`} stroke="none" aria-hidden="true">
+              {(
+                [
+                  [92, "var(--sun)", 0],
+                  [128, OWN_LEAF.gold, -2.4],
+                  [170, "var(--sun-edge)", -4.8],
+                  [214, OWN_LEAF.berry, -7.2],
+                  [110, OWN_LEAF.gold, -5.6],
+                ] as const
+              ).map(([x, fill, delay], i) => (
+                <path key={x} className="pk-room__leaf" d={`M${x} 40c6 2 6 11 0 14-6-3-6-12 0-14z`} fill={fill} style={{ animationDelay: `${delay}s`, animationDuration: `${8 + i}s` }} />
+              ))}
+            </g>
+          ) : null}
           <path d="M156 58v164M68 140h176" strokeWidth="5" />
           <rect x="66" y="56" width="180" height="168" rx="20" fill="none" />
           {/* curtains, tied back */}

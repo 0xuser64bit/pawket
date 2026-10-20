@@ -185,6 +185,11 @@ real mouth, and the pet leans into the hand.
 Brush uses that same stroke, with its handle gripped in the palm and its
 bristles kept down; contact targets the brush head rather than the bare hand.
 
+**Coat.** The pipeline bakes each species' coat into the model as two
+vertex colours (`BAKED` in `src/lib/player/coats.ts`). `PetActor.paint`
+swaps exactly those for the chosen coat's — eyes, muzzle and inner ears keep
+theirs — on the pet's own copy of the geometry, never the shared file.
+
 **Care.** A care button saves first. Only when `saveGuestPet` returns true
 does Home cue the moment (`CARE_MOMENT`); a refusal or a storage failure
 plays nothing.

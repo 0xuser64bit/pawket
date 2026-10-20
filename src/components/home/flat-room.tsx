@@ -8,7 +8,7 @@ const DAY = { opacity: "var(--pk-day)" };
 const NIGHT = { opacity: "var(--pk-night)" };
 const GLOW = { opacity: "calc(var(--pk-night) * 0.24)" };
 
-export type FlatPet = { form: PetForm; temper: Temper; feeling: Feeling; wearing: string | null; seed: string };
+export type FlatPet = { form: PetForm; temper: Temper; feeling: Feeling; wearing: string | null; seed: string; coat?: string; patch?: string };
 
 /**
  * The room drawn flat: what shows before the 3D room is ready, and instead

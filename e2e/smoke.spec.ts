@@ -423,11 +423,22 @@ test("adoption shows the pet you are making: its name on its blanket, its temper
   await page.getByRole("button", { name: /Mischief/ }).click();
   await expect(page.getByRole("button", { name: /Mischief/ })).toHaveAttribute("aria-pressed", "true");
 
+  await page.getByRole("radio", { name: "Mint" }).click();
+  await expect(page.getByText("Their coat: Mint")).toBeVisible();
+
   await page.getByRole("button", { name: /that’s the one/i }).click();
   await expect(page.getByRole("heading", { name: "Mochi is yours." })).toBeVisible();
   await expect(page.getByText("Their first page")).toBeVisible();
   await expect(page.getByText("Mischief", { exact: true })).toBeVisible();
   await expect(page.getByText("Cloud bun", { exact: true })).toBeVisible();
+  await expect(page.getByText("Mint", { exact: true })).toBeVisible();
+  // The coat is the pet's on this device: the wardrobe keeps it, and changes it.
+  await page.getByRole("button", { name: /take them home/i }).click();
+  await page.goto("/profile?tab=wardrobe#shelf");
+  await expect(page.getByRole("radio", { name: "Mint" })).toBeChecked();
+  await page.getByRole("radio", { name: "Cocoa" }).click();
+  await page.reload();
+  await expect(page.getByRole("radio", { name: "Cocoa" })).toBeChecked();
 });
 
 test("a short name is refused in words, not in bytes", async ({ page }) => {

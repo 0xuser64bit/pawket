@@ -21,6 +21,7 @@ import type { PetMood, PetSpecies } from "@/lib/game/enums";
 import type { ClothColour, PlayerLook } from "@/lib/player/look";
 import { DEFAULT_DECOR, DECOR_SLOTS, type RoomDecor } from "@/lib/room/decor";
 import type { RoomCue } from "@/lib/room/moments";
+import type { Coat } from "@/lib/player/coats";
 import { useReducedMotion } from "@/lib/utils/use-reduced-motion";
 
 /** three.js arrives only with the room, never on the first paint. */
@@ -201,6 +202,8 @@ export function Room({
     name: string;
     wearing: string | null;
     mood: PetMood;
+    /** Its coat on this device (`src/lib/player/coats.ts`); the classic coat when left out. */
+    coat?: Coat;
   } | null;
   look: PlayerLook;
   sky: Sky;
@@ -241,13 +244,16 @@ export function Room({
   const [mounted3d, setMounted3d] = useState(want3d);
   if (want3d && !mounted3d) setMounted3d(true);
   // Home re-renders every second for its countdowns; the 3D leaf should not.
-  const petKey = pet ? `${pet.species}|${pet.name}|${pet.wearing}|${pet.mood}` : "";
+  const petKey = pet ? `${pet.species}|${pet.name}|${pet.wearing}|${pet.mood}|${pet.coat?.id ?? ""}` : "";
   // The same things, in the same places, are the same room: neither room is dressed again for a re-render.
   const decorKey = DECOR_SLOTS.map((slot) => decor[slot] ?? "").join("|");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const things = useMemo(() => decor, [decorKey]);
   const scenePet = useMemo(
-    () => (pet ? { species: pet.species, name: pet.name, wearing: pet.wearing, mood: pet.mood } : null),
+    () =>
+      pet
+        ? { species: pet.species, name: pet.name, wearing: pet.wearing, mood: pet.mood, coat: pet.coat ? { main: pet.coat.main, second: pet.coat.second } : undefined }
+        : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [petKey],
   );
@@ -337,7 +343,7 @@ export function Room({
           Leaving 3D, it is back at once under the canvas fading off it. */}
       <div className="pk-room__flat" aria-hidden={flatShown ? undefined : true}>
         <FlatRoom
-          pet={pet ? { form: pet.form, temper: pet.temper, feeling: pet.feeling, wearing: pet.wearing, seed: pet.name } : null}
+          pet={pet ? { form: pet.form, temper: pet.temper, feeling: pet.feeling, wearing: pet.wearing, seed: pet.name, coat: pet.coat?.coat, patch: pet.coat?.patch } : null}
           colour={PEG_COLOUR[look.topColour]}
           hop={hop}
           hat={look.headwear === "none" ? undefined : look.headwear}

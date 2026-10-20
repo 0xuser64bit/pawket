@@ -54,9 +54,9 @@ wait. Solana Actions have their own owner-approved flow (`SOLANA.md`).
 
 | Area | Supported behavior |
 | --- | --- |
-| Adoption | Multiple local pets; one chosen pet at home |
+| Adoption | Multiple local pets; one chosen pet at home; five coats per species, kept on the device |
 | Home | Feed, play, groom, rest; decay estimates, cooldowns, XP, mood, UTC streak and care log; 3D room with flat fallback; the room's things (a picture, a plant, a rug, the bed, something past it), kept on the device; emotes, photos, calendar reminders and, in the Android app, a care reminder scheduled on the phone |
-| Profile | Player name, look and outfits; pets, wardrobe, record-derived stickers and settings; a copy of the browser's pets to keep and bring back |
+| Profile | Player name, look and outfits; pets, wardrobe and coats, record-derived stickers and settings; a copy of the browser's pets to keep and bring back |
 | Playground | Catch, Hop, Copy, Pairs; shared daily seeds; one flat daily XP bonus per pet; explicit recording for Solana rounds |
 | Public record | Server-read Passport and visit room, guestbook waves, Park discovery and Pulse counts |
 | Market | Three free pet pieces; 25 bought pieces, 12 bought rooms and 8 photo frames; 31 room things, free or with a Market room; search and shelves; fixed program prices and chain-read closet entitlements |

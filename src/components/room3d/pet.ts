@@ -1,11 +1,13 @@
 import {
   AnimationMixer,
+  Color,
   Group,
   LoopRepeat,
   Quaternion,
   Vector3,
   type AnimationAction,
   type AnimationClip,
+  type BufferAttribute,
   type Mesh,
   type MeshStandardMaterial,
   type Object3D,
@@ -66,6 +68,9 @@ export class PetActor {
   /** A clip held at one frame for a photo; while set, nothing else plays. */
   private held: string | null = null;
   private readonly carried = new Group();
+  private readonly meshes: Mesh[] = [];
+  /** Each repainted mesh's colours as the model came, so a coat can always be swapped back. */
+  private readonly baked = new Map<Mesh, BufferAttribute>();
   private readonly bodyRest: { position: Vector3; quaternion: Quaternion };
   breathe = true;
 
@@ -76,7 +81,7 @@ export class PetActor {
     this.root.name = "pet";
     this.body = this.model.getObjectByName("body")!;
     this.bodyRest = { position: this.body.position.clone(), quaternion: this.body.quaternion.clone() };
-    const meshes: Mesh[] = [];
+    const meshes = this.meshes;
     this.model.traverse((object) => {
       if (object.name.startsWith("leg-")) this.legs.push(object);
       if ((object as Mesh).isMesh) meshes.push(object as Mesh);
@@ -92,6 +97,37 @@ export class PetActor {
     this.carried.position.copy(MOUTH).add(new Vector3(0, -0.05, 0.08));
     this.wear(wearing);
     this.play("idle", 0);
+  }
+
+  /**
+   * The coat, in 3D: wherever the model has the colours the pipeline baked in
+   * (`baked`), the coat's instead; eyes, muzzle and inner ears stay as they
+   * are. The model's own geometry is shared with every copy of the file, so a
+   * pet repainted for the first time gets its own copy of it.
+   */
+  paint(baked: { main: string; second: string }, coat: { main: string; second: string }): void {
+    const from = [new Color(baked.main), new Color(baked.second)];
+    const to = [new Color(coat.main), new Color(coat.second)];
+    const near = (a: Color, b: Color) => Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) < 0.06;
+    const c = new Color();
+    for (const mesh of this.meshes) {
+      let original = this.baked.get(mesh);
+      if (!original) {
+        const colours = mesh.geometry.getAttribute("color") as BufferAttribute | undefined;
+        if (!colours) continue;
+        original = colours.clone();
+        mesh.geometry = mesh.geometry.clone();
+        this.baked.set(mesh, original);
+      }
+      const colours = mesh.geometry.getAttribute("color") as BufferAttribute;
+      for (let i = 0; i < original.count; i++) {
+        c.setRGB(original.getX(i), original.getY(i), original.getZ(i));
+        const k = from.findIndex((each) => near(each, c));
+        const out = k >= 0 ? to[k] : c;
+        colours.setXYZ(i, out.r, out.g, out.b);
+      }
+      colours.needsUpdate = true;
+    }
   }
 
   /** Put on the wardrobe item, if there is one, in 3D. */
@@ -358,5 +394,7 @@ export class PetActor {
   dispose(): void {
     this.mixer.stopAllAction();
     this.root.removeFromParent();
+    // Only the geometry a coat copied is this pet's own to give back.
+    for (const mesh of this.baked.keys()) mesh.geometry.dispose();
   }
 }

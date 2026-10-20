@@ -10,6 +10,7 @@ import { SPECIES_MODEL } from "@/lib/game/appearance";
 import type { PetMood, PetSpecies } from "@/lib/game/enums";
 import type { PlayerLook } from "@/lib/player/look";
 import type { RoomDecor } from "@/lib/room/decor";
+import { BAKED } from "@/lib/player/coats";
 import type { PhotoPose, RoomCue } from "@/lib/room/moments";
 import { Director, type DirectorStatus } from "./director";
 import { HumanActor } from "./human";
@@ -32,7 +33,8 @@ export interface RoomView {
 }
 
 export interface Room3DProps {
-  pet: { species: PetSpecies; name: string; wearing: string | null; mood: PetMood } | null;
+  /** The pet on stage, in its coat's 3D colours (the classic coat when left out). */
+  pet: { species: PetSpecies; name: string; wearing: string | null; mood: PetMood; coat?: { main: string; second: string } } | null;
   look: PlayerLook;
   sky: Sky;
   evening: boolean;
@@ -263,6 +265,17 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
       alive = false;
     };
   }, [gl, scene, camera, invalidate]);
+
+  // A coat is the model's own colours swapped, seen at once.
+  const coatMain = pet?.coat?.main;
+  const coatSecond = pet?.coat?.second;
+  useEffect(() => {
+    if (!petActor || !pet) return;
+    const baked = BAKED[pet.species];
+    petActor.paint(baked, coatMain && coatSecond ? { main: coatMain, second: coatSecond } : baked);
+    invalidate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [petActor, coatMain, coatSecond, invalidate]);
 
   const wearSeen = useRef(false);
   useEffect(() => {

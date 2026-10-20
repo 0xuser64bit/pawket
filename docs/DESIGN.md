@@ -87,7 +87,10 @@ a finger. Today's checklist reflects recorded care and a round, granting no
 extra reward. Letting a local pet go lives on its record, behind confirmation.
 
 Profile presents the player, look editor and shelf tabs. Wardrobe previews a
-piece on the selected pet before wearing it. Free starters and confirmed
+piece on the selected pet before wearing it, and holds the pet's coat: five
+two-tone swatches per species, the classic first, chosen at adoption too.
+A coat is kept on the device; the Passport, the Park and a visit show the
+classic coat, and the picker says so. Free starters and confirmed
 purchases are available; stickers do not unlock clothing. Market sheets show
 the buyer's preview, fixed price, treasury and current fee payer. A room
 thing's sheet has no price and no Paper: it places the thing, or opens the

@@ -6,6 +6,7 @@ import {
   ARRIVE,
   Banner,
   Button,
+  Choice,
   Field,
   Icon,
   LEAVE,
@@ -37,6 +38,7 @@ import { usePawketSend } from "@/lib/solana/use-send";
 import { formatUtcDate } from "@/lib/utils/format";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 import { useBackCloses, useHere } from "@/lib/native/android";
+import { COATS, chooseCoat, findCoat } from "@/lib/player/coats";
 
 const SPECIES = [PetSpecies.LunaCat, PetSpecies.MossPup, PetSpecies.CloudBun];
 
@@ -152,6 +154,7 @@ export function AdoptFlow() {
   const [species, setSpecies] = useState<PetSpecies>(PetSpecies.LunaCat);
   const [hop, setHop] = useState(0);
   const [personality, setPersonality] = useState<PetPersonality>(PetPersonality.Curious);
+  const [coatId, setCoatId] = useState("classic");
   const [name, setName] = useState("");
   const [error, setError] = useState<string>();
   const [adopted, setAdopted] = useState<GuestPet>();
@@ -211,6 +214,8 @@ export function AdoptFlow() {
 
   const form = SPECIES_ART[species];
   const sky = SPECIES_SKY[species];
+  // A coat belongs to its species: another species starts in its classic one.
+  const coat = findCoat(species, coatId);
   const temper = PERSONALITY_TEMPER[personality];
   const typed = name.trim();
 
@@ -236,6 +241,7 @@ export function AdoptFlow() {
       const saved = savePet(created);
       if (saved) {
         choosePet(created.id);
+        if (coat.id !== "classic") chooseCoat(created.id, coat.id);
         record({ name: "pet_adopted" });
         // The pet lives only in this browser: ask it to keep the storage rather than clear it.
         void askBrowserToKeep();
@@ -342,7 +348,7 @@ export function AdoptFlow() {
         >
           <div className="pk-adopt__portrait" data-eyes>
             <span className="pk-adopt__plate">
-              <PetFrame form={form} temper={temper} sky={sky} size="lg" seed={species} />
+              <PetFrame form={form} temper={temper} sky={sky} size="lg" seed={species} coat={coat.coat} patch={coat.patch} />
               <Tag name={typed || "Your pet"} empty={!typed} />
             </span>
           </div>
@@ -381,6 +387,22 @@ export function AdoptFlow() {
               </div>
             </div>
 
+            <div>
+              <Choice
+                label={`Their coat: ${coat.name}`}
+                options={COATS[species].map((each) => ({ value: each.id, label: each.name }))}
+                value={coat.id}
+                swatch={(id) => {
+                  const each = findCoat(species, id);
+                  return `linear-gradient(135deg, ${each.coat} 0 62%, ${each.patch} 62%)`;
+                }}
+                onPick={setCoatId}
+              />
+              <p className="caption pk-faint" style={{ marginTop: "var(--space-2)" }}>
+                Change it any time in the wardrobe. It is kept in {here}, like their room.
+              </p>
+            </div>
+
             <fieldset className="pk-adopt__tempers">
               <legend className="label pk-faint">How would you describe them?</legend>
               <div className="pk-tempers">
@@ -395,7 +417,7 @@ export function AdoptFlow() {
                       className="pk-temper"
                     >
                       <span className="pk-temper__face">
-                        <PetFrame form={form} temper={PERSONALITY_TEMPER[option.value]} sky={sky} size="fluid" still />
+                        <PetFrame form={form} temper={PERSONALITY_TEMPER[option.value]} sky={sky} size="fluid" still coat={coat.coat} patch={coat.patch} />
                       </span>
                       <span className="pk-temper__words">
                         <span className="title">{PERSONALITY_LABEL[option.value]}</span>
@@ -433,6 +455,8 @@ export function AdoptFlow() {
               size="lg"
               level={projected?.level ?? 1}
               seed={kept}
+              coat={coat.coat}
+              patch={coat.patch}
             />
             <Tag name={kept} />
           </span>
@@ -455,6 +479,7 @@ export function AdoptFlow() {
                 rows={[
                   { k: "Name", v: kept },
                   { k: "Species", v: SPECIES_LABEL[species] },
+                  { k: "Coat", v: coat.name },
                   { k: "Temperament", v: PERSONALITY_LABEL[personality] },
                   { k: "Adopted", v: adopted ? formatUtcDate(adopted.createdAt) : "Today" },
                   { k: "Kept", v: `In ${here}` },

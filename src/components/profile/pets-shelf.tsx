@@ -4,6 +4,7 @@ import { NavLink as Link, useNavigationWait } from "@/components/pk/nav-link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Button, ButtonLink, Card, Chip, Icon, PetFrame, Row, SectionLabel, Stack } from "@/components/pk";
+import { useCoats } from "@/lib/player/coats";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
@@ -61,10 +62,11 @@ export function PetsShelf({ companion, onConnect }: { companion: CompanionState;
 function PetCard({ pet, onChain, home, onHome }: { pet: GuestPet; onChain: boolean; home: boolean; onHome: () => void }) {
   const { here } = useHere();
   const { level, mood } = projectGuestPet(pet);
+  const coat = useCoats()(pet);
   return (
     <Card variant="flush">
       <Link href={`/pet/${pet.id}`} className="pk-card__art" aria-label={`${pet.name}'s record`} transitionTypes={["nav-forward"]}>
-        <PetFrame {...petLook(pet, mood)} sky={SPECIES_SKY[pet.species]} level={level} size="fluid" still />
+        <PetFrame {...petLook(pet, mood)} coat={coat.coat} patch={coat.patch} sky={SPECIES_SKY[pet.species]} level={level} size="fluid" still />
       </Link>
       <div className="pk-card__body">
         <h2 className="title">{pet.name}</h2>

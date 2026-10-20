@@ -22,6 +22,7 @@ import { PetCopy } from "./pet-copy";
 import { Settings } from "./settings";
 import { StickerBook } from "./sticker-book";
 import { Wardrobe } from "./wardrobe";
+import { useCoats } from "@/lib/player/coats";
 import { useHere } from "@/lib/native/android";
 
 export type ProfileTab = "pets" | "wardrobe" | "stickers" | "settings";
@@ -41,6 +42,7 @@ const TABS: Array<{ key: ProfileTab; label: string; href: string }> = [
  * records have earned, and the rooms and settings of this device.
  */
 export function ProfileScreen() {
+  const coatOf = useCoats();
   const queryTab = useSearchParams().get("tab");
   const tab = TABS.find((item) => item.key === queryTab)?.key ?? "pets";
   const companion = useCompanion();
@@ -111,7 +113,7 @@ export function ProfileScreen() {
         <Room
           pet={
             pet && projected
-              ? { ...petLook(pet, projected.mood), species: pet.species, name: pet.name, mood: projected.mood }
+              ? { ...petLook(pet, projected.mood), species: pet.species, name: pet.name, mood: projected.mood, coat: coatOf(pet) }
               : null
           }
           look={look}

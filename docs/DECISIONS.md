@@ -84,6 +84,15 @@ things stand is kept on the device, like the player's look, and a visit shows
 the room as it came. Selling a room thing on its own would need item ids and
 prices in a program upgrade (`MAINNET.md`).
 
+## A coat is the pet's, on this device
+
+A pet's coat is fur, not clothes: chosen at adoption or in the wardrobe,
+five per species (`src/lib/player/coats.ts`). The Pet account has no field
+for it and the program is frozen, so a coat is kept on the device, like the
+room and the player's look; the public record shows the species' classic
+coat. In 3D the room swaps the colours the pipeline baked into the model
+(`PetActor.paint`), so a coat needs no new file.
+
 ## Guild membership is independent of coin holdings
 
 Each pet joins one guild through its member PDA. Events and polls are program

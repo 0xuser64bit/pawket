@@ -101,6 +101,7 @@ One home per fact. If two files disagree, the left column wins.
 | Stickers (read from a record)     | `src/lib/game/badges.ts`            |
 | Rooms (themes)                    | `src/config/themes.ts` + the token blocks in `app/globals.css` |
 | Player name and outfits           | `src/lib/player/profile.ts`         |
+| Pet coats (on this device)        | `src/lib/player/coats.ts`           |
 | Player hats and glasses in 3D     | `src/components/room3d/accessories.ts` |
 | Player look (3D room)             | `src/lib/player/look.ts`            |
 | This device's key (Pawket Wallet) | `src/lib/wallet/device.ts`          |

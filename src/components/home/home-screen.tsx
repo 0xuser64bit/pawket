@@ -30,6 +30,7 @@ import { SigningNote } from "./signing-note";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { DecorPanel } from "@/components/home/decor-panel";
 import { shownDecor, useRoomDecor } from "@/lib/room/decor";
+import { useCoats } from "@/lib/player/coats";
 import { useCloset } from "@/lib/market/use-closet";
 import { Room, RoomViewSwitch, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";
@@ -92,6 +93,7 @@ export function HomeScreen() {
   const closet = useCloset(companion.owner);
   const owned = new Set(closet.data?.items ?? []);
   const decor = shownDecor(chosenDecor, owned);
+  const coatOf = useCoats();
   const sender = usePawketSend();
   const [now, setNow] = useState(() => new Date());
   const [connecting, setConnecting] = useState(false);
@@ -348,6 +350,7 @@ export function HomeScreen() {
             species: pet.species,
             name: pet.name,
             mood: projected.mood,
+            coat: coatOf(pet),
           }}
           look={look}
           sky={SPECIES_SKY[pet.species]}

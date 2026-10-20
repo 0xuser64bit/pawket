@@ -4,6 +4,7 @@ import { NavLink as Link } from "@/components/pk/nav-link";
 import { Icon, PetArt } from "@/components/pk";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
+import { useCoats } from "@/lib/player/coats";
 
 const SKY_CLASS = { warm: "pk-sky--warm", cool: "pk-sky", plain: "pk-sky--plain" } as const;
 const NONE: ReadonlySet<string> = new Set();
@@ -35,6 +36,7 @@ export function PetSwitcher({
   /** The ids of pets kept on Solana. */
   kept?: ReadonlySet<string>;
 }) {
+  const coatOf = useCoats();
   return (
     <div className="pk-switch" role="group" aria-label={label}>
       {pets.map((pet) => {
@@ -50,7 +52,7 @@ export function PetSwitcher({
               title={pet.name}
               onClick={() => onChoose(pet.id)}
             >
-              <PetArt {...petLook(pet, projectGuestPet(pet).mood)} still />
+              <PetArt {...petLook(pet, projectGuestPet(pet).mood)} coat={coatOf(pet).coat} patch={coatOf(pet).patch} still />
             </button>
             {onChain ? (
               <span className="pk-switch__badge pk-switch__badge--kept" aria-hidden="true" title="On Solana">

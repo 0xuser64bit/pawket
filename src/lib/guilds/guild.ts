@@ -41,6 +41,19 @@ export function slugFor(name: string): string {
     .replace(/-+$/, "");
 }
 
+/**
+ * The name an unfounded address was most likely meant as: its words, each
+ * capitalised — `window-seat` is `Window Seat`. Null when no name would make
+ * that address, so founding from it never lands somewhere else.
+ */
+export function nameFor(slug: string): string | null {
+  const name = slug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+  return isValidSlug(slug) && !RESERVED.has(slug) && slugFor(name) === slug ? name : null;
+}
+
 /** Addresses Pawket's own pages use, so no guild can take them. */
 const RESERVED = new Set(["new"]);
 

@@ -24,13 +24,13 @@ import { GuildCrest } from "./guild-crest";
  * that makes it fills the width below. One signature, from the pet's owner; Pawket pays the fee and the
  * rent while it can. A name nobody has is checked before the wallet opens.
  */
-export function FoundGuild({ children }: { children: ReactNode }) {
+export function FoundGuild({ children, initialName = "" }: { children: ReactNode; initialName?: string }) {
   const companion = useCompanion();
   const sender = usePawketSend();
   const sponsor = useSponsor();
   const router = useRouter();
   const [opening, startOpening] = useTransition();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName);
   const [motto, setMotto] = useState("");
   const [crest, setCrest] = useState(0);
   const [colour, setColour] = useState(0);

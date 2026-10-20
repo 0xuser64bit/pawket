@@ -12,7 +12,7 @@ import { guildReportUrl } from "@/config/site";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
 import { DELISTED_SLUGS } from "@/lib/guilds/delisted";
-import { isValidSlug } from "@/lib/guilds/guild";
+import { isValidSlug, nameFor } from "@/lib/guilds/guild";
 import { toCompanionRecord, type ChainGuild, type PetOnChain } from "@/lib/solana/accounts";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
@@ -73,10 +73,17 @@ export default async function GuildPage({ params }: Props) {
     );
   }
   if (!guild) {
+    // An address nobody has founded is offered to whoever wants it, under the name it reads as.
+    const unfounded = nameFor(slug);
     return (
       <Screen width="narrow">
         <BackLink label="Guilds" href="/guilds" />
-        <Banner tone="info" title="No guild has that name" body="Nothing on Solana answers to it in Pawket's program. It is free to found." />
+        <Banner
+          tone="info"
+          title="No guild has that name"
+          body={unfounded ? "Nothing on Solana answers to it in Pawket's program. It is free to found." : "Nothing on Solana answers to it in Pawket's program."}
+          action={<ButtonLink label={unfounded ? `Found ${unfounded}` : "Found a guild"} href={unfounded ? `/guilds/new?name=${encodeURIComponent(unfounded)}` : "/guilds/new"} tone="quiet" size="sm" icon="guild" />}
+        />
       </Screen>
     );
   }

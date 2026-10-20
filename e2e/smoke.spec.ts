@@ -176,9 +176,15 @@ test("the pulse is counted from the program, or says plainly that Solana did not
   await expect(page.getByText(/counted from pawket's program on solana, read live/i)).toBeVisible();
 });
 
-test("a guild nobody founded is a plain miss", async ({ page }) => {
+test("a guild nobody founded is a plain miss, and free to found under its name", async ({ page }) => {
   await page.goto("/guilds/no-such-guild-here");
   await expect(page.getByText(/no guild has that name|solana did not answer/i)).toBeVisible();
+  const found = page.getByRole("link", { name: "Found No Such Guild Here" });
+  if (await found.count()) {
+    await found.click();
+    await expect(page.getByRole("textbox", { name: "Guild name" })).toHaveValue("No Such Guild Here");
+    await expect(page.getByText("/guilds/no-such-guild-here")).toBeVisible();
+  }
 });
 
 test("a care pressed from the keyboard keeps focus on its button, resting", async ({ page }) => {

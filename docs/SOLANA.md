@@ -164,7 +164,11 @@ pet address with HMAC. `readKeepsake` verifies the account exists under Core
 before showing a card. Creation requires the owner, current sponsorship and
 no existing card. The sponsor covers rent and authority; the owner signs the
 prepared transaction through `sendPrepared`. Metadata is built from live pet
-reads under `/api/keepsake/[pet]`.
+reads under `/api/keepsake/[pet]`; its picture is `/api/keepsake/[pet]/card`
+(`keepsakeCard` in `src/server/card.tsx`): the pet's portrait in what the
+record says it wears, drawn happy because it is a keepsake, with its level,
+cares, best run and the day it was adopted, read live. An Action's icon is
+the one that draws the pet's mood.
 
 Rotating the sponsor changes discovery addresses and authority requirements.
 Q10 in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) must be resolved before rotation.

@@ -10,12 +10,14 @@ import { calculateLevelFromXp } from "@/lib/game/math";
 import { projectGuestPet } from "@/lib/guest/pet";
 import { toCompanionRecord, type ChainGuild, type PetOnChain } from "@/lib/solana/accounts";
 import { iconPath } from "@/components/pk/icon";
+import { formatUtcDate } from "@/lib/utils/format";
 import { CREST_COLOURS, CREST_GLYPHS } from "@/lib/guilds/guild";
 
 /**
  * Pictures of a pet for outside the app: the card a shared link unfurls as
- * (`wide`, 1200×630) and the icon of a Solana Action (`square`). Drawn from
- * the record at request time; without a pet, the three species together.
+ * (`wide`, 1200×630), the icon of a Solana Action (`square`) and the
+ * keepsake a wallet shows (`keepsakeCard`). Drawn from the record at request
+ * time; without a pet, the three species together.
  */
 
 /** The pet's paint in hex: the card is drawn without a stylesheet, so no token resolves. */
@@ -263,6 +265,70 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
       </div>
     ),
     options,
+  );
+}
+
+/**
+ * A keepsake as a wallet shows it: a collectible card, the pet's portrait
+ * on its species' sky in the piece the record says it wears, then its name,
+ * what it is, and the record's own numbers, read now. The portrait is a
+ * keepsake's, so the pet is drawn happy; how it feels today is on its
+ * Passport and in an Action's icon, which draw its mood.
+ */
+export async function keepsakeCard(onChain: PetOnChain, cluster: string): Promise<ImageResponse> {
+  const { pet, passport } = onChain;
+  const look = { ...lookOf(onChain), feeling: "happy" as const };
+  const since = formatUtcDate(new Date(toCompanionRecord(onChain).createdAt));
+  const numbers: Array<[string, string]> = [
+    ["LEVEL", String(calculateLevelFromXp(pet.xp))],
+    ["CARES", String(passport.careCount)],
+    ["BEST RUN", `${passport.bestStreak} ${passport.bestStreak === 1 ? "day" : "days"}`],
+  ];
+  return new ImageResponse(
+    (
+      <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", background: SKY[look.form], fontFamily: "Hanken Grotesk", color: DAYLIGHT.edge }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: 640,
+            height: 736,
+            padding: 32,
+            background: DAYLIGHT.surface,
+            border: `8px solid ${DAYLIGHT.edge}`,
+            borderRadius: 52,
+            boxShadow: `14px 14px 0 ${DAYLIGHT.edge}`,
+          }}
+        >
+          <Pocket look={look} size={320} />
+          <div style={{ fontFamily: "Fraunces", fontSize: pet.name.length > 12 ? 58 : 76, lineHeight: 1, marginTop: 26 }}>{pet.name}</div>
+          <div style={{ fontSize: 28, color: DAYLIGHT["trim-cloth"], marginTop: 12 }}>
+            {`${SPECIES_LABEL[pet.species]} · ${PERSONALITY_LABEL[pet.personality]}`}
+          </div>
+          <div style={{ display: "flex", gap: 14, marginTop: 24 }}>
+            {numbers.map(([k, v]) => (
+              <div key={k} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 172, padding: "10px 0", border: `3px solid ${DAYLIGHT.edge}`, borderRadius: 18, background: DAYLIGHT.ground }}>
+                <div style={{ fontSize: 17, letterSpacing: 2, color: DAYLIGHT["trim-cloth"] }}>{k}</div>
+                <div style={{ fontFamily: "Fraunces", fontSize: 34, lineHeight: 1.1 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: 552, marginTop: "auto", paddingTop: 18, borderTop: `3px dashed ${DAYLIGHT["trim-cloth"]}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+              <img src={pawImage(36)} width={36} height={36} alt="" />
+              <div style={{ fontFamily: "Fraunces", fontSize: 28 }}>Pawket keepsake</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", fontSize: 18, letterSpacing: 1.5, color: DAYLIGHT["trim-cloth"] }}>
+              <div>{`SINCE ${since.toUpperCase()}`}</div>
+              <div>{`SOLANA ${cluster.toUpperCase()}`}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    { ...SQUARE, fonts: await brandFonts() },
   );
 }
 

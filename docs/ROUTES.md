@@ -30,6 +30,7 @@ unwired route, and call a pet "on Solana" only when it was read from chain.
 /api/actions/guild/[slug]  Solana Action: a pet joins the guild
 /api/actions/icon          a square card for an Action (?pet=)
 /api/keepsake/[pet]        GET: the card's metadata, live. POST { account }: its creation, owner only
+/api/keepsake/[pet]/card   the card's picture: the pet's portrait and its record's numbers, read now
 /api/keepsake/collection   the collection's metadata
 /api/coins/[slug]/quote    GET: a quote on the curve or in the verified DAMM v2 pool
 /api/coins/[slug]/position GET ?account=: a wallet's locked positions in a graduated coin's pool, and their unclaimed fees

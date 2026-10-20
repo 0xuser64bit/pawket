@@ -34,7 +34,7 @@ export async function GET(_request: Request, { params }: Props) {
   const record = toCompanionRecord(onChain);
   const projected = projectGuestPet(record, new Date());
   const { pet: chainPet, passport } = onChain;
-  const image = `${app}/api/actions/icon?pet=${pet}`;
+  const image = `${app}/api/keepsake/${pet}/card`;
   return NextResponse.json(
     {
       name: chainPet.name,

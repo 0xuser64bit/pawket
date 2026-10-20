@@ -139,13 +139,28 @@ test("the Market can be searched and narrowed, and a narrowed shelf can be linke
   await expect(page.locator(".pk-tiles button")).toHaveCount(2);
   await page.getByRole("searchbox", { name: "Search the Market" }).fill("nothing called this");
   await page.getByRole("button", { name: "Show everything" }).click();
-  await expect(page.locator(".pk-tiles button")).toHaveCount(45);
+  await expect(page.locator(".pk-tiles button")).toHaveCount(76);
   await page.getByRole("radio", { name: "Rooms" }).click();
   await expect(page).toHaveURL(/#room$/);
   await expect(page.locator(".pk-tiles button")).toHaveCount(12);
   await page.goto("/market#eyes");
   await expect(page.getByRole("radio", { name: "Glasses" })).toBeChecked();
   await expect(page.locator(".pk-tiles button")).toHaveCount(3);
+});
+
+test("the room's things are in the Market: free ones placed at once, a room's own one shown with its room", async ({ page }) => {
+  await page.goto("/market#decor");
+  await expect(page.locator(".pk-tiles button")).toHaveCount(31);
+  await page.getByRole("button", { name: /^Blossom scroll/ }).click();
+  const scroll = page.getByRole("dialog", { name: "Blossom scroll" });
+  await expect(scroll.getByText(/comes with the Blossom room/)).toBeVisible();
+  await scroll.getByRole("button", { name: "See the Blossom room" }).click();
+  await expect(page.getByRole("dialog", { name: "Blossom" })).toBeVisible();
+  await page.getByRole("dialog", { name: "Blossom" }).getByRole("button", { name: "Not now" }).click();
+  await page.getByRole("button", { name: /^Wall clock/ }).click();
+  await page.getByRole("dialog", { name: "Wall clock" }).getByRole("button", { name: "Place in your room" }).click();
+  await expect(page.getByRole("dialog", { name: "Wall clock" }).getByRole("link", { name: "See it at home" })).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("pawket.room-decor.v1") ?? "{}").slots?.wall)).toBe("wall-clock");
 });
 
 test("the pulse is counted from the program, or says plainly that Solana did not answer", async ({ page }) => {

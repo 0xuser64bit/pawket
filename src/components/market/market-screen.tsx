@@ -14,6 +14,9 @@ import { projectGuestPet } from "@/lib/guest/pet";
 import { PHOTO_FRAMES } from "@/lib/market/frames";
 import { SHELF_FILTERS, isShelfFilter, onShelf, type ShelfEntry, type ShelfFilter } from "@/lib/market/shelf";
 import { FrameArt } from "./frame-art";
+import { DecorArt } from "@/components/home/decor-art";
+import { DECOR, SLOT_LABEL, decorOpen, placeDecor, useRoomDecor, type DecorPiece } from "@/lib/room/decor";
+import { useHere } from "@/lib/native/android";
 import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
@@ -36,8 +39,11 @@ import { DevnetFaucet } from "@/components/wallet/faucet";
  */
 
 interface Item extends ShelfEntry {
-  id: number;
+  /** A Market item id, or a room thing's own id (`decor`): nothing on Solana, nothing sold. */
+  id: number | string;
   art: React.ReactNode;
+  /** A room thing, placed on this device. */
+  decor?: DecorPiece;
   /** The catalog id of a piece, to try it on. */
   piece?: string;
   room?: ThemeId;
@@ -68,9 +74,35 @@ const FRAMES: Item[] = PHOTO_FRAMES.map((frame) => ({
   art: <FrameArt id={frame.id} className="pk-market-frame" />,
 }));
 
+/** Words a room thing is found by, beyond its name and line. */
+const DECOR_WORDS: Record<DecorPiece["slot"], string[]> = {
+  wall: ["wall", "painting", "picture", "art"],
+  corner: ["plant", "corner", "pot"],
+  rug: ["rug", "floor", "carpet"],
+  bed: ["bed", "nap", "sleep"],
+  side: ["furniture", "lamp", "shelf"],
+};
+
+const roomOf = (piece: DecorPiece) => THEMES.find((theme) => theme.id === piece.room);
+
+const THINGS: Item[] = DECOR.map((piece) => ({
+  id: piece.id,
+  name: piece.name,
+  line: piece.line,
+  kind: "decor",
+  tags: [...DECOR_WORDS[piece.slot], ...(piece.room ? [piece.room, "glass"] : ["free"])],
+  decor: piece,
+  art: <DecorArt id={piece.id} className="pk-market-decor" />,
+}));
+
 const SHELVES: ReadonlyArray<{ label: string; items: Item[]; note?: string }> = [
   { label: "For your pets", items: PIECES },
   { label: "Rooms", items: ROOMS },
+  {
+    label: "For your room",
+    items: THINGS,
+    note: "A picture, a plant, a rug, a bed and more, placed from Home. Most are free; each room above brings one of its own.",
+  },
   { label: "For your photos", items: FRAMES, note: "Frame a moment with your pet. Save it or share it from Home." },
 ];
 
@@ -94,9 +126,10 @@ function useFragment(): string {
  * frames copper. Looks only; it is written beside the price.
  */
 function rarityOf(item: Item): Rarity {
-  if (item.kind === "room") return "glass";
+  if (item.kind === "room" || item.decor?.room) return "glass";
+  if (item.kind === "decor") return "cloth";
   if (item.kind === "frame") return "copper";
-  return marketPrice(item.id) === MARKET.classicPrice ? "cloth" : "foil";
+  return marketPrice(item.id as number) === MARKET.classicPrice ? "cloth" : "foil";
 }
 
 export function MarketScreen() {
@@ -105,13 +138,16 @@ export function MarketScreen() {
   const owner = (connected?.account.address as Address | undefined) ?? null;
   const closet = useCloset(owner);
   const choice = useThemeChoice();
+  const decor = useRoomDecor();
   const [picked, setPicked] = useState<Item | null>(null);
   const owned = new Set(closet.data?.items ?? []);
+  /** Whether the closet holds it: a room's thing once the room is there; a free thing is nobody's purchase. */
+  const holds = (item: Item) => (item.decor ? Boolean(item.decor.room) && decorOpen(item.decor, owned) : owned.has(item.id as number));
   const [query, setQuery] = useState("");
   const fragment = useFragment();
   const filter: ShelfFilter = isShelfFilter(fragment) ? fragment : "all";
   const narrowing = query.trim() !== "" || filter !== "all";
-  const shelves = SHELVES.map((shelf) => ({ ...shelf, shown: shelf.items.filter((item) => onShelf(item, query, filter, owned.has(item.id))) }));
+  const shelves = SHELVES.map((shelf) => ({ ...shelf, shown: shelf.items.filter((item) => onShelf(item, query, filter, holds(item))) }));
   const found = shelves.reduce((sum, shelf) => sum + shelf.shown.length, 0);
 
   /** The address holds the shelf, so a narrowed Market can be linked to, and comes back on reload. */
@@ -126,14 +162,30 @@ export function MarketScreen() {
   }
 
   const tile = (item: Item) => {
-    const has = owned.has(item.id);
+    if (item.decor) {
+      const piece = item.decor;
+      const open = decorOpen(piece, owned);
+      return (
+        <button key={item.id} type="button" className="pk-tile-hit" aria-haspopup="dialog" onClick={() => setPicked(item)}>
+          <ItemTile
+            name={item.name}
+            kind={piece.room ? (open ? "With your room" : `With ${roomOf(piece)?.name}`) : SLOT_LABEL[piece.slot]}
+            rarity={rarityOf(item)}
+            price={piece.room ? undefined : "Free"}
+            art={item.art}
+            equipped={decor[piece.slot] === piece.id}
+          />
+        </button>
+      );
+    }
+    const has = owned.has(item.id as number);
     return (
       <button key={item.id} type="button" className="pk-tile-hit" aria-haspopup="dialog" onClick={() => setPicked(item)}>
         <ItemTile
           name={item.name}
           kind={has ? "In your closet" : `${RARITY_LABEL[rarityOf(item)]} ${item.kind}`}
           rarity={rarityOf(item)}
-          price={has ? undefined : sol(marketPrice(item.id)!)}
+          price={has ? undefined : sol(marketPrice(item.id as number)!)}
           art={item.art}
           equipped={has && item.room === choice}
         />
@@ -216,12 +268,20 @@ export function MarketScreen() {
         </Stack>
       </details>
 
-      {picked ? (
+      {picked?.decor ? (
+        <DecorSheet
+          piece={picked.decor}
+          open={decorOpen(picked.decor, owned)}
+          placed={decor[picked.decor.slot] === picked.decor.id}
+          onRoom={() => setPicked(ROOMS.find((room) => room.room === picked.decor!.room) ?? null)}
+          onDismiss={() => setPicked(null)}
+        />
+      ) : picked ? (
         <ItemSheet
           item={picked}
           owner={owner}
           canSign={Boolean(connected?.signer)}
-          has={owned.has(picked.id)}
+          has={owned.has(picked.id as number)}
           onBought={closet.refresh}
           onDismiss={() => setPicked(null)}
         />
@@ -250,7 +310,7 @@ function ItemSheet({
   const sponsor = useSponsor();
   const { pet } = useCompanion();
   const [connecting, setConnecting] = useState(false);
-  const price = marketPrice(item.id)!;
+  const price = marketPrice(item.id as number)!;
   const balance = sender.pawketWallet?.balance;
   const short = owner !== null && balance !== undefined && balance < price;
   const needsLink = owner !== null && !sender.pawketWallet?.linked;
@@ -262,7 +322,7 @@ function ItemSheet({
     const address = (await deriveClosetPda(owner)).address;
     const wallet = (await deriveWalletPda(owner)).address;
     const result = await sender.send(`Buy the ${item.name.toLowerCase()}`, ({ owner: signer, payer }) => [
-      getBuyWithWalletInstruction({ owner: signer, payer, closet: address, wallet, item: item.id }),
+      getBuyWithWalletInstruction({ owner: signer, payer, closet: address, wallet, item: item.id as number }),
     ]);
     if (result?.outcome === "confirmed") {
       onBought();
@@ -323,6 +383,77 @@ function ItemSheet({
             Your Pawket Wallet holds {sol(balance ?? 0n)}. Add SOL there before buying.<DevnetFaucet /> Nothing was sent.
           </Problem>
         ) : null}
+      </Stack>
+    </Sheet>
+  );
+}
+
+/**
+ * A room thing, as a sheet: drawn large, what it is, and the one thing to do
+ * with it — place it in the room on this device, or, for a thing that comes
+ * with a Market room not yet bought, see that room. Nothing here is a sale,
+ * so there is no price and no Paper.
+ */
+function DecorSheet({
+  piece,
+  open,
+  placed,
+  onRoom,
+  onDismiss,
+}: {
+  piece: DecorPiece;
+  open: boolean;
+  placed: boolean;
+  onRoom: () => void;
+  onDismiss: () => void;
+}) {
+  const { here } = useHere();
+  const [said, setSaid] = useState<string>();
+  const room = roomOf(piece);
+  return (
+    <Sheet
+      title={piece.name}
+      meta={piece.room ? `With the ${room?.name} room` : "Free"}
+      register="room"
+      onDismiss={onDismiss}
+      foot={(dismiss) => (
+        <>
+          <div className="pk-spread">
+            <Button tone="quiet" label={placed ? "Done" : "Not now"} onClick={dismiss} />
+            {!open ? (
+              <Button label={`See the ${room?.name} room`} onClick={onRoom} />
+            ) : placed ? (
+              <ButtonLink label="See it at home" icon="home" href="/home" />
+            ) : (
+              <Button
+                label="Place in your room"
+                icon="sofa"
+                onClick={() => setSaid(placeDecor(piece.slot, piece.id) ? undefined : `${here === "this app" ? "This app" : "This browser"} did not keep it. Your room is as it was.`)}
+              />
+            )}
+          </div>
+          <p role="status" className="caption pk-faint" style={{ marginTop: said || placed ? "var(--space-2)" : 0 }}>
+            {said ?? (placed ? `In your room: ${SLOT_LABEL[piece.slot].toLowerCase()}. Change it any time from Home, under Decor.` : "")}
+          </p>
+        </>
+      )}
+    >
+      <Stack gap={4}>
+        <div className="pk-market-try pk-market-try--decor" aria-hidden="true">
+          <DecorArt id={piece.id} />
+        </div>
+        <div>
+          <h2 className="title">{piece.name}</h2>
+          <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
+            {piece.line}{" "}
+            {piece.room
+              ? open
+                ? `It came with your ${room?.name} room.`
+                : `It comes with the ${room?.name} room: buy the room once, and this is yours too, on every device of the wallet.`
+              : `Free, for everyone. It stays in your room in ${here}.`}
+          </p>
+        </div>
+        <p className="body-sm pk-muted">Looks only: it changes no vital, XP, cooldown or score.</p>
       </Stack>
     </Sheet>
   );

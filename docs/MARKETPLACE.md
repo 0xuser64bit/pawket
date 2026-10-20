@@ -29,6 +29,14 @@ a separately approved product and protocol design; see `DECISIONS.md`.
 | 19–28 | Ten pet pieces: halo, wizard hat, sun hat, gold crown, cowboy hat, chef hat, sunglasses, headphones, beret, necktie | Foil | 0.05 SOL each | `dress_owned` |
 | 64–75 | Twelve rooms: Blossom, Aurora, Strawberry, Honey, Matcha, Seaside, Lavender, Starlight, Terracotta, Newsprint, Cocoa, Arcade | Glass | 0.1 SOL each | the room picker |
 | 80–87 | Eight photo frames: Postcard, Film strip, Garden, Sunshine, Instant, Hearts, Starry night, Confetti | Copper | 0.025 SOL each | Home → Photo → Photo frame |
+| — | Thirty-one room things: pictures, plants, rugs, beds and things past the bed | — | Free, or with a Market room | Home → Decor |
+
+Room things are not sold and have no item id (`src/lib/room/decor.ts`). Most
+are free. Each Market room brings one of its own — the Blossom scroll, the
+northern lights, a strawberry rug, a honeycomb rug, a bonsai, a seashell bed,
+lavender, moon and stars, a sun mirror, a framed front page, a cocoa mug, a
+neon heart — open once the closet holds that room. Where they stand is kept on
+the device; the Market's "For your room" shelf places them too.
 
 Each shelf's material is its tile's trim, and the word is written beside the
 price ("Cloth piece", "Glass room"). The material says what kind of thing it

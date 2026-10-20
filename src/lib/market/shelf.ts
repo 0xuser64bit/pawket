@@ -4,7 +4,7 @@
  * screen and its test read the same answer.
  */
 
-export type ShelfKind = "piece" | "room" | "frame";
+export type ShelfKind = "piece" | "room" | "frame" | "decor";
 
 export interface ShelfEntry {
   name: string;
@@ -23,6 +23,7 @@ export const SHELF_FILTERS = [
   { value: "neck", label: "Neck" },
   { value: "back", label: "Back" },
   { value: "room", label: "Rooms" },
+  { value: "decor", label: "Decor" },
   { value: "frame", label: "Frames" },
   { value: "yours", label: "In your closet" },
 ] as const;
@@ -57,6 +58,10 @@ const SAME: Record<string, string> = {
   photos: "frame",
   clothes: "piece",
   outfit: "piece",
+  furniture: "decor",
+  decoration: "decor",
+  plants: "plant",
+  paintings: "painting",
   night: "dark",
   grey: "gray",
 };

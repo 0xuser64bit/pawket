@@ -64,6 +64,9 @@ const SAME: Record<string, string> = {
   paintings: "painting",
   night: "dark",
   grey: "gray",
+  halloween: "autumn",
+  fall: "autumn",
+  spooky: "autumn",
 };
 
 /**

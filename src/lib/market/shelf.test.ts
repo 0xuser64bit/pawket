@@ -33,3 +33,8 @@ it("takes only the filters it shows", () => {
   expect(isShelfFilter("room")).toBe(true);
   expect(isShelfFilter("stat")).toBe(false);
 });
+
+it("finds the autumn things by the season's other names", () => {
+  const leaves: ShelfEntry = { name: "Leaf pile", line: "A heap of autumn leaves, for jumping in.", kind: "decor", tags: ["side", "free"] };
+  for (const query of ["autumn", "halloween", "fall", "spooky"]) expect(onShelf(leaves, query, "all", false), query).toBe(true);
+});

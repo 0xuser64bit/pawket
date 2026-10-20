@@ -14,7 +14,7 @@ unwired route, and call a pet "on Solana" only when it was read from chain.
 (game)/pet/[id]            an address: the public Passport, from chain (with its guild and guestbook);
                            otherwise the record of a pet in this browser
 (game)/pet/[address]/visit you, in a pet's room on Solana: emotes, and a wave into its guestbook
-(game)/market              looks for SOL at fixed prices — 25 pieces, 12 rooms, 8 frames — paid from the Pawket Wallet; the closet read from chain
+(game)/market              looks for SOL at fixed prices — 25 pieces, 12 rooms, 8 frames — paid from the Pawket Wallet, and the room's things; the closet read from chain
 (game)/pulse               everything the program holds, counted and read live
 (game)/guilds              every guild on Solana, read live (test and delisted ones left out), and the rule
 (game)/guilds/new          founding a guild: name, motto, crest, the founding pet
@@ -37,6 +37,7 @@ unwired route, and call a pet "on Solana" only when it was read from chain.
 /api/coins/[slug]/{launch,trade,graduate,claim}   POST { account, ... }: a transaction for the player to sign
 /api/coins/[slug]/metadata the coin's token metadata
 /actions.json              /adopt, /pet/* and /guilds/* unfurl as those Actions
+/robots.txt, /sitemap.xml   crawlers read the production deployment only (never a preview, never /api), from its public pages
 (game)/pet/[id]/opengraph-image, /opengraph-image   share cards
 ```
 

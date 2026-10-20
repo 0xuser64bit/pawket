@@ -315,7 +315,7 @@ export function HomeScreen() {
   return (
     <Screen className="pk-home-screen">
       <ScreenBar>
-        <div>
+        <div className={pet.name.length > 12 ? "pk-home__title--long" : undefined}>
           <h1 className="display-s">{pet.name}&apos;s room</h1>
           <Row gap={2} wrap style={{ marginTop: "var(--space-1)" }}>
             <span className="caption pk-faint">

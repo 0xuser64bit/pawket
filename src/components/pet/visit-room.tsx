@@ -13,6 +13,7 @@ import { describeLook } from "@/lib/player/look";
 import { usePlayerLook } from "@/lib/player/use-player-look";
 import type { RoomCue } from "@/lib/room/moments";
 import { Guestbook } from "./guestbook";
+import { nameHeadingClass } from "@/lib/utils/format";
 
 /**
  * Visiting a pet that lives on Solana: you, as you dressed yourself, in its
@@ -49,7 +50,9 @@ export function VisitRoom({
       <BackLink label={record.name} href={`/pet/${address}`} />
       <Stack gap={4}>
         <div>
-          <h1 className="display-l">Visiting {record.name}</h1>
+          <h1 className={nameHeadingClass(record.name)} style={{ overflowWrap: "anywhere" }}>
+            Visiting {record.name}
+          </h1>
           <p className="body-sm pk-muted">
             {SPECIES_LABEL[record.species]} · level {projected.level} · kept on Solana. Wave, dance, say hello — only{" "}
             {record.name}&apos;s owner can care for them.

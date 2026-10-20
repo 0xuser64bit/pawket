@@ -16,7 +16,7 @@ import { GuildCrest } from "@/components/guilds/guild-crest";
 import { NavLink as Link } from "@/components/pk/nav-link";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
-import { formatUtcDate } from "@/lib/utils/format";
+import { formatUtcDate, nameHeadingClass } from "@/lib/utils/format";
 import type { Keepsake } from "@/server/keepsake";
 import { Guestbook } from "./guestbook";
 import { KeepsakeCard } from "./keepsake";
@@ -83,7 +83,7 @@ export function Passport({
               />
             </div>
             <div>
-              <h1 className="display-l" style={{ overflowWrap: "anywhere" }}>
+              <h1 className={nameHeadingClass(pet.name)} style={{ overflowWrap: "anywhere" }}>
                 {pet.name}
               </h1>
               <p className="body-sm pk-muted">

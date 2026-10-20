@@ -106,3 +106,13 @@ export function dayTurnsAt(now: Date = new Date(), options: { locale?: string; t
   if (/^0?0:00$/.test(clock)) return "at midnight";
   return `at ${new Intl.DateTimeFormat(options.locale, { hour: "numeric", minute: "2-digit", timeZone: options.timeZone }).format(next)} here`;
 }
+
+/**
+ * The display size for a heading that holds a pet's name. A name is a proper
+ * noun, which no browser hyphenates: a word in it longer than a phone's column
+ * holds at the large size (about ten letters) takes the size below, rather than
+ * breaking in the middle.
+ */
+export function nameHeadingClass(name: string, large = "display-l", small = "display-m"): string {
+  return Math.max(...name.split(/\s+/).map((word) => [...word].length)) > 10 ? small : large;
+}

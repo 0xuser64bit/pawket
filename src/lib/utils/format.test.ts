@@ -5,6 +5,7 @@ import {
   formatCountdown,
   formatSol,
   formatUtcDate,
+  nameHeadingClass,
   parseSolToLamports,
   truncateAddress,
 } from "./format";
@@ -114,5 +115,14 @@ describe("dayTurnsAt", () => {
   it("counts from the UTC day it is now, even late in the local evening", () => {
     // 01:00 UTC on the 18th is still the 17th in Los Angeles; the next turn is the 19th's UTC midnight.
     expect(dayTurnsAt(new Date("2026-10-18T01:00:00Z"), { locale: "en-US", timeZone: "America/Los_Angeles" })).toBe("at 5:00 PM here");
+  });
+});
+
+describe("nameHeadingClass", () => {
+  it("steps a name's heading down only when a word in it is too long for a phone", () => {
+    expect(nameHeadingClass("Pepper")).toBe("display-l");
+    expect(nameHeadingClass("Sir Wigglesworth Pickles")).toBe("display-m");
+    expect(nameHeadingClass("Mr Whiskers Jr")).toBe("display-l");
+    expect(nameHeadingClass("Wigglesworth", "display-hero", "display-l")).toBe("display-l");
   });
 });

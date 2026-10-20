@@ -28,7 +28,7 @@ import {
 import { projectGuestPet, streakAsOf, type GuestPet } from "@/lib/guest/pet";
 import { removePet } from "@/lib/guest/storage";
 import { usePets } from "@/lib/guest/use-pets";
-import { formatUtcDate } from "@/lib/utils/format";
+import { formatUtcDate, nameHeadingClass } from "@/lib/utils/format";
 import { StickerStrip } from "./sticker-strip";
 import { useHere } from "@/lib/native/android";
 
@@ -103,7 +103,7 @@ export function PetScreen({ id }: { id: string }) {
           <>
             <div className="pk-spread">
               <div>
-                <h1 className="display-l" style={{ overflowWrap: "anywhere" }}>
+                <h1 className={nameHeadingClass(pet.name)} style={{ overflowWrap: "anywhere" }}>
                   {pet.name}
                 </h1>
                 <p className="body-sm pk-muted">

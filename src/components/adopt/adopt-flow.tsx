@@ -35,7 +35,7 @@ import { record } from "@/lib/analytics/events";
 import { usePets } from "@/lib/guest/use-pets";
 import { useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend } from "@/lib/solana/use-send";
-import { formatUtcDate } from "@/lib/utils/format";
+import { formatUtcDate, nameHeadingClass } from "@/lib/utils/format";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 import { useBackCloses, useHere } from "@/lib/native/android";
 import { COATS, findCoat } from "@/lib/player/coats";
@@ -464,7 +464,7 @@ export function AdoptFlow() {
         </div>
 
         <div>
-          <h1 ref={heading} tabIndex={-1} className="display-l">
+          <h1 ref={heading} tabIndex={-1} className={nameHeadingClass(kept)}>
             {kept} is yours.
           </h1>
           <p className="body-lg pk-muted" style={{ marginTop: "var(--space-3)" }}>

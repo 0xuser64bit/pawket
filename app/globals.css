@@ -3875,6 +3875,11 @@ li {
 .pk-home-screen .pk-screen__bar > div:first-child { flex: 1; min-width: 0; }
 .pk-home-screen .pk-screen__bar > :is(.pk-chip, .pk-btn) { flex-shrink: 0; white-space: nowrap; }
 .pk-home-screen h1 { overflow-wrap: anywhere; }
+/* A long name takes the whole width on a phone, and what sits beside it goes under it. */
+@media (max-width: 479px) {
+  .pk-home-screen .pk-screen__bar:has(> .pk-home__title--long) { flex-wrap: wrap; }
+  .pk-home-screen .pk-screen__bar > div.pk-home__title--long { flex-basis: 100%; }
+}
 .pk-home__pets { min-width: 0; margin-bottom: var(--space-3); }
 .pk-home__signing { display: flex; align-items: flex-start; gap: var(--space-2); }
 .pk-paste {

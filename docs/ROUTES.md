@@ -38,7 +38,7 @@ unwired route, and call a pet "on Solana" only when it was read from chain.
 /api/coins/[slug]/metadata the coin's token metadata
 /actions.json              /adopt, /pet/* and /guilds/* unfurl as those Actions
 /robots.txt, /sitemap.xml   crawlers read the production deployment only (never a preview, never /api), from its public pages
-(game)/pet/[id]/opengraph-image, /opengraph-image   share cards
+(game)/pet/[id]/opengraph-image, (game)/guilds/[slug]/opengraph-image (its crest), /opengraph-image   share cards
 ```
 
 Redirects: anything under `/market` goes to `/market`; `/inventory`

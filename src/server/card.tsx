@@ -342,46 +342,59 @@ const CREST_TONE: Record<(typeof CREST_COLOURS)[number]["id"], [Tone, Tone]> = {
   glass: ["trim-glass", "ink-inverse"],
 };
 
-/** A guild's square card: its crest, its name and motto, and how many pets are in it. */
-export async function guildCard(guild: ChainGuild): Promise<ImageResponse> {
+/**
+ * A guild's card: its crest, its name and motto, and how many pets are in it.
+ * `square` is an Action's icon; `wide` is the card its page unfurls as.
+ */
+export async function guildCard(guild: ChainGuild, shape: "square" | "wide" = "square"): Promise<ImageResponse> {
   const [fill, on] = CREST_TONE[CREST_COLOURS[guild.colour]?.id ?? "bloom"];
   const glyph = CREST_GLYPHS[guild.crest] ?? "paw";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="220" height="220" fill="none" stroke="${DAYLIGHT[on]}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${iconPath(glyph)}"/></svg>`;
+  const crest = (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        width: 300,
+        height: 330,
+        background: DAYLIGHT[fill],
+        border: `10px solid ${DAYLIGHT[on]}`,
+        borderRadius: "34px 34px 46% 46%",
+        boxShadow: `12px 12px 0 ${DAYLIGHT.edge}`,
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+      <img src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`} width={220} height={220} alt="" />
+    </div>
+  );
+  const count = `${guild.memberCount} ${guild.memberCount === 1 ? "PET" : "PETS"} · A GUILD ON SOLANA`;
+  const base = { display: "flex", width: "100%", height: "100%", background: DAYLIGHT.ground, color: DAYLIGHT.edge, fontFamily: "Hanken Grotesk" } as const;
+
+  if (shape === "wide") {
+    return new ImageResponse(
+      (
+        <div style={{ ...base, alignItems: "center", padding: "0 88px", gap: 72 }}>
+          {crest}
+          <div style={{ display: "flex", flexDirection: "column", gap: 22, minWidth: 0 }}>
+            <div style={{ fontFamily: "Fraunces", fontSize: guild.name.length > 16 ? 76 : 100, lineHeight: 1 }}>{guild.name}</div>
+            {guild.motto ? <div style={{ fontSize: 34, color: DAYLIGHT["trim-cloth"], maxWidth: 640 }}>{guild.motto}</div> : null}
+            <div style={{ display: "flex", marginTop: 14 }}>{mark(count, 24)}</div>
+          </div>
+        </div>
+      ),
+      { ...WIDE, fonts: await brandFonts() },
+    );
+  }
+
   return new ImageResponse(
     (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 26,
-          width: "100%",
-          height: "100%",
-          background: DAYLIGHT.ground,
-          color: DAYLIGHT.edge,
-          fontFamily: "Hanken Grotesk",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 300,
-            height: 330,
-            background: DAYLIGHT[fill],
-            border: `10px solid ${DAYLIGHT[on]}`,
-            borderRadius: "34px 34px 46% 46%",
-            boxShadow: `12px 12px 0 ${DAYLIGHT.edge}`,
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
-          <img src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`} width={220} height={220} alt="" />
-        </div>
+      <div style={{ ...base, flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 26 }}>
+        {crest}
         <div style={{ fontFamily: "Fraunces", fontSize: guild.name.length > 16 ? 60 : 80, lineHeight: 1 }}>{guild.name}</div>
         {guild.motto ? <div style={{ fontSize: 30, color: DAYLIGHT["trim-cloth"], maxWidth: 680, textAlign: "center" }}>{guild.motto}</div> : null}
-        {mark(`${guild.memberCount} ${guild.memberCount === 1 ? "PET" : "PETS"} · A GUILD ON SOLANA`, 24)}
+        {mark(count, 24)}
       </div>
     ),
     { ...SQUARE, fonts: await brandFonts() },

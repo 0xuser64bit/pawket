@@ -5431,12 +5431,26 @@ details > .pk-risks {
   user-select: all;
   -webkit-user-select: all;
 }
+.pk-share__more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+}
 .pk-share__post {
   justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--ink);
+  font: inherit;
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pk-share__post:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 /* ------------------------------------------------------- rooms (themes)

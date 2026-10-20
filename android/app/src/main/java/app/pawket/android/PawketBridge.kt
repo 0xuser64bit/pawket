@@ -30,9 +30,10 @@ import java.util.Base64
 /**
  * The page's one way to ask the phone for something: `window.PawketAndroid`,
  * injected only into Pawket's own origin and heard only from its main frame.
- * It knows eight requests — share or save a photo, share a link, set a daily
- * reminder in the calendar, allow and set the one care reminder, a haptic,
- * the room's colours — and checks every field of each. It never carries a key, a transaction, a file path or a URL
+ * It knows nine requests — share or save a photo, share a link, share a
+ * record's card with its link, set a daily reminder in the calendar, allow
+ * and set the one care reminder, a haptic, the room's colours — and checks
+ * every field of each. It never carries a key, a transaction, a file path or a URL
  * to load: a wallet is the wallet app's, and Solana is the page's.
  *
  * Requests are JSON `{ id, op, … }`; the answer, for those that have one, is
@@ -74,6 +75,7 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
             "room" -> room(request)
             "share-image" -> picture(request, share = true, answer)
             "save-image" -> picture(request, share = false, answer)
+            "share-card" -> card(request, answer)
             "share-link" -> shareLink(request, answer)
             "remind" -> remind(request, answer)
             "allow-reminders" -> activity.allowNotifications { allowed -> answer(allowed, "denied") }
@@ -120,11 +122,22 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         activity.roomChanged(android.graphics.Color.parseColor(ground), request.optBoolean("dark"))
     }
 
+    /** A record's card (a PNG data URL) and the link to it, a page of Pawket's, into the share sheet together. */
+    private fun card(
+        request: JSONObject,
+        answer: (Boolean, String?) -> Unit,
+    ) {
+        val url = request.optString("url").toUri()
+        if (!activity.isTrusted(url)) return answer(false, "not-pawket")
+        picture(request, share = true, answer, words = shareWords(request.optString("text"), "$url"))
+    }
+
     /** A printed photo, as the page made it (a PNG data URL): into the share sheet, or into Pictures/Pawket. */
     private fun picture(
         request: JSONObject,
         share: Boolean,
         answer: (Boolean, String?) -> Unit,
+        words: String? = null,
     ) {
         val data = request.optString("data")
         val name = fileName(request.optString("name"))
@@ -138,7 +151,7 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
                 }
             when {
                 stored == null -> answer(false, if (share) "not-staged" else "not-saved")
-                share -> answer(activity.launch(shareIntent(stored, title)), "no-target")
+                share -> answer(activity.launch(shareIntent(stored, title, words)), "no-target")
                 else -> answer(true, null)
             }
         }
@@ -163,6 +176,7 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
     private fun shareIntent(
         picture: Uri,
         title: String,
+        words: String?,
     ): Intent {
         val send =
             Intent(Intent.ACTION_SEND)
@@ -171,6 +185,8 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         send.clipData = ClipData.newRawUri(title, picture)
         if (title.isNotBlank()) send.putExtra(Intent.EXTRA_TITLE, title)
+        // A card goes with its words and link: an app that takes both (a chat, a post) gets both.
+        if (words != null) send.putExtra(Intent.EXTRA_TEXT, words)
         return Intent.createChooser(send, activity.getString(R.string.share_picture))
     }
 
@@ -210,11 +226,10 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
     ) {
         val url = request.optString("url").toUri()
         if (!activity.isTrusted(url)) return answer(false, "not-pawket")
-        val text = request.optString("text").take(280)
         val send =
             Intent(Intent.ACTION_SEND)
                 .setType("text/plain")
-                .putExtra(Intent.EXTRA_TEXT, if (text.isBlank()) "$url" else "$text $url")
+                .putExtra(Intent.EXTRA_TEXT, shareWords(request.optString("text"), "$url"))
         request.optString("title").take(120).takeIf { it.isNotBlank() }?.let { send.putExtra(Intent.EXTRA_TITLE, it) }
         answer(activity.launch(Intent.createChooser(send, activity.getString(R.string.share_link))), "no-target")
     }
@@ -275,6 +290,7 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         private const val HOUR_MS = 60 * 60 * 1000L
         private const val DAY_MS = 24 * HOUR_MS
         private const val REMINDER_LENGTH_MS = 10 * 60 * 1000L
+        private const val MAX_SHARE_TEXT = 280
         private val HEX_COLOUR = Regex("^#[0-9a-fA-F]{6}$")
         private val PNG_SIGNATURE = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
         private const val PNG_DATA_URL = "data:image/png;base64,"
@@ -291,6 +307,12 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
             if (bytes.size > MAX_PICTURE_BYTES || bytes.size < PNG_SIGNATURE.size) return null
             return if (bytes.copyOfRange(0, PNG_SIGNATURE.size).contentEquals(PNG_SIGNATURE)) bytes else null
         }
+
+        /** What a shared link says: the page's words, capped, then the link. */
+        fun shareWords(
+            text: String,
+            url: String,
+        ): String = text.take(MAX_SHARE_TEXT).trim().let { if (it.isEmpty()) url else "$it $url" }
 
         /** A file name the page suggested, kept to letters, digits and dashes. */
         fun fileName(suggested: String): String =

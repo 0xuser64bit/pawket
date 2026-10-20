@@ -111,7 +111,6 @@ export function Passport({
               <ShareButton
                 name={pet.name}
                 label={`Share ${pet.name}'s record`}
-                image={`/pet/${pet.address}/opengraph-image`}
                 text={`${pet.name}, a ${SPECIES_LABEL[pet.species].toLowerCase()} kept on Solana in Pawket. Wave hello.`}
               />
             </div>

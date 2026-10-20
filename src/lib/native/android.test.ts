@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { haptic, inAndroidApp, savePicture, setCareReminder, shareLink, sharePicture, useBackCloses, useCareReminders, useHaptics } from "./android";
+import { haptic, inAndroidApp, savePicture, setCareReminder, shareLink, sharePicture, useBackCloses, useCareReminders, useHaptics, shareCard } from "./android";
 
 type Request = Record<string, unknown>;
 
@@ -51,6 +51,13 @@ describe("in the app", () => {
     expect(posted).toEqual([
       { id: expect.any(String), op: "share-image", data: "data:image/png;base64,AA==", name: "pawket-pepper", title: "Pepper and you" },
     ]);
+  });
+
+  it("hands a record's card to the share sheet with its link", async () => {
+    const posted = app();
+    const card = { data: "data:image/png;base64,AA==", name: "mango-on-pawket", title: "Mango on Pawket", url: "https://pawket.world/pet/abc", text: "Mango, kept on Solana." };
+    await expect(shareCard(card)).resolves.toEqual({ ok: true });
+    expect(posted).toEqual([{ id: expect.any(String), op: "share-card", ...card }]);
   });
 
   it("passes on why the phone said no", async () => {

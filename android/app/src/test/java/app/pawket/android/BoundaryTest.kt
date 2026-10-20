@@ -62,4 +62,11 @@ class BoundaryTest {
         assertEquals("pawket", PawketBridge.fileName("///"))
         assertEquals(60, PawketBridge.fileName("a".repeat(200)).length)
     }
+
+    @Test
+    fun sharedWordsAreCappedAndEndWithTheLink() {
+        assertEquals("Mango, kept on Solana. https://pawket.world/pet/x", PawketBridge.shareWords("Mango, kept on Solana.", "https://pawket.world/pet/x"))
+        assertEquals("https://pawket.world/pet/x", PawketBridge.shareWords("   ", "https://pawket.world/pet/x"))
+        assertEquals(280 + 1 + 4, PawketBridge.shareWords("a".repeat(500), "link").length)
+    }
 }

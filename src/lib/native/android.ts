@@ -101,6 +101,14 @@ export function savePicture(data: string, name: string): Promise<Answer> {
   return ask("save-image", { data, name });
 }
 
+/**
+ * A record's card (a PNG data URL) and its link to Pawket, into the share sheet
+ * together. An app from before this request answers "unknown": share the link alone.
+ */
+export function shareCard(card: { data: string; name: string; title: string; url: string; text?: string }): Promise<Answer> {
+  return ask("share-card", card);
+}
+
 /** A page of Pawket's into the share sheet. The app shares only links to Pawket. */
 export function shareLink(link: { url: string; text?: string; title?: string }): Promise<Answer> {
   return ask("share-link", link);

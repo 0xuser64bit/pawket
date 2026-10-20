@@ -72,6 +72,7 @@ a JVM boundary test and a documented permission reason.
 | `share-image` | Validated PNG in a unique cache file, shared through a read-only FileProvider URI; old files cleared | None |
 | `save-image` | MediaStore image in `Pictures/Pawket`; failed writes remove partial images | None on minSdk 29+ |
 | `share-link` | Pawket-origin link through the share sheet | None |
+| `share-card` | A record's card (validated PNG, staged like `share-image`) with its Pawket-origin link and words, so a chat shows the picture; an older app answers `unknown` and the page shares the link alone | None |
 | `remind` | Calendar editor with a daily reminder for 30 days; the player saves it | None |
 | `allow-reminders` | Asked when the player turns care reminders on (Home or Settings); answers whether the phone lets Pawket post | `POST_NOTIFICATIONS` on Android 13+, asked only here |
 | `care-reminder` | Sets or clears the one care reminder: a time within three days and plain words (control characters removed, lengths capped), as an inexact alarm; tapping it opens the app where it was left | None more |

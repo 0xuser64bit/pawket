@@ -178,7 +178,8 @@ export default function LandingPage() {
                 </Row>
               </Stack>
             </div>
-            <div className="pk-roomshow__photos" aria-label="Photos taken in Pawket's rooms" role="group">
+            {/* A row a phone swipes: a region a keyboard can focus and scroll too. */}
+            <div className="pk-roomshow__photos" aria-label="Photos taken in Pawket's rooms" role="region" tabIndex={0}>
               {[
                 { src: "/landing/pepper.webp", alt: "A photo from Pawket: the player waves beside Pepper, a ginger cat, in a room with a sea painting, a sunflower and a cloud bed." },
                 { src: "/landing/biscuit.webp", alt: "Biscuit, a golden pup, dancing with the player under bunting, by a monstera and a cardboard box bed." },
@@ -197,7 +198,7 @@ export default function LandingPage() {
             <h2 className="display-m">A day with them</h2>
             <p className="body-lg pk-muted">Four things, a few minutes, and a face that remembers.</p>
           </div>
-          <div className="pk-days">
+          <div className="pk-days" aria-label="A day with them" role="region" tabIndex={0}>
             <article className="pk-day">
               <div className="pk-day__art pk-day__art--adopt">
                 <span className="pk-day__frame">

@@ -1618,8 +1618,11 @@ li {
   background: color-mix(in srgb, currentColor 12%, transparent);
   transform: scale(0.97);
 }
+/* The width it gives back is its own: a row sized to its content is that much
+   narrower, and the button's 100% cap would otherwise clip its words. */
 .pk-btn--flush {
   margin-left: calc(-1 * var(--space-3));
+  max-width: calc(100% + var(--space-3));
 }
 /* paper: the only button allowed on a Paper surface. Square, no shelf, and
    deliberately unsatisfying to press. */

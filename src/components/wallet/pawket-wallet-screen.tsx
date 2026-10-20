@@ -107,7 +107,7 @@ export function PawketWalletScreen() {
           <Card>
             <h2 className="title">Set up your Pawket Wallet</h2>
             <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-              Connect the wallet that keeps your pets. It owns the Pawket Wallet and approves once; then {here}
+              Connect the wallet that keeps your pets. It owns the Pawket Wallet and approves once; then {here}{" "}
               signs for your pets with no pop-up. Connecting signs nothing.
             </p>
             <div className="pk-foot">

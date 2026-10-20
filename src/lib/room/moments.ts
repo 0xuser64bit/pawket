@@ -142,6 +142,53 @@ export const MOMENTS: readonly Moment[] = [
     says: "You cheer. {pet} bounces.",
   },
   {
+    id: "heart",
+    label: "Heart",
+    icon: "hearts",
+    clips: [{ at: 0, name: "Heart", src: "/3d/emotes/heart.glb" }],
+    lookAt: "room",
+    formation: "free",
+    facing: 10,
+    pet: [
+      { at: 0.3, cue: "look" },
+      { at: 0.9, cue: "happy" },
+      { at: 1.9, cue: "hop" },
+    ],
+    still: 1.3,
+    says: "You make a heart. {pet} beams.",
+  },
+  {
+    id: "peace",
+    label: "Peace",
+    icon: "peace",
+    clips: [{ at: 0, name: "Peace", src: "/3d/emotes/peace.glb" }],
+    lookAt: "room",
+    formation: "beside",
+    facing: 8,
+    pet: [
+      { at: 0, cue: "look" },
+      { at: 0.5, cue: "happy" },
+    ],
+    still: 1.1,
+    says: "You and {pet} strike a pose.",
+  },
+  {
+    id: "thumbs",
+    label: "Nice",
+    icon: "thumbs",
+    clips: [{ at: 0, name: "Thumbs up", src: "/3d/emotes/thumbs-up.glb" }],
+    lookAt: "room",
+    formation: "free",
+    facing: 10,
+    pet: [
+      { at: 0.2, cue: "look" },
+      { at: 0.7, cue: "happy" },
+      { at: 1.5, cue: "hop" },
+    ],
+    still: 0.9,
+    says: "You give {pet} a thumbs up.",
+  },
+  {
     id: "feed",
     label: "Feed",
     icon: "bowl",
@@ -212,7 +259,7 @@ export const MOMENTS: readonly Moment[] = [
 ];
 
 /** The emote row: moments a player can start at any time. */
-export const EMOTES = ["wave", "dance", "pet", "treat", "cheer"] as const;
+export const EMOTES = ["wave", "dance", "pet", "treat", "cheer", "heart", "peace", "thumbs"] as const;
 
 /**
  * Poses for a photo: a moment's own clip, staged for the camera instead of
@@ -241,6 +288,9 @@ export const PHOTO_POSES = [
   { value: "cheer", label: "Cheer", icon: "spark", moment: "cheer", stage: TO_CAMERA, still: 0.9, pet: { clip: "gesture-positive", at: 0.3, hop: true } },
   { value: "cuddle", label: "Cuddle", icon: "heart", moment: "pet", still: 2.2, pet: { clip: "idle", at: 0.6 } },
   { value: "dance", label: "Dance", icon: "music", moment: "dance", stage: { ...TO_CAMERA, facing: 14 }, still: 0.3, pet: { clip: "dance", at: 1.2, hop: true } },
+  { value: "peace", label: "Peace", icon: "peace", moment: "peace", stage: TO_CAMERA, still: 1.1, pet: { clip: "gesture-positive", at: 0.9 } },
+  { value: "heart", label: "Heart", icon: "hearts", moment: "heart", stage: TO_CAMERA, still: 1.3, pet: { clip: "idle", at: 0.6 } },
+  { value: "thumbs", label: "Nice", icon: "thumbs", moment: "thumbs", stage: TO_CAMERA, still: 0.9, pet: { clip: "gesture-positive", at: 0.7 } },
 ] as const satisfies readonly PhotoPoseSpec[];
 export type PhotoPose = (typeof PHOTO_POSES)[number]["value"];
 

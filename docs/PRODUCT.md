@@ -65,7 +65,7 @@ wait. Solana Actions have their own owner-approved flow (`SOLANA.md`).
 | Android | Wallet app integration, gallery and native sharing, calendar editor, haptics, back behavior, shortcuts and App Links |
 
 Cosmetics and coin balances never change vitals, XP, cooldowns or scores.
-Photos can be posed (Wave, Cheer, Cuddle, Dance), both of you facing the
+Photos can be posed (Wave, Cheer, Cuddle, Dance, Peace, Heart, and Nice — a thumbs up), both of you facing the
 camera, using the room's existing animations. Home plays a
 quiet music-box lullaby, and a little tune for each emote and saved care,
 all synthesised on the device; the room's speaker switch mutes it, and the

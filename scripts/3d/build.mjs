@@ -552,7 +552,7 @@ async function main() {
     report.push(await check(await finish(doc, `human/body-${key}.glb`)));
   }
   for (const clip of EMOTE_CLIPS) {
-    report.push(await check(await finish(await buildEmote(clip), `emotes/${clip.name.toLowerCase()}.glb`)));
+    report.push(await check(await finish(await buildEmote(clip), `emotes/${clip.name.toLowerCase().replaceAll(" ", "-")}.glb`)));
   }
   console.table(report.map(({ file, kb, triangles, clips }) => ({ file, kb, triangles, clips: clips.length })));
 }

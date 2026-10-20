@@ -158,8 +158,9 @@ export function blip(frequency: number, ms = 90, type: OscillatorType = "triangl
 
 /**
  * What each moment sounds like, in the room's own music box: notes (MIDI)
- * and when, in seconds. A wave says hello, a cheer climbs, a meal is two
- * small bites, a brush sparkles, a rest winds down.
+ * and when, in seconds. A wave says hello, a cheer climbs, a heart swells,
+ * a pose snaps, a meal is two small bites, a brush sparkles, a rest winds
+ * down.
  */
 const TUNES: Record<string, Array<[number, number]>> = {
   on: [[79, 0], [84, 0.1]],
@@ -168,6 +169,9 @@ const TUNES: Record<string, Array<[number, number]>> = {
   pet: [[76, 0], [79, 0.18], [84, 0.36]],
   treat: [[96, 0], [91, 0.08]],
   cheer: [[84, 0], [88, 0.07], [91, 0.14], [96, 0.21]],
+  heart: [[76, 0], [79, 0.12], [84, 0.24], [88, 0.36], [84, 0.6]],
+  peace: [[91, 0], [96, 0.1]],
+  thumbs: [[84, 0], [91, 0.16]],
   feed: [[67, 0], [67, 0.16], [72, 0.38]],
   brush: [[96, 0], [91, 0.06], [88, 0.12], [91, 0.3]],
   fetch: [[72, 0], [79, 0.12], [76, 0.5], [84, 0.62]],

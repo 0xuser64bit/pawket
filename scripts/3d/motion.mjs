@@ -222,7 +222,9 @@ function solve(rig, pose) {
       const amount = curl * [0, 70, 85, 55][Number(seg)];
       // In the T-pose the palm faces down, so curling turns about Z.
       // The thumb folds across the palm instead.
-      const axis = which === "thumb" ? [0, amount * 0.6 * ARM[s], -amount * 0.3 * ARM[s]] : [0, 0, -amount * ARM[s]];
+      // `spread` fans the index toward the thumb and the middle away from it, at the knuckle.
+      const fan = seg === "1" && hand.spread ? ({ index: 1, middle: -1 }[which] ?? 0) * hand.spread * -ARM[s] : 0;
+      const axis = which === "thumb" ? [0, amount * 0.6 * ARM[s], -amount * 0.3 * ARM[s]] : [0, fan, -amount * ARM[s]];
       place(bone, withDelta(bone, euler(axis)));
       continue;
     }
@@ -682,7 +684,105 @@ const cheer = {
   },
 };
 
-export const EMOTE_CLIPS = [cheer];
+/**
+ * A heart over the head: the hands meet on its crown, palms down and
+ * fingers touching, elbows out wide for the lobes, and the body sways. The
+ * wrists are placed from the head joint so they land on either build: the
+ * scaled crown sits about 25 cm above it.
+ */
+const heart = {
+  name: "Heart",
+  duration: 2.9,
+  base: STAND,
+  keys: [
+    { t: 0 },
+    {
+      t: 0.5,
+      ease: "settle",
+      pose: {
+        hand_l: { at: [0.13, 0.25, -0.01], from: "Head", pole: [1, 0.5, 0], point: [-1, 0.05, 0], palm: [0, -1, 0] },
+        hand_r: { at: [-0.13, 0.25, -0.01], from: "Head", pole: [-1, 0.5, 0], point: [1, 0.05, 0], palm: [0, -1, 0] },
+        fingers_l: { curl: 0.1, thumb: 0.15 },
+        fingers_r: { curl: 0.1, thumb: 0.15 },
+        spine_03: [-3, 0, 0],
+        Head: [-2, 0, 0],
+      },
+    },
+    { t: 2.35 },
+    { t: 2.9, pose: STAND },
+  ],
+  wobble: (t) => {
+    const k = env(t, 0.5, 2.35, 0.25);
+    const s = Math.sin((t - 0.5) * Math.PI * 1.6) * k;
+    return { pelvis: { rot: [0, 0, 2.5 * s] }, spine_02: [0, 0, -3.5 * s], Head: [0, 0, 7 * s] };
+  },
+};
+
+/**
+ * Two fingers up beside the cheek, spread in a V, the palm out and the
+ * head tipped toward them; the other hand on the hip. The sign bobs twice,
+ * the way a photo is asked for.
+ */
+const peace = {
+  name: "Peace",
+  duration: 2.6,
+  base: STAND,
+  keys: [
+    { t: 0 },
+    {
+      t: 0.42,
+      ease: "settle",
+      pose: {
+        hand_r: { at: [-0.21, -0.03, 0.05], from: "Head", pole: [-1, -1, -0.2], point: [-0.25, 1, 0.05], palm: [0, 0, 1] },
+        fingers_r: { index: 0, middle: 0, ring: 1, pinky: 1, thumb: 0.9, spread: 14 },
+        hand_l: { at: [-0.02, -0.37, -0.03], pole: [1, -0.1, -0.7], point: [-0.35, -0.8, 0.35], palm: [-1, 0, 0] },
+        fingers_l: { curl: 0.25, thumb: 0.4 },
+        pelvis: { rot: [0, 0, -3] },
+        spine_03: [0, -4, 4],
+        Head: [2, -4, 12],
+      },
+    },
+    { t: 2.1 },
+    { t: 2.6, pose: STAND },
+  ],
+  wobble: (t) => {
+    const k = env(t, 0.5, 1.5, 0.1);
+    const s = Math.abs(Math.sin((t - 0.5) * Math.PI * 2)) * k;
+    return { hand_r: { at: [0, 0.025 * s, 0] }, Head: [0, 0, 2 * s] };
+  },
+};
+
+/**
+ * A thumbs up: the fist raised beside the shoulder, thumb to the sky, and
+ * a nod to go with it as the fist pumps.
+ */
+const thumbs = {
+  name: "Thumbs up",
+  duration: 2.3,
+  base: STAND,
+  keys: [
+    { t: 0 },
+    {
+      t: 0.4,
+      ease: "settle",
+      pose: {
+        hand_r: { at: [-0.08, 0.0, 0.24], pole: [-0.6, -1, -0.2], point: [0, 0, 1], palm: [1, 0, 0] },
+        fingers_r: { curl: 1, thumb: 0 },
+        spine_03: [2, -6, 0],
+        Head: [4, -4, -4],
+      },
+    },
+    { t: 1.8 },
+    { t: 2.3, pose: STAND },
+  ],
+  wobble: (t) => {
+    const k = env(t, 0.45, 1.35, 0.1);
+    const nod = Math.max(0, Math.sin((t - 0.45) * Math.PI * 2.2)) * k;
+    return { Head: [6 * nod, 0, 0], hand_r: { at: [0, 0.025 * nod, 0] } };
+  },
+};
+
+export const EMOTE_CLIPS = [cheer, heart, peace, thumbs];
 
 /* ----------------------------------------------------------------- bake */
 

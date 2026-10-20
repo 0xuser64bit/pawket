@@ -5563,7 +5563,7 @@ details > .pk-risks {
 /* Five poses, one row, even on a phone: the glyph over its word. */
 .pk-photo__poses .pk-choices {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .pk-photo__poses .pk-choice {
   flex-direction: column;
@@ -8070,7 +8070,7 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
    widths. On a phone each is its glyph over its word. */
 .pk-emotes {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-2);
   margin-top: var(--space-4);
 }

@@ -28,7 +28,7 @@ to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”
   blank frame. A model that has arrived is marked the way `use` reads a
   settled promise, so it is drawn the same frame; one that failed to load is
   forgotten, so "Try the 3D room again" asks again.
-- Six GLBs in `public/3d/`, built by `pnpm assets:3d`:
+- Nine GLBs in `public/3d/`, built by `pnpm assets:3d`:
 
   | File | What | Size | Triangles (all variants) |
   | --- | --- | --- | --- |
@@ -38,6 +38,9 @@ to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”
   | `pets/dog.glb` | Moss pup, 7 clips | 31 KB | 490 |
   | `pets/bunny.glb` | Cloud bun, 7 clips | 34 KB | 575 |
   | `emotes/cheer.glb` | The Cheer emote: skeleton and one clip, no mesh | 34 KB | 0 |
+  | `emotes/heart.glb` | Heart: hands on the crown, elbows out for the lobes | 46 KB | 0 |
+  | `emotes/peace.glb` | Peace: a V beside the cheek, the other hand on the hip | 33 KB | 0 |
+  | `emotes/thumbs-up.glb` | Nice: a thumbs up beside the shoulder, with a nod | 30 KB | 0 |
 
   A dressed body draws about 25k triangles; the rest are variants switched
   off. Budget per character: under 5 MB and 100k triangles — the pipeline
@@ -143,7 +146,7 @@ channels that never leave rest.
 
 ## The runtime
 
-A photo can be posed: Wave, Cheer, Cuddle or Dance (`PHOTO_POSES` in
+A photo can be posed: Wave, Cheer, Cuddle, Dance, Peace, Heart or Nice (`PHOTO_POSES` in
 `src/lib/room/moments.ts`). A pose borrows a moment's clip but is staged for
 the camera — the player turned to it and looking into it, the pet beside
 them facing it (in their arms for Cuddle) — and both hold one frame, the pet
@@ -173,7 +176,7 @@ diagonal: when the pet looks at the player its face turns to the room. For a
 moment the pet comes to the player (the player turns, never walks) — in
 front for a pat, a treat or the bowl, beside (toward the middle of the room,
 never between the player and the camera) for a dance or a throw — and faces
-the room while being touched. A free moment (Wave, Cheer, Rest) leaves the
+the room while being touched. A free moment (Wave, Cheer, Heart, Nice, Rest) leaves the
 pet where it is, unless the last moment left it at the player's feet; then
 it steps back to watch. Wherever the player looks, their face turns no more
 than 70° from the camera: a pet behind them is watched over the shoulder.
@@ -255,8 +258,14 @@ translation baked on one build sits a couple of centimetres off on the
 other.
 
 To author a clip the way the shipped ones are, add it to `CLIPS` (inside
-each body) or `EMOTE_CLIPS` (its own file) in `scripts/3d/motion.mjs` and
-run `pnpm assets:3d`.
+each body) or `EMOTE_CLIPS` (its own file, named after the clip) in
+`scripts/3d/motion.mjs` and run `pnpm assets:3d`. Fingers curl one by one
+and `spread` fans the index and middle apart (Peace's V). Check a pose in
+both places it is seen: playing, where a free moment turns the player toward
+the pet unless it sets `facing`, and as a photo, staged to the camera. A hand
+raised beside the face reads as a hand on the face once the head turns to
+the pet, so Heart and Nice face the room. Give a new emote a tune in
+`TUNES` (`src/lib/play/sound.ts`).
 
 ## Knobs
 

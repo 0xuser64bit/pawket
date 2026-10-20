@@ -28,6 +28,14 @@ export function BootSplash() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  // The fade is 380ms. Where animations never run, its end never comes, so
+  // the splash goes on time anyway rather than covering the page.
+  useEffect(() => {
+    if (phase !== "leaving") return;
+    const timer = window.setTimeout(() => setPhase("gone"), 700);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+
   if (phase === "gone") return null;
   return (
     <div

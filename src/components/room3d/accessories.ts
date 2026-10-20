@@ -219,6 +219,25 @@ const HEADWEAR: Record<Exclude<PlayerLook["headwear"], "none">, (crown: number, 
     }
     return g;
   },
+  witch: (crown, colour) => {
+    // A wide brim on the head, a cone whose tip bends over, and a gold band.
+    const g = new Group();
+    g.add(part(new CylinderGeometry(0.155, 0.155, 0.012, 32), colour));
+    const cone = part(new ConeGeometry(0.08, 0.2, 24), colour);
+    cone.position.y = 0.1;
+    g.add(cone);
+    // Bent to one side, as the flat doll's is, so the bend shows from the front.
+    const tip = part(new ConeGeometry(0.036, 0.12, 16), colour);
+    tip.position.set(0.045, 0.19, 0);
+    tip.rotation.z = -1.15;
+    g.add(tip);
+    const band = part(new CylinderGeometry(0.07, 0.078, 0.03, 24), tone("trim-foil"));
+    band.position.y = 0.022;
+    g.add(band);
+    g.position.set(0, crown + 0.005, -0.005);
+    g.rotation.set(-0.08, 0, -0.1);
+    return g;
+  },
   bunny: (crown, colour) => {
     const g = new Group();
     const band = part(new TorusGeometry(0.104, 0.008, 6, 32, Math.PI), colour);

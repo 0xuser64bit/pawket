@@ -17,7 +17,7 @@ export const NEWS: readonly NewsEntry[] = [
   {
     date: "2026-10-21",
     title: "Autumn in the room",
-    body: "A bat garland, a pumpkin lantern that grins after dark and a heap of leaves, all free and marked new for a month. Until November, leaves drift past the window too.",
+    body: "A bat garland, a pumpkin lantern that grins after dark and a heap of leaves, all free and marked new for a month, and a witch's hat for you. Until November, leaves drift past the window.",
     href: "/market#decor",
     see: "See the room's things",
   },

@@ -229,6 +229,13 @@ const HATS = {
       <rect x="82" y="34" width="11" height="18" rx="5" fill={color} />
     </>
   ),
+  witch: (color: string) => (
+    <>
+      <path d="M45 18L57-8Q64-22 78-15Q69-12 66-4L75 18z" fill={color} />
+      <path d="M47 11h26l1 6H46z" fill="var(--trim-foil)" />
+      <ellipse cx="60" cy="19" rx="31" ry="6" fill={color} />
+    </>
+  ),
   bunny: (color: string) => (
     <>
       <path d="M48 20c-6-12-6-26 0-28s10 14 8 28M72 20c6-12 6-26 0-28s-10 14-8 28" fill={color} />
@@ -303,6 +310,7 @@ export function PlayerArt({
     flower: "var(--pet-blush)",
     bunny: "var(--surface)",
     cat: "var(--surface-ink)",
+    witch: "var(--surface-ink)",
     headphones: "var(--pool)",
   };
   return (

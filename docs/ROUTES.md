@@ -21,6 +21,7 @@ unwired route, and call a pet "on Solana" only when it was read from chain.
 (game)/guilds/[slug]       a guild: its pets read from their accounts, together counts, join or leave, its events and polls, its coin
 (game)/guilds/[slug]/coin  a guild's coin: its terms and stage from chain, launch, quote, trade, graduate, claim
 /privacy                   the privacy policy, for the web and the Android app
+/new                       what changed lately, newest first (`src/config/news.ts`); the front door names the newest
 /api/health
 /api/sponsor               GET: is it up. POST { transaction }: signed first, as fee payer
 /api/rpc                   the browser's RPC: allow-listed reads and sends for Pawket's program, to SOLANA_RPC_URL

@@ -3444,13 +3444,48 @@ li {
   .pk-hero__title { order: 1; }
   .pk-heroscene { order: 2; aspect-ratio: 4 / 3; }
   .pk-hero__go { order: 3; }
-  .pk-hero__lede { order: 4; }
-  .pk-hero__note { order: 5; }
+  .pk-hero__new { order: 4; }
+  .pk-hero__lede { order: 5; }
+  .pk-hero__note { order: 6; }
 }
 .pk-hero__note {
   display: grid;
   justify-items: start;
   gap: var(--space-3);
+}
+/* The newest thing Pawket shipped, one tap from the front door: a quiet
+   pill under the two ways in, never louder than them. */
+.pk-hero__new {
+  align-self: flex-start;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: 6px var(--space-3);
+  border: var(--stroke-hair) solid var(--edge-soft);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.pk-hero__new > svg:first-child {
+  color: var(--sun-edge);
+}
+@media (hover: hover) {
+  .pk-hero__new:hover {
+    border-color: var(--edge);
+  }
+}
+/* What's new, by day: each change a title, a line, and where to see it. */
+.pk-news__see {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--space-2);
+  font-weight: 600;
 }
 @media (max-width: 719px) {
   .pk-hero__go {

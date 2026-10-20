@@ -30,6 +30,7 @@ import { formatUnits } from "@/lib/utils/format";
 import { NetworkBadge } from "@/components/network-badge";
 import { getPublicEnv } from "@/config/env";
 import { SUPPORT_EMAIL } from "@/config/site";
+import { NEWS } from "@/config/news";
 import { Obstacle, Star, Treat } from "@/components/play/game-art";
 import { PERSONALITY_LABEL, SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, utcDay } from "@/lib/guest/pet";
@@ -134,6 +135,14 @@ export default function LandingPage() {
                 <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" size="lg" />
                 <ButtonLink label="See the park" href="/park" tone="quiet" icon="users" size="lg" />
               </div>
+              <Link href="/new" className="pk-hero__new">
+                <Icon name="spark" size={16} />
+                <span>
+                  New: {NEWS[0].title.charAt(0).toLowerCase()}
+                  {NEWS[0].title.slice(1)}
+                </span>
+                <Icon name="right" size={14} />
+              </Link>
               <div className="pk-hero__note">
                 <p className="body-sm pk-faint">Free to start. No wallet, no token: they live in this browser until you choose otherwise.</p>
                 <Chip label={`Live on Solana ${getPublicEnv().solanaCluster}`} tone="pool" icon="check" />
@@ -407,6 +416,9 @@ export default function LandingPage() {
                 {item.label}
               </Link>
             ))}
+            <Link href="/new" className="pk-landing__link">
+              What&apos;s new
+            </Link>
             <Link href="/privacy" className="pk-landing__link">
               Privacy
             </Link>

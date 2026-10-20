@@ -178,6 +178,14 @@ test("the pulse is counted from the program, or says plainly that Solana did not
   await expect(page.getByText(/counted from pawket's program on solana, read live/i)).toBeVisible();
 });
 
+test("the front door names what is new, and what is new is a page of its own", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: /^New: / }).click();
+  await expect(page).toHaveURL(/\/new$/);
+  await expect(page.getByRole("heading", { name: "What's new" })).toBeVisible();
+  await expect(page.getByRole("article").first()).toBeVisible();
+});
+
 test("a guild nobody founded is a plain miss, and free to found under its name", async ({ page }) => {
   await page.goto("/guilds/no-such-guild-here");
   await expect(page.getByText(/no guild has that name|solana did not answer/i)).toBeVisible();

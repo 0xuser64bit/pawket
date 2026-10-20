@@ -1,5 +1,7 @@
 import { useId, useState } from "react";
 import { PetArt, PlayerArt, type Feeling, type GlassesName, type HatName, type PetForm, type Temper } from "@/components/pk";
+import type { RoomDecor } from "@/lib/room/decor";
+import { BedBack, BedFront, FlatDecor } from "./decor-art";
 
 /** Day things show in Daylight, night things in Lamplight (`--pk-day` / `--pk-night`). */
 const DAY = { opacity: "var(--pk-day)" };
@@ -16,8 +18,12 @@ export type FlatPet = { form: PetForm; temper: Temper; feeling: Feeling; wearing
  * pet in its basket — so nothing in it is ever a cut-off shape.
  *
  * Three layers: the room (sliced to fill whatever width the frame has), the
- * player, and the pet in its basket, which is one unit so the basket always
- * tucks the pet in.
+ * player, and the pet in its bed, which is one unit so the bed always tucks
+ * the pet in. The drawing is twice as wide as a phone shows: a phone sees
+ * its middle, and a wide frame sees the door and the far side too, rather
+ * than a close-up of the rug. The player's things stand in their places
+ * (`decor-art.tsx`): a picture on the wall, a plant on the sill, the rug,
+ * the bed, and something by the bed where the room is wide enough.
  */
 export function FlatRoom({
   pet,
@@ -26,6 +32,7 @@ export function FlatRoom({
   hat,
   hatColour,
   glasses,
+  decor,
 }: {
   pet: FlatPet | null;
   colour: string;
@@ -34,6 +41,7 @@ export function FlatRoom({
   hat?: HatName;
   hatColour?: string;
   glasses?: GlassesName;
+  decor: RoomDecor;
 }) {
   const id = useId().replace(/:/g, "");
   // The doll changing clothes squashes and stretches once; arriving, it does not.
@@ -41,7 +49,7 @@ export function FlatRoom({
   const [arrived] = useState(dress);
   return (
     <>
-      <svg className="pk-room__scene" viewBox="0 0 600 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <svg className="pk-room__scene" viewBox="-300 0 1200 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
         <defs>
           <pattern id={`${id}-paper`} width="36" height="36" patternUnits="userSpaceOnUse">
             <circle cx="9" cy="9" r="2.2" fill="var(--edge)" opacity="0.07" />
@@ -49,7 +57,12 @@ export function FlatRoom({
           </pattern>
         </defs>
         <g stroke="var(--edge)" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
-          <rect x="-20" y="-20" width="640" height="340" fill={`url(#${id}-paper)`} stroke="none" />
+          <rect x="-320" y="-20" width="1240" height="340" fill={`url(#${id}-paper)`} stroke="none" />
+
+          {/* the door, for a frame wide enough to show it */}
+          <path d="M-262 300V96c0-22 14-34 34-34h56c20 0 34 12 34 34v204" fill="var(--trim-copper)" />
+          <path d="M-246 300V108c0-14 8-24 22-24h48c14 0 22 10 22 24v192" fill="var(--surface)" strokeWidth="3" />
+          <circle cx="-166" cy="200" r="6" fill="var(--sun)" strokeWidth="3" />
 
           {/* the window: the day, or the moon after dark */}
           <rect x="66" y="56" width="180" height="168" rx="20" fill="var(--pool-soft)" />
@@ -72,24 +85,18 @@ export function FlatRoom({
           <path d="M30 44h252" strokeWidth="6" />
           {/* the sill, and a plant on it */}
           <rect x="52" y="222" width="208" height="16" rx="7" fill="var(--surface)" />
-          <path d="M214 222l-4-24h28l-4 24z" fill="var(--trim-copper)" />
-          <path d="M224 198c-2-14-14-22-24-18 4 10 12 16 24 18zM224 198c0-16 8-26 20-26-2 12-8 22-20 26z" fill="var(--sprout)" />
+          <FlatDecor slot="corner" id={decor.corner} />
 
-          {/* the lamp, lit after dark */}
-          <path d="M330 -10v70" strokeWidth="3" />
-          <path d="M276 300l54-200 54 200z" fill="var(--sun)" stroke="none" style={GLOW} />
-          <path d="M302 100c0-22 12-38 28-38s28 16 28 38z" fill="var(--sun)" />
-          <path d="M322 100a8 8 0 0 0 16 0" fill="var(--pet-cream)" />
+          {/* the lamp, lit after dark, over the far side */}
+          <path d="M650 -10v70" strokeWidth="3" />
+          <path d="M596 300l54-200 54 200z" fill="var(--sun)" stroke="none" style={GLOW} />
+          <path d="M622 100c0-22 12-38 28-38s28 16 28 38z" fill="var(--sun)" />
+          <path d="M642 100a8 8 0 0 0 16 0" fill="var(--pet-cream)" />
 
-          {/* a high shelf, clear of the pet's ears: three books, a plant, and the paw, framed */}
-          <rect x="520" y="22" width="56" height="54" rx="8" fill="var(--surface)" />
-          <g fill="var(--sun)" strokeWidth="2.6" transform="translate(548 49) scale(0.62) translate(-16 -16)">
-            <path d="M16 29.6c-5.1-3.3-8.6-6.1-8.6-9.9 0-2.7 2-4.6 4.5-4.6 1.9 0 3.2 1 4.1 2.5.9-1.5 2.2-2.5 4.1-2.5 2.5 0 4.5 1.9 4.5 4.6 0 3.8-3.5 6.6-8.6 9.9z" />
-            <ellipse cx="4.7" cy="13.6" rx="2.9" ry="3.6" />
-            <ellipse cx="11.2" cy="6.9" rx="3.1" ry="3.9" />
-            <ellipse cx="20.8" cy="6.9" rx="3.1" ry="3.9" />
-            <ellipse cx="27.3" cy="13.6" rx="2.9" ry="3.6" />
-          </g>
+          {/* the picture on the wall, between the window and the shelf */}
+          <FlatDecor slot="wall" id={decor.wall} />
+
+          {/* a high shelf, clear of the pet's ears: three books and a plant */}
           <rect x="420" y="98" width="16" height="40" rx="3" fill="var(--pool)" />
           <rect x="438" y="92" width="18" height="46" rx="3" fill="var(--sun)" />
           <rect x="460" y="104" width="15" height="34" rx="3" fill="var(--sprout)" transform="rotate(10 467 138)" />
@@ -100,11 +107,11 @@ export function FlatRoom({
           <path d="M418 150l8 12M546 150l-8 12" strokeWidth="4" />
 
           {/* the floor */}
-          <path d="M-20 300h640v140H-20z" fill="var(--surface-sunk)" />
-          <path d="M-20 340h640M-20 384h640M90 300v40M310 300v40M520 300v40M200 340v44M420 340v44M60 384v40M340 384v40" stroke="var(--edge-soft)" strokeWidth="3" />
-          <path d="M-20 300h640" />
-          <ellipse cx="320" cy="368" rx="230" ry="36" fill="var(--sun-soft)" />
-          <ellipse cx="320" cy="368" rx="196" ry="26" fill="none" stroke="var(--sun)" strokeWidth="3" strokeDasharray="2 12" />
+          <path d="M-320 300h1240v140H-320z" fill="var(--surface-sunk)" />
+          <path d="M-320 340h1240M-320 384h1240M-130 300v40M90 300v40M310 300v40M520 300v40M740 300v40M-20 340v44M200 340v44M420 340v44M640 340v44M-160 384v40M60 384v40M340 384v40M620 384v40M840 384v40" stroke="var(--edge-soft)" strokeWidth="3" />
+          <path d="M-320 300h1240" />
+          <FlatDecor slot="side" id={decor.side} />
+          <FlatDecor slot="rug" id={decor.rug} />
         </g>
       </svg>
 
@@ -115,8 +122,7 @@ export function FlatRoom({
       {/* The basket is there before the pet is: an empty one is waiting. */}
       <div className="pk-room__nook">
           <svg className="pk-room__bed" viewBox="0 0 120 120" aria-hidden="true">
-            <path d="M2 94c0-11 26-19 58-19s58 8 58 19" fill="var(--trim-copper)" stroke="var(--edge)" strokeWidth="3" />
-            <path d="M10 94c0-7 22-13 50-13s50 6 50 13" fill="var(--pet-cream)" stroke="none" />
+            <BedBack id={decor.bed ?? "basket"} />
           </svg>
           {pet ? (
             <div key={hop} className={["pk-room__pet", hop ? "pk-room__pet--hop" : ""].join(" ")}>
@@ -124,10 +130,7 @@ export function FlatRoom({
             </div>
           ) : null}
           <svg className="pk-room__bed" viewBox="0 0 120 120" aria-hidden="true">
-            <g stroke="var(--edge)" strokeWidth="3" strokeLinejoin="round">
-              <path d="M2 94c0 17 24 26 58 26s58-9 58-26c-14 8-34 12-58 12S16 102 2 94z" fill="var(--trim-copper)" />
-              <path d="M16 106c4 2 8 3 12 4M44 111h8M68 111h8M92 110c4-1 8-2 12-4" stroke="var(--sun-soft)" strokeWidth="3" strokeLinecap="round" />
-            </g>
+            <BedFront id={decor.bed ?? "basket"} />
           </svg>
         </div>
     </>

@@ -28,6 +28,9 @@ import { RoomSound } from "./room-sound";
 import { HomeScreenTip } from "./home-screen-tip";
 import { SigningNote } from "./signing-note";
 import { PetSwitcher } from "@/components/home/pet-switcher";
+import { DecorPanel } from "@/components/home/decor-panel";
+import { shownDecor, useRoomDecor } from "@/lib/room/decor";
+import { useCloset } from "@/lib/market/use-closet";
 import { Room, RoomViewSwitch, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { RoomView } from "@/components/room3d/room-3d";
@@ -84,6 +87,11 @@ export function HomeScreen() {
   const { ready, pet, active } = companion;
   const look = usePlayerLook();
   const profile = usePlayerProfile();
+  // The room's things: as chosen on this device, a Market room's own thing only while the closet holds that room.
+  const chosenDecor = useRoomDecor();
+  const closet = useCloset(companion.owner);
+  const owned = new Set(closet.data?.items ?? []);
+  const decor = shownDecor(chosenDecor, owned);
   const sender = usePawketSend();
   const [now, setNow] = useState(() => new Date());
   const [connecting, setConnecting] = useState(false);
@@ -171,6 +179,7 @@ export function HomeScreen() {
             sky="warm"
             cue={cue}
             description={`${describeLook(look)}, in an empty room with the window open.`}
+            decor={decor}
             onState={setRoomState}
             stage
             corner={<div className="pk-room-tools"><RoomSound /><RoomViewSwitch mode={mode} state={roomState} onMode={setMode} /></div>}
@@ -348,6 +357,7 @@ export function HomeScreen() {
           onState={setRoomState}
           stage
           viewRef={roomView}
+          decor={decor}
           corner={<div className="pk-room-tools"><RoomSound /><RoomViewSwitch mode={mode} state={roomState} onMode={setMode} /></div>}
         />
         <Deck
@@ -382,6 +392,7 @@ export function HomeScreen() {
               </Card>
             )
           ) : null}
+          {panel === "decor" ? <DecorPanel shown={decor} owned={owned} /> : null}
           {panel === "today" ? (
             <TodayCard
               pet={pet}

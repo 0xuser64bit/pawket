@@ -20,7 +20,7 @@ const VITALS: Array<{ key: keyof PetStats; label: string; icon: IconName }> = [
   { key: "hygiene", label: "Coat", icon: "spark" },
 ];
 
-export type Panel = "say" | "today";
+export type Panel = "say" | "today" | "decor";
 
 /** XP a care just earned, shown once where the thumb is; a new `at` replays it. */
 export type Gain = { action: CareActionType; xp: number; at: number };
@@ -28,6 +28,7 @@ export type Gain = { action: CareActionType; xp: number; at: number };
 const TOOLS: Array<{ key: Panel; label: string; icon: IconName }> = [
   { key: "say", label: "Say", icon: "chat" },
   { key: "today", label: "Today", icon: "info" },
+  { key: "decor", label: "Decor", icon: "sofa" },
 ];
 
 /**

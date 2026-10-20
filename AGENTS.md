@@ -86,6 +86,7 @@ One home per fact. If two files disagree, the left column wins.
 | Design system (tokens, components)| `app/globals.css` + `src/components/pk/` |
 | Guest companion record            | `src/lib/guest/`                    |
 | Wearables (expression only)       | `src/lib/closet/catalog.ts` (slots 4–28 are the Market's) |
+| Room things (decor, expression only) | `src/lib/room/decor.ts` (drawn in `room3d/decor.ts` and `home/decor-art.tsx`) |
 | The Market: items, prices, treasury | `programs/pawket/src/lib.rs` (`item_price`) ↔ `MARKET` in `src/lib/solana/program.ts` |
 | What a wallet bought              | its `Closet` on chain, read with `useCloset` (`src/lib/market/use-closet.ts`) |
 | Pawket's counts                   | `src/server/pulse.ts` (read from chain, never stored) |

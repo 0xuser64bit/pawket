@@ -4119,6 +4119,111 @@ li {
   }
 }
 
+/* Five tools share the row: each shrinks before any wraps, down to a 320px phone. */
+.pk-deck__tools > .pk-tool {
+  flex: 0 1 64px;
+  min-width: 48px;
+}
+
+/* Decorating, under the deck: the places in the room, then the things that
+   can stand in the one chosen, each drawn as itself. The one in the room is
+   raised like any choice; a Market room's thing wears a small lock. */
+.pk-decor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.pk-decor__slots .pk-choices {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-inline: calc(-1 * var(--space-2));
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  scrollbar-width: none;
+}
+.pk-decor__slots .pk-choices::-webkit-scrollbar {
+  display: none;
+}
+.pk-decor__slots .pk-choice {
+  flex: none;
+}
+.pk-decor__things {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: var(--space-2);
+}
+.pk-decor__thing {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-1);
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    transform var(--dur-press) var(--ease-press),
+    box-shadow var(--dur-press) var(--ease-press);
+}
+.pk-decor__thing[aria-pressed="true"] {
+  --pk-keep: var(--shadow-sticker-sm);
+  border-color: var(--edge);
+  box-shadow: var(--shadow-sticker-sm);
+  transform: translateY(-1px);
+}
+.pk-decor__thing:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+.pk-decor__art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  color: var(--ink-faint);
+}
+.pk-decor__art svg {
+  width: 84%;
+  height: 84%;
+}
+.pk-decor__thing--locked .pk-decor__art svg {
+  opacity: 0.5;
+}
+.pk-decor__lock {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+}
+.pk-decor__name {
+  overflow-wrap: anywhere;
+}
+.pk-decor__with {
+  margin-top: -2px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+}
+
 /* Level as ten countable segments round the number. */
 .pk-ring {
   position: relative;
@@ -5237,6 +5342,25 @@ li {
 .pk-market-try > svg {
   height: 196px;
   width: auto;
+}
+/* A room thing stands in the middle of its well, whatever its shape. */
+.pk-market-try--decor {
+  place-items: center;
+  padding: var(--space-4);
+}
+.pk-market-try--decor > svg {
+  max-width: 100%;
+  max-height: 180px;
+}
+/* Fitted inside the well rather than sizing it, so a tall lamp keeps its tile the size of every other. */
+.pk-tile__art:has(.pk-market-decor) {
+  position: relative;
+}
+.pk-tile__art .pk-market-decor {
+  position: absolute;
+  inset: 10%;
+  width: 80%;
+  height: 80%;
 }
 
 /* The coin now: what a million cost, as the one large figure on its Paper —

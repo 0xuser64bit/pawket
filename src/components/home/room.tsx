@@ -19,6 +19,7 @@ import type { RoomView } from "@/components/room3d/room-3d";
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { PetMood, PetSpecies } from "@/lib/game/enums";
 import type { ClothColour, PlayerLook } from "@/lib/player/look";
+import { DEFAULT_DECOR, DECOR_SLOTS, type RoomDecor } from "@/lib/room/decor";
 import type { RoomCue } from "@/lib/room/moments";
 import { useReducedMotion } from "@/lib/utils/use-reduced-motion";
 
@@ -190,6 +191,7 @@ export function Room({
   stage = false,
   viewRef,
   corner,
+  decor = DEFAULT_DECOR,
 }: {
   pet: {
     species: PetSpecies;
@@ -212,6 +214,8 @@ export function Room({
   viewRef?: RefObject<RoomView | null>;
   /** Drawn in the frame's top corner: Home's view switch. */
   corner?: ReactNode;
+  /** What stands in the room; the room as it came where it is left out (a visit). */
+  decor?: RoomDecor;
 }) {
   const [mode] = useRoomMode();
   const canDraw = useCanDraw();
@@ -238,6 +242,10 @@ export function Room({
   if (want3d && !mounted3d) setMounted3d(true);
   // Home re-renders every second for its countdowns; the 3D leaf should not.
   const petKey = pet ? `${pet.species}|${pet.name}|${pet.wearing}|${pet.mood}` : "";
+  // The same things, in the same places, are the same room: neither room is dressed again for a re-render.
+  const decorKey = DECOR_SLOTS.map((slot) => decor[slot] ?? "").join("|");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const things = useMemo(() => decor, [decorKey]);
   const scenePet = useMemo(
     () => (pet ? { species: pet.species, name: pet.name, wearing: pet.wearing, mood: pet.mood } : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -335,6 +343,7 @@ export function Room({
           hat={look.headwear === "none" ? undefined : look.headwear}
           hatColour={PEG_COLOUR[look.headwearColour]}
           glasses={look.eyewear === "none" ? undefined : look.eyewear}
+          decor={things}
         />
       </div>
       {mounted3d ? (
@@ -347,6 +356,7 @@ export function Room({
               evening={theme === "dark"}
               edge={edge}
               wall={wall}
+              decor={things}
               cue={cue}
               reduced={reduced}
               active={want3d && onScreen && visible}

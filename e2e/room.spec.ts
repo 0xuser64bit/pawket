@@ -99,6 +99,27 @@ test("the flat room is a choice this device remembers", async ({ page }) => {
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
 });
 
+test("the room is decorated from Home, and a Market room's own thing waits for that room", async ({ page }) => {
+  await adopt(page);
+  await page.getByRole("radio", { name: "Flat room" }).click();
+  await page.getByRole("button", { name: "Decor" }).click();
+  const things = page.getByRole("group", { name: /what stands there/ });
+  await things.getByRole("button", { name: /^Wall clock/ }).click();
+  await expect(things.getByRole("button", { name: /^Wall clock/ })).toHaveAttribute("aria-pressed", "true");
+  // The flat room draws it on the wall: a clock face among the scene's circles.
+  await expect(page.locator(".pk-room__scene circle[r='23']")).toHaveCount(1);
+  await things.getByRole("button", { name: /^Blossom scroll/ }).click();
+  await expect(page.getByText(/comes with the Blossom room, in the Market/)).toBeVisible();
+  await expect(things.getByRole("button", { name: /^Wall clock/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("radio", { name: "Bed", exact: true }).click();
+  await expect(things.getByRole("button", { name: "Nothing" })).toHaveCount(0);
+  await things.getByRole("button", { name: /^Cardboard box/ }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Decor" }).click();
+  await page.getByRole("radio", { name: "Bed", exact: true }).click();
+  await expect(page.getByRole("group", { name: /what stands there/ }).getByRole("button", { name: /^Cardboard box/ })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("your look is saved on this device and dresses the room", async ({ page }) => {
   // Visit once before Home links here again: the prefetched or reused page
   // must still open its editor when the new destination includes #look.

@@ -199,6 +199,22 @@ rendering stopped while the room is off screen or the tab hidden, one
 request per GLB for the life of the page, and the other build fetched once
 the room is quiet.
 
+## The room's things
+
+The picture, the plant, the rug, the pet's bed and the thing past the bed
+are the player's (`src/lib/room/decor.ts`). `set.ts` keeps a place for each
+(`SLOT_AT` in `src/components/room3d/decor.ts`) and `dress` swaps only the
+places whose thing changed, giving the old one's geometry back to the GPU.
+Every thing is built from primitives in the room's toon-and-ink language;
+small repeated parts (beans, petals, seeds, sprinkles) are merged into one
+mesh each. A lamp and the neon heart light up after dark, and the clock keeps
+the device's time (`tick`). Beds stay inside the old cushion's footprint and
+low enough that a napping pet is seen; `decor.test.ts` holds every thing to
+the catalog, the flat drawings (`src/components/home/decor-art.tsx`) and
+those limits. The flat room places the same things: a picture between the
+window and the shelf, the plant on the sill, the rug, the bed, and the thing
+past the bed where a wide frame shows it.
+
 ## Adding an emote
 
 An emote is a clip plus one entry. The clip can live in its own GLB made for
@@ -239,6 +255,6 @@ run `pnpm assets:3d`.
 
 ## Knobs
 
-`PET_SCALE` (`pet.ts`), `HEAD_SCALE` (`human.ts`), the formation spots and
+`SLOT_AT` (`decor.ts`), `PET_SCALE` (`pet.ts`), `HEAD_SCALE` (`human.ts`), the formation spots and
 blocking (`director.ts`), outline width (`room-3d.tsx`), the toon ramp
 (`materials.ts`), garment lines and thickness (`outfits.mjs`).

@@ -73,6 +73,17 @@ availability. Item slots are stable. Existing wearing is not stripped by a
 catalog change. Stickers derive from records and unlock no purchase benefit.
 There is no resale or effect on progression.
 
+## Room things are free, or come with a Market room
+
+The room's things — a picture, a plant, a rug, the pet's bed and something
+past it (`src/lib/room/decor.ts`) — arrived while the program was frozen in
+review, so none has an item id or a price. Most are free; each of the twelve
+Market rooms brings one thing of its own, open once the closet holds that
+room. A purchase gained something; nothing that was bought changed. Where
+things stand is kept on the device, like the player's look, and a visit shows
+the room as it came. Selling a room thing on its own would need item ids and
+prices in a program upgrade (`MAINNET.md`).
+
 ## Guild membership is independent of coin holdings
 
 Each pet joins one guild through its member PDA. Events and polls are program

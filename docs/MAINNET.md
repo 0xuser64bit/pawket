@@ -39,6 +39,8 @@ discriminator change; listing them here authorizes none of them.
 - Guestbooks: the once-a-day wave check reaches only the last eight visitors.
 - Rent: close instructions for the account types that have none, under an
   approved retention policy.
+- Room things, if they are ever sold on their own: item ids and prices in
+  `item_price`, after the 12 rooms' own things stay free with their rooms.
 
 ## Cost and availability planning
 

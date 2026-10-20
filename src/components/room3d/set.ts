@@ -15,13 +15,14 @@ import {
   PointLight,
   Shape,
   SphereGeometry,
-  TorusGeometry,
   Vector2,
   type BufferGeometry,
   type MeshToonMaterial,
 } from "three";
 import type { Sky } from "@/components/pk";
-import { addOutline, toon } from "./materials";
+import { DECOR_SLOTS, type DecorSlot, type RoomDecor } from "@/lib/room/decor";
+import { SLOT_AT, buildDecor, type BuiltDecor } from "./decor";
+import { addOutline, disposeTree, toon } from "./materials";
 import { DAYLIGHT, type Tone } from "./palette";
 
 /**
@@ -29,13 +30,15 @@ import { DAYLIGHT, type Tone } from "./palette";
  * diorama. A back wall in the pet's sky tint, a window with its mullion,
  * a floor meeting the wall on an ink line, and the lantern the evening
  * lights. The furniture stays where it is when the evening comes; only
- * the light changes.
+ * the light changes. What stands in it — the picture, the plant, the rug,
+ * the bed and the thing past it — is the player's (`dress`, from
+ * `src/lib/room/decor.ts`); each place in the room holds one.
  *
  * Room space: metres, floor at y = 0, back wall at z = BACK, camera on +Z.
  */
 
 const BACK = -1.6;
-export const BED = { x: 1.55, z: -0.72 };
+export const BED = { x: SLOT_AT.bed.x, z: SLOT_AT.bed.z };
 
 /** The pet's sky, as the token each backdrop takes (`SPECIES_SKY`). */
 const SKY_TONE: Record<Sky, Tone> = { warm: "sun-soft", cool: "pool-soft", plain: "surface-sunk" };
@@ -59,22 +62,6 @@ function roundedTop(width: number, height: number, radius: number): Shape {
   return s;
 }
 
-function roundedRect(width: number, depth: number, radius: number): Shape {
-  const s = new Shape();
-  const w = width / 2;
-  const d = depth / 2;
-  s.moveTo(-w + radius, -d);
-  s.lineTo(w - radius, -d);
-  s.quadraticCurveTo(w, -d, w, -d + radius);
-  s.lineTo(w, d - radius);
-  s.quadraticCurveTo(w, d, w - radius, d);
-  s.lineTo(-w + radius, d);
-  s.quadraticCurveTo(-w, d, -w, d - radius);
-  s.lineTo(-w, -d + radius);
-  s.quadraticCurveTo(-w, -d, -w + radius, -d);
-  return s;
-}
-
 export interface RoomSet {
   group: Group;
   /**
@@ -83,6 +70,10 @@ export interface RoomSet {
    * one evening wall, lit by the lantern.
    */
   light: (evening: boolean, wall: string) => void;
+  /** Put the player's things in their places; a place whose thing is unchanged is left as it is. */
+  dress: (decor: RoomDecor) => void;
+  /** Each frame: what keeps time does. */
+  tick: (now: Date) => void;
   window: { x: number; y: number; z: number };
 }
 
@@ -127,42 +118,36 @@ export function buildRoom(): RoomSet {
   sill.position.set(win.x, win.y - 0.02, win.z + 0.07);
   group.add(sill);
 
-  // A rug under the two of them.
-  const rug = solid(new ExtrudeGeometry(roundedRect(2.7, 1.6, 0.4), { depth: 0.012, bevelEnabled: false }), "sprout-soft");
-  rug.rotation.x = -Math.PI / 2;
-  rug.position.set(0.05, 0.001, 0.32);
-  group.add(rug);
-
-  // The pet's cushion, where a nap happens.
-  const bed = new Group();
-  bed.add(solid(new TorusGeometry(0.34, 0.09, 12, 28), "sun"));
-  bed.children[0].rotation.x = -Math.PI / 2;
-  bed.children[0].position.y = 0.08;
-  const pad = solid(new CylinderGeometry(0.34, 0.36, 0.08, 28), "sun-soft");
-  pad.position.y = 0.04;
-  bed.add(pad);
-  bed.position.set(BED.x, 0, BED.z);
-  group.add(bed);
-
-  // A plant in the corner by the window.
-  const plant = new Group();
-  const pot = solid(new CylinderGeometry(0.16, 0.12, 0.3, 20), "trim-copper");
-  pot.position.y = 0.15;
-  plant.add(pot);
-  for (const [x, y, z, rx, rz, s] of [
-    [0, 0.55, 0, 0, 0, 1],
-    [-0.12, 0.46, 0.04, 0.2, 0.55, 0.85],
-    [0.13, 0.48, -0.02, -0.1, -0.6, 0.85],
-    [0.02, 0.44, 0.12, 0.6, 0.1, 0.75],
-  ]) {
-    const leaf = solid(new SphereGeometry(0.12, 14, 10), "sprout");
-    leaf.scale.set(0.55 * s, 1.5 * s, 0.35 * s);
-    leaf.position.set(x, y, z);
-    leaf.rotation.set(rx, 0, rz);
-    plant.add(leaf);
+  // The player's things, each in its place: dressed by `dress`.
+  const places = {} as Record<DecorSlot, { group: Group; id: string | null; built: BuiltDecor | null }>;
+  for (const slot of DECOR_SLOTS) {
+    const place = new Group();
+    place.name = `decor:${slot}`;
+    place.position.set(SLOT_AT[slot].x, SLOT_AT[slot].y, SLOT_AT[slot].z);
+    group.add(place);
+    places[slot] = { group: place, id: null, built: null };
   }
-  plant.position.set(-2.2, 0, BACK + 0.45);
-  group.add(plant);
+  let dark = false;
+  const dress = (decor: RoomDecor) => {
+    for (const slot of DECOR_SLOTS) {
+      const place = places[slot];
+      const id = decor[slot];
+      if (place.id === id) continue;
+      if (place.built) {
+        place.group.remove(place.built.object);
+        disposeTree(place.built.object);
+      }
+      place.id = id;
+      place.built = id ? buildDecor(id) : null;
+      if (place.built) {
+        place.group.add(place.built.object);
+        place.built.evening?.(dark);
+      }
+    }
+  };
+  const tick = (now: Date) => {
+    for (const slot of DECOR_SLOTS) places[slot].built?.tick?.(now);
+  };
 
   // A shelf with three books.
   const shelf = new Group();
@@ -206,6 +191,8 @@ export function buildRoom(): RoomSet {
   group.add(hemi, sun, sun.target, fill, lamp);
 
   const light = (evening: boolean, wall: string) => {
+    dark = evening;
+    for (const slot of DECOR_SLOTS) places[slot].built?.evening?.(evening);
     wallMaterial.color.set(evening ? DAYLIGHT["surface-sunk"] : wall);
     skyMaterial.color.set(evening ? DAYLIGHT["pool-edge"] : DAYLIGHT["pool-soft"]);
     (disc.material as MeshBasicMaterial).color.set(evening ? DAYLIGHT["sun-soft"] : DAYLIGHT["ink-inverse"]);
@@ -224,7 +211,7 @@ export function buildRoom(): RoomSet {
   };
   light(false, DAYLIGHT[SKY_TONE.warm]);
 
-  return { group, light, window: { x: win.x, y: win.y + 0.5, z: win.z } };
+  return { group, light, dress, tick, window: { x: win.x, y: win.y + 0.5, z: win.z } };
 }
 
 /** A flat, hard-edged shadow: offset and outline, never blur. */

@@ -9,6 +9,7 @@ import type { Sky } from "@/components/pk";
 import { SPECIES_MODEL } from "@/lib/game/appearance";
 import type { PetMood, PetSpecies } from "@/lib/game/enums";
 import type { PlayerLook } from "@/lib/player/look";
+import type { RoomDecor } from "@/lib/room/decor";
 import type { PhotoPose, RoomCue } from "@/lib/room/moments";
 import { Director, type DirectorStatus } from "./director";
 import { HumanActor } from "./human";
@@ -38,6 +39,8 @@ export interface Room3DProps {
   edge: string;
   /** The pet's sky in the room the player picked: the wall by day. */
   wall: string;
+  /** What stands in the room: the player's picture, plant, rug, bed and the thing past it. */
+  decor: RoomDecor;
   cue: RoomCue | null;
   reduced: boolean;
   /** False while the room is off screen or the tab is hidden: nothing renders. */
@@ -166,7 +169,7 @@ export default memo(function Room3D(props: Room3DProps) {
   );
 });
 
-function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, onStatus, onReady, onSlow }: Room3DProps & { onSlow?: () => void }) {
+function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, view, onStatus, onReady, onSlow }: Room3DProps & { onSlow?: () => void }) {
   // The body on screen changes only once the new one has arrived, so a
   // switch never blanks the room.
   const [shown, setShown] = useState(look.body);
@@ -265,6 +268,12 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
     wearSeen.current = true;
     invalidate();
   }, [petActor, pet?.wearing, invalidate, reduced]);
+
+  // A thing placed or taken away is seen at once; one left in place is not rebuilt.
+  useEffect(() => {
+    room.dress(decor);
+    invalidate();
+  }, [room, decor, invalidate]);
 
   useEffect(() => {
     room.light(evening, wall);
@@ -392,6 +401,7 @@ function Stage({ pet, look, evening, edge, wall, cue, reduced, compact, view, on
     }
     const dt = reduced ? delta : Math.min(delta, 1 / 20);
     director.update(dt);
+    room.tick(new Date());
     const seconds = performance.now() / 1000;
     dressed(director.human.root, seconds - dressedAt.current.human);
     if (petActor) dressed(petActor.root, seconds - dressedAt.current.pet);

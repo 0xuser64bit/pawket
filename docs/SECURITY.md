@@ -106,6 +106,9 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   the owner approves tops its float back up to 1,000,000 lamports. It cannot
   withdraw, buy or send the balance anywhere. Unlinking ends its authorization;
   local deletion alone does not revoke it on chain.
+- Pawket's client always sends with preflight, but a caller holding a
+  sponsor-signed transaction can broadcast it without. One that fails on chain
+  still costs the float its fee, inside the same per-caller limits.
 - `finish_round` has no daily cap on chain. Only a pet's first round of a UTC
   day earns XP, so repeating it changes nothing in the game; its cost is fees,
   bounded by the sponsor's per-caller limits and a device's daily limit.

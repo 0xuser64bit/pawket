@@ -27,18 +27,6 @@ import org.json.JSONObject
 import java.io.File
 import java.util.Base64
 
-/**
- * The page's one way to ask the phone for something: `window.PawketAndroid`,
- * injected only into Pawket's own origin and heard only from its main frame.
- * It knows nine requests — share or save a photo, share a link, share a
- * record's card with its link, set a daily reminder in the calendar, allow
- * and set the one care reminder, a haptic, the room's colours — and checks
- * every field of each. It never carries a key, a transaction, a file path or a URL
- * to load: a wallet is the wallet app's, and Solana is the page's.
- *
- * Requests are JSON `{ id, op, … }`; the answer, for those that have one, is
- * JSON `{ id, ok, reason? }` posted back.
- */
 class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessageListener {
     fun attach(view: WebView) {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
@@ -66,9 +54,7 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
                 return
             }
         val id = request.optString("id").take(40)
-        // The request's name only, never its contents: so a development build shows what the page asked for.
         if (BuildConfig.DEBUG) Log.d(MainActivity.TAG, "bridge: ${request.optString("op")} ${request.optString("kind")}".trim())
-        // A failure says why; a success says nothing more.
         val answer = { ok: Boolean, reason: String? -> reply(replyProxy, id, ok, reason.takeUnless { ok }) }
         when (request.optString("op")) {
             "haptic" -> haptic(view, request.optString("kind"))
@@ -95,12 +81,9 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         if (reason != null) body.put("reason", reason)
         try {
             proxy.postMessage(body.toString())
-        } catch (_: IllegalStateException) {
-            // The page or renderer went away while a picture was being written.
-        }
+        } catch (_: IllegalStateException) {}
     }
 
-    /** A care kept, a level, a refusal, a boop: the system's own feedback, so the phone's touch-feedback setting decides. */
     private fun haptic(
         view: WebView,
         kind: String,
@@ -116,7 +99,6 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         activity.roomChanged(android.graphics.Color.parseColor(ground), request.optBoolean("dark"))
     }
 
-    /** A record's card (a PNG data URL) and the link to it, a page of Pawket's, into the share sheet together. */
     private fun card(
         request: JSONObject,
         answer: (Boolean, String?) -> Unit,
@@ -126,7 +108,6 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         picture(request, share = true, answer, words = shareWords(request.optString("text"), "$url"))
     }
 
-    /** A printed photo, as the page made it (a PNG data URL): into the share sheet, or into Pictures/Pawket. */
     private fun picture(
         request: JSONObject,
         share: Boolean,
@@ -151,7 +132,6 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         }
     }
 
-    /** Writes the picture under cache/shared/ (clearing yesterday's), and returns its content URI. */
     private fun stageForShare(
         bytes: ByteArray,
         name: String,
@@ -179,12 +159,10 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         send.clipData = ClipData.newRawUri(title, picture)
         if (title.isNotBlank()) send.putExtra(Intent.EXTRA_TITLE, title)
-        // A card goes with its words and link: an app that takes both (a chat, a post) gets both.
         if (words != null) send.putExtra(Intent.EXTRA_TEXT, words)
         return Intent.createChooser(send, activity.getString(R.string.share_picture))
     }
 
-    /** Pictures/Pawket through MediaStore: the gallery sees it, and no storage permission is asked. */
     @SuppressLint("InlinedApi")
     private fun saveToPictures(
         bytes: ByteArray,
@@ -213,7 +191,6 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         }
     }
 
-    /** A link to a page of Pawket's — a Passport, a guild, a round — into the share sheet. */
     private fun shareLink(
         request: JSONObject,
         answer: (Boolean, String?) -> Unit,
@@ -228,11 +205,6 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         answer(activity.launch(Intent.createChooser(send, activity.getString(R.string.share_link))), "no-target")
     }
 
-    /**
-     * A daily reminder, in the phone's own calendar: the calendar app opens
-     * with the event filled in and the player saves it there. Nothing is
-     * scheduled by Pawket and no permission is asked.
-     */
     private fun remind(
         request: JSONObject,
         answer: (Boolean, String?) -> Unit,
@@ -254,7 +226,6 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         answer(activity.launch(insert), "no-calendar")
     }
 
-    /** The one care reminder, set for the time the page worked out, or cleared. Never asks the player anything. */
     private fun careReminder(
         request: JSONObject,
         answer: (Boolean, String?) -> Unit,
@@ -267,7 +238,6 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
             CareReminder.checked(request.optLong("at"), System.currentTimeMillis(), request.optString("title"), request.optString("text"))
                 ?: return answer(false, "invalid")
         if (!CareReminder.allowed(activity)) {
-            // The phone took its permission back: the one set before goes too.
             CareReminder.cancel(activity)
             return answer(false, "not-allowed")
         }
@@ -289,7 +259,6 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         private val PNG_SIGNATURE = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
         private const val PNG_DATA_URL = "data:image/png;base64,"
 
-        /** The system's own feedback for a kind the page names, or null for any other kind. */
         fun hapticEffect(
             kind: String,
             modern: Boolean,
@@ -297,12 +266,10 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
             when (kind) {
                 "done", "cheer" -> if (modern) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
                 "refuse" -> if (modern) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
-                // A boop: the lightest tick the phone has.
                 "tap" -> HapticFeedbackConstants.CLOCK_TICK
                 else -> null
             }
 
-        /** A PNG, from a data URL, or null for anything else or anything too large. */
         fun decodePng(data: String): ByteArray? {
             if (!data.startsWith(PNG_DATA_URL)) return null
             val bytes =
@@ -315,13 +282,11 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
             return if (bytes.copyOfRange(0, PNG_SIGNATURE.size).contentEquals(PNG_SIGNATURE)) bytes else null
         }
 
-        /** What a shared link says: the page's words, capped, then the link. */
         fun shareWords(
             text: String,
             url: String,
         ): String = text.take(MAX_SHARE_TEXT).trim().let { if (it.isEmpty()) url else "$it $url" }
 
-        /** A file name the page suggested, kept to letters, digits and dashes. */
         fun fileName(suggested: String): String =
             suggested
                 .lowercase()

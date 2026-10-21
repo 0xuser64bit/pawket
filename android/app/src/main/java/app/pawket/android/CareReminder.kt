@@ -14,15 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 
-/**
- * One care reminder, kept on the phone. The page works out when a pet will
- * first need care (the program's own decay, `src/lib/reminders/care.ts`) and
- * the phone says so then, once; a newer reminder replaces it. Nothing about
- * it leaves the phone: no server knows who wants reminding. A restart clears
- * it until Pawket is opened again.
- */
 object CareReminder {
-    /** Three days: every vital is below a need's line well before then. */
     const val MAX_AHEAD_MS = 3 * 24 * 60 * 60 * 1000L
     private const val MAX_TITLE = 120
     private const val MAX_TEXT = 160
@@ -38,7 +30,6 @@ object CareReminder {
         val text: String,
     )
 
-    /** The reminder the page asked for, checked: a time after now and within three days, and words to show. */
     fun checked(
         at: Long,
         now: Long,
@@ -52,7 +43,6 @@ object CareReminder {
 
     private fun plain(words: String): String = words.filterNot { it.isISOControl() }.trim()
 
-    /** Whether the phone lets Pawket post: the permission (Android 13 and later) and the app's own switch. */
     fun allowed(context: Context): Boolean =
         NotificationManagerCompat.from(context).areNotificationsEnabled() &&
             (
@@ -60,7 +50,6 @@ object CareReminder {
                     ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             )
 
-    /** Inexact, and allowed while the phone dozes: a nudge, not an alarm, so no exact-alarm permission. */
     fun schedule(
         context: Context,
         reminder: Reminder,
@@ -82,7 +71,6 @@ object CareReminder {
         pending.cancel()
     }
 
-    /** The reminder, said: tapping it opens Pawket as the launcher would, where it was left. */
     fun show(
         context: Context,
         intent: Intent,
@@ -105,12 +93,9 @@ object CareReminder {
                 .build()
         try {
             NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
-        } catch (_: SecurityException) {
-            // The permission was taken back between the check and the post: nothing is said.
-        }
+        } catch (_: SecurityException) {}
     }
 
-    /** Its own channel, so the phone's settings can quiet care reminders apart from anything else. */
     private fun channel(context: Context) {
         val channel = NotificationChannel(CHANNEL, context.getString(R.string.care_channel), NotificationManager.IMPORTANCE_DEFAULT)
         channel.description = context.getString(R.string.care_channel_about)
@@ -118,7 +103,6 @@ object CareReminder {
     }
 }
 
-/** Fires the one care reminder; not exported, so only this app's own alarm reaches it. */
 class CareReminderReceiver : BroadcastReceiver() {
     override fun onReceive(
         context: Context,

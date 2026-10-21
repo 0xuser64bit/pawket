@@ -66,7 +66,6 @@ fn slugs_names_mottos_and_crests_are_held_to_their_rules() {
     expect_pawket(&env.send(&[found("sunbeam", "Sunbeam", "", 8, 0)], &owner, &[]), PawketError::UnknownCrest);
     expect_pawket(&env.send(&[found("sunbeam", "Sunbeam", "", 0, 6)], &owner, &[]), PawketError::UnknownCrest);
 
-    // At the limits, with a name in another script: it is bytes that count.
     ok(env.send(&[found("abc", "ねこ会", &"a".repeat(MAX_MOTTO_LEN), 7, 5)], &owner, &[]));
     assert_eq!(env.guild("abc").name, "ねこ会");
 }
@@ -97,7 +96,6 @@ fn a_pet_is_in_one_guild_at_a_time_and_leaving_gives_the_rent_back() {
     ok(env.send(&[leave_ix(&owner.pubkey(), &pet, &sunbeam, &sponsor.pubkey())], &sponsor, &[&owner]));
     assert_eq!(env.guild("sunbeam-club").member_count, 1);
     assert!(!env.exists(&member_pda(&pet)));
-    // Two signatures at 5,000 lamports each: the sponsor pays the fee and has the rent back.
     assert_eq!(env.lamports(&sponsor.pubkey()), before + rent - 10_000);
 
     ok(env.send(&[join_ix(&owner.pubkey(), &sponsor.pubkey(), &pet, &cloud)], &sponsor, &[&owner]));
@@ -146,10 +144,8 @@ fn leaving_counts_down_only_the_guild_the_pet_is_in() {
     ok(env.send(&[found_ix(&second.pubkey(), &second.pubkey(), &miso, "cloud-nine")], &second, &[]));
     let cloud = guild_pda("cloud-nine");
 
-    // Pepper leaves, naming a guild it was never in.
     let wrong = leave_ix(&first.pubkey(), &pepper, &cloud, &first.pubkey());
     expect_anchor(&env.send(&[wrong], &first, &[]), anchor_lang::error::ErrorCode::ConstraintHasOne);
-    // Or naming Miso's place in it, the rent going to whoever paid for that place.
     let mut borrowed = leave_ix(&first.pubkey(), &pepper, &cloud, &second.pubkey());
     borrowed.accounts[2].pubkey = member_pda(&miso);
     expect_anchor(&env.send(&[borrowed], &first, &[]), anchor_lang::error::ErrorCode::ConstraintSeeds);
@@ -165,7 +161,6 @@ fn a_pet_joins_a_guild_only_at_the_guilds_own_address() {
     let saffron = env.adopt(&founder, "Saffron");
     let pepper = env.adopt(&joiner, "Pepper");
     ok(env.send(&[found_ix(&founder.pubkey(), &founder.pubkey(), &saffron, "sunbeam-club")], &founder, &[]));
-    // The guild, word for word, somewhere else.
     let elsewhere = Keypair::new().pubkey();
     let copy = env.guild("sunbeam-club");
     env.forge(&elsewhere, &copy);

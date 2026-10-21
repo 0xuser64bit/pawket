@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Pawket is a hosted app. Saving a picture goes through MediaStore and needs
-         no permission; haptics use the view's own feedback and need none. -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Asked (Android 13 and later) only when the player turns care reminders on. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -18,8 +15,7 @@
         android:supportsRtl="true"
         android:hardwareAccelerated="true"
         android:theme="@style/Theme.Pawket">
-        <!-- Every configuration change is handled in place: recreating the
-             activity would reload the page, and with it a send waiting on the wallet. -->
+        <!-- Recreating the activity would reload the page, and a send waiting on the wallet with it. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -32,8 +28,6 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- A shared Passport, guild or place in Pawket opens here when the app is installed,
-                 verified by the site's /.well-known/assetlinks.json (public/.well-known/). -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
@@ -53,12 +47,10 @@
             </intent-filter>
         </activity>
 
-        <!-- The one care reminder, fired by this app's own alarm (CareReminder.kt). -->
         <receiver
             android:name=".CareReminderReceiver"
             android:exported="false" />
 
-        <!-- Pictures handed to the share sheet: a temporary content URI, read-only, for the one share. -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.pictures"

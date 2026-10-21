@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** What the page may ask the phone to say, and when: a time ahead and within three days, and plain words. */
 class CareReminderTest {
     private val now = 1_800_000_000_000L
 

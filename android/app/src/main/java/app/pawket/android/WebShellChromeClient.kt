@@ -11,11 +11,6 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 
-/**
- * The page's requests of the app: a new window (a link that opens in a new
- * tab — Pawket's own opens here, anything else in the browser), progress, and
- * nothing else. Pawket asks for no camera, microphone or location.
- */
 class WebShellChromeClient(private val activity: MainActivity) : WebChromeClient() {
     override fun onProgressChanged(
         view: WebView,
@@ -25,7 +20,6 @@ class WebShellChromeClient(private val activity: MainActivity) : WebChromeClient
     }
 
     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-        // The page's console can carry anything: never written to logcat in a release build.
         if (BuildConfig.DEBUG) {
             Log.d(MainActivity.TAG, "${consoleMessage.message()} — ${consoleMessage.sourceId()}:${consoleMessage.lineNumber()}")
         }
@@ -40,7 +34,7 @@ class WebShellChromeClient(private val activity: MainActivity) : WebChromeClient
     ): Boolean {
         if (!isUserGesture) return false
         val transport = resultMsg.obj as? WebView.WebViewTransport ?: return false
-        // A throwaway WebView only to learn where the new window was going; it never loads anything.
+        // onCreateWindow gives no URL: a throwaway WebView learns where the window was going.
         val catcher = WebView(view.context)
         catcher.webViewClient =
             object : WebViewClient() {

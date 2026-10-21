@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- A light theme by day (values-night has the dark one): WebView reads the
-         theme's isLightTheme for prefers-color-scheme, so a player who has not
-         picked a room gets Daylight or Lamplight as the phone is set. -->
+    <!-- WebView takes prefers-color-scheme from isLightTheme: light here, dark in values-night. -->
     <style name="Theme.Pawket" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/pawket_ground</item>
     </style>

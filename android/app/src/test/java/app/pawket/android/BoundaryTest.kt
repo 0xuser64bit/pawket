@@ -7,7 +7,6 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import java.util.Base64
 
-/** What the shell lets in: the origin it trusts, and what the bridge takes as a picture or a file name. */
 class BoundaryTest {
     private val png = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3)
 

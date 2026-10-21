@@ -1,5 +1,3 @@
-//! `perform_care_action`: the locked deltas, the cooldown, lazy decay, XP, and the Passport.
-
 use anchor_lang::error::ErrorCode;
 use pawket::{decayed, utc_day, CareActionType, CareMark, PawketError};
 use solana_keypair::Keypair;
@@ -16,7 +14,6 @@ const ACTIONS: [CareActionType; 4] = [
 
 #[test]
 fn each_action_applies_the_locked_deltas() {
-    // The same table as `applyCareAction` in src/lib/game/math.test.ts.
     let expected = [
         (CareActionType::Feed, (95, 74, 72, 72)),
         (CareActionType::Play, (66, 95, 60, 72)),
@@ -46,7 +43,6 @@ fn each_action_rests_for_thirty_minutes_on_its_own_clock() {
     let pet = env.adopt(&owner, "Pepper");
 
     ok(env.care(&owner, &pet, CareActionType::Feed));
-    // Another action is not held by the first one's cooldown.
     ok(env.care(&owner, &pet, CareActionType::Play));
     env.warp(30 * 60 - 1);
     expect_pawket(&env.care(&owner, &pet, CareActionType::Feed), PawketError::CareCooldownActive);
@@ -83,7 +79,6 @@ fn a_passport_counts_only_at_its_own_address() {
     let mut env = Env::new();
     let owner = env.player();
     let pet = env.adopt(&owner, "Pepper");
-    // The pet's own passport, word for word, kept somewhere else: only its address is wrong.
     let elsewhere = Keypair::new().pubkey();
     let copy = env.passport(&pet);
     env.forge(&elsewhere, &copy);
@@ -100,7 +95,6 @@ fn decay_is_lazy_and_lands_on_the_same_integers_as_the_web_app() {
     let owner = env.player();
     let pet = env.adopt(&owner, "Pepper");
 
-    // Twelve minutes is exactly half a point of hunger: 71.5 rounds up to 72, as Math.round does.
     assert_eq!(decayed(72, 25, 720), 72);
     assert_eq!(decayed(72, 25, 721), 71);
     assert_eq!(decayed(1, 25, 48 * HOUR), 0);
@@ -110,7 +104,6 @@ fn decay_is_lazy_and_lands_on_the_same_integers_as_the_web_app() {
     env.warp(12 * HOUR);
     ok(env.care(&owner, &pet, CareActionType::Rest));
     let state = env.pet(&pet);
-    // 12h: hunger −30, happiness −21.6, energy −18, hygiene −14.4; then rest +28 energy.
     assert_eq!(
         (state.hunger, state.happiness, state.energy, state.hygiene),
         (42, 50, 82, 58)
@@ -120,9 +113,6 @@ fn decay_is_lazy_and_lands_on_the_same_integers_as_the_web_app() {
 
 #[test]
 fn time_only_lowers_a_vital_and_no_clock_can_make_decay_fail() {
-    // Every value, every rate, and elapsed times from the most negative to the largest: a vital
-    // never rises, never leaves 0–100, and only falls as time goes on. A panic here would leave a
-    // pet that can never be cared for again.
     let times = [i64::MIN, -1, 0, 1, 719, 720, 721, HOUR, DAY, 300_000, 1_000_000, 1_000_001, i64::MAX];
     for value in 0..=100u8 {
         for rate in pawket::DECAY_TENTHS_PER_HOUR {
@@ -178,7 +168,6 @@ fn the_passport_keeps_the_last_eight_cares_and_counts_them_all() {
     let passport = env.passport(&pet);
     assert_eq!(passport.care_count, 10);
     assert_eq!(passport.event_count, 11);
-    // Slots 0 and 1 were overwritten by cares 8 and 9; slot 2 holds the oldest kept, care 2.
     let half_hour = 30 * 60;
     assert_eq!(passport.recent[0], CareMark { action: ACTIONS[0], at: T0 + 8 * half_hour });
     assert_eq!(passport.recent[1], CareMark { action: ACTIONS[1], at: T0 + 9 * half_hour });
@@ -200,12 +189,10 @@ fn the_streak_counts_utc_days_and_remembers_the_best() {
         assert_eq!(passport.last_active_day, today + u32::from(day));
         env.warp(DAY);
     }
-    // A second care on the same day changes nothing.
     env.warp(-DAY);
     ok(env.care(&owner, &pet, CareActionType::Play));
     assert_eq!(env.passport(&pet).streak, 3);
 
-    // Skip a day: the streak starts again, the best stays.
     env.warp(2 * DAY);
     ok(env.care(&owner, &pet, CareActionType::Feed));
     let passport = env.passport(&pet);

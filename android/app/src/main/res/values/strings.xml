@@ -8,7 +8,6 @@
     <string name="share_picture">Share the photo</string>
     <string name="share_link">Share</string>
 
-    <!-- Long-press the icon: straight to the place, the same page as in the dock. -->
     <string name="shortcut_home_short">Home</string>
     <string name="shortcut_home_long">Look in on your pet</string>
     <string name="shortcut_playground_short">Playground</string>
@@ -16,10 +15,8 @@
     <string name="shortcut_park_short">Park</string>
     <string name="shortcut_park_long">Every pet on Solana</string>
 
-    <!-- Care reminders (CareReminder.kt): what the phone's notification settings call them. -->
     <string name="care_channel">Care reminders</string>
     <string name="care_channel_about">When a pet you keep in Pawket will first need care</string>
 
-    <!-- The mark's five shapes in public/favicon.svg's 64 unit grid: four beans, then the heart. -->
     <string name="paw_shapes" translatable="false">M6.03,19.86C8.51,17.97 12.26,18.72 14.42,21.54C17.06,24.98 17.05,29.42 14.72,31.2C12.4,32.98 8.11,31.84 5.47,28.39C3.31,25.57 3.56,21.75 6.03,19.86ZM21.54,7.28C25.08,6.48 28.71,9.16 29.63,13.26C30.76,18.27 28.59,23.03 25.25,23.78C21.92,24.53 17.92,21.16 16.79,16.15C15.87,12.05 17.99,8.07 21.54,7.28ZM42.46,7.28C46.01,8.07 48.13,12.05 47.21,16.15C46.08,21.16 42.08,24.53 38.75,23.78C35.41,23.03 33.24,18.27 34.37,13.26C35.29,9.16 38.92,6.48 42.46,7.28ZM57.97,19.86C60.44,21.75 60.69,25.57 58.53,28.39C55.89,31.84 51.6,32.98 49.28,31.2C46.95,29.42 46.94,24.98 49.58,21.54C51.74,18.72 55.49,17.97 57.97,19.86ZM32,34.63C30.1,31.35 26.24,29.76 22.59,30.74C18.94,31.72 16.4,35.04 16.4,38.82C16.4,48.24 24.28,51.63 30.11,57.66C30.6,58.18 31.29,58.47 32,58.47C32.71,58.47 33.4,58.18 33.89,57.66C39.72,51.63 47.6,48.24 47.6,38.82C47.6,35.04 45.06,31.72 41.41,30.74C37.76,29.76 33.9,31.35 32,34.63Z</string>
 </resources>

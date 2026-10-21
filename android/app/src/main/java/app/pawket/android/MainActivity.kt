@@ -62,15 +62,7 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
-/**
- * Pawket on Android: the hosted app in one WebView, and the few things a
- * phone does better — the wallet apps (Mobile Wallet Adapter, through the
- * shell's wallet-intent handling), the share sheet, the gallery, the
- * calendar, haptics and the back gesture. Nothing about a pet, a key or a
- * transaction lives here: the page and Solana keep all of that.
- */
 class MainActivity : ComponentActivity() {
-    /** Where Pawket is served from; nothing else loads inside the app. */
     lateinit var origin: String
         private set
     private val crashes = CrashWindow()
@@ -87,7 +79,6 @@ class MainActivity : ComponentActivity() {
             notificationAnswer?.invoke(CareReminder.allowed(this))
             notificationAnswer = null
         }
-    /** The room the page is in, as it last said: its ground colour and whether it is a dark one. */
     private var ground by mutableStateOf<Pair<Int, Boolean>?>(null)
     private var created = 0L
 
@@ -96,7 +87,6 @@ class MainActivity : ComponentActivity() {
             override fun handleOnBackPressed() {
                 val view = webView
                 if (view == null || failed) return leave()
-                // An open sheet or dialog closes first, then the page goes back, then Pawket goes to the background.
                 view.evaluateJavascript(BACK_SCRIPT) { handled ->
                     if (handled == "true") return@evaluateJavascript
                     if (view.canGoBack()) view.goBack() else leave()
@@ -108,7 +98,6 @@ class MainActivity : ComponentActivity() {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
         created = SystemClock.uptimeMillis()
-        // The system splash holds until the page has drawn, or for 2.5s at most; then the loader below says what is happening.
         splash.setKeepOnScreenCondition { !painted && !failed && SystemClock.uptimeMillis() - created < SPLASH_HOLD_MS }
         applySystemBars(isNight())
 
@@ -125,7 +114,6 @@ class MainActivity : ComponentActivity() {
         if (!failed) {
             webView =
                 makeWebView().also { view ->
-                    // An app update may change the trusted origin. Never restore the previous host's page.
                     if (savedInstanceState == null || savedInstanceState.getString(SAVED_ORIGIN) != origin || view.restoreState(savedInstanceState) == null) {
                         view.loadUrl(launchUrl(intent))
                     }
@@ -136,7 +124,6 @@ class MainActivity : ComponentActivity() {
         if (!failed) offerShortcuts()
     }
 
-    /** Long-press the icon: home, today's round, the Park — each opens that page of Pawket's, nothing more. */
     private fun offerShortcuts() {
         val places =
             listOf(
@@ -161,7 +148,6 @@ class MainActivity : ComponentActivity() {
     private fun makeWebView(): WebView =
         WebView(this).apply {
             layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-            // The room's ground until the page paints over it: never a white flash.
             setBackgroundColor(getColor(R.color.pawket_ground))
             settings.apply {
                 javaScriptEnabled = true
@@ -178,7 +164,7 @@ class MainActivity : ComponentActivity() {
                 useWideViewPort = false
                 offscreenPreRaster = true
                 textZoom = textZoomFor(resources.configuration)
-                // The marker Mobile Wallet Adapter (>= 0.5.1) reads to treat this WebView as the official shell.
+                // Mobile Wallet Adapter (>= 0.5.1) reads this marker to treat the WebView as its official shell.
                 userAgentString = "${userAgentString.trim()} $WEB_SHELL_MARKER"
             }
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
@@ -187,7 +173,6 @@ class MainActivity : ComponentActivity() {
             bridge.attach(this)
         }
 
-    /** The page to open: a link into Pawket this app was handed, or home. */
     private fun launchUrl(intent: Intent?): String {
         val link = intent?.data
         return if (link != null && isTrusted(link)) link.toString() else startUrl
@@ -201,11 +186,6 @@ class MainActivity : ComponentActivity() {
 
     fun isTrusted(url: Uri): Boolean = url.origin() == origin
 
-    /**
-     * Whether care reminders may be posted, asking the player where the phone
-     * asks (Android 13 and later). Earlier, and once asked, the answer is the
-     * phone's: the app's notification switch in its settings.
-     */
     fun allowNotifications(answer: (Boolean) -> Unit) {
         if (CareReminder.allowed(this) || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return answer(CareReminder.allowed(this))
         notificationAnswer?.invoke(false)
@@ -213,12 +193,10 @@ class MainActivity : ComponentActivity() {
         askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    /** Back to where Pawket starts. */
     fun loadStart() {
         webView?.loadUrl(startUrl)
     }
 
-    /** Opens a link that is not Pawket's in the app that handles it — the browser, the Explorer, a wallet's site. */
     fun openOutside(url: Uri) {
         if (url.scheme != "http" && url.scheme != "https") return
         launch(Intent(Intent.ACTION_VIEW, url).addCategory(Intent.CATEGORY_BROWSABLE))
@@ -256,7 +234,6 @@ class MainActivity : ComponentActivity() {
         progress = percent / 100f
     }
 
-    /** The page's room changed: the bars around it take its ground, and its icons the right ink. */
     fun roomChanged(color: Int, dark: Boolean) {
         ground = color to dark
         applySystemBars(dark)
@@ -274,11 +251,6 @@ class MainActivity : ComponentActivity() {
 
     private fun isNight() = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
-    /**
-     * The renderer died — out of memory, or killed. The page is all in the
-     * renderer and every record is in storage or on Solana, so a new WebView
-     * opens where the old one was, instead of the app closing with it.
-     */
     fun rendererGone(view: WebView) {
         if (view != webView) return
         val url = view.url?.toUri()?.takeIf(::isTrusted)?.toString() ?: startUrl
@@ -286,8 +258,6 @@ class MainActivity : ComponentActivity() {
         (view.parent as? ViewGroup)?.removeView(view)
         view.destroy()
         painted = false
-        // A page that kills the renderer every time is not brought straight back into the same crash: the retry
-        // screen waits for the player, and Try again starts from Pawket's first page.
         val again = crashes.bringBack(SystemClock.elapsedRealtime())
         webView = makeWebView().also { if (again) it.loadUrl(url) }
         if (!again) failed = true
@@ -300,12 +270,6 @@ class MainActivity : ComponentActivity() {
         if (view.url.isNullOrBlank() || view.url == "about:blank") view.loadUrl(startUrl) else view.reload()
     }
 
-    /**
-     * Back at the root goes home and keeps Pawket as it was — the platform's
-     * own rule for a launcher's root since Android 12 — however Pawket was
-     * opened (a link or a shortcut too), so coming back is instant, with the
-     * page, the room and any send in flight still there.
-     */
     private fun leave() {
         moveTaskToBack(true)
     }
@@ -322,8 +286,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onPause() {
-        // Hidden, not stopped: the page's timers and sockets keep running, so a
-        // wallet app answering while Pawket is behind it is still heard.
+        // onPause, never pauseTimers: a wallet app's answer must reach the page while Pawket is behind it.
         webView?.onPause()
         CookieManager.getInstance().flush()
         super.onPause()
@@ -434,7 +397,6 @@ class MainActivity : ComponentActivity() {
         private const val SPLASH_HOLD_MS = 2_500L
         private const val SAVED_ORIGIN = "pawket.origin"
 
-        /** Asks the page to close its open sheet or dialog; true when it did. */
         private const val BACK_SCRIPT =
             "(function(){try{return typeof window.pawketBack==='function'&&window.pawketBack()===true}catch(e){return false}})()"
 
@@ -442,10 +404,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** What "the same site" means here: this URL's origin, as Android parsed it. */
 fun Uri.origin(): String = originOf(scheme, host, port)
 
-/** scheme://host[:port], lowercased, the default port left out; "" when there is no scheme or host. */
 fun originOf(
     scheme: String?,
     host: String?,

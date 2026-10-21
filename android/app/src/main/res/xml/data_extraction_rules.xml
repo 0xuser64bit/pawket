@@ -1,9 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Pawket is not backed up (allowBackup is false): the page and Solana keep its records.
-   Android 12 and later may still move an app's data to a new phone; WebView storage
-   (cookies, local storage, IndexedDB with the Pawket Wallet device key) and databases
-   never go with it.
--->
+<?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" path="app_webview" />

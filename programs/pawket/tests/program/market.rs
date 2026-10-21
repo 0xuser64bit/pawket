@@ -4,9 +4,7 @@ use solana_signer::Signer;
 
 use crate::harness::*;
 
-/// The first piece the Market sold: the original paid slot; its id stays unchanged.
 const HALO: u8 = 19;
-/// The classic pieces (4–18) sell at the cloth price, the rest (19–28) at the wearable price.
 const LAST_CLASSIC: u8 = 18;
 const LAST_PIECE: u8 = 28;
 const FIRST_ROOM: u8 = 64;
@@ -25,7 +23,6 @@ fn a_piece_bought_in_the_market_goes_to_the_treasury_and_into_the_closet_while_a
     ok(env.send(&[buy_ix(&owner.pubkey(), &sponsor.pubkey(), HALO)], &sponsor, &[&owner]));
 
     assert_eq!(env.lamports(&TREASURY) - treasury_before, WEARABLE_PRICE_LAMPORTS);
-    // The owner paid the price and nothing else: the fee and the closet's rent were the sponsor's.
     assert_eq!(owner_before - env.lamports(&owner.pubkey()), WEARABLE_PRICE_LAMPORTS);
     let closet = env.closet(&owner.pubkey());
     assert_eq!(closet.owner, owner.pubkey());
@@ -33,7 +30,6 @@ fn a_piece_bought_in_the_market_goes_to_the_treasury_and_into_the_closet_while_a
     assert!(!closet.has(HALO + 1));
     assert_eq!((closet.count, closet.spent), (1, WEARABLE_PRICE_LAMPORTS));
 
-    // Bought, it is worn with `dress_owned`; the old `dress` still knows only the three starter pieces.
     expect_pawket(&env.dress(&owner, &pet, HALO), PawketError::UnknownWearable);
     ok(env.send(&[dress_owned_ix(&owner.pubkey(), &pet, HALO)], &owner, &[]));
     assert_eq!(env.pet(&pet).wearing, HALO);
@@ -63,7 +59,6 @@ fn nothing_is_bought_twice_and_only_what_the_market_sells_is_sold() {
         expect_pawket(&env.send(&[buy_ix(&owner.pubkey(), &owner.pubkey(), item)], &owner, &[]), PawketError::UnknownItem);
     }
     assert_eq!(env.closet(&owner.pubkey()).spent, spent);
-    // Every id there is: pet pieces, rooms and photo frames have their prices, and nothing else has one.
     for item in 0..=u8::MAX {
         let expected = match item {
             4..=LAST_CLASSIC => Some(CLASSIC_PRICE_LAMPORTS),
@@ -90,8 +85,6 @@ fn a_closet_that_is_there_already_is_bought_into_only_while_it_names_its_owner()
     let mut env = Env::new();
     let owner = env.player();
     let other = env.player();
-    // At the owner's closet address, a closet that names someone else. Only `buy` writes a closet
-    // on a cluster, always with its signer, so this is `init_if_needed`'s second path, held anyway.
     let forged = Closet { owner: other.pubkey(), items: [0; 32], count: 0, spent: 0, bump: 0 };
     env.forge(&closet_pda(&owner.pubkey()), &forged);
     let treasury_before = env.lamports(&TREASURY);
@@ -138,12 +131,10 @@ fn a_piece_not_in_the_closet_is_not_worn() {
         &env.send(&[dress_owned_ix(&owner.pubkey(), &pet, LAST_PIECE + 1)], &owner, &[]),
         PawketError::UnknownWearable,
     );
-    // The three starter pieces, and nothing at all, go on through `dress_owned` too.
     ok(env.send(&[dress_owned_ix(&owner.pubkey(), &pet, 3)], &owner, &[]));
     ok(env.send(&[dress_owned_ix(&owner.pubkey(), &pet, 0)], &owner, &[]));
     assert_eq!(env.pet(&pet).wearing, 0);
 
-    // Another owner's closet does not dress this pet.
     let other = env.player();
     ok(env.send(&[buy_ix(&other.pubkey(), &other.pubkey(), HALO + 1)], &other, &[]));
     let mut borrowed = dress_owned_ix(&owner.pubkey(), &pet, HALO + 1);
@@ -198,10 +189,8 @@ fn funded_purchases_debit_pawket_wallet_and_never_the_owners_existing_sol() {
     assert_eq!(balance - env.balance(&owner.pubkey()), cost);
     assert_eq!(env.lamports(&TREASURY) - treasury, cost);
     expect_pawket(&env.send(&[buy_with_wallet_ix(&owner.pubkey(), &sponsor.pubkey(), 83)], &sponsor, &[&owner]), PawketError::AlreadyOwned);
-    // What is left (about 0.054 SOL) covers a piece but not a room.
     expect_pawket(&env.send(&[buy_with_wallet_ix(&owner.pubkey(), &sponsor.pubkey(), FIRST_ROOM)], &sponsor, &[&owner]), PawketError::InsufficientBalance);
     assert!(!env.closet(&owner.pubkey()).has(FIRST_ROOM));
-    // Neither a foreign wallet account nor a device signature can spend the owner's balance.
     let stranger = env.player();
     ok(env.send(&[open_wallet_ix(&stranger.pubkey(), &sponsor.pubkey())], &sponsor, &[&stranger]));
     let mut forged = buy_with_wallet_ix(&owner.pubkey(), &sponsor.pubkey(), 5);
@@ -221,26 +210,21 @@ fn owner_approved_external_spending_returns_change_and_sale_proceeds_to_pawket_w
     let keep = env.lamports(&owner.pubkey());
     let before = env.balance(&owner.pubkey());
     let spent = env.wallet(&owner.pubkey()).spent;
-    // Like a trade: fund more than needed, return the change, refill only the paid network fee.
     let fund = wallet_spend_ix(&owner.pubkey(), &device.pubkey(), keep, Some(20_000_000));
     let settle = wallet_spend_ix(&owner.pubkey(), &device.pubkey(), keep, None);
     ok(env.send(&[fund.clone(), transfer(&owner.pubkey(), &recipient.pubkey(), 7_000_000), settle.clone()], &device, &[&owner]));
     assert_eq!(env.lamports(&owner.pubkey()), keep);
     assert_eq!(before - env.balance(&owner.pubkey()), 7_010_000);
     assert_eq!(env.wallet(&owner.pubkey()).spent - spent, 7_010_000);
-    // Like a sale: all incoming SOL returns to Pawket Wallet too.
     let before = env.balance(&owner.pubkey());
     ok(env.send(&[fund.clone(), transfer(&recipient.pubkey(), &owner.pubkey(), 30_000_000), settle.clone()], &device, &[&owner, &recipient]));
     assert_eq!(env.lamports(&owner.pubkey()), keep);
     assert_eq!(env.balance(&owner.pubkey()) - before, 30_000_000 - 15_000);
-    // Consuming any preexisting owner SOL rolls every transfer back: the settlement says so.
     let before = env.balance(&owner.pubkey());
     let overspend = transfer(&owner.pubkey(), &recipient.pubkey(), 20_000_001);
     expect_pawket_at(&env.send(&[fund.clone(), overspend, settle.clone()], &device, &[&owner]), 2, PawketError::InsufficientBalance);
     assert_eq!(env.lamports(&owner.pubkey()), keep);
     assert_eq!(env.balance(&owner.pubkey()), before);
-    // The brackets are mandatory, in order, same owner, same reserved balance: each refusal is the
-    // half that finds the other missing or different.
     expect_pawket_at(&env.send(&[fund.clone()], &device, &[&owner]), 0, PawketError::InvalidAmount);
     expect_pawket_at(&env.send(&[settle.clone()], &device, &[&owner]), 0, PawketError::InvalidAmount);
     let wrong_keep = wallet_spend_ix(&owner.pubkey(), &device.pubkey(), keep - 1, None);
@@ -250,10 +234,8 @@ fn owner_approved_external_spending_returns_change_and_sale_proceeds_to_pawket_w
     expect_pawket_at(&env.send(&[fund.clone(), foreign], &device, &[&owner]), 0, PawketError::InvalidAmount);
     let first = transfer(&recipient.pubkey(), &owner.pubkey(), 1);
     expect_pawket_at(&env.send(&[first, fund.clone(), settle.clone()], &device, &[&owner, &recipient]), 1, PawketError::InvalidAmount);
-    // A settlement before the last instruction leaves room after it: it refuses, whatever follows.
     let pay = transfer(&owner.pubkey(), &recipient.pubkey(), 1_000);
     expect_pawket_at(&env.send(&[fund.clone(), pay, settle.clone(), settle.clone()], &device, &[&owner]), 2, PawketError::InvalidAmount);
-    // Only the linked device's float is refilled, and only while its link lasts.
     let stranger = env.broke();
     let elsewhere = wallet_spend_ix(&owner.pubkey(), &stranger.pubkey(), keep, Some(20_000_000));
     let settle_elsewhere = wallet_spend_ix(&owner.pubkey(), &stranger.pubkey(), keep, None);

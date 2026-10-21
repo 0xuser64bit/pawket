@@ -5,14 +5,7 @@ import { GUILD_LIMITS } from "@/lib/solana/program";
 
 export const metadata: Metadata = { title: "Found a guild" };
 
-/**
- * Founding sits on the same rails as every place. The head is the
- * directory's on the left — the title and one line under it — with the guild
- * as it will look on the right (under the title on a phone); the form that
- * makes it fills the width below.
- */
 export default async function FoundGuildPage({ searchParams }: { searchParams: Promise<{ name?: string | string[] }> }) {
-  // A name brought from an address nobody has founded yet starts the form.
   const { name } = await searchParams;
   return (
     <Screen>

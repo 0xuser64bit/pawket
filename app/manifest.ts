@@ -1,7 +1,6 @@
 import type { MetadataRoute } from "next";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/config/site";
 
-/** Installable: a pet you check on every day belongs on the home screen. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: `${APP_NAME} — ${APP_TAGLINE.toLowerCase()}`,

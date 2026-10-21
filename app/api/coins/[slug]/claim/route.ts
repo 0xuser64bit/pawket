@@ -3,12 +3,6 @@ import { coinError, guildOr404, postedFields } from "@/server/coins/routes";
 import { actionError, actionJson, caller, preflight } from "@/server/actions";
 import { actionLimit } from "@/server/sponsor";
 
-/**
- * POST { account, from }: fees claimed to their own wallet — `from: "curve"`
- * (default), the founder's share of the curve's trading fees; `from: "pool"`,
- * what the wallet's locked positions in the graduated pool have earned.
- */
-
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const OPTIONS = preflight;

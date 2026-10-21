@@ -36,14 +36,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 const since = (seconds: number) => formatUtcDate(new Date(seconds * 1000).toISOString());
 
-/**
- * A guild, as anyone can see it. The head is the introduction: its crest,
- * name and motto, how many and since when, and — for a visitor with pets on
- * Solana — the way in or out, right there. Then the page is what the guild
- * is for: what is on (events and polls, read live), with the pets in it,
- * what they have done together and its coin to the side, and what it is on
- * chain folded away.
- */
 export default async function GuildPage({ params }: Props) {
   const { slug } = await params;
   let guild: ChainGuild | null = null;
@@ -54,7 +46,6 @@ export default async function GuildPage({ params }: Props) {
   try {
     guild = isValidSlug(slug) ? await readGuild(slug) : null;
     if (guild) {
-      // The coin is optional and read beside the pets: if it — or Meteora's SDK — cannot be read, the guild still shows.
       const found = guild;
       const coins = import("@/server/coins/meteora").catch(() => null);
       [pets, coin, gatherings] = await Promise.all([
@@ -73,7 +64,6 @@ export default async function GuildPage({ params }: Props) {
     );
   }
   if (!guild) {
-    // An address nobody has founded is offered to whoever wants it, under the name it reads as.
     const unfounded = nameFor(slug);
     return (
       <Screen width="narrow">
@@ -103,7 +93,6 @@ export default async function GuildPage({ params }: Props) {
     <Screen>
       <BackLink label="Guilds" href="/guilds" />
       <Stack gap={6}>
-        {/* Who they are, who is in it, and the way in: the guild's whole introduction, in one place. */}
         <header className="pk-guild-hero">
           <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} size="lg" />
           <div className="pk-guild-hero__words">
@@ -117,7 +106,6 @@ export default async function GuildPage({ params }: Props) {
               <Chip label="Optional" tone="bloom" icon="guild" />
               <Chip label={`Since ${since(guild.createdAt)}`} tone="plain" />
             </Row>
-            {/* Facts above, the ways in below: joining, and passing the page on. */}
             <div className="pk-guild-hero__join">
               {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name }} />}
               <ShareButton name={guild.name} label="Share this guild" text={`${guild.name}: an optional guild of pets on Pawket, kept on Solana.`} />
@@ -267,7 +255,6 @@ const COIN_LINE: Record<CoinState["stage"], (guild: string) => string> = {
   suspended: () => "Pawket stopped offering trades in it. What anyone holds is untouched on Solana.",
 };
 
-/** The guild's coin, in a line, with the way to its page — the only place a coin is traded. */
 function CoinCard({ guildName, slug, coin }: { guildName: string; slug: string; coin: CoinState }) {
   return (
     <Card variant="quiet">

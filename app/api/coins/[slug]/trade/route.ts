@@ -3,13 +3,6 @@ import { coinError, guildOr404, postedFields, units } from "@/server/coins/route
 import { actionError, actionJson, caller, preflight } from "@/server/actions";
 import { actionLimit } from "@/server/sponsor";
 
-/**
- * POST { account, side, amount, minimumOut }: a trade in a guild's coin,
- * for the wallet to sign. `minimumOut` is the least the trade accepts — the
- * figure the player read on the quote — so a price that moved since then
- * fails on Solana and costs only the network fee, never more coin.
- */
-
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const OPTIONS = preflight;

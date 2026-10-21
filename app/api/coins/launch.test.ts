@@ -1,11 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-/**
- * Launching a guild's coin, at the edges that need no network: who may,
- * and the refusals before Meteora is asked for a transaction. Building and
- * signing it is walked against devnet (`pnpm e2e:coins`).
- */
 const readGuild = vi.fn();
 const readPet = vi.fn();
 const launchTransaction = vi.fn(async () => "base64-transaction");

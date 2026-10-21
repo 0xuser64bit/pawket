@@ -55,7 +55,6 @@ const SECTIONS: Array<{ title: string; body: string[] }> = [
   },
 ];
 
-/** The privacy policy, for the web and the Android app alike. */
 export default function PrivacyPage() {
   return (
     <Screen width="narrow">

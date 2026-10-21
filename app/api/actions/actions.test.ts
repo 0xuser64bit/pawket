@@ -3,12 +3,6 @@ import { describe, expect, it } from "vitest";
 import { GET as actionsJson } from "../../actions.json/route";
 import { GET as adoptCard, OPTIONS, POST as adopt } from "./adopt/route";
 
-/**
- * The Solana Actions spec, at the edges that need no network: the card, the
- * headers a Blink client checks, and every refusal that comes before a
- * transaction is built. The path that signs and sends is walked against
- * devnet (docs/SOLANA.md, "Blinks").
- */
 const at = (path: string, init?: RequestInit) => new Request(`http://localhost:3000${path}`, init);
 const posted = (path: string, account: unknown) =>
   at(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account }) });

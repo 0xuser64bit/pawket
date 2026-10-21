@@ -2,10 +2,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 
-/**
- * A pet's card is the link people share, and most who open it are not the
- * owner: the card says so, and gives them their own way in.
- */
 const PET = "J3nMY26sQZiBod2RCwsUFrh8E5PW56Mhr4ksm8RFQJAp";
 const OWNER = "11111111111111111111111111111112";
 const now = Math.floor(Date.now() / 1000);

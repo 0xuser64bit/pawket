@@ -5,15 +5,6 @@ import { WalletChip } from "@/components/wallet/wallet-chip";
 import { ResumeSends } from "@/lib/solana/use-send";
 import { CareReminderSync } from "@/components/home/remind-me";
 
-/**
- * The app shell: the mark, the Dock, and the two facts about this session.
- * The Dock is the only persistent navigation and floats at the foot of the
- * view at every width; the bar scrolls away with the page. See the dock and
- * scaffolding notes in `app/globals.css`.
- *
- * The bar is deliberately small — label-sized type, no hue — because
- * nothing in the shell may outrank the animal on the screen below it.
- */
 export default function GameLayout({ children }: { children: ReactNode }) {
   return (
     <>

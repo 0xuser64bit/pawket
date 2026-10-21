@@ -8,11 +8,6 @@ export const metadata: Metadata = {
   description: "Pieces for your pets and rooms to live in, for SOL at fixed prices. Looks only, never power.",
 };
 
-/**
- * The Market: looks for SOL, at prices Pawket's program fixes for everyone.
- * The screen is the Market's client leaf, since every figure on it depends
- * on the connected wallet's closet.
- */
 export default function MarketPage() {
   return (
     <Screen>

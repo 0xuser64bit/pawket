@@ -6,21 +6,12 @@ import { actionError, actionJson, caller, preflight } from "@/server/actions";
 import { readPet } from "@/server/solana";
 import { actionLimit } from "@/server/sponsor";
 
-/**
- * POST { account, preset, firstBuy }: the guild's coin, launched by its
- * founder on one of Pawket's presets — the curve and the coin, made in one
- * transaction their wallet signs, with their own first buy in it when they
- * ask. Only the founder, while the pet they founded it with is still in it,
- * only once, only for a guild with enough pets in it to be a community first.
- */
-
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const OPTIONS = preflight;
 
 type Props = { params: Promise<{ slug: string }> };
 
-/** The most a founder may put into their own first buy, in lamports. */
 const MAX_FIRST_BUY = 10_000_000_000n;
 
 export async function POST(request: Request, { params }: Props) {

@@ -3,13 +3,6 @@ import { scrub, scrubPath } from "@/lib/analytics/scrub";
 import { createLimiter } from "@/lib/solana/sponsor";
 import { caller } from "@/server/actions";
 
-/**
- * POST { path, name, message, digest }: a screen that broke in a browser,
- * said in one line of Pawket's logs so it can be fixed — the page, the kind
- * of error and its message, scrubbed of URLs and addresses, and nothing about
- * who saw it. Sent only while the player is being counted (`record`).
- */
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

@@ -1,6 +1,5 @@
 import { ButtonLink, Mark, PetFrame, Screen, Stack } from "@/components/pk";
 
-/** An address with nothing at it: the mark, so the player knows where they are, and two ways back in. */
 export default function NotFound() {
   return (
     <Screen width="narrow">

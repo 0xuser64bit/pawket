@@ -4,14 +4,6 @@ import { coinError, guildOr404, units } from "@/server/coins/routes";
 import { actionError, caller } from "@/server/actions";
 import { actionLimit } from "@/server/sponsor";
 
-/**
- * GET ?side=buy|sell&amount=<base units>&slippage=<bps>: what a trade in a
- * guild's coin gives now, and the least it will accept — read from the
- * curve or, once it has graduated, from the verified DAMM v2 pool. A quote
- * is a snapshot; the trade route takes its least as the trade's floor, so a
- * price that moved since then fails on Solana instead of filling worse.
- */
-
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 

@@ -2,12 +2,7 @@ import { guildCard, petCard } from "@/server/card";
 import { readGuild, readPet } from "@/server/solana";
 import { isValidSlug } from "@/lib/guilds/guild";
 
-/**
- * An Action's square picture: the pet at `?pet=`, the guild at `?guild=`, or
- * the three species. The edge caches one picture per address it is asked
- * at, so any other query goes to the plain one first: a run of made-up
- * queries cannot make it draw a picture for each.
- */
+/** Any other query redirects to the plain one, so made-up queries cannot each make the edge draw a picture. */
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const params = url.searchParams;

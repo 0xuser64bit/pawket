@@ -7,14 +7,6 @@ import { absolute, actionError, actionJson, caller, postedAccount, preflight } f
 import { actionLimit, mayPayRent, sponsoredForPlayer, sponsorState } from "@/server/sponsor";
 import { readGuild, readOwnedPets } from "@/server/solana";
 
-/**
- * "Join Sunbeam Club", as a Solana Action: the guild's card, live from
- * chain, and one button. The pet that joins is the wallet's most recently
- * adopted pet on Solana that is in no guild yet; its owner signs, and
- * Pawket pays the fee and the rent. Optional, like every guild — and a
- * guild never changes a pet.
- */
-
 export const dynamic = "force-dynamic";
 export const OPTIONS = preflight;
 

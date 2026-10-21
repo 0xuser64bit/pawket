@@ -23,8 +23,6 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Content may run under a notch or home indicator; the shell, the dock and
-  // every band pad themselves with the safe-area insets instead.
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
   themeColor: [
@@ -42,14 +40,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={fontClassNames} suppressHydrationWarning>
       <head>
-        {/* Lamplight is Pawket's own dark room, so Dark Reader is asked to stand
-            down. Left on, it repaints the palette and rewrites every SVG's fill and
-            stroke before React hydrates, which React reports as a mismatch. It reads
-            this tag before it touches the page, so it must be in the served head. */}
+        {/* Dark Reader rewrites SVG fills before hydration, which React reports as a mismatch: this tag, in the served head, stops it. */}
         <meta name="darkreader-lock" />
-        {/* The room a player picked, applied before paint so the wrong one never flashes. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
-        {/* Without a script nothing would ever lift the splash, so it is never drawn. */}
         <noscript>
           <style>{".pk-boot{display:none}"}</style>
         </noscript>

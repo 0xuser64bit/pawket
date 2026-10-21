@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPublicEnv } from "@/config/env";
 
-/** The metadata Pawket's keepsake collection carries. */
 export function GET() {
   const app = getPublicEnv().appUrl;
   return NextResponse.json(

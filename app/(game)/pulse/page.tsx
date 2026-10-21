@@ -17,11 +17,6 @@ export const runtime = "nodejs";
 const n = (value: number) => value.toLocaleString("en-US");
 const sol = (lamports: string) => `${formatUnits(lamports, 9, 3)} SOL`;
 
-/**
- * Pawket's pulse: every figure counted from the program's accounts, read
- * live, with nothing estimated and nothing added by hand — the same
- * accounts anyone can read on Explorer. Facts, so all of it is Paper.
- */
 export default async function PulsePage() {
   let pulse: Pulse | null = null;
   try {

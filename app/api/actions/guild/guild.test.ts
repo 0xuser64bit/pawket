@@ -1,11 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-/**
- * The guild's Action at the edges that need no network: which pet joins,
- * and every refusal before a transaction is built. Signing and sending is
- * the same sponsored path as every other Action, walked against devnet.
- */
 const readGuild = vi.fn();
 const readOwnedPets = vi.fn();
 const sponsoredForPlayer = vi.fn(async () => "base64-transaction");

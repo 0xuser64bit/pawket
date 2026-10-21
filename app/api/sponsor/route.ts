@@ -5,18 +5,8 @@ import { cosign, SponsorRefusal } from "@/lib/solana/sponsor";
 import { caller as callerOf } from "@/server/actions";
 import { actionLimit, mayPayRent, sponsorAddress, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
 
-/**
- * The sponsor: pays the network fee, and the rent of a new pet, a new guild
- * or a pet's place in one. It signs first,
- * as fee payer, and hands the transaction back for the player's wallet to
- * sign and send (see `src/lib/solana/sponsor.ts` for why that order). What
- * it will sign is `checkSponsorable`'s call. GET says whether it is up; POST
- * { transaction } returns { transaction } with the sponsor's signature.
- */
-
 export const runtime = "nodejs";
 
-/** One line in the logs for a failure the player only sees as "cannot reach the network": never the key, never a URL. */
 function logged(where: string, error: unknown) {
   console.error(JSON.stringify({ pawket: "sponsor", where, name: error instanceof Error ? error.name : typeof error, message: error instanceof Error ? scrub(error.message) : undefined }));
 }
@@ -33,7 +23,6 @@ export async function GET() {
     );
   } catch (error) {
     logged("status", error);
-    // The address is public: a history can still tell the fees Pawket paid while the network is down.
     const address = await sponsorAddress();
     return NextResponse.json(
       { available: false, reason: "The sponsor cannot reach the network.", ...(address ? { address } : {}) },

@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { Banner, Button, ButtonLink, Screen, Stack } from "@/components/pk";
 import { reportError } from "@/lib/analytics/events";
 
-/** A screen failure cannot establish whether an earlier send reached Solana. */
 export default function GlobalError({
   error,
   retry,

@@ -1,11 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-/**
- * The route around what the sponsor signs (`checkSponsorable`, tested in
- * `sponsor.test.ts`): what it refuses before signing anything, the limits it
- * hands the co-signer, and what it says and logs when something fails.
- */
 const mock = vi.hoisted(() => ({
   state: vi.fn(),
   cosign: vi.fn(),

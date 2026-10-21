@@ -5,13 +5,6 @@ import { sponsorRpc, sponsorState } from "@/server/sponsor";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Whether Pawket can do its job now, for a person or a monitor: the server
- * answers (this response), its Solana RPC answers and how fast, and whether
- * the sponsor is paying — never a secret, a balance or the provider's URL.
- * `status` is "ok" when the RPC answers, else "degraded"; HTTP 200 either
- * way, so a monitor reads the fields rather than the code.
- */
 export async function GET() {
   const env = getPublicEnv();
   const started = Date.now();

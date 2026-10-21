@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   description: "What changed in Pawket lately, newest first.",
 };
 
-/** What is new, by day: Pawket is built a little at a time, and this is the record of it. */
 export default function NewsPage() {
   const days = [...new Set(NEWS.map((entry) => entry.date))];
   return (

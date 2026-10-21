@@ -39,7 +39,6 @@ import { formatAgo, truncateAddress } from "@/lib/utils/format";
 import { readAllPets } from "@/server/solana";
 import { sponsorState } from "@/server/sponsor";
 
-/** What the program holds is read at most once a minute. */
 export const revalidate = 60;
 
 const ON_SOLANA: Array<{ icon: IconName; title: string; body: string }> = [
@@ -50,14 +49,12 @@ const ON_SOLANA: Array<{ icon: IconName; title: string; body: string }> = [
   { icon: "image", title: "A keepsake card", body: "A frozen card in your wallet that points at the pet. It cannot be sold or sent." },
 ];
 
-/** What a player can own, in three plain columns; the full table is folded underneath. */
 const OWNED: Array<{ title: string; note: string; things: string[]; paper?: boolean }> = [
   { title: "Free, no wallet", note: "Yours from the first tap, kept in this browser.", things: ["Your pets, as many as you adopt", "Their room and its things", "Five coats each, and clothes to start", "Every game and every round"] },
   { title: "On Solana, if you choose", note: "Records nobody can edit, and nothing to sell.", things: ["Their Passport: every care, the streak", "A keepsake card that cannot be sold", "A guild, joined and left for free"] },
   { title: "Costs SOL, if you choose", note: "Fixed prices, stated before you approve.", things: ["Market looks: pieces, rooms, frames", "A guild's coin: optional, and it can fall to nothing"], paper: true },
 ];
 
-/** The Market, as a shelf of real things at their fixed prices. */
 const SHELF = [
   { name: "Halo", kind: "Foil piece", rarity: "foil", item: wearableItem("halo"), art: <WearableArt id="halo" className="pk-tile__piece" /> },
   { name: "Wizard hat", kind: "Foil piece", rarity: "foil", item: wearableItem("wizard-hat"), art: <WearableArt id="wizard-hat" className="pk-tile__piece" /> },
@@ -66,7 +63,6 @@ const SHELF = [
   { name: "Star pin", kind: "Cloth piece", rarity: "cloth", item: wearableItem("star-pin"), art: <WearableArt id="star-pin" className="pk-tile__piece" /> },
 ] as const;
 
-/** Things for the room, as the Market and Home draw them. */
 const ROOM_THINGS = ["sea-painting", "sunflower", "cloud-bed", "wall-clock", "round-rug", "bookcase"];
 
 const ASSET_COLUMNS = ["Thing", "What it is for", "Needed to play?", "Has a market price?"];
@@ -91,12 +87,6 @@ const NAV = [
   { label: "Guilds", href: "/guilds" },
 ];
 
-/**
- * The front door: the pets first, then what a day with them is, then what
- * Solana adds — shown with a real Passport read from the program — then the
- * plain table of what is and is not owned. `display-hero` is used once,
- * here, and nowhere else in the product.
- */
 export default function LandingPage() {
   return (
     <>
@@ -187,7 +177,6 @@ export default function LandingPage() {
                 </Row>
               </Stack>
             </div>
-            {/* A row a phone swipes: a region a keyboard can focus and scroll too. */}
             <div className="pk-roomshow__photos" aria-label="Photos taken in Pawket's rooms" role="region" tabIndex={0}>
               {[
                 { src: "/landing/pepper.webp", alt: "A photo from Pawket: the player waves beside Pepper, a ginger cat, in a room with a sea painting, a sunflower and a cloud bed." },
@@ -439,7 +428,6 @@ export default function LandingPage() {
   );
 }
 
-/** What has happened, counted from the program's accounts: no database, no estimate. */
 async function LiveStrip() {
   let figures: Array<{ k: string; v: string }> | null = null;
   try {
@@ -449,7 +437,6 @@ async function LiveStrip() {
     figures = [
       { k: "Pets kept on Solana", v: String(pets.length) },
       { k: "Cares recorded", v: String(pets.reduce((sum, entry) => sum + entry.passport.careCount, 0)) },
-      // A quiet day is said by leaving the count out, never by rounding it up.
       ...(out > 0 ? [{ k: "Cared for today", v: String(out) }] : []),
       { k: "Network fee", v: sponsor?.available ? "Paid by Pawket" : "A little devnet SOL" },
     ];
@@ -476,7 +463,6 @@ async function LiveStrip() {
   );
 }
 
-/** The most cared-for pet the program keeps, as anyone can see it. */
 async function FeaturedPassport() {
   let best: Awaited<ReturnType<typeof readAllPets>>[number] | undefined;
   try {

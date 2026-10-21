@@ -4,20 +4,15 @@ import { isValidSlug } from "@/lib/guilds/guild";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const params = url.searchParams;
-  const kept = [...params.keys()].every((key) => key === "pet" || key === "guild") && params.getAll("pet").length <= 1 && params.getAll("guild").length <= 1;
-  if (!kept) {
-    const plain = new URL(url.pathname, url);
-    for (const key of ["pet", "guild"]) {
-      const value = params.get(key);
-      if (value) plain.searchParams.set(key, value);
-    }
-    return Response.redirect(plain, 308);
-  }
-  const slug = params.get("guild");
+  const slug = url.searchParams.get("guild");
+  const address = url.searchParams.get("pet");
   const guild = slug && isValidSlug(slug) ? await readGuild(slug).catch(() => null) : null;
-  const pet = params.get("pet");
-  const card = guild ? await guildCard(guild) : await petCard(pet ? await readPet(pet).catch(() => null) : null, "square");
+  const pet = !guild && address ? await readPet(address).catch(() => null) : null;
+  const canonical = new URL(url.pathname, url);
+  if (guild) canonical.searchParams.set("guild", guild.slug);
+  else if (pet) canonical.searchParams.set("pet", pet.pet.address);
+  if (canonical.search !== url.search) return Response.redirect(canonical, 307);
+  const card = guild ? await guildCard(guild) : await petCard(pet, "square");
   card.headers.set("Cache-Control", "public, max-age=60, s-maxage=60");
   card.headers.set("Access-Control-Allow-Origin", "*");
   return card;

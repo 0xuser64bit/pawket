@@ -176,8 +176,10 @@ export function extractProgramErrorCode(error: unknown): number | null {
     const code = Number(contextual[1] ?? contextual[2] ?? contextual[3]);
     return isPawketCode(code) ? code : null;
   }
-  const bare = /\b(600[0-7])\b/.exec(message);
-  return bare ? Number(bare[1]) : null;
+  for (const [digits] of message.matchAll(/\b\d{4}\b/g)) {
+    if (isPawketCode(Number(digits))) return Number(digits);
+  }
+  return null;
 }
 
 export function toUserFacingError(error: unknown): string {

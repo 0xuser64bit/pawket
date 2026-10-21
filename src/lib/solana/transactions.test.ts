@@ -56,6 +56,7 @@ describe("transaction errors", () => {
 
   it("extracts embedded program codes", () => {
     expect(extractProgramErrorCode(new Error("custom 6002 here"))).toBe(6002);
+    expect(extractProgramErrorCode(new Error("block 1234, then custom 6029"))).toBe(6029);
     expect(extractProgramErrorCode(new Error("nope"))).toBeNull();
   });
 

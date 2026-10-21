@@ -161,7 +161,6 @@ export function AdoptFlow() {
     const io = new IntersectionObserver(
       () => {
         if (row.scrollWidth <= row.clientWidth) return;
-        // Observer entries can predate a resize: measure the row as it is now.
         const center = row.getBoundingClientRect().left + row.clientWidth / 2;
         let closest: HTMLElement | undefined;
         let distance = Infinity;

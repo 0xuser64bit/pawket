@@ -12,7 +12,6 @@ export interface CoinPreset {
   marketCap: Record<CoinCluster, { start: number; graduation: number }>;
 }
 
-/** Each preset's numbers are fixed on chain in its config account (`scripts/coin-presets.mts`): a change needs a new config. */
 export const COIN_PRESETS: readonly CoinPreset[] = [
   {
     id: "gentle",

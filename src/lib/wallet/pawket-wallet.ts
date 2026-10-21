@@ -20,7 +20,6 @@ export interface PawketWalletState {
   error?: unknown;
 }
 
-/** 890,880 lamports: a system account's rent-exempt minimum. */
 const DEVICE_MINIMUM = 890_880n + WALLET_LIMITS.feePerSignature;
 
 let walletRent: Promise<bigint> | null = null;

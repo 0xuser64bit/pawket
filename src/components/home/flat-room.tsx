@@ -34,7 +34,6 @@ export function FlatRoom({
   decor: RoomDecor;
 }) {
   const id = useId().replace(/:/g, "");
-  // September to November: getMonth counts from 0.
   const autumn = useMounted() && [8, 9, 10].includes(new Date().getMonth());
   const [booped, setBooped] = useState(0);
   const [beaming, setBeaming] = useState(false);

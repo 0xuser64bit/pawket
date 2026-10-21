@@ -12,7 +12,6 @@ import {
 } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { COIN_TERMS, type CoinCluster, type CoinPreset } from "@/lib/coins/presets";
 
-/** No `server-only` marker: `scripts/coin-presets.mts` runs this outside Next. */
 export function presetParameters(preset: CoinPreset, cluster: CoinCluster): ConfigParameters {
   const { start, graduation } = preset.marketCap[cluster];
   return buildCurveWithMarketCap({

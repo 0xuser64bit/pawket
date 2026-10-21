@@ -30,7 +30,6 @@ export function units(value: unknown): bigint | null {
 
 export function coinError(error: unknown): Response {
   if (error instanceof CoinRefusal) return actionError(error.message, error.status);
-  // RPC errors can carry the server's credential-bearing endpoint: never log them.
   console.error("coin route failed");
   return actionError("Solana did not answer. Nothing was sent — try again.", 503);
 }

@@ -53,7 +53,6 @@ export function setTheme(choice: ThemeChoice) {
     } catch {}
     const ground = getComputedStyle(root).getPropertyValue("--ground").trim();
     for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) meta.content = ground;
-    // Synchronously: the view transition snapshots the page as this callback leaves it.
     flushSync(() => {
       for (const listener of listeners) listener();
     });

@@ -164,7 +164,7 @@ class MainActivity : ComponentActivity() {
                 useWideViewPort = false
                 offscreenPreRaster = true
                 textZoom = textZoomFor(resources.configuration)
-                // Mobile Wallet Adapter (>= 0.5.1) reads this marker to treat the WebView as its official shell.
+                // Mobile Wallet Adapter registers its wallet in a WebView only if the user agent carries this marker.
                 userAgentString = "${userAgentString.trim()} $WEB_SHELL_MARKER"
             }
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
@@ -286,7 +286,6 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onPause() {
-        // onPause, never pauseTimers: a wallet app's answer must reach the page while Pawket is behind it.
         webView?.onPause()
         CookieManager.getInstance().flush()
         super.onPause()

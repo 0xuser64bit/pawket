@@ -49,7 +49,6 @@ export function mobileWalletErrorCode(error: unknown): string | number | null {
   return null;
 }
 
-// Mobile Wallet Adapter protocol codes: -1 authorization failed, -3 not signed.
 const MOBILE_REFUSALS = new Set<string | number>([-1, -3, "ERROR_ASSOCIATION_CANCELLED"]);
 
 export function isUserRejection(error: unknown): boolean {

@@ -37,7 +37,6 @@ export function RemindMe({ name }: { name: string }) {
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
     link.download = `pawket-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "pet"}.ics`;
-    // Attached, and revoked only later: some browsers start the download after the click returns.
     document.body.append(link);
     link.click();
     link.remove();

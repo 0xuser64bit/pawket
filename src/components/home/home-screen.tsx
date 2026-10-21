@@ -389,7 +389,7 @@ export function HomeScreen() {
           onCarried={(address) => {
             carried.current = { id: keeping.id, address };
             companion.choose(address);
-            // An RPC node can confirm a pet before it serves its account: read again until it does.
+            // An RPC node can confirm a pet before it serves its account.
             void (async () => {
               for (let tries = 0; tries < 6 && carried.current?.address === address; tries++) {
                 await companion.refresh();

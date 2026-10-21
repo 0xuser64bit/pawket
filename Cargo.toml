@@ -8,7 +8,6 @@ rust-version = "1.89.0"
 license = "MIT"
 
 [profile.release]
-# The program relies on this: unchecked arithmetic aborts instead of wrapping.
 overflow-checks = true
 lto = "fat"
 codegen-units = 1

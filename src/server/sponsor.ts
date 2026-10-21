@@ -48,6 +48,7 @@ export async function sponsorState(): Promise<SponsorState> {
     .then(() => createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(keypair) as number[])))
     .catch((error: unknown) => {
       signer = null;
+      // Name only: JSON.parse's message quotes its input — the secret key.
       console.error("[sponsor] SPONSOR_KEYPAIR is not a valid keypair:", error instanceof Error ? error.name : "unknown");
       throw new Error("The sponsor's key is not valid on this deployment.");
     });

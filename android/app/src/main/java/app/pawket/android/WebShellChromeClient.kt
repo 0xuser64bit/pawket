@@ -34,7 +34,6 @@ class WebShellChromeClient(private val activity: MainActivity) : WebChromeClient
     ): Boolean {
         if (!isUserGesture) return false
         val transport = resultMsg.obj as? WebView.WebViewTransport ?: return false
-        // onCreateWindow gives no URL: a throwaway WebView learns where the window was going.
         val catcher = WebView(view.context)
         catcher.webViewClient =
             object : WebViewClient() {

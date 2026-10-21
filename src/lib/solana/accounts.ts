@@ -396,7 +396,6 @@ export async function fetchPetOnChain(rpc: Rpc<GetMultipleAccountsApi>, petAddre
   };
 }
 
-/** getMultipleAccounts takes at most 100 addresses. */
 async function readMany(rpc: Rpc<GetMultipleAccountsApi>, addresses: Address[]) {
   const chunks = [];
   for (let i = 0; i < addresses.length; i += 100) chunks.push(fetchEncodedAccounts(rpc, addresses.slice(i, i + 100)));

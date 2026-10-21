@@ -84,7 +84,6 @@ export function dayTurnsAt(now: Date = new Date(), options: { locale?: string; t
   return `at ${new Intl.DateTimeFormat(options.locale, { hour: "numeric", minute: "2-digit", timeZone: options.timeZone }).format(next)} here`;
 }
 
-/** No browser hyphenates a proper noun, so a word over ten letters steps the heading down a size. */
 export function nameHeadingClass(name: string, large = "display-l", small = "display-m"): string {
   return Math.max(...name.split(/\s+/).map((word) => [...word].length)) > 10 ? small : large;
 }

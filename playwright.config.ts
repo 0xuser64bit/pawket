@@ -21,7 +21,6 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      // On some Macs a new AudioContext waits seconds on the host's headphones.
       use: { ...devices["Desktop Chrome"], launchOptions: { args: ["--disable-audio-output"] } },
     },
   ],

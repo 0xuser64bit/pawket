@@ -40,7 +40,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={fontClassNames} suppressHydrationWarning>
       <head>
-        {/* Dark Reader rewrites SVG fills before hydration, which React reports as a mismatch: this tag, in the served head, stops it. */}
         <meta name="darkreader-lock" />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <noscript>

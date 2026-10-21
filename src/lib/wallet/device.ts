@@ -19,7 +19,6 @@ async function run<T>(mode: IDBTransactionMode, act: (store: IDBObjectStore) => 
     return await new Promise<T>((resolve, reject) => {
       const transaction = db.transaction(STORE, mode);
       const request = act(transaction.objectStore(STORE));
-      // An IndexedDB request can succeed and its transaction still roll back: resolve on commit.
       transaction.oncomplete = () => resolve(request.result);
       transaction.onabort = () => reject(transaction.error ?? new Error("Device storage did not finish. Nothing was linked."));
       request.onerror = () => reject(request.error);

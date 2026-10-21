@@ -50,7 +50,6 @@ export function ProfileScreen() {
   const router = useRouter();
   const social = useSocialRecords(companion.owned.map((entry) => entry.pet.address));
 
-  // After navigation commits: a prefetched render can run before #look is in the address.
   useEffect(() => {
     if (!ready || !window.location.hash) return;
     const target = document.getElementById(window.location.hash.slice(1));

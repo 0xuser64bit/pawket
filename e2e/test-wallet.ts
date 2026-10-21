@@ -30,7 +30,6 @@ export function createTestWallet(name = "Pawket Test Wallet"): TestWallet {
   return { address, script: `(${install.toString()})(${config});` };
 }
 
-/** Serialised with toString() into the page: it must stay self-contained. */
 function install(config: { name: string; address: string; pkcs8: string; publicKey: number[] }) {
   const publicKey = new Uint8Array(config.publicKey);
   const chains = ["solana:devnet", "solana:localnet", "solana:testnet"] as const;

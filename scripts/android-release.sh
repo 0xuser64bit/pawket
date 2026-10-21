@@ -4,7 +4,6 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 keystore="${PAWKET_ANDROID_KEYSTORE:?Set PAWKET_ANDROID_KEYSTORE to the release keystore (never in the repository).}"
 : "${ANDROID_HOME:?Set ANDROID_HOME to the Android SDK.}"
-# apksigner runs the java on PATH.
 if [ -n "${JAVA_HOME:-}" ]; then export PATH="$JAVA_HOME/bin:$PATH"; fi
 
 if [ -z "${SOLANA_MOBILE_KEYSTORE_PASSWORD:-}" ] && command -v security >/dev/null 2>&1; then
@@ -39,7 +38,6 @@ case "$badging" in
   "$expected"*) ;;
   *) echo "The APK's package or version is not android/gradle.properties'." >&2; exit 1 ;;
 esac
-# apksigner labels signers by scheme or by number, depending on its version.
 signers="$(echo "$certs" | sed -n 's/.*certificate SHA-256 digest: //p' | sort -u | tr a-f A-F | sed 's/../&:/g; s/:$//')"
 for signer in ${signers:-none}; do
   if ! grep -q "\"$signer\"" "$root/public/.well-known/assetlinks.json"; then

@@ -16,7 +16,6 @@ const dataUrlOf = (blob: Blob) =>
 
 type Card = "loading" | "missing" | { file: File; url: string };
 
-/** Next hashes a dynamic route's OG image name, so read the page's og:image rather than guess a path. */
 function pageCard(): string {
   const tag = document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content;
   if (!tag) return "/opengraph-image";
@@ -82,13 +81,11 @@ export function ShareButton({
         if (!answer || answer.reason === "unknown") answer = await shareLink({ url: link, title, ...(text ? { text } : {}) });
         if (!answer.ok) setSaid("The share sheet did not open. Copy the link instead.");
       } else if (picture && navigator.canShare?.({ files: [picture] })) {
-        // With files, some apps drop `url`: the link rides in the text.
         await navigator.share({ files: [picture], title, text: `${words} ${link}` });
       } else {
         await navigator.share({ url: link, title, ...(text ? { text } : {}) });
       }
     } catch (error) {
-      // AbortError is a closed sheet. By name: a DOMException from another realm fails instanceof.
       if ((error as { name?: unknown } | null)?.name !== "AbortError") setSaid("The link could not be shared. Copy it instead.");
     } finally {
       setBusy(false);

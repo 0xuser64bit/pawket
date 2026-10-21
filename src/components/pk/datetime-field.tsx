@@ -20,7 +20,6 @@ const timeLabel = (hhmm: string) => {
   return new Date(2000, 0, 1, h, m).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 };
 const dayLabel = (date: Date) => date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
-/** Noon, so no clock change can push the date into another day. */
 const noon = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
 const nextHour = (now: number) => {
   const at = new Date(now);

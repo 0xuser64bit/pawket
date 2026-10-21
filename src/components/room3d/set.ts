@@ -27,7 +27,6 @@ import { DAYLIGHT, type Tone } from "./palette";
 
 const BACK = -1.6;
 export const BED = { x: SLOT_AT.bed.x, z: SLOT_AT.bed.z };
-/** September to November: getMonth counts from 0. */
 export const AUTUMN: ReadonlySet<number> = new Set([8, 9, 10]);
 
 const SKY_TONE: Record<Sky, Tone> = { warm: "sun-soft", cool: "pool-soft", plain: "surface-sunk" };

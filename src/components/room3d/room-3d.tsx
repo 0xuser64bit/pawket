@@ -106,8 +106,6 @@ export default memo(function Room3D(props: Room3DProps) {
   const pet = useArrivedPet(props.pet);
   const [slow, setSlow] = useState(false);
   const onSlow = useCallback(() => setSlow(true), []);
-  // R3F loses the context on purpose while unmounting; a layout effect's cleanup runs first, so only
-  // a loss while mounted counts.
   const here = useRef(false);
   useLayoutEffect(() => {
     here.current = true;
@@ -153,7 +151,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
   const petGltf = pet ? use(load(petFile(pet.species))) : null;
   const { camera, size, invalidate, gl, scene } = useThree();
 
-  // Dressed as it is built, so its things compile with the scene before the first frame.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const room = useMemo(() => buildRoom(decor), []);
   const world = useMemo(() => new Group(), []);

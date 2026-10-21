@@ -15,7 +15,6 @@
         android:supportsRtl="true"
         android:hardwareAccelerated="true"
         android:theme="@style/Theme.Pawket">
-        <!-- Recreating the activity would reload the page, and a send waiting on the wallet with it. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

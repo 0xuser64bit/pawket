@@ -44,7 +44,6 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
     document.body.append(link);
     link.click();
     link.remove();
-    // Revoked only later: some browsers read the file after the click returns.
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     setSaved(`A copy of ${pets(local.length)} is in your downloads, as ${name}.`);
     record({ name: "pets_copied", how: "file" });

@@ -17,7 +17,6 @@ export function clampStat(value: number): number {
   return Math.max(MIN_STAT, Math.min(MAX_STAT, Math.round(value)));
 }
 
-/** Integer arithmetic in 36000ths of a point, rounding half up, so it matches `decayed` in the program exactly. */
 function decayStat(value: number, perHour: number, seconds: number): number {
   const scaled = value * 36_000 - Math.round(perHour * 10) * seconds + 18_000;
   return scaled <= 0 ? MIN_STAT : Math.min(MAX_STAT, Math.floor(scaled / 36_000));

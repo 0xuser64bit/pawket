@@ -132,8 +132,6 @@ export async function sendPawket({
       (m) => appendTransactionMessageInstructions(instructions({ owner, payer: createNoopSigner(payerAddress) }), m),
     );
     const built = compileTransaction(message);
-    // The sponsor signs first: wallets rewrite a transaction nobody has signed yet (Phantom adds
-    // priority fees and guard instructions), and the sponsor refuses the rewrite.
     const sponsored = sponsor ? decode(await cosign(getBase64EncodedWireTransaction(built))) : await walletSigns(feePayer!, built);
     if (!same(sponsored.messageBytes, built.messageBytes)) {
       throw new Error("The sponsor returned a different transaction. Nothing was sent.");

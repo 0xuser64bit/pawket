@@ -11,6 +11,5 @@ export const SUPPORT_EMAIL = "hi@pawket.world";
 export function guildReportUrl(guild: { slug: string; name: string }, page: string): string {
   const subject = `Report: ${guild.name} (${guild.slug})`;
   const body = `Guild: ${page}\n\nWhat is wrong (impersonation, a scam link, a misleading claim, abuse):\n\n\nPawket can stop promoting a guild. It cannot remove it from Solana, take a pet out of it or undo anything it did.`;
-  // Mail clients read %20 as a space but never "+", so not URLSearchParams.
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

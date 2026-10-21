@@ -20,14 +20,13 @@ import {
   type MeshToonMaterial,
 } from "three";
 import type { Sky } from "@/components/pk";
-import { DECOR_SLOTS, type DecorSlot, type RoomDecor } from "@/lib/room/decor";
+import { AUTUMN, DECOR_SLOTS, type DecorSlot, type RoomDecor } from "@/lib/room/decor";
 import { SLOT_AT, buildDecor, type BuiltDecor } from "./decor";
 import { addOutline, disposeTree, toon } from "./materials";
 import { DAYLIGHT, type Tone } from "./palette";
 
 const BACK = -1.6;
 export const BED = { x: SLOT_AT.bed.x, z: SLOT_AT.bed.z };
-export const AUTUMN: ReadonlySet<number> = new Set([8, 9, 10]);
 
 const SKY_TONE: Record<Sky, Tone> = { warm: "sun-soft", cool: "pool-soft", plain: "surface-sunk" };
 

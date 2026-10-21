@@ -61,6 +61,8 @@ export const DECOR: readonly DecorPiece[] = [
   { id: "leaf-pile", name: "Leaf pile", slot: "side", line: "A heap of autumn leaves, for jumping in.", since: "2026-10-21" },
 ];
 
+export const AUTUMN: ReadonlySet<number> = new Set([8, 9, 10]);
+
 export function isNewDecor(piece: DecorPiece, now: Date): boolean {
   return piece.since !== undefined && now.getTime() - Date.parse(piece.since) < 30 * 86_400_000;
 }

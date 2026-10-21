@@ -3,7 +3,7 @@ import { useMounted } from "@/lib/utils/use-mounted";
 import { chime } from "@/lib/play/sound";
 import { haptic } from "@/lib/native/android";
 import { Icon, PetArt, PlayerArt, type Feeling, type GlassesName, type HatName, type IconName, type PetForm, type Temper } from "@/components/pk";
-import type { RoomDecor } from "@/lib/room/decor";
+import { AUTUMN, type RoomDecor } from "@/lib/room/decor";
 import { BedBack, BedFront, FlatDecor } from "./decor-art";
 
 const OWN_LEAF = { gold: "#ffc84a", berry: "#e2434b" };
@@ -34,7 +34,7 @@ export function FlatRoom({
   decor: RoomDecor;
 }) {
   const id = useId().replace(/:/g, "");
-  const autumn = useMounted() && [8, 9, 10].includes(new Date().getMonth());
+  const autumn = useMounted() && AUTUMN.has(new Date().getMonth());
   const [booped, setBooped] = useState(0);
   const [beaming, setBeaming] = useState(false);
   const beam = useRef(0);

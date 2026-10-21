@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { CLOTH_COLOURS } from "@/lib/player/look";
 import { CLOTH_TONE, DAYLIGHT } from "./palette";
 
-/** The Daylight tokens as `app/globals.css` declares them on `:root` (the block Daylight's preview shares). */
 function rootTokens(): Record<string, string> {
   const css = fs.readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
   const start = css.indexOf(':root,\n[data-theme-preview="light"] {');

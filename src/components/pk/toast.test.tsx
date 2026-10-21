@@ -6,7 +6,6 @@ const cards = () => Array.from(document.querySelectorAll<HTMLElement>(".pk-toast
 const depth = (title: string) => screen.getByText(title).closest(".pk-toast")!.getAttribute("data-depth");
 
 beforeEach(() => vi.useFakeTimers());
-// The store is the page's: each test dismisses what it shows, and the timers let it go.
 afterEach(() => {
   act(() => vi.runAllTimers());
   cleanup();

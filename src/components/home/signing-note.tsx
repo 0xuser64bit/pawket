@@ -6,18 +6,11 @@ import { useAndroidApp, useHere } from "@/lib/native/android";
 import { deviceFallback, needsSol, useSponsor } from "@/lib/solana/use-send";
 import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
 
-/**
- * For a pet on Solana, said before a tap rather than after one: why this
- * device cannot sign its care right now — not linked here, its link ran
- * out, today's limit used, an empty balance — and where that is fixed.
- * Nothing while it can, so a phone keeps its room.
- */
 export function SigningNote({ state, name }: { state: PawketWalletState | null; name: string }) {
   const { here, Here } = useHere();
   const app = useAndroidApp();
   const sponsor = useSponsor();
   if (!state || state.status !== "ready" || state.error) return null;
-  // An empty balance matters only while Pawket is not paying, and only once the sponsor has said so.
   const why = deviceFallback(state) ?? (sponsor.data && needsSol(state.balance, sponsor.data.available) ? "fund" : null);
   if (why === null) return null;
   const line =

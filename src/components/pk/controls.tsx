@@ -3,14 +3,6 @@ import { Problem } from "./surfaces";
 import { useId, type ComponentProps } from "react";
 import { Icon, type IconName } from "./icon";
 
-/* ------------------------------------------------------------------ Button */
-
-/**
- * Tone picks the meaning, not the mood. `sun` is the only tone for the main
- * action on a screen, and there is at most one per screen region. `paper` is
- * the only variant allowed on a Paper surface — square, hairline, mono, no
- * shelf, and deliberately unsatisfying to press.
- */
 type ButtonTone =
   | "sun"
   | "sprout"
@@ -56,12 +48,6 @@ function buttonFace({ label, size = "md", icon, after }: ButtonShape) {
   );
 }
 
-/**
- * An unavailable button stays focusable: it is `aria-disabled` and ignores a
- * press, rather than `disabled`, because disabling the focused button — a
- * send that has started, a care cooling down — drops keyboard focus to the
- * page, and a screen reader loses its place.
- */
 export function Button({
   label,
   tone,
@@ -94,7 +80,6 @@ export function Button({
   );
 }
 
-/** The same face, when the control navigates rather than asks. */
 export function ButtonLink({
   label,
   tone,
@@ -113,8 +98,6 @@ export function ButtonLink({
   );
 }
 
-/* -------------------------------------------------------------------- Chip */
-
 type ChipTone = "sun" | "sprout" | "pool" | "bloom" | "alarm" | "plain" | "paper";
 
 interface ChipShape {
@@ -128,11 +111,6 @@ function chipClass({ tone, className }: ChipShape) {
   return ["pk-chip", tone && `pk-chip--${tone}`, className].filter(Boolean).join(" ");
 }
 
-/**
- * A small, non-interactive label for a trait, a rarity, a status or a filter.
- * Status chips always carry a word — `pool` and `alarm` are the opposing
- * pair, and colour is never the only signal.
- */
 export function Chip({ label, tone, icon, className }: ChipShape) {
   return (
     <span className={chipClass({ label, tone, className })}>
@@ -142,13 +120,6 @@ export function Chip({ label, tone, icon, className }: ChipShape) {
   );
 }
 
-/* ------------------------------------------------------------------- Field */
-
-/**
- * An input that looks carved into the surface rather than floating on it.
- * A trailing suffix — a currency, a unit — stays faint, so a number is never
- * glued to a word. An error takes a word, never a red border alone.
- */
 export function Field({
   label,
   icon = "search",
@@ -162,7 +133,6 @@ export function Field({
   label: string;
   icon?: IconName;
   suffix?: string;
-  /** Amounts inside a field are mono, like every other figure in Pawket. */
   amount?: boolean;
   error?: string;
   helper?: string;

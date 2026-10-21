@@ -1,30 +1,9 @@
 import type { CSSProperties, ReactNode } from "react";
 
-/**
- * The pets. Flat shapes, one outline weight, no gradients — and drawn to be
- * held: a big head on a small body, eyes set low and wide with a shine in
- * each, a blush, small paws resting on the rim.
- *
- * Every drawing is composed for the pocket rim: the head sits in the upper
- * two thirds, the paws land at y≈88 where the rim crests at 92, and
- * everything below y≈100 is hidden inside a frame.
- *
- * A pet's face is its record, not decoration. Temperament sets the face it
- * wears when all is well; a need (hungry, lonely, tired, scruffy) replaces
- * it until it is cared for; radiant adds a few sparks. What it wears is
- * drawn on it. None of this is randomised, so a pet looks the same on every
- * screen that draws it.
- *
- * Hook-free on purpose: the share card renders this tree as plain SVG.
- */
-
 export type PetForm = "cat" | "dog" | "bun";
-/** How a pet holds its face when nothing is wrong. */
 export type Temper = "curious" | "cozy" | "brave" | "mischief";
-/** What the pet's record says it feels, in the art's terms. */
 export type Feeling = "radiant" | "happy" | "okay" | "hungry" | "lonely" | "tired" | "scruffy";
 
-/** Every colour a pet is drawn in. Tokens by default; hex for a card drawn with no stylesheet. */
 export interface PetPaint {
   ink: string;
   rim: string;
@@ -71,16 +50,12 @@ const TOKENS: PetPaint = {
   surface: "var(--surface)",
 };
 
-/** Each species' coat and patch, as token names in the paint. */
 const PET_COATS: Record<PetForm, { coat: string; patch: string }> = {
   cat: { coat: "var(--sun)", patch: "var(--sun-edge)" },
   dog: { coat: "var(--trim-copper)", patch: "var(--pet-cocoa)" },
   bun: { coat: "var(--pet-cloud)", patch: "var(--pet-cloud-shade)" },
 };
 
-/* ------------------------------------------------------------ geometry */
-
-/** Where the face sits on each species, so faces and clothes are drawn once. */
 const FACE: Record<PetForm, { eyeY: number; eyeL: number; eyeR: number; mouthY: number; cheekY: number; top: number; neck: number }> = {
   cat: { eyeY: 48, eyeL: 46, eyeR: 74, mouthY: 57.6, cheekY: 58, top: 19, neck: 72 },
   dog: { eyeY: 46, eyeL: 46, eyeR: 74, mouthY: 58, cheekY: 58, top: 21, neck: 72 },
@@ -97,7 +72,6 @@ function paws(lx: number, rx: number, y: number, coat: string, small = false) {
   ));
 }
 
-/** A tail is drawn twice: a wide pass in ink, then the coat inside it. */
 function tail(d: string, coat: string, ink: string, width = 8) {
   return (
     <g className="pk-pet-tail">
@@ -106,8 +80,6 @@ function tail(d: string, coat: string, ink: string, width = 8) {
     </g>
   );
 }
-
-/* ---------------------------------------------------------------- faces */
 
 type EyeKind = "open" | "sparkle" | "smile" | "sleepy" | "wink";
 type Brow = "none" | "brave" | "sad";
@@ -122,10 +94,6 @@ interface Face {
   extra?: "sparks" | "zzz" | "tear" | "tufts" | "drop";
 }
 
-/**
- * Temperament is the face at ease; a need overrides it until it is met.
- * Radiant is the face at ease with sparks around it.
- */
 export function faceFor(temper: Temper, feeling: Feeling): Face {
   if (feeling === "hungry") return { eyes: "open", brow: "sad", mouth: "drool", tilt: 0, blush: 0.6, extra: "drop" };
   if (feeling === "lonely") return { eyes: "open", brow: "sad", mouth: "frown", tilt: 4, blush: 0.4, extra: "tear" };
@@ -214,7 +182,6 @@ function mouth(kind: Mouth, form: PetForm, y: number, p: PetPaint) {
       </>
     );
   }
-  // The species' own resting mouth.
   if (form === "dog") {
     return (
       <>
@@ -279,8 +246,6 @@ function extras(kind: Face["extra"], form: PetForm, p: PetPaint) {
   }
   return null;
 }
-
-/* ------------------------------------------------------------- species */
 
 function catBack(coat: string, p: PetPaint) {
   return tail("M86 88c13-1 20-9 20-21 0-6-3-10-7.6-10.4", coat, p.ink);
@@ -350,12 +315,6 @@ function bunHead(coat: string, patch: string) {
   );
 }
 
-/* --------------------------------------------------------- clothes */
-
-/**
- * A wearable drawn on the pet. Ids are `src/lib/closet/catalog.ts`'s; an id
- * this does not know draws nothing, which is the honest failure.
- */
 function worn(id: string | null | undefined, form: PetForm, p: PetPaint, layer: "back" | "front") {
   if (!id) return null;
   const f = FACE[form];
@@ -471,7 +430,6 @@ function worn(id: string | null | undefined, form: PetForm, p: PetPaint, layer: 
         </g>
       );
     case "little-backpack":
-      // The straps, over the shoulders; the pack itself is drawn behind.
       return <path d={`M43 ${n - 4}c-2 8-2 16 0 24M77 ${n - 4}c2 8 2 16 0 24`} stroke={p.sunEdge} strokeWidth="4" fill="none" />;
     case "round-glasses": {
       const { eyeL: l, eyeR: r, eyeY: y } = f;
@@ -561,7 +519,6 @@ function worn(id: string | null | undefined, form: PetForm, p: PetPaint, layer: 
       );
     }
     case "halo": {
-      // Floats above the head: a ring of foil with an ink keyline either side.
       const y = f.top - 15;
       return (
         <g fill="none" className="pk-pet-halo">
@@ -615,7 +572,6 @@ function worn(id: string | null | undefined, form: PetForm, p: PetPaint, layer: 
       );
     }
     case "cowboy-hat": {
-      // A brim that curls up at both ends, and a creased crown with a sun band.
       const t = f.top + 2;
       return (
         <g>
@@ -683,7 +639,6 @@ function worn(id: string | null | undefined, form: PetForm, p: PetPaint, layer: 
   }
 }
 
-/** Worn on the head, so they tilt with it; the rest hang from the neck. */
 const ON_HEAD = new Set([
   "paper-crown",
   "nap-ribbon",
@@ -706,9 +661,6 @@ const ON_HEAD = new Set([
   "beret",
 ]);
 
-/* ---------------------------------------------------------------- PetArt */
-
-/** A small, stable offset from a name, so a park full of pets does not blink in step. */
 function phase(seed: string | undefined): string | undefined {
   if (!seed) return undefined;
   let h = 0;
@@ -716,6 +668,7 @@ function phase(seed: string | undefined): string | undefined {
   return `-${(Math.abs(h) % 40) / 10}s`;
 }
 
+/** Hook-free: `src/server/card.tsx` serialises this tree to SVG without React. */
 export function PetArt({
   form,
   temper = "curious",
@@ -731,21 +684,16 @@ export function PetArt({
   colours,
 }: {
   form: PetForm;
-  /** `rim` peeks over a pocket or a basket; `full` is the whole pet, sitting, for the playground. */
   pose?: "rim" | "full";
   temper?: Temper;
   feeling?: Feeling;
-  /** A wardrobe id; drawn on the pet. */
   wearing?: string | null;
   coat?: string;
   patch?: string;
-  /** The pocket rim the paws rest on. Drawn inside the artwork, not over it. */
   rim?: boolean;
   still?: boolean;
-  /** Anything stable about this pet (its name), to offset its blink from its neighbours'. */
   seed?: string;
   className?: string;
-  /** Resolved colours, for a drawing made where no stylesheet applies (a share card). */
   colours?: Partial<PetPaint>;
 }) {
   const p: PetPaint = { ...TOKENS, ...colours };
@@ -792,9 +740,6 @@ export function PetArt({
       className={className}
       style={life}
     >
-      {/* A pet breathes on a 3.6s loop from a 50% 100% origin, so it
-          settles on its feet; its eyes blink and its tail sways on the same
-          life. All of it stops under reduced motion. */}
       <g transform={pose === "full" ? "translate(0 -2)" : "translate(0 4)"}>
       <g
         className={still ? undefined : "pk-breathe"}
@@ -850,12 +795,6 @@ export function PetArt({
   );
 }
 
-/* ------------------------------------------------------------ WearableArt */
-
-/**
- * A wearable on its own, for a tile on the shelf: the same piece the pet
- * wears, laid flat on a 64px grid.
- */
 export function WearableArt({ id, className }: { id: string; className?: string }) {
   const p = TOKENS;
   let art: ReactNode = null;

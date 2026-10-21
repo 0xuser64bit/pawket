@@ -37,7 +37,6 @@ const PARTS = [
   { key: "extras", label: "Extras" },
 ] as const;
 
-/** A look in a sentence, for a summary line. */
 function lookSummary(look: PlayerLook): string {
   return [
     look.hair === "none" ? "Shaved" : `${LOOK_LABEL.hairColour[look.hairColour]} ${LOOK_LABEL.hair[look.hair].toLowerCase()}`,
@@ -49,7 +48,6 @@ function lookSummary(look: PlayerLook): string {
   ].join(", ");
 }
 
-/** An outfit, drawn as the colours it is made of. */
 function OutfitDots({ look }: { look: PlayerLook }) {
   const dots = [
     HAIR_COLOURS[look.hairColour],
@@ -67,12 +65,6 @@ function OutfitDots({ look }: { look: PlayerLook }) {
 }
 
 
-/**
- * How the player looks in the room, in full: five parts as tabs, three
- * outfits to keep and put back on, and a surprise. Saved on this device;
- * like the pet's wardrobe it is expression only. The room above it changes
- * as you go.
- */
 export function LookEditor({
   look,
   shown,
@@ -80,7 +72,6 @@ export function LookEditor({
 }: {
   look: PlayerLook;
   shown: boolean;
-  /** The pet at home, whose hat or glasses the player can match. */
   twin?: { name: string; wearing: string | null };
 }) {
   const [part, setPart] = useState<(typeof PARTS)[number]["key"]>("body");
@@ -108,7 +99,6 @@ export function LookEditor({
       bottomColour: pick(CLOTH_COLOURS),
       shoes: pick(SHOES.filter((s) => s !== "none")),
       shoeColour: pick(CLOTH_COLOURS),
-      // Half the time, nothing on the head or the nose: a surprise is not always a hat.
       headwear: Math.random() < 0.5 ? "none" : pick(HEADWEAR),
       headwearColour: pick(CLOTH_COLOURS),
       eyewear: Math.random() < 0.5 ? "none" : pick(EYEWEAR),
@@ -149,7 +139,6 @@ export function LookEditor({
         <Button label="Surprise me" icon="spark" tone="quiet" size="sm" onClick={surprise} />
       </div>
       <div className="pk-look">
-        {/* Five facets, one at a time, so the room stays in view above. */}
         <div
           role="tablist"
           aria-label="Parts of your look"

@@ -17,7 +17,6 @@ function subscribe(listener: () => void) {
   };
 }
 
-/** The document is the store: the pre-paint script has already applied the pick. */
 function readChoice(): ThemeChoice {
   const picked = document.documentElement.dataset.theme;
   return isThemeId(picked) ? picked : "system";
@@ -27,17 +26,14 @@ function readScheme(): "light" | "dark" {
   return getComputedStyle(document.documentElement).colorScheme.includes("dark") ? "dark" : "light";
 }
 
-/** Whether the room in force is a day room or an evening one. The 3D room lights the lantern for an evening. */
 export function useTheme(): "light" | "dark" {
   return useSyncExternalStore(subscribe, readScheme, () => "light" as const);
 }
 
-/** The player's pick, or "system" when the room follows the device. */
 export function useThemeChoice(): ThemeChoice {
   return useSyncExternalStore(subscribe, readChoice, () => "system" as const);
 }
 
-/** A token's value in the theme in force, read from the page, not from a copy. */
 export function useToken(name: `--${string}`, fallback: string): string {
   return useSyncExternalStore(
     subscribe,
@@ -46,7 +42,6 @@ export function useToken(name: `--${string}`, fallback: string): string {
   );
 }
 
-/** Move into a room. Remembered on this device; a blocked store keeps it until a reload. */
 export function setTheme(choice: ThemeChoice) {
   const root = document.documentElement;
   const apply = () => {
@@ -55,21 +50,15 @@ export function setTheme(choice: ThemeChoice) {
     try {
       if (choice === "system") window.localStorage.removeItem(THEME_KEY);
       else window.localStorage.setItem(THEME_KEY, choice);
-    } catch {
-      // A blocked store only means the choice does not survive a reload.
-    }
-    // The browser's own chrome takes the room's ground.
+    } catch {}
     const ground = getComputedStyle(root).getPropertyValue("--ground").trim();
     for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) meta.content = ground;
-    // Drawn now, inside the transition, so its new picture has the new room in it.
+    // Synchronously: the view transition snapshots the page as this callback leaves it.
     flushSync(() => {
       for (const listener of listeners) listener();
     });
   };
-  // The whole page crossfades into the new room where the browser can, and
-  // simply changes where it cannot or motion is reduced.
   if ("startViewTransition" in document && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    // Marked, so this crossfade is the room's and not a screen's arrival.
     const root = document.documentElement;
     root.dataset.transition = "room";
     document.startViewTransition(apply).finished.finally(() => delete root.dataset.transition);
@@ -80,16 +69,10 @@ export function setTheme(choice: ThemeChoice) {
 
 const named = (id: ThemeId) => THEMES.find((theme) => theme.id === id)!;
 
-/** The room shown when nothing is picked: the device decides between these two. */
 function roomInForce(choice: ThemeChoice, scheme: "light" | "dark") {
   return named(choice === "system" ? (scheme === "dark" ? "dark" : "light") : choice);
 }
 
-/**
- * A room in its own colours: the ground, a card on it, the sun and a pet,
- * drawn with the theme's tokens (the element carries `data-theme-preview`),
- * so what a player sees here is exactly what they will get.
- */
 function Swatch({ id, form = "cat" }: { id: ThemeId; form?: PetForm }) {
   return (
     <span className="pk-swatch-room" data-theme-preview={id} aria-hidden="true">
@@ -106,12 +89,6 @@ function Swatch({ id, form = "cat" }: { id: ThemeId; form?: PetForm }) {
 
 const NOTHING_OWNED: ReadonlySet<number> = new Set();
 
-/**
- * Every room, as a radio group of drawn previews — native radios, so the
- * arrow keys move the pick and Tab leaves the group. "Follow my device" is
- * the first choice and the default. A Market room the closet (`owned`, item
- * ids) does not hold yet is a way to the Market, never a free pick.
- */
 export function ThemePicker({
   form,
   name = "pawket-theme",
@@ -159,12 +136,6 @@ export function ThemePicker({
   );
 }
 
-/**
- * The shell's room switch: shows the room's colours, and a tap moves into
- * the next one — every free room, and the Market rooms the closet (`owned`)
- * holds. The accessible name carries both rooms; "Follow my
- * device" lives with the other rooms in Settings.
- */
 export function ThemeButton({ owned = NOTHING_OWNED }: { owned?: ReadonlySet<number> }) {
   const choice = useThemeChoice();
   const scheme = useTheme();

@@ -15,12 +15,6 @@ import type { RoomCue } from "@/lib/room/moments";
 import { Guestbook } from "./guestbook";
 import { nameHeadingClass } from "@/lib/utils/format";
 
-/**
- * Visiting a pet that lives on Solana: you, as you dressed yourself, in its
- * room with it. Emotes are for the two of you and change nothing; a wave
- * goes into its guestbook on Solana, and the room plays it once Solana has
- * it. Nothing here can care for someone else's pet.
- */
 export function VisitRoom({
   record,
   address,
@@ -67,7 +61,6 @@ export function VisitRoom({
           onStatus={onStatus}
           stage
         />
-        {/* The room shows the moment; only a screen reader needs it said. */}
         <p role="status" className="pk-sr">
           {status.sentence}
         </p>

@@ -6,11 +6,6 @@ import { petLook } from "@/lib/game/appearance";
 import type { GuestPet } from "@/lib/guest/pet";
 import type { SocialRecord } from "@/lib/companion/use-social";
 
-/**
- * The sticker book: every sticker a pet's record can earn, and which of your
- * pets have earned it. Each is read from the record, so a sticker cannot be
- * bought and is never lost; one not yet earned says how.
- */
 export function StickerBook({
   pets,
   onChain,
@@ -20,7 +15,6 @@ export function StickerBook({
   pets: GuestPet[];
   onChain: Set<string>;
   inGuild: Set<string>;
-  /** Waves and gatherings, for pets on Solana. */
   social?: Map<string, SocialRecord>;
 }) {
   const earnedBy = new Map<string, GuestPet[]>();

@@ -19,23 +19,12 @@ import { WEARABLES } from "@/lib/closet/catalog";
 import { addOutline, toon } from "./materials";
 import { DAYLIGHT, type Tone } from "./palette";
 
-/**
- * The wardrobe in 3D. Every item in `src/lib/closet/catalog.ts` has a shape
- * here, fitted to Kenney's cube animals — all three share one body box, so
- * one fit serves every species. Units are the body node's, before the pet
- * is scaled: the face is +Z, the box is about ±0.62 wide, 0–1.41 tall and
- * −0.63…0.70 deep.
- *
- * Looks only, like the catalog: nothing here reaches a vital.
- */
-
 function part(geometry: BufferGeometry, tone: Tone, outline = true): Mesh {
   const mesh = new Mesh(geometry, toon({ color: DAYLIGHT[tone] }));
   if (outline) addOutline(mesh);
   return mesh;
 }
 
-/** A closed loop hugging the box at height `y`, `out` metres off its sides. */
 function band(y: number, out: number, radius: number): TubeGeometry {
   const w = 0.62 + out;
   const front = 0.7 + out;
@@ -126,7 +115,6 @@ const FIT: Record<string, () => Object3D> = {
     return pin;
   },
   "rain-cape": () => {
-    // A U-shaped band over the top and down both sides, laid along the back.
     const outer = 0.68;
     const inner = outer - 0.035;
     const top = 1.46;
@@ -171,17 +159,14 @@ const FIT: Record<string, () => Object3D> = {
   },
 };
 
-/** Where the eyes sit on the front face: glasses are fitted to them. */
 const EYES = { y: 0.6, x: 0.2, z: 0.71 };
 
-/** A dome over the top of the box, for a hat. */
 function dome(radius: number, squash: number, tone: Tone): Mesh {
   const mesh = part(new SphereGeometry(radius, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), tone);
   mesh.scale.set(1, squash, 1);
   return mesh;
 }
 
-/** A flattened sphere: a leaf, a petal, a wing. */
 function blob(radius: number, scale: [number, number, number], tone: Tone): Mesh {
   const mesh = part(new SphereGeometry(radius, 16, 12), tone);
   mesh.scale.set(...scale);
@@ -311,7 +296,6 @@ Object.assign(FIT, {
     const pocket = part(new BoxGeometry(0.4, 0.24, 0.1), "sun-edge");
     pocket.position.set(0, 0.6, -0.94);
     g.add(pocket);
-    // The pet is all head, so its straps would cross its crown: the pack alone reads as a pack.
     return g;
   },
   "strawberry-hat": () => {
@@ -365,7 +349,6 @@ Object.assign(FIT, {
     g.position.set(0, 1.43, 0.04);
     return g;
   },
-  // The Market's pieces: the same hand as the rest, a little grander.
   halo: () => {
     const ring = part(new TorusGeometry(0.34, 0.045, 10, 40), "trim-foil");
     ring.rotation.x = Math.PI / 2;
@@ -436,10 +419,8 @@ Object.assign(FIT, {
     g.position.set(0.12, 1.41, 0.12);
     return g;
   },
-  // The Market's second shelf.
   "cowboy-hat": () => {
     const g = new Group();
-    // A brim whose two sides curl up, under a crown with a sun band.
     const brim = new CylinderGeometry(0.84, 0.84, 0.045, 36);
     const pos = brim.getAttribute("position");
     for (let i = 0; i < pos.count; i++) pos.setY(i, pos.getY(i) + Math.max(0, Math.abs(pos.getX(i)) - 0.42) * 0.5);
@@ -496,7 +477,6 @@ Object.assign(FIT, {
   },
   headphones: () => {
     const g = new Group();
-    // A band over the crown from one side of the head to the other, a cup on each.
     const band = part(new TorusGeometry(0.7, 0.05, 8, 36, Math.PI), "pool");
     band.position.y = 0.8;
     g.add(band);
@@ -539,7 +519,6 @@ Object.assign(FIT, {
   },
 } satisfies Record<string, () => Object3D>);
 
-/** The item's shape, ready to parent to the pet's body, or null if none exists. */
 export function wearableFor(id: string): Object3D | null {
   const make = FIT[id];
   if (!make) return null;
@@ -548,12 +527,10 @@ export function wearableFor(id: string): Object3D | null {
   return item;
 }
 
-/** Whether the room can draw this item. Anything it cannot stays a word. */
 export function isShownIn3D(id: string): boolean {
   return id in FIT;
 }
 
-/** Catalog ids with no shape yet — kept at zero by `wearables.test.ts`. */
 export function wearablesWithoutShape(): string[] {
   return WEARABLES.filter((item) => !(item.id in FIT)).map((item) => item.id);
 }

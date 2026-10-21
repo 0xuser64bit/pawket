@@ -21,35 +21,23 @@ import { chime } from "@/lib/play/sound";
 import { haptic } from "@/lib/native/android";
 
 export interface RoomView {
-  /** Turn the view a step left (-1) or right (1). */
   nudge: (direction: number) => void;
   reset: () => void;
-  /** The room as it is now, as a PNG data URL: drawn and read in the same frame. */
   snap: () => string | null;
-  /**
-   * Strike a photo pose, or let it go with `null`, then take the photo: the
-   * next frame drawn, once the shadows and the camera have moved with it.
-   * Null if the room does not draw (off screen, hidden) or cannot be read.
-   */
   pose: (id: PhotoPose | null) => Promise<string | null>;
 }
 
 export interface Room3DProps {
-  /** The pet on stage, in its coat's 3D colours (the classic coat when left out). */
   pet: { species: PetSpecies; name: string; wearing: string | null; mood: PetMood; coat?: { main: string; second: string } } | null;
   look: PlayerLook;
   sky: Sky;
   evening: boolean;
   edge: string;
-  /** The pet's sky in the room the player picked: the wall by day. */
   wall: string;
-  /** What stands in the room: the player's picture, plant, rug, bed and the thing past it. */
   decor: RoomDecor;
   cue: RoomCue | null;
   reduced: boolean;
-  /** False while the room is off screen or the tab is hidden: nothing renders. */
   active: boolean;
-  /** Phones render at one device pixel. */
   compact: boolean;
   view: Ref<RoomView>;
   onStatus: (status: DirectorStatus) => void;
@@ -59,7 +47,7 @@ export interface Room3DProps {
 
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
-/** The canvas as a PNG, read before the browser shows the frame (the buffer is not kept). */
+/** Read in the frame it was drawn: WebGL clears the buffer once the frame is shown. */
 function picture(canvas: HTMLCanvasElement): string | null {
   try {
     return canvas.toDataURL("image/png");
@@ -70,12 +58,6 @@ function picture(canvas: HTMLCanvasElement): string | null {
 type File = Promise<GLTF> & { status?: "fulfilled" | "rejected"; value?: GLTF; reason?: unknown };
 const files = new Map<string, File>();
 
-/**
- * One request per file for the life of the page. A file that has arrived is
- * marked as such, the way `use` reads a promise, so a model already here is
- * drawn in the same frame rather than after a beat of suspense. One that
- * failed is forgotten, so trying the room again asks again.
- */
 function load(url: string): Promise<GLTF> {
   let file = files.get(url);
   if (!file) {
@@ -96,11 +78,6 @@ function load(url: string): Promise<GLTF> {
 const arrived = (url: string) => files.get(url)?.status === "fulfilled";
 const petFile = (species: PetSpecies) => `/3d/pets/${SPECIES_MODEL[species]}.glb`;
 
-/**
- * The pet on stage. A pet of another species takes the stage only once its
- * model has arrived — until then the last one stays — so switching pets
- * never blanks the room.
- */
 function useArrivedPet(pet: Room3DProps["pet"]): Room3DProps["pet"] {
   const [last, setLast] = useState(pet);
   const [, settled] = useState(0);
@@ -120,25 +97,17 @@ function useArrivedPet(pet: Room3DProps["pet"]): Room3DProps["pet"] {
 
 const bodyFile = (body: string) => `/3d/human/body-${body}.glb`;
 
-/** Fetch a body before the player picks it, so the switch is instant. */
 function preloadBody(body: string): void {
   void load(bodyFile(body));
 }
 
-/**
- * The one Canvas. Everything else in the room is plain three.js driven from
- * here, so React re-renders only when something about the room changes.
- */
 export default memo(function Room3D(props: Room3DProps) {
   const { active, reduced, compact, onLost } = props;
   const pet = useArrivedPet(props.pet);
-  // A device that cannot keep up gets fewer pixels, once, rather than jank.
   const [slow, setSlow] = useState(false);
   const onSlow = useCallback(() => setSlow(true), []);
-  // Letting go of the canvas loses its context on purpose, and the renderer
-  // does it while React is still unmounting the room — so this is a layout
-  // effect, whose cleanup runs before the canvas's. Only a loss while the
-  // room is still here is a room that stopped drawing.
+  // R3F loses the context on purpose while unmounting; a layout effect's cleanup runs first, so only
+  // a loss while mounted counts.
   const here = useRef(false);
   useLayoutEffect(() => {
     here.current = true;
@@ -155,9 +124,7 @@ export default memo(function Room3D(props: Room3DProps) {
       gl={{ antialias: true, powerPreference: "high-performance" }}
       style={{ touchAction: "pan-y" }}
       onCreated={({ gl }) => {
-        // Asking a shader for its log waits for it to finish compiling, which
-        // turns the room's async compile back into a long freeze on arrival.
-        // Development keeps the check, as three.js advises; production skips it.
+        // Reading a shader's log blocks until it compiles, undoing the async compile: development only.
         gl.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
         gl.domElement.style.touchAction = "pan-y";
         gl.domElement.addEventListener("webglcontextlost", (event) => {
@@ -174,8 +141,6 @@ export default memo(function Room3D(props: Room3DProps) {
 });
 
 function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, view, onStatus, onReady, onSlow }: Room3DProps & { onSlow?: () => void }) {
-  // The body on screen changes only once the new one has arrived, so a
-  // switch never blanks the room.
   const [shown, setShown] = useState(look.body);
   useEffect(() => {
     let alive = true;
@@ -188,15 +153,13 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
   const petGltf = pet ? use(load(petFile(pet.species))) : null;
   const { camera, size, invalidate, gl, scene } = useThree();
 
-  // Dressed as it is built, so its things are in the scene when the shaders compile ahead of the first frame;
-  // a thing placed later compiles when it arrives.
+  // Dressed as it is built, so its things compile with the scene before the first frame.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const room = useMemo(() => buildRoom(decor), []);
   const world = useMemo(() => new Group(), []);
   const human = useMemo(() => new HumanActor(body.scene, body.animations), [body]);
   const petActor = useMemo(
     () => (petGltf ? new PetActor(petGltf.scene, petGltf.animations, pet?.wearing ?? null) : null),
-    // Wearing changes are applied below without rebuilding the pet.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [petGltf],
   );
@@ -207,7 +170,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
     ready.current = onReady;
   });
 
-  // One director for the life of this stage; it outlives body switches.
   const [director] = useState(
     () =>
       new Director({
@@ -223,10 +185,8 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
       }),
   );
   useEffect(() => director.listen(onStatus), [director, onStatus]);
-  // Mood drifts as vitals decay; the pet's life between moments follows it.
   useEffect(() => director.setMood(pet?.mood ?? null), [director, pet?.mood]);
 
-  // A new body (build one ↔ two) takes over the old one's place and clip.
   useEffect(() => {
     if (director.human !== human) {
       const old = director.human;
@@ -240,9 +200,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
     };
   }, [director, human, world, invalidate]);
 
-  // A change of clothes is seen happening: whoever changed gives a quick
-  // squash and stretch from the feet. Not on arrival, and never under
-  // reduced motion.
   const dressedAt = useRef({ human: -Infinity, pet: -Infinity });
   const lookSeen = useRef(false);
   useEffect(() => {
@@ -252,8 +209,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
     invalidate();
   }, [human, look, invalidate, reduced]);
 
-  // With the cast in the scene, shaders compile off the main path before
-  // the first 3D frame, so the flat room stays responsive meanwhile.
   const compiled = useRef(false);
   useEffect(() => {
     let alive = true;
@@ -268,7 +223,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
     };
   }, [gl, scene, camera, invalidate]);
 
-  // A coat is the model's own colours swapped, seen at once.
   const coatMain = pet?.coat?.main;
   const coatSecond = pet?.coat?.second;
   useEffect(() => {
@@ -287,7 +241,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
     invalidate();
   }, [petActor, pet?.wearing, invalidate, reduced]);
 
-  // A thing placed or taken away is seen at once; one left in place is not rebuilt.
   useEffect(() => {
     room.dress(decor);
     invalidate();
@@ -304,7 +257,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
     invalidate();
   }, [director, reduced, invalidate]);
 
-  // A cue from the page: a care that was saved, or an emote.
   const lastCue = useRef<number | null>(null);
   useEffect(() => {
     if (!cue || cue.nonce === lastCue.current) return;
@@ -312,8 +264,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
     director.play(cue.moment);
     invalidate();
     if (reduced) {
-      // Nothing moves, so the frame loop only needs a few frames a second
-      // while a still is held, to know when to let it go.
       const timer = window.setInterval(() => {
         invalidate();
         if (!director.busy) window.clearInterval(timer);
@@ -324,14 +274,11 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
 
   useEffect(() => () => director.dispose(), [director]);
 
-  // The view: a gentle drag turns the room, and it springs back.
   const orbit = useRef({ az: 0, el: 0, wantAz: 0, wantEl: 0, lastTouch: -10, drag: null as null | { x: number; y: number; az: number; el: number } });
-  /** Waiting for the next frame drawn, to take it as a photo. */
   const shutter = useRef<((url: string | null) => void) | null>(null);
   useImperativeHandle(view, () => ({
     pose: async (id) => {
       await director.holdPhoto(id);
-      // A pose faces the camera square on; a candid photo keeps the turn the player gave the room.
       if (id) Object.assign(orbit.current, { az: 0, el: 0, wantAz: 0, wantEl: 0 });
       shutter.current?.(null);
       return new Promise<string | null>((resolve) => {
@@ -372,7 +319,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
       if (!o.drag) return;
       const w = el.clientWidth || 1;
       o.wantAz = Math.max(-0.45, Math.min(0.45, o.drag.az - ((event.clientX - o.drag.x) / w) * 1.3));
-      // A finger's vertical drag belongs to the page, so only a pointer tilts.
       if (event.pointerType !== "touch") o.wantEl = Math.max(-0.08, Math.min(0.22, o.drag.el + ((event.clientY - o.drag.y) / w) * 0.8));
       o.lastTouch = performance.now() / 1000;
       invalidate();
@@ -393,7 +339,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
     };
   }, [gl, invalidate]);
 
-  // Once the room is up and quiet, fetch the other build too.
   useEffect(() => {
     const timer = window.setTimeout(() => preloadBody(shown === "a" ? "b" : "a"), 5000);
     return () => window.clearTimeout(timer);
@@ -401,8 +346,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
 
   const started = useRef(false);
   const base = useMemo(() => new Vector3(), []);
-  // Two seconds under 40 fps at full resolution, and the Canvas drops to one pixel per CSS pixel.
-  // The first second (texture uploads, first draws) does not count.
   const pace = useRef({ warm: 0, time: 0, frames: 0 });
   useFrame((state, delta) => {
     if (!compiled.current) return;
@@ -427,7 +370,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
     shadows.human.position.set(director.human.root.position.x, 0.014, director.human.root.position.z);
     if (petActor) shadows.pet.position.set(petActor.root.position.x, 0.014, petActor.root.position.z);
 
-    // Frame the stage for this aspect: the player, the pet and the window.
     const cam = camera as PerspectiveCamera;
     const o = orbit.current;
     const now = state.clock.elapsedTime;
@@ -441,7 +383,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
     const drift = reduced ? 0 : Math.sin(now * 0.21) * 0.018;
     const aspect = size.width / Math.max(1, size.height);
     const half = Math.tan((cam.fov * Math.PI) / 360);
-    // A phone frames tighter: the two of them, less of the corners.
     const fit = Math.max(1.22 / half, (compact ? 1.72 : 2.05) / (half * aspect));
     const distance = fit * (1 - 0.16 * director.zoom);
     base.set(-0.12, 0.9, 0.12).lerp(director.focus, 0.4);
@@ -489,7 +430,6 @@ function Stage({ pet, look, evening, edge, wall, decor, cue, reduced, compact, v
 
 const DRESS_SECONDS = 0.46;
 
-/** Just dressed: a squash, a stretch and still again, from the feet (the root's origin), then left alone. */
 function dressed(object: Object3D, age: number): void {
   if (!(age >= 0 && age < DRESS_SECONDS)) {
     if (object.scale.y !== 1) object.scale.setScalar(1);
@@ -500,7 +440,6 @@ function dressed(object: Object3D, age: number): void {
   object.scale.set(1 + s * 0.6, 1 - s, 1 + s * 0.6);
 }
 
-/** The pet is pressable: a pointer over it says so. */
 function pointAt(el: HTMLElement, pressable: boolean): void {
   el.style.cursor = pressable ? "pointer" : "";
 }

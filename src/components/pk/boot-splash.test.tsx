@@ -10,7 +10,6 @@ it("lifts away on time even where its fade never ends", () => {
   const { container } = render(<BootSplash />);
   act(() => vi.advanceTimersByTime(1400));
   expect(container.querySelector(".pk-boot--out")).not.toBeNull();
-  // No animationend: jsdom runs no animations, like a page whose animations are paused.
   act(() => vi.advanceTimersByTime(700));
   expect(container.querySelector(".pk-boot")).toBeNull();
   vi.unstubAllGlobals();

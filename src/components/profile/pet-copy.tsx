@@ -14,12 +14,6 @@ const pets = (n: number) => `${n} ${n === 1 ? "pet" : "pets"}`;
 const names = (list: readonly { name: string }[]) =>
   list.length <= 2 ? list.map((p) => p.name).join(" and ") : `${list.slice(0, -1).map((p) => p.name).join(", ")} and ${list.at(-1)!.name}`;
 
-/**
- * A copy of the pets in this browser, and the way to bring pets back from
- * one: the record they live in, as text to keep where the player likes. In a
- * browser it is also a file; the Android app saves no files, so there it is
- * text for a note. Pets on Solana need no copy — their record is there.
- */
 export function PetCopy({ companion }: { companion: CompanionState }) {
   const app = useAndroidApp();
   const { here, Here } = useHere();
@@ -50,7 +44,7 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
     document.body.append(link);
     link.click();
     link.remove();
-    // The download reads the file after the click returns; letting it go at once can cancel it.
+    // Revoked only later: some browsers read the file after the click returns.
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     setSaved(`A copy of ${pets(local.length)} is in your downloads, as ${name}.`);
     record({ name: "pets_copied", how: "file" });
@@ -87,7 +81,6 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
       read.unreadable ? `${pets(read.unreadable)} in the copy could not be read.` : "",
     ].filter(Boolean);
     setBrought(parts.join(" "));
-    // A pet that came back wears the coat it wore in the copy.
     for (const pet of [...result.added, ...result.updated]) if (read.coats[pet.id]) chooseCoat(pet.id, read.coats[pet.id]);
     if (result.added.length || result.updated.length) {
       setText("");

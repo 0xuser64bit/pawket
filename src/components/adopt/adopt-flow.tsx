@@ -43,7 +43,6 @@ import { chooseCoat } from "@/lib/player/use-coats";
 
 const SPECIES = [PetSpecies.LunaCat, PetSpecies.MossPup, PetSpecies.CloudBun];
 
-/** One line each, about the animal — what it is like to live with, not what it is worth. */
 const SPECIES_LINE: Record<PetSpecies, string> = {
   [PetSpecies.LunaCat]: "Naps in sunbeams and follows you from room to room.",
   [PetSpecies.MossPup]: "Meets you at the door like you were gone a year.",
@@ -63,14 +62,12 @@ const NAMES: Record<PetSpecies, string[]> = {
   [PetSpecies.CloudBun]: ["Tuesday", "Mochi", "Clover", "Dumpling", "Puff"],
 };
 
-/** "Pepper will have company." — the pets already here, named. */
 function companyLine(names: string[]): string {
   if (names.length === 1) return `${names[0]} will have company.`;
   if (names.length === 2) return `${names[0]} and ${names[1]} will have company.`;
   return `${names[0]}, ${names[1]} and ${names.length - 2} more will have company.`;
 }
 
-/** Three paws, one per step: the ones behind you filled, the one you are on outlined in sun. */
 function Steps({ step }: { step: 1 | 2 | 3 }) {
   return (
     <ol className="pk-steps" aria-label={`Step ${step} of 3`}>
@@ -93,11 +90,6 @@ function Bar({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
   );
 }
 
-/**
- * One step of the three. Going on, the next one comes in from the right as
- * this one steps left; Back runs the other way — the same motion as going
- * deeper into a place, and back out of it.
- */
 function StepView({ narrow = false, scope, children }: { narrow?: boolean; scope?: Ref<HTMLElement>; children: ReactNode }) {
   return (
     <ViewTransition enter={ARRIVE} exit={LEAVE} default="none">
@@ -108,7 +100,6 @@ function StepView({ narrow = false, scope, children }: { narrow?: boolean; scope
   );
 }
 
-/** The name stitched on the blanket, sized so a long one still fits across it. */
 function Tag({ name, empty }: { name: string; empty?: boolean }) {
   return (
     <span
@@ -126,30 +117,14 @@ function AdoptBack({ onBack }: { onBack: () => void }) {
   return <Button label="Back" tone="ghost" icon="left" className="pk-btn--flush" onClick={onBack} />;
 }
 
-/**
- * Three taps to a pet. A player keeps as many as they adopt: a new one
- * joins the others in this browser and comes home, and nobody already here
- * is touched on the way through.
- *
- * The pets are the page: all three sit large and alive, their eyes follow
- * the pointer, choosing one makes it hop, and the temperament you pick is
- * the face it wears from then on. The name is stitched on its blanket as
- * you type it.
- *
- * Each step replaces the last in place, so focus and scroll move to the new
- * step's heading — otherwise a keyboard or screen reader is left on a button
- * that no longer exists.
- */
 export function AdoptFlow() {
   const router = useRouter();
   const [opening, startOpening] = useTransition();
   const goHome = () => startOpening(() => router.push("/home", { transitionTypes: ["nav-place"] }));
-  // Adoption has no dock to fetch Home ahead, so it asks for it: "Take them home" is then instant.
   useEffect(() => {
     router.prefetch("/home");
   }, [router]);
   const { ready, pets: residents } = usePets();
-  // A connected wallet's pets on Solana: a name it keeps there could never be kept again from here.
   const { owned } = useCompanion();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [species, setSpecies] = useState<PetSpecies>(PetSpecies.LunaCat);
@@ -179,8 +154,6 @@ export function AdoptFlow() {
     });
   }
 
-  // On a phone the three are a row you swipe: the one you land on is the one
-  // chosen, so the button under them never names a pet you swiped past.
   useEffect(() => {
     const row = stage.current;
     if (step !== 1 || !row) return;
@@ -188,8 +161,7 @@ export function AdoptFlow() {
     const io = new IntersectionObserver(
       () => {
         if (row.scrollWidth <= row.clientWidth) return;
-        // Observer entries can describe the previous viewport after a resize.
-        // Read the current carousel so the CTA always names the visible pet.
+        // Observer entries can predate a resize: measure the row as it is now.
         const center = row.getBoundingClientRect().left + row.clientWidth / 2;
         let closest: HTMLElement | undefined;
         let distance = Infinity;
@@ -215,7 +187,6 @@ export function AdoptFlow() {
 
   const form = SPECIES_ART[species];
   const sky = SPECIES_SKY[species];
-  // A coat belongs to its species: another species starts in its classic one.
   const coat = findCoat(species, coatId);
   const temper = PERSONALITY_TEMPER[personality];
   const typed = name.trim();
@@ -244,7 +215,6 @@ export function AdoptFlow() {
         choosePet(created.id);
         if (coat.id !== "classic") chooseCoat(created.id, coat.id);
         record({ name: "pet_adopted" });
-        // The pet lives only in this browser: ask it to keep the storage rather than clear it.
         void askBrowserToKeep();
       }
       setAdopted(created);
@@ -252,8 +222,6 @@ export function AdoptFlow() {
       setError(undefined);
       go(3);
     } catch {
-      // The rule comes from the on-chain name seed (2–24 UTF-8 bytes); the
-      // sentence a player reads should not.
       setError(typed.length < 2 ? "A name needs at least two plain letters, or a single emoji." : "That name is too long. Shorten it; accents and emoji use more room.");
       nameInput.current?.focus();
     }
@@ -270,8 +238,6 @@ export function AdoptFlow() {
     setStored(saved);
   }
 
-  // The first step draws before this browser's pets are read: only the line
-  // about who will have company waits for them.
   if (step === 1) {
     return (
       <StepView key={1} scope={scope}>

@@ -1,12 +1,6 @@
 import { useId, type ReactNode } from "react";
 import type { PhotoFrameId } from "@/lib/market/frames";
 
-/**
- * A photo frame as the Market shows it: a small print — the room behind,
- * the paper under it, a line for the names — in that frame, drawn the way
- * `printPhoto` draws it, so the shelf and the print agree. Tokens only, so
- * it is in whichever room the player is in.
- */
 export function FrameArt({ id, className }: { id: PhotoFrameId; className?: string }) {
   const clip = useId();
   const square = id === "postcard" || id === "film" || id === "polaroid";
@@ -14,7 +8,6 @@ export function FrameArt({ id, className }: { id: PhotoFrameId; className?: stri
   const thick = id === "sunshine" || id === "film" || id === "starry";
   const stroke =
     id === "sunshine" ? "var(--sun)" : id === "garden" ? "var(--sprout)" : id === "hearts" ? "var(--pet-blush)" : id === "starry" ? "var(--pool)" : "var(--edge)";
-  // The photo's place on the print.
   const [x, y, w, h] = [16, 12, 68, 56];
   let extra: ReactNode = null;
   switch (id) {

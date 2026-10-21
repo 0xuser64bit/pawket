@@ -4,7 +4,6 @@ import { BAKED } from "@/lib/player/coats";
 import { PetSpecies } from "@/lib/game/enums";
 import { PetActor } from "./pet";
 
-/** A stand-in for a pet's file: a body whose vertices wear the cat's baked coat, its stripe and an eye. */
 function catFile() {
   const linear = (hex: string) => new Color(hex).toArray();
   const colours = [...linear(BAKED[PetSpecies.LunaCat].main), ...linear(BAKED[PetSpecies.LunaCat].second), ...linear("#2a1e14")];
@@ -28,7 +27,6 @@ it("paints a coat over the baked colours only, and can always paint the classic 
   const colour = (i: number) => new Color().fromBufferAttribute(mesh.geometry.getAttribute("color") as BufferAttribute, i);
   expect(colour(0).getHexString()).toBe("cdbbe6");
   expect(colour(1).getHexString()).toBe("9d88c2");
-  // The eye keeps its ink, and the file every other pet is drawn from is untouched.
   expect(colour(2).getHexString()).toBe("2a1e14");
   expect(mesh.geometry).not.toBe(geometry);
   expect(new Color().fromBufferAttribute(geometry.getAttribute("color") as BufferAttribute, 0).getHexString()).toBe("ff8a3d");

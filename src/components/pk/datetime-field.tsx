@@ -8,34 +8,26 @@ import { Icon } from "./icon";
 import { Sheet } from "./sheet";
 
 const never = () => () => {};
-/** True once in the browser: the server knows neither this device's clock nor how it writes a time. */
 const useInBrowser = () => useSyncExternalStore(never, () => true, () => false);
 
-/** This device's clock: twelve hours and AM or PM, or twenty-four. */
 const twelveHour = () => /h1[12]/.test(new Intl.DateTimeFormat(undefined, { hour: "numeric" }).resolvedOptions().hourCycle ?? "h23");
 const zone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 const pad = (n: number) => String(n).padStart(2, "0");
 const QUARTERS = ["00", "15", "30", "45"] as const;
 
-/** "19:00" as this device says it: "7:00 PM", or "19:00". */
 const timeLabel = (hhmm: string) => {
   const [h, m] = hhmm.split(":").map(Number);
   return new Date(2000, 0, 1, h, m).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 };
 const dayLabel = (date: Date) => date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
-/** Noon of a day: a date that no clock change can push into the next or the last. */
+/** Noon, so no clock change can push the date into another day. */
 const noon = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
-/** The next whole hour from now: a time worth suggesting. */
 const nextHour = (now: number) => {
   const at = new Date(now);
   at.setHours(at.getHours() + 1, 0, 0, 0);
   return at;
 };
 
-/**
- * A time of day as choices — the hour, the quarter hour, and AM or PM where
- * this device uses them. Nothing to type and nothing to get wrong.
- */
 function TimeChoice({ value, onPick }: { value: string; onPick: (value: string) => void }) {
   const [h, m] = value.split(":").map(Number);
   const twelve = twelveHour();
@@ -72,7 +64,6 @@ function TimeChoice({ value, onPick }: { value: string; onPick: (value: string) 
   );
 }
 
-/** A local event time, picked in the room's own calendar and confirmed as one change. */
 export function DateTimeField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   const [open, setOpen] = useState(false);
   const inBrowser = useInBrowser();
@@ -133,7 +124,6 @@ function Calendar({ value, label, onClose, onApply }: { value: string; label: st
     document.getElementById(`${id}-${dateKey}`)?.focus();
   }, [id, dateKey]);
 
-  /** To the same day of another month, or its last day if it is shorter; never before today. */
   function moveMonth(step: number) {
     const last = new Date(day.getFullYear(), day.getMonth() + step + 1, 0).getDate();
     const next = new Date(day.getFullYear(), day.getMonth() + step, Math.min(day.getDate(), last), 12);
@@ -227,7 +217,6 @@ function Calendar({ value, label, onClose, onApply }: { value: string; label: st
   );
 }
 
-/** A time of day, chosen the same way, for something that repeats daily. */
 export function TimeField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   const [draft, setDraft] = useState<string | null>(null);
   const inBrowser = useInBrowser();

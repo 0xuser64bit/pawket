@@ -1,10 +1,5 @@
 import type { PetForm } from "@/components/pk";
 
-/**
- * The things in the playground, in the pets' own style: flat shapes, one
- * outline, the palette. Each is drawn on a 64px grid and sized by its slot.
- */
-
 const INK = { stroke: "var(--edge)", strokeWidth: 3, strokeLinejoin: "round", strokeLinecap: "round" } as const;
 
 function Art({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -15,7 +10,6 @@ function Art({ children, className }: { children: React.ReactNode; className?: s
   );
 }
 
-/** Each species has its own treat: a fish for the cat, a bone for the pup, a carrot for the bun. */
 export function Treat({ form, className }: { form: PetForm; className?: string }) {
   if (form === "cat") {
     return (
@@ -51,7 +45,6 @@ export function Star({ className }: { className?: string }) {
   );
 }
 
-/** The one thing to dodge: a storm cloud, dark and grumpy, with its own bolt. */
 export function RainCloud({ className }: { className?: string }) {
   return (
     <Art className={className}>
@@ -73,7 +66,6 @@ export function Heart({ className }: { className?: string }) {
   );
 }
 
-/** What is in the path, drawn to its footprint (the slot sets the size). */
 export function Obstacle({ kind, className }: { kind: "pot" | "puddle" | "log"; className?: string }) {
   if (kind === "pot") {
     return (

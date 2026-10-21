@@ -9,12 +9,6 @@ import { useCoats } from "@/lib/player/use-coats";
 const SKY_CLASS = { warm: "pk-sky--warm", cool: "pk-sky", plain: "pk-sky--plain" } as const;
 const NONE: ReadonlySet<string> = new Set();
 
-/**
- * Every pet the player keeps, as a face in a circle; the chosen one is
- * ringed and any other is a tap away. On Home it says who is home (and the
- * last circle adopts another). A pet on Solana wears a small pool mark.
- * In the wardrobe, it says who is being dressed.
- */
 export function PetSwitcher({
   pets,
   home,
@@ -31,9 +25,7 @@ export function PetSwitcher({
   label?: string;
   chooseLabel?: (pet: GuestPet) => string;
   chosenLabel?: (pet: GuestPet) => string;
-  /** End with a circle that adopts another. */
   adopt?: boolean;
-  /** The ids of pets kept on Solana. */
   kept?: ReadonlySet<string>;
 }) {
   const coatOf = useCoats();

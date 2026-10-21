@@ -3,21 +3,9 @@
 import { useEffect, useState } from "react";
 import { PawGlyph } from "./art";
 
-/** How long the splash holds from the start of the page load: the paw has drawn itself and its name has landed. */
 const HOLD_MS = 1350;
 const HOLD_REDUCED_MS = 500;
 
-/**
- * The splash on every full page load — a refresh, an opened link: the mark
- * draws itself, its name follows, and the whole of it lifts away once the
- * page under it has arrived. It is in the server's HTML, so it is the first
- * thing painted, before any JavaScript; after hydration it holds until the
- * intro has played (counted from the start of the load, so a slow load
- * never waits twice) and then fades. Moving between places inside Pawket
- * never shows it again: it lives in the root layout, which stays mounted.
- *
- * Decorative: the page beneath it says what is happening in words.
- */
 export function BootSplash() {
   const [phase, setPhase] = useState<"on" | "leaving" | "gone">("on");
 
@@ -28,8 +16,6 @@ export function BootSplash() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  // The fade is 380ms. Where animations never run, its end never comes, so
-  // the splash goes on time anyway rather than covering the page.
   useEffect(() => {
     if (phase !== "leaving") return;
     const timer = window.setTimeout(() => setPhase("gone"), 700);

@@ -17,14 +17,6 @@ import { useHere } from "@/lib/native/android";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { record } from "@/lib/analytics/events";
 
-/**
- * Keeping the pet in this browser on Solana, from Home's labelled control.
- * It does one specific thing: a record of every care that
- * nobody can edit, which outlives this browser. The chain only knows what it
- * saw, so the record there starts today, at level 1 — said here, with the
- * pet's own level beside it, before the wallet opens rather than after.
- */
-/** How recently a chain pet must have been born to be taken for this browser pet's own keep. */
 const LATELY_MS = 6 * 60 * 60 * 1000;
 
 export function KeepSheet({
@@ -38,9 +30,7 @@ export function KeepSheet({
   pet: GuestPet;
   owner: Address | null;
   canSign: boolean;
-  /** Home's sender, so the toast outlives this sheet once the pet is on Solana. */
   sender: PawketSender;
-  /** Called once Solana confirms the pet, with its address. The caller retires the browser copy. */
   onCarried: (address: Address) => void;
   onDismiss: () => void;
 }) {
@@ -55,10 +45,8 @@ export function KeepSheet({
   const linked = Boolean(sender.pawketWallet?.linked);
   const ready = linked && !needsSol(sender.pawketWallet?.balance ?? 0n, sponsored);
   const linking = useLinkBrowser();
-  // While Pawket sponsors, linking needs no SOL: one approval links this browser, and it keeps the pet at once.
   const linkHere = sponsored && !linked;
 
-  /** This browser pet's keep, already on Solana: its name, species and temperament, born there since it was here, and lately. */
   const isThisKeep = (found: NonNullable<Awaited<ReturnType<typeof fetchPetOnChain>>>) =>
     found.pet.species === pet.species &&
     found.pet.personality === pet.personality &&
@@ -77,7 +65,6 @@ export function KeepSheet({
     const petPda = (await derivePetPda(owner, pet.name)).address;
     const existing = await fetchPetOnChain(rpc, petPda).catch(() => null);
     if (existing) {
-      // A keep that landed while this sheet could not hear back — a lost answer, a reload — is not a clash.
       if (isThisKeep(existing)) return carried(petPda);
       record({ name: "keep_blocked", reason: "name-taken" });
       setTaken(true);
@@ -97,7 +84,6 @@ export function KeepSheet({
     ]);
     if (result?.outcome === "confirmed") return carried(petPda);
     if (result?.outcome === "unknown") {
-      // The answer was lost, not the pet: look for the pet itself before anyone tries again.
       for (let tries = 0; tries < 6; tries++) {
         await new Promise((resolve) => setTimeout(resolve, 5_000));
         const found = await fetchPetOnChain(rpc, petPda).catch(() => null);

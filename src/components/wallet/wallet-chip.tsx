@@ -16,21 +16,12 @@ import { WalletSheet } from "./wallet-sheet";
 import { useHere } from "@/lib/native/android";
 import { DevnetFaucet } from "@/components/wallet/faucet";
 
-/**
- * The wallet, in the shell, just before the room switch and drawn the same
- * way: "Connect" until one is connected, then its own mark and address —
- * with a bolt while this browser signs for it, so "no pop-ups" is visible
- * from every screen. Tapping it opens the wallet you are: the address, this
- * browser's link (or one approval to make it), and the way out.
- */
 export function WalletChip() {
   const ready = useWalletReady();
   const connected = useConnectedWallet(wallet);
-  // Which sheet is open: choosing a wallet, or the wallet you are. Connecting from the first never opens the second.
   const [open, setOpen] = useState<"connect" | "panel" | null>(null);
   const linking = useLinkBrowser();
   const { Here } = useHere();
-  // Nothing until the wallet has had its chance to reconnect: never a "Connect" that turns into an address.
   if (!ready) return <span className="pk-shell-btn pk-shell-btn--hold" aria-hidden="true" />;
 
   if (!connected) {
@@ -73,7 +64,6 @@ export function WalletChip() {
   );
 }
 
-/** The wallet you are: whose it is, whether this browser signs for it, and the way out. */
 function WalletPanel({
   address,
   name,

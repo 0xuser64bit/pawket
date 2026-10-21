@@ -6,11 +6,6 @@ import { useMounted } from "@/lib/utils/use-mounted";
 
 const KEY = "pawket.tip.home-screen";
 
-/**
- * On an iPhone or iPad, outside a Home Screen app: WebKit may clear what a
- * site stores after a week without a visit, and a browser pet lives only in
- * that storage. A Home Screen app keeps its own. Said once, until dismissed.
- */
 function needsTip(): boolean {
   const ua = navigator.userAgent;
   const ios = /iP(hone|od|ad)/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -41,9 +36,7 @@ export function HomeScreenTip({ name }: { name: string }) {
           onClick={() => {
             try {
               window.localStorage.setItem(KEY, "seen");
-            } catch {
-              // Blocked storage: gone for this visit only.
-            }
+            } catch {}
             setGone(true);
           }}
         />

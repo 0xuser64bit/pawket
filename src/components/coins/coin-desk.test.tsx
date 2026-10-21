@@ -11,7 +11,6 @@ const guild = { slug: "window-seat", name: "Window Seat", founder: "founder", me
 const coin = { slug: "window-seat", name: "Window Seat", symbol: "SEAT", mint: "Mint1111", stage: "dbc", creator: "founder" } as CoinState;
 const balances = { lamports: 10n ** 9n, units: 10n ** 12n };
 
-/** A quote route that answers only when the test says so. */
 function slowQuotes() {
   const answers: Array<(quote: CoinQuote) => void> = [];
   vi.stubGlobal("fetch", vi.fn(() => new Promise((resolve) => {

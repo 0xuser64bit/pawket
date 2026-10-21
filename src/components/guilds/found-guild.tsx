@@ -15,15 +15,6 @@ import { GUILD_LIMITS } from "@/lib/solana/program";
 import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
 import { GuildCrest } from "./guild-crest";
 
-/**
- * Founding a guild: its name (which is its address), a motto, a crest — a
- * glyph and a colour — and the pet that founds it and becomes its first
- * member. The head holds the page's title (`children`, from the server) on
- * the left and the guild as it will look — crest, name, motto, address,
- * drawn as typed — on the right, or under the title on a phone; the form
- * that makes it fills the width below. One signature, from the pet's owner; Pawket pays the fee and the
- * rent while it can. A name nobody has is checked before the wallet opens.
- */
 export function FoundGuild({ children, initialName = "" }: { children: ReactNode; initialName?: string }) {
   const companion = useCompanion();
   const sender = usePawketSend();

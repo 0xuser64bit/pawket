@@ -11,13 +11,6 @@ import { record } from "@/lib/analytics/events";
 
 const DAYS = 30;
 
-/**
- * A daily nudge, kept in the player's own calendar: one repeating event at
- * the time they choose, linking back home. In a browser it is a calendar
- * file; in the Android app, the phone's calendar opens with the event filled
- * in, to save there. Pawket keeps no list of who wants reminding and sends
- * nothing.
- */
 export function RemindMe({ name }: { name: string }) {
   const [time, setTime] = useState("19:00");
   const [saved, setSaved] = useState(false);
@@ -44,7 +37,7 @@ export function RemindMe({ name }: { name: string }) {
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
     link.download = `pawket-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "pet"}.ics`;
-    // In the page, and let go only later: some browsers start a download after the click returns.
+    // Attached, and revoked only later: some browsers start the download after the click returns.
     document.body.append(link);
     link.click();
     link.remove();
@@ -91,14 +84,12 @@ export function RemindMe({ name }: { name: string }) {
   );
 }
 
-/** Why the phone would not take care reminders, in words. */
 function refusal(answer: Answer): string {
   if (answer.reason === "denied") return "Your phone did not allow Pawket's notifications. Allow them for Pawket in the phone's settings, then try again.";
   if (answer.reason === "unknown") return "This version of the app cannot remind you yet. Update Pawket, then try again.";
   return "The app did not answer. Nothing was turned on.";
 }
 
-/** Turns care reminders on or off, and says why not when the phone refuses. */
 function useCareReminderSwitch(): { on: boolean; turn: (on: boolean) => Promise<void>; problem?: string } {
   const [on, set] = useCareReminders();
   const [problem, setProblem] = useState<string>();
@@ -115,7 +106,6 @@ function useCareReminderSwitch(): { on: boolean; turn: (on: boolean) => Promise<
 const CARE_REMINDER_ABOUT =
   "The phone says once, at a waking hour, when a pet will first need care. It is worked out on the phone from your pets' records, so Pawket keeps no list and sends nothing.";
 
-/** On Home in the app: the offer, until it is taken. Settings turns it off. */
 function CareReminderOffer({ name }: { name: string }) {
   const { on, turn, problem } = useCareReminderSwitch();
   return (
@@ -139,7 +129,6 @@ function CareReminderOffer({ name }: { name: string }) {
   );
 }
 
-/** In Settings, in the app: care reminders on or off. */
 export function CareReminderSetting() {
   const { on, turn, problem } = useCareReminderSwitch();
   return (
@@ -163,11 +152,6 @@ export function CareReminderSetting() {
   );
 }
 
-/**
- * In the app, with care reminders on: keeps the one reminder in step with
- * the pets on every screen of the game — set again whenever a record
- * changes (a care saved or confirmed), cleared when no pet is left.
- */
 export function CareReminderSync() {
   const inApp = useAndroidApp();
   const [on] = useCareReminders();

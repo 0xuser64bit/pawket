@@ -6,17 +6,10 @@ import { BEANS, checkCopy, copyPattern, showMs } from "@/lib/play/copy";
 import { BEAN_NOTES, blip } from "@/lib/play/sound";
 
 const BEAN_NAMES = ["Sun bean", "Pool bean", "Sprout bean", "Copper bean"];
-/** Where each bean sits in the arch, and which way the pet looks at it. */
 const BEAN_LOOK = [-1, -0.4, 0.4, 1];
 
 type Phase = "ready" | "show" | "turn" | "copied" | "wrong";
 
-/**
- * Copy, drawn: one giant paw. The pet sits in its centre pad and taps the
- * four toe beans in a pattern; the player taps it back. Each pattern copied
- * grows by one; the first wrong bean ends the round. The beans are buttons,
- * so a keyboard (1–4, or Tab and Enter) plays it as well as a finger.
- */
 export function CopyGame({
   form,
   temper,
@@ -49,7 +42,6 @@ export function CopyGame({
   };
   useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), []);
 
-  // The pet shows the pattern, one bean at a time, then hands it over.
   useEffect(() => {
     if (phase !== "show" || paused) return;
     const on = showMs(length);
@@ -70,7 +62,6 @@ export function CopyGame({
       timers.current.forEach((id) => window.clearTimeout(id));
       timers.current = [];
     };
-    // The pattern is a function of seed and length.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, length, seed, paused]);
 

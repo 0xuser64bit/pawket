@@ -26,22 +26,8 @@ import type { DecorSlot } from "@/lib/room/decor";
 import { addOutline, toon } from "./materials";
 import { DAYLIGHT, type Tone } from "./palette";
 
-/**
- * The room's things in 3D (`src/lib/room/decor.ts` lists them). Built from
- * primitives in the room's own language — toon-shaded, ink-outlined,
- * Daylight colours — so a picture, a plant or a bed sits in the room as if
- * it had always been there. A few things have colours of their own (a
- * sunflower, a strawberry, a honeycomb), kept here as data like hair colours.
- *
- * Each builder draws its thing around its slot's anchor (`SLOT_AT`): a wall
- * thing faces the room from the back wall, a floor thing stands on y = 0.
- * Beds keep to the cushion's footprint — the pet naps where it always has —
- * and stay low enough that a sleeping pet is still seen.
- */
-
 const BACK = -1.6;
 
-/** Where each place in the room is. */
 export const SLOT_AT: Record<DecorSlot, { x: number; y: number; z: number }> = {
   wall: { x: -0.1, y: 1.36, z: BACK + 0.012 },
   corner: { x: -2.2, y: 0, z: BACK + 0.45 },
@@ -50,7 +36,6 @@ export const SLOT_AT: Record<DecorSlot, { x: number; y: number; z: number }> = {
   side: { x: 2.6, y: 0, z: BACK + 0.32 },
 };
 
-/** Colours a few things have of their own; everything else is a token. */
 const OWN = {
   sunny: "#ffc84a",
   berry: "#e2434b",
@@ -76,7 +61,6 @@ function at<T extends Object3D>(object: T, x: number, y: number, z: number): T {
   return object;
 }
 
-/** Many small parts in one paint, as one mesh: one draw, one outline. */
 function many(parts: BufferGeometry[], paint: Paint, outline = true): Mesh {
   return solid(mergeGeometries(parts.map((part) => part.toNonIndexed())), paint, outline);
 }
@@ -131,7 +115,6 @@ function starShape(outer: number, inner: number, points = 5): Shape {
 
 const flat = (shape: Shape, depth: number) => new ExtrudeGeometry(shape, { depth, bevelEnabled: false });
 
-/** A frame on the wall: a rounded border, the canvas sunk behind it. Art goes on `canvas`, at z 0. */
 function framed(width: number, height: number, border: number, frame: Paint, canvasPaint: Paint, round = 0.03) {
   const group = new Group();
   const rim = solid(flat(roundedRect(width, height, round, border), 0.04), frame);
@@ -144,7 +127,6 @@ function framed(width: number, height: number, border: number, frame: Paint, can
   return { group, art };
 }
 
-/** A pot on the floor: a tapered cylinder, its rim, and the soil showing. */
 function pot(radius: number, height: number, paint: Paint, band?: Paint): Group {
   const g = new Group();
   g.add(at(solid(new CylinderGeometry(radius, radius * 0.78, height, 24), paint), 0, height / 2, 0));
@@ -164,13 +146,11 @@ function blob(radius: number, scale: [number, number, number], paint: Paint, out
   return mesh;
 }
 
-/** A rug lies on the floor: shapes are drawn in x/y and laid flat, front toward the room. */
 function lay(object: Object3D): Object3D {
   object.rotation.x = -Math.PI / 2;
   return object;
 }
 
-/** Something that glows after dark: its materials take their own colour as light. */
 function glow(meshes: Mesh[], strength: number, day = 0): (on: boolean) => void {
   return (on) => {
     for (const mesh of meshes) {
@@ -183,15 +163,11 @@ function glow(meshes: Mesh[], strength: number, day = 0): (on: boolean) => void 
 
 export interface BuiltDecor {
   object: Object3D;
-  /** After dark: a lamp or a sign lights up. */
   evening?: (on: boolean) => void;
-  /** Each frame: a clock keeps the time. */
   tick?: (now: Date) => void;
 }
 
 const BUILD: Record<string, () => BuiltDecor> = {
-  /* ------------------------------------------------------------- the wall */
-
   "sea-painting": () => {
     const { group, art } = framed(0.66, 0.5, 0.07, "trim-copper", "pool-soft");
     art.add(at(solid(new CircleGeometry(0.06, 24), "sun", false), 0.14, 0.09, 0));
@@ -278,7 +254,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     const group = new Group();
     const string = (x: number) => 0.08 + 0.12 * (x / 0.52) ** 2;
     group.add(tube([-0.52, -0.26, 0, 0.26, 0.52].map((x) => [x, string(x), 0.03]), 0.006, "edge"));
-    // One bat, wings out: a scalloped wing drawn once and mirrored, a round body, two ears.
     const wing = new Shape();
     wing.moveTo(0, 0.012);
     wing.quadraticCurveTo(0.04, 0.042, 0.078, 0.02);
@@ -401,7 +376,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     const points: Array<[number, number, number]> = [];
     for (let i = 0; i <= 40; i++) {
       const t = (i / 40) * Math.PI * 2;
-      // The heart curve, at the size of a sign.
       const x = 16 * Math.sin(t) ** 3;
       const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
       points.push([x * 0.014, y * 0.014 + 0.02, 0.05]);
@@ -413,8 +387,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     }
     return { object: group, evening: glow([neon], 1.1, 0.35) };
   },
-
-  /* ----------------------------------------------------------- the corner */
 
   fern: () => {
     const group = pot(0.16, 0.3, "trim-copper");
@@ -451,7 +423,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
 
   monstera: () => {
     const group = pot(0.17, 0.28, "surface", "pool");
-    // A monstera leaf: heart-based, with three slits cut in from each side.
     const half: Array<[number, number]> = [[0.45, -1], [0.75, -0.7], [0.8, -0.35], [0.33, -0.24], [0.86, -0.05], [0.36, 0.1], [0.8, 0.3], [0.33, 0.42], [0.62, 0.64]];
     const leaf = () => {
       const s = new Shape();
@@ -501,17 +472,14 @@ const BUILD: Record<string, () => BuiltDecor> = {
 
   "pumpkin-lantern": () => {
     const group = new Group();
-    // As tall as a potted plant: a pumpkin of 0.3 m radius, its face to scale.
     const k = 1.5;
     const r = 0.2 * k;
-    // Ribbed: six lobes around the middle, one paint, one outline.
     const lobes = Array.from({ length: 6 }, (_, i) => {
       const a = (i / 6) * Math.PI * 2;
       return placed(new SphereGeometry(r * 0.62, 18, 12).scale(0.62, 0.84, 1), Math.sin(a) * r * 0.36, r * 0.86, Math.cos(a) * r * 0.36, 0, a);
     });
     group.add(many(lobes, "sun"));
     group.add(at(solid(new CylinderGeometry(0.022 * k, 0.03 * k, 0.09 * k, 10), "sprout-edge"), 0.01, r * 1.72, 0));
-    // The carved face, lit from inside: two eyes and a grin, on the front.
     const eye = new Shape();
     eye.moveTo(-0.028, 0);
     eye.lineTo(0.028, 0);
@@ -570,8 +538,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     group.add(many(tops, "lavender"));
     return { object: group };
   },
-
-  /* -------------------------------------------------------------- the rug */
 
   "meadow-rug": () => ({ object: lay(solid(flat(roundedRect(2.7, 1.6, 0.4), 0.012), "sprout-soft")) }),
 
@@ -646,7 +612,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
       return s;
     };
     const cells: Array<[number, number]> = [[0, 0]];
-    // Neighbours of a pointed-top cell sit √3 × its radius away: the cells touch.
     for (let i = 0; i < 6; i++) cells.push([Math.cos((i / 6) * Math.PI * 2) * 0.52, Math.sin((i / 6) * Math.PI * 2) * 0.52]);
     const outer = cells.map(([x, y]) => placed(flat(hexagon(0.3), 0.012), x, y, 0));
     const inner = cells.map(([x, y]) => placed(flat(hexagon(0.2), 0.004), x, y, 0.013));
@@ -656,8 +621,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     group.add(lay(comb));
     return { object: group };
   },
-
-  /* -------------------------------------------------------------- the bed */
 
   basket: () => {
     const group = new Group();
@@ -730,7 +693,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     const group = new Group();
     const profile = [new Vector2(0, 0), new Vector2(0.38, 0), new Vector2(0.44, 0.06), new Vector2(0.4, 0.08), new Vector2(0, 0.05)];
     group.add(solid(new LatheGeometry(profile, 32), "pet-cream"));
-    // The upper shell, open behind the pet: a fan with a scalloped edge, its ribs raised.
     const fan = new Shape();
     fan.moveTo(-0.42, 0);
     const bumps = 7;
@@ -771,8 +733,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     group.add(many(marshmallows, "pet-cloud"));
     return { object: group };
   },
-
-  /* ---------------------------------------------------------- by the bed */
 
   "floor-lamp": () => {
     const group = new Group();
@@ -852,7 +812,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
 
   "leaf-pile": () => {
     const group = new Group();
-    // A low mound, half in the floor, under a scatter of leaves laid on its slope.
     group.add(blob(0.42, [1, 0.42, 0.74], "sun-edge"));
     const leaf = new Shape();
     leaf.moveTo(0, -0.07);
@@ -861,7 +820,6 @@ const BUILD: Record<string, () => BuiltDecor> = {
     const paints: Paint[] = ["sun", "sunny", "berry", "sun-edge"];
     const leaves: BufferGeometry[][] = paints.map(() => []);
     for (let i = 0; i < 40; i++) {
-      // The golden angle spreads them evenly round the pile, without chance.
       const around = i * 2.39996;
       const up = 0.12 + (i % 7) * 0.2;
       const x = Math.cos(around) * Math.cos(up) * 0.42;
@@ -874,11 +832,9 @@ const BUILD: Record<string, () => BuiltDecor> = {
   },
 };
 
-/** The thing `id` in 3D, or null for an id the room does not know. */
 export function buildDecor(id: string): BuiltDecor | null {
   const build = BUILD[id];
   return build ? build() : null;
 }
 
-/** Every id the room can build: held to the catalog by `decor.test.ts`. */
 export const DECOR_BUILT = Object.keys(BUILD);

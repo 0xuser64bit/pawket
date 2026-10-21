@@ -3,7 +3,6 @@ import { PetArt, type Feeling, type PetForm, type Temper } from "./pet-art";
 import { Chip } from "./controls";
 import { Icon, type IconName } from "./icon";
 
-/** Rarity is a material — Cloth, Copper, Glass, Foil — never a glow. */
 export type Rarity = "cloth" | "copper" | "glass" | "foil";
 
 export const RARITY_LABEL: Record<Rarity, string> = {
@@ -13,7 +12,6 @@ export const RARITY_LABEL: Record<Rarity, string> = {
   foil: "Foil",
 };
 
-/** Room and frame backdrops use these three only — bloom never sits behind a pet. */
 export type Sky = "warm" | "cool" | "plain";
 
 const SKY_CLASS: Record<Sky, string> = {
@@ -22,14 +20,6 @@ const SKY_CLASS: Record<Sky, string> = {
   plain: "pk-sky--plain",
 };
 
-/* ---------------------------------------------------------------- PetFrame */
-
-/**
- * The pocket a pet lives in, and the only frame a pet is ever shown in. The
- * rim is drawn inside the artwork rather than over it, so the pet and the
- * pocket always line up at any size. Rarity is a band across the top *and*
- * the word printed beside the name.
- */
 export function PetFrame({
   form,
   temper,
@@ -50,14 +40,11 @@ export function PetFrame({
   form: PetForm;
   temper?: Temper;
   feeling?: Feeling;
-  /** A wardrobe id, drawn on the pet. */
   wearing?: string | null;
-  /** Anything stable about the pet (its name), so neighbours do not blink in step. */
   seed?: string;
   name?: string;
   level?: number;
   rarity?: Rarity;
-  /** A one-word mood. */
   mood?: string;
   sky?: Sky;
   size?: "sm" | "md" | "lg" | "fluid";
@@ -106,13 +93,6 @@ export function PetFrame({
   );
 }
 
-/* ------------------------------------------------------------------- Meter */
-
-/**
- * Countable progress: discrete segments, gaps you can see, and the numbers
- * printed beside them. Never a percentage, never a smooth bar, never more
- * than ten segments — pick a count a person can count at a glance.
- */
 export function Meter({
   value,
   max,
@@ -125,7 +105,6 @@ export function Meter({
   value: number;
   max: number;
   label?: string;
-  /** Use when the raw counts are not the real number — "740 / 1000 XP". */
   readout?: string;
   tone?: "sprout" | "sun" | "pool" | "bloom" | "neutral";
   slim?: boolean;
@@ -158,14 +137,6 @@ export function Meter({
   );
 }
 
-/* ---------------------------------------------------------------- ItemTile */
-
-/**
- * A cosmetic, accessory or guild badge, in the one shape the whole
- * collection uses. A tile with no price is already owned. Guild-linked items
- * name the guild where every other tile names a slot, so a player never
- * finds out after the fact that an item was conditional.
- */
 export function ItemTile({
   name,
   kind,
@@ -179,13 +150,10 @@ export function ItemTile({
   name: string;
   kind: string;
   rarity?: Rarity;
-  /** Already formatted in SOL. The tile does no maths. */
   price?: string;
   equipped?: boolean;
-  /** Just arrived in the Market: marked new. */
   fresh?: boolean;
   icon?: IconName;
-  /** The thing itself, drawn; an icon stands in when there is no drawing. */
   art?: ReactNode;
 }) {
   return (
@@ -216,12 +184,6 @@ export function ItemTile({
   );
 }
 
-/* -------------------------------------------------------------- EmptyState */
-
-/**
- * An empty shelf that still feels like Pawket. Empty states explain the
- * thing, not the absence — and carry one action, never two.
- */
 export function EmptyState({
   title,
   body,
@@ -251,9 +213,6 @@ export function EmptyState({
   );
 }
 
-/* ---------------------------------------------------------------- Presence */
-
-/** Activity read from the pets' records, always named as well as colored. */
 export function Presence({ name }: { name: string }) {
   return (
     <span className="pk-presence">

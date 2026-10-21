@@ -28,24 +28,10 @@ import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
 import { formatUnits } from "@/lib/utils/format";
 import { DevnetFaucet } from "@/components/wallet/faucet";
 
-/**
- * The Market: looks for SOL, at the prices Pawket's program fixes for
- * everyone. The shelves are the screen; a tap on anything opens it as a
- * sheet — your own pet wearing it, or sitting in the room — with its price
- * and where the SOL goes, on Paper, and one button. A purchase is one signed
- * transaction: the price from the buyer's Pawket Wallet straight to Pawket's
- * treasury, the item into their closet on Solana for good. Pawket's sponsor
- * pays the network fee and the closet's rent. Nothing here changes a vital,
- * XP, a cooldown or a score, and nothing is resold.
- */
-
 interface Item extends ShelfEntry {
-  /** A Market item id, or a room thing's own id (`decor`): nothing on Solana, nothing sold. */
   id: number | string;
   art: React.ReactNode;
-  /** A room thing, placed on this device. */
   decor?: DecorPiece;
-  /** The catalog id of a piece, to try it on. */
   piece?: string;
   room?: ThemeId;
 }
@@ -75,7 +61,6 @@ const FRAMES: Item[] = PHOTO_FRAMES.map((frame) => ({
   art: <FrameArt id={frame.id} className="pk-market-frame" />,
 }));
 
-/** Words a room thing is found by, beyond its name and line. */
 const DECOR_WORDS: Record<DecorPiece["slot"], string[]> = {
   wall: ["wall", "painting", "picture", "art"],
   corner: ["plant", "corner", "pot"],
@@ -109,7 +94,6 @@ const SHELVES: ReadonlyArray<{ label: string; items: Item[]; note?: string }> = 
 
 const sol = (lamports: bigint | string) => `${formatUnits(lamports, 9, 4)} SOL`;
 
-/** The address's #fragment, so a link can open the Market narrowed (`/market#room`); "" on the server. */
 function useFragment(): string {
   return useSyncExternalStore(
     (changed) => {
@@ -121,11 +105,6 @@ function useFragment(): string {
   );
 }
 
-/**
- * Each shelf's material, so the trim says what kind of thing it is: the
- * classic pieces are cloth, the rest of the pieces foil, rooms glass and
- * frames copper. Looks only; it is written beside the price.
- */
 function rarityOf(item: Item): Rarity {
   if (item.kind === "room" || item.decor?.room) return "glass";
   if (item.kind === "decor") return "cloth";
@@ -140,14 +119,11 @@ export function MarketScreen() {
   const closet = useCloset(owner);
   const choice = useThemeChoice();
   const decor = useRoomDecor();
-  /** Whether "new" can be decided: by this device's clock, once it is here. */
   const mounted = useMounted();
   const [picked, setPicked] = useState<Item | null>(null);
   const owned = new Set(closet.data?.items ?? []);
-  /** Whether the closet holds it: a room's thing once the room is there; a free thing is nobody's purchase. */
   const holds = (item: Item) => (item.decor ? Boolean(item.decor.room) && decorOpen(item.decor, owned) : owned.has(item.id as number));
   const [query, setQuery] = useState("");
-  /** Shelves opened whole on a phone; untouched, each is a row to swipe. */
   const [opened, setOpened] = useState<readonly string[]>([]);
   const fragment = useFragment();
   const filter: ShelfFilter = isShelfFilter(fragment) ? fragment : "all";
@@ -155,7 +131,6 @@ export function MarketScreen() {
   const shelves = SHELVES.map((shelf) => ({ ...shelf, shown: shelf.items.filter((item) => onShelf(item, query, filter, holds(item))) }));
   const found = shelves.reduce((sum, shelf) => sum + shelf.shown.length, 0);
 
-  /** The address holds the shelf, so a narrowed Market can be linked to, and comes back on reload. */
   function narrow(next: ShelfFilter) {
     window.history.replaceState(window.history.state, "", next === "all" ? window.location.pathname : `#${next}`);
     window.dispatchEvent(new HashChangeEvent("hashchange"));
@@ -212,7 +187,6 @@ export function MarketScreen() {
           onChange={(event) => setQuery(event.target.value)}
         />
         <Choice label="Show" hideLabel className="pk-market-filters" options={SHELF_FILTERS} value={filter} onPick={narrow} />
-        {/* Said once the shelves settle, not drawn: the counts beside each shelf already show it. */}
         <p className="pk-sr" role="status">
           {narrowing ? `${found} ${found === 1 ? "thing" : "things"} on the shelves` : ""}
         </p>
@@ -234,9 +208,6 @@ export function MarketScreen() {
       ) : (
         shelves.map((shelf) => {
           if (!shelf.shown.length) return null;
-          // On a phone the whole Market was one long column. An untouched shelf
-          // is a row to swipe there instead, and opens whole from its head;
-          // a search or a filter always shows everything it found.
           const row = !narrowing && !opened.includes(shelf.label);
           return (
             <Stack key={shelf.label} gap={3} className={row ? "pk-shelf--row" : undefined}>
@@ -317,7 +288,6 @@ export function MarketScreen() {
   );
 }
 
-/** One thing in the Market, as a sheet: drawn on your own pet or as the room, its price on Paper, one button. */
 function ItemSheet({
   item,
   owner,
@@ -341,7 +311,6 @@ function ItemSheet({
   const balance = sender.pawketWallet?.balance;
   const short = owner !== null && balance !== undefined && balance < price;
   const needsLink = owner !== null && !sender.pawketWallet?.linked;
-  // Your own pet, wearing it — or in the room — before anything is signed.
   const look = pet ? petLook(pet, projectGuestPet(pet).mood) : ({ form: "cat", temper: "curious", feeling: "happy", wearing: null, seed: item.name } as const);
 
   async function buy() {
@@ -415,12 +384,6 @@ function ItemSheet({
   );
 }
 
-/**
- * A room thing, as a sheet: drawn large, what it is, and the one thing to do
- * with it — place it in the room on this device, or, for a thing that comes
- * with a Market room not yet bought, see that room. Nothing here is a sale,
- * so there is no price and no Paper.
- */
 function DecorSheet({
   piece,
   open,

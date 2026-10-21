@@ -3,27 +3,17 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { Icon } from "./icon";
 
-/**
- * A toast: a short word about something that happened off to the side — a
- * send on its way, recorded, or refused — at the top of the screen, over the
- * page, never pushing it about. Waiting stays as long as it waits; a record
- * goes by itself; a refusal stays until it is read. One store for the whole
- * app, so a send that outlives its screen still says how it ended.
- */
 export interface Toast {
   id: string;
-  /** Waiting, done, refused — or a note: a word worth knowing, with nothing wrong. */
   tone: "wait" | "done" | "risk" | "note";
   title: string;
   body?: ReactNode;
-  /** Milliseconds until it goes by itself; without one it stays until dismissed. */
   ttl?: number;
 }
 
 type Shown = Toast & { leaving?: boolean };
 
 const MAX = 3;
-/** Time to leave, after which a dismissed toast is gone from the store. */
 const LEAVE_MS = 200;
 const EMPTY: Shown[] = [];
 let toasts: Shown[] = EMPTY;
@@ -35,11 +25,6 @@ function publish(next: Shown[]) {
   for (const listener of listeners) listener();
 }
 
-/**
- * Room for one more: past three, the oldest that matters least goes first —
- * a record or a note, then a refusal — and a send still waiting goes last,
- * since it may hold the only way to its receipt.
- */
 const EVICT_FIRST: ReadonlyArray<Toast["tone"]> = ["done", "note", "risk", "wait"];
 function admit(list: Shown[]): Shown[] {
   const next = [...list];
@@ -52,7 +37,6 @@ function admit(list: Shown[]): Shown[] {
   return next;
 }
 
-/** Show `toast`, or update the one with its id in place. */
 export function showToast(toast: Toast) {
   const at = toasts.findIndex((shown) => shown.id === toast.id);
   publish(at >= 0 ? toasts.map((shown, i) => (i === at ? toast : shown)) : admit([...toasts, toast]));
@@ -66,7 +50,6 @@ export function dismissToast(id: string) {
   timers.delete(id);
   if (!toasts.some((shown) => shown.id === id && !shown.leaving)) return;
   publish(toasts.map((shown) => (shown.id === id ? { ...shown, leaving: true } : shown)));
-  // Shown again while it was leaving, it stays.
   setTimeout(() => {
     if (toasts.some((shown) => shown.id === id && shown.leaving)) publish(toasts.filter((shown) => shown.id !== id || !shown.leaving));
   }, LEAVE_MS);
@@ -77,12 +60,6 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-/**
- * Where toasts appear: once, at the end of the page, top centre. The newest
- * is in front and the rest tuck in under it, a sliver of each showing, so
- * three never cover a screen; hovering, focusing or tapping the stack fans
- * it out. A sheet leaves it awake (`data-toasts`).
- */
 export function Toasts() {
   const shown = useSyncExternalStore(subscribe, () => toasts, () => EMPTY);
   const [open, setOpen] = useState(false);
@@ -90,7 +67,6 @@ export function Toasts() {
   const live = shown.filter((toast) => !toast.leaving);
   const fanned = open && live.length > 1;
 
-  // A tap anywhere else folds the stack again.
   useEffect(() => {
     if (!fanned) return;
     const away = (event: globalThis.PointerEvent) => {
@@ -106,8 +82,7 @@ export function Toasts() {
       className="pk-toasts"
       data-toasts
       data-open={fanned ? "" : undefined}
-      // The one live region, there before any toast is: a toast inside it is not another, or a
-      // screen reader would say it twice (and an alert inside it, out of turn).
+      // The one live region, mounted before any toast: a region or alert nested in it is announced twice.
       aria-live="polite"
       onPointerEnter={(event) => event.pointerType === "mouse" && setOpen(true)}
       onPointerLeave={(event) => event.pointerType === "mouse" && setOpen(false)}
@@ -123,7 +98,6 @@ export function Toasts() {
 
 const MARK = { done: "check", note: "spark", risk: "alert" } as const;
 
-/** One toast. On a touch screen it can be flicked away, up or to either side. */
 function ToastCard({ toast, depth, onTap }: { toast: Shown; depth: number; onTap: () => void }) {
   const card = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; pointer: number } | null>(null);
@@ -159,7 +133,6 @@ function ToastCard({ toast, depth, onTap }: { toast: Shown; depth: number; onTap
       data-leaving={toast.leaving ? "" : undefined}
       style={depth > 0 ? ({ "--depth": depth } as CSSProperties) : undefined}
       onPointerDown={(event) => {
-        // A finger on the words, not on a link or the close: the start of a flick.
         if (event.pointerType === "mouse" || (event.target as HTMLElement).closest("a, button")) return;
         drag.current = { x: event.clientX, y: event.clientY, pointer: event.pointerId };
         event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -168,7 +141,6 @@ function ToastCard({ toast, depth, onTap }: { toast: Shown; depth: number; onTap
       onPointerUp={(event) => release(event)}
       onPointerCancel={(event) => release(event, true)}
     >
-      {/* Keyed by tone, so the tick pops in the moment a wait is recorded. */}
       <span key={toast.tone} className="pk-toast__mark" aria-hidden="true">
         {toast.tone === "wait" ? <span className="pk-spinner" /> : <Icon name={MARK[toast.tone]} size={14} weight={2.4} />}
       </span>

@@ -3,10 +3,6 @@
 import { useId, useRef, type KeyboardEvent } from "react";
 import { Icon, type IconName } from "./icon";
 
-/**
- * One choice from a short list, as a radio group: arrow keys move the
- * choice, Tab leaves the group, and the room changes as you go.
- */
 export function Choice<T extends string | number>({
   label,
   options,
@@ -17,14 +13,11 @@ export function Choice<T extends string | number>({
   hideLabel,
 }: {
   label: string;
-  /** An icon beside a word helps a row read at a glance; a swatch has none. */
   options: ReadonlyArray<{ value: T; label: string; icon?: IconName }>;
   value: T;
   onPick: (value: T) => void;
-  /** Draw each option as a colour dot instead of a word. */
   swatch?: (value: T) => string;
   className?: string;
-  /** Said to a screen reader only, when the choices already say what they are (AM, PM). */
   hideLabel?: boolean;
 }) {
   const refs = useRef<Array<HTMLButtonElement | null>>([]);

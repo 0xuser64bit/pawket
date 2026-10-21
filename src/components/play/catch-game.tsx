@@ -7,11 +7,6 @@ import { blip } from "@/lib/play/sound";
 import { Heart, RainCloud, Star, Treat } from "./game-art";
 import { useFrame } from "./use-frame";
 
-/**
- * Catch, drawn: a garden, the pet on the grass, things falling. A pointer
- * or a finger anywhere on the field is where the pet heads; the arrow keys
- * work too. The pet's face answers what it catches.
- */
 export function CatchGame({
   form,
   temper,

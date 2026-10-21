@@ -12,13 +12,6 @@ import { getJoinGuildInstruction, getLeaveGuildInstruction } from "@/lib/solana/
 import { deriveMemberPda } from "@/lib/solana/pda";
 import { rentWaits, usePawketSend, useSponsor } from "@/lib/solana/use-send";
 
-/**
- * Your pets and this guild, in the guild's head: each pet on Solana with
- * the one thing it can do here — join, leave, or nothing while it is in
- * another guild. Joining and leaving are signed by the pet's owner (or the
- * browser linked to them, with no pop-up); Pawket pays the fee while it
- * can. The page is read again from Solana once a send is confirmed.
- */
 export function GuildMembership({ guild }: { guild: { address: string; name: string } }) {
   const companion = useCompanion();
   const sender = usePawketSend();

@@ -17,7 +17,6 @@ it("plays a cue in the flat room: the player says it in a bubble and the room sa
   vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
   const onStatus = vi.fn();
   const props = { pet, look: DEFAULT_LOOK, sky: "warm", description: "Pepper's room", onStatus } as const;
-  // jsdom draws no WebGL, so this room is flat. A cue it was given before it came is not played again.
   const { container, rerender } = render(<Room {...props} cue={{ moment: "wave", nonce: 1 }} />);
   expect(container.querySelector(".pk-room__said")).toBeNull();
   expect(onStatus).not.toHaveBeenCalledWith(expect.objectContaining({ moment: "wave" }));

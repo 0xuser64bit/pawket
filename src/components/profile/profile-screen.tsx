@@ -34,13 +34,6 @@ const TABS: Array<{ key: ProfileTab; label: string; href: string }> = [
   { key: "settings", label: "Settings", href: "/profile?tab=settings#shelf" },
 ];
 
-/**
- * You. The room first — you and the pet at home, as Home draws it — with
- * your name and what you have done together on a plate at its foot. Then
- * everything about how you look, which the room shows as you change it.
- * Then everything you keep: your pets, the wardrobe, the stickers their
- * records have earned, and the rooms and settings of this device.
- */
 export function ProfileScreen() {
   const coatOf = useCoats();
   const queryTab = useSearchParams().get("tab");
@@ -55,11 +48,9 @@ export function ProfileScreen() {
   const [nameNotice, setNameNotice] = useState<string>();
   const { here, Here } = useHere();
   const router = useRouter();
-  // Hooks run before the early return below: what others did with these pets on Solana.
   const social = useSocialRecords(companion.owned.map((entry) => entry.pet.address));
 
-  // Read the hash after navigation commits: a prefetched render can happen
-  // before #look reaches the address bar. Native details keeps its own state.
+  // After navigation commits: a prefetched render can run before #look is in the address.
   useEffect(() => {
     if (!ready || !window.location.hash) return;
     const target = document.getElementById(window.location.hash.slice(1));

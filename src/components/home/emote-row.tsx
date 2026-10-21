@@ -5,11 +5,6 @@ import { EMOTES, findMoment } from "@/lib/room/moments";
 
 const glyph = (name: string): IconName | undefined => (ICON_NAMES as string[]).includes(name) ? (name as IconName) : undefined;
 
-/**
- * Things to do together that are not care: a wave, a dance, a pat, a
- * treat. The room plays each one and announces it accessibly; nothing
- * here touches the record.
- */
 export function EmoteRow({
   petName,
   playing,

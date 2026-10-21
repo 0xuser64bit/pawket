@@ -73,22 +73,12 @@ import { record, recordHomeOpened } from "@/lib/analytics/events";
 import { dayTurnsAt } from "@/lib/utils/format";
 import { localMinute } from "@/lib/utils/local-datetime";
 
-/**
- * The room you actually live in, and the whole width of the screen: you and
- * the pet at home. Beneath it sits the deck — how the pet is, the four
- * cares and three tools — and a tool opens its panel below the deck, so the
- * room stays the largest thing on the screen. The pet is the one the player
- * chose, from any they keep; a care in this browser is saved at once, and a
- * care on Solana is signed, sent and confirmed first. The room shows a care
- * only once it is kept.
- */
 export function HomeScreen() {
   const companion = useCompanion();
   const { here, Here } = useHere();
   const { ready, pet, active } = companion;
   const look = usePlayerLook();
   const profile = usePlayerProfile();
-  // The room's things: as chosen on this device, a Market room's own thing only while the closet holds that room.
   const chosenDecor = useRoomDecor();
   const closet = useCloset(companion.owner);
   const owned = new Set(closet.data?.items ?? []);
@@ -97,7 +87,6 @@ export function HomeScreen() {
   const sender = usePawketSend();
   const [now, setNow] = useState(() => new Date());
   const [connecting, setConnecting] = useState(false);
-  /** The browser pet whose "keep it on Solana" sheet is open. */
   const [keeping, setKeeping] = useState<GuestPet | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [gain, setGain] = useState<Gain | null>(null);
@@ -108,42 +97,34 @@ export function HomeScreen() {
     setShot(null);
   }, []);
   const poseForPhoto = useCallback((id: PhotoPose | null) => roomView.current?.pose(id) ?? Promise.resolve(null), []);
-  // A return is counted once a day, by how old the pets are: nobody is named.
   const allPets = companion.all;
   useEffect(() => {
     if (ready) recordHomeOpened(allPets);
   }, [ready, allPets]);
-  /** A browser pet on its way onto Solana: its id here, and its address there. */
   const carried = useRef<{ id: string; address: Address } | null>(null);
   const [cue, setCue] = useState<RoomCue | null>(null);
   const [status, setStatus] = useState<DirectorStatus>({ moment: null, sentence: "" });
   const [roomState, setRoomState] = useState<RoomState>("loading");
   const [mode, setMode] = useRoomMode();
   const onStatus = useCallback((next: DirectorStatus) => setStatus(next), []);
-  // The room plays the moment, and the music box its little tune.
   const ask = (moment: string) => {
     setCue({ moment, nonce: Date.now() });
     chime(moment);
   };
   const earned = (action: CareActionType, xp: number) => setGain({ action, xp, at: Date.now() });
 
-  // A resting care counts down by the second; otherwise vitals move a point in tens of minutes, and
-  // the whole room need not redraw every second to show it.
   const resting = pet ? Object.values(cooldownsFor(pet, now)).some((left) => left > 0) : false;
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), resting ? 1_000 : 30_000);
     return () => window.clearInterval(id);
   }, [resting]);
 
-  // A tool's panel opens under the deck; on a phone that is below the fold,
-  // so it comes up to meet the tap rather than opening out of sight.
   useEffect(() => {
     if (!panel) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document.getElementById("pk-deck-panel")?.scrollIntoView({ block: "nearest", behavior: reduce ? "instant" : "smooth" });
   }, [panel]);
 
-  // A pet carried onto Solana leaves this browser once the chain copy is the one drawn.
   useEffect(() => {
     if (carried.current && active?.pet.address === carried.current.address) {
       if (!removePet(carried.current.id)) {
@@ -228,7 +209,6 @@ export function HomeScreen() {
   const streak = streakAsOf(pet.streak, now);
   const today = todayFor(pet, now);
   const worn = findWearable(pet.wearing);
-  // The care the pet most wants wears sun; the rest wait their turn.
   const wanted = sender.busy ? null : suggestCare(projected.stats, cooldowns);
 
   function care(action: CareActionType) {
@@ -257,8 +237,6 @@ export function HomeScreen() {
       tone: "ok",
       text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${earnedLine(current, result.pet)}`,
     });
-    // A level in this browser is a level Solana has not seen: worth a word, once, at the moment it counts,
-    // in front of the care's own line.
     if (level) {
       showToast({
         id: `keep-${current.id}`,
@@ -276,8 +254,6 @@ export function HomeScreen() {
         ),
       });
     }
-    // Only now, with the care saved, does the room show it — and a new
-    // level is the one thing worth a cheer.
     earned(action, result.xpGained);
     record({ name: "care_saved", where: "browser", action });
     ask(level ? "cheer" : CARE_MOMENT[action]);
@@ -286,7 +262,6 @@ export function HomeScreen() {
 
   async function careOnChain(action: CareActionType) {
     if (!active || !pet) return;
-    // The same rule the program enforces, checked before the wallet opens.
     const check = applyGuestCare(pet, action, new Date());
     if (!check.ok) {
       setNotice({ tone: "stop", text: check.message });
@@ -295,7 +270,6 @@ export function HomeScreen() {
     }
     setNotice(undefined);
     const level = levelUp(pet.xp, check.pet.xp);
-    // Said in the send's own toast, with its record: one toast for one care.
     const done = `${CARE_DONE_LABEL[action]}.${level ? ` ${pet.name} is level ${level} now.` : ""}${earnedLine(pet, check.pet, { onChain: true, guild: Boolean(active.member) })}`;
     const result = await sender.act(
       `${CARE_ACTION_LABEL[action]} ${pet.name}`,
@@ -304,7 +278,6 @@ export function HomeScreen() {
     );
     if (!result) return;
     companion.refresh();
-    // Only now, with the care confirmed, does the room show it.
     if (result.outcome === "confirmed") {
       earned(action, check.xpGained);
       record({ name: "care_saved", where: "solana", action });
@@ -325,7 +298,6 @@ export function HomeScreen() {
             {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
           </Row>
         </div>
-        {/* Where the pet lives, or — for one in this browser — the way to keep it on Solana. */}
         {onChain ? (
           <Chip label="On Solana" tone="pool" icon="check" />
         ) : (
@@ -417,7 +389,7 @@ export function HomeScreen() {
           onCarried={(address) => {
             carried.current = { id: keeping.id, address };
             companion.choose(address);
-            // A node can answer a moment before it has the new pet: read again until it does, then the browser copy goes.
+            // An RPC node can confirm a pet before it serves its account: read again until it does.
             void (async () => {
               for (let tries = 0; tries < 6 && carried.current?.address === address; tries++) {
                 await companion.refresh();
@@ -442,20 +414,17 @@ export function HomeScreen() {
   );
 }
 
-/** A sticker a care just earned, said after it. */
 function earnedLine(before: GuestPet, after: GuestPet, context: BadgeContext = {}): string {
   const earned = newlyEarned(before, after, context);
   if (earned.length === 0) return "";
   return ` New sticker: ${earned.map((badge) => badge.name).join(", ")}.`;
 }
 
-/** The new level when XP crosses one, else null. */
 function levelUp(before: number, after: number): number | null {
   const level = calculateLevelFromXp(after);
   return level > calculateLevelFromXp(before) ? level : null;
 }
 
-/** Solana did not answer: say what is shown instead, and offer to ask again. */
 function ChainTrouble({ error, kept, onRetry }: { error: unknown; kept: boolean; onRetry: () => void }) {
   const { here } = useHere();
   if (!error) return null;
@@ -480,10 +449,6 @@ const GOALS: Array<{ action: CareActionType; label: string }> = [
   { action: CareActionType.Rest, label: "A rest" },
 ];
 
-/**
- * Today's round in one band: the five things that make a good day, ticked as
- * they happen. Guidance only: it changes no rule and grants nothing new.
- */
 function TodayStrip({ name, today }: { name: string; today: TodayGoals }) {
   return (
     <section className="pk-today" aria-labelledby="pk-today-title">
@@ -515,7 +480,6 @@ function TodayStrip({ name, today }: { name: string; today: TodayGoals }) {
               <span className="pk-sr">, done</span>
             </>
           ) : (
-            // The one goal played elsewhere: its whole mark is the way there.
             <Link href="/playground" className="pk-goal__go" transitionTypes={["nav-place"]}>
               <span className="pk-goal__mark" aria-hidden="true">
                 <Icon name="ball" size={14} />
@@ -535,7 +499,6 @@ function TodayStrip({ name, today }: { name: string; today: TodayGoals }) {
   );
 }
 
-/** The full numbers behind the deck: each vital, the level, the streak. */
 function TodayCard({
   pet,
   mood,
@@ -595,7 +558,6 @@ function TodayCard({
   );
 }
 
-/** Five segments and the raw count beside them — never a percentage. */
 function Vital({ label, value }: { label: string; value: number }) {
   return (
     <Meter
@@ -608,10 +570,6 @@ function Vital({ label, value }: { label: string; value: number }) {
   );
 }
 
-/**
- * Under the day: the way to the pet's whole record, and to the rest of the
- * family. Letting a pet go lives on its record, away from the daily care.
- */
 function HomeFoot({ pet, onChain, others }: { pet: GuestPet; onChain: boolean; others: number }) {
   const { here } = useHere();
   return (

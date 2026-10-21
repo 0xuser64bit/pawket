@@ -6,7 +6,6 @@ import { localMinute, parseLocalMinute } from "@/lib/utils/local-datetime";
 vi.mock("@/lib/native/android", () => ({ useBackCloses: () => {} }));
 afterEach(cleanup);
 
-/** An hour chip, on a twelve- or a twenty-four-hour clock. */
 function pickHour(hour24: number) {
   const hours = within(screen.getByRole("radiogroup", { name: "Hour" }));
   const twelve = screen.queryByRole("radiogroup", { name: "Morning or afternoon" });
@@ -36,11 +35,9 @@ it("moves across a year with the keyboard, takes the time as chips, and commits 
 it("keeps the past out of reach and a passed time from being confirmed", () => {
   render(<DateTimeField label="Starts" value="2000-01-01T15:45" onChange={vi.fn()} />);
   fireEvent.click(screen.getByRole("button", { name: /Starts/ }));
-  // Unavailable but still focusable: a Pawket button is aria-disabled, never disabled.
   expect(screen.getByRole("button", { name: "Use this time" }).getAttribute("aria-disabled")).toBe("true");
   expect(screen.getByRole("status").textContent).toContain("That time has passed");
   expect((screen.getByRole("gridcell", { selected: true }).querySelector("button") as HTMLButtonElement).disabled).toBe(true);
-  // A month on lands on the soonest day there is, never further back.
   fireEvent.click(screen.getByRole("button", { name: "Next month" }));
   expect((screen.getByRole("gridcell", { selected: true }).querySelector("button") as HTMLButtonElement).disabled).toBe(false);
 });

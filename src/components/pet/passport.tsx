@@ -26,14 +26,6 @@ import { StickerStrip } from "./sticker-strip";
 
 const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
 
-/**
- * A pet kept on Solana, as anyone can see it. Beside the record, its ID card
- * stays in view: the portrait, the name, its guild and what you can do —
- * visit, share, care if it is yours. The record is the page: the level and
- * the days in a row, the last cares, the guestbook, the stickers; what it is
- * on chain folds away. Read live from the program's accounts at request
- * time — nothing here is cached, kept or guessed by Pawket.
- */
 export function Passport({
   onChain,
   now,
@@ -43,17 +35,12 @@ export function Passport({
   guestbook = null,
   gatherings = 0,
 }: {
-  /** Guild events the pet checked in at. */
   gatherings?: number;
   onChain: PetOnChain;
-  /** Who waved at the pet, or null before anyone has. */
   guestbook?: ChainGuestbook | null;
-  /** The guild the pet is in, read from chain, or null. */
   guild?: ChainGuild | null;
   now: Date;
-  /** The pet's card, where keepsakes are on. */
   keepsake: Keepsake | null;
-  /** Whether Pawket can pay for a new card right now. */
   canKeep: boolean;
 }) {
   const { pet, passport } = onChain;

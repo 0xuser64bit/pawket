@@ -3,18 +3,6 @@
 import { useSyncExternalStore, type ReactNode } from "react";
 import type { DecorSlot } from "@/lib/room/decor";
 
-/**
- * The room's things drawn flat, the way the flat room draws everything:
- * tokens for colour, the room's ink for the line, and a few colours a thing
- * has of its own (a sunflower, a strawberry). Each is drawn around its own
- * origin — a picture about its centre, a plant from its pot's foot, a rug
- * about its middle, something by the bed from where it stands — and the
- * flat room puts the origin where the slot is (`FLAT_AT`). A bed is two
- * drawings, behind the pet and in front of it, on the nook's 120 × 120.
- * The same drawings are the Market's tiles and the room panel's choices.
- */
-
-/** Where each slot's origin is in the flat room's drawing, and how big the thing is drawn there. */
 export const FLAT_AT: Record<Exclude<DecorSlot, "bed">, { x: number; y: number; scale: number }> = {
   wall: { x: 345, y: 140, scale: 1 },
   corner: { x: 226, y: 223, scale: 0.62 },
@@ -24,8 +12,6 @@ export const FLAT_AT: Record<Exclude<DecorSlot, "bed">, { x: number; y: number; 
 
 const OWN = { sunny: "#ffc84a", berry: "#e2434b", lavender: "#a88fdc", navy: "#22305a", card: "#c9955e", dough: "#e9b27a", rope: "#d8c093", neon: "#ff5fa2" };
 const NIGHT = { opacity: "var(--pk-night)" };
-
-/* ----------------------------------------------------------- the time */
 
 const ticking = new Set<() => void>();
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -45,7 +31,6 @@ const minuteNow = () => {
   return now.getHours() * 60 + now.getMinutes();
 };
 
-/** The clock's hands: this device's time once the page is here, ten past ten (a clock's pose) before. */
 function ClockHands() {
   const minutes = useSyncExternalStore(subscribeMinutes, minuteNow, () => 10 * 60 + 10);
   const hour = ((minutes % 720) / 720) * 360;
@@ -58,8 +43,6 @@ function ClockHands() {
     </g>
   );
 }
-
-/* ------------------------------------------------------------- drawings */
 
 function pot(width: number, height: number, fill: string, band?: string) {
   const w = width / 2;
@@ -95,7 +78,6 @@ type Drawing = { draw: () => ReactNode; box: [number, number, number, number] };
 type Bed = { back: () => ReactNode; front: () => ReactNode };
 
 const DRAW: Record<string, Drawing> = {
-  /* the wall: about its centre */
   "sea-painting": {
     box: [-52, -40, 104, 80],
     draw: () => (
@@ -255,7 +237,6 @@ const DRAW: Record<string, Drawing> = {
     ),
   },
 
-  /* the corner: from the pot's foot */
   fern: {
     box: [-34, -78, 68, 82],
     draw: () => (
@@ -351,7 +332,6 @@ const DRAW: Record<string, Drawing> = {
     ),
   },
 
-  /* the rug: about its middle, seen lying on the floor */
   "meadow-rug": {
     box: [-236, -42, 472, 84],
     draw: () => (
@@ -420,7 +400,6 @@ const DRAW: Record<string, Drawing> = {
     ),
   },
 
-  /* by the bed: from where it stands */
   "floor-lamp": {
     box: [-36, -182, 72, 186],
     draw: () => (
@@ -572,7 +551,6 @@ const BEDS: Record<string, Bed> = {
   },
 };
 
-/** A thing in the flat room, at its slot (a bed is drawn by the nook). */
 export function FlatDecor({ slot, id }: { slot: Exclude<DecorSlot, "bed">; id: string | null }) {
   const drawing = id ? DRAW[id] : undefined;
   if (!drawing) return null;
@@ -580,7 +558,6 @@ export function FlatDecor({ slot, id }: { slot: Exclude<DecorSlot, "bed">; id: s
   return <g transform={`translate(${at.x} ${at.y}) scale(${at.scale})`}>{drawing.draw()}</g>;
 }
 
-/** The pet's bed, behind it and in front of it, on the nook's 120 × 120. */
 export function BedBack({ id }: { id: string }) {
   return <>{(BEDS[id] ?? BEDS.basket).back()}</>;
 }
@@ -588,7 +565,6 @@ export function BedFront({ id }: { id: string }) {
   return <>{(BEDS[id] ?? BEDS.basket).front()}</>;
 }
 
-/** A thing on its own, for a tile or a choice: the same drawing, framed to fit. */
 export function DecorArt({ id, className }: { id: string; className?: string }) {
   const bed = BEDS[id];
   if (bed) {
@@ -610,5 +586,4 @@ export function DecorArt({ id, className }: { id: string; className?: string }) 
   );
 }
 
-/** Every id drawn flat: held to the catalog by `decor.test.ts`. */
 export const DECOR_DRAWN = [...Object.keys(DRAW), ...Object.keys(BEDS)];

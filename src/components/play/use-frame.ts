@@ -2,11 +2,6 @@
 
 import { useEffect, useRef } from "react";
 
-/**
- * Calls `step(dt)` once per animation frame while `running`, with `dt` in
- * seconds and capped, so a tab that was hidden resumes where it paused
- * instead of leaping.
- */
 export function useFrame(running: boolean, step: (dt: number) => void) {
   const latest = useRef(step);
   useEffect(() => {

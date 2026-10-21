@@ -30,7 +30,6 @@ describe("read and share recovery", () => {
     vi.stubGlobal("navigator", { clipboard: { writeText: copy } });
     render(<><AddressLine value="FullAddressThatMustBeReachable" label="address" /><Toasts /></>);
     fireEvent.click(screen.getByRole("button", { name: "Copy address" }));
-    // Said in the toasts' one live region, the whole value selectable there.
     const refused = await screen.findByText("address could not be copied");
     expect(refused.closest(".pk-toast")!.textContent).toContain("FullAddressThatMustBeReachable");
     fireEvent.click(screen.getByRole("button", { name: "Copy address" }));
@@ -42,7 +41,6 @@ describe("read and share recovery", () => {
     vi.stubGlobal("navigator", { clipboard: { writeText: vi.fn().mockRejectedValue(new Error("Refused")) } });
     render(<><AdoptLink url="https://pawket.app/adopt" /><Toasts /></>);
     fireEvent.click(screen.getByRole("button", { name: "Share adoption link" }));
-    // The link is printed in the sheet, selectable, whatever the clipboard does.
     expect(screen.getByText("https://pawket.app/adopt")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Post it on X" }).getAttribute("href")).toContain(encodeURIComponent("https://pawket.app/adopt"));
     fireEvent.click(screen.getByRole("button", { name: "Copy link" }));

@@ -9,7 +9,6 @@ import { Button, Choice, Sheet, Stack } from "@/components/pk";
 import { PHOTO_POSES, type PhotoPose } from "@/lib/room/moments";
 import { savePicture, sharePicture, useAndroidApp } from "@/lib/native/android";
 
-/** The tokens a photo is printed in, read from the room the player is in. */
 function ink() {
   const style = getComputedStyle(document.documentElement);
   const token = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
@@ -28,7 +27,6 @@ function ink() {
   };
 }
 
-/** A heart centred on (x, y), `s` across its widest half. */
 function heart(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
   ctx.beginPath();
   ctx.moveTo(x, y + s * 0.9);
@@ -37,7 +35,6 @@ function heart(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
   ctx.closePath();
 }
 
-/** A five-pointed star centred on (x, y). */
 function star(ctx: CanvasRenderingContext2D, x: number, y: number, outer: number, inner: number) {
   ctx.beginPath();
   for (let i = 0; i < 10; i++) {
@@ -58,11 +55,6 @@ function load(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/**
- * The room's picture as a print: the photo in the room's frame shape and
- * ink outline, on the room's own paper, with who is in it and the day under
- * it, and the name of the place it was taken.
- */
 async function printPhoto(shot: string, title: string, line: string, frame?: PhotoFrameId): Promise<string> {
   const image = await load(shot);
   await document.fonts.ready;
@@ -102,7 +94,6 @@ async function printPhoto(shot: string, title: string, line: string, frame?: Pho
     }
   }
   if (frame === "polaroid") {
-    // A strip of tape across the top edge, a little crooked.
     ctx.save();
     ctx.translate(W / 2, pad);
     ctx.rotate(-0.04);
@@ -139,7 +130,6 @@ async function printPhoto(shot: string, title: string, line: string, frame?: Pho
     }
   }
   if (frame === "confetti") {
-    // The same sprinkle every time: a fixed seed, so a print never changes between saves.
     let seed = 7;
     const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
     const colours = [t.sun, t.pool, t.sprout, t.blush];
@@ -192,13 +182,6 @@ async function printPhoto(shot: string, title: string, line: string, frame?: Pho
   return canvas.toDataURL("image/png");
 }
 
-/**
- * A photo of the two of you, printed, in a dialog: save it as a file, or
- * hand it to the system's share sheet where there is one. In the Android
- * app, saving puts it in the phone's gallery and sharing opens the phone's
- * share sheet (`src/lib/native/android.ts`). Nothing is sent anywhere by
- * taking it, and nothing is uploaded to share it.
- */
 export function PhotoDialog({
   shot,
   title,
@@ -210,23 +193,19 @@ export function PhotoDialog({
   shot: string;
   title: string;
   line: string;
-  /** The saved file's name, without the extension. */
   file: string;
   onClose: () => void;
-  /** Strike a pose in the room (or let it go) and return the photo of it. */
   onPose?: (pose: PhotoPose | null) => Promise<string | null>;
 }) {
   const [rawShot, setRawShot] = useState(shot);
   const [pose, setPose] = useState<PhotoPose | "">("");
   const [posing, setPosing] = useState(false);
-  /** The latest pose asked for; an earlier one that answers late is dropped. */
   const asked = useRef(0);
   const connected = useConnected();
   const closet = useCloset((connected?.account.address as Address | undefined) ?? null);
   const [frame, setFrame] = useState<PhotoFrameId>();
   const available = PHOTO_FRAMES.filter((option) => closet.data?.items.includes(option.item));
   const selected = available.some((option) => option.id === frame) ? frame : undefined;
-  /** The print on show, and what it was printed from: a stale one stays up, faded, until the next is ready. */
   const [printed, setPrinted] = useState<{ url: string; from: string; frame?: PhotoFrameId } | null>(null);
   const fresh = printed?.from === rawShot && printed.frame === selected;
   const print = fresh && !posing ? printed.url : null;
@@ -244,7 +223,6 @@ export function PhotoDialog({
     };
   }, [rawShot, title, line, selected]);
 
-  /** To the phone: its gallery, or its share sheet. It says what happened, and what did not. */
   async function toPhone(how: "save" | "share") {
     if (!print || handing) return;
     setHanding(true);
@@ -280,7 +258,6 @@ export function PhotoDialog({
         setSaid("Shared.");
       } else setSaid("This browser cannot share a picture. Save it instead.");
     } catch (error) {
-      // Closing the share sheet says nothing; a share the phone refused says so.
       setSaid((error as { name?: unknown } | null)?.name === "AbortError" ? undefined : "The photo could not be shared. Save it instead.");
     }
   }
@@ -300,7 +277,6 @@ export function PhotoDialog({
                 <span className="pk-btn__label">Save the photo</span>
               </a>
             ) : (
-              // Held in place, not hidden, while a photo develops: nothing under a finger moves.
               <Button label="Save the photo" size="sm" disabled={!print || handing} onClick={() => void toPhone("save")} />
             )}
           </div>
@@ -313,7 +289,6 @@ export function PhotoDialog({
       <Stack gap={4}>
       <div className="pk-photo" aria-busy={!print}>
         {printed ? (
-          // A data URL made on this device: there is nothing for the image optimiser to fetch.
           // eslint-disable-next-line @next/next/no-img-element
           <img key={printed.url} src={printed.url} alt={`${title}, ${line}`} className="pk-photo__print" />
         ) : (

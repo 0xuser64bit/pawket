@@ -7,18 +7,11 @@ import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 
 export interface YourPlace {
   founded: boolean;
-  /** Your pets on Solana that are in it. */
   pets: PetOnChain[];
 }
 
 const NOWHERE: YourPlace = { founded: false, pets: [] };
 
-/**
- * Your place in a guild, read from the connected wallet and nothing else:
- * whether you founded it, and which of your pets on Solana are in it. Said
- * only once the wallet's pets are read, so the server's page and the first
- * one drawn here agree, and a founder and their pets arrive together.
- */
 export function yourPlace(
   { ready, owner, owned }: { ready: boolean; owner: string | null; owned: PetOnChain[] },
   guild: { address: string; founder: string },
@@ -27,7 +20,6 @@ export function yourPlace(
   return { founded: owner === guild.founder, pets: owned.filter((entry) => entry.member?.guild === guild.address) };
 }
 
-/** On a guild's card: the faces of your pets in it, and your role, in a word. */
 export function YourBadge({ founded, pets }: YourPlace) {
   const names = pets.map((entry) => entry.pet.name);
   return (
@@ -43,7 +35,6 @@ export function YourBadge({ founded, pets }: YourPlace) {
   );
 }
 
-/** On a guild's own page: the same role, leading its facts. */
 export function GuildRole({ guild }: { guild: { address: string; founder: string } }) {
   const { founded, pets } = yourPlace(useCompanion(), guild);
   if (!founded && pets.length === 0) return null;

@@ -12,7 +12,6 @@ vi.mock("@/lib/solana/use-send", () => ({ usePawketSend: () => null, useSponsor:
 vi.mock("@/lib/companion/use-companion", () => ({ useCompanion: () => ({ owned: [] }) }));
 vi.mock("@/lib/wallet/history", () => ({ fetchWalletHistory: mock.older }));
 vi.mock("@/lib/wallet/pawket-wallet", () => ({ rentOfWallet: mock.rent }));
-// The rent and the first page, already read.
 vi.mock("@solana/react", () => ({
   useRequest: (read: unknown) =>
     read === null ? { status: "idle" } : { status: "success", data: read === mock.rent ? 0n : { entries: [entry("newest", 2n)], next: "newest" } },

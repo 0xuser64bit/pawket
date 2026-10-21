@@ -2,18 +2,12 @@
 
 import { useRef, useState } from "react";
 
-/**
- * Local panels that keep their deep links without asking the server to
- * render again. The tab pressed lights at once, even while a heavy panel
- * is still being drawn; Back and Forward move them as the address does.
- */
 export function Tabs({ items, active, label }: {
   items: Array<{ key: string; label: string; href: string }>;
   active: string;
   label: string;
 }) {
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
-  // A press holds until the address moves — to the tab pressed, or anywhere by Back — and then the address wins.
   const [pressed, setPressed] = useState<{ key: string; from: string } | null>(null);
   if (pressed && pressed.from !== active) setPressed(null);
   const lit = pressed && pressed.from === active ? pressed.key : active;

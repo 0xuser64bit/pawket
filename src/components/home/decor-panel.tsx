@@ -19,16 +19,10 @@ const SLOTS: ReadonlyArray<{ value: DecorSlot; label: string; icon: IconName }> 
 
 const roomName = (id: string) => THEMES.find((theme) => theme.id === id)?.name ?? id;
 
-/**
- * Decorating, under the deck: a place in the room, then what stands there.
- * A tap puts it in the room above at once; nothing is bought here. A thing
- * that comes with a Market room says which, and where to find it.
- */
 export function DecorPanel({ shown, owned }: { shown: RoomDecor; owned: ReadonlySet<number> }) {
   const [slot, setSlot] = useState<DecorSlot>("wall");
   const [said, setSaid] = useState<string>();
   const { here } = useHere();
-  /** Whether "new" can be decided: by this device's clock, once it is here. */
   const mounted = useMounted();
   const pieces = DECOR.filter((piece) => piece.slot === slot);
 

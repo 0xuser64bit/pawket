@@ -26,7 +26,6 @@ it("holds a pose facing the camera until released, then the room lives again", a
   director.listen(status);
   await director.holdPhoto("wave");
   expect(human.hold).toHaveBeenCalledWith("Wave", 1);
-  // Turned to the camera, not to the window behind: a face, never the back of a head.
   expect(Math.abs(human.root.rotation.y)).toBeLessThan(0.3);
   human.play.mockClear();
   director.update(30);

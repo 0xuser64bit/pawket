@@ -21,18 +21,9 @@ import { GATHERING_LIMITS, PAWKET_ACCOUNTS } from "@/lib/solana/program";
 import { rentWaits, useSponsor, usePawketSend } from "@/lib/solana/use-send";
 import { useMounted } from "@/lib/utils/use-mounted";
 
-/**
- * A guild's gatherings: events its founder plans and its pets go to, and
- * polls its founder asks and each wallet with a pet in it answers once.
- * Every one is a record on Solana — planned, RSVPed, checked in, voted —
- * with Pawket paying the fee and the rent while it can. None of it reaches
- * a vital, XP or a score; a vote has no weight but one.
- */
-
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "Sun 12 Oct, 18:00 UTC": what the server draws, so the first draw matches it; then `localWhen`. */
 function when(seconds: number): string {
   const d = new Date(seconds * 1000);
   const hh = String(d.getUTCHours()).padStart(2, "0");
@@ -40,7 +31,6 @@ function when(seconds: number): string {
   return `${WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}, ${hh}:${mm} UTC`;
 }
 
-/** "Sun, Oct 12, 11:00 AM PDT": the viewer's own clock, named, once the page is in the browser. */
 const localWhen = (seconds: number) =>
   new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(
     new Date(seconds * 1000),
@@ -62,14 +52,11 @@ export function GuildGatherings({
   const mounted = useMounted();
   const at = (seconds: number) => (mounted ? localWhen(seconds) : when(seconds));
   const router = useRouter();
-  // The page's moment: events open and close against it until the page is read again.
   const [now] = useState(() => Math.floor(Date.now() / 1000));
   const owner = companion.owner;
   const mine = useMemo(() => companion.owned.filter((entry) => entry.member?.guild === guild.address), [companion.owned, guild.address]);
-  // Like "your place" (yours.tsx): only once the wallet's pets are read, so the first draw matches the server's.
   const founder = yourPlace(companion, guild).founded;
 
-  // What this wallet's pets have RSVPed to, and which polls it has answered: read from Solana.
   const readMine = useCallback(async () => {
     const rsvps = (await Promise.all(mine.map((entry) => fetchPetRsvps(rpc, entry.pet.address)))).flat();
     const ballots = await Promise.all(polls.map(async (poll) => (await deriveBallotPda(poll.address, owner!)).address));
@@ -258,7 +245,6 @@ export function GuildGatherings({
   );
 }
 
-/** What only the founder sees: planning an event, and asking the guild something. */
 function FounderDesk({
   guild,
   sender,
@@ -276,7 +262,6 @@ function FounderDesk({
   const [options, setOptions] = useState(["", "", "", ""]);
   const [days, setDays] = useState("3");
   const [problem, setProblem] = useState<string>();
-  // Every plan and poll opens an account: they wait while Pawket cannot pay its rent.
   const waits = rentWaits(useSponsor().data);
 
   async function plan() {

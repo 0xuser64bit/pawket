@@ -7,15 +7,8 @@ import { inAndroidApp } from "@/lib/native/android";
 import { stopWaitingForPhoneWallet } from "@/lib/solana/browser-client";
 import { DevnetFaucet } from "@/components/wallet/faucet";
 
-/** Where a linked device key lives, said as the player sees it: this app, or this browser. Toasts are made at run time, never on the server. */
 const here = () => (inAndroidApp() ? "this app" : "this browser");
 
-/**
- * What a send looks like, as a toast. Waiting is neutral; a record is a fact
- * with its signature a tap away, not a celebration; a timeout is "still
- * waiting", never "failed"; a failure names its reason and stays until it is
- * read. The joy belongs to the animal on the screen.
- */
 export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast | null {
   const title = tx.label ?? "Your transaction";
   const look = tx.signature ? (
@@ -42,7 +35,6 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
           ) : tx.phone ? (
             <>
               Approve it in your wallet app. Nothing is sent until you do.{" "}
-              {/* A wallet showing nothing, or one left open: stop waiting, and the next try asks it afresh. */}
               <button type="button" className="pk-linkish" onClick={stopWaitingForPhoneWallet}>
                 Nothing there? Stop waiting
               </button>

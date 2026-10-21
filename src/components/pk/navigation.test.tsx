@@ -36,11 +36,9 @@ it("lights a pressed tab at once, and lets the address win once it moves", () =>
   ];
   const view = render(<Tabs label="Shelf" active="pets" items={items} />);
   fireEvent.click(screen.getByRole("tab", { name: "Stickers" }));
-  // The address has not been read back yet; the tab pressed is lit anyway.
   expect(screen.getByRole("tab", { name: "Stickers" }).getAttribute("aria-selected")).toBe("true");
   view.rerender(<Tabs label="Shelf" active="stickers" items={items} />);
   expect(screen.getByRole("tab", { name: "Stickers" }).getAttribute("aria-selected")).toBe("true");
-  // Back: the address says Pets again, and so do the tabs.
   view.rerender(<Tabs label="Shelf" active="pets" items={items} />);
   expect(screen.getByRole("tab", { name: "Pets" }).getAttribute("aria-selected")).toBe("true");
 });

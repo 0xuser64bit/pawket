@@ -24,32 +24,17 @@ import { clothHex, DAYLIGHT, hairHex } from "./palette";
 import { aimBone, dampVector, reach, worldPosition } from "./rig";
 
 
-/**
- * The pack's bodies are drawn eight heads tall. A slightly larger head is
- * the one proportion change that brings them toward Pawket's friendlier
- * shapes without making them strange; hair and eyes ride on the same bone.
- */
 const HEAD_SCALE = 1.15;
 
 const HAIR_MESH = { buzzed: "hair_buzzed", parted: "hair_parted", long: "hair_long", buns: "hair_buns" } as const;
 
 export interface HumanFrame {
-  /** Where the eyes and head should go, in world space. */
   look: Vector3 | null;
   lookWeight: number;
-  /**
-   * Where the right wrist should go, in world space, given where the clip
-   * put it this frame — called after the clip is applied, before the IK.
-   */
   reach: ((clipWrist: Vector3) => Vector3) | null;
   reachWeight: number;
 }
 
-/**
- * The player in the room: one body GLB with every hairstyle and garment
- * inside it, dressed by toggling meshes, coloured by the look, animated by
- * a mixer, then finished by look-at and a reaching hand.
- */
 export class HumanActor {
   readonly root = new Group();
   readonly mixer: AnimationMixer;
@@ -59,9 +44,7 @@ export class HumanActor {
   private readonly clips = new Map<string, AnimationClip>();
   private readonly weights = new Map<AnimationAction, { now: number; to: number; rate: number }>();
   private readonly skin: ReturnType<typeof skinMaterial>;
-  /** Materials the look recolours, by what they are. */
   private readonly dye: Record<"top" | "bottom" | "shoes" | "hair", MeshToonMaterial[]> = { top: [], bottom: [], shoes: [], hair: [] };
-  /** Bit per garment in the body's `_cover` attribute, and the sole height — from the GLB. */
   private readonly cover: Record<string, number>;
   private readonly sole: number;
   private readonly faceAxis: Vector3;
@@ -85,17 +68,14 @@ export class HumanActor {
     });
     this.bones = bones;
 
-    // Materials: the GLB carries PBR defaults; the room draws in toon.
     const skinSource = ((this.model.getObjectByName("body") as Mesh).material as MeshStandardMaterial);
     this.skin = skinMaterial(skinSource.map as Texture, skinSource.normalMap);
-    // The painting's own average tone, measured by the asset pipeline.
     this.skinBase = new Color((skinSource.userData.skinBase as string | undefined) ?? "#a67858");
 
     const meshes: SkinnedMesh[] = [];
     this.model.traverse((object) => {
       if ((object as SkinnedMesh).isMesh) meshes.push(object as SkinnedMesh);
     });
-    // Collected first: an outline is a child mesh, and must not get one itself.
     for (const mesh of meshes) {
       mesh.frustumCulled = false;
       const source = mesh.material as MeshStandardMaterial;
@@ -123,7 +103,6 @@ export class HumanActor {
     this.cover = extras.cover ?? {};
     this.sole = extras.sole ?? 0;
 
-    // Named parts: a multi-primitive mesh arrives as a group under its node name.
     for (const name of ["body", "eyes", "brows", "beard", ...Object.values(HAIR_MESH), ...Object.keys(this.cover)]) {
       const part = this.model.getObjectByName(name);
       if (part) this.meshes.set(name, part);
@@ -132,7 +111,6 @@ export class HumanActor {
     this.mixer = new AnimationMixer(this.model);
     for (const clip of clips) this.clips.set(clip.name, clip);
 
-    // Where the face and neck point, in their own space, from the rest pose.
     this.model.updateMatrixWorld(true);
     const forward = new Vector3(0, 0, 1);
     this.faceAxis = forward.clone().transformDirection(bones.Head.matrixWorld.clone().invert());
@@ -152,7 +130,6 @@ export class HumanActor {
     return this.clips.get(name)?.duration ?? 0;
   }
 
-  /** Dress and colour the body from a look. */
   wear(look: PlayerLook): void {
     const show = (name: string, on: boolean) => {
       const part = this.meshes.get(name);
@@ -173,25 +150,18 @@ export class HumanActor {
     for (const m of this.dye.top) m.color.set(clothHex(look.topColour));
     for (const m of this.dye.bottom) m.color.set(clothHex(look.bottomColour));
     for (const m of this.dye.shoes) m.color.set(clothHex(look.shoeColour));
-    // The hair texture is a grey strand map; lift the tint so it lands on the shade.
     for (const m of this.dye.hair) m.color.set(hairHex(look.hairColour)).multiplyScalar(1.45);
     this.model.position.y = look.shoes === "none" ? 0 : this.sole;
-    // A hat and glasses hang from the head, measured from this body's own eyes.
     const head = this.bones.Head;
     const worn = head.getObjectByName("accessory");
     if (worn) {
       worn.removeFromParent();
-      // Each look builds its hat and glasses afresh: the old ones go, GPU buffers and all.
       disposeTree(worn);
     }
     const eyes = { l: this.bones.eye_l?.position.clone() ?? new Vector3(0.034, 0.1, 0.08), r: this.bones.eye_r?.position.clone() ?? new Vector3(-0.034, 0.1, 0.08) };
     head.add(accessoriesFor(look, eyes));
   }
 
-  /**
-   * Blend to a clip. Weights always sum to one, so a half-finished fade
-   * never lets the bind pose show through.
-   */
   play(name: string, { fade = 0.35, loop = false, at = 0 }: { fade?: number; loop?: boolean; at?: number } = {}): AnimationAction | null {
     const clip = this.clips.get(name);
     if (!clip) return null;
@@ -222,12 +192,10 @@ export class HumanActor {
     return action;
   }
 
-  /** The clip playing now, and how far into it. */
   current(): { name: string; time: number } | null {
     return this.action ? { name: this.action.getClip().name, time: this.action.time } : null;
   }
 
-  /** Pose the body at one moment of a clip and hold it there (reduced motion). */
   hold(name: string, time: number): void {
     const action = this.play(name, { fade: 0 });
     if (!action) return;
@@ -258,9 +226,6 @@ export class HumanActor {
     this.model.updateMatrixWorld(true);
 
     if (frame.look && frame.lookWeight > 0) {
-      // Eyes lead, the head follows: the gaze point moves smoothly. A still
-      // (reduced motion, a photo pose) has no time to turn in, so it looks
-      // straight at its point rather than wherever the head last was.
       if (!this.gazeReady || dt === 0) {
         this.gaze.copy(frame.look);
         this.gazeReady = true;
@@ -278,11 +243,6 @@ export class HumanActor {
     }
   }
 
-  /**
-   * The pack has no eyelid shapes, but each eye has its own joint (added by
-   * the asset pipeline): squashing it closes the eye. A blink every few
-   * seconds, sometimes two. Held still (dt = 0), the eyes stay open.
-   */
   private blink(dt: number): void {
     this.clock += dt;
     let open = 1;
@@ -295,7 +255,6 @@ export class HumanActor {
     this.bones.eye_r?.scale.set(1, open, 1);
   }
 
-  /** A point in the right palm, in world space. */
   palm(side: "l" | "r", out = new Vector3()): Vector3 {
     const hand = this.bones[`hand_${side}`];
     const fingers = this.bones[`middle_01_${side}`];

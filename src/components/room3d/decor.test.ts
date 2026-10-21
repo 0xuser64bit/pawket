@@ -30,7 +30,6 @@ describe("the room's things, three ways", () => {
     const clock = buildDecor("wall-clock")!;
     clock.tick!(new Date(2026, 9, 20, 3, 0));
     const hands = clock.object.children.filter((child) => child.type === "Group");
-    // At three o'clock the hour hand points right and the minute hand up.
     expect(hands[0].rotation.z).toBeCloseTo(-Math.PI / 2);
     expect(hands[1].rotation.z).toBeCloseTo(0);
   });

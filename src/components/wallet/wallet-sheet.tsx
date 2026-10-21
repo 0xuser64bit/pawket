@@ -15,28 +15,17 @@ const INSTALL = [
   { name: "Backpack", href: "https://backpack.app/download" },
 ];
 
-/**
- * A phone's browser has no wallet of its own: the wallet app's browser does.
- * Each app publishes a link that opens a page inside it (and offers the app
- * where it is not installed yet).
- */
 const OPEN_IN = [
   { name: "Phantom", href: (page: string, ref: string) => `https://phantom.app/ul/browse/${encodeURIComponent(page)}?ref=${encodeURIComponent(ref)}` },
   { name: "Solflare", href: (page: string, ref: string) => `https://solflare.com/ul/v1/browse/${encodeURIComponent(page)}?ref=${encodeURIComponent(ref)}` },
 ];
 
-/**
- * Choosing a wallet. Offered only where connecting does something — keeping
- * a pet on Solana, or finding the ones a wallet already holds — and never
- * the first thing a player sees.
- */
 export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: string }) {
   const wallets = useWallets(wallet);
   const connect = useConnect(wallet);
   const sponsor = useSponsor();
   const cluster = getPublicEnv().solanaCluster;
   const declined = connect.isError && isUserRejection(connect.error);
-  // The sheet opens only after a tap, so the page and the hand are known here.
   const [where] = useState(() => ({ page: window.location.href, ref: window.location.origin, phone: window.matchMedia("(pointer: coarse)").matches }));
 
   return (
@@ -58,14 +47,11 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
                 className="pk-btn pk-btn--quiet pk-btn--full pk-wallet-pick"
                 disabled={connect.isRunning}
                 onClick={() => {
-                  connect.dispatchAsync(option).then(onDismiss, () => {
-                    // The error is on `connect`; the sheet says it below.
-                  });
+                  connect.dispatchAsync(option).then(onDismiss, () => {});
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- a wallet's own data-URI mark */}
                 <img src={option.icon} alt="" />
-                {/* Mobile Wallet Adapter is how, not what: the player knows their wallet app by its own name. */}
                 <span>{option.name === PHONE_WALLETS ? "A wallet app on this phone" : option.name}</span>
               </button>
             ))}

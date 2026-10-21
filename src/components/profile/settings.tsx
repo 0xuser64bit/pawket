@@ -13,11 +13,6 @@ import type { PetForm } from "@/components/pk";
 import { useAndroidApp, useHaptics, useHere } from "@/lib/native/android";
 import { CareReminderSetting } from "@/components/home/remind-me";
 
-/**
- * The room you live in and how this device plays: the rooms, 3D or flat,
- * and Pawket's sound. All of it is saved here, and none of it
- * changes a pet.
- */
 export function Settings({ form }: { form?: PetForm }) {
   const [mode, setMode] = useRoomMode();
   const [sound, setSound] = useSound();

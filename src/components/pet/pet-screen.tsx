@@ -32,10 +32,6 @@ import { formatUtcDate, nameHeadingClass } from "@/lib/utils/format";
 import { StickerStrip } from "./sticker-strip";
 import { useHere } from "@/lib/native/android";
 
-/**
- * The record of a pet kept in this browser. An id this browser does not
- * keep is a plain miss: the pet may live in another browser.
- */
 export function PetScreen({ id }: { id: string }) {
   const { ready, pets } = usePets();
   const { here } = useHere();
@@ -184,10 +180,6 @@ export function PetScreen({ id }: { id: string }) {
   );
 }
 
-/**
- * Letting a pet go from this browser: last on its record, behind a second
- * press that says what goes with it — never one tap away on the daily room.
- */
 function LetGo({ pet, others }: { pet: GuestPet; others: number }) {
   const { here } = useHere();
   const router = useRouter();

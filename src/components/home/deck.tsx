@@ -22,7 +22,6 @@ const VITALS: Array<{ key: keyof PetStats; label: string; icon: IconName }> = [
 
 export type Panel = "say" | "today" | "decor";
 
-/** XP a care just earned, shown once where the thumb is; a new `at` replays it. */
 export type Gain = { action: CareActionType; xp: number; at: number };
 
 const TOOLS: Array<{ key: Panel; label: string; icon: IconName }> = [
@@ -31,10 +30,6 @@ const TOOLS: Array<{ key: Panel; label: string; icon: IconName }> = [
   { key: "decor", label: "Decor", icon: "sofa" },
 ];
 
-/**
- * Level as a ring of ten segments, the number inside: countable, like every
- * meter in Pawket, and small enough to sit beside the care buttons.
- */
 function LevelRing({ level, into, of }: { level: number; into: number; of: number }) {
   const filled = Math.floor((into / of) * 10);
   const r = 19;
@@ -62,7 +57,6 @@ function LevelRing({ level, into, of }: { level: number; into: number; of: numbe
   );
 }
 
-/** One vital, minimized: its glyph, its name and the number, then five segments across the column. */
 function MiniVital({ label, icon, value }: { label: string; icon: IconName; value: number }) {
   const filled = Math.round(value / 20);
   return (
@@ -81,14 +75,6 @@ function MiniVital({ label, icon, value }: { label: string; icon: IconName; valu
   );
 }
 
-/**
- * Everything you can do in the room, floating under it: how the pet is
- * (level, the four vitals, the mood in a word), the four cares as round
- * buttons — the one the pet most wants in sun, a resting one counting down
- * inside its face, its name kept beneath — and the tools: say something and
- * today's numbers open a panel below, and how you look opens in your
- * profile. Nothing here sits over the animal.
- */
 export function Deck({
   name,
   mood,
@@ -120,7 +106,6 @@ export function Deck({
   gain?: Gain | null;
   onCare: (action: CareActionType) => void;
   onPanel: (panel: Panel | null) => void;
-  /** Take a photo of the room; absent where the room cannot be photographed (the flat room). */
   onSnap?: () => void;
 }) {
   return (
@@ -157,7 +142,6 @@ export function Deck({
               key={action}
               type="button"
               className={["pk-care", action === wanted && "pk-care--wanted"].filter(Boolean).join(" ")}
-              // Resting or busy, it keeps focus (aria-disabled, not disabled): the countdown is read in place.
               aria-disabled={left > 0 || busy || undefined}
               aria-label={left > 0 ? `${label}, resting for ${formatCountdown(left)}` : label}
               onClick={() => {

@@ -10,15 +10,9 @@ import { SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
 import { useHere } from "@/lib/native/android";
 
-/**
- * Every pet the player keeps, on Solana first, then in this browser: each
- * one's face, level and where it lives, the way to its record, and the way
- * home. The last pocket on the shelf adopts another.
- */
 export function PetsShelf({ companion, onConnect }: { companion: CompanionState; onConnect: () => void }) {
   const router = useRouter();
   const [opening, startOpening] = useTransition();
-  // The pressed card says "At home" at once; the room on its way is the bar's to say.
   useNavigationWait(opening);
   const { here } = useHere();
   const home = companion.pet?.id;
@@ -86,7 +80,6 @@ function PetCard({ pet, onChain, home, onHome }: { pet: GuestPet; onChain: boole
   );
 }
 
-/** An empty shelf: one action, and what it does. */
 export function EmptyShelf() {
   const { here } = useHere();
   return (

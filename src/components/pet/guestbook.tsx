@@ -14,12 +14,6 @@ import { deriveGuestbookPda } from "@/lib/solana/pda";
 import { rentWaits, usePawketSend, useSponsor } from "@/lib/solana/use-send";
 import { formatUtcDate } from "@/lib/utils/format";
 
-/**
- * Who waved at a pet: every wave counted, the last eight kept on Solana in
- * its guestbook. Anyone but its owner can wave, once a UTC day, with
- * Pawket paying the fee — the one thing a visitor does on a pet's record,
- * and it changes nothing about the pet.
- */
 export function Guestbook({
   pet,
   owner,
@@ -29,15 +23,12 @@ export function Guestbook({
   today,
   onWaved,
 }: {
-  /** Called once Solana has the wave: a room plays it. */
   onWaved?: () => void;
   pet: Address;
   owner: Address;
   name: string;
   waves: number;
-  /** Newest first. */
   recent: Array<{ visitor: Address; at: number }>;
-  /** The UTC day the page was read on, counted from the epoch. */
   today: number;
 }) {
   const connected = useConnected();

@@ -25,24 +25,11 @@ import { SLOT_AT, buildDecor, type BuiltDecor } from "./decor";
 import { addOutline, disposeTree, toon } from "./materials";
 import { DAYLIGHT, type Tone } from "./palette";
 
-/**
- * The room: the flat Home room from the design system, built as a
- * diorama. A back wall in the pet's sky tint, a window with its mullion,
- * a floor meeting the wall on an ink line, and the lantern the evening
- * lights. The furniture stays where it is when the evening comes; only
- * the light changes. What stands in it — the picture, the plant, the rug,
- * the bed and the thing past it — is the player's (`dress`, from
- * `src/lib/room/decor.ts`); each place in the room holds one.
- *
- * Room space: metres, floor at y = 0, back wall at z = BACK, camera on +Z.
- */
-
 const BACK = -1.6;
 export const BED = { x: SLOT_AT.bed.x, z: SLOT_AT.bed.z };
-/** September to November: leaves go past the window. */
+/** September to November: getMonth counts from 0. */
 export const AUTUMN: ReadonlySet<number> = new Set([8, 9, 10]);
 
-/** The pet's sky, as the token each backdrop takes (`SPECIES_SKY`). */
 const SKY_TONE: Record<Sky, Tone> = { warm: "sun-soft", cool: "pool-soft", plain: "surface-sunk" };
 
 function solid(geometry: BufferGeometry, tone: Tone, outline = true): Mesh {
@@ -66,15 +53,8 @@ function roundedTop(width: number, height: number, radius: number): Shape {
 
 export interface RoomSet {
   group: Group;
-  /**
-   * Evening or day, and the wall: by day it is the pet's sky in the room the
-   * player picked (a token's value, read from the page); after dark it is the
-   * one evening wall, lit by the lantern.
-   */
   light: (evening: boolean, wall: string) => void;
-  /** Put the player's things in their places; a place whose thing is unchanged is left as it is. */
   dress: (decor: RoomDecor) => void;
-  /** Each frame: what keeps time does. */
   tick: (now: Date) => void;
   window: { x: number; y: number; z: number };
 }
@@ -93,13 +73,11 @@ export function buildRoom(decor?: RoomDecor): RoomSet {
   floor.position.set(0, 0, BACK + 3.5);
   group.add(floor);
 
-  // Where wall meets floor: the ink line the flat room draws.
   const line = new Mesh(new BoxGeometry(12, 0.03, 0.03), new MeshBasicMaterial({ color: DAYLIGHT.edge }));
   line.position.set(0, 0.012, BACK + 0.012);
   group.add(line);
   const lineMaterial = line.material as MeshBasicMaterial;
 
-  // The window: rounded at the top like `radius-md`, a mullion down the middle.
   const win = { x: -1.2, y: 0.98, z: BACK };
   const frameShape = roundedTop(1.02, 0.96, 0.16);
   frameShape.holes.push(new Shape(roundedTop(0.9, 0.84, 0.11).getPoints().map((p) => p.add(new Vector2(0, 0.06)))));
@@ -120,8 +98,6 @@ export function buildRoom(decor?: RoomDecor): RoomSet {
   sill.position.set(win.x, win.y - 0.02, win.z + 0.07);
   group.add(sill);
 
-  // In autumn a few leaves drift down past the glass, between it and the
-  // mullion; the frame hides them at its edges. Only the month says when.
   const leafShape = new Shape();
   leafShape.moveTo(0, -0.035);
   leafShape.quadraticCurveTo(0.028, -0.005, 0, 0.035);
@@ -137,7 +113,6 @@ export function buildRoom(decor?: RoomDecor): RoomSet {
   const glassTop = win.y + 0.06 + 0.84;
   const glassBottom = win.y + 0.06;
 
-  // The player's things, each in its place: dressed by `dress`.
   const places = {} as Record<DecorSlot, { group: Group; id: string | null; built: BuiltDecor | null }>;
   for (const slot of DECOR_SLOTS) {
     const place = new Group();
@@ -171,7 +146,6 @@ export function buildRoom(decor?: RoomDecor): RoomSet {
     leaves.forEach((leaf, i) => {
       leaf.visible = autumn;
       if (!autumn) return;
-      // Each crosses the glass in seven to twelve seconds, swaying, turning over as it goes.
       const fall = (t / (7 + i) + i / leaves.length) % 1;
       leaf.position.set(
         win.x - 0.34 + (i / (leaves.length - 1)) * 0.68 + Math.sin(t * 1.3 + i * 2) * 0.05,
@@ -183,7 +157,6 @@ export function buildRoom(decor?: RoomDecor): RoomSet {
   };
   if (decor) dress(decor);
 
-  // A shelf with three books.
   const shelf = new Group();
   shelf.add(solid(new BoxGeometry(0.9, 0.05, 0.22), "surface"));
   for (const [x, h, w, tone, tilt] of [
@@ -200,7 +173,6 @@ export function buildRoom(decor?: RoomDecor): RoomSet {
   shelf.position.set(0.85, 1.52, BACK + 0.12);
   group.add(shelf);
 
-  // The lantern, hung from above the frame; lit in the evening.
   const lantern = new Group();
   const cord = new Mesh(new CylinderGeometry(0.008, 0.008, 1.2, 6), new MeshBasicMaterial({ color: DAYLIGHT.edge }));
   cord.position.y = 0.6;
@@ -215,7 +187,6 @@ export function buildRoom(decor?: RoomDecor): RoomSet {
   lantern.position.set(1.45, 2.02, -0.55);
   group.add(lantern);
 
-  // Light. Day comes through the window; evening is the lantern.
   const hemi = new HemisphereLight(0xfff4e6, 0xcab89c, 1.6);
   const sun = new DirectionalLight(0xfff0dc, 2.2);
   sun.position.set(-3, 4.5, 4);
@@ -248,7 +219,6 @@ export function buildRoom(decor?: RoomDecor): RoomSet {
   return { group, light, dress, tick, window: { x: win.x, y: win.y + 0.5, z: win.z } };
 }
 
-/** A flat, hard-edged shadow: offset and outline, never blur. */
 export function blobShadow(radius: number): Mesh {
   const mesh = new Mesh(
     new CircleGeometry(radius, 32),

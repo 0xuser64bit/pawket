@@ -6,7 +6,6 @@ import { Button } from "@/components/pk";
 import { choosePet } from "@/lib/companion/use-companion";
 import { useConnected } from "@/lib/solana/browser-client";
 
-/** On your own pet's record, the way home. Anyone else sees the record and nothing to press. */
 export function OwnerActions({ owner, address, name }: { owner: string; address: string; name: string }) {
   const connected = useConnected();
   const router = useRouter();

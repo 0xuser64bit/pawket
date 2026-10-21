@@ -9,11 +9,6 @@ import { GuildCrest } from "./guild-crest";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { yourPlace, YourBadge, type YourPlace } from "./yours";
 
-/**
- * Every guild, yours first: the ones you founded or a pet of yours is in,
- * read from the connected wallet, then the rest. Nothing is saved beside
- * chain state.
- */
 export function GuildDirectory({ guilds, coins }: { guilds: ChainGuild[]; coins: Map<string, CoinStage> }) {
   const companion = useCompanion();
   const places = new Map(guilds.map((guild) => [guild.address, yourPlace(companion, guild)]));

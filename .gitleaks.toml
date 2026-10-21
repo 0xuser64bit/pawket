@@ -4,9 +4,9 @@ title = "Pawket secret detection"
 useDefault = true
 
 [[allowlists]]
-description = "Public localStorage names present in early commits"
+description = "Public localStorage names"
 regexTarget = "secret"
-regexes = ['''^pawket\.(daily|guest-pet)\.v1$''']
+regexes = ['''^pawket\.(daily|guest-pet|pet-coats)\.v1$''']
 
 [[rules]]
 id = "solana-keypair"

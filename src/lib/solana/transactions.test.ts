@@ -23,7 +23,6 @@ describe("transaction errors", () => {
     expect(isUserRejection(new Error("boom"))).toBe(false);
   });
 
-  // Mobile Wallet Adapter wraps its own error as the cause of a plain one.
   const mwa = (name: string, code: string | number, message = "wallet said so") =>
     new Error(message, { cause: Object.assign(new Error(message), { name, code }) });
 
@@ -61,7 +60,6 @@ describe("transaction errors", () => {
   });
 
   it("finds the code Kit hangs on the cause of a failed simulation", () => {
-    // The simulation fields do not matter here; the cause is the point.
     const failed = new SolanaError(SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE, {
       cause: getSolanaErrorFromTransactionError({ InstructionError: [0, { Custom: 6002 }] }),
     } as never);
@@ -88,7 +86,6 @@ describe("transaction errors", () => {
   it("tells an expired signature from a refusal", () => {
     expect(toUserFacingError(new Error("Transaction simulation failed: Blockhash not found"))).toMatch(/expired/);
     const cause = getSolanaErrorFromTransactionError("BlockhashNotFound");
-    // Production Kit errors carry codes, with developer text stripped out.
     Object.defineProperty(cause, "message", { value: "Solana error #7050008" });
     const failed = new SolanaError(SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE, {
       cause,

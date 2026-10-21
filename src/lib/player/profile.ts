@@ -4,11 +4,6 @@ import { useSyncExternalStore } from "react";
 import * as z from "@/lib/zod";
 import { lookSchema, parseLook, type PlayerLook } from "./look";
 
-/**
- * The player, as this device knows them: what Pawket calls them, and up to
- * three outfits they saved. Like the look, it is expression only and never
- * leaves the device — Pawket has no account to put it in.
- */
 export const OUTFIT_SLOTS = 3;
 export const MAX_PLAYER_NAME = 24;
 
@@ -26,7 +21,6 @@ const KEY = "pawket.player.v1";
 const listeners = new Set<() => void>();
 let cache: { raw: string | null; profile: PlayerProfile } | null = null;
 
-/** A stored blob as a profile: a damaged outfit is an empty slot, garbage is the default. */
 export function parseProfile(raw: unknown): PlayerProfile {
   const whole = profileSchema.safeParse(raw);
   if (whole.success) return whole.data;
@@ -66,7 +60,6 @@ function readProfileSnapshot(): PlayerProfile {
   return profile;
 }
 
-/** Keep the profile. False when storage is blocked or it is not valid. */
 export function saveProfile(profile: PlayerProfile): boolean {
   if (!profileSchema.safeParse(profile).success) return false;
   try {
@@ -79,7 +72,6 @@ export function saveProfile(profile: PlayerProfile): boolean {
   return true;
 }
 
-/** Keep `look` in an outfit slot (or empty it with null). */
 export function withOutfit(profile: PlayerProfile, slot: number, look: PlayerLook | null): PlayerProfile {
   const outfits = profile.outfits.map((outfit, i) => (i === slot ? look : outfit));
   return { ...profile, outfits };

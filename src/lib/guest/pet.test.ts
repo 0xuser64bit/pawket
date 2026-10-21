@@ -139,7 +139,6 @@ describe("applyGuestCare", () => {
     if (!first.ok) return;
     const second = applyGuestCare(first.pet, CareActionType.Play, now);
     expect(second.ok).toBe(false);
-    // …but a different action is still allowed.
     expect(
       applyGuestCare(first.pet, CareActionType.Groom, now).ok,
     ).toBe(true);
@@ -171,7 +170,6 @@ describe("projectGuestPet", () => {
     const live = projectGuestPet(pet);
     expect(live.level).toBe(2);
     expect(live.xpIntoLevel).toBe(35);
-    // The bar is this level's width, not the cumulative threshold (200).
     expect(live.xpForNext).toBe(100);
   });
 });
@@ -381,7 +379,6 @@ describe("pet storage", () => {
 
   it("draws only what it can read, and writes what it cannot back as it was", () => {
     const pet = createGuestPet(INPUT);
-    // A pet from a newer release (a species this page does not know), and a damaged entry.
     const newer = { ...createGuestPet({ ...INPUT, name: "Comet" }), species: "STAR_FOX" };
     window.localStorage.setItem("pawket.pets.v1", JSON.stringify([{ name: 3 }, pet, newer, pet]));
     expect(loadPets()).toEqual([pet]);

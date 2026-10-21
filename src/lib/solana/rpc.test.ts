@@ -6,7 +6,6 @@ const busy = (headers = new Headers()) =>
   new SolanaError(SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR, { headers, message: "Too Many Requests", statusCode: 429 });
 const request = { payload: { method: "getSlot" } } as Parameters<RpcTransport>[0];
 
-/** A transport that answers with `script`, one entry a call: an error to throw, or a value to return. */
 function scripted(script: unknown[]) {
   const calls: number[] = [];
   const transport = (async () => {

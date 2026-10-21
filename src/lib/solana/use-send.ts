@@ -16,7 +16,6 @@ import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult
 import { refreshOwnedPets } from "@/lib/companion/use-companion";
 import { extractProgramErrorCode, isActiveStage, isUserRejection, settleSignature, toUserFacingError, type TransactionStage } from "./transactions";
 
-/** What a send is, for its count: read from its instructions, never from its words. */
 const KIND: Partial<Record<PawketInstructionName, SendKind>> = {
   adoptPet: "adopt", performCareAction: "care", finishRound: "round", dress: "dress", dressOwned: "dress",
   foundGuild: "guild", joinGuild: "guild", leaveGuild: "guild",
@@ -40,7 +39,6 @@ function kindOf(instructions: SendOptions["instructions"]): SendKind {
   return "wallet";
 }
 
-/** How a send ended, as one fixed word. */
 function outcomeOf(result: SendResult | null, error?: unknown): SendOutcome {
   if (result) return result.outcome;
   if (error instanceof PawketWalletNeeded) return "needs-wallet";
@@ -54,31 +52,20 @@ export interface SponsorStatus {
   reason?: string;
 }
 
-/** What one send looks like to the player, from the wallet prompt to the receipt. */
 export interface TxState {
   stage: TransactionStage;
-  /** What is being recorded, as the player would say it: "Feed Pepper". */
   label?: string;
   signature?: string;
   sponsored?: boolean;
-  /** Who signed: the wallet (with a prompt), or this device, linked to the Pawket Wallet (without one). */
   by?: "wallet" | "device";
-  /** The wallet is an app on this phone (Mobile Wallet Adapter): its wait can be stopped from here. */
   phone?: boolean;
   error?: string;
-  /** Nothing was tried: the Pawket Wallet needs this first — a link, a balance, or tomorrow. */
   needs?: PawketWalletNeed;
-  /** What it did, said with the record once Solana has it: "Fed. +10 XP." One toast, not two. */
   done?: string;
 }
 
 export type PawketWalletNeed = "link" | "fund" | "limit";
 
-/**
- * Pawket acts on Solana only through a linked Pawket Wallet, never
- * the connected wallet on its own. When one is not ready, nothing is sent and
- * the player is told the next step, as a note rather than a failure.
- */
 class PawketWalletNeeded extends Error {
   constructor(readonly need: PawketWalletNeed, message: string) {
     super(message);
@@ -93,10 +80,8 @@ const NEEDS: Record<PawketWalletNeed, string> = {
 };
 const needed = (need: PawketWalletNeed) => new PawketWalletNeeded(need, NEEDS[need]);
 
-/** Why a linked device did not sign: none is linked here, its link ran out, or today's limit is used. */
 export type DeviceFallback = "unlinked" | "expired" | "limit";
 
-/** Why `state`'s device cannot act for its owner now, or null when it can. */
 export function deviceFallback(state: PawketWalletState | null, now = Date.now() / 1000): DeviceFallback | null {
   const wallet = state?.wallet;
   if (!wallet || !state?.device || wallet.device !== state.device.address) return "unlinked";
@@ -114,7 +99,6 @@ async function fetchSponsor(signal?: AbortSignal): Promise<SponsorStatus> {
   }
 }
 
-/** A linked Pawket Wallet, read fresh; one that will be spent from must hold something. */
 async function requirePawketWallet(owner: Address, { spends }: { spends: boolean }) {
   const state = await readPawketWallet(owner);
   if (state.error) throw new Error("Pawket could not read your Pawket Wallet. Try again once you are online. Nothing was sent.");
@@ -123,12 +107,6 @@ async function requirePawketWallet(owner: Address, { spends }: { spends: boolean
   return state;
 }
 
-/**
- * A send whose answer was lost, kept for this tab until it is known: if the
- * page is replaced meanwhile — a reload, a link opened in the Android app —
- * the next page looks into it again (`ResumeSends`) rather than leave the
- * player to guess whether to try once more.
- */
 interface Pending {
   signature: string;
   blockhash: string;
@@ -148,15 +126,9 @@ function keepPending(list: Pending[]) {
   try {
     if (list.length) window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(list.slice(-5)));
     else window.sessionStorage.removeItem(PENDING_KEY);
-  } catch {
-    // Blocked storage: this page still settles it; only a reload forgets it.
-  }
+  } catch {}
 }
 
-/**
- * Look into a send that came back unknown until Solana says how it ended:
- * its toast says so, and what it changed is read again. Sends nothing.
- */
 async function settleLater(pending: Pending, show: (next: Partial<TxState>) => void) {
   keepPending([...pendingSends().filter((each) => each.signature !== pending.signature), pending]);
   try {
@@ -178,7 +150,6 @@ async function settleLater(pending: Pending, show: (next: Partial<TxState>) => v
   }
 }
 
-/** On a new page, the sends a replaced page left unknown, each with its own toast until it is known. */
 export function ResumeSends() {
   useEffect(() => {
     for (const pending of pendingSends()) {
@@ -208,32 +179,14 @@ function setSending(value: boolean) {
   for (const listener of sendListeners) listener();
 }
 
-/** Whether Pawket is covering fees right now, for the sentence beside a send. */
 export function useSponsor() {
   return useRequest(fetchSponsor);
 }
 
-/**
- * Whether a Pawket Wallet must hold SOL before its device acts: only while
- * Pawket is not paying, since then the device's fees come from it. While
- * Pawket sponsors, a linked wallet with nothing in it acts as well as a full
- * one; Market looks and coins still spend what is in it.
- */
 export const needsSol = (balance: bigint, sponsored: boolean) => balance <= 0n && !sponsored;
 
-/**
- * Whether actions that open an account wait: the sponsor has answered, and is
- * not paying. A linked device never pays rent itself (`act` refuses), so a
- * screen disables those actions and says they wait, rather than promising a cost.
- */
 export const rentWaits = (status: SponsorStatus | undefined) => status !== undefined && !status.available;
 
-/**
- * Sends through `sendPawket` with the connected wallet as the owner and the
- * sponsor as fee payer while it is up — asked fresh at each send, so a
- * sponsor that went down is never relied on. One send at a time; the state
- * is what a receipt draws.
- */
 export function usePawketSend() {
   const connected = useConnected();
   const owner = (connected?.account.address as Address | undefined) ?? null;
@@ -250,11 +203,8 @@ export function usePawketSend() {
       go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void, show: (next: Partial<TxState>) => void) => Promise<SendResult>,
       done?: string,
     ) => {
-      // shortcut: One send per tab; use account-scoped slots if concurrent wallets are supported.
-      // Never open competing wallet sessions or queue a send.
       if (sending) return null;
       setSending(true);
-      // Each send is one toast, kept up to date to the end — even after the screen that sent it is gone.
       const id = `send-${++sends}`;
       let state: TxState = { stage: "preparing", label, by, done, phone: by === "wallet" && connected?.wallet?.name === PHONE_WALLETS };
       const show = (next: Partial<TxState>) => {
@@ -273,7 +223,6 @@ export function usePawketSend() {
         const result = await go(signer, (stage) => show({ stage }), show);
         show({ stage: result.outcome, signature: result.signature, sponsored: result.sponsored });
         record({ name: "send_outcome", kind, outcome: outcomeOf(result) });
-        // Felt when Solana has it, never before: "unknown" is still waiting, and is looked into until it is not.
         if (result.outcome === "confirmed") haptic("done");
         else void settleLater({ signature: result.signature, blockhash: result.blockhash, label, owner }, show);
         return result;
@@ -284,7 +233,6 @@ export function usePawketSend() {
           return null;
         }
         show({ stage: "failed", error: toUserFacingError(error), signature: (error as { signature?: string }).signature });
-        // Saying no in the wallet sent nothing and changed nothing: nothing to report.
         if (isUserRejection(error)) dismissToast(id);
         else haptic("refuse");
         return null;
@@ -296,7 +244,6 @@ export function usePawketSend() {
     [owner, connected],
   );
 
-  /** `instructions`, signed by `signer` — the wallet, or this device — with the sponsor paying while it is up. */
   const sendAs = useCallback(
     (
       label: string,
@@ -316,9 +263,7 @@ export function usePawketSend() {
           if (by === "wallet" && !management && built.some((ix) => ix.programAddress !== PAWKET_PROGRAM_ID || !PAWKET_DISCRIMINATORS.buyWithWallet.every((byte, i) => ix.data?.[i] === byte))) {
             throw new Error("Pet actions must use your linked Pawket Wallet. Nothing was sent.");
           }
-          // Outside managing the wallet, the owner signs only a Market purchase, which spends it.
           const state = by === "wallet" && !management ? await requirePawketWallet(owner.address, { spends: true }) : null;
-          // The sponsor signs Pawket's instructions only: anything else (a device handing back its float) pays its own way.
           const sponsor = built.every((ix) => ix.programAddress === PAWKET_PROGRAM_ID) ? await fetchSponsor() : { available: false };
           if (state && !sponsor.available && !state.paysOwnWay) throw new Error("Add SOL and relink this device in your Pawket Wallet to cover its network fee. Nothing was sent.");
           return sendPawket({
@@ -340,15 +285,9 @@ export function usePawketSend() {
     [sendAs, connected],
   );
 
-  /**
-   * A transaction Pawket's server builds at `path` for this wallet (POST
-   * { account, ...fields }), signed here and sent. `sponsored` says who pays
-   * its fee: Pawket for a keepsake, the player for anything in a coin.
-   */
   const sendFromServer = useCallback(
     (label: string, path: string, fields: Record<string, unknown> = {}, { sponsored = true } = {}): Promise<SendResult | null> =>
       run(label, path.startsWith("/api/keepsake/") ? "keepsake" : "coin", connected?.signer, "wallet", async (owner, onStage) => {
-        // A keepsake is Pawket's to pay for; a coin spends the wallet.
         const state = await requirePawketWallet(owner.address, { spends: !sponsored });
         return sendPrepared({
           rpc,
@@ -370,8 +309,6 @@ export function usePawketSend() {
             return body.transaction;
           },
         }).catch((error: unknown) => {
-          // A coin's bracket holds the owner's SOL to the lamport it was when the server built the trade; any change
-          // in between (a transfer in, another send) refuses it all with 6008, which here means only that.
           if (!sponsored && extractProgramErrorCode(error) === 6008) {
             throw Object.assign(new Error("Your wallet's SOL changed between the quote and your signature, so nothing moved. Quote it again."), { signature: (error as { signature?: string }).signature });
           }
@@ -381,20 +318,12 @@ export function usePawketSend() {
     [run, connected],
   );
 
-  /** Something this device signs on its own, with no prompt: letting go of its own link. */
   const asDevice = useCallback(
     (label: string, device: KeyPairSigner, instructions: SendOptions["instructions"]): Promise<SendResult | null> =>
       sendAs(label, device, "device", instructions),
     [sendAs],
   );
 
-  /**
-   * Anything for the connected wallet's pets that costs no money — care,
-   * rounds, clothes, adoption, guilds, gatherings, waves — built as the owner
-   * would sign it. Only a linked device acts; there is no owner-wallet
-   * fallback. While Pawket sponsors, the wallet needs no balance; without
-   * sponsorship the device pays its fee from it, and rent-bearing actions wait.
-   */
   const act = useCallback(
     (label: string, instructions: SendOptions["instructions"], done?: string): Promise<SendResult | null> =>
       run(label, kindOf(instructions), connected?.signer, "device", async (walletSigner, onStage) => {
@@ -429,7 +358,6 @@ export function usePawketSend() {
     sendFromServer,
     reset,
     busy: busy || isActiveStage(tx.stage),
-    /** The connected wallet's Pawket Wallet, as every screen sees it. */
     pawketWallet,
   };
 }

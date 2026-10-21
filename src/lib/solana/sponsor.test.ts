@@ -67,7 +67,6 @@ beforeAll(async () => {
   owner = await generateKeyPairSigner();
 });
 
-/** What the browser builds and sends the sponsor: compiled, signed by nobody yet. */
 async function built(
   instructions: (payer: TransactionSigner) => Instruction[],
   feePayer: TransactionSigner = createNoopSigner(sponsor.address),
@@ -157,12 +156,10 @@ describe("checkSponsorable", () => {
   });
 
   it("refuses more signatures than a Pawket transaction needs, the other way: each is a fee it pays", async () => {
-    // Anchor takes extra accounts without a word, so a care can carry signers it never reads.
     const extra = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner()]);
     const ix = care();
     const padded = { ...ix, accounts: [...(ix.accounts ?? []), ...extra.map(({ address }) => ({ address, role: AccountRole.READONLY_SIGNER }))] };
     expect(checkSponsorable(await built(() => [padded]), sponsor.address)).toMatchObject({ ok: false });
-    // Linking a device is the most any asks: the sponsor, the owner and the device.
     const link = await built(() => [getLinkDeviceInstruction({ owner, wallet: WALLET, device: DEVICE, expiresAt: 1_790_848_800, dailyActions: 200 })]);
     expect(checkSponsorable(link, sponsor.address)).toEqual({ ok: true, kinds: ["link"], rent: 0 });
   });
@@ -204,13 +201,10 @@ describe("checkSponsorable", () => {
   });
 
   it("pays a wallet's rent, never takes its money, and never stands in for its device", async () => {
-    // The rent comes back to the sponsor when the wallet closes (`close = rent_payer`).
     const rent = await built((payer) => [getOpenWalletInstruction({ owner, payer, wallet: WALLET })]);
     expect(checkSponsorable(rent, sponsor.address)).toEqual({ ok: true, kinds: ["open-wallet"], rent: 1 });
-    // Closing hands the sponsor back the rent it paid (the program holds it to `rent_payer`).
     const asRentPayer = await built((payer) => [getCloseWalletInstruction({ owner, wallet: WALLET, rentPayer: payer.address })]);
     expect(checkSponsorable(asRentPayer, sponsor.address)).toEqual({ ok: true, kinds: ["close-wallet"], rent: 0 });
-    // A withdrawal to the sponsor, or the sponsor as the wallet's owner, is a part it does not take.
     const asOwner = await built((payer) => [getWithdrawInstruction({ owner: payer, wallet: WALLET, amount: 1n })]);
     expect(checkSponsorable(asOwner, sponsor.address)).toMatchObject({ ok: false });
     const closesAsOwner = await built((payer) => [getCloseWalletInstruction({ owner: payer, wallet: WALLET, rentPayer: payer.address })]);
@@ -236,7 +230,6 @@ describe("checkSponsorable", () => {
       asDeviceInstruction(getLeaveGuildInstruction({ owner: owner.address, pet: PET, member: MEMBER, guild: GUILD, payer: payer.address }), linked),
     ]);
     expect(checkSponsorable(leave, sponsor.address)).toEqual({ ok: true, kinds: ["leave"], rent: 0 });
-    // The sponsor as the device, or as the owner's wallet account, is a part it does not take.
     const asTheDevice = await built((payer) => [
       asDeviceInstruction(getCareInstruction({ owner: owner.address, pet: PET, passport: PASSPORT, action: CareActionType.Feed }), { device: payer, wallet: WALLET }),
     ]);
@@ -262,7 +255,6 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(asWallet, sponsor.address)).toMatchObject({ ok: false });
     const coin = await built(() => [getWalletSpendInstruction({ owner, wallet: WALLET, device: DEVICE, amount: 1n, keep: 10n })]);
     expect(checkSponsorable(coin, sponsor.address)).toMatchObject({ ok: false });
-    // The sponsor as the buyer would be paying the price: a part it does not take.
     const asBuyer = await built((payer) => [getBuyInstruction({ owner: payer, payer, closet: CLOSET, item: 19 })]);
     expect(checkSponsorable(asBuyer, sponsor.address)).toMatchObject({ ok: false });
     const wear = await built(() => [getDressOwnedInstruction({ owner, pet: PET, closet: CLOSET, wearing: 19 })]);
@@ -284,7 +276,6 @@ describe("checkSponsorable", () => {
     const vote = (payer: TransactionSigner, who: TransactionSigner = owner) =>
       getVoteInstruction({ owner: who, payer, pet: PET, member: MEMBER, poll: EVENT, ballot: WALLET, option: 1 });
     const wave = (payer: TransactionSigner, who: TransactionSigner = owner) => getWaveInstruction({ visitor: who, payer, pet: PET, guestbook: WALLET });
-    // Each rent alone; never four in one transaction for the price of one limit.
     for (const [one, kind] of [[event, "event"], [rsvp, "rsvp"], [poll, "poll"], [vote, "vote"]] as const) {
       expect(checkSponsorable(await built((payer) => [one(payer)]), sponsor.address)).toEqual({ ok: true, kinds: [kind], rent: 1 });
     }
@@ -299,7 +290,6 @@ describe("checkSponsorable", () => {
   });
 
   it("stands exactly where the program names a payer, in every instruction and so in every twin", () => {
-    // A twin's accounts are its owner instruction's, one later (`program.test.ts`), so the owner's names decide.
     for (const [name, kind] of Object.entries(KIND_OF)) {
       const ix = idl.instructions.find((each) => each.name === name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`));
       const payers = (ix?.accounts ?? []).flatMap((account, i) => (account.name === "payer" || account.name === "rent_payer" ? [i] : []));
@@ -325,7 +315,6 @@ describe("cosign", () => {
     const signed = getTransactionDecoder().decode(getBase64Encoder().encode(result.transaction));
     expect(signed.signatures[sponsor.address]).toBeTruthy();
     expect(signed.signatures[owner.address]).toBeNull();
-    // The message is exactly the one that was built: the client checks this too.
     expect(Array.from(signed.messageBytes)).toEqual(
       Array.from(getTransactionDecoder().decode(getBase64Encoder().encode(wire)).messageBytes),
     );

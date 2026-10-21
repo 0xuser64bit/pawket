@@ -47,7 +47,6 @@ describe("send routing (no wallet signing)", () => {
     await act(async () => { expect(await hook.result.current.act("Care", () => [])).toBeNull(); });
     expect(mock.send).not.toHaveBeenCalled();
     expect(hook.result.current.tx.error).toContain("Link this device in your Pawket Wallet");
-    // A next step, not a failure: nothing was tried.
     expect(hook.result.current.tx.needs).toBe("link");
   });
 

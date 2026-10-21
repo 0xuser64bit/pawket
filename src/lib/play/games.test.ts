@@ -57,7 +57,6 @@ describe("Catch", () => {
   });
 });
 
-/** A player who jumps when the next thing is a jump's reach away. */
 function autoJump(state: HopState): boolean {
   const next = state.obstacles.find((o) => o.x + o.w > HOP.petX - HOP.petHalf);
   return !!next && next.x - (HOP.petX + HOP.petHalf) < state.speed * AIRTIME * 0.25;
@@ -132,7 +131,7 @@ describe("Pairs", () => {
     const other = state.cards.indexOf(1);
     state = flipCard(flipCard(state, first), other);
     expect(state.misses).toBe(1);
-    expect(flipCard(state, mate)).toBe(state); // two are up: look first
+    expect(flipCard(state, mate)).toBe(state);
     state = settle(state);
     state = flipCard(flipCard(state, first), mate);
     expect(state.found[first] && state.found[mate]).toBe(true);

@@ -79,12 +79,11 @@ describe("getAdoptPetInstruction", () => {
       species: PetSpecies.MossPup,
       personality: PetPersonality.Brave,
     });
-    // discriminator(8) + name len(4) + "Nova"(4) + species(1) + personality(1)
     const expected = [
       ...PAWKET_DISCRIMINATORS.adoptPet,
       4, 0, 0, 0, 78, 111, 118, 97,
-      1, // moss_pup
-      2, // brave
+      1,
+      2,
     ];
     expect(Array.from(ix.data ?? [])).toEqual(expected);
     expect(Array.from(trimmed.data ?? [])).toEqual(expected);
@@ -137,7 +136,7 @@ describe("getCareInstruction", () => {
     ]);
     expect(Array.from(ix.data ?? [])).toEqual([
       ...PAWKET_DISCRIMINATORS.performCareAction,
-      1, // play
+      1,
     ]);
   });
 });
@@ -177,12 +176,10 @@ describe("getReturnFloatInstruction", () => {
     const owner = address("SysvarRent111111111111111111111111111111111");
     const ix = await getReturnFloatInstruction({ device, owner, lamports: 995_000n });
     expect(ix.programAddress).toBe("11111111111111111111111111111111");
-    // Its destination is always the owner's own Pawket Wallet, derived, never passed in.
     expect(ix.accounts?.map((meta) => [meta.address, meta.role])).toEqual([
       [device.address, AccountRole.WRITABLE_SIGNER],
       [(await deriveWalletPda(owner)).address, AccountRole.WRITABLE],
     ]);
-    // The system program's Transfer: index 2, then the lamports, little-endian.
     expect(Array.from(ix.data ?? [])).toEqual([2, 0, 0, 0, ...Array.from(new Uint8Array(new BigUint64Array([995_000n]).buffer))]);
   });
 });

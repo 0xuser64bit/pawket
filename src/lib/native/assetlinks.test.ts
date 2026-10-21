@@ -2,11 +2,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-/**
- * The Android app (android/gradle.properties) and the site's statement that
- * its links may open in that app (public/.well-known/assetlinks.json) name
- * the same package; the app opens Pawket over https only.
- */
 const root = process.cwd();
 const gradle = Object.fromEntries(
   readFileSync(join(root, "android/gradle.properties"), "utf8")

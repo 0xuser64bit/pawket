@@ -1,21 +1,6 @@
 import { createSignerFromKeyPair, generateKeyPair, type KeyPairSigner } from "@solana/kit";
 import { inAndroidApp } from "@/lib/native/android";
 
-/**
- * This device's key for a Pawket Wallet. It is made here, by the browser's
- * WebCrypto, as a non-extractable Ed25519 key: its secret half cannot be
- * read, exported or sent anywhere — by Pawket's own code included — only
- * asked to sign. It is kept in this browser's IndexedDB, one per owner, and
- * never leaves it. What it may sign is the program's call: the non-money
- * actions its owner signs for — care, rounds, clothes, adoption, guilds,
- * gatherings and waves — for its owner's pets, inside the end date and the
- * daily limit the owner set when they linked it (`programs/pawket/src/lib.rs`).
- * It never moves the balance.
- *
- * Clearing the site's data forgets the key. Nothing is lost but the small
- * fee float it held: the owner unlinks it from anywhere, and links another.
- */
-
 const DB = "pawket";
 const STORE = "devices";
 
@@ -34,7 +19,7 @@ async function run<T>(mode: IDBTransactionMode, act: (store: IDBObjectStore) => 
     return await new Promise<T>((resolve, reject) => {
       const transaction = db.transaction(STORE, mode);
       const request = act(transaction.objectStore(STORE));
-      // A successful request can still roll back. Never link a key until its storage commits.
+      // An IndexedDB request can succeed and its transaction still roll back: resolve on commit.
       transaction.oncomplete = () => resolve(request.result);
       transaction.onabort = () => reject(transaction.error ?? new Error("Device storage did not finish. Nothing was linked."));
       request.onerror = () => reject(request.error);
@@ -44,7 +29,6 @@ async function run<T>(mode: IDBTransactionMode, act: (store: IDBObjectStore) => 
   }
 }
 
-/** This browser's device key for `owner`, or null when it has none (or cannot keep one). */
 export async function loadDevice(owner: string): Promise<KeyPairSigner | null> {
   if (typeof indexedDB === "undefined") return null;
   try {
@@ -55,10 +39,6 @@ export async function loadDevice(owner: string): Promise<KeyPairSigner | null> {
   }
 }
 
-/**
- * A new device key for `owner`, kept in place of any before it. Throws, in
- * words, when this browser cannot make or keep one.
- */
 export async function makeDevice(owner: string): Promise<KeyPairSigner> {
   const here = inAndroidApp() ? "This app" : "This browser";
   if (typeof indexedDB === "undefined") throw new Error(`${here} cannot keep a device key. Nothing was linked.`);
@@ -66,7 +46,6 @@ export async function makeDevice(owner: string): Promise<KeyPairSigner> {
   try {
     pair = await generateKeyPair();
   } catch {
-    // In the app the key is made by Android System WebView, which gained Ed25519 in a later version than some phones run.
     throw new Error(
       inAndroidApp()
         ? "This phone's Android System WebView is too old to make the key. Update it from the Play Store, then link again. Nothing was linked."
@@ -82,7 +61,6 @@ export async function makeDevice(owner: string): Promise<KeyPairSigner> {
   return createSignerFromKeyPair(pair);
 }
 
-/** Forget `owner`'s device key on this browser. */
 export async function forgetDevice(owner: string): Promise<void> {
   if (typeof indexedDB === "undefined") return;
   await run("readwrite", (store) => store.delete(owner));

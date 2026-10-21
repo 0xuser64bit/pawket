@@ -16,7 +16,6 @@ describe("a guild coin's stage", () => {
   it("pauses once the threshold is raised, and while a migration is not yet checked", () => {
     expect(coinStage({ listed: true, curve: curve(100n), graduated: null })).toBe("pending");
     expect(coinStage({ listed: true, curve: curve(100n, true), graduated: null })).toBe("pending");
-    // The index can lag the chain: migrated, but the pool not seen where the preset says yet.
     expect(coinStage({ listed: true, curve: curve(100n, true), graduated: { verified: false } })).toBe("pending");
   });
 

@@ -23,7 +23,6 @@ vi.mock("@/lib/solana/accounts", () => ({
 
 const chainPet = (address: string, birth = 1) => ({ pet: { address, name: address, birthTimestamp: birth } }) as unknown as PetOnChain;
 const guest = (id: string) => ({ id, name: id }) as unknown as GuestPet;
-/** A read that answers only when the test says so. */
 function deferred() {
   let answer!: (pets: PetOnChain[]) => void;
   const promise = new Promise<PetOnChain[]>((resolve) => { answer = resolve; });
@@ -60,7 +59,6 @@ it("never lets a read that began before a refresh overwrite the refresh", async 
   const late = deferred();
   mock.fetch.mockReturnValueOnce(early.promise).mockReturnValueOnce(late.promise);
   const hook = renderHook(useCompanion);
-  // Started, not awaited: the read it begins answers only when the test says so.
   act(() => {
     void hook.result.current.refresh();
   });

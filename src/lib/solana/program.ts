@@ -4,32 +4,6 @@ import {
   PetSpecies,
 } from "@/lib/game/enums";
 
-/**
- * On-chain identity. Source of truth for everything the client derives,
- * encodes or decodes against the Pawket program (`programs/pawket/`), whose
- * IDL is committed at `./idl/pawket.json` — `program.test.ts` holds every
- * number below to it.
- *
- * SAFETY (do not weaken without a program change):
- * 1. Never change PDA seed strings or their order.
- * 2. Each instruction is signed by the wallet it acts for (a pet's owner, a
- *    guild's founder, a visitor) — or by the device that wallet linked to its
- *    Pawket Wallet, through the instruction's `*_by_device` twin
- *    (`DEVICE_VARIANTS`), inside the link's end date and daily limit.
- *    Nothing that moves money has a twin.
- * 3. Names are 2–24 UTF-8 bytes, trimmed by the client before derivation.
- * 4. Nothing in the program moves value except rent, which `payer` covers on
- *    adoption, founding, joining, opening a Pawket Wallet, a closet, an
- *    event, an RSVP, a poll, a ballot or a guestbook — the owner, or the
- *    sponsor in `app/api/sponsor` — and which leaving or closing hands back
- *    to that payer; a player's own Pawket Wallet, which only its owner fills
- *    or empties, and which refills a linked device by at most one fee per
- *    action it takes; and a Market sale, which goes from the Pawket Wallet to
- *    `PAWKET_TREASURY`; owner-approved coin funding returns change and proceeds
- *    to Pawket Wallet without consuming existing owner SOL.
- */
-
-/** Must match `declare_id!` in `programs/pawket/src/lib.rs`. */
 export const PAWKET_PROGRAM_ID = "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74";
 
 export const PAWKET_SEEDS = {
@@ -49,15 +23,8 @@ export const PAWKET_SEEDS = {
 export const MAX_NAME_BYTES = 24;
 export const MIN_NAME_BYTES = 2;
 
-/** The program's `WEARABLE_COUNT`: the free wardrobe, numbered from 1 in catalog order. */
 export const WEARABLE_COUNT = 3;
 
-/**
- * The program's Market (`item_price`): the pieces after the three starters (worn
- * with `dress_owned`) — the fifteen classics at the classic price, the rest at
- * the wearable price — rooms from item 64, photo frames from item 80, their
- * prices in lamports, and where every sale goes.
- */
 export const MARKET = {
   wearables: 25,
   classicWearables: 15,
@@ -72,7 +39,6 @@ export const MARKET = {
   treasury: "SEpAw5iTAXf4j5YUsgpLD8UTKLCT6xqUAkecnvJvWfw",
 } as const;
 
-/** The program's limits on a guild's events and polls, in UTF-8 bytes and seconds. */
 export const GATHERING_LIMITS = {
   minTitle: 3,
   maxTitle: 48,
@@ -89,37 +55,27 @@ export const GATHERING_LIMITS = {
   maxPollSeconds: 14 * 86_400,
 } as const;
 
-/** Visitors a guestbook keeps, newest overwriting oldest. */
 export const RECENT_WAVES = 8;
 
-/** Cares the Passport keeps, newest overwriting oldest. */
 export const RECENT_CARES = 8;
 
-/** The program's guild limits: a slug is the guild's seed, a name and a motto are UTF-8 bytes. */
 export const GUILD_LIMITS = {
   minSlug: 3,
   maxSlug: 24,
   minName: 3,
   maxName: 32,
   maxMotto: 80,
-  /** Glyphs and colours a crest is drawn from (`src/lib/guilds/guild.ts`). */
   crests: 8,
   colours: 6,
 } as const;
 
-/** The program's Pawket Wallet limits, in seconds, actions and lamports. */
 export const WALLET_LIMITS = {
-  /** A device is linked for this long at most. */
   maxDeviceSeconds: 30 * 86_400,
-  /** The most actions a device may take in one UTC day. */
   maxDailyActions: 500,
-  /** What a device keeps on hand for its own fees. */
   deviceFloat: 1_000_000n,
-  /** One signature's fee: a device's action is refilled by at most this much. */
   feePerSignature: 5_000n,
 } as const;
 
-/** Anchor 8-byte instruction discriminators. */
 export const PAWKET_DISCRIMINATORS = {
   settleWalletSpend: [50, 123, 140, 252, 104, 133, 31, 99],
   fundWalletSpend: [185, 137, 98, 107, 255, 123, 154, 87],
@@ -163,13 +119,6 @@ export const PAWKET_DISCRIMINATORS = {
 
 export type PawketInstructionName = keyof typeof PAWKET_DISCRIMINATORS;
 
-/**
- * What a linked device may sign: each instruction its owner signs that has a
- * `*_by_device` twin. A twin takes the same arguments and the same accounts,
- * with the device and the owner's Pawket Wallet where the owner was
- * (`asDeviceInstruction`). Nothing that moves money is here — not a sale, not
- * the Pawket Wallet's own balance, not a coin.
- */
 export const DEVICE_VARIANTS = {
   adoptPet: "adoptPetByDevice",
   performCareAction: "careByDevice",
@@ -187,7 +136,6 @@ export const DEVICE_VARIANTS = {
   wave: "waveByDevice",
 } as const satisfies Partial<Record<PawketInstructionName, PawketInstructionName>>;
 
-/** Anchor 8-byte account discriminators, and each account's size on chain. */
 export const PAWKET_ACCOUNTS = {
   pet: { discriminator: [180, 195, 178, 241, 61, 123, 238, 32], size: 130 },
   passport: { discriminator: [197, 235, 164, 111, 43, 33, 153, 145], size: 169 },
@@ -202,7 +150,6 @@ export const PAWKET_ACCOUNTS = {
   guestbook: { discriminator: [24, 45, 253, 91, 214, 23, 198, 188], size: 365 },
 } as const;
 
-/** Borsh variant indexes. Only this module translates string enums to bytes. */
 export const PET_SPECIES_VARIANTS: Record<PetSpecies, number> = {
   [PetSpecies.LunaCat]: 0,
   [PetSpecies.MossPup]: 1,
@@ -223,7 +170,6 @@ export const CARE_ACTION_VARIANTS: Record<CareActionType, number> = {
   [CareActionType.Rest]: 3,
 };
 
-/** Anchor custom errors 6000–6029, mapped to one-sentence UX copy in `transactions.ts`. */
 export const PAWKET_ERROR_CODES = {
   6000: "INVALID_PET_NAME",
   6001: "NOT_PET_OWNER",

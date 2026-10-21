@@ -1,10 +1,5 @@
 import { seedFrom } from "./random";
 
-/**
- * A player's best score in each game, on this device — overall, and in
- * today's daily round. A personal record, not a leaderboard: it is never
- * sent anywhere and it changes nothing on the pet.
- */
 export type GameId = "catch" | "hop" | "copy" | "pairs";
 const GAME_IDS: readonly GameId[] = ["catch", "hop", "copy", "pairs"];
 
@@ -33,28 +28,19 @@ export function readBest(): Partial<Record<GameId, number>> {
   return out;
 }
 
-/** Keep a score if it beats the best. True when it did. */
 export function keepBest(game: GameId, value: number): boolean {
   const best = readBest();
   if (value <= (best[game] ?? 0)) return false;
   try {
     window.localStorage.setItem(KEY, JSON.stringify({ ...best, [game]: value }));
-  } catch {
-    // Blocked storage: the best is shown for this round and not kept.
-  }
+  } catch {}
   return true;
 }
 
-/**
- * Today's round of a game: the same seed for everyone on the same UTC day,
- * so two players can compare one round without any server comparing it for
- * them.
- */
 export function dailySeed(game: GameId, day: string): number {
   return seedFrom(`pawket:${day}:${game}`);
 }
 
-/** Today's best in each game's daily round, on this device. Yesterday's is gone. */
 export function readDaily(day: string): Partial<Record<GameId, number>> {
   const stored = readJson(DAILY_KEY);
   if (stored.day !== day) return {};
@@ -66,14 +52,11 @@ export function readDaily(day: string): Partial<Record<GameId, number>> {
   return out;
 }
 
-/** Keep a daily-round score if it beats today's. True when it did. */
 export function keepDaily(game: GameId, day: string, value: number): boolean {
   const today = readDaily(day);
   if (value <= (today[game] ?? -1)) return false;
   try {
     window.localStorage.setItem(DAILY_KEY, JSON.stringify({ ...today, day, [game]: value }));
-  } catch {
-    // Blocked storage: shown for this round, not kept.
-  }
+  } catch {}
   return true;
 }

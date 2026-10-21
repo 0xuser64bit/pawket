@@ -1,12 +1,10 @@
 import { getBase58Decoder } from "@solana/kit";
 import { PAWKET_ACCOUNTS, PAWKET_PROGRAM_ID } from "./program";
 
-/** Each of Pawket's account kinds, as a scan names it: its discriminator, in base58, at offset 0. */
 const KINDS: ReadonlySet<string> = new Set(
   Object.values(PAWKET_ACCOUNTS).map((account) => getBase58Decoder().decode(Uint8Array.from(account.discriminator))),
 );
 
-/** A scan of one of Pawket's account kinds, never of the whole program: a memcmp at offset 0 on a known discriminator. */
 function namesAKind(config: unknown): boolean {
   const filters = (config as { filters?: unknown } | null)?.filters;
   if (!Array.isArray(filters)) return false;
@@ -16,12 +14,6 @@ function namesAKind(config: unknown): boolean {
   });
 }
 
-/**
- * What a browser may ask Pawket's RPC proxy (`/api/rpc`): the calls the app
- * makes, one at a time, and a program scan only of Pawket's own program. The
- * proxy lets browsers read and send through the server's provider — its key
- * never leaves the server — without becoming an open RPC for anything else.
- */
 const PROXIED_METHODS: ReadonlySet<string> = new Set([
   "getAccountInfo",
   "getBalance",

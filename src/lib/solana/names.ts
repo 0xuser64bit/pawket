@@ -1,10 +1,5 @@
 import { MAX_NAME_BYTES, MIN_NAME_BYTES } from "./program";
 
-/**
- * The name rule shared with PDA derivation. This module does not import
- * the Solana client, so the browser companion can validate a name without
- * loading the wallet stack.
- */
 export class SolanaValidationError extends Error {
   readonly code = "SOLANA_VALIDATION_ERROR";
   constructor(message: string) {
@@ -19,7 +14,6 @@ function byteLength(value: string): number {
   return utf8.encode(value).length;
 }
 
-/** Trim + validate an on-chain name (2–24 UTF-8 bytes) before derivation. */
 export function normalizePetName(name: string): string {
   const trimmed = name.trim();
   const length = byteLength(trimmed);

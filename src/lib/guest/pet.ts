@@ -24,16 +24,6 @@ import {
 } from "@/lib/game/enums";
 import { normalizePetName } from "@/lib/solana/names";
 
-/**
- * Wallet-free companion kept in this browser. Same locked care math as the
- * on-chain loop (`src/lib/game/`). A guest pet can graduate later because
- * names already follow `normalizePetName` and care deltas match the program.
- *
- * Version 2 adds the record a player can actually see: a care log, a UTC
- * streak, one wearable, and a once-a-day play bonus. Version 1 blobs still
- * load — see `migrateStoredPet`.
- */
-
 const CARE_LOG_LIMIT = 40;
 
 const statSchema = z.number().int().min(0).max(100);
@@ -46,9 +36,7 @@ const careLogEntrySchema = z.object({
 
 const streakSchema = z.object({
   count: z.number().int().nonnegative(),
-  /** UTC day `YYYY-MM-DD` of the last care or finished round. */
   lastDay: z.string().nullable(),
-  /** The longest run there has been, as the Passport keeps `best_streak`. Older records start it at the run they have. */
   best: z.number().int().nonnegative().default(0),
 });
 
@@ -72,7 +60,6 @@ export const guestPetSchema = z.object({
   streak: streakSchema,
   wearing: z.string().nullable(),
   plays: z.number().int().nonnegative(),
-  /** UTC day the daily play bonus was last granted, if ever. */
   lastDailyPlayDay: z.string().nullable(),
 });
 
@@ -86,7 +73,6 @@ export interface AdoptGuestInput {
   now?: Date;
 }
 
-/** Stable id so a migrated pet keeps the same profile URL across reloads. */
 function guestIdFrom(createdAt: string, name: string): string {
   let hash = 2166136261;
   const input = `${createdAt}\0${name}`;
@@ -118,10 +104,6 @@ function nextStreak(
   return { count, lastDay: today, best: Math.max(streak.best, count) };
 }
 
-/**
- * The streak a screen should print. A stored count from before yesterday is
- * already over, even though the next action is what writes the reset.
- */
 export function streakAsOf(
   streak: GuestPet["streak"],
   now: Date,
@@ -134,19 +116,12 @@ export function streakAsOf(
 }
 
 export interface TodayGoals {
-  /** Each care, given today (UTC). */
   cares: Record<CareActionType, boolean>;
-  /** A playground round finished today. */
   round: boolean;
   done: number;
   of: number;
 }
 
-/**
- * Today's round of care, as a checklist: each of the four cares and one
- * playground round, on the UTC day the streak counts. Guidance only — it
- * grants nothing the record does not already grant.
- */
 export function todayFor(pet: Pick<GuestPet, "lastActionAt" | "lastDailyPlayDay">, now: Date = new Date()): TodayGoals {
   const today = utcDay(now);
   const cares = {} as Record<CareActionType, boolean>;
@@ -172,7 +147,6 @@ function isTimestamp(value: string): boolean {
   return !Number.isNaN(new Date(value).getTime());
 }
 
-/** Create a fresh guest pet. Throws `SolanaValidationError` on a bad name. */
 export function createGuestPet(input: AdoptGuestInput): GuestPet {
   const now = (input.now ?? new Date()).toISOString();
   const name = normalizePetName(input.name);
@@ -195,28 +169,20 @@ export function createGuestPet(input: AdoptGuestInput): GuestPet {
   };
 }
 
-/**
- * Whether a name is already used by one of `pets`, ignoring case and the
- * spaces around it — two pets called Pepper are one too many to tell apart.
- */
 export function nameTaken(pets: readonly { name: string }[], name: string): boolean {
   const wanted = name.trim().toLocaleLowerCase();
   return pets.some((pet) => pet.name.trim().toLocaleLowerCase() === wanted);
 }
 
 export interface ProjectedPet {
-  /** Live stats: stored value decayed forward to `now`. Labeled estimate in UI. */
   stats: PetStats;
   mood: PetMood;
   level: number;
-  /** XP earned since the current level started. */
   xpIntoLevel: number;
-  /** XP that fills the current level. Always one level wide, not cumulative. */
   xpForNext: number;
   elapsedSeconds: number;
 }
 
-/** Pure projection — stored stats are the value at `statsUpdatedAt`. */
 export function projectGuestPet(pet: GuestPet, now: Date = new Date()): ProjectedPet {
   const elapsedSeconds = elapsedSecondsBetween(pet.statsUpdatedAt, now);
   const stats = applyStatDecay(pet.stats, elapsedSeconds);
@@ -235,10 +201,6 @@ export type GuestCareResult =
   | { ok: true; pet: GuestPet; xpGained: number }
   | { ok: false; message: string };
 
-/**
- * Apply one care action: decay forward, enforce cooldown, apply deltas, +XP,
- * append the log, and move the UTC streak. Pure — callers persist the pet.
- */
 export function applyGuestCare(
   pet: GuestPet,
   action: CareActionType,
@@ -272,7 +234,6 @@ export function applyGuestCare(
   };
 }
 
-/** Remaining cooldown per action in seconds (0 = ready). For countdown UI. */
 export function cooldownsFor(
   pet: GuestPet,
   now: Date = new Date(),
@@ -286,10 +247,6 @@ export function cooldownsFor(
   return out;
 }
 
-/**
- * Wear or take off one item. An unknown id is ignored. Wearing the item
- * that is already on takes it off. Looks only — stats are not copied.
- */
 export function setWearing(pet: GuestPet, wearableId: string | null): GuestPet {
   if (wearableId !== null && !isWearableId(wearableId)) return pet;
   const wearing = pet.wearing === wearableId ? null : wearableId;
@@ -298,15 +255,9 @@ export function setWearing(pet: GuestPet, wearableId: string | null): GuestPet {
 
 export interface PlayRecord {
   pet: GuestPet;
-  /** Daily bonus granted by this finish. Zero when today was already claimed. */
   xpGained: number;
 }
 
-/**
- * A finished playground round. The first finish of a UTC day grants
- * `DAILY_GOAL_REWARD_XP` and nothing else — stats, cooldowns, and wearables
- * stay put. Later finishes the same day still count as plays.
- */
 export function recordPlay(pet: GuestPet, now: Date = new Date()): PlayRecord {
   const day = utcDay(now);
   const xpGained = pet.lastDailyPlayDay === day ? 0 : DAILY_GOAL_REWARD_XP;
@@ -366,11 +317,6 @@ function careLogFrom(raw: unknown[] | undefined): CareLogEntry[] {
   return entries.slice(-CARE_LOG_LIMIT);
 }
 
-/**
- * Read a stored blob as a version-2 pet. Version 1 records, and version 2
- * records with a damaged log entry, come back with defaults instead of
- * being thrown away. Garbage returns null.
- */
 export function migrateStoredPet(raw: unknown): GuestPet | null {
   const direct = guestPetSchema.safeParse(raw);
   if (direct.success) {

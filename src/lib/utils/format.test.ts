@@ -113,7 +113,6 @@ describe("dayTurnsAt", () => {
     expect(dayTurnsAt(evening, { locale: "en-GB", timeZone: "UTC" })).toBe("at midnight");
   });
   it("counts from the UTC day it is now, even late in the local evening", () => {
-    // 01:00 UTC on the 18th is still the 17th in Los Angeles; the next turn is the 19th's UTC midnight.
     expect(dayTurnsAt(new Date("2026-10-18T01:00:00Z"), { locale: "en-US", timeZone: "America/Los_Angeles" })).toBe("at 5:00 PM here");
   });
 });

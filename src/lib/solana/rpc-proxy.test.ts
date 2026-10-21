@@ -20,7 +20,6 @@ describe("checkRpcRequest", () => {
   it("is not an open RPC: no other method, no other program's scan, no batches, no giant reads", () => {
     expect(checkRpcRequest(call("requestAirdrop", [SYSTEM, 1]))).toMatchObject({ ok: false });
     expect(checkRpcRequest(call("getProgramAccounts", [SYSTEM, {}]))).toMatchObject({ ok: false });
-    // The whole program in one read, or a scan that names no kind of Pawket's: refused.
     expect(checkRpcRequest(call("getProgramAccounts", [PAWKET_PROGRAM_ID, {}]))).toMatchObject({ ok: false });
     expect(checkRpcRequest(call("getProgramAccounts", [PAWKET_PROGRAM_ID, { filters: [{ memcmp: { offset: 8, bytes: SYSTEM } }] }]))).toMatchObject({ ok: false });
     expect(checkRpcRequest([call("getBalance", [SYSTEM])])).toMatchObject({ ok: false });

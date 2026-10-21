@@ -3,10 +3,8 @@ import { PetMood } from "@/lib/game/enums";
 import { careReminder, firstNeed } from "./care";
 
 const even = { hunger: 72, happiness: 72, energy: 72, hygiene: 72 };
-/** From 72, hunger (2.5 an hour) is first below 25 after 68,401 seconds: 19 hours and a second. */
 const HUNGRY_AFTER_MS = 68_401_000;
 
-/** A pet whose need begins at `due`, a local time, so the waking hours read the same in any time zone. */
 function petDue(name: string, due: Date) {
   return { name, stats: even, statsUpdatedAt: new Date(due.getTime() - HUNGRY_AFTER_MS).toISOString() };
 }
@@ -17,7 +15,6 @@ describe("the first need", () => {
       at: new Date("2026-10-18T19:00:01.000Z"),
       mood: PetMood.Hungry,
     });
-    // Already in need: from the moment the record was written.
     expect(firstNeed({ stats: { ...even, energy: 20 }, statsUpdatedAt: "2026-10-18T00:00:00.000Z" })).toEqual({
       at: new Date("2026-10-18T00:00:00.000Z"),
       mood: PetMood.Tired,

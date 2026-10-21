@@ -1,29 +1,14 @@
 import { PetSpecies } from "@/lib/game/enums";
 
-/**
- * A pet's coat: the colour of its fur, chosen by its person. Expression
- * only, like the wardrobe, and kept on this device the way the room and the
- * player's look are — Solana has no field for it, so a pet's Passport, the
- * Park and a visit show its species' classic coat.
- *
- * Each coat is a fill and a patch for the flat art (`PetArt` takes both)
- * and a main and second colour for the 3D model, which the room swaps for
- * the colours the asset pipeline baked in (`PetActor.paint`). The classic
- * coat is the species' own tokens. Every other coat stays light enough that
- * the flat art's dark eyes read on it.
- */
 export interface Coat {
   id: string;
   name: string;
-  /** The flat art's fill and patch. */
   coat: string;
   patch: string;
-  /** The 3D model's main and second colours, sRGB. */
   main: string;
   second: string;
 }
 
-/** The colours the pipeline baked into each model (`scripts/3d/build.mjs`): Daylight values, held to the palette by the test. */
 export const BAKED: Record<PetSpecies, { main: string; second: string }> = {
   [PetSpecies.LunaCat]: { main: "#ff8a3d", second: "#b8500f" },
   [PetSpecies.MossPup]: { main: "#a45f2a", second: "#6b3d1f" },

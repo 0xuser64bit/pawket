@@ -163,7 +163,6 @@ describe("message integrity", () => {
     } as unknown as SendRpc;
     return { rpc, send };
   };
-  /** A wallet that rewrites whatever it is given, as one adding its own guard would. */
   const rewriting = (address: Address, into: Transaction) => ({
     address,
     modifyAndSignTransactions: vi.fn(async () => [into]),

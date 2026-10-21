@@ -1,8 +1,3 @@
-/**
- * A small seeded generator (mulberry32), carried as a number so a game step
- * stays a pure function of its state: the same seed and the same inputs
- * always play the same round.
- */
 export function nextRandom(state: number): [value: number, state: number] {
   const next = (state + 0x6d2b79f5) | 0;
   let t = next;
@@ -11,7 +6,6 @@ export function nextRandom(state: number): [value: number, state: number] {
   return [((t ^ (t >>> 14)) >>> 0) / 4294967296, next];
 }
 
-/** A seed from any string, so a round can be named and replayed. */
 export function seedFrom(text: string): number {
   let hash = 2166136261;
   for (let i = 0; i < text.length; i++) {

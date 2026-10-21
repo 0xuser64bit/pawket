@@ -1,10 +1,3 @@
-/**
- * The rule a guild lives inside. These lists are the product: what a guild
- * is, and what it can never be, whoever founds it. A guild may launch one
- * optional coin on Pawket's presets (`src/lib/coins/`) — and a coin, like
- * the guild, never reaches a pet.
- */
-
 export const GUILD_CAN = [
   "Give your pet a crest, a name and a motto to belong to",
   "Gather pets and their people, read live from Solana",

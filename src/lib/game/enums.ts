@@ -1,4 +1,3 @@
-/** String enums are the UI/API representation. Only the Solana layer maps to Borsh indexes. */
 export enum PetSpecies {
   LunaCat = "luna_cat",
   MossPup = "moss_pup",

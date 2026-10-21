@@ -2,16 +2,8 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 
-/**
- * Pawket's sounds, all made here, no files: Home's music box, a little tune
- * for each thing the two of you do there, and the playground's blips. One
- * switch for all of them, remembered on this device: on until it is turned
- * off. Nothing plays before a tap — browsers forbid it, and Pawket would not
- * — and nothing plays while the page is hidden.
- */
 const KEY = "pawket.sound";
 const listeners = new Set<() => void>();
-/** Blocked storage: the choice lasts for this page. */
 let volatileChoice: boolean | null = null;
 
 function read(): boolean {
@@ -32,7 +24,6 @@ function storage(event: StorageEvent) {
     notify();
   }
 }
-/** Turn everything up, or quiet at once — even what is already ringing. */
 function loud(on: boolean) {
   if (out && context) out.gain.setTargetAtTime(on ? 0.8 : 0, context.currentTime, 0.03);
 }
@@ -45,22 +36,16 @@ function subscribe(listener: () => void) {
   };
 }
 
-/* ------------------------------------------------------------- the voice */
-
 let context: AudioContext | null = null;
-/** Everything goes through here, so one switch silences what is already ringing. */
 let out: GainNode | null = null;
-/** When, on the audio clock, the last sound set to play has finished ringing. */
 let quietAt = 0;
 
-/** The audio, made on the first sound after a tap; null where a device has none. */
 function audio(): { ctx: AudioContext; out: GainNode } | null {
   try {
     if (!context) {
       context = new AudioContext();
       out = context.createGain();
       out.gain.value = 0.8;
-      // A small room for the music box: one soft echo, fading.
       const echo = context.createDelay(1);
       echo.delayTime.value = 0.21;
       const back = context.createGain();
@@ -81,10 +66,6 @@ function audio(): { ctx: AudioContext; out: GainNode } | null {
 
 const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
-/**
- * One tine of a music box: the note, a quiet and slightly sharp octave, a
- * faint twelfth — struck, then left to ring, the higher partials first to go.
- */
 function tine(ctx: AudioContext, to: AudioNode, midi: number, at: number, volume: number, ring = 1.6) {
   for (const [ratio, level, last] of [
     [1, 1, 1],
@@ -126,7 +107,6 @@ export function useSound(): [boolean, (on: boolean) => void] {
   return [on, set];
 }
 
-/** A short cue for the playground, started by a player action; silence never blocks a game. */
 export function blip(frequency: number, ms = 90, type: OscillatorType = "triangle", volume = 0.05) {
   if (!read() || document.hidden) return;
   const sound = audio();
@@ -149,19 +129,9 @@ export function blip(frequency: number, ms = 90, type: OscillatorType = "triangl
     osc.start(at);
     osc.stop(at + ms / 1000 + 0.02);
     quietAt = Math.max(quietAt, at + ms / 1000 + 0.02);
-  } catch {
-    // This device can still play without audio.
-  }
+  } catch {}
 }
 
-/* ------------------------------------------------------------- the tunes */
-
-/**
- * What each moment sounds like, in the room's own music box: notes (MIDI)
- * and when, in seconds. A wave says hello, a cheer climbs, a heart swells,
- * a pose snaps, a boop is a quick bright pair, a meal is two small bites, a
- * brush sparkles, a rest winds down.
- */
 const TUNES: Record<string, Array<[number, number]>> = {
   on: [[79, 0], [84, 0.1]],
   wave: [[79, 0], [84, 0.14]],
@@ -179,7 +149,6 @@ const TUNES: Record<string, Array<[number, number]>> = {
   rest: [[79, 0], [76, 0.24], [72, 0.5]],
 };
 
-/** The little tune for `moment`, if it has one and sound is on. */
 export function chime(moment: string) {
   const tune = TUNES[moment];
   if (!tune || !read() || document.hidden) return;
@@ -188,16 +157,9 @@ export function chime(moment: string) {
   try {
     const at = sound.ctx.currentTime + 0.02;
     for (const [midi, after] of tune) tine(sound.ctx, sound.out, midi, at + after, 0.07, 1.1);
-  } catch {
-    // Quiet is fine.
-  }
+  } catch {}
 }
 
-/**
- * Home's lullaby: sixteen bars in three, a music box on a windowsill — the
- * tune on top, a soft low note at each bar — then a bar's rest, and again.
- * Each bar is its low note and the tune's notes, as [MIDI, beats].
- */
 const BARS: Array<[number, Array<[number, number]>]> = [
   [60, [[76, 2], [79, 1]]],
   [55, [[84, 2], [83, 1]]],
@@ -218,7 +180,6 @@ const BARS: Array<[number, Array<[number, number]>]> = [
   [0, []],
 ];
 const BEAT = 0.6;
-/** One time round: when each note sounds, in beats from the top. */
 const LULLABY = BARS.flatMap(([low, notes], bar) => {
   const events: Array<{ beat: number; midi: number; volume: number; ring: number }> = low ? [{ beat: bar * 3, midi: low, volume: 0.035, ring: 2.4 }] : [];
   let beat = bar * 3;
@@ -230,12 +191,6 @@ const LULLABY = BARS.flatMap(([low, notes], bar) => {
 });
 const ROUND = BARS.length * 3;
 
-/**
- * Plays the lullaby while `on` and this room is on screen: from the first
- * tap after a load, fading in; quiet while the page is hidden; gone when
- * Home is left or the sound is turned off. Notes are set a moment ahead on
- * the audio clock, so a busy page never makes it stumble.
- */
 export function useRoomMusic(on: boolean) {
   useEffect(() => {
     if (!on) return;
@@ -287,7 +242,6 @@ export function useRoomMusic(on: boolean) {
         void context?.suspend().catch(() => {});
       } else play();
     }
-    // A remembered "on" is not a tap: after a load, the first one starts it.
     const started = typeof navigator !== "undefined" && navigator.userActivation?.hasBeenActive;
     if (started) play();
     window.addEventListener("pointerdown", play);
@@ -298,8 +252,6 @@ export function useRoomMusic(on: boolean) {
       window.removeEventListener("pointerdown", play);
       window.removeEventListener("keydown", play);
       document.removeEventListener("visibilitychange", visibility);
-      // Home left or muted: once the last note has rung, the phone's audio rests until the next sound
-      // wakes it. A sound set since then is someone else's, and keeps it awake.
       const rest = () => {
         if (context?.state === "running" && context.currentTime >= quietAt) void context.suspend().catch(() => {});
       };
@@ -308,5 +260,4 @@ export function useRoomMusic(on: boolean) {
   }, [on]);
 }
 
-/** The four beans of Copy sing a major chord, low to high. */
 export const BEAN_NOTES = [392, 494, 587, 784];

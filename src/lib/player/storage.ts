@@ -13,7 +13,6 @@ function readRaw(): string | null {
   }
 }
 
-/** The saved look, or the default. Stable while the stored string is unchanged. */
 export function readLookSnapshot(): PlayerLook {
   if (typeof window === "undefined") return DEFAULT_LOOK;
   const raw = readRaw();
@@ -30,7 +29,6 @@ export function readLookSnapshot(): PlayerLook {
   return look;
 }
 
-/** Persist a look. False when storage is blocked or the look is invalid. */
 export function saveLook(look: PlayerLook): boolean {
   if (typeof window === "undefined" || !lookSchema.safeParse(look).success) return false;
   try {

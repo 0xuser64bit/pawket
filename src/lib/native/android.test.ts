@@ -4,7 +4,6 @@ import { haptic, inAndroidApp, savePicture, setCareReminder, shareLink, sharePic
 
 type Request = Record<string, unknown>;
 
-/** The app's injected object, as the page sees it: it keeps what was posted and answers as PawketBridge.kt does. */
 function app(answer: (request: Request) => Request = () => ({ ok: true })): Request[] {
   const posted: Request[] = [];
   const listeners: Array<(event: { data: unknown }) => void> = [];

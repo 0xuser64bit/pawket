@@ -1,21 +1,12 @@
-/**
- * The Market as one list a player can search and narrow: every piece, room
- * and frame, with the words a player would look for it by. Pure, so the
- * screen and its test read the same answer.
- */
-
 export type ShelfKind = "piece" | "room" | "frame" | "decor";
 
 export interface ShelfEntry {
   name: string;
-  /** Its one line in the Market. */
   line: string;
   kind: ShelfKind;
-  /** Words it is also found by: where it is worn, its material, its colours. */
   tags: readonly string[];
 }
 
-/** The ways to narrow the shelves, in the order the row shows them. */
 export const SHELF_FILTERS = [
   { value: "all", label: "Everything" },
   { value: "head", label: "Hats" },
@@ -34,7 +25,6 @@ export function isShelfFilter(value: unknown): value is ShelfFilter {
   return SHELF_FILTERS.some((filter) => filter.value === value);
 }
 
-/** Lower case, without accents, in words. */
 function words(text: string): string[] {
   return text
     .normalize("NFKD")
@@ -44,7 +34,6 @@ function words(text: string): string[] {
     .filter(Boolean);
 }
 
-/** A few words players say for the same thing. */
 const SAME: Record<string, string> = {
   specs: "glasses",
   shades: "glasses",
@@ -69,11 +58,6 @@ const SAME: Record<string, string> = {
   spooky: "autumn",
 };
 
-/**
- * Whether `entry` is on the narrowed shelf: it passes the filter and every
- * word of the query begins a word it is known by, so "hea" finds Headphones
- * and Heart glasses, and "pink room" finds the pink rooms only.
- */
 export function onShelf(entry: ShelfEntry, query: string, filter: ShelfFilter, owned: boolean): boolean {
   if (filter === "yours" ? !owned : filter !== "all" && filter !== entry.kind && !entry.tags.includes(filter)) return false;
   const known = words([entry.name, entry.line, entry.kind, ...entry.tags].join(" "));

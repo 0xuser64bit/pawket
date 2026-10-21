@@ -37,7 +37,6 @@ it("keeps every Solana address and query out of a page's address", () => {
 });
 
 it("can carry nothing that names a player: every property is one of a few fixed words", () => {
-  // Every event a screen sends, with every property at its widest: no value is free text.
   const events: PawketEvent[] = [
     { name: "home_opened", petAge: "30+", sinceCare: "never" },
     { name: "send_outcome", kind: "coin", outcome: "needs-wallet" },

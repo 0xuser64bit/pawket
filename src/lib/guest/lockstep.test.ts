@@ -5,11 +5,6 @@ import { applyStatDecay, calculateLevelFromXp, elapsedSecondsBetween } from "@/l
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { applyGuestCare, createGuestPet, recordPlay, streakAsOf, type GuestPet } from "./pet";
 
-/**
- * The guest record replays the same scripted life as the program
- * (`programs/pawket/tests/program/lockstep.rs`). A number that differs here
- * differs on chain.
- */
 const SCRIPT = readFileSync(path.join(process.cwd(), "src/lib/game/lockstep.txt"), "utf8");
 const ADOPTED_AT = Date.UTC(2026, 9, 1, 10, 0, 0);
 const at = (seconds: number) => new Date(ADOPTED_AT + seconds * 1000);

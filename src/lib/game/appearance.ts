@@ -1,20 +1,12 @@
 import type { Feeling, PetForm, Sky, Temper } from "@/components/pk";
 import { CareActionType, PetMood, PetPersonality, PetSpecies, type PetStats } from "./enums";
 
-/**
- * How a domain pet is drawn. The species enum is lockstep with the on-chain
- * program (`PET_SPECIES_VARIANTS`), so it never changes shape for a picture
- * — this module is the one place that maps a record to the design system's
- * flat geometry, its sky tint and the words beside it.
- */
-
 export const SPECIES_ART: Record<PetSpecies, PetForm> = {
   [PetSpecies.LunaCat]: "cat",
   [PetSpecies.MossPup]: "dog",
   [PetSpecies.CloudBun]: "bun",
 };
 
-/** The 3D model each species wears in the room (`public/3d/pets/`). */
 export const SPECIES_MODEL: Record<PetSpecies, "cat" | "dog" | "bunny"> = {
   [PetSpecies.LunaCat]: "cat",
   [PetSpecies.MossPup]: "dog",
@@ -27,7 +19,6 @@ export const SPECIES_LABEL: Record<PetSpecies, string> = {
   [PetSpecies.CloudBun]: "Cloud bun",
 };
 
-/** Backdrops behind a pet are limited to these three. Bloom means guild. */
 export const SPECIES_SKY: Record<PetSpecies, Sky> = {
   [PetSpecies.LunaCat]: "warm",
   [PetSpecies.MossPup]: "plain",
@@ -41,7 +32,6 @@ export const PERSONALITY_LABEL: Record<PetPersonality, string> = {
   [PetPersonality.Mischief]: "Mischief",
 };
 
-/** The verb on the care button. */
 export const CARE_ACTION_LABEL: Record<CareActionType, string> = {
   [CareActionType.Feed]: "Feed",
   [CareActionType.Play]: "Play",
@@ -49,7 +39,6 @@ export const CARE_ACTION_LABEL: Record<CareActionType, string> = {
   [CareActionType.Rest]: "Rest",
 };
 
-/** The verb after the care has happened. */
 export const CARE_DONE_LABEL: Record<CareActionType, string> = {
   [CareActionType.Feed]: "Fed",
   [CareActionType.Play]: "Played",
@@ -57,7 +46,6 @@ export const CARE_DONE_LABEL: Record<CareActionType, string> = {
   [CareActionType.Rest]: "Rested",
 };
 
-/** A care as someone else sees it happen, in the park: "Pepper was fed". */
 export const CARE_SEEN: Record<CareActionType, (name: string) => string> = {
   [CareActionType.Feed]: (name) => `${name} was fed`,
   [CareActionType.Play]: (name) => `${name} played`,
@@ -65,7 +53,6 @@ export const CARE_SEEN: Record<CareActionType, (name: string) => string> = {
   [CareActionType.Rest]: (name) => `${name} had a rest`,
 };
 
-/** A pet's mood is one word, shown on the frame. */
 export const MOOD_LABEL: Record<PetMood, string> = {
   [PetMood.Radiant]: "Radiant",
   [PetMood.Happy]: "Happy",
@@ -76,7 +63,6 @@ export const MOOD_LABEL: Record<PetMood, string> = {
   [PetMood.Scruffy]: "Scruffy",
 };
 
-/** The face a temperament wears when nothing is wrong. */
 export const PERSONALITY_TEMPER: Record<PetPersonality, Temper> = {
   [PetPersonality.Curious]: "curious",
   [PetPersonality.Cozy]: "cozy",
@@ -84,7 +70,6 @@ export const PERSONALITY_TEMPER: Record<PetPersonality, Temper> = {
   [PetPersonality.Mischief]: "mischief",
 };
 
-/** The face a mood puts on. A need shows on the pet until it is met. */
 export const MOOD_FEELING: Record<PetMood, Feeling> = {
   [PetMood.Radiant]: "radiant",
   [PetMood.Happy]: "happy",
@@ -95,11 +80,6 @@ export const MOOD_FEELING: Record<PetMood, Feeling> = {
   [PetMood.Scruffy]: "scruffy",
 };
 
-/**
- * Everything a drawing of this pet needs from its record: the species'
- * form, the face its temperament and mood make, and what it is wearing.
- * Spread it into a `PetFrame` or a `PetArt`.
- */
 export function petLook(
   pet: { species: PetSpecies; personality: PetPersonality; wearing: string | null; name: string },
   mood?: PetMood,
@@ -113,7 +93,6 @@ export function petLook(
   };
 }
 
-/** What a mood sounds like in a sentence, after the pet's name. */
 export const MOOD_SENTENCE: Record<PetMood, string> = {
   [PetMood.Radiant]: "is radiant. Whatever you are doing, keep doing it.",
   [PetMood.Happy]: "is happy.",
@@ -124,7 +103,6 @@ export const MOOD_SENTENCE: Record<PetMood, string> = {
   [PetMood.Scruffy]: "is scruffy. A brush would help.",
 };
 
-/** The vital each care looks after. */
 const CARE_STAT: Record<CareActionType, keyof PetStats> = {
   [CareActionType.Feed]: "hunger",
   [CareActionType.Play]: "happiness",
@@ -132,11 +110,6 @@ const CARE_STAT: Record<CareActionType, keyof PetStats> = {
   [CareActionType.Rest]: "energy",
 };
 
-/**
- * The care a pet would most like right now: the one for its lowest vital,
- * among those not resting. Null when every care is resting. Guidance only —
- * it picks which button wears sun, and changes no rule.
- */
 export function suggestCare(stats: PetStats, resting: Record<CareActionType, number>): CareActionType | null {
   let best: CareActionType | null = null;
   for (const action of [CareActionType.Feed, CareActionType.Play, CareActionType.Groom, CareActionType.Rest]) {

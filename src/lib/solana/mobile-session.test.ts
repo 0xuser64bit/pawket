@@ -9,7 +9,6 @@ const authorize = vi.fn();
 const capabilities = vi.fn();
 const signTransactions = vi.fn();
 const scenario = vi.fn(async () => ({ wallet: Promise.resolve({ authorize, getCapabilities: capabilities, signTransactions }), close }));
-/** One account, as a wallet names it (base64), and the same account as Wallet Standard does. */
 const ACCOUNT = { address: Buffer.alloc(32, 1).toString("base64") };
 const OTHER = { address: Buffer.alloc(32, 2).toString("base64") };
 const refused = () => Object.assign(new Error("authorization request failed"), { name: "SolanaMobileWalletAdapterProtocolError", code: -1 });
@@ -61,7 +60,6 @@ it("closes a hung handshake and ignores its late wallet", async () => {
   scenario.mockImplementationOnce(async () => ({ wallet: new Promise((resolve) => { connect = resolve; }), close }));
   const adapter = await mobile();
   const result = adapter.features["standard:connect"].connect().catch((error: Error) => error);
-  // A wallet app still starting, or waiting to be unlocked, gets a minute to answer.
   await vi.advanceTimersByTimeAsync(30_001);
   expect(close).not.toHaveBeenCalled();
   await vi.advanceTimersByTimeAsync(30_000);
@@ -112,7 +110,6 @@ it("signs with the wallet's own token while it is young", async () => {
 it("ends the visit when the wallet refuses its token, then asks afresh and signs in the next one", async () => {
   const adapter = await connected();
   authorize.mockRejectedValueOnce(refused());
-  // Phantom and Solflare can show nothing for a second ask in the same visit: none is made.
   const refusal = await sign(adapter).catch((error: Error) => error);
   expect(mobileWalletErrorCode(refusal)).toBe("ERROR_REAUTHORIZE");
   expect(authorize).toHaveBeenCalledTimes(2);

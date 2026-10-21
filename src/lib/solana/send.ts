@@ -32,37 +32,15 @@ import { deriveWalletPda } from "./pda";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
 import { CONFIRMATION_TIMEOUT_MS, waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
 
-/**
- * The one way the app sends: the lifecycle in `transactions.ts`, end to end.
- *
- * With a sponsor, the sponsor signs first, as fee payer: `/api/sponsor`
- * checks the transaction and returns it with its signature. Then the wallet
- * signs as the owner — a transaction that already carries a signature is
- * one a wallet signs as it is, rather than rewriting it — and the message
- * is checked to be the one that was built before anything is sent. Without
- * a sponsor, the owner pays and signs alone. Any other key the instructions
- * name as a signer — this device's, when it is being linked — signs here,
- * last, once the wallet has. Either way the transaction goes to the RPC with
- * preflight on, so one that would fail lands nothing.
- *
- * A linked device acting for its owner goes the same way, with the device as
- * `owner`: it signs on this device with no prompt, the sponsor paying as for
- * the owner — or, with no sponsor, the device paying from its own float.
- */
-
 export type SendRpc = Rpc<GetLatestBlockhashApi & SendTransactionApi & GetSignatureStatusesApi>;
 
 export interface SendOptions {
   rpc: SendRpc;
   owner: TransactionSigner;
-  /** The sponsor's address, or null when the owner pays. */
   sponsor: Address | null;
-  /** A linked device pays when sponsorship is unavailable; the owner still approves money. */
   feePayer?: TransactionSigner;
-  /** The instructions, given the owner's signer and whoever pays rent (adoption needs it). */
   instructions: (signers: { owner: TransactionSigner; payer: TransactionSigner }) => Instruction[];
   onStage?: (stage: TransactionStage) => void;
-  /** Hands the unsigned transaction to the sponsor; returns it with the sponsor's signature. */
   cosign?: (wireBase64: string) => Promise<string>;
 }
 
@@ -70,11 +48,9 @@ export interface SendResult {
   signature: string;
   outcome: ConfirmationOutcome;
   sponsored: boolean;
-  /** The blockhash it was signed against: when it expires, an unconfirmed send can no longer land. */
   blockhash: string;
 }
 
-/** A failure the sponsor reported, carrying what the UI needs to say it. */
 export class RelayError extends Error {
   constructor(
     message: string,
@@ -102,10 +78,8 @@ async function askSponsor(wireBase64: string): Promise<string> {
 const decode = (wireBase64: string) => getTransactionDecoder().decode(getBase64Encoder().encode(wireBase64));
 
 /**
- * A wallet can open without ever answering. A late signature is discarded, never broadcast.
- * Longer than a phone wallet's own limits (a minute to open, 85 seconds to answer, in the
- * patched Mobile Wallet Adapter), so its session always ends before this gives up on it and
- * a retry never opens a second session over a first.
+ * Outlasts the patched Mobile Wallet Adapter's own limits (a minute to open, 85 s to answer),
+ * so a retry never opens a second wallet session over the first.
  */
 async function signingDeadline<T>(sign: () => Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
@@ -122,7 +96,6 @@ function same(a: ReadonlyUint8Array, b: ReadonlyUint8Array): boolean {
   return a.length === b.length && a.every((byte, i) => byte === b[i]);
 }
 
-/** The wallet's signature on a transaction that already has the sponsor's. */
 async function walletSigns(signer: TransactionSigner, transaction: Transaction): Promise<Transaction> {
   if (isTransactionModifyingSigner(signer)) {
     const [signed] = await signer.modifyAndSignTransactions([transaction as Parameters<typeof signer.modifyAndSignTransactions>[0][number]]);
@@ -159,6 +132,8 @@ export async function sendPawket({
       (m) => appendTransactionMessageInstructions(instructions({ owner, payer: createNoopSigner(payerAddress) }), m),
     );
     const built = compileTransaction(message);
+    // The sponsor signs first: wallets rewrite a transaction nobody has signed yet (Phantom adds
+    // priority fees and guard instructions), and the sponsor refuses the rewrite.
     const sponsored = sponsor ? decode(await cosign(getBase64EncodedWireTransaction(built))) : await walletSigns(feePayer!, built);
     if (!same(sponsored.messageBytes, built.messageBytes)) {
       throw new Error("The sponsor returned a different transaction. Nothing was sent.");
@@ -168,7 +143,6 @@ export async function sendPawket({
     if (!same(signed.messageBytes, built.messageBytes)) {
       throw new Error("Your wallet changed the transaction, so Pawket's signature no longer fits it. Nothing was sent.");
     }
-    // Any other key named as a signer (a device being linked) signs last, as it is.
     for (const other of getSignersFromTransactionMessage(message)) {
       if (other.address === owner.address || other.address === payerAddress || !isTransactionPartialSigner(other)) continue;
       const [signatures] = await other.signTransactions([signed as Parameters<typeof other.signTransactions>[0][number]]);
@@ -187,14 +161,6 @@ export async function sendPawket({
   return land(rpc, signed, onStage, sponsor !== null);
 }
 
-/**
- * A transaction Pawket's server built — a keepsake, whose card signs its own
- * creation, and every guild-coin transaction, which Meteora's SDK builds and
- * any key it makes signs first. The wallet signs as the owner. When another
- * key has signed already, the message is checked to be the one it signed; a
- * wallet may add its own guard to one nobody else has signed yet. Then it
- * goes the same way.
- */
 export async function sendPrepared({
   rpc,
   owner,
@@ -203,9 +169,7 @@ export async function sendPrepared({
   sponsored = true,
   extraSigner,
 }: Pick<SendOptions, "rpc" | "owner" | "onStage"> & {
-  /** Fetches the server's transaction, as base64. */
   prepare: () => Promise<string>;
-  /** Whether Pawket's sponsor pays its fee (a keepsake); coins use the linked device. */
   sponsored?: boolean;
   extraSigner?: TransactionSigner;
 }): Promise<SendResult> {
@@ -233,7 +197,6 @@ export async function sendPrepared({
   return land(rpc, signed, onStage, sponsored);
 }
 
-/** Sends with preflight on — one that would fail lands nothing — and waits for Solana. */
 async function land(
   rpc: SendRpc,
   signed: Transaction,
@@ -248,8 +211,6 @@ async function land(
     await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" })
       .send({ abortSignal: AbortSignal.timeout(CONFIRMATION_TIMEOUT_MS) });
   } catch (error) {
-    // A preflight refusal is definitive. A lost broadcast reply is not:
-    // Solana may already have it. Look up the signature, never send a new one.
     if (isSolanaError(error, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE)) throw error;
   }
 
@@ -258,7 +219,6 @@ async function land(
   try {
     outcome = await waitForConfirmation({ rpc }, signature);
   } catch (error) {
-    // It landed and the program refused it: the signature is the receipt.
     throw Object.assign(error instanceof Error ? error : new Error(String(error)), { signature });
   }
   onStage?.(outcome);

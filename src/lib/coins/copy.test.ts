@@ -4,7 +4,6 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { BANNED_PHRASES, COIN_DOES, COIN_NEVER, COIN_RISKS } from "./copy";
 
-/** Every file a player reads a coin's words in: this copy, the coin screens and the coin routes. */
 function coinSurfaces(): string[] {
   const roots = ["src/lib/coins", "src/components/coins", "app/(game)/guilds/[slug]/coin", "app/api/coins"];
   const files: string[] = [];
@@ -18,16 +17,13 @@ function coinSurfaces(): string[] {
   for (const root of roots) {
     try {
       walk(root);
-    } catch {
-      // A surface not built yet has nothing to say.
-    }
+    } catch {}
   }
   return files;
 }
 
 describe("what Pawket says about a coin", () => {
   it("never sells it: no surface uses a banned phrase", () => {
-    // The list itself lives in copy.ts, so that file is read without it.
     for (const file of coinSurfaces()) {
       let text = readFileSync(file, "utf8").toLowerCase();
       if (file.endsWith(path.join("coins", "copy.ts"))) text = text.slice(0, text.indexOf("export const banned_phrases"));

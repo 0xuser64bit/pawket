@@ -3,7 +3,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 type Fake = { contexts: number; oscillators: number; time: number; master: { gain: { setTargetAtTime: ReturnType<typeof vi.fn> } } | null; ctx: { suspend: ReturnType<typeof vi.fn>; resume: ReturnType<typeof vi.fn> } | null };
 
-/** Just enough of Web Audio to count what would sound, on a clock the test moves. */
 function fakeAudio(): Fake {
   const made: Fake = { contexts: 0, oscillators: 0, time: 0, master: null, ctx: null };
   const param = () => ({ value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn() });
@@ -106,7 +105,6 @@ it("goes quiet while the page is hidden, when it is muted, and when Home is left
   fireEvent(document, new Event("visibilitychange"));
   expect(audio.oscillators).toBeGreaterThan(before);
 
-  // Muted: what is ringing goes quiet at once, and nothing more is set.
   fireEvent.click(screen.getByRole("button"));
   expect(audio.master!.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, expect.any(Number), expect.any(Number));
   before = audio.oscillators;

@@ -1,31 +1,8 @@
 import { CareActionType } from "@/lib/game/enums";
 
-/**
- * Moments are what the player and the pet do together in the 3D room. Each
- * is data: which clips the player plays and when, where the pet stands,
- * what it is cued to do, which prop is in a hand, and when a hand is on the
- * pet. The room implements every cue, formation and prop once, so a new
- * emote is a clip plus an entry here — no new component.
- *
- * A clip is named as it appears in the body GLB (`public/3d/human/`), or in
- * the file at `src` when it ships separately. Any clip made for the same
- * rig works: the Quaternius Universal Base Characters skeleton (65 joints,
- * pelvis → spine_01..03 → neck_01 → Head, UE naming).
- *
- * Moments are expression only. None changes a vital, XP or the streak;
- * a care moment plays after the care it shows has been saved.
- */
-
-/** What the pet can be asked to do. The pet knows each of these. */
 export const PET_CUES = ["look", "happy", "no", "hop", "dance", "eat", "nibble", "lean", "sleep", "fetch", "idle"] as const;
 export type PetCue = (typeof PET_CUES)[number];
 
-/**
- * Where the pet stands for the moment, relative to the player:
- * `free` stays put and turns to look, `front` is within reach of a kneeling
- * player, `beside` is shoulder to shoulder facing the room, `bed` is its
- * cushion.
- */
 export const FORMATIONS = ["free", "front", "beside", "bed"] as const;
 type Formation = (typeof FORMATIONS)[number];
 
@@ -34,32 +11,18 @@ export type PropKind = (typeof PROPS)[number];
 
 export interface Moment {
   id: string;
-  /** The button, in the imperative. */
   label: string;
-  /** A glyph from the design system's icon set, beside the label. */
   icon: string;
-  /**
-   * Clips in order; `at` is seconds into the moment. A `loop` clip repeats
-   * until the moment ends; otherwise the player idles once the clips are done.
-   */
   clips: Array<{ at: number; name: string; src?: string; loop?: boolean }>;
-  /** Seconds the moment lasts. Defaults to the end of the last clip. */
   length?: number;
   formation: Formation;
-  /** Which way the player turns for it, in degrees from facing the room. */
   facing?: number;
-  /** In front of the player, the pet faces them, or the room (so its face shows). */
   petFaces?: "player" | "room";
-  /** Where the player looks: at the pet (the default) or out to the room. */
   lookAt?: "pet" | "room";
   pet: Array<{ at: number; cue: PetCue }>;
-  /** A prop in the player's hand. `release` sets it down or throws it. */
   prop?: { kind: PropKind; hand: "right" | "both"; from: number; release?: number; to: number };
-  /** Seconds the right hand is on the pet: its crown (a pat) or at its mouth (a treat). */
   contact?: { from: number; to: number; at?: "crown" | "mouth" };
-  /** With reduced motion the room shows this second, still, instead. */
   still: number;
-  /** What the room announces to a screen reader; nothing shows it. `{pet}` is the pet's name. */
   says: string;
 }
 
@@ -125,7 +88,6 @@ export const MOMENTS: readonly Moment[] = [
     says: "{pet} takes the treat from your hand.",
   },
   {
-    // Its clip arrives in its own file: an emote added as an asset and this entry.
     id: "cheer",
     label: "Cheer",
     icon: "spark",
@@ -258,25 +220,14 @@ export const MOMENTS: readonly Moment[] = [
   },
 ];
 
-/** The emote row: moments a player can start at any time. */
 export const EMOTES = ["wave", "dance", "pet", "treat", "cheer", "heart", "peace", "thumbs"] as const;
 
-/**
- * Poses for a photo: a moment's own clip, staged for the camera instead of
- * for each other — both of you turned to it, the pet at your side or in
- * your arms — and held at one second while the photo is taken. The pet
- * holds a frame of its own clip, mid-hop if it is cheering. Expression
- * only, like every moment: nothing saved changes.
- */
 export interface PhotoPoseSpec {
   value: string;
   label: string;
   icon: string;
-  /** The moment whose clip it borrows. */
   moment: string;
-  /** Staging that replaces the moment's own, so faces show to the camera. */
   stage?: Pick<Moment, "formation" | "facing" | "lookAt">;
-  /** The second of the moment the player holds. */
   still: number;
   pet: { clip: "idle" | "gesture-positive" | "dance"; at: number; hop?: boolean };
 }
@@ -298,7 +249,6 @@ export function findPhotoPose(id: string): PhotoPoseSpec | undefined {
   return PHOTO_POSES.find((pose) => pose.value === id);
 }
 
-/** The moment each care action shows, once that care has been saved. */
 export const CARE_MOMENT: Record<CareActionType, string> = {
   [CareActionType.Feed]: "feed",
   [CareActionType.Play]: "fetch",
@@ -310,7 +260,6 @@ export function findMoment(id: string): Moment | undefined {
   return MOMENTS.find((moment) => moment.id === id);
 }
 
-/** Seconds a moment lasts, given the durations of its clips. */
 export function momentLength(moment: Moment, clipDuration: (name: string) => number): number {
   if (moment.length !== undefined) return moment.length;
   return Math.max(...moment.clips.map((clip) => clip.at + clipDuration(clip.name)));
@@ -320,10 +269,6 @@ export function momentSentence(moment: Moment, petName: string): string {
   return moment.says.replaceAll("{pet}", petName);
 }
 
-/**
- * A room cue: which moment, and a nonce so the same moment can be asked
- * for twice in a row.
- */
 export interface RoomCue {
   moment: string;
   nonce: number;

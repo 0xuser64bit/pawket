@@ -11,14 +11,9 @@ import { inAndroidApp } from "@/lib/native/android";
 import { askBrowserToKeep } from "@/lib/utils/persist";
 import { record } from "@/lib/analytics/events";
 
-/** A link's end: a few minutes inside the program's 30 days, so a clock running ahead is not refused. */
+/** Ten minutes inside the program's limit, so a clock running ahead is not refused. */
 const linkEnds = (days: number) => Math.floor(Date.now() / 1000) + Math.min(days * 86_400, WALLET_LIMITS.maxDeviceSeconds) - 600;
 
-/**
- * Linking this browser to the connected wallet's Pawket Wallet — opening it
- * first when there is none — in one approval, with the sponsor paying while
- * it is up. The browser's key is the one it keeps, or a new one made here.
- */
 export function useLinkBrowser() {
   const sender = usePawketSend();
   const [problem, setProblem] = useState<string>();
@@ -54,7 +49,6 @@ export function useLinkBrowser() {
       ]);
       if (result) {
         await refreshPawketWallet(owner);
-        // The device key is in this browser's storage: losing it means linking again.
         if (result.outcome === "confirmed") {
           record({ name: "wallet_linked", deposit: deposit > 0n ? "some" : "none" });
           void askBrowserToKeep();

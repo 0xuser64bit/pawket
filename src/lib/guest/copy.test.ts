@@ -14,7 +14,6 @@ it("carries each pet's coat, and reads back only a coat its species has", () => 
   const [pepper, miso] = [pet("Pepper"), pet("Miso")];
   const copy = petsCopy([pepper, miso], new Date(), { [pepper.id]: "golden", [miso.id]: "lilac", someoneElse: "ash" });
   expect(JSON.parse(copy).coats).toEqual({ [pepper.id]: "golden", [miso.id]: "lilac" });
-  // A pup has no lilac coat: Miso comes back in the classic one.
   expect(readPetsCopy(copy)).toMatchObject({ coats: { [pepper.id]: "golden" } });
 });
 

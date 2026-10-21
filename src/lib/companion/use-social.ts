@@ -12,11 +12,6 @@ export interface SocialRecord {
   gatherings: number;
 }
 
-/**
- * What other players did with these pets on Solana: waves in each one's
- * guestbook (one read for all of them) and the guild events each checked
- * in at. Stickers read these; nothing here is stored anywhere else.
- */
 export function useSocialRecords(pets: Address[]) {
   const key = pets.join(",");
   const read = useCallback(async () => {

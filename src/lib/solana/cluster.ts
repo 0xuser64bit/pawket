@@ -1,6 +1,5 @@
 import type { SolanaCluster } from "@/config/env";
 
-/** Wallet Standard chain identifiers (one client = one chain). */
 export const CLUSTER_CHAINS: Record<SolanaCluster, `${string}:${string}`> = {
   devnet: "solana:devnet",
   testnet: "solana:testnet",
@@ -8,7 +7,6 @@ export const CLUSTER_CHAINS: Record<SolanaCluster, `${string}:${string}`> = {
   localnet: "solana:localnet",
 };
 
-/** CAIP-2 ids for Solana Actions' X-Blockchain-Ids: `solana:` + the cluster's genesis hash. */
 export const CLUSTER_CAIP2: Record<SolanaCluster, string> = {
   devnet: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
   testnet: "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY",
@@ -16,11 +14,6 @@ export const CLUSTER_CAIP2: Record<SolanaCluster, string> = {
   localnet: "solana:localnet",
 };
 
-/**
- * Whether a node's genesis hash is `cluster`'s. A script asks the node it was
- * pointed at before it signs anything: a URL from the shell can name another
- * cluster than the one the script was told.
- */
 export function isGenesisOf(cluster: SolanaCluster, genesisHash: string): boolean {
   return CLUSTER_CAIP2[cluster] === `solana:${genesisHash}`;
 }

@@ -117,7 +117,7 @@ export function pawIcon(size: number): ImageResponse {
   return new ImageResponse(
     (
       <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", background: DAYLIGHT["sun-soft"] }}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={pawImage(glyph)} width={glyph} height={glyph} alt="" />
       </div>
     ),
@@ -140,7 +140,7 @@ function Pocket({ look, size }: { look: Look; size: number }) {
         overflow: "hidden",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={petImage(look)} width={size - 12} height={size - 12} alt="" />
     </div>
   );
@@ -222,7 +222,7 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
             ))}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 22, marginTop: 8 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={pawImage(112)} width={112} height={112} alt="" />
             <div style={{ fontFamily: "Fraunces", fontSize: 92, lineHeight: 1 }}>Pawket</div>
           </div>
@@ -295,7 +295,7 @@ export async function keepsakeCard(onChain: PetOnChain, cluster: string): Promis
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: 552, marginTop: "auto", paddingTop: 18, borderTop: `3px dashed ${DAYLIGHT["trim-cloth"]}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={pawImage(36)} width={36} height={36} alt="" />
               <div style={{ fontFamily: "Fraunces", fontSize: 28 }}>Pawket keepsake</div>
             </div>
@@ -339,7 +339,7 @@ export async function guildCard(guild: ChainGuild, shape: "square" | "wide" = "s
         boxShadow: `12px 12px 0 ${DAYLIGHT.edge}`,
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`} width={220} height={220} alt="" />
     </div>
   );

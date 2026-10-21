@@ -50,7 +50,7 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
                   connect.dispatchAsync(option).then(onDismiss, () => {});
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element -- a wallet's own data-URI mark */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={option.icon} alt="" />
                 <span>{option.name === PHONE_WALLETS ? "A wallet app on this phone" : option.name}</span>
               </button>

@@ -48,7 +48,7 @@ export function WalletChip() {
         aria-label={`Your wallet, ${truncateAddress(address)}${signsHere ? `. ${Here} signs with no pop-up` : ""}`}
         onClick={() => setOpen("panel")}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element -- a wallet's own data-URI mark */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="pk-shell-btn__mark" src={connected.wallet.icon} alt="" />
         <span className="pk-shell-btn__address">{truncateAddress(address)}</span>
         {signsHere ? (
@@ -109,7 +109,7 @@ function WalletPanel({
     >
       <Stack gap={4}>
         <div className="pk-wallet-who">
-          {/* eslint-disable-next-line @next/next/no-img-element -- a wallet's own data-URI mark */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={icon} alt="" />
           <div className="pk-fill">
             <p className="title">{name}</p>

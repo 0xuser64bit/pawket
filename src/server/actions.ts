@@ -6,12 +6,6 @@ import { PERSONALITY_LABEL, SPECIES_LABEL } from "@/lib/game/appearance";
 import { PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { CLUSTER_CAIP2 } from "@/lib/solana/cluster";
 
-/**
- * Solana Actions: a link that unfurls into a card a wallet can act on — on
- * X, on dial.to, in any Blink client. Every response carries the CORS and
- * version headers the spec asks for; errors are `{ message }` in one
- * sentence that says what did not change.
- */
 export const ACTION_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
@@ -34,22 +28,15 @@ export function preflight() {
   return new Response(null, { status: 204, headers: ACTION_HEADERS });
 }
 
-/** An absolute URL on this deployment, from the request that asked. */
 export function absolute(request: Request, path: string): string {
   return new URL(path, request.url).toString();
 }
 
-/** The `account` a Blink client posts: the wallet that will sign. */
 export async function postedAccount(request: Request): Promise<string | null> {
   const body = (await request.json().catch(() => null)) as { account?: unknown } | null;
   return typeof body?.account === "string" ? body.account : null;
 }
 
-/**
- * Who is asking, for a limit: the client's address as the platform reports it
- * (Vercel sets `x-forwarded-for`). An IPv6 address counts by its /64, the
- * block one subscriber holds whole; an IPv4 one, mapped or not, as itself.
- */
 export function caller(request: Request): string {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   const v4 = /(\d{1,3}(?:\.\d{1,3}){3})$/.exec(ip);
@@ -61,11 +48,6 @@ export function caller(request: Request): string {
   return `${groups.slice(0, 4).map((group) => group.replace(/^0+(?=.)/, "")).join(":")}::/64`;
 }
 
-/**
- * Adopting a pet straight onto Solana: the adoption card's one button, and
- * the way in on every card someone shares — most people who see a pet's
- * card are not its owner, and this is what they can do.
- */
 export function adoptLinkedAction(label = "Adopt") {
   return {
     type: "transaction" as const,

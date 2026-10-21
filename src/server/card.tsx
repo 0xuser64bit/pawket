@@ -13,14 +13,6 @@ import { iconPath } from "@/components/pk/icon";
 import { formatUtcDate } from "@/lib/utils/format";
 import { CREST_COLOURS, CREST_GLYPHS } from "@/lib/guilds/guild";
 
-/**
- * Pictures of a pet for outside the app: the card a shared link unfurls as
- * (`wide`, 1200×630), the icon of a Solana Action (`square`) and the
- * keepsake a wallet shows (`keepsakeCard`). Drawn from the record at request
- * time; without a pet, the three species together.
- */
-
-/** The pet's paint in hex: the card is drawn without a stylesheet, so no token resolves. */
 const PAINT: PetPaint = {
   ink: DAYLIGHT.edge,
   rim: DAYLIGHT.surface,
@@ -61,7 +53,6 @@ const SPECIES_LOOKS: Look[] = [
   { form: "bun", temper: "cozy", feeling: "happy", wearing: null },
 ];
 
-/** How this pet looks right now, from its record. */
 function lookOf(onChain: PetOnChain): Look {
   const record = toCompanionRecord(onChain);
   const { form, temper, feeling, wearing } = petLook(record, projectGuestPet(record).mood);
@@ -70,7 +61,7 @@ function lookOf(onChain: PetOnChain): Look {
 
 let fonts: Promise<Array<{ name: string; data: ArrayBuffer; weight: 500 | 700 }>> | null = null;
 
-/** The brand's faces as TTF (the renderer reads no WOFF2), fetched once; none if the fetch fails. */
+/** The OG renderer reads no WOFF2, so the brand's faces are fetched as TTF. */
 function brandFonts() {
   fonts ??= (async () => {
     const css = await fetch(
@@ -87,15 +78,9 @@ function brandFonts() {
 }
 
 const escape = (value: string) => value.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
-/** SVG keeps these two in camelCase; every other prop is an attribute in kebab-case. */
 const attribute = (prop: string) =>
   prop === "className" ? "class" : prop === "viewBox" || prop === "preserveAspectRatio" ? prop : prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
-/**
- * PetArt as an SVG string. The renderer cannot draw fragments and no page
- * renderer may be imported here, so this serialises the drawing's own
- * element tree — plain SVG, no hooks.
- */
 function markup(node: ReactNode): string {
   if (node == null || typeof node === "boolean") return "";
   if (typeof node === "string" || typeof node === "number") return escape(String(node));
@@ -120,7 +105,6 @@ function petImage(look: Look): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
-/** The mark at a size, as an image the renderer can place: tokens resolve to their Daylight hex. */
 function pawImage(size: number): string {
   const svg = markup(<PawGlyph size={size} />)
     .replace(/var\(--([a-z-]+)\)/g, (_, token: string) => DAYLIGHT[token as Tone])
@@ -128,7 +112,6 @@ function pawImage(size: number): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
-/** Pawket's own icon, for a home screen: the paw at its fullest — shelf and highlights — on a `sun-soft` square. */
 export function pawIcon(size: number): ImageResponse {
   const glyph = Math.round(size * 0.66);
   return new ImageResponse(
@@ -163,11 +146,6 @@ function Pocket({ look, size }: { look: Look; size: number }) {
   );
 }
 
-/**
- * A name's size on a card: smaller as it grows, so the longest a name may be
- * (24 characters for a pet, 32 for a guild) still fits its column, on two
- * lines at most.
- */
 const nameSize = (name: string, [roomy, longer, longest]: readonly [number, number, number]) =>
   name.length <= 10 ? roomy : name.length <= 18 ? longer : longest;
 
@@ -276,13 +254,6 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
   );
 }
 
-/**
- * A keepsake as a wallet shows it: a collectible card, the pet's portrait
- * on its species' sky in the piece the record says it wears, then its name,
- * what it is, and the record's own numbers, read now. The portrait is a
- * keepsake's, so the pet is drawn happy; how it feels today is on its
- * Passport and in an Action's icon, which draw its mood.
- */
 export async function keepsakeCard(onChain: PetOnChain, cluster: string): Promise<ImageResponse> {
   const { pet, passport } = onChain;
   const look = { ...lookOf(onChain), feeling: "happy" as const };
@@ -340,7 +311,6 @@ export async function keepsakeCard(onChain: PetOnChain, cluster: string): Promis
   );
 }
 
-/** A crest's fill and ink, as the Daylight values a PNG needs. */
 const CREST_TONE: Record<(typeof CREST_COLOURS)[number]["id"], [Tone, Tone]> = {
   bloom: ["bloom", "ink-inverse"],
   pool: ["pool", "on-sun"],
@@ -350,10 +320,6 @@ const CREST_TONE: Record<(typeof CREST_COLOURS)[number]["id"], [Tone, Tone]> = {
   glass: ["trim-glass", "ink-inverse"],
 };
 
-/**
- * A guild's card: its crest, its name and motto, and how many pets are in it.
- * `square` is an Action's icon; `wide` is the card its page unfurls as.
- */
 export async function guildCard(guild: ChainGuild, shape: "square" | "wide" = "square"): Promise<ImageResponse> {
   const [fill, on] = CREST_TONE[CREST_COLOURS[guild.colour]?.id ?? "bloom"];
   const glyph = CREST_GLYPHS[guild.crest] ?? "paw";

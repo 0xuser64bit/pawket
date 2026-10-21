@@ -12,14 +12,7 @@ import {
 } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { COIN_TERMS, type CoinCluster, type CoinPreset } from "@/lib/coins/presets";
 
-/**
- * A preset as Meteora's Dynamic Bonding Curve takes it: the parameters of
- * the config account every coin on that preset is made from. Read by
- * `scripts/coin-presets.mts`, which makes the account once per cluster, and
- * by the test that holds these numbers to `COIN_TERMS`. No `server-only`
- * marker, because the script runs it outside Next; nothing in the browser
- * imports it.
- */
+/** No `server-only` marker: `scripts/coin-presets.mts` runs this outside Next. */
 export function presetParameters(preset: CoinPreset, cluster: CoinCluster): ConfigParameters {
   const { start, graduation } = preset.marketCap[cluster];
   return buildCurveWithMarketCap({
@@ -34,7 +27,6 @@ export function presetParameters(preset: CoinPreset, cluster: CoinCluster): Conf
     fee: {
       baseFeeParams: {
         baseFeeMode: BaseFeeMode.FeeSchedulerLinear,
-        // One flat fee from the first trade to the last.
         feeSchedulerParam: {
           startingFeeBps: COIN_TERMS.feeBps,
           endingFeeBps: COIN_TERMS.feeBps,
@@ -59,7 +51,6 @@ export function presetParameters(preset: CoinPreset, cluster: CoinCluster): Conf
       creatorLiquidityPercentage: 0,
       creatorPermanentLockedLiquidityPercentage: COIN_TERMS.lockedLiquidityPercent.founder,
     },
-    // No allocations: nobody holds a coin the curve did not sell them.
     lockedVesting: {
       totalLockedVestingAmount: 0,
       numberOfVestingPeriod: 0,

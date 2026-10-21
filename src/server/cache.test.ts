@@ -2,7 +2,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-// The Data Cache at its worst: it keeps the first answer and hands it back however old it is.
 vi.mock("next/cache", () => ({
   unstable_cache: <T,>(read: () => Promise<T>) => {
     let kept: Promise<T> | null = null;

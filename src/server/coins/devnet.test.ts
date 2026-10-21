@@ -7,20 +7,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { ChainGuild } from "@/lib/solana/accounts";
 import { assertSponsorHasRoom, sponsorKeypairJson, testFunderKeypairJson } from "../../../e2e/devnet";
 
-/**
- * A guild coin's whole life on devnet, run by `pnpm e2e:coins` and skipped
- * otherwise: a founder launches it on the gentle preset with a first buy,
- * buyers carry the curve to its threshold, it graduates into DAMM v2, a
- * holder sells in the graduated pool, and the founder claims their share
- * of the fees — every step a transaction Pawket's server built and only
- * the player signed, every number read back from Solana.
- *
- * The coin's key comes from the sponsor's (SPONSOR_KEYPAIR or
- * .keys/sponsor.json); the test funder (PAWKET_TEST_FUNDER or
- * .keys/test-funder.json, never the sponsor or the deploy wallet) funds the
- * founder. The guild is a stand-in with a fresh slug: a coin needs only
- * the guild's name and slug, and the routes check the rest.
- */
 const RUN = process.env.PAWKET_DEVNET === "1";
 const RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
 
@@ -87,8 +73,6 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
     for (let round = 0; round < 6; round++) {
       const coin = (await coins.readCoin(guild))!;
       if (coin.stage !== "dbc") break;
-      // Up to a SOL at a time. The last one asks for a little more than is
-      // left, and the curve takes only what graduation needs.
       const left = BigInt(coin.threshold) - BigInt(coin.raised);
       const amount = [BigInt(LAMPORTS_PER_SOL), left + left / 5n + 10_000_000n].reduce((a, b) => (a < b ? a : b));
       const quote = await coins.quoteTrade(guild, "buy", amount, 100);
@@ -125,7 +109,6 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
     const before = await connection.getBalance(new PublicKey(walletAddress));
     const coin = (await coins.readCoin(guild))!;
     expect(BigInt(coin.fees.founderUnclaimed)).toBeGreaterThan(0n);
-    // Halves, to the lamport Meteora's rounding gives Pawket.
     const gap = BigInt(coin.fees.pawketUnclaimed) - BigInt(coin.fees.founderUnclaimed);
     expect(gap >= 0n && gap <= 1n).toBe(true);
     await sign(await coins.claimTransaction(guild, founder.publicKey.toBase58()), founder);

@@ -9,13 +9,6 @@ import { MARKET, PAWKET_ACCOUNTS, PAWKET_PROGRAM_ID } from "@/lib/solana/program
 import { shared } from "./cache";
 import { readAllPets, readGuilds } from "./solana";
 
-/**
- * Pawket's pulse: what has happened, counted from the program's accounts
- * and read live — no database, no estimate, nothing added by hand. On
- * devnet the counts include the runs of Pawket's own tests, said on the
- * page. One read answers for thirty seconds, so a crowd is one scan.
- */
-/** Of the pets adopted at least that many days ago, how many were looked after on a later day. */
 export interface Returns {
   day: { back: number; of: number };
   week: { back: number; of: number };
@@ -25,7 +18,6 @@ export interface Pulse {
   pets: { kept: number; outToday: number; cares: number; rounds: number; bestRun: number; owners: number; returned: Returns };
   guilds: { listed: number; pets: number; events: number; going: number; came: number; polls: number; votes: number };
   coins: { launched: number; onCurve: number; graduating: number; graduated: number } | null;
-  /** Lamports as decimal strings: the pulse is cached as plain JSON. */
   market: { closets: number; sold: number; paid: string; treasury: string };
   guestbook: { books: number; waves: number };
   wallets: { opened: number; deviceActions: number };
@@ -36,7 +28,6 @@ const base58 = getBase58Decoder();
 const base64 = getBase64Encoder();
 const rpc = () => createPatientRpc(serverRpcUrl());
 
-/** Every account of one kind, as raw bytes. */
 async function every(account: { discriminator: readonly number[]; size: number }): Promise<Uint8Array[]> {
   const accounts = await rpc()
     .getProgramAccounts(address(PAWKET_PROGRAM_ID), {
@@ -56,12 +47,6 @@ async function every(account: { discriminator: readonly number[]; size: number }
   return accounts.map(({ account: found }) => Uint8Array.from(base64.encode(found.data[0])));
 }
 
-/**
- * Whether pets come back, from their own records and nothing else: a pet is
- * back after `n` days when its Passport's last active UTC day (its last care
- * or round) is at least `n` days after the day it was adopted. Counted among
- * the pets old enough to have had the chance.
- */
 export function returnsOf(pets: readonly PetOnChain[], todayUtc: number): Returns {
   const born = (entry: PetOnChain) => Math.floor(entry.pet.birthTimestamp / 86_400);
   const after = (days: number) => {
@@ -71,11 +56,6 @@ export function returnsOf(pets: readonly PetOnChain[], todayUtc: number): Return
   return { day: after(1), week: after(7) };
 }
 
-/**
- * Where Pulse reads each count, in bytes from an account's start (its 8-byte
- * discriminator first). Read by hand to keep the scan light; `pulse.test.ts`
- * holds every offset to the IDL, so a layout change cannot skew a public count.
- */
 export const AT = {
   eventGoing: 100,
   eventCame: 104,
@@ -92,12 +72,6 @@ const u64 = (bytes: Uint8Array, at: number) => new DataView(bytes.buffer, bytes.
 
 let cached: { at: number; pulse: Promise<Pulse> } | null = null;
 
-/**
- * Thirty seconds of the Data Cache across instances, and the same in this
- * process. The Data Cache outlives a deploy, so its key names the shape of
- * what it holds: change the shape, change the name, or a new page reads an
- * old entry that lacks what it draws.
- */
 const measured = shared(() => measure(), "pulse:returns", 30);
 
 export function readPulse(): Promise<Pulse> {
@@ -125,7 +99,6 @@ async function measure(): Promise<Pulse> {
   ]);
   const listed = guilds.filter(isListed);
   const today = new Date().toISOString().slice(0, 10);
-  // Coins are optional, and Meteora's SDK loads only on the server: the pulse shows without them if they cannot be read.
   const coins = await import("./coins/meteora")
     .then(({ readCoinStages }) => readCoinStages(listed))
     .then((stages) => {

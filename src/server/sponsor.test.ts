@@ -2,7 +2,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { caller } from "./actions";
 
-/** A fresh module each time: the budget and the limits live in it. */
 async function sponsor() {
   vi.resetModules();
   return import("./sponsor");
@@ -40,15 +39,12 @@ describe("mayPayRent", () => {
   it("bounds the hour by what the sponsor's balance actually lost, plus what was signed lately", async () => {
     const { mayPayRent, noteFloat } = await sponsor();
     noteFloat(10n * SOL, 0);
-    // Requests that never land use up only the in-flight allowance, and only for two minutes.
     let signed = 0;
     while (mayPayRent([`key-${signed}`], 1000)) signed++;
     expect(BigInt(signed)).toBe(500_000_000n / ONE_RENT);
     expect(mayPayRent(["fresh"], 1000 + 120_000)).toBe(true);
-    // Once the balance shows the spending, it counts whether or not anyone is still asking.
     noteFloat(10n * SOL - 499_000_000n, 200_000);
     expect(mayPayRent(["after-spend"], 300_000)).toBe(false);
-    // A refill starts the count again, and so does a new hour.
     noteFloat(12n * SOL, 300_001);
     expect(mayPayRent(["after-refill"], 300_002)).toBe(true);
     noteFloat(12n * SOL - 499_000_000n, 400_000);

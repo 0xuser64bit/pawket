@@ -1,14 +1,7 @@
-/**
- * What is new in Pawket, newest first: a line each, in the player's words,
- * and where to see it. Only what this deployment has — an entry ships with
- * the change it describes. The front door names the newest; /new lists all.
- */
 export interface NewsEntry {
-  /** The day it shipped, UTC. */
   date: string;
   title: string;
   body: string;
-  /** Where to see it, inside Pawket. */
   href?: string;
   see?: string;
 }

@@ -21,18 +21,10 @@ import { getServerEnv, serverRpcUrl } from "@/config/server-env";
 import { createPatientRpc } from "@/lib/solana/rpc";
 import { checkSponsorable, createLimiter } from "@/lib/solana/sponsor";
 
-/**
- * Whether the sponsor is up, and its signer when it is. One answer for the
- * API and for any page that says "Pawket pays the fee", so the sentence is
- * never on screen while the float is empty.
- */
-
-/** Below this the sponsor stops and players pay their own fees. */
 const MIN_FLOAT_LAMPORTS = 50_000_000n;
 
 export type SponsorState =
   | { available: true; address: string; signer: KeyPairSigner }
-  /** `address`, when a key is set: its public half, so a history can still say which fees Pawket paid. */
   | { available: false; reason: string; address?: string };
 
 let signer: Promise<KeyPairSigner> | null = null;
@@ -42,7 +34,6 @@ export function sponsorRpc() {
   return createPatientRpc(serverRpcUrl());
 }
 
-/** Forget the cached float, after the sponsor has spent some of it. */
 export function sponsorSpent() {
   float = null;
 }
@@ -56,7 +47,6 @@ export async function sponsorState(): Promise<SponsorState> {
   signer ??= Promise.resolve()
     .then(() => createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(keypair) as number[])))
     .catch((error: unknown) => {
-      // Never kept: a deployment fixed without a restart reads the key again. The key itself is never logged.
       signer = null;
       console.error("[sponsor] SPONSOR_KEYPAIR is not a valid keypair:", error instanceof Error ? error.name : "unknown");
       throw new Error("The sponsor's key is not valid on this deployment.");
@@ -73,7 +63,6 @@ export async function sponsorState(): Promise<SponsorState> {
   return { available: true, address: sponsor.address, signer: sponsor };
 }
 
-/** The sponsor's public address, without asking the network; null without a usable key. */
 export async function sponsorAddress(): Promise<string | null> {
   const keypair = getServerEnv().sponsorKeypair;
   if (!keypair) return null;
@@ -83,36 +72,20 @@ export async function sponsorAddress(): Promise<string | null> {
 }
 
 const HOUR = 60 * 60 * 1000;
-/** Shared by every route that sponsors. */
 export const actionLimit = createLimiter(240, HOUR);
-// Rent is the real cost — a new pet, a keepsake — so it is the scarce one. A
-// venue shares one IP between many players, so the per-key limit is generous.
 const rentPerKey = createLimiter(20, HOUR);
 
-/** What the sponsor may spend in an hour, measured by how far its balance falls. */
 const RENT_BUDGET_LAMPORTS = 500_000_000n;
-/** About the most one sponsored instruction's rent costs on devnet: a guild and its first member. */
 const ONE_RENT_LAMPORTS = 3_500_000n;
-/** How long a signed transaction can still land: a blockhash's life, with room to spare. */
 const IN_FLIGHT_MS = 120_000;
 
-/** This hour's spending, from the balance the sponsor started it with; rents signed lately count until they could no longer land. */
 let spend: { since: number; from: bigint; now: bigint; signed: number[] } | null = null;
 
-/** The sponsor's balance as just read. A refill, or a new hour, starts the count again. */
 export function noteFloat(lamports: bigint, at = Date.now()) {
   if (!spend || at - spend.since >= HOUR || lamports > spend.from) spend = { since: at, from: lamports, now: lamports, signed: [] };
   else spend.now = lamports;
 }
 
-/**
- * Whether the sponsor may sign one more rent, for every key the caller goes
- * by (its address, the wallet it names). Keys are cheap to change, so the
- * whole is bounded too — by what the sponsor actually spends, read from its
- * balance, plus the rents signed in the last two minutes that may still land.
- * A request that never lands spends nothing, so asking alone cannot use the
- * budget up for everyone. Until the balance has been read, nothing is paid.
- */
 export function mayPayRent(keys: readonly string[], at = Date.now()): boolean {
   if (!keys.every((key) => rentPerKey(key, at))) return false;
   if (!spend) return false;
@@ -123,7 +96,6 @@ export function mayPayRent(keys: readonly string[], at = Date.now()): boolean {
   return true;
 }
 
-/** A transaction the sponsor builds and signs first, as fee payer, with any signer the instructions carry. */
 export async function signedBySponsor(sponsor: KeyPairSigner, instructions: Instruction[]): Promise<Transaction> {
   const { value: blockhash } = await sponsorRpc().getLatestBlockhash({ commitment: "confirmed" }).send();
   const message = pipe(
@@ -135,11 +107,6 @@ export async function signedBySponsor(sponsor: KeyPairSigner, instructions: Inst
   return partiallySignTransactionMessageWithSigners(message);
 }
 
-/**
- * Pawket instructions for a player who signs after — a Solana Action. The
- * player is a no-op stand-in here; the same policy holds as for one the
- * player built.
- */
 export async function sponsoredForPlayer(
   sponsor: KeyPairSigner,
   player: Address,

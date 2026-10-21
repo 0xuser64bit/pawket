@@ -11,11 +11,11 @@ const pet = (bornDay: number, lastActiveDay: number) =>
 it("counts a pet as back only on a later day than its adoption, among pets old enough to be", () => {
   const today = 1000;
   const pets = [
-    pet(1000, 1000), // adopted today: too new to count
-    pet(999, 999), // adopted yesterday, never back
-    pet(999, 1000), // back the next day
-    pet(990, 991), // back a day on, gone before the week
-    pet(990, 998), // back a week on
+    pet(1000, 1000),
+    pet(999, 999),
+    pet(999, 1000),
+    pet(990, 991),
+    pet(990, 998),
   ];
   expect(returnsOf(pets, today)).toEqual({ day: { back: 3, of: 4 }, week: { back: 1, of: 2 } });
 });
@@ -24,7 +24,6 @@ it("is zero of zero with no pets, never a division", () => {
   expect(returnsOf([], 1000)).toEqual({ day: { back: 0, of: 0 }, week: { back: 0, of: 0 } });
 });
 
-/** A field's offset in an account, from the IDL: the discriminator, then each fixed-size field before it. */
 function offsetOf(account: string, field: string): number {
   const size = (type: unknown): number => {
     if (typeof type === "string") return { pubkey: 32, u8: 1, bool: 1, u16: 2, u32: 4, i64: 8, u64: 8 }[type] ?? NaN;

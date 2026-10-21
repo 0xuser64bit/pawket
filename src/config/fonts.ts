@@ -1,11 +1,5 @@
 import localFont from "next/font/local";
 
-/**
- * The three families of the Pawket design system, each with one job:
- * Fraunces is the game's voice, Hanken Grotesk is everything you read,
- * DM Mono is anything verifiable. Loaded locally so a price never reflows.
- */
-
 const display = localFont({
   src: "../fonts/Fraunces-Variable.woff2",
   weight: "100 900",

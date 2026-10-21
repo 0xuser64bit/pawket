@@ -5,7 +5,6 @@ import { THEMES, THEME_SCRIPT } from "./themes";
 
 const css = fs.readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
 
-/** A theme's tokens, from the block its preview selector opens. */
 function tokens(id: string): Record<string, string> {
   const start = css.indexOf(`[data-theme-preview="${id}"] {`);
   if (start < 0) return {};
@@ -27,7 +26,6 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/** Every pairing the design system promises, as [text, ground, minimum]. */
 function pairings(): Array<[string, string, number]> {
   const out: Array<[string, string, number]> = [];
   for (const ground of ["ground", "surface", "surface-sunk", "paper"]) {

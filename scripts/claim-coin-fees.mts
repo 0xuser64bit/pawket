@@ -1,16 +1,3 @@
-/**
- * Collects Pawket's side of every guild coin into its treasury: the
- * partner's share of each curve's trading fees, each coin's launch fee, and
- * what Pawket's half of each graduated pool's locked liquidity has earned.
- * The treasury's key signs and pays; it never touches anyone else's share,
- * and the liquidity itself stays locked.
- *
- *   pnpm dlx tsx scripts/claim-coin-fees.mts            # devnet
- *   pnpm dlx tsx scripts/claim-coin-fees.mts mainnet-beta
- *
- * The treasury's key is .keys/treasury.json (TREASURY_KEYPAIR overrides). It
- * is never put on the server.
- */
 import { readFileSync } from "node:fs";
 import { Connection, Keypair, sendAndConfirmTransaction, type Transaction } from "@solana/web3.js";
 import { DynamicBondingCurveClient, U64_MAX } from "@meteora-ag/dynamic-bonding-curve-sdk";

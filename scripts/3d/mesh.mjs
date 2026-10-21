@@ -1,12 +1,3 @@
-/**
- * Typed-array meshes for the 3D pipeline. No Blender here: the Quaternius
- * body is cut, shelled into clothes and re-skinned with these functions.
- *
- * A mesh is { pos, nrm, uv, j, w, idx } — positions/normals (xyz), one UV
- * set, four skin joints/weights per vertex, and triangle indices. Bind space
- * is Y-up, metres, character facing +Z with its left side on +X.
- */
-
 export function readPrimitive(prim) {
   const n = prim.getAttribute("POSITION").getCount();
   const take = (semantic, size, Type) => {
@@ -31,7 +22,6 @@ export function readPrimitive(prim) {
   };
 }
 
-/** Growable copy of a mesh, so cuts can append vertices. */
 function growable(mesh) {
   return {
     pos: Array.from(mesh.pos),
@@ -53,7 +43,6 @@ function freeze(g, idx) {
   };
 }
 
-/** Blend two skin-weight sets, keep the four strongest, renormalise. */
 function blendSkin(ja, wa, jb, wb, t) {
   const acc = new Map();
   for (let k = 0; k < 4; k++) {
@@ -80,12 +69,6 @@ function vertexOf(mesh, i) {
   };
 }
 
-/**
- * Split every triangle that straddles `field(v) = 0` so no triangle crosses
- * the line afterwards. New vertices sit exactly on the line, are shared by
- * both sides, and carry interpolated normals, UVs and blended skin weights.
- * `field` receives { p, n, j, w } and returns a number.
- */
 export function cut(mesh, field) {
   const g = growable(mesh);
   const values = [];
@@ -133,7 +116,6 @@ export function cut(mesh, field) {
       out.push(...tri);
       continue;
     }
-    // Rotate so the lone vertex comes first, keeping the winding.
     const lone = s[0] !== s[1] && s[0] !== s[2] ? 0 : s[1] !== s[0] && s[1] !== s[2] ? 1 : 2;
     const a = tri[lone];
     const b = tri[(lone + 1) % 3];
@@ -163,10 +145,6 @@ export function triangleCentroid(mesh, t) {
   return c;
 }
 
-/**
- * Keep the triangles `keep(t)` accepts, re-indexed. Returns the submesh and
- * the map from new vertex index to the source vertex.
- */
 export function submesh(mesh, keep) {
   const remap = new Map();
   const source = [];
@@ -205,7 +183,6 @@ export function submesh(mesh, keep) {
   };
 }
 
-/** Collapse vertices that share a position (UV seams) into one id each. */
 function weldIds(pos, epsilon = 1e-5) {
   const ids = new Int32Array(pos.length / 3);
   const seen = new Map();
@@ -230,7 +207,6 @@ const norm = (a) => {
   return [a[0] / l, a[1] / l, a[2] / l];
 };
 
-/** Area-weighted vertex normals over `tris` (flat array of vertex ids). */
 export function vertexNormals(points, tris) {
   const n = points.map(() => [0, 0, 0]);
   for (let t = 0; t < tris.length; t += 3) {
@@ -241,17 +217,6 @@ export function vertexNormals(points, tris) {
   return n.map(norm);
 }
 
-/**
- * A garment shell over part of the body: welded, smoothed so muscle does
- * not read through the cloth, pushed out along its own normals, and closed
- * at every open edge with a hem wall back to the skin so a cuff has depth.
- *
- * `offset(p)` is the cloth thickness at a bind-space point. `drape` runs
- * outward-only relaxation afterwards, so cloth spans a hollow (under a bust,
- * between abs, the small of the back) instead of following the skin into
- * it; `maxLift` caps how far it may stand off the skin. Returns a mesh whose
- * vertices keep the body's skin weights.
- */
 export function shell(part, { offset, iterations = 12, drape = 0, maxLift = 0.016, clampFloor = null }) {
   const { ids, count } = weldIds(part.pos);
   const firstOf = new Int32Array(count).fill(-1);
@@ -266,7 +231,6 @@ export function shell(part, { offset, iterations = 12, drape = 0, maxLift = 0.01
   });
   const tris = Array.from(part.idx, (i) => ids[i]);
 
-  // Edges: interior neighbours and open (boundary) edges.
   const edgeUse = new Map();
   const edgeOwner = new Map();
   for (let t = 0; t < tris.length; t += 3) {
@@ -295,8 +259,6 @@ export function shell(part, { offset, iterations = 12, drape = 0, maxLift = 0.01
     }
   }
 
-  // Taubin smoothing: shrink-free Laplacian. Rim vertices only slide along
-  // their rim, so a hem stays where the cut put it.
   let p = points.map((x) => x.slice());
   const step = (factor) => {
     p = p.map((x, v) => {
@@ -311,14 +273,11 @@ export function shell(part, { offset, iterations = 12, drape = 0, maxLift = 0.01
     step(0.5);
     step(-0.53);
   }
-  // Never below the skin it came from.
   p = p.map((x, v) => {
     const d = dot(sub(x, points[v]), skinNormals[v]);
     return d < 0 ? x.map((c, k) => c - skinNormals[v][k] * d) : x;
   });
 
-  // Drape: a vertex may rise toward its neighbours but never sink, and only
-  // slides sideways otherwise, so hollows fill while crests stay put.
   for (let i = 0; i < drape; i++) {
     p = p.map((x, v) => {
       if (onRim[v] || !neighbours[v].size) return x;
@@ -361,9 +320,7 @@ export function shell(part, { offset, iterations = 12, drape = 0, maxLift = 0.01
   const shellIndex = outer.map((point, v) => pushVertex(point, outerNormals[v], v));
   idx.push(...tris.map((v) => shellIndex[v]));
 
-  // Hem walls: from each open edge of the shell straight back to the skin.
   for (const { a, b, t } of rimEdges) {
-    // Keep the owning triangle's winding for the edge direction.
     const tri = [tris[t], tris[t + 1], tris[t + 2]];
     const ia = tri.indexOf(a);
     const [from, to] = tri[(ia + 1) % 3] === b ? [a, b] : [b, a];
@@ -379,7 +336,6 @@ export function shell(part, { offset, iterations = 12, drape = 0, maxLift = 0.01
     const o1 = pushVertex(outer[to], wallNormal, to);
     const i0 = pushVertex(inner(from), wallNormal, from);
     const i1 = pushVertex(inner(to), wallNormal, to);
-    // Wind the quad so its face normal agrees with wallNormal.
     const face = cross(sub(outer[to], outer[from]), sub(inner(from), outer[from]));
     if (dot(face, wallNormal) >= 0) idx.push(o0, o1, i0, i0, o1, i1);
     else idx.push(o0, i0, o1, i0, i1, o1);
@@ -395,7 +351,6 @@ export function shell(part, { offset, iterations = 12, drape = 0, maxLift = 0.01
   };
 }
 
-/** Duplicate vertices so every triangle can carry its own per-vertex tag. */
 export function splitByTriangleTag(mesh, tagOf) {
   const key = new Map();
   const source = [];
@@ -437,7 +392,6 @@ export function splitByTriangleTag(mesh, tagOf) {
   };
 }
 
-/** Write a typed-array mesh into a glTF-Transform primitive. */
 export function writePrimitive(doc, buffer, mesh, extra = {}) {
   const acc = (type, array) => doc.createAccessor().setType(type).setArray(array).setBuffer(buffer);
   const prim = doc
@@ -452,11 +406,6 @@ export function writePrimitive(doc, buffer, mesh, extra = {}) {
   return prim;
 }
 
-/**
- * Drop triangles with no area and vertices no triangle uses, and give any
- * normal that came out zero a real direction — the validator rejects a
- * non-unit normal, and a GPU shades it black.
- */
 export function compact(mesh) {
   const keep = [];
   for (let t = 0; t < mesh.idx.length; t += 3) {

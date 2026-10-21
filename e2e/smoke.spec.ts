@@ -7,7 +7,6 @@ test("landing leads with the pet and closes with the rules", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Raise a pet. Keep every paw print." })).toBeVisible();
   await expect(page.getByText(/no wallet, no token/i).first()).toBeVisible();
   await expect(page.getByRole("link", { name: /adopt a pet/i }).first()).toBeVisible();
-  // The room, as photos taken in it, and its things.
   await expect(page.getByRole("heading", { name: "A room that is theirs" })).toBeVisible();
   await expect(page.getByRole("img", { name: /Pepper, a ginger cat/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "See the room's things" })).toHaveAttribute("href", "/market#decor");
@@ -59,7 +58,6 @@ test("a wallet is offered, never asked for: the front door has none, the shell h
   await shell.getByRole("button", { name: "Connect", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Connect a wallet" })).toBeVisible();
   await page.getByRole("button", { name: "Not now" }).click();
-  // A tap on the room's name moves into the next room; no menu opens.
   const room = shell.getByRole("button", { name: /^Room: / });
   const before = await room.getAttribute("aria-label");
   await room.click();
@@ -85,13 +83,11 @@ test("guilds are optional, read from Solana, and trade nothing outside a coin's 
   await page.goto("/guilds");
   await expect(page.getByRole("heading", { name: "Guilds" })).toBeVisible();
   await expect(page.getByText(/optional, always/i)).toBeVisible();
-  // The rule every guild lives inside is a fold away.
   await page.getByText("The rule every guild lives inside").click();
   await expect(page.getByText(/raise a pet/i)).toBeVisible();
   await expect(page.getByRole("button", { name: /buy|swap|pay/i })).toHaveCount(0);
   await expect(page.getByText(/coin/i).first()).toBeVisible();
 
-  // Founding asks for a pet on Solana, and a wallet only once there is something to sign.
   await page.getByRole("link", { name: "Found a guild" }).click();
   await page.getByRole("textbox", { name: "Guild name" }).fill("Sunbeam Club");
   await expect(page.getByText("/guilds/sunbeam-club")).toBeVisible();
@@ -104,14 +100,12 @@ test("a guild's coin states its terms and what can go wrong, and asks a wallet o
   const read = page.getByText(/solana did not answer|guild coins are off here|no guild has that name/i);
   const heading = page.getByRole("heading", { level: 1 });
   await expect(read.or(heading)).toBeVisible();
-  // Nothing signs here without a wallet, and nothing is offered as a promise.
   await expect(page.getByRole("button", { name: /^sign/i })).toHaveCount(0);
   await expect(page.getByText(/guaranteed|to the moon|passive income/i)).toHaveCount(0);
   if (await read.isVisible()) return;
   await expect(heading).toContainText(/coin/i);
   await expect(page.getByText("The terms")).toBeVisible();
   await expect(page.getByText("What can go wrong")).toBeVisible();
-  // What it does and never does is a fold away, open on a tap.
   await page.getByText("What it does, and never does").click();
   await expect(page.getByText(/never changes a pet's vitals/i)).toBeVisible();
 });
@@ -124,15 +118,12 @@ test("the Market states its fixed prices and where the SOL goes, and asks a wall
     await expect(page.getByText(piece, { exact: true }).first()).toBeVisible();
   }
   await expect(page.getByText("Where the SOL goes")).toBeVisible();
-  // Each shelf wears its material: classic pieces cloth, the rest foil, rooms glass, frames copper.
   for (const [name, kind] of [["Star pin", "Cloth piece"], ["Halo", "Foil piece"], ["Aurora", "Glass room"], ["Postcard", "Copper frame"]]) {
     await expect(page.getByRole("button", { name: new RegExp(`^${name}`) })).toContainText(kind);
   }
   await page.getByRole("button", { name: /Halo/ }).click();
-  // The item opens over the shelves, not under them.
   const sheet = page.getByRole("dialog", { name: "Halo" });
   await expect(sheet.getByText(/changes no vital, XP, cooldown or score/i)).toBeVisible();
-  // No wallet yet: the one action is connecting, never a purchase.
   await expect(sheet.getByRole("button", { name: /^Buy for/ })).toHaveCount(0);
   await expect(sheet.getByRole("button", { name: "Connect a wallet" })).toBeVisible();
 });
@@ -143,7 +134,6 @@ test("the Market can be searched and narrowed, and a narrowed shelf can be linke
   await expect(page.locator(".pk-tiles button")).toHaveCount(3);
   await page.getByRole("searchbox", { name: "Search the Market" }).fill("pink room");
   await expect(page.locator(".pk-tiles button")).toHaveCount(2);
-  // Wide, every shelf is already its whole grid: nothing to open.
   await expect(page.getByRole("button", { name: /^See all/ })).toHaveCount(0);
   await page.getByRole("searchbox", { name: "Search the Market" }).fill("nothing called this");
   await page.getByRole("button", { name: "Show everything" }).click();
@@ -210,11 +200,8 @@ test("a care pressed from the keyboard keeps focus on its button, resting", asyn
   const resting = page.getByRole("button", { name: /Feed, resting for/ });
   await expect(resting).toBeFocused();
   await expect(resting).toBeDisabled();
-  // Browsers that follow the HTML focus-fixup rule drop focus from a button once it is
-  // `disabled`; Chromium may keep it, so the markup that avoids the drop is held here too.
   await expect(resting).toHaveAttribute("aria-disabled", "true");
   await expect(resting).not.toHaveAttribute("disabled");
-  // Pressing it again while it rests does nothing.
   await page.keyboard.press("Enter");
   await expect(page.getByText(/Fed\. \+10 XP/)).toHaveCount(1);
 });
@@ -231,19 +218,16 @@ test("adopting a pet needs no wallet and makes Home real", async ({ page }) => {
   await page.getByRole("button", { name: /take them home/i }).click();
   await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
   await expect(page.getByText(/In this browser/)).toBeVisible();
-  // Keeping it on Solana has a labelled control beside the room's name.
   await expect(page.getByRole("button", { name: "Keep Pepper on Solana" })).toBeVisible();
   await expect(page.getByRole("img", { name: "Fullness 72 / 100" })).toBeVisible();
 
   await page.getByRole("button", { name: "Feed" }).click();
   await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
-  // The first meal is a sticker, said as it is earned.
   await expect(page.getByText(/New sticker: First meal\./)).toBeVisible();
   await expect(page.getByRole("img", { name: "Fullness 95 / 100" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
   await expect(page.getByRole("listitem").filter({ hasText: "A meal" })).toContainText("done");
 
-  // The full numbers are a tool away, not in the way.
   await page.getByRole("button", { name: "Today" }).click();
   await expect(page.getByText("Today with Pepper")).toBeVisible();
   await expect(page.getByText("95 / 100")).toBeVisible();
@@ -265,7 +249,6 @@ test("letting a pet go stays on its page if storage fails, and can be retried", 
   await expect(page).toHaveURL(new RegExp(`/pet/${id}$`));
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("pawket.pets.v1")!).length)).toBe(1);
 
-  // A reload restores storage and lets the same action finish.
   await page.reload();
   await page.getByRole("button", { name: "Let Pepper go", exact: true }).click();
   await page.getByRole("button", { name: "Let them go", exact: true }).click();
@@ -281,7 +264,6 @@ test("a new level is said out loud, and nothing else about the care changes", as
   await page.getByRole("button", { name: /take them home/i }).click();
   await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
 
-  // Five XP short of level two.
   await page.evaluate(() => {
     const [pet] = JSON.parse(localStorage.getItem("pawket.pets.v1")!);
     localStorage.setItem("pawket.pets.v1", JSON.stringify([{ ...pet, xp: 95 }]));
@@ -289,8 +271,6 @@ test("a new level is said out loud, and nothing else about the care changes", as
   await page.reload();
   await expect(page.getByText("95 / 100 XP")).toBeVisible();
   await page.getByRole("button", { name: "Feed" }).click();
-  // The level is its own toast, in front of the care's line, which no longer repeats it;
-  // the line is tucked under it until the stack is fanned out.
   await expect(page.getByText("Pepper is level 2!")).toBeVisible();
   const care = page.getByText(/^Fed\. \+10 XP\. Day 1\./);
   await expect(care).toBeHidden();
@@ -319,10 +299,8 @@ test("a second adoption keeps the first pet, and either can be at home", async (
   await page.getByRole("button", { name: /take them home/i }).click();
   await expect(page.getByRole("heading", { name: "Miso's room" })).toBeVisible();
 
-  // Either one comes home from the room itself.
   await page.getByRole("button", { name: "Bring Pepper home" }).click();
   await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
-  // The old shelf's link lands on the profile, where every pet is kept.
   await page.goto("/inventory");
   await expect(page).toHaveURL(/\/profile/);
   await page.getByRole("button", { name: "Bring home" }).click();
@@ -389,13 +367,11 @@ test("a playground round finishes and keeps a daily bonus", async ({ page }) => 
 
   await page.goto("/playground");
   await expect(page.getByText("Today's round is worth 25 XP")).toBeVisible();
-  // A pet that never jumps meets the first flower pot: the round is over.
   await page.getByRole("button", { name: /^Play Hop/ }).click();
   await page.getByRole("application", { name: /^Hop/ }).click();
   await expect(page.getByText("Round finished")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/\+25 XP for playing today/)).toBeVisible();
 
-  // The bonus is once a day; another game still counts and says so.
   await page.getByRole("button", { name: "Another game" }).click();
   await expect(page.getByText("Tuesday has today's round")).toBeVisible();
   await page.getByRole("button", { name: /^Play Copy/ }).click();
@@ -420,7 +396,6 @@ test("today's Pairs is the same round for everyone, and a perfect one is sixty",
   await page.getByRole("button", { name: /^Play Pairs/ }).click();
   await expect(page.getByText("Today's round", { exact: true })).toBeVisible();
 
-  // The deal is the day's, so the test can know it — as anyone could.
   const today = new Date().toISOString().slice(0, 10);
   const { cards } = dealPairs(dailySeed("pairs", today));
   const board = page.getByRole("group", { name: /^Pairs\./ });
@@ -454,7 +429,6 @@ test("adoption shows the pet you are making: its name on its blanket, its temper
   await expect(page.getByText("Mischief", { exact: true })).toBeVisible();
   await expect(page.getByText("Cloud bun", { exact: true })).toBeVisible();
   await expect(page.getByText("Mint", { exact: true })).toBeVisible();
-  // The coat is the pet's on this device: the wardrobe keeps it, and changes it.
   await page.getByRole("button", { name: /take them home/i }).click();
   await page.goto("/profile?tab=wardrobe#shelf");
   await expect(page.getByRole("radio", { name: "Mint" })).toBeChecked();
@@ -511,7 +485,6 @@ test("health endpoint says whether Solana and the sponsor answer, and nothing se
   expect(body.service).toBe("pawket-web");
   expect(body.rpc).toEqual({ ok: expect.any(Boolean), ms: expect.any(Number) });
   expect(typeof body.sponsor.available).toBe("boolean");
-  // No URL, key or balance ever leaves in it.
   expect(JSON.stringify(body)).not.toMatch(/https?:|api-key|lamports/i);
 });
 

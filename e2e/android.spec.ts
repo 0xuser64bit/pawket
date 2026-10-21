@@ -1,12 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/**
- * The pages as the Android app runs them: with `window.PawketAndroid`, which
- * the app injects into Pawket's origin (android/…/PawketBridge.kt). Here a
- * stand-in records what the page asks and answers yes, so the web's half of
- * the bridge is checked in a real browser; the app's half has its own tests
- * and a device procedure (docs/ANDROID.md).
- */
 async function inTheApp(page: Page) {
   await page.addInitScript(() => {
     const posted: unknown[] = [];

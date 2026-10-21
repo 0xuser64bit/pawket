@@ -1,9 +1,5 @@
 name: Watch
 
-# Every four hours, and on demand: does pawket.world answer, does its Solana RPC answer, and
-# is the sponsor paying with room to spare? A failed run notifies the repository's owner.
-# GitHub runs scheduled and manual workflows only from the default branch, so this starts
-# watching once main carries it.
 on:
   schedule:
     - cron: "17 */4 * * *"
@@ -19,7 +15,6 @@ jobs:
     env:
       SITE: https://pawket.world
       RPC: https://api.devnet.solana.com
-      # Well above the 0.05 SOL floor where sponsorship stops: time to refill before it does.
       FLOOR_LAMPORTS: "2000000000"
     steps:
       - name: The site and its RPC answer

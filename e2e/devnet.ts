@@ -15,18 +15,7 @@ import {
 } from "@solana/kit";
 import { getTransferSolInstruction } from "@solana-program/system";
 
-/**
- * What the devnet specs share. Run only with PAWKET_DEVNET=1. Test wallets
- * are funded by a key kept for that alone (PAWKET_TEST_FUNDER, a keypair's
- * JSON, or .keys/test-funder.json), never by the sponsor — it pays the live
- * site's fees — and never by the deploy wallet. The sponsored actions still
- * spend the sponsor's float, because its key is also the keepsake
- * collection's authority (Q10 in docs/OPEN-QUESTIONS.md), so a run refuses
- * to start while that float is low.
- */
-
 const RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
-/** What the sponsor must hold before a run may spend from it: well above its 0.05 SOL floor. */
 export const SPONSOR_ROOM_LAMPORTS = 2_000_000_000n;
 
 function keypairJson(env: string, file: string): string | null {
@@ -35,14 +24,12 @@ function keypairJson(env: string, file: string): string | null {
   return existsSync(at) ? readFileSync(at, "utf8") : null;
 }
 
-/** The sponsor's key as the tests use it, and so its address. */
 export function sponsorKeypairJson(): string {
   const raw = keypairJson("SPONSOR_KEYPAIR", ".keys/sponsor.json");
   if (!raw) throw new Error("The devnet suites need the sponsor's key: SPONSOR_KEYPAIR or .keys/sponsor.json.");
   return raw;
 }
 
-/** The key that funds test wallets, refused when it is the sponsor's. */
 export async function testFunderKeypairJson(): Promise<string> {
   const raw = keypairJson("PAWKET_TEST_FUNDER", ".keys/test-funder.json");
   if (!raw) {
@@ -53,7 +40,6 @@ export async function testFunderKeypairJson(): Promise<string> {
   return raw;
 }
 
-/** Refuse to run while the sponsor holds too little to share with a test run. */
 export async function assertSponsorHasRoom() {
   const sponsor = await createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(sponsorKeypairJson()) as number[]));
   const { value } = await createSolanaRpc(RPC_URL).getBalance(sponsor.address, { commitment: "confirmed" }).send();
@@ -62,7 +48,6 @@ export async function assertSponsorHasRoom() {
   }
 }
 
-/** Some devnet SOL for the test wallet, from the test funder, as a faucet would give it. */
 export async function fund(address: string, lamports: bigint) {
   await assertSponsorHasRoom();
   const funder = await createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(await testFunderKeypairJson()) as number[]));

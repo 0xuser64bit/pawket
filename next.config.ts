@@ -3,7 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
-  // Meteora's SDKs (web3.js v1 + Anchor) run on the server only, as Node loads them.
   serverExternalPackages: [
     "@meteora-ag/dynamic-bonding-curve-sdk",
     "@meteora-ag/cp-amm-sdk",
@@ -11,9 +10,6 @@ const nextConfig: NextConfig = {
     "@solana/web3.js",
   ],
   async headers() {
-    // No Pawket page is drawn inside another site's frame: a linked device signs
-    // care, guilds and waves with no prompt, so a framed page could be clicked
-    // into them. Nothing here uses a camera, a microphone or a location.
     return [
       {
         source: "/:path*",

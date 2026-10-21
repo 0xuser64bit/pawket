@@ -1,6 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/** Every screen a player can actually open. */
 const SCREENS = [
   "/",
   "/adopt",
@@ -23,7 +22,6 @@ const SCREENS = [
   "/pet/11111111111111111111111111111111",
 ];
 
-/** Whatever sticks out past the right edge, named so a failure says where. */
 async function overflow(page: Page) {
   return page.evaluate(() => {
     const edge = document.documentElement.clientWidth;
@@ -37,7 +35,7 @@ async function overflow(page: Page) {
 
 for (const width of [320, 375, 768]) {
   test(`nothing scrolls sideways at ${width}px`, async ({ page }) => {
-    test.slow(); // This checks nineteen routes, including live RPC reads.
+    test.slow();
     await page.setViewportSize({ width, height: 800 });
     for (const path of SCREENS) {
       await test.step(path, async () => {

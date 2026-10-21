@@ -1,18 +1,3 @@
-/**
- * Makes the config account behind each guild-coin preset on a cluster,
- * once: Meteora's Dynamic Bonding Curve reads every coin on a preset from
- * it — the curve, the fee and its split, graduation to DAMM v2 and the
- * locked liquidity. Pawket is the partner: its treasury claims Pawket's
- * share of the fees and receives what a curve leaves over.
- *
- *   pnpm dlx tsx scripts/coin-presets.mts            # devnet
- *   pnpm dlx tsx scripts/coin-presets.mts mainnet-beta
- *
- * The deploy wallet (~/.config/solana/id.json) pays. Prints the addresses
- * for `COIN_CONFIGS` in src/lib/coins/presets.ts; a preset that already has
- * an account there is left alone. A config's own key signs only its
- * creation and is not kept.
- */
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from "@solana/web3.js";

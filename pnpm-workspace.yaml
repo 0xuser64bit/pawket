@@ -1,8 +1,5 @@
 packages:
   - "."
-# The two advisories docs/SECURITY.md accepts, neither with a fixed release: bigint-buffer
-# (CVE-2025-3194, patched locally) and braces (CVE-2026-93687, lint tooling only). Any other
-# high or critical one fails `pnpm audit --audit-level high` in CI.
 auditConfig:
   ignoreCves:
     - CVE-2025-3194
@@ -11,9 +8,6 @@ auditConfig:
 ignoredOptionalDependencies:
   - "@react-native-async-storage/async-storage"
 
-# Patched releases under Meteora's SDKs (Anchor's client, web3.js v1) and the CSS build (docs/SECURITY.md).
-# rpc-websockets stays at 9.3.3: later ones need uuid 14, which is ESM-only and does not
-# load in web3.js v1 on Vercel. uuid 11.1.1 is the last patched line that loads with require().
 overrides:
   bn.js: 5.2.5
   jayson: 5.0.0

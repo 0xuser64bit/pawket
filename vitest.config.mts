@@ -6,7 +6,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": new URL("./src", import.meta.url).pathname,
-      // Tests run server modules directly; the marker's own server build is empty.
       "server-only": new URL("./node_modules/server-only/empty.js", import.meta.url).pathname,
     },
   },

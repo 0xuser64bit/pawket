@@ -62,7 +62,6 @@ test("a large pet family and room controls fit a narrow phone, with Profile last
   const family = page.getByRole("group", { name: "Who is home" });
   await expect(family.getByRole("button")).toHaveCount(12);
   expect(await family.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
-  // The view switch sits in the room's corner, both views readable, each a finger's width.
   const view = page.getByRole("radiogroup", { name: "Room view" });
   await expect(view).toBeVisible();
   for (const name of ["Flat room", "3D room"]) {
@@ -268,7 +267,6 @@ test("starter choices stay small and every Market category opens a readable shar
   await page.goto("/profile?tab=settings#shelf");
   await expect(page.getByRole("radiogroup", { name: "Rooms" }).getByRole("radio")).toHaveCount(3);
   await page.goto("/market");
-  // 25 pieces, 12 rooms, 34 things for the room and 8 frames.
   await expect(page.locator(".pk-tiles button")).toHaveCount(79);
   await page.getByRole("button", { name: /Sunshine/ }).tap();
   const sheet = page.getByRole("dialog", { name: "Sunshine" });
@@ -282,13 +280,11 @@ test("on a phone each Market shelf is a row to swipe, and opens whole on asking"
   await page.goto("/market");
   const pets = page.locator(".pk-tiles").first();
   await expect(pets).toHaveClass(/pk-tiles--row/);
-  // Seventy-nine things no longer make one column several screens long.
   expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThan(3000);
   expect(await pets.evaluate((row) => row.scrollWidth > row.clientWidth)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole("button", { name: "See all 25: for your pets" }).tap();
   await expect(pets).not.toHaveClass(/pk-tiles--row/);
-  // A search always shows all it found, as a grid.
   await page.getByRole("searchbox", { name: "Search the Market" }).fill("bed");
   await expect(page.locator(".pk-tiles--row")).toHaveCount(0);
 });

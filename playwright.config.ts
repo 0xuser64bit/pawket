@@ -21,8 +21,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      // A fake audio sink: the music box still plays its graph, but the host's own headphones can no
-      // longer hold a page up (a context opened as the last one closes waits seconds on some Macs).
+      // On some Macs a new AudioContext waits seconds on the host's headphones.
       use: { ...devices["Desktop Chrome"], launchOptions: { args: ["--disable-audio-output"] } },
     },
   ],

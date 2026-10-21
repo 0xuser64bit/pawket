@@ -8,7 +8,7 @@ rust-version = "1.89.0"
 license = "MIT"
 
 [profile.release]
-# Arithmetic the program leaves unchecked aborts its transaction instead of wrapping. Keep it on.
+# The program relies on this: unchecked arithmetic aborts instead of wrapping.
 overflow-checks = true
 lto = "fat"
 codegen-units = 1

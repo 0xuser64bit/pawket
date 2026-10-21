@@ -6,7 +6,6 @@ test("profile tabs switch locally, preserve history and support the keyboard", a
   const requests: string[] = [];
   page.on("request", (request) => {
     const headers = request.headers();
-    // Visible dock links prefetch independently of tab changes and browser history.
     if (new URL(request.url()).pathname === "/profile" && headers["rsc"] && !headers["next-router-prefetch"]) requests.push(request.url());
   });
   await page.getByRole("tab", { name: "Settings", exact: true }).click();
@@ -31,7 +30,6 @@ test("a place that is slow to arrive says so at the top, and leaves the link as 
   try {
     await back.click();
     await expect(bar).toHaveCount(1);
-    // Nothing is painted over the link: its arrow and its word are still there.
     await expect(back).toHaveText("Guilds");
     await expect(back.locator(".pk-spinner")).toHaveCount(0);
   } finally { release(); }
@@ -44,7 +42,6 @@ test("a guild's whole card is its link, not only its name", async ({ page }) => 
   const card = page.locator(".pk-guild").first();
   test.skip(!(await card.count()), "Solana did not answer with any guild");
   const href = await card.locator(".pk-guild__name").getAttribute("href");
-  // What a finger on the crest presses, once the page has arrived: the guild's own link.
   await expect
     .poll(() =>
       card.evaluate((el) => {
@@ -62,10 +59,8 @@ test("founding shares the normal page rails, its preview beside the title above 
   await page.goto("/guilds/new");
   const found = (await page.getByRole("heading", { name: "Found a guild", level: 1 }).boundingBox())!;
   expect(found.x).toBe(directory.x);
-  // Title and description on the left, the guild as it will look on the right.
   const preview = (await page.locator(".pk-guild-head").boundingBox())!;
   expect(preview.x).toBeGreaterThan(found.x + 300);
-  // The form that makes it fills the width below the head, on the same rails.
   const form = (await page.locator(".pk-card", { has: page.getByRole("textbox", { name: "Guild name" }) }).boundingBox())!;
   expect(form.y).toBeGreaterThan(preview.y + preview.height);
   expect(form.x).toBe(found.x);
@@ -78,10 +73,8 @@ test("on a phone the guild as it will look comes down under the title, whole", a
   const found = (await page.getByRole("heading", { name: "Found a guild", level: 1 }).boundingBox())!;
   const line = (await page.getByText(/^Optional, like every guild/).boundingBox())!;
   const preview = (await page.locator(".pk-guild-head").boundingBox())!;
-  // One column: the title and its line, then the guild, on the same rails.
   expect(preview.y).toBeGreaterThanOrEqual(line.y + line.height);
   expect(preview.x).toBe(found.x);
-  // Its crest keeps to the right edge, in line with the form under it.
   const crest = (await page.locator(".pk-guild-head .pk-crest").boundingBox())!;
   const form = (await page.locator(".pk-card", { has: page.getByRole("textbox", { name: "Guild name" }) }).boundingBox())!;
   expect(crest.x + crest.width).toBeCloseTo(form.x + form.width, 0);

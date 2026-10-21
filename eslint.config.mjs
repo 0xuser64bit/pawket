@@ -2,12 +2,6 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
-/**
- * Meteora's SDKs are built on web3.js v1 and Anchor, which the rest of the
- * app never uses (Kit is the one client). They live behind one door,
- * `src/server/coins/`, server-only, and in the scripts that set Pawket's
- * presets up; anywhere else, importing them is an error.
- */
 const LEGACY_SOLANA = {
   patterns: [
     {
@@ -17,11 +11,6 @@ const LEGACY_SOLANA = {
   ],
 };
 
-/**
- * Zod's `z` namespace also holds every one of its locales, and the bundler
- * keeps them all in the browser's shared code. Code a page can load names
- * what it uses through `@/lib/zod`; server-only code may import `zod`.
- */
 const BROWSER_ZOD = {
   paths: [{ name: "zod", message: "Import Zod from @/lib/zod in code a page can load: \"zod\" brings all its locales into the browser." }],
 };

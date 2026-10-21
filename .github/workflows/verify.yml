@@ -38,16 +38,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Scan all fetched history
-        # Gitleaks 8.30.1, linux/amd64; pin the image as well as the actions.
+        # gitleaks 8.30.1, linux/amd64
         run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks@sha256:b109bc5f8f76a38196a3e413704fc5b9e3c32360bce4e4b603bd6f45b3721dbb git --config=/repo/.gitleaks.toml --redact --log-opts=--all /repo
 
   program:
-    # The program's own suite (LiteSVM, the lockstep replay included) and the IDL it builds,
-    # held to the one committed beside the client.
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      # The newest 3.1 release Anza still publishes (3.1.15, on some local machines, is no longer served).
       SOLANA_VERSION: 3.1.14
       ANCHOR_VERSION: 1.2.0
     steps:
@@ -68,15 +65,13 @@ jobs:
       - name: Solana CLI and its SBF platform tools
         run: |
           if [ ! -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
-            # Downloaded first, so a missing release fails here rather than installing nothing.
             curl -sSfL "https://release.anza.xyz/v${SOLANA_VERSION}/install" -o "$RUNNER_TEMP/solana-install.sh"
             sh "$RUNNER_TEMP/solana-install.sh"
           fi
           "$HOME/.local/share/solana/install/active_release/bin/cargo-build-sbf" --version
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
       - name: Anchor CLI
-        # Outside the checkout, with the runner's own stable rustc: rust-toolchain.toml pins the
-        # program's 1.89, older than anchor-cli's locked dependencies accept.
+        # Outside the checkout: rust-toolchain.toml's 1.89 is older than anchor-cli's dependencies accept.
         working-directory: ${{ runner.temp }}
         run: |
           if ! anchor --version 2>/dev/null | grep -q "$ANCHOR_VERSION"; then
@@ -92,7 +87,6 @@ jobs:
         run: cargo test -p pawket
 
   android:
-    # The shell's own checks: origin, picture and file-name boundaries, lint, and the release script.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -110,8 +104,6 @@ jobs:
       - name: Unit tests and lint
         run: ./gradlew --no-daemon testDebugUnitTest lintDebug
       - name: The release script runs through to its signer check
-        # With a throwaway key the site does not list, the script must build and sign the APK, read
-        # its version, and refuse it at the signer: every step before a real release, held each push.
         run: |
           keytool -genkeypair -keystore "$RUNNER_TEMP/throwaway.jks" -storetype PKCS12 -alias pawket -keyalg RSA \
             -keysize 2048 -validity 1 -storepass throwaway -keypass throwaway -dname "CN=CI throwaway" > /dev/null
@@ -122,8 +114,6 @@ jobs:
           grep -q "is not in public/.well-known/assetlinks.json" "$RUNNER_TEMP/release.log" || { cat "$RUNNER_TEMP/release.log"; exit 1; }
 
   audit:
-    # Advisories in what ships: any high or critical one beyond the two docs/SECURITY.md
-    # accepts (pnpm-workspace.yaml) fails, and so does any Rust vulnerability.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

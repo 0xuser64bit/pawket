@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@solana/kit";
+import type { SolanaMobileWalletAdapterWalletName } from "@solana-mobile/wallet-standard-mobile";
 import { walletWithoutSigner } from "@solana/kit-plugin-wallet";
 import { useConnectedWallet, useIsWalletReady } from "@solana/kit-plugin-wallet/react";
 import { getPublicEnv } from "@/config/env";
@@ -37,7 +38,7 @@ function registerPhoneWallets(): void {
 }
 registerPhoneWallets();
 
-export const PHONE_WALLETS = "Mobile Wallet Adapter";
+export const PHONE_WALLETS: typeof SolanaMobileWalletAdapterWalletName = "Mobile Wallet Adapter";
 
 export function stopWaitingForPhoneWallet(): void {
   window.dispatchEvent(new Event("pawket:wallet-cancel"));

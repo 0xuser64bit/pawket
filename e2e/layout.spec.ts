@@ -33,14 +33,23 @@ async function overflow(page: Page) {
   });
 }
 
+async function cutLabels(page: Page) {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll(".pk-btn__label"))
+      .filter((el) => el.getBoundingClientRect().width > 0 && el.scrollWidth > el.clientWidth + 1)
+      .map((el) => el.textContent),
+  );
+}
+
 for (const width of [320, 375, 768]) {
-  test(`nothing scrolls sideways at ${width}px`, async ({ page }) => {
+  test(`nothing scrolls sideways at ${width}px, and no button hides a word`, async ({ page }) => {
     test.slow();
     await page.setViewportSize({ width, height: 800 });
     for (const path of SCREENS) {
       await test.step(path, async () => {
         await page.goto(path);
         expect(await overflow(page), path).toEqual([]);
+        expect(await cutLabels(page), path).toEqual([]);
       });
     }
   });

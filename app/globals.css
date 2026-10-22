@@ -1439,8 +1439,8 @@ li {
 }
 .pk-btn__label {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .pk-btn > svg {
   flex: none;

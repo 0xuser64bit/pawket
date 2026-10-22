@@ -135,7 +135,9 @@ still. [ROOM-3D.md](ROOM-3D.md) owns staging, contact, loading and asset budgets
 
 ## Controls, sheets and recovery
 
-Use verb-first, single-line button labels. Standard controls are 48px and
+Use verb-first, single-line button labels; a label that cannot fit its
+button (a small phone, a large font) wraps to a second line rather than
+hiding words behind an ellipsis. Standard controls are 48px and
 large controls 56px; small controls are 36px, enlarged to 44px on touch devices.
 Fields keep a 44px interaction area and at least 16px text on phones. Copy,
 close and address controls have distinct targets whose hit areas do not overlap.
@@ -208,7 +210,8 @@ feedback without a decorative progress promise.
 Text meets 4.5:1 contrast on its intended grounds. Focus, meaningful marks and
 control boundaries meet 3:1. Meaning never depends on color or motion alone.
 Keep keyboard focus visible and clear of the dock. Verify the affected flow at
-320px, with long names, large text and reduced motion; [TESTING.md](TESTING.md)
+320px, with long names, large text (the Android app follows the phone's
+font size, 85–200%) and reduced motion; [TESTING.md](TESTING.md)
 identifies browser and physical Android checks.
 
 ## Product voice

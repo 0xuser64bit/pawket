@@ -73,7 +73,7 @@ export function Passport({
               <h1 className={nameHeadingClass(pet.name)} style={{ overflowWrap: "anywhere" }}>
                 {pet.name}
               </h1>
-              <p className="body-sm pk-muted">
+              <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
                 {SPECIES_LABEL[pet.species]} · {PERSONALITY_LABEL[pet.personality]} · adopted {formatUtcDate(record.createdAt)}
               </p>
             </div>

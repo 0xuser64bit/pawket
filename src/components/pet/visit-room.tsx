@@ -47,7 +47,7 @@ export function VisitRoom({
           <h1 className={nameHeadingClass(record.name)} style={{ overflowWrap: "anywhere" }}>
             Visiting {record.name}
           </h1>
-          <p className="body-sm pk-muted">
+          <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
             {SPECIES_LABEL[record.species]} · level {projected.level} · kept on Solana. Wave, dance, say hello — only{" "}
             {record.name}&apos;s owner can care for them.
           </p>

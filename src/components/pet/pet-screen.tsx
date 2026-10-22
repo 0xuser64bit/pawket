@@ -141,11 +141,11 @@ export function PetScreen({ id }: { id: string }) {
             <Card variant="quiet">
               <div className="pk-spread">
                 <h2 className="title">Wearing</h2>
-                <span className="caption pk-faint">{worn ? "1 of 1" : "0 of 1"}</span>
+                <span className="caption pk-faint">One piece at a time</span>
               </div>
               <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
                 {worn
-                  ? `${worn.name}. It changes how they look in words, and nothing else.`
+                  ? `${worn.name}. It changes how they look, and nothing else.`
                   : "Nothing yet. Anything in the wardrobe can be worn, and none of it changes a vital."}
               </p>
             </Card>

@@ -283,7 +283,13 @@ test("on a phone each Market shelf is a row to swipe, and opens whole on asking"
   expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThan(3000);
   expect(await pets.evaluate((row) => row.scrollWidth > row.clientWidth)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole("button", { name: "See all 25: for your pets" }).tap();
+  const all = page.getByRole("button", { name: "See all 25: for your pets" });
+  await page.locator(".pk-boot").waitFor({ state: "detached" });
+  const box = (await all.boundingBox())!;
+  for (const y of [box.y - 10, box.y + box.height + 10]) {
+    expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("button")?.textContent, { x: box.x + box.width / 2, y })).toBe("See all 25");
+  }
+  await all.tap();
   await expect(pets).not.toHaveClass(/pk-tiles--row/);
   await page.getByRole("searchbox", { name: "Search the Market" }).fill("bed");
   await expect(page.locator(".pk-tiles--row")).toHaveCount(0);

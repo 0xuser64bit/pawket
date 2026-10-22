@@ -3018,6 +3018,14 @@ li {
     display: none;
   }
 }
+.pk-linkish.pk-shelf__all {
+  position: relative;
+}
+.pk-linkish.pk-shelf__all::after {
+  content: "";
+  position: absolute;
+  inset: -11px -8px;
+}
 @media (min-width: 720px) {
   .pk-linkish.pk-shelf__all {
     display: none;

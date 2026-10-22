@@ -123,8 +123,10 @@ export function GuildGatherings({
       {upcoming.length === 0 && open.length === 0 ? (
         <div className="pk-whats-on__empty">
           <p className="body-sm pk-muted">
-            Nothing planned yet.{" "}
-            {founder ? "Plan the first event, or ask the guild something, below." : `When ${guild.name}'s founder plans an event or asks a question, it is here.`}
+            {past.length || closed.length ? "Nothing coming up." : "Nothing planned yet."}{" "}
+            {founder
+              ? `Plan the ${past.length ? "next" : "first"} event, or ask the guild something, below.`
+              : `When ${guild.name}'s founder plans an event or asks a question, it is here.`}
           </p>
         </div>
       ) : null}

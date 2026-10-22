@@ -35,7 +35,7 @@ import { record } from "@/lib/analytics/events";
 import { usePets } from "@/lib/guest/use-pets";
 import { useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend } from "@/lib/solana/use-send";
-import { formatUtcDate, nameHeadingClass } from "@/lib/utils/format";
+import { formatLocalDate, nameHeadingClass } from "@/lib/utils/format";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 import { useBackCloses, useHere } from "@/lib/native/android";
 import { COATS, findCoat } from "@/lib/player/coats";
@@ -445,7 +445,7 @@ export function AdoptFlow() {
                   { k: "Species", v: SPECIES_LABEL[species] },
                   { k: "Coat", v: coat.name },
                   { k: "Temperament", v: PERSONALITY_LABEL[personality] },
-                  { k: "Adopted", v: adopted ? formatUtcDate(adopted.createdAt) : "Today" },
+                  { k: "Adopted", v: adopted ? formatLocalDate(adopted.createdAt) : "Today" },
                   { k: "Kept", v: `In ${here}` },
                 ]}
               />

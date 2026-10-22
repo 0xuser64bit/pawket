@@ -4,6 +4,7 @@ import {
   formatAgo,
   formatCountdown,
   formatSol,
+  formatLocalDate,
   formatUtcDate,
   nameHeadingClass,
   parseSolToLamports,
@@ -37,6 +38,14 @@ describe("formatUtcDate", () => {
   it("formats a UTC calendar date and refuses a bad value", () => {
     expect(formatUtcDate("2026-09-23T23:30:00.000Z")).toBe("23 Sep 2026");
     expect(formatUtcDate("not-a-date")).toBe("");
+  });
+});
+
+describe("formatLocalDate", () => {
+  it("formats the calendar date where the player is, whatever UTC says", () => {
+    expect(formatLocalDate(new Date(2026, 9, 23, 0, 14))).toBe("23 Oct 2026");
+    expect(formatLocalDate(new Date(2026, 9, 22, 23, 50))).toBe("22 Oct 2026");
+    expect(formatLocalDate("not-a-date")).toBe("");
   });
 });
 

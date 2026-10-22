@@ -17,7 +17,7 @@ export function formatSol(lamports: bigint): string {
 
 const MAX_LAMPORTS = (1n << 64n) - 1n;
 
-const UTC_MONTHS = [
+const MONTHS = [
   "Jan",
   "Feb",
   "Mar",
@@ -35,7 +35,13 @@ const UTC_MONTHS = [
 export function formatUtcDate(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return `${date.getUTCDate()} ${UTC_MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+  return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+}
+
+export function formatLocalDate(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
 
 export function formatCountdown(totalSeconds: number): string {

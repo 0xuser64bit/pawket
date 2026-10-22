@@ -38,7 +38,7 @@ import {
   getWithdrawInstruction,
 } from "@/lib/solana/instructions";
 import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
-import { dayTurnsAt, formatAgo, formatSol, formatUtcDate, parseSolToLamports, truncateAddress } from "@/lib/utils/format";
+import { dayTurnsAt, formatAgo, formatLocalDate, formatSol, parseSolToLamports, truncateAddress } from "@/lib/utils/format";
 import { forgetDevice } from "@/lib/wallet/device";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { fetchWalletHistory, type WalletEntry } from "@/lib/wallet/history";
@@ -290,7 +290,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
   const here = state.device && wallet.device === state.device.address;
   const elsewhere = wallet.device && !here;
   const expired = here && wallet.deviceExpiresAt <= now;
-  const until = formatUtcDate(new Date(wallet.deviceExpiresAt * 1000));
+  const until = formatLocalDate(new Date(wallet.deviceExpiresAt * 1000));
   const left = Math.max(0, wallet.dailyActions - wallet.actionsToday);
 
   async function unlinkHere() {

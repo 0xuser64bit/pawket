@@ -28,7 +28,7 @@ import {
 import { projectGuestPet, streakAsOf, type GuestPet } from "@/lib/guest/pet";
 import { removePet } from "@/lib/guest/storage";
 import { usePets } from "@/lib/guest/use-pets";
-import { formatUtcDate, nameHeadingClass } from "@/lib/utils/format";
+import { formatLocalDate, nameHeadingClass } from "@/lib/utils/format";
 import { StickerStrip } from "./sticker-strip";
 import { useHere } from "@/lib/native/android";
 
@@ -105,7 +105,7 @@ export function PetScreen({ id }: { id: string }) {
                 </h1>
                 <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
                   {SPECIES_LABEL[pet.species]} · {PERSONALITY_LABEL[pet.personality]} · adopted{" "}
-                  {formatUtcDate(pet.createdAt)}
+                  {formatLocalDate(pet.createdAt)}
                 </p>
               </div>
               <ButtonLink label="Dress" href="/profile?tab=wardrobe#shelf" icon="spark" size="sm" tone="quiet" />
@@ -164,7 +164,7 @@ export function PetScreen({ id }: { id: string }) {
                     <li key={`${entry.at}-${entry.action}`}>
                       <span>{CARE_DONE_LABEL[entry.action]}</span>
                       <span className="caption pk-faint">
-                        {formatUtcDate(entry.at)} · +{entry.xpGained} XP
+                        {formatLocalDate(entry.at)} · +{entry.xpGained} XP
                       </span>
                     </li>
                   ))}

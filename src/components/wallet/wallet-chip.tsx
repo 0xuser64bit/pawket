@@ -9,7 +9,7 @@ import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { wallet, useWalletReady } from "@/lib/solana/browser-client";
 import { deviceFallback, needsSol, useSponsor } from "@/lib/solana/use-send";
-import { dayTurnsAt, formatUtcDate, truncateAddress } from "@/lib/utils/format";
+import { dayTurnsAt, formatLocalDate, truncateAddress } from "@/lib/utils/format";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { AddressLine } from "./address";
 import { WalletSheet } from "./wallet-sheet";
@@ -141,7 +141,7 @@ function WalletPanel({
             <div className="pk-fill">
               <p className="title">No pop-ups in {here}</p>
               <p className="caption pk-muted">
-                It signs for your pets until {formatUtcDate(new Date(linkedWallet!.deviceExpiresAt * 1000))} —{" "}
+                It signs for your pets until {formatLocalDate(new Date(linkedWallet!.deviceExpiresAt * 1000))} —{" "}
                 {linkedWallet!.actionsToday} of {linkedWallet!.dailyActions} today. Anything that spends SOL still asks.{" "}
                 <Link href="/wallet" onClick={onDismiss}>
                   Manage

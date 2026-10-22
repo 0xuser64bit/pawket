@@ -15,7 +15,7 @@ import { describeLook } from "@/lib/player/look";
 import { MAX_PLAYER_NAME, saveProfile, usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
 import { usePawketSend } from "@/lib/solana/use-send";
-import { formatUtcDate } from "@/lib/utils/format";
+import { formatLocalDate } from "@/lib/utils/format";
 import { LookEditor } from "./look-editor";
 import { EmptyShelf, PetsShelf } from "./pets-shelf";
 import { PetCopy } from "./pet-copy";
@@ -94,7 +94,7 @@ export function ProfileScreen() {
           <p className="caption pk-faint">
             {pets.length === 0
               ? "No pets yet"
-              : `Keeper of ${pets.length} ${pets.length === 1 ? "pet" : "pets"}${since ? ` since ${formatUtcDate(since)}` : ""}`}
+              : `Keeper of ${pets.length} ${pets.length === 1 ? "pet" : "pets"}${since ? ` since ${formatLocalDate(since)}` : ""}`}
           </p>
         </div>
       </ScreenBar>

@@ -77,6 +77,30 @@ test("the longest one-word name fits a small phone, and the pets shelf cuts noth
   }
 });
 
+test("at the Android app's largest text size, no screen scrolls sideways", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  for (const path of ["/home", "/profile", "/playground", "/market", "/guilds", "/park", "/wallet", "/"]) {
+    await test.step(path, async () => {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+      await page.locator(".pk-boot").waitFor({ state: "detached" });
+      await page.evaluate(() => {
+        const all = Array.from(document.querySelectorAll<HTMLElement>("body *"));
+        const sizes = all.map((el) => getComputedStyle(el)).map((style) => [parseFloat(style.fontSize), style.lineHeight] as const);
+        all.forEach((el, i) => {
+          el.style.setProperty("font-size", `${sizes[i][0] * 2}px`, "important");
+          if (sizes[i][1].endsWith("px")) el.style.setProperty("line-height", `${parseFloat(sizes[i][1]) * 2}px`, "important");
+        });
+      });
+      expect(await overflow(page), path).toEqual([]);
+    });
+  }
+});
+
 test("the dock keeps every place on a small phone, whichever is lit", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   let slots: number[] | undefined;

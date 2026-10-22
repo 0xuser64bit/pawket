@@ -4449,6 +4449,7 @@ li {
   position: relative;
   z-index: 2;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   margin: 0 0 var(--space-3);
   padding: var(--space-4);

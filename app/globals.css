@@ -4971,7 +4971,9 @@ a:not([class]) {
 .pk-event__day {
   margin-top: 4px;
   font-family: var(--font-display);
+  font-variation-settings: "SOFT" 64, "WONK" 1;
   font-size: 26px;
+  font-weight: 600;
 }
 .pk-event__weekday {
   margin-top: 4px;

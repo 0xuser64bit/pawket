@@ -2,7 +2,7 @@ import localFont from "next/font/local";
 
 const display = localFont({
   src: "../fonts/Fraunces-Variable.woff2",
-  weight: "100 900",
+  weight: "600",
   display: "swap",
   variable: "--font-display",
   fallback: ["Georgia", "serif"],

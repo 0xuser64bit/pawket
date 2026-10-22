@@ -2065,6 +2065,7 @@ li {
 
 .pk-tile {
   position: relative;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -2074,6 +2075,15 @@ li {
   border: var(--stroke-line) solid var(--edge);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sticker-sm);
+}
+.pk-tile__meta {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--space-2);
+  margin-top: auto;
+}
+.pk-tile__meta > .amount-sm {
+  white-space: nowrap;
 }
 .pk-tile__art {
   aspect-ratio: 5 / 4;
@@ -3034,6 +3044,7 @@ li {
 .pk-tile-hit {
   display: block;
   width: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
   border: 0;

@@ -175,7 +175,7 @@ export function ItemTile({
       <div className="pk-tile__name pk-truncate" title={name}>
         {name}
       </div>
-      <div className="pk-row" style={{ justifyContent: "space-between", gap: "var(--space-2)" }}>
+      <div className="pk-row pk-tile__meta">
         <span className="caption pk-faint">{kind}</span>
         {price ? <span className="amount-sm">{price}</span> : null}
       </div>

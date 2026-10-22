@@ -214,6 +214,33 @@ test("a care pressed from the keyboard keeps focus on its button, resting", asyn
   await expect(page.getByText(/Fed\. \+10 XP/)).toHaveCount(1);
 });
 
+test("an adoption the browser would not store keeps its coat when it is saved again", async ({ page }) => {
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("radio", { name: "Snow" }).click();
+  await page.evaluate(() => {
+    const store = Storage.prototype.setItem;
+    let refused = false;
+    Storage.prototype.setItem = function (key: string, value: string) {
+      if (key === "pawket.pets.v1" && !refused) {
+        refused = true;
+        throw new DOMException("Storage unavailable", "QuotaExceededError");
+      }
+      return store.call(this, key, value);
+    };
+  });
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await expect(page.getByText("Not stored")).toBeVisible();
+  await page.getByRole("button", { name: "Try saving again" }).click();
+  await expect(page.getByRole("button", { name: /take them home/i })).toBeVisible();
+  const [id, coats] = await page.evaluate(() => [
+    JSON.parse(localStorage.getItem("pawket.pets.v1")!)[0].id as string,
+    JSON.parse(localStorage.getItem("pawket.pet-coats.v1") ?? "{}") as Record<string, string>,
+  ] as const);
+  expect(coats[id]).toBe("snow");
+});
+
 test("adopting a pet needs no wallet and makes Home real", async ({ page }) => {
   await page.goto("/adopt");
   await expect(page.getByText(/wallet|connect|solana|token/i)).toHaveCount(0);

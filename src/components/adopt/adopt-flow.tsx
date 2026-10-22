@@ -210,12 +210,7 @@ export function AdoptFlow() {
     try {
       const created = createGuestPet({ name, species, personality });
       const saved = savePet(created);
-      if (saved) {
-        choosePet(created.id);
-        if (coat.id !== "classic") chooseCoat(created.id, coat.id);
-        record({ name: "pet_adopted" });
-        void askBrowserToKeep();
-      }
+      if (saved) welcome(created);
       setAdopted(created);
       setStored(saved);
       setError(undefined);
@@ -226,14 +221,17 @@ export function AdoptFlow() {
     }
   }
 
+  function welcome(pet: GuestPet) {
+    choosePet(pet.id);
+    if (coat.id !== "classic") chooseCoat(pet.id, coat.id);
+    record({ name: "pet_adopted" });
+    void askBrowserToKeep();
+  }
+
   function retrySave() {
     if (!adopted) return;
     const saved = savePet(adopted);
-    if (saved) {
-      choosePet(adopted.id);
-      record({ name: "pet_adopted" });
-      void askBrowserToKeep();
-    }
+    if (saved) welcome(adopted);
     setStored(saved);
   }
 

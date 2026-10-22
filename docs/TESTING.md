@@ -25,7 +25,7 @@
 | Guest record, wardrobe, games  | `src/lib/guest`, `closet`, `play`       | Vitest   |
 | Player look, moment registry (checked against the shipped GLBs' clips) | `src/lib/player`, `src/lib/room` | Vitest |
 | 3D room: palette ↔ `:root` tokens, every wearable drawn, two-bone reach | `src/components/room3d/*.test.ts` | Vitest |
-| 3D room: live room, emote, care moment after save, flat choice, no-WebGL fallback, reduced motion, saved look, empty room, 320px | `e2e/room.spec.ts` | Playwright |
+| 3D room: live room, emote, care moment after save, the greeting after hours away (once, record untouched), flat choice, no-WebGL fallback, reduced motion, saved look, empty room, 320px | `e2e/room.spec.ts` | Playwright |
 | Shell, adopt, care, wardrobe, playground, guild boundary, park, passport miss, connect sheet, health | `e2e/smoke.spec.ts` | Playwright |
 | Layout: no sideways scroll or cut button label at 320/375/768, none at 200% text (the Android app's largest), long names and the pets shelf, dock placement | `e2e/layout.spec.ts` | Playwright |
 | Local Profile tabs/history, a slow place's top bar with the link left as it was, an offline place that waits and opens once back, whole-card guild links, founding-page rails and its head stacked on a 320px phone, and shared Home sound | `e2e/experience.spec.ts` | Playwright |

@@ -36,7 +36,9 @@ animate toward a promised outcome.
 | `bloom` | Guilds and their community participation |
 | `alarm` | Risk, refusal and failure |
 
-Status always has words or an icon as well as color. A filled control's
+Status always has words or an icon as well as color. A link inside a
+sentence is underlined (any `a` without a class), never told apart by
+color alone. A filled control's
 outline carries its boundary. Token surfaces do not use growth colors to
 suggest profit or safety.
 

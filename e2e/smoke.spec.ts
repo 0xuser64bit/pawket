@@ -19,6 +19,14 @@ test("landing leads with the pet and closes with the rules", async ({ page }) =>
   await expect(page.getByText(/design preview|demo data/i)).toHaveCount(0);
 });
 
+test("a link inside a sentence looks like a link", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Pawket's pulse" })).toHaveCSS("text-decoration-line", "underline");
+  await page.goto("/profile?tab=settings");
+  await expect(page.getByRole("link", { name: "what's new" })).toHaveCSS("text-decoration-line", "underline");
+  await expect(page.getByRole("link", { name: "Privacy", exact: true })).toHaveCSS("text-decoration-line", "underline");
+});
+
 test("the privacy policy is a click from the front door, with a way to write", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("navigation", { name: "Footer" }).getByRole("link", { name: "Privacy" }).click();

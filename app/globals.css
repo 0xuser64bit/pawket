@@ -1092,6 +1092,16 @@ p,
 li {
   text-wrap: pretty;
 }
+a:not([class]) {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+@media (hover: hover) {
+  a:not([class]):hover {
+    text-decoration-thickness: 2px;
+  }
+}
 
 ::selection {
   background: var(--sun);

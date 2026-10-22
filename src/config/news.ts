@@ -9,6 +9,13 @@ export interface NewsEntry {
 export const NEWS: readonly NewsEntry[] = [
   {
     date: "2026-10-23",
+    title: "They missed you",
+    body: "Come back after a few hours and your pet bounces over to say hello, with a word on how long it has been and what they need.",
+    href: "/home",
+    see: "Go home",
+  },
+  {
+    date: "2026-10-23",
     title: "Still home when the signal drops",
     body: "Lose the connection and Pawket stays open: your pets here still work, and a place that needs the connection waits and opens by itself once you are back.",
     href: "/home",

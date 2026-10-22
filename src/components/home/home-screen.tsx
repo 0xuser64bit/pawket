@@ -107,6 +107,24 @@ export function HomeScreen() {
   const [roomState, setRoomState] = useState<RoomState>("loading");
   const [mode, setMode] = useRoomMode();
   const onStatus = useCallback((next: DirectorStatus) => setStatus(next), []);
+  const greeted = useRef<string | null>(null);
+  const roomReady = useCallback((state: RoomState) => {
+    setRoomState(state);
+    if (!pet || state === "loading" || greeted.current === pet.id) return;
+    greeted.current = pet.id;
+    const now = Date.now();
+    const away = now - Math.max(Date.parse(pet.statsUpdatedAt) || now, lastGreeting(pet.id));
+    if (away < AWAY_MS) return;
+    rememberGreeting(pet.id, now);
+    setCue({ moment: "hello", nonce: now });
+    showToast({
+      id: `hello-${pet.id}`,
+      tone: "note",
+      title: `${pet.name} missed you`,
+      body: `Back after ${awayFor(away)}. ${pet.name} ${MOOD_SENTENCE[projectGuestPet(pet, new Date(now)).mood]}`,
+      ttl: 8_000,
+    });
+  }, [pet]);
   const ask = (moment: string) => {
     setCue({ moment, nonce: Date.now() });
     chime(moment);
@@ -328,7 +346,7 @@ export function HomeScreen() {
           cue={cue}
           description={`${describeLook(look)}, and ${pet.name} the ${SPECIES_LABEL[pet.species].toLowerCase()}${worn ? ` in the ${worn.name.toLowerCase()}` : ""}, in the room with the window open.`}
           onStatus={onStatus}
-          onState={setRoomState}
+          onState={roomReady}
           stage
           viewRef={roomView}
           decor={decor}
@@ -412,6 +430,34 @@ export function HomeScreen() {
       ) : null}
     </Screen>
   );
+}
+
+const AWAY_MS = 4 * 3_600_000;
+const GREETINGS = "pawket.greetings";
+
+function greetings(): Record<string, unknown> {
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(GREETINGS) ?? "{}");
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function lastGreeting(id: string): number {
+  const at = greetings()[id];
+  return typeof at === "number" ? at : 0;
+}
+
+function rememberGreeting(id: string, at: number) {
+  try {
+    window.localStorage.setItem(GREETINGS, JSON.stringify({ ...greetings(), [id]: at }));
+  } catch {}
+}
+
+function awayFor(ms: number): string {
+  const hours = Math.floor(ms / 3_600_000);
+  return hours < 48 ? `${hours} hours` : `${Math.floor(hours / 24)} days`;
 }
 
 function earnedLine(before: GuestPet, after: GuestPet, context: BadgeContext = {}): string {

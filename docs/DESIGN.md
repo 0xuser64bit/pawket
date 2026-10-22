@@ -84,7 +84,10 @@ Today, Decor, Photo, Look); selected tools open their panels below it. Decor
 picks a place in the room, then what stands there; a tap shows it in the room
 above at once, and a Market room's own thing wears a lock and names its room. Care feedback does not move controls under
 a finger. Today's checklist reflects recorded care and a round, granting no
-extra reward. Letting a local pet go lives on its record, behind confirmation.
+extra reward. Back after four hours or more since the pet's last care (and
+its last greeting), the room plays a hello once it is drawn — you wave, the
+pet bounces — and a note says how long it has been and what the pet needs;
+nothing in the record changes. Letting a local pet go lives on its record, behind confirmation.
 
 Profile presents the player, look editor and shelf tabs. Below 480px the
 pets shelf is a list of rows, the portrait beside the name and its controls,

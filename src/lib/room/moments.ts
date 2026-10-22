@@ -42,6 +42,21 @@ export const MOMENTS: readonly Moment[] = [
     says: "You wave. {pet} saw.",
   },
   {
+    id: "hello",
+    label: "Hello",
+    icon: "paw",
+    clips: [{ at: 0, name: "Wave" }],
+    formation: "free",
+    pet: [
+      { at: 0.1, cue: "look" },
+      { at: 0.5, cue: "hop" },
+      { at: 1.0, cue: "hop" },
+      { at: 1.5, cue: "happy" },
+    ],
+    still: 1.0,
+    says: "You are back. {pet} missed you, and bounces to say so.",
+  },
+  {
     id: "dance",
     label: "Dance",
     icon: "music",

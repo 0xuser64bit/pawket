@@ -67,6 +67,27 @@ test("the desktop care deck stays clear of the dock on short and tall screens", 
   }
 });
 
+test("back after hours away, the pet greets you once, and its record is untouched", async ({ page }) => {
+  await adopt(page);
+  await page.evaluate(() => {
+    const [pet] = JSON.parse(localStorage.getItem("pawket.pets.v1")!);
+    const hours = (n: number) => new Date(Date.now() - n * 3_600_000).toISOString();
+    localStorage.setItem("pawket.pets.v1", JSON.stringify([{ ...pet, createdAt: hours(10), statsUpdatedAt: hours(9) }]));
+    localStorage.setItem("pawket.room", "flat");
+  });
+  const record = await page.evaluate(() => localStorage.getItem("pawket.pets.v1"));
+  await page.reload();
+  await expect(page.getByRole("status").filter({ hasText: "You are back. Pepper missed you, and bounces to say so." })).toBeAttached();
+  await expect(page.getByText("Pepper missed you", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Back after 9 hours\. Pepper is /)).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("pawket.pets.v1"))).toBe(record);
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
+  await page.waitForTimeout(1_000);
+  await expect(page.getByText("Pepper missed you", { exact: true })).toHaveCount(0);
+});
+
 test("the flat room is a choice this device remembers", async ({ page }) => {
   test.setTimeout(90_000);
   await adopt(page);

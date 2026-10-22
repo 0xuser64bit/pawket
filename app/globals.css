@@ -2926,6 +2926,19 @@ li {
     --pk-cards-gap: var(--space-5);
   }
 }
+@media (max-width: 479px) {
+  .pk-cards:not(.pk-cards--dense) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pk-cards:not(.pk-cards--dense) > .pk-card--flush {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: center;
+  }
+  .pk-cards:not(.pk-cards--dense) > .pk-card--flush > .pk-card__art {
+    padding: var(--space-3) 0 var(--space-3) var(--space-3);
+  }
+}
 .pk-cards--dense {
   grid-template-columns: repeat(
     auto-fill,

@@ -429,7 +429,7 @@ export function AdoptFlow() {
         </div>
 
         <div>
-          <h1 ref={heading} tabIndex={-1} className={nameHeadingClass(kept)}>
+          <h1 ref={heading} tabIndex={-1} className={nameHeadingClass(kept)} style={{ overflowWrap: "anywhere" }}>
             {kept} is yours.
           </h1>
           <p className="body-lg pk-muted" style={{ marginTop: "var(--space-3)" }}>

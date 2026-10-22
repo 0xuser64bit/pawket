@@ -86,7 +86,9 @@ above at once, and a Market room's own thing wears a lock and names its room. Ca
 a finger. Today's checklist reflects recorded care and a round, granting no
 extra reward. Letting a local pet go lives on its record, behind confirmation.
 
-Profile presents the player, look editor and shelf tabs. Wardrobe previews a
+Profile presents the player, look editor and shelf tabs. Below 480px the
+pets shelf is a list of rows, the portrait beside the name and its controls,
+so no label is cut short; wider, it is a grid of cards. Wardrobe previews a
 piece on the selected pet before wearing it, and holds the pet's coat: five
 two-tone swatches per species, the classic first, chosen at adoption too.
 A coat is kept on the device; the Passport, the Park and a visit show the

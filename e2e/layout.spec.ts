@@ -46,6 +46,28 @@ for (const width of [320, 375, 768]) {
   });
 }
 
+test("the longest one-word name fits a small phone, and the pets shelf cuts nothing short", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  for (const name of ["Pepper", "Wolfeschlegelsteinhausen"]) {
+    await page.goto("/adopt");
+    await page.getByRole("button", { name: /choose the luna cat/i }).click();
+    await page.getByRole("textbox", { name: "Pet name" }).fill(name);
+    await page.getByRole("button", { name: /that’s the one/i }).click();
+    await expect(page.getByRole("heading", { name: `${name} is yours.` })).toBeVisible();
+    expect(await overflow(page), name).toEqual([]);
+  }
+  for (const width of [320, 375]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/profile#shelf");
+    await expect(page.getByRole("button", { name: "Bring home" })).toBeVisible();
+    const cut = await page
+      .locator(".pk-cards")
+      .evaluate((shelf) => Array.from(shelf.querySelectorAll(".pk-btn__label, .pk-chip > span")).filter((el) => el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent));
+    expect(cut, `${width}px`).toEqual([]);
+    expect(await overflow(page), `${width}px`).toEqual([]);
+  }
+});
+
 test("the dock keeps every place on a small phone, whichever is lit", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   let slots: number[] | undefined;

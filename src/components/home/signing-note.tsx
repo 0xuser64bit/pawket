@@ -5,6 +5,7 @@ import { NavLink as Link } from "@/components/pk/nav-link";
 import { useAndroidApp, useHere } from "@/lib/native/android";
 import { deviceFallback, needsSol, useSponsor } from "@/lib/solana/use-send";
 import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
+import { dayTurnsAt } from "@/lib/utils/format";
 
 export function SigningNote({ state, name }: { state: PawketWalletState | null; name: string }) {
   const { here, Here } = useHere();
@@ -20,7 +21,7 @@ export function SigningNote({ state, name }: { state: PawketWalletState | null; 
       </>
     ) : why === "limit" ? (
       <>
-        {Here} used today&apos;s limit. <Link href="/wallet">Change it</Link>, or care again after midnight UTC.
+        {Here} used today&apos;s limit. <Link href="/wallet">Change it</Link>, or care again {dayTurnsAt()}.
       </>
     ) : why === "fund" ? (
       <>

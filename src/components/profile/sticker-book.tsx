@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon, PetArt, SectionLabel } from "@/components/pk";
+import { DayTurns } from "@/components/pk/day-turns";
 import { BADGES, badgesFor } from "@/lib/game/badges";
 import { petLook } from "@/lib/game/appearance";
 import type { GuestPet } from "@/lib/guest/pet";
@@ -30,6 +31,7 @@ export function StickerBook({
       <p className="body-sm pk-muted">
         Earned by care, by showing up, by playing and by being visited — read from each pet&apos;s record, so they
         cannot be bought and are never lost. They change nothing about a pet but its pride.
+        <DayTurns />
       </p>
       <ul className="pk-stickers">
         {BADGES.map((badge) => {

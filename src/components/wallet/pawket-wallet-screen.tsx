@@ -38,7 +38,7 @@ import {
   getWithdrawInstruction,
 } from "@/lib/solana/instructions";
 import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
-import { formatAgo, formatSol, formatUtcDate, parseSolToLamports, truncateAddress } from "@/lib/utils/format";
+import { dayTurnsAt, formatAgo, formatSol, formatUtcDate, parseSolToLamports, truncateAddress } from "@/lib/utils/format";
 import { forgetDevice } from "@/lib/wallet/device";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { fetchWalletHistory, type WalletEntry } from "@/lib/wallet/history";
@@ -356,7 +356,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               <Banner
                 tone="wait"
                 title="Today's limit is reached"
-                body="This device can act again after midnight UTC. To continue sooner, link again with a higher daily limit below."
+                body={`This device can act again ${dayTurnsAt()}. To continue sooner, link again with a higher daily limit below.`}
               />
             ) : null}
             <Row gap={2} wrap>

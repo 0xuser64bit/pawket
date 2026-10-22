@@ -7,6 +7,7 @@ import {
   SOLANA_ERROR__TRANSACTION_ERROR__INSUFFICIENT_FUNDS_FOR_FEE,
   type Signature,
 } from "@solana/kit";
+import { dayTurnsAt } from "@/lib/utils/format";
 
 export const CONFIRMATION_TIMEOUT_MS = 30_000;
 
@@ -119,7 +120,7 @@ export function pawketErrorMessage(code: number): string {
     case 6012:
       return "This device's link has run out. Link it again to keep going. Nothing changed.";
     case 6013:
-      return "This device has done all it may today. Nothing changed; it can again after midnight UTC.";
+      return `This device has done all it may today. Nothing changed; it can again ${dayTurnsAt()}.`;
     case 6014:
       return "No device is linked to your Pawket Wallet. Nothing changed.";
     case 6015:

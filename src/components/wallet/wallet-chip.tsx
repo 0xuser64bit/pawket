@@ -9,7 +9,7 @@ import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { wallet, useWalletReady } from "@/lib/solana/browser-client";
 import { deviceFallback, needsSol, useSponsor } from "@/lib/solana/use-send";
-import { formatUtcDate, truncateAddress } from "@/lib/utils/format";
+import { dayTurnsAt, formatUtcDate, truncateAddress } from "@/lib/utils/format";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { AddressLine } from "./address";
 import { WalletSheet } from "./wallet-sheet";
@@ -152,7 +152,7 @@ function WalletPanel({
             <div className="pk-fill">
               <p className="title">Today&apos;s limit is used</p>
               <p className="caption pk-muted">
-                This device can act again after midnight UTC.{" "}
+                This device can act again {dayTurnsAt()}.{" "}
                 <Link href="/wallet" onClick={onDismiss}>
                   Change the limit
                 </Link>

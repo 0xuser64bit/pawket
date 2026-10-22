@@ -211,7 +211,10 @@ identifies browser and physical Android checks.
 ## Product voice
 
 Use second person, sentence case and short sentences. Name where a pet is
-saved: in this browser, in this app, or on Solana after a chain read. State
+saved: in this browser, in this app, or on Solana after a chain read. A day
+is the UTC day the program counts; a screen says when it turns in the
+player's own time ("at 5:30 AM here", `dayTurnsAt`), and only Pulse's
+records name UTC. State
 sponsorship only while it is available. Describe what a refusal left unchanged.
 Never fabricate activity, a price, a member count or an asset's value. Guilds
 and coins are optional; no financial surface promises income or a return.

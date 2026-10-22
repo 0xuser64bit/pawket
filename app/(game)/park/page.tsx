@@ -24,6 +24,7 @@ import { projectGuestPet, streakAsOf, utcDay } from "@/lib/guest/pet";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { getPublicEnv } from "@/config/env";
 import { AdoptLink } from "@/components/park/adopt-link";
+import { DayTurns } from "@/components/pk/day-turns";
 import { readAllPets, readGuilds } from "@/server/solana";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { isListed } from "@/lib/guilds/delisted";
@@ -130,8 +131,9 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
             </div>
             <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
               {outToday.length > 0
-                ? `${outToday.length} out today, in UTC, name tags in blue. Tap one for their record.`
-                : "Nobody has been cared for yet today, in UTC. These are the most cared for; the first care of the day brings a pet out."}
+                ? `${outToday.length} out today, name tags in blue. Tap one for their record.`
+                : "Nobody has been cared for yet today. These are the most cared for; the first care of the day brings a pet out."}
+              <DayTurns />
             </p>
           </div>
 

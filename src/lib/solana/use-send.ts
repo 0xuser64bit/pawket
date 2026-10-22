@@ -14,6 +14,7 @@ import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID, type PawketInstructionName } 
 import { asDeviceInstruction } from "./instructions";
 import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
 import { refreshOwnedPets } from "@/lib/companion/use-companion";
+import { dayTurnsAt } from "@/lib/utils/format";
 import { extractProgramErrorCode, isActiveStage, isUserRejection, settleSignature, toUserFacingError, type TransactionStage } from "./transactions";
 
 const KIND: Partial<Record<PawketInstructionName, SendKind>> = {
@@ -73,12 +74,12 @@ class PawketWalletNeeded extends Error {
   }
 }
 
-const NEEDS: Record<PawketWalletNeed, string> = {
-  link: "Link this device in your Pawket Wallet first. Nothing was sent.",
-  fund: "Add SOL to your Pawket Wallet first. Nothing was sent.",
-  limit: "Your Pawket Wallet has used today's limit. Change it there, or come back after midnight UTC. Nothing was sent.",
+const NEEDS: Record<PawketWalletNeed, () => string> = {
+  link: () => "Link this device in your Pawket Wallet first. Nothing was sent.",
+  fund: () => "Add SOL to your Pawket Wallet first. Nothing was sent.",
+  limit: () => `Your Pawket Wallet has used today's limit. Change it there, or come back ${dayTurnsAt()}. Nothing was sent.`,
 };
-const needed = (need: PawketWalletNeed) => new PawketWalletNeeded(need, NEEDS[need]);
+const needed = (need: PawketWalletNeed) => new PawketWalletNeeded(need, NEEDS[need]());
 
 export type DeviceFallback = "unlinked" | "expired" | "limit";
 

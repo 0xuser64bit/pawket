@@ -7290,6 +7290,7 @@ details > .pk-risks {
     padding-inline: var(--gutter);
     overflow-x: auto;
     scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--gutter);
     scrollbar-width: none;
   }
   .pk-shelfshow__tiles::-webkit-scrollbar {

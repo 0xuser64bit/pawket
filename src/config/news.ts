@@ -8,6 +8,13 @@ export interface NewsEntry {
 
 export const NEWS: readonly NewsEntry[] = [
   {
+    date: "2026-10-23",
+    title: "Still home when the signal drops",
+    body: "Lose the connection and Pawket stays open: your pets here still work, and a place that needs the connection waits and opens by itself once you are back.",
+    href: "/home",
+    see: "Go home",
+  },
+  {
     date: "2026-10-21",
     title: "Autumn in the room",
     body: "A bat garland, a pumpkin lantern that grins after dark and a heap of leaves, all free and marked new for a month, and a witch's hat for you. Until November, leaves drift past the window.",

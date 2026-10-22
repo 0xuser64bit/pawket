@@ -6,7 +6,7 @@ import { THEME_SCRIPT } from "@/config/themes";
 import { PawketAnalytics } from "@/components/analytics";
 import { BootSplash } from "@/components/pk/boot-splash";
 import { Toasts } from "@/components/pk/toast";
-import { NavProgress } from "@/components/pk/nav-link";
+import { NavProgress, OfflineNote } from "@/components/pk/nav-link";
 import "./globals.css";
 import Providers from "./providers";
 
@@ -49,6 +49,7 @@ export default function RootLayout({
       <body>
         <BootSplash />
         <NavProgress />
+        <OfflineNote />
         <Providers>{children}</Providers>
         <Toasts />
         <PawketAnalytics />

@@ -181,7 +181,10 @@ and a hidden or left Home goes quiet. Blocked storage keeps the choice for
 the page.
 
 A failed read provides a disabled-while-reading retry without resetting local
-records. Copy/share failure leaves a selectable link or address. Transactions
+records. Offline, a place that needs the server waits in its placeholder
+under a note that the pets here still work, and opens by itself once the
+connection is back (Next's `useOffline`); it never falls to the browser's
+error page. Copy/share failure leaves a selectable link or address. Transactions
 show one shared toast: preparation, signing, sending, confirmation or unknown
 outcome, then a signature and Explorer link. A care on Solana says what it
 did in that same toast, never in a second one. A timeout retains the existing

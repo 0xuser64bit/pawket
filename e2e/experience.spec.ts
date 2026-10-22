@@ -37,6 +37,19 @@ test("a place that is slow to arrive says so at the top, and leaves the link as 
   await expect(bar).toHaveCount(0);
 });
 
+test("offline, a place waits inside Pawket and opens by itself once the connection is back", async ({ page, context }) => {
+  await page.goto("/home");
+  await expect(page.getByRole("heading", { name: "The window is open" })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  await context.setOffline(true);
+  await page.getByRole("navigation", { name: "Pawket" }).getByRole("link", { name: "Park" }).click();
+  await expect(page.getByText("You are offline")).toBeVisible();
+  expect(page.url()).toMatch(/^http:\/\/localhost:\d+\//);
+  await context.setOffline(false);
+  await expect(page.getByRole("heading", { name: "Park", level: 1 })).toBeVisible();
+  await expect(page.getByText("Back online")).toBeVisible();
+});
+
 test("a guild's whole card is its link, not only its name", async ({ page }) => {
   await page.goto("/guilds");
   const card = page.locator(".pk-guild").first();

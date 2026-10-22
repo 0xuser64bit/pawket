@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
+  experimental: {
+    useOffline: true,
+  },
   serverExternalPackages: [
     "@meteora-ag/dynamic-bonding-curve-sdk",
     "@meteora-ag/cp-amm-sdk",

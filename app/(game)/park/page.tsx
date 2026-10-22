@@ -162,7 +162,7 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
                 })}
               </ul>
               <p className="caption pk-faint" style={{ marginTop: "var(--space-2)" }}>
-                Each line is a transaction signed by the pet&apos;s owner.
+                Each line is a transaction signed by the pet&apos;s owner, or by a device they linked.
               </p>
             </section>
           ) : null}

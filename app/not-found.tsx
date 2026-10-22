@@ -1,4 +1,7 @@
 import { ButtonLink, Mark, PetFrame, Screen, Stack } from "@/components/pk";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Wandered off", robots: { index: false } };
 
 export default function NotFound() {
   return (

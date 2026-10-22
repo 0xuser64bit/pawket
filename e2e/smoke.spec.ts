@@ -43,6 +43,14 @@ test("the park is read from Solana, or says plainly that it could not be", async
   await expect(page.getByRole("button", { name: /buy|swap|pay/i })).toHaveCount(0);
 });
 
+test("a page that is not there, or a pet that is not in this browser, says so in its heading", async ({ page }) => {
+  await page.goto("/pet/missing");
+  await expect(page.getByRole("heading", { level: 1, name: "No pet in this browser" })).toBeVisible();
+  await page.goto("/nowhere-at-all");
+  await expect(page.getByRole("heading", { level: 1, name: "This page wandered off" })).toBeVisible();
+  await expect(page).toHaveTitle("Wandered off · Pawket");
+});
+
 test("an address with no pet is a plain miss, not an error", async ({ page }) => {
   await page.goto("/pet/11111111111111111111111111111111");
   await expect(

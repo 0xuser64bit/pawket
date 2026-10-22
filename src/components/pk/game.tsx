@@ -189,11 +189,13 @@ export function EmptyState({
   body,
   icon = "pocket",
   action,
+  heading: Heading = "h2",
 }: {
   title: string;
   body?: string;
   icon?: IconName;
   action?: ReactNode;
+  heading?: "h1" | "h2";
 }) {
   return (
     <div className="pk-empty">
@@ -201,7 +203,7 @@ export function EmptyState({
         <Icon name={icon} size={30} />
       </span>
       <div>
-        <div className="display-m">{title}</div>
+        <Heading className="display-m">{title}</Heading>
         {body ? (
           <p className="body pk-muted" style={{ marginTop: "var(--space-2)", maxWidth: "34ch" }}>
             {body}

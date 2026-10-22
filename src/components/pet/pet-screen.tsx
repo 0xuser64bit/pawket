@@ -51,6 +51,7 @@ export function PetScreen({ id }: { id: string }) {
       <Screen width="narrow">
         <BackLink label="Profile" href="/profile#shelf" />
         <EmptyState
+          heading="h1"
           icon="paw"
           title={pets.length ? `That pet is not in ${here}` : `No pet in ${here}`}
           body={

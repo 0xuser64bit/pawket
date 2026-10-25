@@ -16,7 +16,7 @@ Mainnet requires a separate human-approved deploy plan.
 | Coins | Devnet preset configs only | Legal/policy approval (Q6), approved mainnet parameters and recipients (Q3), verified config accounts and pool routing |
 | Market | Prices fixed by the program | Approved real-SOL prices; source parity and treasury validation |
 | RPC and discovery | Direct scans with short shared caches | Measured capacity, provider and monitoring ownership (Q4) |
-| Persistent rent | Most account types cannot close | Approved retention/rent policy; any recovery instruction needs its own program design and review |
+| Persistent rent | Records are permanent by decision (`DECISIONS.md`) | A budget that treats that rent as spent for good, or players paying their own rent |
 | Android | Same hosted product; device checks separate | Supported consumer-wallet/WebView matrix and physical release validation |
 
 Devnet records do not migrate automatically. Mainnet starts with different
@@ -30,14 +30,12 @@ These changes wait for an authorized program upgrade, each with its LiteSVM
 test written first and no seed or discriminator change; listing them here
 authorizes none of them.
 
-- Coin-trade float: `fund_wallet_spend` tops a device back up to its whole
-  float each trade; refilling only the fee paid would match `act`.
-- Rounds: an optional daily cap on `finish_round`, which earns XP once a day.
-- Guestbooks: the once-a-day wave check reaches only the last eight visitors.
-- Rent: close instructions for the account types that have none, under an
-  approved retention policy.
 - Room things, if they are ever sold on their own: item ids and prices in
   `item_price`, after the 12 rooms' own things stay free with their rooms.
+
+The coin-trade float, a daily round cap, the guestbook's window and close
+instructions were weighed on 25 October 2026 and left as they are
+(`DECISIONS.md`).
 
 ## Cost and availability planning
 

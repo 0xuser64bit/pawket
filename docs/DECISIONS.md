@@ -61,9 +61,9 @@ and mainnet sponsorship is disabled.
 ## A keepsake is a frozen card
 
 Metaplex Core provides one permanently frozen card pointing to the pet PDA.
-It cannot transfer or burn. The program record remains the pet. Address
-recovery currently depends on the sponsor secret; secret separation is still
-unresolved (Q10).
+It cannot transfer or burn. The program record remains the pet. Its address
+comes from `DERIVATION_SECRET`, which keeps every card's address through a
+sponsor rotation once it is pinned (below).
 
 ## Cosmetics are fixed-price entitlements
 
@@ -171,3 +171,18 @@ Settled on 25 October 2026 (formerly Q9):
 - **Names.** Slugs remain first come, first served. The program refuses only
   `new`, which the create route uses. Delisting is Pawket's remedy for a
   squatted or abusive name. There is no on-chain dispute path.
+
+## Derived addresses and the collection's authority have their own keys
+
+Settled on 25 October 2026 (formerly Q10):
+
+- **Derivation secret.** Keepsake and coin keys come from `DERIVATION_SECRET`
+  by HMAC (`src/server/derive.ts`). Unset, it falls back to the sponsor key's
+  seed, which every address so far used, so nothing moved.
+- **Rotating the sponsor.** Pin the derivation secret to the current seed
+  first; after that, a rotation changes no derived address. Once set, it never
+  changes.
+- **Collection authority.** `COLLECTION_AUTHORITY_KEYPAIR` signs keepsakes as
+  the collection's authority, falling back to the sponsor. Using a key of its
+  own needs the collection's update authority moved on chain first.
+- **Storage.** Both are stored and backed up like the sponsor key.

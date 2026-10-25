@@ -1,6 +1,5 @@
 import "server-only";
 
-import { createHmac } from "node:crypto";
 import {
   Connection,
   Keypair,
@@ -28,7 +27,7 @@ import {
 } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { CpAmm, derivePoolAuthority, getTokenProgram, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
 import { getPublicEnv } from "@/config/env";
-import { getServerEnv, serverRpcUrl } from "@/config/server-env";
+import { serverRpcUrl } from "@/config/server-env";
 import { COIN_LOOKUP_TABLES, COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type CoinCluster, type PresetId } from "@/lib/coins/presets";
 import { coinStage, type CoinStage } from "@/lib/coins/stage";
 import { DELISTED_SLUGS } from "@/lib/guilds/delisted";
@@ -37,6 +36,7 @@ import type { Address, Instruction } from "@solana/kit";
 import { deriveWalletPda } from "@/lib/solana/pda";
 import { getWalletSpendInstruction } from "@/lib/solana/instructions";
 import { PAWKET_ACCOUNTS, WALLET_LIMITS } from "@/lib/solana/program";
+import { derivedSeed } from "@/server/derive";
 import { sponsorRpc } from "@/server/sponsor";
 
 const WRAPPED_SOL = new PublicKey("So11111111111111111111111111111111111111112");
@@ -52,10 +52,8 @@ const dbc = () => new DynamicBondingCurveClient(rpc(), "confirmed");
 const damm = () => new CpAmm(rpc());
 
 function coinKeypair(slug: string): Keypair | null {
-  const keypair = getServerEnv().sponsorKeypair;
-  if (!keypair) return null;
-  const secret = Uint8Array.from(JSON.parse(keypair) as number[]).subarray(0, 32);
-  return Keypair.fromSeed(createHmac("sha256", secret).update(`pawket guild coin ${slug}`).digest());
+  const seed = derivedSeed(`pawket guild coin ${slug}`);
+  return seed ? Keypair.fromSeed(seed) : null;
 }
 
 export interface CoinState {
@@ -225,7 +223,7 @@ export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, 
     const config = presetConfig(cluster, preset.id);
     return config ? [new PublicKey(config)] : [];
   });
-  if (offered.length === 0 || !getServerEnv().sponsorKeypair) return stages;
+  if (offered.length === 0 || !coinKeypair("")) return stages;
 
   const candidates = guilds.flatMap((guild) => {
     const mint = coinKeypair(guild.slug)!.publicKey;

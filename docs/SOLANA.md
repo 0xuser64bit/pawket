@@ -157,12 +157,15 @@ indexes endpoints; `src/server/actions.ts` owns the response helpers.
 A keepsake is a permanently frozen card pointing to the pet account. It
 cannot transfer or burn; the Pet PDA remains authoritative. Core instructions
 live in `src/lib/solana/core.ts` with byte-level tests. The collection address
-is a checked source constant; its current authority is the sponsor.
+is a checked source constant; its authority is the sponsor unless
+`COLLECTION_AUTHORITY_KEYPAIR` is set.
 
-`src/server/keepsake.ts` derives an asset signer from the sponsor secret and
-pet address with HMAC. `readKeepsake` verifies the account exists under Core
+`src/server/keepsake.ts` derives an asset signer from the pet address and
+`DERIVATION_SECRET` (`src/server/derive.ts`; the sponsor's seed unless set)
+with HMAC. `readKeepsake` verifies the account exists under Core
 before showing a card. Creation requires the owner, current sponsorship and
-no existing card. The sponsor covers rent and authority; the owner signs the
+no existing card. The sponsor covers rent and the collection's authority
+signs; the owner signs the
 prepared transaction through `sendPrepared`. Metadata is built from live pet
 reads under `/api/keepsake/[pet]`; its picture is `/api/keepsake/[pet]/card`
 (`keepsakeCard` in `src/server/card.tsx`): the pet's portrait in what the
@@ -170,8 +173,8 @@ record says it wears, drawn happy because it is a keepsake, with its level,
 cares, best run and the day it was adopted, read live. An Action's icon is
 the one that draws the pet's mood.
 
-Rotating the sponsor changes discovery addresses and authority requirements.
-Q10 in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) must be resolved before rotation.
+Before rotating the sponsor, pin `DERIVATION_SECRET` and, while the sponsor is
+the collection's authority, move that authority ([ENVIRONMENT.md](ENVIRONMENT.md)).
 `scripts/keepsake-collection.mts` is the one-time collection setup tool; it is
 not routine app startup and needs a separately approved authority plan.
 
@@ -179,8 +182,9 @@ not routine app startup and needs a separately approved authority plan.
 
 The server verifies the guild, creator, derived pool and mints, builds SDK
 transactions and returns them for explicit owner approval. A guild's founding
-pet must still be a member to launch. Coin identity is derived from the sponsor
-secret and guild slug; no key means no coin discovery or launch.
+pet must still be a member to launch. Coin identity is derived from
+`DERIVATION_SECRET` and the guild slug; with neither it nor a sponsor key,
+there is no coin discovery or launch.
 
 Coin sends use atomic `fund_wallet_spend` / `settle_wallet_spend` brackets.
 Both bind the same owner, wallet and reserved existing owner SOL through the

@@ -34,10 +34,15 @@ actions wait for sponsorship.
 Mainnet sponsorship is disabled. The sponsor signs only approved Pawket roles,
 never acts as program upgrade authority, and is not the treasury.
 
-The same secret currently derives keepsake and coin addresses and authorizes
-the keepsake collection. Rotating it is not a routine safe configuration
-change: Q10 in `OPEN-QUESTIONS.md` must be resolved to preserve those addresses
-and authorities. Keep server keys out of logs, source, client bundles and APKs.
+Two optional server-only keys take over jobs the sponsor key otherwise does.
+`DERIVATION_SECRET` (64 hex characters) is what keepsake and coin addresses
+are derived from (`src/server/derive.ts`); unset, it is the sponsor key's first
+32 bytes, which every address so far came from. Set it to that seed before the
+sponsor ever rotates, back it up like the sponsor key, and never change it once
+set: every derived address would move. `COLLECTION_AUTHORITY_KEYPAIR` (a
+keypair's JSON array) signs keepsakes as the collection's authority; unset, the
+sponsor does. Move the collection's update authority on chain to that key
+before setting it. Keep server keys out of logs, source, client bundles and APKs.
 Operational scripts document their own local key inputs; do not put a player's
 wallet secret in an application environment variable.
 
@@ -47,8 +52,9 @@ The opt-in devnet suites fund their test wallets from `PAWKET_TEST_FUNDER` (a
 keypair's JSON array) or `.keys/test-funder.json`; make one with
 `solana-keygen new -o .keys/test-funder.json` and fund it from a devnet faucet.
 They refuse a funder that is the sponsor, and never use the deploy wallet.
-Their sponsored actions still spend the sponsor's float, because its key is
-the keepsake collection's authority (Q10), so each run first requires the
+Their sponsored actions still spend the sponsor's float, because the sponsor
+signs as the keepsake collection's authority unless
+`COLLECTION_AUTHORITY_KEYPAIR` is set, so each run first requires the
 sponsor to hold at least 2 SOL (`e2e/devnet.ts`).
 
 ## Origins

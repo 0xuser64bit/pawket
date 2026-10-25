@@ -24,14 +24,6 @@ Mainnet coins remain blocked pending legal review of disclosure and utility,
 launch terms, jurisdiction policy, moderation, support and incident ownership.
 Devnet behavior is not evidence of mainnet readiness. See `MAINNET.md`.
 
-## Q10 — Address derivation and key rotation
-
-Keepsake and coin keys are currently derived from `SPONSOR_KEYPAIR` by HMAC.
-Changing the sponsor secret changes those derived addresses and can hide
-existing assets from the app or allow duplicate creation. The creator check
-protects coin attribution, but does not solve rotation. Decide how a separate
-derivation secret and collection authority are stored, backed up and migrated
-before rotation or mainnet. Do not treat routine sponsor rotation as safe.
 
 ## Scope decisions
 

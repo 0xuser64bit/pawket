@@ -11,7 +11,7 @@ in `src/lib/solana/send.ts`. [AGENTS.md](../AGENTS.md) is the change contract.
 | --- | --- |
 | Owner wallet | Approves wallet management and spending; owns the pet and Pawket Wallet |
 | Linked device | Non-extractable WebCrypto key; program-limited non-money actions until expiry and daily limit; can unlink itself; once unlinked or replaced, can send its own leftover float to its owner's Pawket Wallet and nowhere else |
-| Sponsor | Server-only devnet fee/rent payer; also current keepsake collection authority and source of derived asset keys |
+| Sponsor | Server-only devnet fee/rent payer; also the keepsake collection's authority and the derivation secret, unless `COLLECTION_AUTHORITY_KEYPAIR` and `DERIVATION_SECRET` are set |
 | Program upgrade authority | Separate deploy wallet; never the sponsor |
 | Treasury | Receives Market purchases and partner coin fees; its signing key is not on the server |
 
@@ -88,9 +88,11 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 
 ## Known limits and release blockers
 
-- Keepsake and coin derivation uses the sponsor secret. Rotating it changes
-  addresses and can lose app discovery or permit duplicate creation. Separate
-  derivation-secret storage and collection authority are unresolved (Q10).
+- Keepsake and coin addresses derive from `DERIVATION_SECRET`, which falls
+  back to the sponsor's seed. Until it is pinned, rotating the sponsor changes
+  those addresses and can lose app discovery or permit duplicate creation.
+  Anyone holding it can compute every derived key, so it is kept like the
+  sponsor key.
 - A founder keeps the coin's fee rights after the founding pet leaves: the
   pool records the founder's wallet, outside the program. Events, polls and
   launches stop while that pet is out of the guild.
@@ -164,8 +166,8 @@ gitleaks git --redact --log-opts=--all .
 Investigate a suspected compromised authority from its verified address and
 recent signatures. Stop affected server signing and product promotion,
 preserve public receipts and logs without secrets, and contact the responsible
-operator. Resolve Q10 before changing a derivation key; do not assume rotation
-preserves asset addresses. Reconcile uncertain sends by signature before retrying.
+operator. Pin `DERIVATION_SECRET` before rotating the sponsor, and never change a set
+derivation secret: every derived address would move. Reconcile uncertain sends by signature before retrying.
 Record affected authorities, timeline, mitigation and recovery verification.
 Mainnet operational ownership and response procedures must be approved under
 `MAINNET.md` before release.
@@ -183,4 +185,4 @@ check release assets separately and enable the host's secret protection where
 available. A scan cannot prove that no secret exists. If a real credential is
 found in history, stop publication, identify its authority and exposure, and
 coordinate revocation and history remediation with the operator. Sponsor
-rotation additionally requires Q10; deleting a file alone does not revoke a key.
+rotation additionally requires `DERIVATION_SECRET` pinned first; deleting a file alone does not revoke a key.

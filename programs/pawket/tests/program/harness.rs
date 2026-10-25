@@ -511,6 +511,7 @@ pub fn create_event_ix(
     owner: &Pubkey,
     payer: &Pubkey,
     guild: &Pubkey,
+    founder_pet: &Pubkey,
     id: u32,
     title: &str,
     note: &str,
@@ -525,6 +526,7 @@ pub fn create_event_ix(
             guild: *guild,
             event: event_pda(guild, id),
             system_program: system_program::ID,
+            founder_member: member_pda(founder_pet),
         }
         .to_account_metas(None),
         data: pawket::instruction::CreateEvent {
@@ -563,16 +565,19 @@ pub fn check_in_ix(owner: &Pubkey, pet: &Pubkey, event: &Pubkey) -> Instruction 
             pet: *pet,
             event: *event,
             rsvp: rsvp_pda(event, pet),
+            member: member_pda(pet),
         }
         .to_account_metas(None),
         data: pawket::instruction::CheckIn {}.data(),
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_poll_ix(
     owner: &Pubkey,
     payer: &Pubkey,
     guild: &Pubkey,
+    founder_pet: &Pubkey,
     id: u32,
     question: &str,
     options: &[&str],
@@ -586,6 +591,7 @@ pub fn create_poll_ix(
             guild: *guild,
             poll: poll_pda(guild, id),
             system_program: system_program::ID,
+            founder_member: member_pda(founder_pet),
         }
         .to_account_metas(None),
         data: pawket::instruction::CreatePoll {

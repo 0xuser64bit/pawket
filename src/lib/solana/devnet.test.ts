@@ -404,10 +404,10 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     const member = (await deriveMemberPda(pet)).address;
     const rsvp = (await deriveRsvpPda(event, pet)).address;
     await send(({ payer }) => [
-      getCreateEventInstruction({ owner, payer, guild: testGuild, event, id: startsAt, title: "Devnet nap", note: "Made by the devnet test.", startsAt, endsAt: now + 3_600 }),
+      getCreateEventInstruction({ owner, payer, guild: testGuild, event, founderMember: member, id: startsAt, title: "Devnet nap", note: "Made by the devnet test.", startsAt, endsAt: now + 3_600 }),
       getRsvpInstruction({ owner, payer, pet, member, event, rsvp }),
     ]);
-    await send(() => [getCheckInInstruction({ owner, pet, event, rsvp })]);
+    await send(() => [getCheckInInstruction({ owner, pet, event, rsvp, member })]);
     const [planned] = await fetchGuildEvents(rpc, testGuild);
     expect(planned).toMatchObject({ title: "Devnet nap", going: 1, came: 1 });
     expect((await fetchPetRsvps(rpc, pet)).map((entry) => entry.came)).toEqual([true]);
@@ -415,7 +415,7 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     const poll = (await derivePollPda(testGuild, now)).address;
     const ballot = (await deriveBallotPda(poll, owner.address)).address;
     await send(({ payer }) => [
-      getCreatePollInstruction({ owner, payer, guild: testGuild, poll, id: now, question: "Where next?", options: ["Window", "Rug"], closesAt: now + 3_600 }),
+      getCreatePollInstruction({ owner, payer, guild: testGuild, poll, founderMember: member, id: now, question: "Where next?", options: ["Window", "Rug"], closesAt: now + 3_600 }),
       getVoteInstruction({ owner, payer, pet, member, poll, ballot, option: 1 }),
     ]);
     const [asked] = await fetchGuildPolls(rpc, testGuild);

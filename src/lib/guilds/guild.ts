@@ -33,7 +33,7 @@ export function nameFor(slug: string): string | null {
   return isValidSlug(slug) && !RESERVED.has(slug) && slugFor(name) === slug ? name : null;
 }
 
-const RESERVED = new Set(["new"]);
+const RESERVED = new Set<string>(GUILD_LIMITS.reserved);
 
 export function isValidSlug(slug: string): boolean {
   return (

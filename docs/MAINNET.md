@@ -13,7 +13,6 @@ Mainnet requires a separate human-approved deploy plan.
 | Sponsorship | Devnet-only hot key; float floor and per-instance limits | Explicit fee/rent policy, shared rate limiting, total budget enforcement, monitoring and replenishment ownership |
 | Pawket Wallet | Linked device and positive balance required for app transactions | Review all money paths, fee float, unlink/close, recovery and mainnet fee policy; no implicit owner-wallet fallback |
 | Keepsakes and coins | Keys derived from sponsor secret | Resolve derivation-secret backup/migration and collection authority separation (Q10) |
-| Guild authority | Founders retain program powers after leaving | Resolve departure, rejoin and succession semantics (Q9) |
 | Coins | Devnet preset configs only | Legal/policy approval (Q6), approved mainnet parameters and recipients (Q3), verified config accounts and pool routing |
 | Market | Prices fixed by the program | Approved real-SOL prices; source parity and treasury validation |
 | RPC and discovery | Direct scans with short shared caches | Measured capacity, provider and monitoring ownership (Q4) |
@@ -31,8 +30,6 @@ Main and the devnet program are frozen in review. These changes wait for the
 next authorized upgrade, each with its LiteSVM test written first and no seed or
 discriminator change; listing them here authorizes none of them.
 
-- Guild roles and names: what a founder keeps after the founding pet leaves,
-  check-in after leaving, and reserved or disputed slugs (Q9).
 - Coin-trade float: `fund_wallet_spend` tops a device back up to its whole
   float each trade; refilling only the fee paid would match `act`.
 - Rounds: an optional daily cap on `finish_round`, which earns XP once a day.
@@ -56,7 +53,7 @@ promise that Market revenue or coin fees will fund operations without a budget.
 
 ## Release gates
 
-- [ ] Q6, Q9 and Q10 resolved; Q3 and Q4 settled for the planned load.
+- [ ] Q6 and Q10 resolved; Q3 and Q4 settled for the planned load.
 - [ ] Program and server security review complete; findings closed or explicitly accepted.
 - [ ] Upgrade, treasury, collection and derivation authorities recorded and recoverable.
 - [ ] Fee/rent policy, shared limits, budgets and alert ownership approved.

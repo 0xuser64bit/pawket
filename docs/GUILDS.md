@@ -17,6 +17,8 @@ test and delisted guilds. `/guilds/[slug]` reads its pets and Passport totals;
 `/guilds/new` creates one. A pet's Passport links its guild. There is no
 pre-founding approval workflow or off-chain membership database.
 
+A slug is first come, first served. The program refuses `RESERVED_SLUGS`
+(`new`, the create route), mirrored as `GUILD_LIMITS.reserved`.
 `src/lib/guilds/guild.ts` owns slug, name, motto and crest validation;
 `src/lib/guilds/boundary.ts` owns the community boundaries.
 
@@ -25,17 +27,19 @@ pre-founding approval workflow or off-chain membership database.
 | Actor | Permissions |
 | --- | --- |
 | Pet owner or authorized device | Join/leave, RSVP, check in and vote through a pet they keep |
-| Founder | Create events and polls; launch the guild's coin while its founding pet remains a member; claim the founder's fees |
+| Founder | While the founding pet remains a member: create events and polls, and launch the guild's coin. Claim the founder's fees |
 | Pawket | Delist its product surfaces; cannot move pets, change membership or reverse chain transactions |
 
 Events have program-checked times and RSVPs per pet. Check-in uses that RSVP
 within the allowed window. Polls accept one ballot per wallet with a pet in
 the guild; coin balance and number of pets never increase vote weight.
 
-The program still permits a founder to create events and polls after the
-founding pet leaves. Existing RSVPs can also check in after membership ends.
-Founder departure and succession remain unresolved in Q9 (`OPEN-QUESTIONS.md`);
-do not describe the API's coin launch check as a general program role rule.
+A founder's powers follow the founding pet. The program reads that pet's
+member account for every event and poll, so they stop while it is out of the
+guild and return if it rejoins. Nobody succeeds to the role: such a guild keeps
+its pets, events and polls, and plans nothing new. A pet checks in only while
+it is in the event's guild. The founder's coin-fee rights are Meteora's record
+and stay with the founder's wallet (`DECISIONS.md`).
 
 ## Optional coins
 

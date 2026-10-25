@@ -97,10 +97,10 @@ const BUILT: Record<string, Instruction> = {
   buy_with_wallet: getBuyWithWalletInstruction({ owner: A, payer: A, closet: A, wallet: A, item: 19 }),
   buy: getBuyInstruction({ owner: A, payer: A, closet: A, item: 19 }),
   dress_owned: getDressOwnedInstruction({ owner: A, pet: A, closet: A, wearing: 19 }),
-  create_event: getCreateEventInstruction({ owner: A, payer: A, guild: A, event: A, id: 7, title: "Sunday nap", note: "By the window.", startsAt: 1_790_848_800, endsAt: 1_790_856_000 }),
+  create_event: getCreateEventInstruction({ owner: A, payer: A, guild: A, event: A, founderMember: A, id: 7, title: "Sunday nap", note: "By the window.", startsAt: 1_790_848_800, endsAt: 1_790_856_000 }),
   rsvp: getRsvpInstruction({ owner: A, payer: A, pet: A, member: A, event: A, rsvp: A }),
-  check_in: getCheckInInstruction({ owner: A, pet: A, event: A, rsvp: A }),
-  create_poll: getCreatePollInstruction({ owner: A, payer: A, guild: A, poll: A, id: 7, question: "Which rug?", options: ["Red", "Blue"], closesAt: 1_790_848_800 }),
+  check_in: getCheckInInstruction({ owner: A, pet: A, event: A, rsvp: A, member: A }),
+  create_poll: getCreatePollInstruction({ owner: A, payer: A, guild: A, poll: A, founderMember: A, id: 7, question: "Which rug?", options: ["Red", "Blue"], closesAt: 1_790_848_800 }),
   vote: getVoteInstruction({ owner: A, payer: A, pet: A, member: A, poll: A, ballot: A, option: 1 }),
   wave: getWaveInstruction({ visitor: A, payer: A, pet: A, guestbook: A }),
 };
@@ -202,6 +202,9 @@ describe("program.ts against the IDL", () => {
     expect(data.slice(-2)).toEqual([0, 0]);
     expect(GUILD_LIMITS.crests).toBe(8);
     expect(GUILD_LIMITS.colours).toBe(6);
+    const source = readFileSync(path.join(process.cwd(), "programs/pawket/src/lib.rs"), "utf8");
+    const reserved = source.match(/pub const RESERVED_SLUGS: \[&str; \d+\] = \[([^\]]*)\];/)?.[1];
+    expect(reserved?.split(",").map((slug) => JSON.parse(slug.trim()))).toEqual(GUILD_LIMITS.reserved);
   });
 
   it("encodes enums in the program's variant order", () => {

@@ -33,7 +33,7 @@ fn the_founder_plans_an_event_and_its_pets_say_they_are_going_and_check_in() {
     let starts = env.now() + DAY;
     let id = starts as u32;
     ok(env.send(
-        &[create_event_ix(&g.founder.pubkey(), &g.sponsor.pubkey(), &g.guild, id, "Sunday nap", "In the sun, by the window.", starts, starts + 2 * HOUR)],
+        &[create_event_ix(&g.founder.pubkey(), &g.sponsor.pubkey(), &g.guild, &g.founder_pet, id, "Sunday nap", "In the sun, by the window.", starts, starts + 2 * HOUR)],
         &g.sponsor,
         &[&g.founder],
     ));
@@ -78,10 +78,10 @@ fn only_the_founder_plans_and_only_the_guilds_pets_say_they_are_going() {
     let g = gathering(&mut env);
     let starts = env.now() + HOUR;
     expect_pawket(
-        &env.send(&[create_event_ix(&g.member.pubkey(), &g.member.pubkey(), &g.guild, 1, "My party", "", starts, starts + HOUR)], &g.member, &[]),
+        &env.send(&[create_event_ix(&g.member.pubkey(), &g.member.pubkey(), &g.guild, &g.founder_pet, 1, "My party", "", starts, starts + HOUR)], &g.member, &[]),
         PawketError::NotGuildFounder,
     );
-    ok(env.send(&[create_event_ix(&g.founder.pubkey(), &g.founder.pubkey(), &g.guild, 1, "Our party", "", starts, starts + HOUR)], &g.founder, &[]));
+    ok(env.send(&[create_event_ix(&g.founder.pubkey(), &g.founder.pubkey(), &g.guild, &g.founder_pet, 1, "Our party", "", starts, starts + HOUR)], &g.founder, &[]));
     let event = event_pda(&g.guild, 1);
 
     let stranger = env.player();
@@ -103,7 +103,7 @@ fn an_event_is_held_to_its_rules() {
     let g = gathering(&mut env);
     let now = env.now();
     let plan = |title: &str, note: &str, starts: i64, ends: i64| {
-        create_event_ix(&g.founder.pubkey(), &g.founder.pubkey(), &g.guild, 7, title, note, starts, ends)
+        create_event_ix(&g.founder.pubkey(), &g.founder.pubkey(), &g.guild, &g.founder_pet, 7, title, note, starts, ends)
     };
     for ix in [
         plan("No", "", now + HOUR, now + 2 * HOUR),
@@ -125,7 +125,7 @@ fn a_poll_takes_one_ballot_per_wallet_and_counts_them() {
     let g = gathering(&mut env);
     let closes = env.now() + DAY;
     ok(env.send(
-        &[create_poll_ix(&g.founder.pubkey(), &g.sponsor.pubkey(), &g.guild, 1, "Next nap spot?", &["Window", "Rug", "Basket"], closes)],
+        &[create_poll_ix(&g.founder.pubkey(), &g.sponsor.pubkey(), &g.guild, &g.founder_pet, 1, "Next nap spot?", &["Window", "Rug", "Basket"], closes)],
         &g.sponsor,
         &[&g.founder],
     ));
@@ -157,11 +157,11 @@ fn only_the_founder_asks_and_a_poll_is_held_to_its_rules() {
     let g = gathering(&mut env);
     let now = env.now();
     expect_pawket(
-        &env.send(&[create_poll_ix(&g.member.pubkey(), &g.member.pubkey(), &g.guild, 1, "Mine?", &["Yes", "No"], now + DAY)], &g.member, &[]),
+        &env.send(&[create_poll_ix(&g.member.pubkey(), &g.member.pubkey(), &g.guild, &g.founder_pet, 1, "Mine?", &["Yes", "No"], now + DAY)], &g.member, &[]),
         PawketError::NotGuildFounder,
     );
     let ask = |question: &str, options: &[&str], closes: i64| {
-        create_poll_ix(&g.founder.pubkey(), &g.founder.pubkey(), &g.guild, 2, question, options, closes)
+        create_poll_ix(&g.founder.pubkey(), &g.founder.pubkey(), &g.guild, &g.founder_pet, 2, question, options, closes)
     };
     for ix in [
         ask("Hm", &["Yes", "No"], now + DAY),
@@ -182,8 +182,8 @@ fn a_pet_goes_and_answers_only_on_its_own_place_in_the_guild() {
     let mut env = Env::new();
     let g = gathering(&mut env);
     let (founder, now) = (g.founder.pubkey(), env.now());
-    ok(env.send(&[create_event_ix(&founder, &founder, &g.guild, 1, "Nap", "", now + DAY, now + DAY + HOUR)], &g.founder, &[]));
-    ok(env.send(&[create_poll_ix(&founder, &founder, &g.guild, 1, "Where?", &["Rug", "Sun"], now + DAY)], &g.founder, &[]));
+    ok(env.send(&[create_event_ix(&founder, &founder, &g.guild, &g.founder_pet, 1, "Nap", "", now + DAY, now + DAY + HOUR)], &g.founder, &[]));
+    ok(env.send(&[create_poll_ix(&founder, &founder, &g.guild, &g.founder_pet, 1, "Where?", &["Rug", "Sun"], now + DAY)], &g.founder, &[]));
     let (event, poll) = (event_pda(&g.guild, 1), poll_pda(&g.guild, 1));
 
     let outsider = env.player();
@@ -206,8 +206,8 @@ fn nobody_checks_in_or_votes_with_someone_elses_pet() {
     let mut env = Env::new();
     let g = gathering(&mut env);
     let (founder, member, starts) = (g.founder.pubkey(), g.member.pubkey(), env.now() + HOUR);
-    ok(env.send(&[create_event_ix(&founder, &founder, &g.guild, 1, "Nap", "", starts, starts + HOUR)], &g.founder, &[]));
-    ok(env.send(&[create_poll_ix(&founder, &founder, &g.guild, 1, "Where?", &["Rug", "Sun"], starts + HOUR)], &g.founder, &[]));
+    ok(env.send(&[create_event_ix(&founder, &founder, &g.guild, &g.founder_pet, 1, "Nap", "", starts, starts + HOUR)], &g.founder, &[]));
+    ok(env.send(&[create_poll_ix(&founder, &founder, &g.guild, &g.founder_pet, 1, "Where?", &["Rug", "Sun"], starts + HOUR)], &g.founder, &[]));
     let (event, poll) = (event_pda(&g.guild, 1), poll_pda(&g.guild, 1));
     ok(env.send(&[rsvp_ix(&member, &member, &g.member_pet, &event)], &g.member, &[]));
     env.set_time(starts);
@@ -224,7 +224,7 @@ fn a_pet_checks_in_only_on_its_own_rsvp() {
     let mut env = Env::new();
     let g = gathering(&mut env);
     let (founder, starts) = (g.founder.pubkey(), env.now() + HOUR);
-    ok(env.send(&[create_event_ix(&founder, &founder, &g.guild, 1, "Nap", "", starts, starts + HOUR)], &g.founder, &[]));
+    ok(env.send(&[create_event_ix(&founder, &founder, &g.guild, &g.founder_pet, 1, "Nap", "", starts, starts + HOUR)], &g.founder, &[]));
     let event = event_pda(&g.guild, 1);
     ok(env.send(&[rsvp_ix(&founder, &founder, &g.founder_pet, &event)], &g.founder, &[]));
     env.set_time(starts);
@@ -234,6 +234,60 @@ fn a_pet_checks_in_only_on_its_own_rsvp() {
     expect_anchor(&env.send(&[borrowed], &g.member, &[]), ErrorCode::ConstraintSeeds);
     assert!(!env.rsvp(&rsvp_pda(&event, &g.founder_pet)).came);
     assert_eq!(env.event(&event).came, 0);
+}
+
+#[test]
+fn a_founder_plans_and_asks_only_while_the_founding_pet_is_in_the_guild() {
+    let mut env = Env::new();
+    let g = gathering(&mut env);
+    let (founder, sponsor, now) = (g.founder.pubkey(), g.sponsor.pubkey(), env.now());
+    let plan = || create_event_ix(&founder, &founder, &g.guild, &g.founder_pet, 1, "Nap", "", now + DAY, now + DAY + HOUR);
+    let ask = || create_poll_ix(&founder, &founder, &g.guild, &g.founder_pet, 1, "Where?", &["Rug", "Sun"], now + DAY);
+
+    ok(env.send(&[leave_ix(&founder, &g.founder_pet, &g.guild, &sponsor)], &g.founder, &[]));
+    for ix in [plan(), ask()] {
+        expect_anchor(&env.send(&[ix.clone()], &g.founder, &[]), ErrorCode::AccountNotInitialized);
+        let mut borrowed = ix;
+        borrowed.accounts.last_mut().unwrap().pubkey = member_pda(&g.member_pet);
+        expect_anchor(&env.send(&[borrowed], &g.founder, &[]), ErrorCode::ConstraintSeeds);
+    }
+
+    ok(env.send(&[found_ix(&founder, &founder, &g.founder_pet, "window-seat")], &g.founder, &[]));
+    for ix in [plan(), ask()] {
+        expect_pawket(&env.send(&[ix], &g.founder, &[]), PawketError::NotGuildFounder);
+    }
+
+    ok(env.send(&[leave_ix(&founder, &g.founder_pet, &guild_pda("window-seat"), &founder)], &g.founder, &[]));
+    ok(env.send(&[join_ix(&founder, &founder, &g.founder_pet, &g.guild)], &g.founder, &[]));
+    ok(env.send(&[plan(), ask()], &g.founder, &[]));
+    assert_eq!(env.event(&event_pda(&g.guild, 1)).creator, founder);
+    assert_eq!(env.poll(&poll_pda(&g.guild, 1)).creator, founder);
+}
+
+#[test]
+fn a_pet_checks_in_only_while_it_is_in_the_guild() {
+    let mut env = Env::new();
+    let g = gathering(&mut env);
+    let (founder, member, sponsor, starts) = (g.founder.pubkey(), g.member.pubkey(), g.sponsor.pubkey(), env.now() + HOUR);
+    ok(env.send(&[create_event_ix(&founder, &founder, &g.guild, &g.founder_pet, 1, "Nap", "", starts, starts + HOUR)], &g.founder, &[]));
+    let event = event_pda(&g.guild, 1);
+    ok(env.send(&[rsvp_ix(&member, &member, &g.member_pet, &event)], &g.member, &[]));
+    ok(env.send(&[leave_ix(&member, &g.member_pet, &g.guild, &sponsor)], &g.member, &[]));
+    env.set_time(starts);
+
+    let check_in = || check_in_ix(&member, &g.member_pet, &event);
+    expect_anchor(&env.send(&[check_in()], &g.member, &[]), ErrorCode::AccountNotInitialized);
+    let mut borrowed = check_in();
+    borrowed.accounts.last_mut().unwrap().pubkey = member_pda(&g.founder_pet);
+    expect_anchor(&env.send(&[borrowed], &g.member, &[]), ErrorCode::ConstraintSeeds);
+    ok(env.send(&[found_ix(&member, &member, &g.member_pet, "muddy-paws")], &g.member, &[]));
+    expect_pawket(&env.send(&[check_in()], &g.member, &[]), PawketError::NotInGuild);
+    assert_eq!(env.event(&event).came, 0);
+
+    ok(env.send(&[leave_ix(&member, &g.member_pet, &guild_pda("muddy-paws"), &member)], &g.member, &[]));
+    ok(env.send(&[join_ix(&member, &member, &g.member_pet, &g.guild)], &g.member, &[]));
+    ok(env.send(&[check_in()], &g.member, &[]));
+    assert_eq!(env.event(&event).came, 1);
 }
 
 #[test]

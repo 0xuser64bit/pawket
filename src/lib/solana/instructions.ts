@@ -495,6 +495,7 @@ export function getCreateEventInstruction(input: {
   payer?: SignerInput;
   guild: string | Address;
   event: string | Address;
+  founderMember: string | Address;
   id: number;
   title: string;
   note: string;
@@ -516,6 +517,7 @@ export function getCreateEventInstruction(input: {
       { address: parseAddress(input.guild, "guild"), role: AccountRole.READONLY },
       { address: parseAddress(input.event, "event"), role: AccountRole.WRITABLE },
       { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+      { address: parseAddress(input.founderMember, "founderMember"), role: AccountRole.READONLY },
     ],
     data: concatBytes(
       PAWKET_DISCRIMINATORS.createEvent,
@@ -557,6 +559,7 @@ export function getCheckInInstruction(input: {
   pet: string | Address;
   event: string | Address;
   rsvp: string | Address;
+  member: string | Address;
   programId?: string | Address;
 }): Instruction {
   return {
@@ -566,6 +569,7 @@ export function getCheckInInstruction(input: {
       { address: parseAddress(input.pet, "pet"), role: AccountRole.READONLY },
       { address: parseAddress(input.event, "event"), role: AccountRole.WRITABLE },
       { address: parseAddress(input.rsvp, "rsvp"), role: AccountRole.WRITABLE },
+      { address: parseAddress(input.member, "member"), role: AccountRole.READONLY },
     ],
     data: new Uint8Array(PAWKET_DISCRIMINATORS.checkIn),
   };
@@ -576,6 +580,7 @@ export function getCreatePollInstruction(input: {
   payer?: SignerInput;
   guild: string | Address;
   poll: string | Address;
+  founderMember: string | Address;
   id: number;
   question: string;
   options: string[];
@@ -602,6 +607,7 @@ export function getCreatePollInstruction(input: {
       { address: parseAddress(input.guild, "guild"), role: AccountRole.READONLY },
       { address: parseAddress(input.poll, "poll"), role: AccountRole.WRITABLE },
       { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+      { address: parseAddress(input.founderMember, "founderMember"), role: AccountRole.READONLY },
     ],
     data: concatBytes(
       PAWKET_DISCRIMINATORS.createPoll,

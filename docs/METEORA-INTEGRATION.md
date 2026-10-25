@@ -88,8 +88,8 @@ must be approved and verified before mainnet is enabled (Q3, Q6).
 
 - Legal review of the coin copy, the disclosure and the asset-model row
   (Q6). Until it is signed, `COIN_CONFIGS` has no mainnet entry and the
-  coin page says coins are off there. Address derivation and founder powers
-  also require Q10 and Q9 to be resolved.
+  coin page says coins are off there. Address derivation also requires
+  Q10 to be resolved.
 - An approved config-deployment and verification plan with reviewed preset
   parameters and treasury authority (`MAINNET.md`). Partner-fee claims run
   from the treasury's operational tool, never the server.

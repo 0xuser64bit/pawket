@@ -8,6 +8,13 @@ export interface NewsEntry {
 
 export const NEWS: readonly NewsEntry[] = [
   {
+    date: "2026-10-25",
+    title: "Founders stay with their guild",
+    body: "A founder plans events and polls while the pet that founded the guild is in it, and a pet checks in while it is in the guild too.",
+    href: "/guilds",
+    see: "See the guilds",
+  },
+  {
     date: "2026-10-23",
     title: "They missed you",
     body: "Come back after a few hours and your pet bounces over to say hello, with a word on how long it has been and what they need.",

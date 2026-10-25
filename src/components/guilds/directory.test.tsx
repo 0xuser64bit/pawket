@@ -15,12 +15,12 @@ const wallet = vi.hoisted(() => ({ ready: true, owner: null as string | null, ow
 vi.mock("@/lib/companion/use-companion", () => ({ useCompanion: () => wallet }));
 afterEach(cleanup);
 
-const guild = (address: string, founder = "someone") =>
-  ({ address, founder, name: address, slug: address, motto: "", crest: 0, colour: 0, createdAt: 1, memberCount: 1 }) as ChainGuild;
-const guilds = [guild("Cloud Nine"), guild("Window Seat", "me"), guild("Muddy Paws")];
+const guild = (address: string, founder = "someone", founderPet = "pet-Someone") =>
+  ({ address, founder, founderPet, name: address, slug: address, motto: "", crest: 0, colour: 0, createdAt: 1, memberCount: 1 }) as ChainGuild;
+const guilds = [guild("Cloud Nine"), guild("Window Seat", "me", "pet-Pip"), guild("Muddy Paws")];
 
 it("puts the guilds you founded or are in first, with your role and your pet", () => {
-  Object.assign(wallet, { owner: "me", owned: [chainPet("Mango", "Muddy Paws"), chainPet("Pip", null)] });
+  Object.assign(wallet, { owner: "me", owned: [chainPet("Mango", "Muddy Paws"), chainPet("Pip", "Window Seat")] });
   render(<GuildDirectory guilds={guilds} coins={new Map()} />);
   const yours = screen.getByRole("region", { name: "Your guilds" });
   const founded = within(yours).getByRole("link", { name: "Window Seat" }).closest(".pk-guild") as HTMLElement;
@@ -32,6 +32,13 @@ it("puts the guilds you founded or are in first, with your role and your pet", (
   const more = screen.getByRole("region", { name: "More guilds" });
   expect(within(more).getByRole("link", { name: "Cloud Nine" })).toBeTruthy();
   expect(within(more).queryByText(/Founder|Member/)).toBeNull();
+});
+
+it("a founder whose founding pet has left is no longer marked as the guild's", () => {
+  Object.assign(wallet, { ready: true, owner: "me", owned: [chainPet("Pip", null)] });
+  render(<GuildDirectory guilds={guilds} coins={new Map()} />);
+  expect(screen.queryByRole("region", { name: "Your guilds" })).toBeNull();
+  expect(screen.queryByText("Founder")).toBeNull();
 });
 
 it("without a wallet, or before its pets are read, every guild is one list and none is marked", () => {

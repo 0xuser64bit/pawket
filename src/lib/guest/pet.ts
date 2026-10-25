@@ -26,41 +26,42 @@ import { normalizePetName } from "@/lib/solana/names";
 
 const CARE_LOG_LIMIT = 40;
 
-const statSchema = z.number().int().min(0).max(100);
+const statSchema = z.int().check(z.minimum(0), z.maximum(100));
+const countSchema = () => z.int().check(z.nonnegative());
 
 const careLogEntrySchema = z.object({
-  action: z.nativeEnum(CareActionType),
+  action: z.enum(CareActionType),
   at: z.string(),
-  xpGained: z.number().int().nonnegative(),
+  xpGained: countSchema(),
 });
 
 const streakSchema = z.object({
-  count: z.number().int().nonnegative(),
-  lastDay: z.string().nullable(),
-  best: z.number().int().nonnegative().default(0),
+  count: countSchema(),
+  lastDay: z.nullable(z.string()),
+  best: z._default(countSchema(), 0),
 });
 
 export const guestPetSchema = z.object({
   version: z.literal(2),
-  id: z.string().min(1),
+  id: z.string().check(z.minLength(1)),
   name: z.string(),
-  species: z.nativeEnum(PetSpecies),
-  personality: z.nativeEnum(PetPersonality),
+  species: z.enum(PetSpecies),
+  personality: z.enum(PetPersonality),
   stats: z.object({
     hunger: statSchema,
     happiness: statSchema,
     energy: statSchema,
     hygiene: statSchema,
   }),
-  xp: z.number().int().nonnegative(),
+  xp: countSchema(),
   createdAt: z.string(),
   statsUpdatedAt: z.string(),
-  lastActionAt: z.record(z.nativeEnum(CareActionType), z.string().nullable()),
-  careLog: z.array(careLogEntrySchema).max(CARE_LOG_LIMIT),
+  lastActionAt: z.record(z.enum(CareActionType), z.nullable(z.string())),
+  careLog: z.array(careLogEntrySchema).check(z.maxLength(CARE_LOG_LIMIT)),
   streak: streakSchema,
-  wearing: z.string().nullable(),
-  plays: z.number().int().nonnegative(),
-  lastDailyPlayDay: z.string().nullable(),
+  wearing: z.nullable(z.string()),
+  plays: countSchema(),
+  lastDailyPlayDay: z.nullable(z.string()),
 });
 
 export type GuestPet = z.infer<typeof guestPetSchema>;
@@ -274,25 +275,25 @@ export function recordPlay(pet: GuestPet, now: Date = new Date()): PlayRecord {
 }
 
 const looseSchema = z.object({
-  name: z.string().min(1),
-  species: z.nativeEnum(PetSpecies),
-  personality: z.nativeEnum(PetPersonality),
+  name: z.string().check(z.minLength(1)),
+  species: z.enum(PetSpecies),
+  personality: z.enum(PetPersonality),
   stats: z.object({
     hunger: statSchema,
     happiness: statSchema,
     energy: statSchema,
     hygiene: statSchema,
   }),
-  xp: z.number().int().nonnegative(),
+  xp: countSchema(),
   createdAt: z.string(),
   statsUpdatedAt: z.string(),
-  lastActionAt: z.record(z.string(), z.string().nullable()).optional(),
-  id: z.string().min(1).optional(),
-  careLog: z.array(z.unknown()).optional(),
-  streak: streakSchema.optional(),
-  wearing: z.string().nullable().optional(),
-  plays: z.number().int().nonnegative().optional(),
-  lastDailyPlayDay: z.string().nullable().optional(),
+  lastActionAt: z.optional(z.record(z.string(), z.nullable(z.string()))),
+  id: z.optional(z.string().check(z.minLength(1))),
+  careLog: z.optional(z.array(z.unknown())),
+  streak: z.optional(streakSchema),
+  wearing: z.optional(z.nullable(z.string())),
+  plays: z.optional(countSchema()),
+  lastDailyPlayDay: z.optional(z.nullable(z.string())),
 });
 
 function lastActionFrom(

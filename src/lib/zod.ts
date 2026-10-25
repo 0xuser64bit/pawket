@@ -1,2 +1,24 @@
-export { array, boolean, enum, literal, nativeEnum, number, object, preprocess, record, string, unknown, ZodIssueCode } from "zod";
-export type { infer, ZodNullable, ZodString } from "zod";
+export {
+  _default,
+  array,
+  boolean,
+  enum,
+  int,
+  length,
+  literal,
+  maximum,
+  maxLength,
+  minimum,
+  minLength,
+  nonnegative,
+  nullable,
+  object,
+  optional,
+  pipe,
+  record,
+  string,
+  superRefine,
+  transform,
+  unknown,
+} from "zod/mini";
+export type { infer, ZodMiniNullable, ZodMiniString } from "zod/mini";

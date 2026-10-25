@@ -9,8 +9,8 @@ export const MAX_PLAYER_NAME = 24;
 
 const profileSchema = z.object({
   version: z.literal(1),
-  name: z.string().max(MAX_PLAYER_NAME),
-  outfits: z.array(lookSchema.nullable()).length(OUTFIT_SLOTS),
+  name: z.string().check(z.maxLength(MAX_PLAYER_NAME)),
+  outfits: z.array(z.nullable(lookSchema)).check(z.length(OUTFIT_SLOTS)),
 });
 
 export type PlayerProfile = z.infer<typeof profileSchema>;

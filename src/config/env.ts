@@ -18,23 +18,17 @@ const KNOWN_RPC_HOSTS: Array<{ cluster: SolanaCluster; host: string }> = [
 
 const publicEnvSchema = z
   .object({
-    appUrl: z.preprocess(emptyToUndefined, z.string().default("http://localhost:3000")),
-    solanaCluster: z.preprocess(
-      emptyToUndefined,
-      clusterSchema.default("devnet"),
-    ),
-    solanaRpcUrl: z.preprocess(
-      emptyToUndefined,
-      z.string().default("https://api.devnet.solana.com"),
-    ),
+    appUrl: z.pipe(z.transform(emptyToUndefined), z._default(z.string(), "http://localhost:3000")),
+    solanaCluster: z.pipe(z.transform(emptyToUndefined), z._default(clusterSchema, "devnet")),
+    solanaRpcUrl: z.pipe(z.transform(emptyToUndefined), z._default(z.string(), "https://api.devnet.solana.com")),
   })
-  .superRefine((env, ctx) => {
+  .check(z.superRefine((env, ctx) => {
     let app: URL | undefined;
     try { app = new URL(env.appUrl); } catch {}
     if (!app || !["http:", "https:"].includes(app.protocol)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["appUrl"], message: "NEXT_PUBLIC_APP_URL must be an http(s) origin, like https://pawket.world." });
+      ctx.addIssue({ code: "custom", path: ["appUrl"], message: "NEXT_PUBLIC_APP_URL must be an http(s) origin, like https://pawket.world." });
     } else if (process.env.VERCEL_ENV === "production" && (app.protocol !== "https:" || ["localhost", "127.0.0.1", "[::1]"].includes(app.hostname))) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["appUrl"], message: "A production build needs NEXT_PUBLIC_APP_URL set to its https origin; it is written into metadata on Solana." });
+      ctx.addIssue({ code: "custom", path: ["appUrl"], message: "A production build needs NEXT_PUBLIC_APP_URL set to its https origin; it is written into metadata on Solana." });
     }
     let rpc: URL | undefined;
     try { rpc = new URL(env.solanaRpcUrl); } catch {}
@@ -44,7 +38,7 @@ const publicEnvSchema = z
       !["http:", "https:"].includes(rpc.protocol) || rpc.username || rpc.password ||
       rpc.pathname !== "/" || rpc.search || rpc.hash)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["solanaRpcUrl"],
         message: "Use a public Solana endpoint, a loopback RPC, or /api/rpc. Put provider URLs in SOLANA_RPC_URL (server-only).",
       });
@@ -55,13 +49,13 @@ const publicEnvSchema = z
         rpc?.hostname === known.host
       ) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["solanaRpcUrl"],
           message: `RPC URL points at ${known.cluster} but cluster is ${env.solanaCluster}.`,
         });
       }
     }
-  });
+  }));
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 

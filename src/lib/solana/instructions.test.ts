@@ -6,9 +6,11 @@ import {
   getCareInstruction,
   getDressInstruction,
   getFinishRoundInstruction,
+  getReturnFloatInstruction,
 } from "./instructions";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID, WEARABLE_COUNT } from "./program";
+import { deriveWalletPda } from "./pda";
 
 const OWNER = "11111111111111111111111111111111";
 const SPONSOR = "SysvarRent111111111111111111111111111111111";
@@ -77,12 +79,11 @@ describe("getAdoptPetInstruction", () => {
       species: PetSpecies.MossPup,
       personality: PetPersonality.Brave,
     });
-    // discriminator(8) + name len(4) + "Nova"(4) + species(1) + personality(1)
     const expected = [
       ...PAWKET_DISCRIMINATORS.adoptPet,
       4, 0, 0, 0, 78, 111, 118, 97,
-      1, // moss_pup
-      2, // brave
+      1,
+      2,
     ];
     expect(Array.from(ix.data ?? [])).toEqual(expected);
     expect(Array.from(trimmed.data ?? [])).toEqual(expected);
@@ -135,7 +136,7 @@ describe("getCareInstruction", () => {
     ]);
     expect(Array.from(ix.data ?? [])).toEqual([
       ...PAWKET_DISCRIMINATORS.performCareAction,
-      1, // play
+      1,
     ]);
   });
 });
@@ -166,5 +167,19 @@ describe("getDressInstruction", () => {
     expect(() => getDressInstruction({ owner: OWNER, pet: PET, wearing: WEARABLE_COUNT + 1 })).toThrow();
     expect(() => getDressInstruction({ owner: OWNER, pet: PET, wearing: -1 })).toThrow();
     expect(getDressInstruction({ owner: OWNER, pet: PET, wearing: 0 }).data?.[8]).toBe(0);
+  });
+});
+
+describe("getReturnFloatInstruction", () => {
+  it("is a plain system transfer from the device's own key to its owner's Pawket Wallet, nothing of Pawket's", async () => {
+    const device = createNoopSigner(address("So11111111111111111111111111111111111111112"));
+    const owner = address("SysvarRent111111111111111111111111111111111");
+    const ix = await getReturnFloatInstruction({ device, owner, lamports: 995_000n });
+    expect(ix.programAddress).toBe("11111111111111111111111111111111");
+    expect(ix.accounts?.map((meta) => [meta.address, meta.role])).toEqual([
+      [device.address, AccountRole.WRITABLE_SIGNER],
+      [(await deriveWalletPda(owner)).address, AccountRole.WRITABLE],
+    ]);
+    expect(Array.from(ix.data ?? [])).toEqual([2, 0, 0, 0, ...Array.from(new Uint8Array(new BigUint64Array([995_000n]).buffer))]);
   });
 });

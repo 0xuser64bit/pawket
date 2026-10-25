@@ -1,39 +1,15 @@
-import { z } from "zod";
-
-/**
- * How the player looks in the 3D room. Expression only: nothing here is
- * read by care, the playground or the record, and it is saved on this
- * device the same way the pet is.
- *
- * Every option maps to something the supplied assets actually contain —
- * two base bodies, their painted skin (recoloured to each tone), four
- * hairstyles and a beard fitted to both heads — or to the clothes the asset
- * pipeline cuts from the body, because the pack has none.
- * Colours for clothes are design-system hue names, so they follow a token;
- * hair colours are natural shades, kept here as data.
- */
+import * as z from "@/lib/zod";
 
 export const BODIES = ["a", "b"] as const;
 export const HAIRSTYLES = ["none", "buzzed", "parted", "long", "buns"] as const;
 export const TOPS = ["tee", "long", "tank"] as const;
 export const BOTTOMS = ["trousers", "shorts"] as const;
 export const SHOES = ["sneakers", "boots", "none"] as const;
-/** What sits on the head, and on the nose: built in the room (`room3d/accessories.ts`), drawn on the peg doll too. */
-export const HEADWEAR = ["none", "beanie", "cap", "party", "flower", "bunny"] as const;
-export const EYEWEAR = ["none", "round", "hearts", "shades"] as const;
+export const HEADWEAR = ["none", "beanie", "cap", "party", "flower", "bunny", "bow", "cat", "headphones", "witch"] as const;
+export const EYEWEAR = ["none", "round", "hearts", "shades", "stars"] as const;
 
-/**
- * Skin tones, as the average colour the skin should land on. The pack
- * paints one skin per body (its "light" and "dark" textures differ only in
- * the underwear), so the room recolours that painting to each tone and
- * keeps its detail.
- */
 export const SKIN_TONES = ["#f3d2b8", "#e3b48e", "#c8926d", "#a06a48", "#744630", "#4b2c1e"] as const;
 
-/**
- * Clothes wear a design-system hue — the fills, and their soft tints for the
- * pastels. Bloom is the guild layer and alarm is risk, so neither is here.
- */
 export const CLOTH_COLOURS = [
   "pool",
   "sun",
@@ -50,7 +26,6 @@ export const CLOTH_COLOURS = [
   "blush",
 ] as const;
 
-/** Natural hair shades, plus two from the palette. */
 export const HAIR_COLOURS = {
   black: "#2b2320",
   espresso: "#4a3122",
@@ -86,7 +61,6 @@ export const lookSchema = z.object({
 
 export type PlayerLook = z.infer<typeof lookSchema>;
 
-/** The first look: the peg doll's pool colour, carried into the room. */
 export const DEFAULT_LOOK: PlayerLook = {
   version: 1,
   body: "b",
@@ -105,11 +79,6 @@ export const DEFAULT_LOOK: PlayerLook = {
   eyewear: "none",
 };
 
-/**
- * Read a stored blob as a look. A field that is missing or no longer
- * offered falls back to the default on its own, so one retired option
- * never costs the player the rest of their look. Garbage is the default.
- */
 export function parseLook(raw: unknown): PlayerLook {
   const whole = lookSchema.safeParse(raw);
   if (whole.success) return whole.data;
@@ -123,7 +92,6 @@ export function parseLook(raw: unknown): PlayerLook {
   return lookSchema.parse(out);
 }
 
-/** Change one part of the look. Unknown values leave the look as it was. */
 export function withLook<K extends Exclude<keyof PlayerLook, "version">>(
   look: PlayerLook,
   key: K,
@@ -133,15 +101,14 @@ export function withLook<K extends Exclude<keyof PlayerLook, "version">>(
   return lookSchema.safeParse(next).success ? next : look;
 }
 
-/** Words for each option, for labels and the room's description. */
 export const LOOK_LABEL = {
   body: { a: "Build one", b: "Build two" },
   hair: { none: "Shaved", buzzed: "Buzzed", parted: "Parted", long: "Long", buns: "Buns" },
   top: { tee: "Tee", long: "Long sleeve", tank: "Tank" },
   bottom: { trousers: "Trousers", shorts: "Shorts" },
   shoes: { sneakers: "Sneakers", boots: "Boots", none: "Barefoot" },
-  headwear: { none: "Nothing", beanie: "Beanie", cap: "Cap", party: "Party hat", flower: "Flower clip", bunny: "Bunny ears" },
-  eyewear: { none: "Nothing", round: "Round glasses", hearts: "Heart glasses", shades: "Shades" },
+  headwear: { none: "Nothing", beanie: "Beanie", cap: "Cap", party: "Party hat", flower: "Flower clip", bunny: "Bunny ears", bow: "Hair bow", cat: "Cat ears", headphones: "Headphones", witch: "Witch's hat" },
+  eyewear: { none: "Nothing", round: "Round glasses", hearts: "Heart glasses", shades: "Shades", stars: "Star glasses" },
   skin: ["Tone one", "Tone two", "Tone three", "Tone four", "Tone five", "Tone six"],
   cloth: {
     pool: "Pool",
@@ -171,7 +138,6 @@ export const LOOK_LABEL = {
   },
 } as const;
 
-/** One sentence a screen reader can hear in place of the picture. */
 export function describeLook(look: PlayerLook): string {
   const hair =
     look.hair === "none"
@@ -187,11 +153,6 @@ export function describeLook(look: PlayerLook): string {
   return `You, with ${hair}${beard}${head}${eyes}, a ${LOOK_LABEL.cloth[look.topColour].toLowerCase()} ${LOOK_LABEL.top[look.top].toLowerCase()}, ${LOOK_LABEL.cloth[look.bottomColour].toLowerCase()} ${LOOK_LABEL.bottom[look.bottom].toLowerCase()} and ${feet}`;
 }
 
-/**
- * What the player can wear to match the pet: a hat or glasses the pet has
- * on, in the closest the player's own wardrobe has. Null when the pet's
- * piece has no match.
- */
 export function twinWith(wearing: string | null): Partial<Pick<PlayerLook, "headwear" | "headwearColour" | "eyewear">> | null {
   switch (wearing) {
     case "knit-beanie":
@@ -202,8 +163,14 @@ export function twinWith(wearing: string | null): Partial<Pick<PlayerLook, "head
       return { headwear: "flower", headwearColour: "blush" };
     case "strawberry-hat":
       return { headwear: "beanie", headwearColour: "blush" };
+    case "nap-ribbon":
+      return { headwear: "bow", headwearColour: "sprout" };
+    case "headphones":
+      return { headwear: "headphones", headwearColour: "pool" };
     case "round-glasses":
       return { eyewear: "round" };
+    case "sunglasses":
+      return { eyewear: "shades" };
     case "heart-glasses":
       return { eyewear: "hearts" };
     default:

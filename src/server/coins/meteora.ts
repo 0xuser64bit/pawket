@@ -29,20 +29,6 @@ import { getWalletSpendInstruction } from "@/lib/solana/instructions";
 import { PAWKET_ACCOUNTS, WALLET_LIMITS } from "@/lib/solana/program";
 import { sponsorRpc } from "@/server/sponsor";
 
-/**
- * A guild's coin, as Meteora keeps it: read from Solana, quoted and built
- * here, signed by the player in their own wallet. This is the one module
- * that speaks Meteora's SDKs (web3.js v1 and Anchor underneath, server
- * only — the lint rule keeps them in this folder).
- *
- * A guild has one coin at one address: its mint's key comes from the
- * sponsor's secret and the guild's slug, as a keepsake's does from the
- * pet's, so the coin is found with one read, nobody can make one at that
- * address but Pawket's server, and a coin claiming to be a guild's that is
- * not at that address is simply not the guild's. Coins are off wherever
- * the sponsor's key is not set, or the cluster has no preset configs.
- */
-
 const WRAPPED_SOL = new PublicKey("So11111111111111111111111111111111111111112");
 const DBC_POOL_AUTHORITY = deriveDbcPoolAuthority();
 const DAMM_POOL_AUTHORITY = derivePoolAuthority();
@@ -55,7 +41,6 @@ function rpc(): Connection {
 const dbc = () => new DynamicBondingCurveClient(rpc(), "confirmed");
 const damm = () => new CpAmm(rpc());
 
-/** The guild's coin key, or null where coins are off. Its secret never leaves this module. */
 function coinKeypair(slug: string): Keypair | null {
   const keypair = getServerEnv().sponsorKeypair;
   if (!keypair) return null;
@@ -63,7 +48,6 @@ function coinKeypair(slug: string): Keypair | null {
   return Keypair.fromSeed(createHmac("sha256", secret).update(`pawket guild coin ${slug}`).digest());
 }
 
-/** A coin as a screen draws it: plain JSON, lamports and coin units as decimal strings. */
 export interface CoinState {
   slug: string;
   name: string;
@@ -71,33 +55,25 @@ export interface CoinState {
   mint: string;
   stage: CoinStage;
   preset: PresetId | null;
-  /** The curve's pool on Meteora's Dynamic Bonding Curve. */
   pool: string | null;
-  /** The wallet that launched it: the guild's founder. */
   creator: string | null;
   raised: string;
   threshold: string;
-  /** SOL for one whole coin, at the price now. */
   price: number;
-  /** The graduated pool, once the curve has migrated to DAMM v2. */
   graduated: { pool: string; verified: boolean } | null;
   fees: { founderUnclaimed: string; pawketUnclaimed: string; total: string };
-  /** Wallets holding the coin, and how much of what they hold the largest ten have, in percent. */
   holders: { count: number; topTenPercent: number } | null;
 }
 
-/** A coin with what this module needs to quote and build from it. */
 interface LiveCoin {
   state: CoinState;
   mint: Keypair;
-  /** A curve sits at the guild's coin address that its founder did not make: not the guild's coin, and none can be launched. */
   taken?: boolean;
   curve: { address: PublicKey; pool: VirtualPool; config: PoolConfig; configAddress: PublicKey } | null;
   graduated: { address: PublicKey; pool: Awaited<ReturnType<CpAmm["fetchPoolState"]>> } | null;
 }
 
 const configs = new Map<string, Promise<PoolConfig | null>>();
-/** A preset's config never changes once made, so it is read once per process. */
 function readConfig(address: PublicKey): Promise<PoolConfig | null> {
   const key = address.toBase58();
   let config = configs.get(key);
@@ -110,11 +86,6 @@ function readConfig(address: PublicKey): Promise<PoolConfig | null> {
 }
 
 const holderReads = new Map<string, { at: number; value: Promise<Map<string, bigint> | null> }>();
-/**
- * Every wallet holding the coin, and how much: its token accounts, less the
- * pools' own vaults. A scan, so it answers for 15 seconds; null when the RPC
- * will not run it.
- */
 function holderWallets(mint: PublicKey): Promise<Map<string, bigint> | null> {
   const key = mint.toBase58();
   const cached = holderReads.get(key);
@@ -137,7 +108,6 @@ function holderWallets(mint: PublicKey): Promise<Map<string, bigint> | null> {
   return value;
 }
 
-/** How many wallets hold the coin, and how much of what they hold the largest ten have. */
 async function readHolders(mint: PublicKey): Promise<CoinState["holders"]> {
   const wallets = await holderWallets(mint);
   if (!wallets) return null;
@@ -147,11 +117,6 @@ async function readHolders(mint: PublicKey): Promise<CoinState["holders"]> {
   return { count: amounts.length, topTenPercent: total === 0n ? 0 : Number((topTen * 10_000n) / total) / 100 };
 }
 
-/**
- * The wallets that hold any of a launched coin: whose pets wear the guild's
- * crest pin on its page. Cosmetic, and gone when they sell. Null when the
- * holders could not be read, which shows no pins rather than wrong ones.
- */
 export async function readHolderWallets(coin: CoinState): Promise<Set<string> | null> {
   if (coin.stage === "none" || coin.stage === "suspended") return null;
   const wallets = await holderWallets(new PublicKey(coin.mint));
@@ -160,7 +125,6 @@ export async function readHolderWallets(coin: CoinState): Promise<Set<string> | 
 
 const big = (value: BN | bigint | number) => BigInt(value.toString());
 
-/** The guild's coin, read live from Solana; null where coins are off. Throws when Solana does not answer. */
 async function liveCoin(guild: ChainGuild): Promise<LiveCoin | null> {
   const cluster = getPublicEnv().solanaCluster;
   const mint = coinKeypair(guild.slug);
@@ -198,8 +162,6 @@ async function liveCoin(guild: ChainGuild): Promise<LiveCoin | null> {
   if (!pool || !config) return { state: base, mint, curve: null, graduated: null };
 
   const curveState = pool.poolState;
-  // Only the founder launches a guild's coin, so a curve someone else made
-  // at its address (which takes the coin's key) is not the guild's coin.
   if (!curveState.creator.equals(new PublicKey(guild.founder))) return { state: base, mint, curve: null, graduated: null, taken: true };
   const migrated = curveState.isMigrated === 1;
   let graduated: LiveCoin["graduated"] = null;
@@ -242,16 +204,10 @@ async function liveCoin(guild: ChainGuild): Promise<LiveCoin | null> {
   };
 }
 
-/** The guild's coin as a screen draws it, or null where coins are off. */
 export async function readCoin(guild: ChainGuild): Promise<CoinState | null> {
   return (await liveCoin(guild))?.state ?? null;
 }
 
-/**
- * Every listed guild's coin stage, for the list of guilds: one read of all
- * their curves, and one of the graduated pools, however many guilds there
- * are. Empty where coins are off.
- */
 export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, CoinStage>> {
   const stages = new Map<string, CoinStage>();
   const cluster = getPublicEnv().solanaCluster;
@@ -309,18 +265,14 @@ function chunks<T>(items: T[], size: number): T[][] {
 
 export type TradeSide = "buy" | "sell";
 
-/** A quote: what a trade gives for what, now, and the least it will accept. Amounts are base units. */
 export interface CoinQuote {
   side: TradeSide;
   route: "curve" | "pool";
   amountIn: string;
-  /** Of `amountIn`, what the trade takes; the rest comes back, as when a buy fills the curve. */
   amountUsed: string;
   amountOut: string;
   minimumOut: string;
-  /** In lamports: every fee is taken in SOL. */
   fee: string;
-  /** How far the trade moves the price, in percent. */
   priceImpact: number;
   slippageBps: number;
   quotedAt: number;
@@ -381,8 +333,6 @@ export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: b
     };
   }
   const { pool, config } = coin.curve!;
-  // A partial fill: a buy that would carry the curve past its threshold
-  // takes only what graduation needs, and the rest stays in the wallet.
   const quote = dbc().pool.swapQuote2({
     virtualPool: pool,
     config,
@@ -403,7 +353,6 @@ export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: b
     amountUsed: big(quote.includedFeeInputAmount).toString(),
     amountOut: quote.outputAmount.toString(),
     minimumOut: (quote.minimumAmountOut ?? quote.outputAmount).toString(),
-    // The whole 1%: the pool's share and Meteora's are reported apart.
     fee: (big(quote.tradingFee) + big(quote.protocolFee) + big(quote.referralFee)).toString(),
     priceImpact: before > 0 ? Math.abs((after - before) / before) * 100 : 0,
     slippageBps,
@@ -411,9 +360,6 @@ export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: b
   };
 }
 
-/** The owner approves the coin transaction; Pawket Wallet funds it and its device pays the fee.
- * Both funding brackets land atomically with the trade. Existing owner SOL stays unchanged.
- */
 async function forPlayer(transaction: Transaction, player: PublicKey, signers: Keypair[] = []): Promise<string> {
   const owner = player.toBase58() as Address;
   const wallet = await fetchWallet(sponsorRpc(), owner);
@@ -445,11 +391,6 @@ async function forPlayer(transaction: Transaction, player: PublicKey, signers: K
   return transaction.serialize({ requireAllSignatures: false, verifySignatures: false }).toString("base64");
 }
 
-/**
- * The founder launches the guild's coin on a preset: the curve's pool and
- * the coin itself (signed here by the coin's own key), and, when they ask,
- * their own first buy in the same transaction — before anyone else can.
- */
 export async function launchTransaction({
   guild,
   founder,
@@ -494,7 +435,6 @@ export async function launchTransaction({
   return forPlayer(transaction, payer, [coin.mint]);
 }
 
-/** A trade at no worse than `minimumOut`: on the curve, or in the graduated pool once it is verified. */
 export async function tradeTransaction({
   guild,
   owner,
@@ -544,11 +484,6 @@ export async function tradeTransaction({
   return forPlayer(transaction, player);
 }
 
-/**
- * Graduation: a curve that raised its threshold moves into its DAMM v2
- * pool, its liquidity locked there for good. Meteora's keepers do this on
- * mainnet; on devnet anyone may, paying the new pool's rent.
- */
 export async function graduateTransaction(guild: ChainGuild, payer: string): Promise<string> {
   const coin = await liveCoin(guild);
   if (!coin?.curve) throw new CoinRefusal("This guild has no coin.", 404);
@@ -563,7 +498,6 @@ export async function graduateTransaction(guild: ChainGuild, payer: string): Pro
   return forPlayer(transaction, new PublicKey(payer), [firstPositionNftKeypair, secondPositionNftKeypair]);
 }
 
-/** The founder's share of the curve's trading fees, claimed to their wallet. */
 export async function claimTransaction(guild: ChainGuild, founder: string): Promise<string> {
   const coin = await liveCoin(guild);
   if (!coin?.curve) throw new CoinRefusal("This guild has no coin.", 404);
@@ -582,11 +516,6 @@ export async function claimTransaction(guild: ChainGuild, founder: string): Prom
   return forPlayer(transaction, creator);
 }
 
-/**
- * A wallet's positions in the coin's graduated pool — the founder's and
- * Pawket's halves of the locked liquidity — and the fees they have earned
- * and not yet claimed, in SOL and in the coin. Null before graduation.
- */
 export async function readPositionFees(guild: ChainGuild, wallet: string): Promise<{ positions: number; feeSol: string; feeCoin: string } | null> {
   const coin = await liveCoin(guild);
   if (!coin?.graduated) return null;
@@ -602,7 +531,6 @@ export async function readPositionFees(guild: ChainGuild, wallet: string): Promi
   return { positions: positions.length, feeSol: feeSol.toString(), feeCoin: feeCoin.toString() };
 }
 
-/** What a wallet's locked positions in the graduated pool have earned, claimed to that wallet. The liquidity stays locked. */
 export async function positionFeeTransaction(guild: ChainGuild, wallet: string): Promise<string> {
   const coin = await liveCoin(guild);
   if (!coin?.graduated) throw new CoinRefusal("This coin has not graduated: its fees are on the curve. Nothing was sent.", 409);

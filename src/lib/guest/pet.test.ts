@@ -19,7 +19,7 @@ import {
   streakAsOf,
   todayFor,
 } from "./pet";
-import { loadPets, readPet, readPetsSnapshot, removePet, savePet, subscribePets } from "./storage";
+import { bringBackPets, loadPets, readPet, readPetsSnapshot, removePet, savePet, subscribePets } from "./storage";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -139,7 +139,6 @@ describe("applyGuestCare", () => {
     if (!first.ok) return;
     const second = applyGuestCare(first.pet, CareActionType.Play, now);
     expect(second.ok).toBe(false);
-    // …but a different action is still allowed.
     expect(
       applyGuestCare(first.pet, CareActionType.Groom, now).ok,
     ).toBe(true);
@@ -171,7 +170,6 @@ describe("projectGuestPet", () => {
     const live = projectGuestPet(pet);
     expect(live.level).toBe(2);
     expect(live.xpIntoLevel).toBe(35);
-    // The bar is this level's width, not the cumulative threshold (200).
     expect(live.xpForNext).toBe(100);
   });
 });
@@ -379,16 +377,54 @@ describe("pet storage", () => {
     expect(JSON.parse(window.localStorage.getItem("pawket.pets.v1")!)).toEqual([pet]);
   });
 
-  it("drops a damaged entry and keeps the others", () => {
+  it("draws only what it can read, and writes what it cannot back as it was", () => {
     const pet = createGuestPet(INPUT);
-    window.localStorage.setItem("pawket.pets.v1", JSON.stringify([{ name: 3 }, pet, pet]));
+    const newer = { ...createGuestPet({ ...INPUT, name: "Comet" }), species: "STAR_FOX" };
+    window.localStorage.setItem("pawket.pets.v1", JSON.stringify([{ name: 3 }, pet, newer, pet]));
     expect(loadPets()).toEqual([pet]);
+    expect(savePet({ ...pet, xp: 40 })).toBe(true);
+    expect(removePet("nobody")).toBe(true);
+    const stored = JSON.parse(window.localStorage.getItem("pawket.pets.v1")!) as unknown[];
+    expect(stored).toEqual([{ ...pet, xp: 40 }, { name: 3 }, newer]);
   });
 
-  it("returns nothing and clears a list that is not JSON", () => {
+  it("sets a list that is not a list aside, never deletes it, then starts a new one", () => {
+    for (const unreadable of ["{broken", JSON.stringify({ pets: "not a list" })]) {
+      window.localStorage.clear();
+      window.localStorage.setItem("pawket.pets.v1", unreadable);
+      expect(loadPets()).toEqual([]);
+      expect(window.localStorage.getItem("pawket.pets.v1")).toBeNull();
+      const aside = Object.keys(window.localStorage).filter((key) => key.startsWith("pawket.pets.v1.unreadable."));
+      expect(aside.map((key) => window.localStorage.getItem(key))).toEqual([unreadable]);
+    }
+  });
+
+  it("keeps an unreadable list where it is when it cannot be set aside, and refuses to write over it", () => {
     window.localStorage.setItem("pawket.pets.v1", "{broken");
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage full"); });
     expect(loadPets()).toEqual([]);
-    expect(window.localStorage.getItem("pawket.pets.v1")).toBeNull();
+    expect(savePet(createGuestPet(INPUT))).toBe(false);
+    vi.restoreAllMocks();
+    expect(window.localStorage.getItem("pawket.pets.v1")).toBe("{broken");
+  });
+
+  it("brings pets back from a copy: adds new ones, takes later care, and leaves the rest", () => {
+    const here = createGuestPet({ ...INPUT, name: "Pepper", now: new Date("2026-10-01T12:00:00Z") });
+    savePet(here);
+    const later = { ...here, xp: 90, statsUpdatedAt: "2026-10-02T12:00:00.000Z" };
+    const earlier = { ...here, xp: 5, statsUpdatedAt: "2026-09-30T12:00:00.000Z" };
+    const other = createGuestPet({ ...INPUT, name: "Miso" });
+    expect(bringBackPets([later, other, { ...other, xp: -1 }])).toMatchObject({ added: [other], updated: [later], same: 0 });
+    expect(loadPets().map((p) => [p.name, p.xp])).toEqual([["Pepper", 90], ["Miso", 0]]);
+    expect(bringBackPets([earlier, other])).toMatchObject({ added: [], updated: [], same: 2 });
+    expect(loadPets().map((p) => p.xp)).toEqual([90, 0]);
+  });
+
+  it("brings nothing back, and says so, when storage cannot be written", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage blocked"); });
+    expect(bringBackPets([createGuestPet(INPUT)])).toBeNull();
+    vi.restoreAllMocks();
+    expect(loadPets()).toEqual([]);
   });
 
   it("refuses to store an invalid record", () => {

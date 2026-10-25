@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ButtonLink, Card, LaunchStage, ReadFailure, Screen, ScreenBar, SectionLabel, Stack } from "@/components/pk";
-import { GuildCrest } from "@/components/guilds/guild-crest";
+import { ButtonLink, Card, ReadFailure, Screen, ScreenBar, Stack } from "@/components/pk";
+import { GuildDirectory } from "@/components/guilds/directory";
 import { GUILD_CAN, GUILD_CANNOT } from "@/lib/guilds/boundary";
 import { isListed } from "@/lib/guilds/delisted";
 import type { ChainGuild } from "@/lib/solana/accounts";
-import { formatUtcDate } from "@/lib/utils/format";
 import type { CoinStage } from "@/lib/coins/stage";
 import { readGuilds } from "@/server/solana";
 
@@ -30,37 +28,6 @@ function Bounds({ items, mark, color }: { items: string[]; mark: string; color: 
   );
 }
 
-function GuildCard({ guild, coin }: { guild: ChainGuild; coin?: CoinStage }) {
-  return (
-    <div className="pk-guild">
-      <GuildCrest crest={guild.crest} colour={guild.colour} name={guild.name} />
-      <div className="pk-fill">
-        <div className="pk-guild__head">
-          <Link href={`/guilds/${guild.slug}`} className="title pk-guild__name" transitionTypes={["nav-forward"]}>
-            {guild.name}
-          </Link>
-        </div>
-        <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
-          {guild.motto || "No motto yet."}
-        </p>
-        <div className="pk-guild__foot">
-          <span className="caption pk-faint">
-            {guild.memberCount} {guild.memberCount === 1 ? "pet" : "pets"}{" "}
-            <span className="pk-nowrap">· since {formatUtcDate(new Date(guild.createdAt * 1000).toISOString())}</span>
-          </span>
-          {coin && coin !== "none" ? <LaunchStage stage={coin} /> : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Guilds: pets and their people, gathered under a name and a crest, kept on
- * Solana where anyone can read who is in one. Optional, said first, in the
- * bar beside the way to found one; then the page is the guilds, read live
- * from the program, and the rule every guild lives inside folds away.
- */
 export default async function GuildsPage() {
   let guilds: ChainGuild[] | null = null;
   let coins = new Map<string, CoinStage>();
@@ -68,7 +35,6 @@ export default async function GuildsPage() {
     guilds = (await readGuilds())
       .filter(isListed)
       .sort((a, b) => b.memberCount - a.memberCount || a.createdAt - b.createdAt);
-    // Optional, like the coins: the list shows without them if they — or Meteora's SDK — cannot be read.
     coins = await import("@/server/coins/meteora").then(({ readCoinStages }) => readCoinStages(guilds!)).catch(() => coins);
   } catch {
     guilds = null;
@@ -98,16 +64,7 @@ export default async function GuildsPage() {
             </p>
           </Card>
         ) : (
-          <Stack gap={3}>
-            <SectionLabel tone="bloom" count={`${guilds.length}`}>
-              On Solana now
-            </SectionLabel>
-            <div className="pk-rows">
-              {guilds.map((guild) => (
-                <GuildCard key={guild.address} guild={guild} coin={coins.get(guild.slug)} />
-              ))}
-            </div>
-          </Stack>
+          <GuildDirectory guilds={guilds} coins={coins} />
         )}
 
         <details className="pk-fold">

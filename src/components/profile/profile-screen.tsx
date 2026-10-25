@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Field, Screen, ScreenBar, Stack, Tabs, Waiting } from "@/components/pk";
 import { Room, type RoomState } from "@/components/home/room";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
@@ -15,12 +15,14 @@ import { describeLook } from "@/lib/player/look";
 import { MAX_PLAYER_NAME, saveProfile, usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
 import { usePawketSend } from "@/lib/solana/use-send";
-import { formatUtcDate } from "@/lib/utils/format";
+import { formatLocalDate } from "@/lib/utils/format";
 import { LookEditor } from "./look-editor";
 import { EmptyShelf, PetsShelf } from "./pets-shelf";
+import { PetCopy } from "./pet-copy";
 import { Settings } from "./settings";
 import { StickerBook } from "./sticker-book";
 import { Wardrobe } from "./wardrobe";
+import { useCoats } from "@/lib/player/use-coats";
 import { useHere } from "@/lib/native/android";
 
 export type ProfileTab = "pets" | "wardrobe" | "stickers" | "settings";
@@ -32,14 +34,10 @@ const TABS: Array<{ key: ProfileTab; label: string; href: string }> = [
   { key: "settings", label: "Settings", href: "/profile?tab=settings#shelf" },
 ];
 
-/**
- * You. The room first — you and the pet at home, as Home draws it — with
- * your name and what you have done together on a plate at its foot. Then
- * everything about how you look, which the room shows as you change it.
- * Then everything you keep: your pets, the wardrobe, the stickers their
- * records have earned, and the rooms and settings of this device.
- */
-export function ProfileScreen({ tab }: { tab: ProfileTab }) {
+export function ProfileScreen() {
+  const coatOf = useCoats();
+  const queryTab = useSearchParams().get("tab");
+  const tab = TABS.find((item) => item.key === queryTab)?.key ?? "pets";
   const companion = useCompanion();
   const { ready, pet } = companion;
   const look = usePlayerLook();
@@ -50,11 +48,8 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
   const [nameNotice, setNameNotice] = useState<string>();
   const { here, Here } = useHere();
   const router = useRouter();
-  // Hooks run before the early return below: what others did with these pets on Solana.
   const social = useSocialRecords(companion.owned.map((entry) => entry.pet.address));
 
-  // Read the hash after navigation commits: a prefetched render can happen
-  // before #look reaches the address bar. Native details keeps its own state.
   useEffect(() => {
     if (!ready || !window.location.hash) return;
     const target = document.getElementById(window.location.hash.slice(1));
@@ -99,7 +94,7 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
           <p className="caption pk-faint">
             {pets.length === 0
               ? "No pets yet"
-              : `Keeper of ${pets.length} ${pets.length === 1 ? "pet" : "pets"}${since ? ` since ${formatUtcDate(since)}` : ""}`}
+              : `Keeper of ${pets.length} ${pets.length === 1 ? "pet" : "pets"}${since ? ` since ${formatLocalDate(since)}` : ""}`}
           </p>
         </div>
       </ScreenBar>
@@ -108,7 +103,7 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
         <Room
           pet={
             pet && projected
-              ? { ...petLook(pet, projected.mood), species: pet.species, name: pet.name, mood: projected.mood }
+              ? { ...petLook(pet, projected.mood), species: pet.species, name: pet.name, mood: projected.mood, coat: coatOf(pet) }
               : null
           }
           look={look}
@@ -163,8 +158,13 @@ export function ProfileScreen({ tab }: { tab: ProfileTab }) {
             </span>
           </div>
           <Tabs label="What you keep" active={tab} items={TABS} />
-          <div key={tab} className="pk-swap-in">
-            {tab === "pets" ? pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : <EmptyShelf /> : null}
+          <div key={tab} id={`pk-panel-${tab}`} role="tabpanel" aria-labelledby={`pk-tab-${tab}`} tabIndex={0} className="pk-swap-in">
+            {tab === "pets" ? (
+              <Stack gap={4}>
+                {pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : <EmptyShelf />}
+                <PetCopy companion={companion} />
+              </Stack>
+            ) : null}
             {tab === "wardrobe" ? pet ? <Wardrobe companion={companion} sender={sender} /> : <EmptyShelf /> : null}
             {tab === "stickers" ? <StickerBook pets={pets} onChain={onChain} inGuild={inGuild} social={social.data} /> : null}
             {tab === "settings" ? <Settings form={pet ? SPECIES_ART[pet.species] : undefined} /> : null}

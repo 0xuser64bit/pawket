@@ -24,10 +24,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-/**
- * A pet's record. An address is a pet on Solana, read live and shown to
- * anyone; anything else is the pet kept in this browser, checked there.
- */
 export default async function PetPage({ params }: Props) {
   const { id } = await params;
   if (!isAddress(id)) return <PetScreen id={id} />;

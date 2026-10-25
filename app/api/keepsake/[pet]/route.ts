@@ -9,13 +9,6 @@ import { keepsakeTransaction, readKeepsake } from "@/server/keepsake";
 import { actionLimit, mayPayRent, sponsorSpent, sponsorState } from "@/server/sponsor";
 import { readPet } from "@/server/solana";
 
-/**
- * A pet's keepsake. GET is the card's metadata — the URI it carries, read
- * live from the pet's record, so a wallet that looks again sees the pet as
- * it is now. POST { account } is the card's creation for the owner's wallet
- * to sign, shaped as a Solana Action's answer.
- */
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const OPTIONS = preflight;
@@ -24,15 +17,16 @@ type Props = { params: Promise<{ pet: string }> };
 
 export async function GET(_request: Request, { params }: Props) {
   const { pet } = await params;
-  const onChain = isAddress(pet) ? await readPet(pet).catch(() => null) : null;
   const headers = { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300, s-maxage=300" };
+  const onChain = isAddress(pet) ? await readPet(pet).catch(() => undefined) : null;
+  if (onChain === undefined) return NextResponse.json({ error: "Solana did not answer. Try again." }, { status: 503, headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" } });
   if (!onChain) return NextResponse.json({ error: "No pet lives at that address." }, { status: 404, headers });
 
   const app = getPublicEnv().appUrl;
   const record = toCompanionRecord(onChain);
   const projected = projectGuestPet(record, new Date());
   const { pet: chainPet, passport } = onChain;
-  const image = `${app}/api/actions/icon?pet=${pet}`;
+  const image = `${app}/api/keepsake/${pet}/card`;
   return NextResponse.json(
     {
       name: chainPet.name,
@@ -57,6 +51,8 @@ export async function POST(request: Request, { params }: Props) {
   const { pet } = await params;
   const account = await postedAccount(request);
   if (!account || !isAddress(account)) return actionError("That is not a wallet address. Nothing was sent.");
+  const who = caller(request);
+  if (!actionLimit(who)) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
   const onChain = isAddress(pet) ? await readPet(pet).catch(() => null) : null;
   if (!onChain) return actionError("No pet lives at that address.", 404);
   const { name, owner } = onChain.pet;
@@ -69,11 +65,12 @@ export async function POST(request: Request, { params }: Props) {
   const keepsake = await readKeepsake(onChain.pet.address).catch(() => null);
   if (!keepsake) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   if (keepsake.made) return actionError(`${name}'s card is already in this wallet. Nothing was sent.`, 409);
-  if (!mayPayRent(account) || !actionLimit(caller(request))) {
+  if (!mayPayRent([account, who])) {
     return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
   }
 
-  const transaction = await keepsakeTransaction(sponsor.signer, onChain);
+  const transaction = await keepsakeTransaction(sponsor.signer, onChain).catch(() => null);
+  if (!transaction) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   sponsorSpent();
   return actionJson({
     type: "transaction",

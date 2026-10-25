@@ -5,6 +5,14 @@ Product context lives in `docs/PRODUCT.md`,
 architecture in `docs/ARCHITECTURE.md`. This file is the contract for how an
 agent works in this repo.
 
+## Hackathon submission freeze
+
+`main` serves the submitted version at `https://pawket.world`. Do not merge
+into or push to `main` until the user explicitly authorizes a release.
+Continue development on `dev`, which deploys to `https://dev.pawket.world`.
+Target `dev` when opening development pull requests. See
+`docs/DEVELOPMENT.md` for the deployment boundaries.
+
 ## Product context
 
 Pawket is a web-first companion game and an Android shell around the same
@@ -12,7 +20,8 @@ hosted app. Local adoption and care need no wallet. Keeping a pet on Solana
 creates a new confirmed program record; local progression is not imported.
 Devnet is the default. `docs/PRODUCT.md` describes supported behavior and limits.
 
-App transactions require a linked, funded Pawket Wallet. Its non-extractable
+App transactions require a linked Pawket Wallet; while Pawket sponsors it may
+be empty, and Market looks, coins and unsponsored fees need SOL in it. Its non-extractable
 device key signs program-scoped non-money actions; the owner approves setup
 and spending. `usePawketSend` and `send.ts` are the only app send path.
 Sponsorship is conditional. Coins and Market purchases spend Pawket Wallet;
@@ -77,6 +86,7 @@ One home per fact. If two files disagree, the left column wins.
 | Design system (tokens, components)| `app/globals.css` + `src/components/pk/` |
 | Guest companion record            | `src/lib/guest/`                    |
 | Wearables (expression only)       | `src/lib/closet/catalog.ts` (slots 4–28 are the Market's) |
+| Room things (decor, expression only) | `src/lib/room/decor.ts` (drawn in `room3d/decor.ts` and `home/decor-art.tsx`) |
 | The Market: items, prices, treasury | `programs/pawket/src/lib.rs` (`item_price`) ↔ `MARKET` in `src/lib/solana/program.ts` |
 | What a wallet bought              | its `Closet` on chain, read with `useCloset` (`src/lib/market/use-closet.ts`) |
 | Pawket's counts                   | `src/server/pulse.ts` (read from chain, never stored) |
@@ -91,6 +101,7 @@ One home per fact. If two files disagree, the left column wins.
 | Stickers (read from a record)     | `src/lib/game/badges.ts`            |
 | Rooms (themes)                    | `src/config/themes.ts` + the token blocks in `app/globals.css` |
 | Player name and outfits           | `src/lib/player/profile.ts`         |
+| Pet coats (on this device)        | `src/lib/player/coats.ts`           |
 | Player hats and glasses in 3D     | `src/components/room3d/accessories.ts` |
 | Player look (3D room)             | `src/lib/player/look.ts`            |
 | This device's key (Pawket Wallet) | `src/lib/wallet/device.ts`          |
@@ -144,7 +155,10 @@ PAWKET_ANDROID_KEYSTORE=… scripts/android-release.sh   # the signed release AP
   non-extractable, kept in that browser's IndexedDB, never read, exported
   or uploaded, linked only by the owner's own signature, and able to do only
   what `PawketWallet` lets a device do — never move the balance. Do not
-  widen what a device may sign without a program change.
+  widen what a device may sign without a program change. The one thing it
+  signs outside the program is sending its own leftover fee float home to
+  its owner's Pawket Wallet (`getReturnFloatInstruction`, destination
+  derived from the owner), from its own screen, when its link is gone.
 - **No hand-rolled instruction bytes in components.** Use
   `src/lib/solana/instructions.ts`. Never invent discriminators;
   `program.test.ts` holds them to the IDL.
@@ -174,7 +188,7 @@ PAWKET_ANDROID_KEYSTORE=… scripts/android-release.sh   # the signed release AP
   carries what can go wrong (`src/lib/coins/copy.ts`).
 - **The Android bridge stays narrow.** `PawketBridge.kt` is injected into
   Pawket's origin only, answers the main frame only, and takes pictures,
-  links, a reminder, a haptic and colours — never a key, a transaction, a
+  links, reminders, a haptic and colours — never a key, a transaction, a
   file path or a URL to load. Signing on a phone is the wallet app's, through
   Mobile Wallet Adapter and `send.ts`. A new request is a review like a new
   thing the sponsor signs: checked fields, a JVM test, no new permission
@@ -183,7 +197,7 @@ PAWKET_ANDROID_KEYSTORE=… scripts/android-release.sh   # the signed release AP
 
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 

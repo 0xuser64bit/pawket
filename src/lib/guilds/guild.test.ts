@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GUILD_LIMITS } from "@/lib/solana/program";
-import { CREST_COLOURS, CREST_GLYPHS, guildProblems, isValidSlug, slugFor } from "./guild";
+import { CREST_COLOURS, CREST_GLYPHS, guildProblems, isValidSlug, nameFor, slugFor } from "./guild";
 
 describe("slugFor", () => {
   it("turns a name into an address the program accepts", () => {
@@ -38,5 +38,15 @@ describe("guildProblems", () => {
     expect(CREST_GLYPHS).toHaveLength(GUILD_LIMITS.crests);
     expect(CREST_COLOURS).toHaveLength(GUILD_LIMITS.colours);
     expect(CREST_COLOURS[0].id).toBe("bloom");
+  });
+});
+
+describe("nameFor", () => {
+  it("names an unfounded address so founding from it lands on that address, or not at all", () => {
+    expect(nameFor("window-seat")).toBe("Window Seat");
+    expect(slugFor(nameFor("club-2026")!)).toBe("club-2026");
+    expect(nameFor("a--b")).toBeNull();
+    expect(nameFor("ab")).toBeNull();
+    expect(nameFor("new")).toBeNull();
   });
 });

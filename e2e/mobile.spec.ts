@@ -62,7 +62,6 @@ test("a large pet family and room controls fit a narrow phone, with Profile last
   const family = page.getByRole("group", { name: "Who is home" });
   await expect(family.getByRole("button")).toHaveCount(12);
   expect(await family.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
-  // The view switch sits in the room's corner, both views readable, each a finger's width.
   const view = page.getByRole("radiogroup", { name: "Room view" });
   await expect(view).toBeVisible();
   for (const name of ["Flat room", "3D room"]) {
@@ -192,8 +191,11 @@ test("room settings show two compact choices per row and remember a touch select
   await page.goto("/profile?tab=settings#shelf");
   const rooms = page.getByRole("radiogroup", { name: "Rooms" });
   const choices = rooms.locator(".pk-theme");
-  const daylight = (await choices.nth(1).boundingBox())!;
-  const lamplight = (await choices.nth(2).boundingBox())!;
+  await expect(choices.nth(2)).toBeVisible();
+  const [daylight, lamplight] = await choices.evaluateAll((nodes) => nodes.slice(1, 3).map((node) => {
+    const { x, y, width } = node.getBoundingClientRect();
+    return { x, y, width };
+  }));
   expect(daylight.y).toBe(lamplight.y);
   expect(lamplight.x).toBeGreaterThan(daylight.x + daylight.width);
   expect((await rooms.boundingBox())!.height).toBeLessThan(1100);
@@ -265,12 +267,30 @@ test("starter choices stay small and every Market category opens a readable shar
   await page.goto("/profile?tab=settings#shelf");
   await expect(page.getByRole("radiogroup", { name: "Rooms" }).getByRole("radio")).toHaveCount(3);
   await page.goto("/market");
-  // 25 pieces, 12 rooms and 8 frames.
-  await expect(page.locator(".pk-tiles button")).toHaveCount(45);
+  await expect(page.locator(".pk-tiles button")).toHaveCount(79);
   await page.getByRole("button", { name: /Sunshine/ }).tap();
   const sheet = page.getByRole("dialog", { name: "Sunshine" });
   await expect(sheet.getByText("0.025 SOL", { exact: true })).toBeVisible();
   await expect(sheet.getByText("Pawket Wallet", { exact: true })).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Connect a wallet" })).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});
+
+test("on a phone each Market shelf is a row to swipe, and opens whole on asking", async ({ page }) => {
+  await page.goto("/market");
+  const pets = page.locator(".pk-tiles").first();
+  await expect(pets).toHaveClass(/pk-tiles--row/);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThan(3000);
+  expect(await pets.evaluate((row) => row.scrollWidth > row.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const all = page.getByRole("button", { name: "See all 25: for your pets" });
+  await page.locator(".pk-boot").waitFor({ state: "detached" });
+  const box = (await all.boundingBox())!;
+  for (const y of [box.y - 10, box.y + box.height + 10]) {
+    expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("button")?.textContent, { x: box.x + box.width / 2, y })).toBe("See all 25");
+  }
+  await all.tap();
+  await expect(pets).not.toHaveClass(/pk-tiles--row/);
+  await page.getByRole("searchbox", { name: "Search the Market" }).fill("bed");
+  await expect(page.locator(".pk-tiles--row")).toHaveCount(0);
 });

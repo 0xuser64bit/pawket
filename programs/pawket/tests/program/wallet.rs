@@ -1,7 +1,3 @@
-//! The Pawket Wallet: a balance only its owner fills or empties, and one linked device that cares
-//! for the owner's pets without the owner signing each time — inside its limits, and paid for from
-//! the balance one fee at a time.
-
 use crate::harness::*;
 use anchor_lang::{error::ErrorCode, prelude::Pubkey};
 use pawket::{CareActionType, PawketError, DEVICE_FLOAT_LAMPORTS, FEE_PER_SIGNATURE, MAX_DEVICE_SECONDS};
@@ -10,8 +6,6 @@ use solana_signer::Signer;
 
 const SOL: u64 = 1_000_000_000;
 
-/// A player with a pet, a Pawket Wallet holding `deposit`, and a device linked for a week at
-/// `daily` actions a day. The sponsor pays the rent and every fee but the device's.
 struct Setup {
     owner: Keypair,
     sponsor: Keypair,
@@ -52,13 +46,11 @@ fn a_deposit_comes_back_only_to_its_owner_and_never_out_of_rent() {
     assert_eq!(env.lamports(&owner.pubkey()), before + SOL / 40 - 5_000);
     assert_eq!(env.balance(&owner.pubkey()), SOL / 10 - SOL / 40);
 
-    // More than the balance, or nothing at all, is refused; the rent is not the balance.
     let too_much = env.send(&[withdraw_ix(&owner.pubkey(), SOL / 10)], &owner, &[]);
     expect_pawket(&too_much, PawketError::InsufficientBalance);
     expect_pawket(&env.send(&[withdraw_ix(&owner.pubkey(), 0)], &owner, &[]), PawketError::InvalidAmount);
     expect_pawket(&env.send(&[deposit_ix(&owner.pubkey(), 0)], &owner, &[]), PawketError::InvalidAmount);
 
-    // Someone else cannot take it: the wallet is the owner's, at the owner's address.
     let mut theft = withdraw_ix(&owner.pubkey(), SOL / 40);
     theft.accounts[0].pubkey = other.pubkey();
     assert!(env.send(&[theft], &other, &[]).is_err());
@@ -72,7 +64,6 @@ fn a_linked_device_cares_with_no_prompt_and_the_balance_pays_its_fee() {
     assert_eq!(env.lamports(&s.device.pubkey()), DEVICE_FLOAT_LAMPORTS);
     let balance = env.balance(&s.owner.pubkey());
 
-    // The device alone signs and pays; the owner is nowhere in it.
     ok(env.send(&[care_by_device_ix(&s.device.pubkey(), &s.owner.pubkey(), &s.pet, CareActionType::Feed)], &s.device, &[]));
     ok(env.send(&[round_by_device_ix(&s.device.pubkey(), &s.owner.pubkey(), &s.pet)], &s.device, &[]));
     ok(env.send(&[dress_by_device_ix(&s.device.pubkey(), &s.owner.pubkey(), &s.pet, 3)], &s.device, &[]));
@@ -81,14 +72,12 @@ fn a_linked_device_cares_with_no_prompt_and_the_balance_pays_its_fee() {
     assert_eq!(pet.xp, 35);
     assert_eq!(pet.wearing, 3);
     assert_eq!(env.passport(&s.pet).care_count, 1);
-    // Each fee came out of the balance, one fee each, and the device holds what it held.
     assert_eq!(env.lamports(&s.device.pubkey()), DEVICE_FLOAT_LAMPORTS);
     assert_eq!(env.balance(&s.owner.pubkey()), balance - 3 * FEE_PER_SIGNATURE);
     let wallet = env.wallet(&s.owner.pubkey());
     assert_eq!((wallet.actions, wallet.actions_today), (3, 3));
     assert_eq!(wallet.spent, DEVICE_FLOAT_LAMPORTS + 3 * FEE_PER_SIGNATURE);
 
-    // A care still cooling down is refused for a device as for an owner.
     let again = env.send(&[care_by_device_ix(&s.device.pubkey(), &s.owner.pubkey(), &s.pet, CareActionType::Feed)], &s.device, &[]);
     expect_pawket(&again, PawketError::CareCooldownActive);
 }
@@ -102,7 +91,6 @@ fn a_device_cares_for_its_owners_pets_and_no_one_elses() {
     let attempt = env.send(&[care_by_device_ix(&s.device.pubkey(), &s.owner.pubkey(), &theirs, CareActionType::Play)], &s.device, &[]);
     expect_pawket(&attempt, PawketError::NotPetOwner);
 
-    // Another key is not the linked device.
     let impostor = env.player();
     let attempt = env.send(&[care_by_device_ix(&impostor.pubkey(), &s.owner.pubkey(), &s.pet, CareActionType::Play)], &impostor, &[]);
     expect_pawket(&attempt, PawketError::NotThisDevice);
@@ -117,11 +105,9 @@ fn a_device_keeps_to_its_daily_limit_and_its_end_date() {
     ok(act(&mut env, CareActionType::Play));
     expect_pawket(&act(&mut env, CareActionType::Groom), PawketError::DailyLimitReached);
 
-    // A new UTC day starts the count again.
     env.warp(DAY);
     ok(act(&mut env, CareActionType::Groom));
 
-    // A week on, the link has run out.
     env.warp(7 * DAY);
     expect_pawket(&act(&mut env, CareActionType::Rest), PawketError::DeviceExpired);
 }
@@ -134,7 +120,6 @@ fn a_link_is_signed_by_the_device_and_kept_within_bounds() {
     ok(env.send(&[open_wallet_ix(&owner.pubkey(), &owner.pubkey()), deposit_ix(&owner.pubkey(), SOL / 100)], &owner, &[]));
     let now = env.now();
 
-    // Without the device's signature there is no link.
     let mut unsigned = link_ix(&owner.pubkey(), &device.pubkey(), now + DAY, 10);
     unsigned.accounts[2].is_signer = false;
     assert!(env.send(&[unsigned], &owner, &[]).is_err());
@@ -143,11 +128,9 @@ fn a_link_is_signed_by_the_device_and_kept_within_bounds() {
         let bad = env.send(&[link_ix(&owner.pubkey(), &device.pubkey(), expires_at, daily)], &owner, &[&device]);
         expect_pawket(&bad, PawketError::InvalidDeviceLink);
     }
-    // The owner's own key is not a device.
     let bad = env.send(&[link_ix(&owner.pubkey(), &owner.pubkey(), now + DAY, 10)], &owner, &[]);
     expect_pawket(&bad, PawketError::InvalidDeviceLink);
 
-    // A balance that cannot hand over the whole float hands over none: the link still stands.
     let poor = env.player();
     let poor_device = env.broke();
     ok(env.send(&[open_wallet_ix(&poor.pubkey(), &poor.pubkey()), deposit_ix(&poor.pubkey(), DEVICE_FLOAT_LAMPORTS - 1)], &poor, &[]));
@@ -165,7 +148,6 @@ fn unlinking_stops_the_device_and_a_device_that_signs_gives_its_float_back() {
     let s = setup(&mut env, SOL / 100, 50);
     let balance = env.balance(&s.owner.pubkey());
 
-    // The device can unlink itself, with no prompt for the owner: what it holds comes home.
     ok(env.send(&[unlink_ix(&s.device.pubkey(), &s.owner.pubkey(), &s.device.pubkey(), true)], &s.sponsor, &[&s.device]));
     assert_eq!(env.lamports(&s.device.pubkey()), 0);
     assert_eq!(env.balance(&s.owner.pubkey()), balance + DEVICE_FLOAT_LAMPORTS);
@@ -183,14 +165,12 @@ fn unlinking_stops_the_device_and_a_device_that_signs_gives_its_float_back() {
 fn the_owner_unlinks_a_lost_device_without_it() {
     let mut env = Env::new();
     let s = setup(&mut env, SOL / 100, 50);
-    // A stranger cannot.
     let stranger = env.player();
     let attempt = env.send(&[unlink_ix(&stranger.pubkey(), &s.owner.pubkey(), &s.device.pubkey(), false)], &stranger, &[]);
     expect_pawket(&attempt, PawketError::NotThisDevice);
 
     ok(env.send(&[unlink_ix(&s.owner.pubkey(), &s.owner.pubkey(), &s.device.pubkey(), false)], &s.owner, &[]));
     assert_eq!(env.wallet(&s.owner.pubkey()).device, anchor_lang::prelude::Pubkey::default());
-    // The lost device keeps its float; it can no longer act with it.
     assert_eq!(env.lamports(&s.device.pubkey()), DEVICE_FLOAT_LAMPORTS);
     let attempt = env.send(&[dress_by_device_ix(&s.device.pubkey(), &s.owner.pubkey(), &s.pet, 1)], &s.device, &[]);
     expect_pawket(&attempt, PawketError::NotThisDevice);
@@ -210,7 +190,6 @@ fn closing_hands_the_balance_to_the_owner_and_the_rent_to_whoever_paid_it() {
     let balance = env.balance(&s.owner.pubkey());
     let owner_before = env.lamports(&s.owner.pubkey());
     let sponsor_before = env.lamports(&s.sponsor.pubkey());
-    // The sponsor pays the fee, as it would for a player with nothing left outside the wallet.
     ok(env.send(&[close_wallet_ix(&s.owner.pubkey(), &s.sponsor.pubkey())], &s.sponsor, &[&s.owner]));
     assert!(!env.exists(&wallet_address));
     assert_eq!(env.lamports(&s.owner.pubkey()), owner_before + balance);
@@ -226,10 +205,8 @@ fn only_the_owner_closes_a_wallet_and_its_rent_goes_only_to_whoever_paid_it() {
     let held = env.lamports(&wallet);
     let thief = env.player();
 
-    // The owner closes, but names someone else to have the sponsor's rent.
     let elsewhere = env.send(&[close_wallet_ix(&s.owner.pubkey(), &thief.pubkey())], &s.owner, &[]);
     expect_anchor(&elsewhere, ErrorCode::ConstraintHasOne);
-    // A stranger closes it, naming themselves its owner, the rent going where it should.
     let mut stranger = close_wallet_ix(&thief.pubkey(), &s.sponsor.pubkey());
     stranger.accounts[1].pubkey = wallet;
     expect_anchor(&env.send(&[stranger], &thief, &[]), ErrorCode::ConstraintSeeds);
@@ -241,12 +218,10 @@ fn nobody_opens_or_pays_into_a_wallet_in_someone_elses_name() {
     let mut env = Env::new();
     let (owner, stranger) = (env.player(), env.player());
     let wallet = wallet_pda(&owner.pubkey());
-    // Before the owner has one, the stranger makes it at the owner's address as their own.
     let mut early = open_wallet_ix(&stranger.pubkey(), &stranger.pubkey());
     early.accounts[2].pubkey = wallet;
     expect_anchor(&env.send(&[early], &stranger, &[]), ErrorCode::ConstraintSeeds);
     assert!(!env.exists(&wallet));
-    // After, the stranger pays into it as if it were theirs.
     ok(env.send(&[open_wallet_ix(&owner.pubkey(), &owner.pubkey())], &owner, &[]));
     let mut deposit = deposit_ix(&stranger.pubkey(), SOL / 100);
     deposit.accounts[1].pubkey = wallet;
@@ -262,7 +237,6 @@ fn nobody_but_its_owner_links_a_device_to_a_wallet() {
     let device = env.broke();
     ok(env.send(&[open_wallet_ix(&owner.pubkey(), &owner.pubkey()), deposit_ix(&owner.pubkey(), SOL / 100)], &owner, &[]));
 
-    // The stranger names themselves the owner of someone else's wallet, and their own key its device.
     let mut hijack = link_ix(&stranger.pubkey(), &device.pubkey(), env.now() + DAY, 500);
     hijack.accounts[1].pubkey = wallet_pda(&owner.pubkey());
     expect_anchor(&env.send(&[hijack], &stranger, &[&device]), ErrorCode::ConstraintSeeds);
@@ -286,7 +260,6 @@ fn a_replaced_device_can_neither_act_nor_unlink_its_replacement() {
     let unlink = unlink_ix(&old, &owner, &newer.pubkey(), false);
     expect_pawket(&env.send(&[unlink], &s.device, &[]), PawketError::NotThisDevice);
     assert_eq!(env.wallet(&owner).device, newer.pubkey());
-    // It paid its own two fees and the balance refilled neither.
     assert_eq!(env.lamports(&old), DEVICE_FLOAT_LAMPORTS - 2 * FEE_PER_SIGNATURE);
     assert_eq!(env.balance(&owner), balance);
 }
@@ -299,8 +272,6 @@ fn a_leaked_device_draws_one_fee_an_action_from_the_balance_whatever_it_does_wit
     let balance = env.balance(&owner);
     let spent = env.wallet(&owner).spent;
 
-    // It pays its own fee, sends its float away around three actions in one transaction, and is
-    // refilled by one fee for each — never by what it sent away.
     let ixs = [
         transfer_ix(&device, &thief, 100_000),
         care_by_device_ix(&device, &owner, &s.pet, CareActionType::Feed),
@@ -318,14 +289,10 @@ fn a_leaked_device_draws_one_fee_an_action_from_the_balance_whatever_it_does_wit
 #[test]
 fn a_device_with_nothing_left_in_the_wallet_still_acts_until_its_float_runs_out() {
     let mut env = Env::new();
-    // Exactly the float: nothing left over for refills.
     let s = setup(&mut env, DEVICE_FLOAT_LAMPORTS, 50);
     assert_eq!(env.balance(&s.owner.pubkey()), 0);
     ok(env.send(&[care_by_device_ix(&s.device.pubkey(), &s.owner.pubkey(), &s.pet, CareActionType::Feed)], &s.device, &[]));
-    // Nothing to refill from: the device paid from its float.
     assert_eq!(env.lamports(&s.device.pubkey()), DEVICE_FLOAT_LAMPORTS - FEE_PER_SIGNATURE);
-    // After a deposit each action is refilled again — by its own fee, never more, so a device
-    // cannot draw down the balance faster than it acts.
     ok(env.send(&[deposit_ix(&s.owner.pubkey(), SOL / 100)], &s.owner, &[]));
     ok(env.send(&[care_by_device_ix(&s.device.pubkey(), &s.owner.pubkey(), &s.pet, CareActionType::Play)], &s.device, &[]));
     assert_eq!(env.lamports(&s.device.pubkey()), DEVICE_FLOAT_LAMPORTS - FEE_PER_SIGNATURE);
@@ -356,7 +323,6 @@ fn a_device_can_pay_for_its_own_unlinking_and_leave_nothing_behind() {
     let mut env = Env::new();
     let s = setup(&mut env, SOL / 100, 50);
     let balance = env.balance(&s.owner.pubkey());
-    // The device is the fee payer and the only signer: no prompt for anyone.
     ok(env.send(&[unlink_ix(&s.device.pubkey(), &s.owner.pubkey(), &s.device.pubkey(), true)], &s.device, &[]));
     assert!(!env.exists(&s.device.pubkey()));
     assert_eq!(env.balance(&s.owner.pubkey()), balance + DEVICE_FLOAT_LAMPORTS - FEE_PER_SIGNATURE);

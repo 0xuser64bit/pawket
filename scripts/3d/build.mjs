@@ -1,19 +1,3 @@
-/**
- * Builds the Home room's 3D assets from the supplied packs into public/3d/.
- *
- *   node scripts/3d/build.mjs            (pnpm assets:3d)
- *
- * Sources (CC0): Kenney "Cube Pets" 2.0 in `assets/pets/` and Quaternius
- * "Universal Base Characters" (free edition) in `assets/human/` — only the
- * files this script reads. Set PAWKET_3D_SOURCE to read them from elsewhere.
- *
- * Pets: the three Pawket species are recoloured to their design-system coats,
- * their clips kept, redundant channels dropped, and meshopt-compressed.
- * Humans: each body is rebuilt on a clean document — skeleton, skin, eyes
- * with look-at joints, brows, every hairstyle re-bound and fitted to that
- * head, clothes cut and shelled from the body (the pack has none), and the
- * authored clips from motion.mjs baked onto that body's rest pose.
- */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,12 +21,6 @@ export const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDepend
   "meshopt.encoder": MeshoptEncoder,
 });
 
-/**
- * A Quaternius glTF, without its images. Only geometry, skins and material
- * names are taken from these files — every texture the room uses is read by
- * name below — so the images they point at (several of which are not even
- * in the pack) are not needed.
- */
 export async function readGltf(file) {
   const dir = path.dirname(file);
   const json = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -56,8 +34,6 @@ export async function readGltf(file) {
   for (const buffer of json.buffers ?? []) resources[buffer.uri] = new Uint8Array(fs.readFileSync(path.join(dir, buffer.uri)));
   return io.readJSON({ json, resources });
 }
-
-/* ------------------------------------------------------------------ humans */
 
 const BODIES = {
   a: {
@@ -74,7 +50,6 @@ const BODIES = {
   },
 };
 
-/** Hairstyles in the product, and the source file for each. */
 const HAIR = {
   hair_parted: "Hair_SimpleParted",
   hair_long: "Hair_Long",
@@ -91,9 +66,7 @@ function bindMatrices(skin) {
   }));
 }
 
-/** Least-squares sphere through a point cloud: the centre of an eyeball. */
 function sphereCentre(points) {
-  // x²+y²+z² = 2ax + 2by + 2cz + d  →  normal equations, 4×4.
   const A = Array.from({ length: 4 }, () => [0, 0, 0, 0]);
   const b = [0, 0, 0, 0];
   for (const [x, y, z] of points) {
@@ -104,7 +77,6 @@ function sphereCentre(points) {
       for (let c = 0; c < 4; c++) A[r][c] += row[r] * row[c];
     }
   }
-  // Gaussian elimination.
   for (let i = 0; i < 4; i++) {
     let p = i;
     for (let r = i + 1; r < 4; r++) if (Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r;
@@ -133,7 +105,6 @@ async function texture(doc, file, { size = 1024, name, grey = false } = {}) {
   return doc.createTexture(name).setImage(new Uint8Array(png)).setMimeType("image/png");
 }
 
-/** Patches of bare skin in the body texture (UV, top-left origin). */
 const SKIN_PATCHES = [
   [0.2, 0.2],
   [0.1, 0.55],
@@ -159,10 +130,6 @@ async function averageColour(file, patches) {
   return "#" + acc.map((c) => Math.round(c / n).toString(16).padStart(2, "0")).join("");
 }
 
-/**
- * Push each vertex out of the target head wherever it sinks within `gap`
- * of the skin — how a hairstyle fitted to one head sits on another.
- */
 function fitOutside(mesh, head, gap) {
   let moved = 0;
   for (let i = 0; i < mesh.pos.length / 3; i++) {
@@ -212,7 +179,6 @@ async function buildHuman(key) {
   const top = doc.createNode(`body-${key}`);
   scene.addChild(top);
 
-  // Skeleton: copy the joint hierarchy with its rest transforms.
   const nodeFor = new Map();
   const copyNode = (source) => {
     const node = doc
@@ -227,8 +193,6 @@ async function buildHuman(key) {
   const srcRootJoint = srcSkin.listJoints()[0];
   top.addChild(copyNode(srcRootJoint));
 
-  // Eye joints under Head, placed at each eyeball's centre, so the runtime
-  // can aim the eyes without a blend shape the pack does not have.
   const meshes = new Map(srcRoot.listNodes().filter((n) => n.getMesh()).map((n) => [n.getName(), n.getMesh()]));
   const eyes = readPrimitive(meshes.get("Eyes").listPrimitives()[0]);
   const sides = { l: [], r: [] };
@@ -266,16 +230,12 @@ async function buildHuman(key) {
   const clips = bake(doc, rigFrom(nodeFor.get(srcRootJoint)));
   console.log(`  ${key} clips: ${clips.join(", ")}`);
 
-  // Eyes: each eyeball follows its own joint.
   for (let i = 0; i < eyes.pos.length / 3; i++) {
     const side = eyes.pos[i * 3] > 0 ? "l" : "r";
     eyes.j.set([eyeIndex[side], 0, 0, 0], i * 4);
     eyes.w.set([1, 0, 0, 0], i * 4);
   }
 
-  // Materials. Colours that belong to the player (skin tone, hair colour,
-  // clothes) are set at runtime; the GLB carries neutral defaults.
-  // The painting's average skin tone: the runtime recolours relative to it.
   const skinBase = await averageColour(path.join(HUMANS, spec.light), SKIN_PATCHES);
   const skinMat = doc
     .createMaterial("skin")
@@ -304,7 +264,7 @@ async function buildHuman(key) {
 
   const addMesh = (name, mesh, material, extra) => {
     const prim = writePrimitive(doc, buffer, extra ? mesh : compact(mesh), extra).setMaterial(material);
-    // Skinned meshes are root nodes, as glTF asks: a parent transform would be ignored.
+    // glTF ignores a skinned mesh's parent transforms: root nodes only.
     const node = doc.createNode(name).setMesh(doc.createMesh(name).addPrimitive(prim)).setSkin(skin);
     scene.addChild(node);
     return node;
@@ -320,8 +280,6 @@ async function buildHuman(key) {
     return new Vector3().setFromMatrixPosition(found.bind).toArray();
   };
   const tailored = tailor(body, jointAt);
-  // The runtime reads which `_COVER` bit is which garment, and how tall a
-  // sole is, from here — the pipeline is the one place they are decided.
   addMesh("body", tailored.body, skinMat, {
     _COVER: { type: "SCALAR", array: tailored.cover },
   }).setExtras({ cover: GARMENTS, sole: SOLE });
@@ -342,7 +300,6 @@ async function buildHuman(key) {
     console.log(`  ${key} ${name}: ${tris} triangles`);
   }
 
-  // The head surface, for fitting hair authored on the other body.
   const head = { points: [], normals: [] };
   for (let i = 0; i < body.pos.length / 3; i++) {
     let w = 0;
@@ -359,8 +316,6 @@ async function buildHuman(key) {
     const hairHead = bindMatrices(hairSkin).find((j) => j.name === "Head").bind;
     const prim = hairDoc.getRoot().listMeshes()[0].listPrimitives()[0];
     const hair = readPrimitive(prim);
-    // Authored on the other body: move it rigidly onto this head, then lift
-    // anything the bigger skull would poke through.
     if (!hairHead.equals(headBind)) {
       transformMesh(hair, headBind.clone().multiply(hairHead.clone().invert()));
       const moved = fitOutside(hair, head, name === "beard" ? 0.0015 : 0.003);
@@ -372,18 +327,6 @@ async function buildHuman(key) {
   return { doc };
 }
 
-/* -------------------------------------------------------------------- pets */
-
-/**
- * Pawket's three species on Kenney's cube animals. Coat and patch are the
- * design-system colours the flat PetArt already uses (Daylight values:
- * `sun`/`sun-edge`, `trim-copper`/`pet-cocoa`, `pet-cloud`/`pet-cloud-shade`
- * with `pet-blush` inside the bun's ears), so
- * the pet in the room is recognisably the pet on every other screen.
- * Cells are Kenney colormap cells (column, row) → the colour they become;
- * cells not listed keep Kenney's own colour. Colours become vertex colours
- * and the gradient texture goes, which is also how the pets lose gradients.
- */
 const PETS = {
   cat: {
     file: "animal-cat.glb",
@@ -409,7 +352,6 @@ async function buildPet(key) {
   const doc = await io.read(path.join(dir, spec.file));
   const root = doc.getRoot();
 
-  // Average colour of each colormap cell.
   const map = await sharp(path.join(dir, "Textures/colormap.png")).raw().toBuffer({ resolveWithObject: true });
   const cellColour = (col, row) => {
     const acc = [0, 0, 0];
@@ -447,7 +389,6 @@ async function buildPet(key) {
       animation.dispose();
       continue;
     }
-    // Kenney keys every TRS channel of every part; most never move.
     for (const channel of animation.listChannels()) {
       const sampler = channel.getSampler();
       const values = sampler.getOutput().getArray();
@@ -472,13 +413,6 @@ async function buildPet(key) {
   return doc;
 }
 
-/* ---------------------------------------------------------------- emotes */
-
-/**
- * An emote as its own file: the skeleton and one clip, nothing to draw —
- * the shape a future emote takes (see docs/ROOM-3D.md). Baked on build one's
- * rest pose, rotations only, so it plays on either build.
- */
 async function buildEmote(clip) {
   const src = await readGltf(path.join(HUMANS, BODIES.a.file));
   const srcRoot = src.getRoot().listSkins()[0].listJoints()[0];
@@ -496,12 +430,9 @@ async function buildEmote(clip) {
   return doc;
 }
 
-/* ------------------------------------------------------------------ output */
-
 async function finish(doc, file) {
   await doc.transform(prune(), dedup(), resample(), textureCompress({ encoder: sharp, targetFormat: "webp", quality: 88 }));
-  // Validate the data itself before it is compressed: the validator cannot
-  // look inside EXT_meshopt_compression buffers.
+  // Before compression: the validator cannot read EXT_meshopt_compression buffers.
   const plain = await validator.validateBytes(await io.writeBinary(doc), { maxIssues: 50 });
   if (plain.issues.numErrors > 0) {
     for (const m of plain.issues.messages.filter((m) => m.severity === 0)) console.log(`  ERROR ${m.code} ${m.pointer ?? ""} ${m.message}`);
@@ -514,13 +445,8 @@ async function finish(doc, file) {
   return out;
 }
 
-/** Budgets from the brief: under 5 MB and 100k triangles per character. */
 const BUDGET = { bytes: 5 * 1024 * 1024, triangles: 100_000 };
 
-/**
- * Khronos glTF-Validator over the written file, plus the numbers that
- * matter. Any validator error, or a blown budget, fails the build.
- */
 async function check(file) {
   const bytes = new Uint8Array(fs.readFileSync(file));
   const report = await validator.validateBytes(bytes, { maxIssues: 50 });
@@ -552,7 +478,7 @@ async function main() {
     report.push(await check(await finish(doc, `human/body-${key}.glb`)));
   }
   for (const clip of EMOTE_CLIPS) {
-    report.push(await check(await finish(await buildEmote(clip), `emotes/${clip.name.toLowerCase()}.glb`)));
+    report.push(await check(await finish(await buildEmote(clip), `emotes/${clip.name.toLowerCase().replaceAll(" ", "-")}.glb`)));
   }
   console.table(report.map(({ file, kb, triangles, clips }) => ({ file, kb, triangles, clips: clips.length })));
 }

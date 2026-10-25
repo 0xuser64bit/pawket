@@ -6,12 +6,6 @@ import { derivePassportPda, derivePetPda, normalizePetName } from "@/lib/solana/
 import { absolute, actionError, actionJson, adoptLinkedAction, caller, postedAccount, preflight } from "@/server/actions";
 import { actionLimit, mayPayRent, sponsoredForPlayer, sponsorRpc, sponsorState } from "@/server/sponsor";
 
-/**
- * "Adopt a pet on Pawket", as a Solana Action: a link that becomes a card
- * in any Blink client. The pet is adopted straight onto Solana devnet;
- * Pawket pays the fee and the rent, and the wallet signs only for the pet.
- */
-
 export const dynamic = "force-dynamic";
 export const OPTIONS = preflight;
 
@@ -34,6 +28,8 @@ export async function POST(request: Request) {
   const query = new URL(request.url).searchParams;
   const account = await postedAccount(request);
   if (!account || !isAddress(account)) return actionError("That is not a wallet address. Nothing was made.");
+  const who = caller(request);
+  if (!actionLimit(who)) return actionError("Too many in a row. Nothing was made — try again in a while.", 429);
   const species = query.get("species") as PetSpecies | null;
   const personality = query.get("personality") as PetPersonality | null;
   if (!species || !SPECIES.includes(species)) return actionError("Choose a luna cat, a moss pup or a cloud bun.");
@@ -54,15 +50,15 @@ export async function POST(request: Request) {
   if (await fetchPetOnChain(sponsorRpc(), pet).catch(() => null)) {
     return actionError(`This wallet already keeps a pet named ${name}. Pick another name.`, 409);
   }
-  // A Blink client may proxy every player through one address, so the key is the wallet.
-  if (!mayPayRent(account) || !actionLimit(caller(request))) {
+  if (!mayPayRent([account, who])) {
     return actionError("Too many adoptions in a row. Nothing was made — try again in a while.", 429);
   }
 
   const passport = (await derivePassportPda(pet)).address;
   const transaction = await sponsoredForPlayer(sponsor.signer, owner, ({ owner: signer, payer }) => [
     getAdoptPetInstruction({ owner: signer, payer, pet, passport, name, species, personality }),
-  ]);
+  ]).catch(() => null);
+  if (!transaction) return actionError("Solana did not answer. Nothing was made — try again.", 503);
   return actionJson({
     type: "transaction",
     transaction,
@@ -74,7 +70,7 @@ export async function POST(request: Request) {
           type: "completed",
           icon: absolute(request, `/api/actions/icon?pet=${pet}`),
           title: `${name} is yours`,
-          description: `Kept on Solana devnet. Their record is at ${absolute(request, `/pet/${pet}`)} — open it, care for them, show them to the park.`,
+          description: `Kept on Solana devnet. Care for them at ${absolute(request, "/home")}: connect this wallet and link your browser once, and their care needs no more pop-ups. Their record is at ${absolute(request, `/pet/${pet}`)}.`,
           label: "Adopted",
         },
       },

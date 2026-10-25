@@ -6,11 +6,6 @@ import { getPublicEnv } from "@/config/env";
 import { useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend } from "@/lib/solana/use-send";
 
-/**
- * The owner's offer of a keepsake: the pet's card in their wallet. Shown to
- * the connected owner only, and only while Pawket can pay for it. Once Solana
- * confirms it the page reads the record again; the card is never assumed.
- */
 export function KeepsakeCard({ owner, pet, name, made }: { owner: string; pet: string; name: string; made: boolean }) {
   const connected = useConnected();
   const sender = usePawketSend();

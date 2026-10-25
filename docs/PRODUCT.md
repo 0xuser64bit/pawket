@@ -33,7 +33,8 @@ lead the experience; guilds support community; coins remain optional.
 The default cluster is devnet. Public configuration is validated in
 `src/config/env.ts`; server secrets are read through `getServerEnv()`.
 Deployment and environment procedures live in `DEVELOPMENT.md` and
-`ENVIRONMENT.md`.
+`ENVIRONMENT.md`. Pawket counts its own loop anonymously, in fixed words, and
+a player can turn that off (`DECISIONS.md`, `/privacy`).
 
 A pet starts in browser storage, or in the Android app's WebView storage.
 Keeping it on Solana creates a new program record with the chosen name,
@@ -41,7 +42,8 @@ species and personality; browser progression is not imported. The confirmation
 flow explains the reset. Solana care changes the screen after confirmation
 and a fresh read. A keepsake is a frozen card pointing to the pet's account.
 
-App transactions require a linked, funded Pawket Wallet. Its non-extractable
+App transactions require a linked Pawket Wallet. While Pawket sponsors it may
+be empty; Market looks, coins and fees without sponsorship need SOL in it. Its non-extractable
 device key signs non-money actions within the owner's expiry and daily limit.
 The owner approves setup, deposits, withdrawals, purchases and coin spending.
 Pawket sponsors eligible devnet fees and rent while sponsorship is available;
@@ -52,17 +54,24 @@ wait. Solana Actions have their own owner-approved flow (`SOLANA.md`).
 
 | Area | Supported behavior |
 | --- | --- |
-| Adoption | Multiple local pets; one chosen pet at home |
-| Home | Feed, play, groom, rest; decay estimates, cooldowns, XP, mood, UTC streak and care log; 3D room with flat fallback; emotes, photos and calendar reminders |
-| Profile | Player name, look and outfits; pets, wardrobe, record-derived stickers and settings |
+| Adoption | Multiple local pets; one chosen pet at home; five coats per species, kept on the device |
+| Home | Feed, play, groom, rest; decay estimates, cooldowns, XP, mood, UTC streak and care log; a greeting when you come back after hours away; 3D room with flat fallback; the room's things (a picture, a plant, a rug, the bed, something past it), kept on the device; emotes, photos, calendar reminders and, in the Android app, a care reminder scheduled on the phone |
+| Profile | Player name, look and outfits; pets, wardrobe and coats, record-derived stickers and settings; a copy of the browser's pets to keep and bring back |
 | Playground | Catch, Hop, Copy, Pairs; shared daily seeds; one flat daily XP bonus per pet; explicit recording for Solana rounds |
 | Public record | Server-read Passport and visit room, guestbook waves, Park discovery and Pulse counts |
-| Market | Three free pet pieces; 25 bought pieces, 12 bought rooms and 8 photo frames; fixed program prices and chain-read closet entitlements |
+| Market | Three free pet pieces; 25 bought pieces, 12 bought rooms and 8 photo frames; 34 room things, free or with a Market room; search and shelves; fixed program prices and chain-read closet entitlements |
 | Guilds | One guild per pet; founding, joining, leaving, events, RSVPs, check-ins and one ballot per wallet per poll |
 | Coins | One optional coin per eligible guild; two devnet Meteora presets; quotes, trades, graduation and fee claims on its own page; permanently locked graduated liquidity |
 | Android | Wallet app integration, gallery and native sharing, calendar editor, haptics, back behavior, shortcuts and App Links |
 
 Cosmetics and coin balances never change vitals, XP, cooldowns or scores.
+Photos can be posed (Wave, Cheer, Cuddle, Dance, Peace, Heart, and Nice — a thumbs up), both of you facing the
+camera, using the room's existing animations. Home plays a
+quiet music-box lullaby, and a little tune for each emote and saved care,
+all synthesised on the device; the room's speaker switch mutes it, and the
+same device preference covers the Playground and Settings. Sound is on until
+muted, starts only after a tap (fading in), and stops when the page is
+hidden or Home is left. Neither poses nor sound change a saved pet record.
 Coin holdings only add the guild's crest pin on that guild's page.
 A local pet is labelled "in this browser" or "in this app"; "on Solana"
 requires a chain-read record. Guestbooks retain eight recent waves; their

@@ -35,7 +35,13 @@ source files; do not add another store of those facts.
 ## Persistence and reads
 
 Local pets live in the `pawket.pets.v1` list. The former single-pet record is
-migrated only after the new list is written successfully. Player settings,
+migrated only after the new list is written successfully. Entries a version
+cannot read are written back verbatim; a list it cannot read at all is set
+aside under `pawket.pets.v1.unreadable.<time>`, never deleted. After an
+adoption or a device link the app asks the browser to keep its storage
+(`navigator.storage.persist`). Profile saves a copy of the browser's pets as
+text or a file and brings them back (`src/lib/guest/copy.ts`); a copy's
+progress stays local and never reaches Solana. Player settings,
 looks, best scores and active pet selection also stay on the device, scoped
 to the origin. `useSyncExternalStore` provides cached snapshots and storage
 change notifications. Android uses its own WebView storage.
@@ -48,10 +54,14 @@ the wallet's pets and local pets, then resolves the device's active selection.
 
 Large public scans have bounded caches: pet/guild scans share eight seconds
 within a process and twenty seconds through Next's Data Cache; Pulse caches
-its measurements for thirty seconds. Failed reads are not cached as successful
-records. Cached discovery counts are chain-derived snapshots, not immediate
+its measurements for thirty seconds. The Data Cache answers an expired entry
+while it refreshes, so each entry carries when it was read and one older than
+twice its life is read again instead (`src/server/cache.ts`). Failed reads are
+not cached as successful records. Cached discovery counts are chain-derived snapshots, not immediate
 transaction receipts. Confirmation refreshes use the relevant source read.
-There is no database, indexer or background worker.
+There is no database, indexer or background worker. Aggregate counts of the
+loop go to Vercel Web Analytics through `src/lib/analytics/events.ts`, held to
+fixed words and the player's choice (`DECISIONS.md`).
 
 ## Writes
 
@@ -63,8 +73,8 @@ local pet on Solana creates a new chain pet; it does not import local
 progression. Failed local cleanup after confirmation leaves the chain pet
 available and explains that a local copy remains.
 
-App sends use `usePawketSend` and `send.ts`. A linked, funded Pawket Wallet is
-required for app actions. Non-money instructions become program-checked device
+App sends use `usePawketSend` and `send.ts`. A linked Pawket Wallet is
+required for app actions, holding SOL only where it is spent (`needsSol`). Non-money instructions become program-checked device
 twins; owner approval remains mandatory for wallet management and spending.
 The sponsor signs eligible devnet transactions first. The client verifies the
 message, sends with preflight, waits for confirmation, then reloads the record.

@@ -19,7 +19,8 @@ import {
   PetPersonality,
   PetSpecies,
 } from "@/lib/game/enums";
-import { normalizePetName, parseAddress } from "./pda";
+import { getTransferSolInstruction } from "@solana-program/system";
+import { deriveWalletPda, normalizePetName, parseAddress } from "./pda";
 import {
   CARE_ACTION_VARIANTS,
   DEVICE_VARIANTS,
@@ -43,11 +44,6 @@ const u64 = getU64Encoder();
 const i64 = getI64Encoder();
 const utf8 = getUtf8Encoder();
 
-/**
- * An account that signs: a plain address when the caller signs some other
- * way, or a Kit signer — the wallet, or a sponsor's no-op stand-in — which
- * `partiallySignTransactionMessageWithSigners` then finds on the meta.
- */
 export type SignerInput = string | Address | TransactionSigner;
 
 export function concatBytes(...parts: ArrayLike<number>[]): Uint8Array {
@@ -61,7 +57,6 @@ export function concatBytes(...parts: ArrayLike<number>[]): Uint8Array {
   return out;
 }
 
-/** Anchor `string` = u32 LE length prefix + UTF-8 bytes. */
 export function encodeAnchorString(value: string): Uint8Array {
   const bytes = utf8.encode(value);
   return concatBytes(u32.encode(bytes.length), bytes);
@@ -94,7 +89,6 @@ function programAddress(programId?: string | Address): Address {
 
 export interface AdoptPetInstructionInput {
   owner: SignerInput;
-  /** Who pays rent: the owner, or a sponsor. Defaults to the owner. */
   payer?: SignerInput;
   pet: string | Address;
   passport: string | Address;
@@ -118,15 +112,10 @@ export interface CareInstructionInput extends PetInstructionInput {
 export interface DressInstructionInput {
   owner: SignerInput;
   pet: string | Address;
-  /** 0 takes everything off; 1–18 is the wardrobe in catalog order. */
   wearing: number;
   programId?: string | Address;
 }
 
-/**
- * Builds the `adopt_pet` instruction. Returns an unsigned Kit instruction:
- * the owner signs for the name, the payer for the rent.
- */
 export function getAdoptPetInstruction(
   input: AdoptPetInstructionInput,
 ): Instruction {
@@ -164,7 +153,6 @@ function petAccounts(input: PetInstructionInput) {
   ];
 }
 
-/** Builds the `perform_care_action` instruction (unsigned). */
 export function getCareInstruction(input: CareInstructionInput): Instruction {
   const variant = CARE_ACTION_VARIANTS[input.action];
   if (variant === undefined) throw new Error(`Unknown action: ${input.action}`);
@@ -179,7 +167,6 @@ export function getCareInstruction(input: CareInstructionInput): Instruction {
   };
 }
 
-/** Builds the `finish_round` instruction (unsigned): a playground round, finished. */
 export function getFinishRoundInstruction(input: PetInstructionInput): Instruction {
   return {
     programAddress: programAddress(input.programId),
@@ -188,7 +175,6 @@ export function getFinishRoundInstruction(input: PetInstructionInput): Instructi
   };
 }
 
-/** Builds the `dress` instruction (unsigned). */
 export function getDressInstruction(input: DressInstructionInput): Instruction {
   if (!Number.isInteger(input.wearing) || input.wearing < 0 || input.wearing > WEARABLE_COUNT) {
     throw new Error(`Nothing to wear at ${input.wearing}`);
@@ -208,9 +194,7 @@ export function getDressInstruction(input: DressInstructionInput): Instruction {
 
 export interface FoundGuildInstructionInput {
   owner: SignerInput;
-  /** Who pays the rent of the guild and the founder's place in it. Defaults to the owner. */
   payer?: SignerInput;
-  /** The founding pet, which becomes the first member. */
   pet: string | Address;
   guild: string | Address;
   member: string | Address;
@@ -224,7 +208,6 @@ export interface FoundGuildInstructionInput {
 
 export interface JoinGuildInstructionInput {
   owner: SignerInput;
-  /** Who pays the rent of the pet's place in the guild. Defaults to the owner. */
   payer?: SignerInput;
   pet: string | Address;
   guild: string | Address;
@@ -237,15 +220,10 @@ export interface LeaveGuildInstructionInput {
   pet: string | Address;
   member: string | Address;
   guild: string | Address;
-  /** Whoever paid the member account's rent, as the member records it: it goes back to them. */
   payer: string | Address;
   programId?: string | Address;
 }
 
-/**
- * Builds `found_guild` (unsigned). The program checks every field again;
- * these checks only refuse a send that could never land.
- */
 export function getFoundGuildInstruction(input: FoundGuildInstructionInput): Instruction {
   const { crest, colour } = input;
   if (!Number.isInteger(crest) || crest < 0 || crest >= GUILD_LIMITS.crests) throw new Error(`No crest at ${crest}`);
@@ -271,7 +249,6 @@ export function getFoundGuildInstruction(input: FoundGuildInstructionInput): Ins
   };
 }
 
-/** Builds `join_guild` (unsigned). */
 export function getJoinGuildInstruction(input: JoinGuildInstructionInput): Instruction {
   return {
     programAddress: programAddress(input.programId),
@@ -287,7 +264,6 @@ export function getJoinGuildInstruction(input: JoinGuildInstructionInput): Instr
   };
 }
 
-/** Builds `leave_guild` (unsigned). */
 export function getLeaveGuildInstruction(input: LeaveGuildInstructionInput): Instruction {
   return {
     programAddress: programAddress(input.programId),
@@ -302,16 +278,12 @@ export function getLeaveGuildInstruction(input: LeaveGuildInstructionInput): Ins
   };
 }
 
-/* ------------------------------------------------------ the Pawket Wallet */
-
 export interface WalletInstructionInput {
   owner: SignerInput;
-  /** The owner's Pawket Wallet (`deriveWalletPda`). */
   wallet: string | Address;
   programId?: string | Address;
 }
 
-/** `open_wallet`: the owner's Pawket Wallet, its rent paid by `payer` (the owner or the sponsor). */
 export function getOpenWalletInstruction(input: WalletInstructionInput & { payer?: SignerInput }): Instruction {
   return {
     programAddress: programAddress(input.programId),
@@ -330,7 +302,6 @@ function lamports(amount: bigint): Uint8Array {
   return Uint8Array.from(u64.encode(amount));
 }
 
-/** `deposit`: `amount` lamports from the owner into their Pawket Wallet. */
 export function getDepositInstruction(input: WalletInstructionInput & { amount: bigint }): Instruction {
   return {
     programAddress: programAddress(input.programId),
@@ -343,7 +314,6 @@ export function getDepositInstruction(input: WalletInstructionInput & { amount: 
   };
 }
 
-/** `withdraw`: `amount` lamports from the Pawket Wallet back to its owner, the only place they can go. */
 export function getWithdrawInstruction(input: WalletInstructionInput & { amount: bigint }): Instruction {
   return {
     programAddress: programAddress(input.programId),
@@ -355,11 +325,6 @@ export function getWithdrawInstruction(input: WalletInstructionInput & { amount:
   };
 }
 
-/**
- * `link_device`: the device acts for the owner until `expiresAt` (unix
- * seconds), at most `dailyActions` times a UTC day. Both sign: the owner,
- * and the device, to show it is really there.
- */
 export function getLinkDeviceInstruction(
   input: WalletInstructionInput & { device: SignerInput; expiresAt: number; dailyActions: number },
 ): Instruction {
@@ -381,10 +346,6 @@ export function getLinkDeviceInstruction(
   };
 }
 
-/**
- * `unlink_device`: `authority` — the owner, or the device itself — ends the
- * link. When the device signs (`deviceSigns`), what it holds comes back.
- */
 export function getUnlinkDeviceInstruction(input: {
   authority: SignerInput;
   wallet: string | Address;
@@ -409,7 +370,6 @@ export function getUnlinkDeviceInstruction(input: {
   };
 }
 
-/** `close_wallet`: the balance to the owner, the rent to `rentPayer`, which paid it. */
 export function getCloseWalletInstruction(input: WalletInstructionInput & { rentPayer: string | Address }): Instruction {
   return {
     programAddress: programAddress(input.programId),
@@ -422,13 +382,6 @@ export function getCloseWalletInstruction(input: WalletInstructionInput & { rent
   };
 }
 
-/**
- * `instruction`, as the owner's linked device signs it: its `*_by_device`
- * twin (`DEVICE_VARIANTS`), with the device and the owner's Pawket Wallet in
- * the owner's place and every other account and argument as they were. Build
- * the owner's instruction for the owner's address, then hand it here. Throws
- * for anything a device may not sign: whatever moves money.
- */
 export function asDeviceInstruction(
   instruction: Instruction,
   linked: { device: SignerInput; wallet: string | Address },
@@ -450,9 +403,6 @@ export function asDeviceInstruction(
   };
 }
 
-/* ------------------------------------------------------------- the Market */
-
-/** Whether the program sells `item` (`item_price` in `programs/pawket/src/lib.rs`). */
 function isMarketItem(item: number): boolean {
   if (!Number.isInteger(item)) return false;
   return (
@@ -462,7 +412,6 @@ function isMarketItem(item: number): boolean {
   );
 }
 
-/** What `item` costs in the Market, in lamports, or null where nothing is sold. */
 export function marketPrice(item: number): bigint | null {
   if (!isMarketItem(item)) return null;
   if (item <= WEARABLE_COUNT + MARKET.classicWearables) return MARKET.classicPrice;
@@ -470,14 +419,9 @@ export function marketPrice(item: number): bigint | null {
   return item < MARKET.firstFrame ? MARKET.roomPrice : MARKET.framePrice;
 }
 
-/**
- * `buy`: one Market item at its fixed price, from the owner straight to the
- * treasury. The payer covers the closet's rent the first time.
- */
 export function getBuyInstruction(input: {
   owner: SignerInput;
   payer?: SignerInput;
-  /** The owner's closet (`deriveClosetPda`). */
   closet: string | Address;
   item: number;
   programId?: string | Address;
@@ -499,7 +443,6 @@ export function getBuyInstruction(input: {
 export function getBuyWithWalletInstruction(input: {
   owner: SignerInput;
   payer?: SignerInput;
-  /** The owner's closet (`deriveClosetPda`). */
   closet: string | Address;
   item: number;
   wallet: string | Address;
@@ -527,7 +470,6 @@ function wearableSlotFor(wearing: number): number {
   return wearing;
 }
 
-/** `dress_owned`: one of the eighteen, or a Market piece the owner's closet holds. */
 export function getDressOwnedInstruction(input: {
   owner: SignerInput;
   pet: string | Address;
@@ -546,16 +488,12 @@ export function getDressOwnedInstruction(input: {
   };
 }
 
-/* ------------------------------------------------- a guild's events and polls */
-
 const utf8Length = (value: string) => utf8.encode(value).length;
 
-/** `create_event`: the founder plans an event. The program checks every field again. */
 export function getCreateEventInstruction(input: {
   owner: SignerInput;
   payer?: SignerInput;
   guild: string | Address;
-  /** `deriveEventPda(guild, id)`. */
   event: string | Address;
   id: number;
   title: string;
@@ -590,15 +528,12 @@ export function getCreateEventInstruction(input: {
   };
 }
 
-/** `rsvp`: a pet in the guild is going. */
 export function getRsvpInstruction(input: {
   owner: SignerInput;
   payer?: SignerInput;
   pet: string | Address;
-  /** The pet's place in the guild (`deriveMemberPda`). */
   member: string | Address;
   event: string | Address;
-  /** `deriveRsvpPda(event, pet)`. */
   rsvp: string | Address;
   programId?: string | Address;
 }): Instruction {
@@ -617,7 +552,6 @@ export function getRsvpInstruction(input: {
   };
 }
 
-/** `check_in`: a pet that said it was going is at the event. */
 export function getCheckInInstruction(input: {
   owner: SignerInput;
   pet: string | Address;
@@ -637,12 +571,10 @@ export function getCheckInInstruction(input: {
   };
 }
 
-/** `create_poll`: the founder asks the guild something, with two to four options. */
 export function getCreatePollInstruction(input: {
   owner: SignerInput;
   payer?: SignerInput;
   guild: string | Address;
-  /** `derivePollPda(guild, id)`. */
   poll: string | Address;
   id: number;
   question: string;
@@ -682,14 +614,12 @@ export function getCreatePollInstruction(input: {
   };
 }
 
-/** `vote`: one ballot per wallet, for a wallet with a pet in the guild. */
 export function getVoteInstruction(input: {
   owner: SignerInput;
   payer?: SignerInput;
   pet: string | Address;
   member: string | Address;
   poll: string | Address;
-  /** `deriveBallotPda(poll, owner)`. */
   ballot: string | Address;
   option: number;
   programId?: string | Address;
@@ -712,14 +642,10 @@ export function getVoteInstruction(input: {
   };
 }
 
-/* ------------------------------------------------------------- the guestbook */
-
-/** `wave`: anyone but its owner waves at a pet, once a UTC day. The payer covers the guestbook's rent the first time. */
 export function getWaveInstruction(input: {
   visitor: SignerInput;
   payer?: SignerInput;
   pet: string | Address;
-  /** `deriveGuestbookPda(pet)`. */
   guestbook: string | Address;
   programId?: string | Address;
 }): Instruction {
@@ -736,7 +662,6 @@ export function getWaveInstruction(input: {
   };
 }
 
-/** Owner-approved funding brackets; keep the owner's existing SOL unchanged and return all change. */
 export function getWalletSpendInstruction(input: {
   owner: SignerInput; wallet: string | Address; device: string | Address;
   keep: bigint; amount?: bigint;
@@ -755,4 +680,9 @@ export function getWalletSpendInstruction(input: {
       ? concatBytes(PAWKET_DISCRIMINATORS.settleWalletSpend, u64.encode(input.keep))
       : concatBytes(PAWKET_DISCRIMINATORS.fundWalletSpend, u64.encode(input.amount), u64.encode(input.keep)),
   };
+}
+
+export async function getReturnFloatInstruction({ device, owner, lamports }: { device: TransactionSigner; owner: Address; lamports: bigint }) {
+  const wallet = (await deriveWalletPda(owner)).address;
+  return getTransferSolInstruction({ source: device, destination: wallet, amount: lamports });
 }

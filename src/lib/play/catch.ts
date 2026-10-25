@@ -1,17 +1,8 @@
 import { nextRandom } from "./random";
 
-/**
- * Catch: treats fall, the pet moves along the grass to catch them, and rain
- * clouds are best avoided. Thirty seconds or three clouds, whichever comes
- * first. The field is 1 wide and 1 tall, y downward.
- *
- * Nothing here reads a vital, a level or a wearable: a level-one pet and a
- * level-ninety pet play the same round.
- */
 export const CATCH_SECONDS = 30;
 export const CATCH_LIVES = 3;
 
-/** Where the pet's mouth meets a falling thing, and how wide it reaches. */
 export const CATCH_MOUTH = { top: 0.68, bottom: 0.9, reach: 0.1 };
 const PET_SPEED = 1.7;
 
@@ -35,7 +26,6 @@ export interface CatchState {
   nextId: number;
   seed: number;
   over: boolean;
-  /** What happened in the last step, for the sound and the pet's face. */
   events: CatchEvent[];
 }
 
@@ -43,7 +33,6 @@ export function startCatch(seed: number): CatchState {
   return { t: 0, x: 0.5, drops: [], score: 0, lives: CATCH_LIVES, nextDrop: 0.4, nextId: 1, seed, over: false, events: [] };
 }
 
-/** Advance the round by `dt` seconds, with the pet heading for `target` (0–1). */
 export function stepCatch(state: CatchState, dt: number, target: number): CatchState {
   if (state.over) return { ...state, events: [] };
   const t = Math.min(CATCH_SECONDS, state.t + dt);
@@ -70,7 +59,6 @@ export function stepCatch(state: CatchState, dt: number, target: number): CatchS
     if (moved.y < 1.08) drops.push(moved);
   }
 
-  // Drops come faster as the round goes on: every 0.8s at the start, 0.34s at the end.
   nextDrop -= dt;
   while (nextDrop <= 0) {
     let r: number;

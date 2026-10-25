@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Photos waiting in the share sheet live in the cache, under shared/, and nowhere else. -->
 <paths>
     <cache-path name="shared" path="shared/" />
 </paths>

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "@solana/kit";
 import {
@@ -23,7 +23,15 @@ import { RemindMe } from "@/components/home/remind-me";
 import { CARE_ICON, Deck, type Gain, type Panel } from "@/components/home/deck";
 import { EmoteRow } from "@/components/home/emote-row";
 import { PhotoDialog } from "@/components/home/photo";
+import { chime } from "@/lib/play/sound";
+import { RoomSound } from "./room-sound";
+import { HomeScreenTip } from "./home-screen-tip";
+import { SigningNote } from "./signing-note";
 import { PetSwitcher } from "@/components/home/pet-switcher";
+import { DecorPanel } from "@/components/home/decor-panel";
+import { shownDecor, useRoomDecor } from "@/lib/room/decor";
+import { useCoats } from "@/lib/player/use-coats";
+import { useCloset } from "@/lib/market/use-closet";
 import { Room, RoomViewSwitch, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";
 import type { RoomView } from "@/components/room3d/room-3d";
@@ -58,60 +66,83 @@ import { haptic, useHere } from "@/lib/native/android";
 import { describeLook } from "@/lib/player/look";
 import { usePlayerProfile } from "@/lib/player/profile";
 import { usePlayerLook } from "@/lib/player/use-player-look";
-import { CARE_MOMENT, type RoomCue } from "@/lib/room/moments";
+import { CARE_MOMENT, type PhotoPose, type RoomCue } from "@/lib/room/moments";
 import { getCareInstruction } from "@/lib/solana/instructions";
 import { usePawketSend } from "@/lib/solana/use-send";
+import { record, recordHomeOpened } from "@/lib/analytics/events";
+import { dayTurnsAt } from "@/lib/utils/format";
+import { localMinute } from "@/lib/utils/local-datetime";
 
-/**
- * The room you actually live in, and the whole width of the screen: you and
- * the pet at home. Beneath it sits the deck — how the pet is, the four
- * cares and three tools — and a tool opens its panel below the deck, so the
- * room stays the largest thing on the screen. The pet is the one the player
- * chose, from any they keep; a care in this browser is saved at once, and a
- * care on Solana is signed, sent and confirmed first. The room shows a care
- * only once it is kept.
- */
 export function HomeScreen() {
   const companion = useCompanion();
   const { here, Here } = useHere();
   const { ready, pet, active } = companion;
   const look = usePlayerLook();
   const profile = usePlayerProfile();
+  const chosenDecor = useRoomDecor();
+  const closet = useCloset(companion.owner);
+  const owned = new Set(closet.data?.items ?? []);
+  const decor = shownDecor(chosenDecor, owned);
+  const coatOf = useCoats();
   const sender = usePawketSend();
   const [now, setNow] = useState(() => new Date());
   const [connecting, setConnecting] = useState(false);
-  /** The browser pet whose "keep it on Solana" sheet is open. */
   const [keeping, setKeeping] = useState<GuestPet | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [gain, setGain] = useState<Gain | null>(null);
   const [shot, setShot] = useState<string | null>(null);
   const roomView = useRef<RoomView>(null);
-  const closePhoto = useCallback(() => setShot(null), []);
-  /** A browser pet on its way onto Solana: its id here, and its address there. */
+  const closePhoto = useCallback(() => {
+    void roomView.current?.pose(null);
+    setShot(null);
+  }, []);
+  const poseForPhoto = useCallback((id: PhotoPose | null) => roomView.current?.pose(id) ?? Promise.resolve(null), []);
+  const allPets = companion.all;
+  useEffect(() => {
+    if (ready) recordHomeOpened(allPets);
+  }, [ready, allPets]);
   const carried = useRef<{ id: string; address: Address } | null>(null);
   const [cue, setCue] = useState<RoomCue | null>(null);
   const [status, setStatus] = useState<DirectorStatus>({ moment: null, sentence: "" });
   const [roomState, setRoomState] = useState<RoomState>("loading");
   const [mode, setMode] = useRoomMode();
   const onStatus = useCallback((next: DirectorStatus) => setStatus(next), []);
-  const lookShown = roomState === "live" || roomState === "loading";
-  const ask = (moment: string) => setCue({ moment, nonce: Date.now() });
+  const greeted = useRef<string | null>(null);
+  const roomReady = useCallback((state: RoomState) => {
+    setRoomState(state);
+    if (!pet || state === "loading" || greeted.current === pet.id) return;
+    greeted.current = pet.id;
+    const now = Date.now();
+    const away = now - Math.max(Date.parse(pet.statsUpdatedAt) || now, lastGreeting(pet.id));
+    if (away < AWAY_MS) return;
+    rememberGreeting(pet.id, now);
+    setCue({ moment: "hello", nonce: now });
+    showToast({
+      id: `hello-${pet.id}`,
+      tone: "note",
+      title: `${pet.name} missed you`,
+      body: `Back after ${awayFor(away)}. ${pet.name} ${MOOD_SENTENCE[projectGuestPet(pet, new Date(now)).mood]}`,
+      ttl: 8_000,
+    });
+  }, [pet]);
+  const ask = (moment: string) => {
+    setCue({ moment, nonce: Date.now() });
+    chime(moment);
+  };
   const earned = (action: CareActionType, xp: number) => setGain({ action, xp, at: Date.now() });
 
+  const resting = pet ? Object.values(cooldownsFor(pet, now)).some((left) => left > 0) : false;
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000);
+    const id = window.setInterval(() => setNow(new Date()), resting ? 1_000 : 30_000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [resting]);
 
-  // A tool's panel opens under the deck; on a phone that is below the fold,
-  // so it comes up to meet the tap rather than opening out of sight.
   useEffect(() => {
     if (!panel) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document.getElementById("pk-deck-panel")?.scrollIntoView({ block: "nearest", behavior: reduce ? "instant" : "smooth" });
   }, [panel]);
 
-  // A pet carried onto Solana leaves this browser once the chain copy is the one drawn.
   useEffect(() => {
     if (carried.current && active?.pet.address === carried.current.address) {
       if (!removePet(carried.current.id)) {
@@ -148,9 +179,10 @@ export function HomeScreen() {
             sky="warm"
             cue={cue}
             description={`${describeLook(look)}, in an empty room with the window open.`}
+            decor={decor}
             onState={setRoomState}
             stage
-            corner={<RoomViewSwitch mode={mode} state={roomState} onMode={setMode} />}
+            corner={<div className="pk-room-tools"><RoomSound /><RoomViewSwitch mode={mode} state={roomState} onMode={setMode} /></div>}
           />
           <Card>
             <h2 className="title">The window is open</h2>
@@ -166,7 +198,7 @@ export function HomeScreen() {
               <ButtonLink label="Change your look" href="/profile#look" tone="ghost" size="sm" className="pk-btn--flush" />
             </div>
           </Card>
-          <ChainTrouble error={companion.chainError} onRetry={companion.refresh} />
+          <ChainTrouble error={companion.chainError} kept={companion.owned.length > 0} onRetry={companion.refresh} />
         </Stack>
         {connecting ? (
           <WalletSheet
@@ -195,7 +227,6 @@ export function HomeScreen() {
   const streak = streakAsOf(pet.streak, now);
   const today = todayFor(pet, now);
   const worn = findWearable(pet.wearing);
-  // The care the pet most wants wears sun; the rest wait their turn.
   const wanted = sender.busy ? null : suggestCare(projected.stats, cooldowns);
 
   function care(action: CareActionType) {
@@ -220,7 +251,10 @@ export function HomeScreen() {
     }
     const day = result.pet.streak.lastDay === utcDay(new Date()) ? ` Day ${result.pet.streak.count}.` : "";
     const level = levelUp(current.xp, result.pet.xp);
-    // A level in this browser is a level Solana has not seen: worth a word, once, at the moment it counts.
+    setNotice({
+      tone: "ok",
+      text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${earnedLine(current, result.pet)}`,
+    });
     if (level) {
       showToast({
         id: `keep-${current.id}`,
@@ -229,8 +263,8 @@ export function HomeScreen() {
         ttl: 14_000,
         body: (
           <>
-            Levels here live in {here}. Kept on Solana, {current.name} would start over at level 1 — the sooner,
-            the less to redo.{" "}
+            This level lives in {here}. On Solana, {current.name} starts at level 1 — the sooner, the less to
+            redo.{" "}
             <button type="button" className="pk-linkish" onClick={() => setKeeping(readPet(current.id) ?? current)}>
               Keep {current.name} on Solana
             </button>
@@ -238,20 +272,14 @@ export function HomeScreen() {
         ),
       });
     }
-    setNotice({
-      tone: "ok",
-      text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${level ? ` ${current.name} is level ${level} now.` : ""}${earnedLine(current, result.pet)}`,
-    });
-    // Only now, with the care saved, does the room show it — and a new
-    // level is the one thing worth a cheer.
     earned(action, result.xpGained);
+    record({ name: "care_saved", where: "browser", action });
     ask(level ? "cheer" : CARE_MOMENT[action]);
     haptic(level ? "cheer" : "done");
   }
 
   async function careOnChain(action: CareActionType) {
     if (!active || !pet) return;
-    // The same rule the program enforces, checked before the wallet opens.
     const check = applyGuestCare(pet, action, new Date());
     if (!check.ok) {
       setNotice({ tone: "stop", text: check.message });
@@ -259,21 +287,18 @@ export function HomeScreen() {
       return;
     }
     setNotice(undefined);
-    const result = await sender.act(`${CARE_ACTION_LABEL[action]} ${pet.name}`, ({ owner }) => [
-      getCareInstruction({ owner, pet: active.pet.address, passport: active.passport.address, action }),
-    ]);
+    const level = levelUp(pet.xp, check.pet.xp);
+    const done = `${CARE_DONE_LABEL[action]}.${level ? ` ${pet.name} is level ${level} now.` : ""}${earnedLine(pet, check.pet, { onChain: true, guild: Boolean(active.member) })}`;
+    const result = await sender.act(
+      `${CARE_ACTION_LABEL[action]} ${pet.name}`,
+      ({ owner }) => [getCareInstruction({ owner, pet: active.pet.address, passport: active.passport.address, action })],
+      done,
+    );
     if (!result) return;
     companion.refresh();
-    // Only now, with the care confirmed, does the room show it.
     if (result.outcome === "confirmed") {
-      const level = check.ok ? levelUp(pet.xp, check.pet.xp) : null;
-      setNotice({
-        tone: "ok",
-        text: `${CARE_DONE_LABEL[action]}. Kept on Solana.${level ? ` ${pet.name} is level ${level} now.` : ""}${
-          check.ok ? earnedLine(pet, check.pet, { onChain: true, guild: Boolean(active.member) }) : ""
-        }`,
-      });
-      if (check.ok) earned(action, check.xpGained);
+      earned(action, check.xpGained);
+      record({ name: "care_saved", where: "solana", action });
       ask(level ? "cheer" : CARE_MOMENT[action]);
     }
   }
@@ -281,7 +306,7 @@ export function HomeScreen() {
   return (
     <Screen className="pk-home-screen">
       <ScreenBar>
-        <div>
+        <div className={pet.name.length > 12 ? "pk-home__title--long" : undefined}>
           <h1 className="display-s">{pet.name}&apos;s room</h1>
           <Row gap={2} wrap style={{ marginTop: "var(--space-1)" }}>
             <span className="caption pk-faint">
@@ -291,7 +316,6 @@ export function HomeScreen() {
             {worn ? <Chip label={worn.name} icon={worn.icon} /> : null}
           </Row>
         </div>
-        {/* Where the pet lives, or — for one in this browser — the way to keep it on Solana. */}
         {onChain ? (
           <Chip label="On Solana" tone="pool" icon="check" />
         ) : (
@@ -315,16 +339,18 @@ export function HomeScreen() {
             species: pet.species,
             name: pet.name,
             mood: projected.mood,
+            coat: coatOf(pet),
           }}
           look={look}
           sky={SPECIES_SKY[pet.species]}
           cue={cue}
           description={`${describeLook(look)}, and ${pet.name} the ${SPECIES_LABEL[pet.species].toLowerCase()}${worn ? ` in the ${worn.name.toLowerCase()}` : ""}, in the room with the window open.`}
           onStatus={onStatus}
-          onState={setRoomState}
+          onState={roomReady}
           stage
           viewRef={roomView}
-          corner={<RoomViewSwitch mode={mode} state={roomState} onMode={setMode} />}
+          decor={decor}
+          corner={<div className="pk-room-tools"><RoomSound /><RoomViewSwitch mode={mode} state={roomState} onMode={setMode} /></div>}
         />
         <Deck
           name={pet.name}
@@ -343,21 +369,14 @@ export function HomeScreen() {
           onPanel={setPanel}
           onSnap={roomState === "live" ? () => setShot(roomView.current?.snap() ?? null) : undefined}
         />
-        {/* What the room is doing, said under the deck so nothing above a finger moves. */}
-        <p role="status" className="body-sm pk-muted pk-home__said">
+        {onChain ? <SigningNote state={sender.pawketWallet} name={pet.name} /> : null}
+        <p role="status" className="pk-sr">
           {status.sentence}
         </p>
 
         <div id="pk-deck-panel" className="pk-deck__panel" hidden={panel === null}>
-          {panel === "say" ? (
-            lookShown ? (
-              <EmoteRow petName={pet.name} playing={status.moment} onEmote={ask} />
-            ) : (
-              <Card variant="quiet">
-                <p className="body-sm pk-muted">Emotes play in the 3D room. The flat room shows the care itself.</p>
-              </Card>
-            )
-          ) : null}
+          {panel === "say" ? <EmoteRow petName={pet.name} playing={status.moment} onEmote={ask} /> : null}
+          {panel === "decor" ? <DecorPanel shown={decor} owned={owned} /> : null}
           {panel === "today" ? (
             <TodayCard
               pet={pet}
@@ -373,7 +392,7 @@ export function HomeScreen() {
           ) : null}
         </div>
 
-        <ChainTrouble error={companion.chainError} onRetry={companion.refresh} />
+        <ChainTrouble error={companion.chainError} kept={companion.owned.length > 0} onRetry={companion.refresh} />
 
         <TodayStrip name={pet.name} today={today} />
         <HomeFoot pet={pet} onChain={onChain} others={companion.all.length - 1} />
@@ -388,16 +407,24 @@ export function HomeScreen() {
           onCarried={(address) => {
             carried.current = { id: keeping.id, address };
             companion.choose(address);
-            companion.refresh();
+            // An RPC node can confirm a pet before it serves its account.
+            void (async () => {
+              for (let tries = 0; tries < 6 && carried.current?.address === address; tries++) {
+                await companion.refresh();
+                if (carried.current?.address !== address) return;
+                await new Promise((resolve) => setTimeout(resolve, 2_000));
+              }
+            })();
           }}
         />
       ) : null}
       {shot ? (
         <PhotoDialog
           shot={shot}
+          onPose={poseForPhoto}
           title={`${pet.name} and ${profile.name.trim() || "me"}`}
-          line={`${PERSONALITY_LABEL[pet.personality]} ${SPECIES_LABEL[pet.species].toLowerCase()} · level ${projected.level} · ${utcDay(now)}`}
-          file={`pawket-${pet.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${utcDay(now)}`}
+          line={`${PERSONALITY_LABEL[pet.personality]} ${SPECIES_LABEL[pet.species].toLowerCase()} · level ${projected.level} · ${localMinute(now).slice(0, 10)}`}
+          file={`pawket-${pet.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${localMinute(now).slice(0, 10)}`}
           onClose={closePhoto}
         />
       ) : null}
@@ -405,28 +432,57 @@ export function HomeScreen() {
   );
 }
 
-/** A sticker a care just earned, said after it. */
+const AWAY_MS = 4 * 3_600_000;
+const GREETINGS = "pawket.greetings";
+
+function greetings(): Record<string, unknown> {
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(GREETINGS) ?? "{}");
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function lastGreeting(id: string): number {
+  const at = greetings()[id];
+  return typeof at === "number" ? at : 0;
+}
+
+function rememberGreeting(id: string, at: number) {
+  try {
+    window.localStorage.setItem(GREETINGS, JSON.stringify({ ...greetings(), [id]: at }));
+  } catch {}
+}
+
+function awayFor(ms: number): string {
+  const hours = Math.floor(ms / 3_600_000);
+  return hours < 48 ? `${hours} hours` : `${Math.floor(hours / 24)} days`;
+}
+
 function earnedLine(before: GuestPet, after: GuestPet, context: BadgeContext = {}): string {
   const earned = newlyEarned(before, after, context);
   if (earned.length === 0) return "";
   return ` New sticker: ${earned.map((badge) => badge.name).join(", ")}.`;
 }
 
-/** The new level when XP crosses one, else null. */
 function levelUp(before: number, after: number): number | null {
   const level = calculateLevelFromXp(after);
   return level > calculateLevelFromXp(before) ? level : null;
 }
 
-/** Solana did not answer: say what is shown instead, and offer to ask again. */
-function ChainTrouble({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+function ChainTrouble({ error, kept, onRetry }: { error: unknown; kept: boolean; onRetry: () => void }) {
   const { here } = useHere();
   if (!error) return null;
   return (
     <Banner
       tone="wait"
       title="Solana did not answer"
-      body={`Your pets there are unchanged; this screen could not read them just now. What you see is ${here}'s.`}
+      body={
+        kept
+          ? "Your pets there are unchanged; this screen could not read them again just now, so what it shows of them may be behind."
+          : `Your pets there are unchanged; this screen could not read them just now. What you see is ${here}'s.`
+      }
       action={<Button label="Try again" tone="quiet" size="sm" onClick={onRetry} />}
     />
   );
@@ -439,10 +495,6 @@ const GOALS: Array<{ action: CareActionType; label: string }> = [
   { action: CareActionType.Rest, label: "A rest" },
 ];
 
-/**
- * Today's round in one band: the five things that make a good day, ticked as
- * they happen. Guidance only: it changes no rule and grants nothing new.
- */
 function TodayStrip({ name, today }: { name: string; today: TodayGoals }) {
   return (
     <section className="pk-today" aria-labelledby="pk-today-title">
@@ -474,7 +526,6 @@ function TodayStrip({ name, today }: { name: string; today: TodayGoals }) {
               <span className="pk-sr">, done</span>
             </>
           ) : (
-            // The one goal played elsewhere: its whole mark is the way there.
             <Link href="/playground" className="pk-goal__go" transitionTypes={["nav-place"]}>
               <span className="pk-goal__mark" aria-hidden="true">
                 <Icon name="ball" size={14} />
@@ -486,13 +537,14 @@ function TodayStrip({ name, today }: { name: string; today: TodayGoals }) {
         </li>
       </ul>
       <p className="caption pk-faint pk-today__line">
-        {today.done === today.of ? `All of it, today. ${name} is well looked after.` : "Any one keeps the streak; all five make a good day."}
+        {today.done === today.of
+          ? `All of it, today. ${name} is well looked after. A new day starts ${dayTurnsAt()}.`
+          : `Any one keeps the streak; all five make a good day. The day turns ${dayTurnsAt()}.`}
       </p>
     </section>
   );
 }
 
-/** The full numbers behind the deck: each vital, the level, the streak. */
 function TodayCard({
   pet,
   mood,
@@ -552,7 +604,6 @@ function TodayCard({
   );
 }
 
-/** Five segments and the raw count beside them — never a percentage. */
 function Vital({ label, value }: { label: string; value: number }) {
   return (
     <Meter
@@ -565,14 +616,11 @@ function Vital({ label, value }: { label: string; value: number }) {
   );
 }
 
-/**
- * Under the day: the way to the pet's whole record, and to the rest of the
- * family. Letting a pet go lives on its record, away from the daily care.
- */
 function HomeFoot({ pet, onChain, others }: { pet: GuestPet; onChain: boolean; others: number }) {
   const { here } = useHere();
   return (
     <div className="pk-home__foot">
+      {onChain ? null : <HomeScreenTip name={pet.name} />}
       <Card href={`/pet/${pet.id}`} className="pk-rowcard">
         <span className="pk-rowcard__words">
           <span className="title">{pet.name}&apos;s record</span>

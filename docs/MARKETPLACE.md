@@ -29,6 +29,16 @@ a separately approved product and protocol design; see `DECISIONS.md`.
 | 19–28 | Ten pet pieces: halo, wizard hat, sun hat, gold crown, cowboy hat, chef hat, sunglasses, headphones, beret, necktie | Foil | 0.05 SOL each | `dress_owned` |
 | 64–75 | Twelve rooms: Blossom, Aurora, Strawberry, Honey, Matcha, Seaside, Lavender, Starlight, Terracotta, Newsprint, Cocoa, Arcade | Glass | 0.1 SOL each | the room picker |
 | 80–87 | Eight photo frames: Postcard, Film strip, Garden, Sunshine, Instant, Hearts, Starry night, Confetti | Copper | 0.025 SOL each | Home → Photo → Photo frame |
+| — | Thirty-four room things: pictures, plants, rugs, beds and things past the bed, an autumn three among them | — | Free, or with a Market room | Home → Decor |
+
+Room things are not sold and have no item id (`src/lib/room/decor.ts`). Most
+are free. Each Market room brings one of its own — the Blossom scroll, the
+northern lights, a strawberry rug, a honeycomb rug, a bonsai, a seashell bed,
+lavender, moon and stars, a sun mirror, a framed front page, a cocoa mug, a
+neon heart — open once the closet holds that room. Where they stand is kept on
+the device; the Market's "For your room" shelf places them too. A thing is
+marked "New" for thirty days after it arrives (`since`, `isNewDecor`), on its
+tile and in Home's Decor panel.
 
 Each shelf's material is its tile's trim, and the word is written beside the
 price ("Cloth piece", "Glass room"). The material says what kind of thing it
@@ -49,6 +59,13 @@ pet (`pet-art.tsx`), as a tile (`WearableArt`) and in the 3D room
 drawn on the print (`printPhoto`) and on the shelf (`FrameArt`).
 
 ## Purchase flow
+
+The shelves can be searched by any word a thing is known by (its name, its
+line, where it is worn, its material, a room's colours) and narrowed to hats,
+glasses, neck, back, rooms, decor, frames or what the closet holds. The address keeps
+the shelf, so `/market#room` opens on the rooms (`src/lib/market/shelf.ts`).
+On a phone an untouched shelf is a row to swipe, the next tile peeking in, and
+"See all" opens it as a grid; a search or a filter always shows the grid.
 
 ```text
 /market → tap an item → a Paper sheet over the shelves: your own pet wearing it (or sitting

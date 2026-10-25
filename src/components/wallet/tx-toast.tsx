@@ -1,20 +1,14 @@
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import type { Toast } from "@/components/pk/toast";
 import type { SolanaCluster } from "@/config/env";
 import { explorerTxUrl } from "@/lib/solana/cluster";
 import type { TxState } from "@/lib/solana/use-send";
 import { inAndroidApp } from "@/lib/native/android";
+import { stopWaitingForPhoneWallet } from "@/lib/solana/browser-client";
 import { DevnetFaucet } from "@/components/wallet/faucet";
 
-/** Where a linked device key lives, said as the player sees it: this app, or this browser. Toasts are made at run time, never on the server. */
 const here = () => (inAndroidApp() ? "this app" : "this browser");
 
-/**
- * What a send looks like, as a toast. Waiting is neutral; a record is a fact
- * with its signature a tap away, not a celebration; a timeout is "still
- * waiting", never "failed"; a failure names its reason and stays until it is
- * read. The joy belongs to the animal on the screen.
- */
 export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast | null {
   const title = tx.label ?? "Your transaction";
   const look = tx.signature ? (
@@ -35,7 +29,19 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
         id,
         tone: "wait",
         title,
-        body: tx.by === "device" ? `Signing in ${here()}.` : "Approve it in your wallet. Nothing is sent until you do.",
+        body:
+          tx.by === "device" ? (
+            `Signing in ${here()}.`
+          ) : tx.phone ? (
+            <>
+              Approve it in your wallet app. Nothing is sent until you do.{" "}
+              <button type="button" className="pk-linkish" onClick={stopWaitingForPhoneWallet}>
+                Nothing there? Stop waiting
+              </button>
+            </>
+          ) : (
+            "Approve it in your wallet. Nothing is sent until you do."
+          ),
       };
     case "sending":
       return { id, tone: "wait", title, body: "On its way to Solana." };
@@ -50,7 +56,7 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
         ttl: 6_000,
         body: (
           <>
-            Recorded on Solana, {paid}.{look}
+            {tx.done ? `${tx.done} ` : ""}Recorded on Solana, {paid}.{look}
           </>
         ),
       };
@@ -62,7 +68,8 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
         title: "Still waiting",
         body: (
           <>
-            {title}: signed, confirmation unknown. Check its receipt before trying again. Nothing changes here until Solana confirms it.{look}
+            {title}: signed, not confirmed yet. Pawket keeps checking for a couple of minutes and says how it ends; try it again only if
+            it did not land. Nothing changes here until Solana confirms it.{look}
           </>
         ),
       };

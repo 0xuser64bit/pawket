@@ -11,15 +11,11 @@ import {
   SkinnedMesh,
   Vector2,
   type BufferGeometry,
+  type Material,
   type MeshToonMaterialParameters,
+  type Object3D,
   type Texture,
 } from "three";
-
-/**
- * Pawket draws flat geometry with an ink outline. In 3D that is toon
- * shading on three steps — shadow, mid, lit — and an inverted-hull outline
- * a fixed number of pixels wide, in the theme's `edge` ink.
- */
 
 let ramp: DataTexture | null = null;
 
@@ -34,18 +30,23 @@ function toonRamp(): DataTexture {
   return ramp;
 }
 
+export function disposeTree(root: Object3D): void {
+  const geometries = new Set<BufferGeometry>();
+  const materials = new Set<Material>();
+  root.traverse((node) => {
+    const mesh = node as Mesh;
+    if (!mesh.isMesh) return;
+    geometries.add(mesh.geometry);
+    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+  });
+  for (const geometry of geometries) geometry.dispose();
+  for (const material of materials) material.dispose();
+}
+
 export function toon(params: MeshToonMaterialParameters = {}): MeshToonMaterial {
   return new MeshToonMaterial({ gradientMap: toonRamp(), ...params });
 }
 
-/**
- * The body's skin: the pack's one painted skin, recoloured by `uTone` — the
- * ratio of the wanted average tone to the painting's own (both linear) —
- * so blush, shadow and detail survive at every tone. Every triangle a worn
- * garment covers is collapsed in the vertex shader (`_cover` bits from the
- * asset pipeline against `uHidden`), so skin is never drawn under cloth and
- * never pokes through it.
- */
 export function skinMaterial(map: Texture, normal: Texture | null) {
   const uniforms = { uTone: { value: new Color(1, 1, 1) }, uHidden: { value: 0 } };
   const material = toon({ map, normalMap: normal ?? undefined });
@@ -69,12 +70,9 @@ export function skinMaterial(map: Texture, normal: Texture | null) {
   return { material, uniforms };
 }
 
-/** Outside clip space, so the whole triangle is culled before it is shaded. */
 const COLLAPSE = `if ((int(_cover + 0.5) & uHidden) != 0) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);`;
 
-/* -------------------------------------------------------------- outline */
-
-const OUTLINE_VERTEX = /* glsl */ `
+const OUTLINE_VERTEX = `
 #include <common>
 #include <skinning_pars_vertex>
 attribute vec3 outlineNormal;
@@ -101,7 +99,7 @@ void main() {
 }
 `;
 
-const OUTLINE_FRAGMENT = /* glsl */ `
+const OUTLINE_FRAGMENT = `
 uniform vec3 uColor;
 void main() {
   gl_FragColor = vec4(uColor, 1.0);
@@ -109,23 +107,15 @@ void main() {
 }
 `;
 
-/** Shared by every outline, so the theme ink and pixel size change in one place. */
 export const outlineUniforms = {
   uColor: { value: new Color("#2a1e14") },
   uWidth: { value: 1.6 },
   uViewport: { value: new Vector2(1, 1) },
 };
 
-/**
- * A normal per position, averaged across split vertices. Extruding along
- * the mesh's own normals would tear the outline open at every hard corner
- * of a cube pet.
- */
 function smoothNormals(geometry: BufferGeometry): BufferAttribute {
   const pos = geometry.getAttribute("position");
   const nrm = geometry.getAttribute("normal");
-  // Quantised positions hashed to ints: a string key per vertex is the
-  // slow part of loading a body with every garment in it.
   const ids = new Int32Array(pos.count);
   const seen = new Map<number, number>();
   const sums: number[] = [];
@@ -156,11 +146,6 @@ function smoothNormals(geometry: BufferGeometry): BufferAttribute {
   return new BufferAttribute(out, 3);
 }
 
-/**
- * Give a mesh its ink: a back-faced twin, pushed out along smoothed
- * normals by a fixed pixel width. Skinned meshes share their skeleton, and
- * a body shares its `hidden` uniform with the skin it outlines.
- */
 export function addOutline(mesh: Mesh | SkinnedMesh, hidden?: { value: number }): Mesh {
   const geometry = mesh.geometry;
   if (!geometry.getAttribute("outlineNormal")) geometry.setAttribute("outlineNormal", smoothNormals(geometry));
@@ -183,7 +168,6 @@ export function addOutline(mesh: Mesh | SkinnedMesh, hidden?: { value: number })
   outline.name = `${mesh.name}:outline`;
   outline.frustumCulled = mesh.frustumCulled;
   outline.raycast = () => {};
-  // A child: it shares the mesh's transform, and hiding the mesh hides it.
   mesh.add(outline);
   return outline;
 }

@@ -18,7 +18,6 @@ fn anyone_but_the_owner_waves_once_a_day_and_the_guestbook_keeps_the_last_eight(
     assert_eq!((book.pet, book.waves), (pet, 1));
     assert_eq!(book.recent[0].visitor, visitor.pubkey());
     assert_eq!(book.recent[0].at, T0);
-    // A wave changes nothing about the pet.
     let after = env.pet(&pet);
     assert_eq!((after.xp, after.happiness, after.stats_updated_at), (before.xp, before.happiness, before.stats_updated_at));
 
@@ -50,7 +49,6 @@ fn a_guestbook_that_is_there_already_takes_waves_only_for_the_pet_it_names() {
     let visitor = env.player();
     let pepper = env.adopt(&owner, "Pepper");
     let nib = env.adopt(&owner, "Nib");
-    // At Pepper's guestbook address, a book that names Nib: `init_if_needed`'s second path, held.
     let forged = Guestbook { pet: nib, waves: 0, recent: Default::default(), bump: 0 };
     env.forge(&guestbook_pda(&pepper), &forged);
 

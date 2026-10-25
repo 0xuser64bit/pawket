@@ -1,10 +1,5 @@
 import { ACTION_HEADERS, preflight } from "@/server/actions";
 
-/**
- * Tells Blink clients which pages on this domain are Solana Actions, so the
- * links people already share unfurl as cards: /adopt as the adoption, a
- * pet's record as its four cares, a guild's page as the way in.
- */
 export function GET() {
   return Response.json(
     {

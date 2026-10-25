@@ -7,13 +7,8 @@ import { blip } from "@/lib/play/sound";
 import { Heart, Obstacle } from "./game-art";
 import { useFrame } from "./use-frame";
 
-/** Where the path is, from the top of the field. */
 const GROUND = 0.8;
 
-/**
- * Hop, drawn: the park path running right to left under the pet, hills and
- * clouds slower behind it. A tap, a click, Space or the up arrow is a jump.
- */
 export function HopGame({
   form,
   temper,

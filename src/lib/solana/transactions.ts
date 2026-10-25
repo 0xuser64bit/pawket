@@ -7,31 +7,7 @@ import {
   SOLANA_ERROR__TRANSACTION_ERROR__INSUFFICIENT_FUNDS_FOR_FEE,
   type Signature,
 } from "@solana/kit";
-
-/**
- * Transaction lifecycle standard (web). `send.ts` is the one implementation.
- *
- * 1. Gather state — the wallet signer, derived PDAs, validated inputs.
- * 2. Validate client-side — game math + `normalizePetName` (trim before PDA).
- * 3. Build instructions — the builders in `instructions.ts`. Never hand-roll
- *    instruction bytes in a component.
- * 4. Sign — the sponsor (`/api/sponsor`) first, as fee payer, after checking
- *    the transaction; then the wallet, as the owner, on a transaction it
- *    then has no reason to rewrite. When the player pays, the wallet alone.
- *    Never ask for seed phrases or keys.
- * 5. Send — to the RPC with preflight on. A failing simulation is never sent
- *    and costs nobody anything.
- * 6. Confirm — `confirmed` commitment, 30s timeout, then treat as unknown
- *    (not failed, not succeeded).
- * 7. Refresh — reload state from the chain. No optimistic XP.
- * 8. Failure — one sentence that names what did not change; the CTA is
- *    disabled while sending.
- *
- * Rules: the fee payer is the sponsor while it is up, else the owner.
- * A lost send reply is resolved by looking up the existing signature.
- * A new transaction always needs a new explicit action and signature.
- * Optimistic UI for adopt/care is forbidden.
- */
+import { dayTurnsAt } from "@/lib/utils/format";
 
 export const CONFIRMATION_TIMEOUT_MS = 30_000;
 
@@ -45,16 +21,10 @@ export type TransactionStage =
   | "unknown"
   | "failed";
 
-/**
- * There is no `simulating` stage: preflight runs inside the send (here or at
- * the sponsor) and cannot be bracketed honestly from the outside. Stages map
- * 1:1 to things the UI actually observes.
- */
 export function isActiveStage(stage: TransactionStage): boolean {
   return stage === "preparing" || stage === "signing" || stage === "sending" || stage === "confirming";
 }
 
-/** The error, then every `cause` under it: Kit wraps the useful part. */
 function errorChain(error: unknown): unknown[] {
   const chain: unknown[] = [];
   for (let e = error, depth = 0; e != null && depth < 6; depth++) {
@@ -71,11 +41,6 @@ function messageOf(error: unknown): string {
     .join(" | ");
 }
 
-/**
- * The code Mobile Wallet Adapter put on its error, anywhere in the chain: a
- * name like "ERROR_WALLET_NOT_FOUND" for the adapter's own, a number for the
- * wallet's answer (-1 not authorized, -3 not signed).
- */
 export function mobileWalletErrorCode(error: unknown): string | number | null {
   for (const e of errorChain(error)) {
     const { name, code } = (e ?? {}) as { name?: unknown; code?: unknown };
@@ -85,7 +50,6 @@ export function mobileWalletErrorCode(error: unknown): string | number | null {
   return null;
 }
 
-/** A wallet app on the phone said no: it declined to authorize or to sign, or the player cancelled before it opened. */
 const MOBILE_REFUSALS = new Set<string | number>([-1, -3, "ERROR_ASSOCIATION_CANCELLED"]);
 
 export function isUserRejection(error: unknown): boolean {
@@ -94,7 +58,6 @@ export function isUserRejection(error: unknown): boolean {
   return /user rejected|rejected by user|declined|user denied|cancell?ed by user/i.test(messageOf(error));
 }
 
-/** What went wrong reaching a wallet app on the phone, in a sentence, or null when it was not that. */
 export function mobileWalletProblem(error: unknown): string | null {
   switch (mobileWalletErrorCode(error)) {
     case "ERROR_WALLET_NOT_FOUND":
@@ -103,6 +66,8 @@ export function mobileWalletProblem(error: unknown): string | null {
       return "Your wallet closed before it answered.";
     case "ERROR_SESSION_TIMEOUT":
       return "Your wallet did not answer in time.";
+    case "ERROR_REAUTHORIZE":
+      return "Your wallet app wanted to approve Pawket again before signing. Try once more: it asks, then signs.";
     case "ERROR_ASSOCIATION_CANCELLED":
       return /timed? out|timeout/i.test(messageOf(error)) ? "Your wallet app did not open in time." : null;
     case "ERROR_LOOPBACK_ACCESS_BLOCKED":
@@ -126,7 +91,6 @@ const MAX_CODE = 6029;
 const isPawketCode = (code: unknown): code is number =>
   typeof code === "number" && Number.isInteger(code) && code >= MIN_CODE && code <= MAX_CODE;
 
-/** Map a program error code (6000–6029) to one sentence that says what did not change. */
 export function pawketErrorMessage(code: number): string {
   switch (code) {
     case 6000:
@@ -156,7 +120,7 @@ export function pawketErrorMessage(code: number): string {
     case 6012:
       return "This device's link has run out. Link it again to keep going. Nothing changed.";
     case 6013:
-      return "This device has done all it may today. Nothing changed; it can again after midnight UTC.";
+      return `This device has done all it may today. Nothing changed; it can again ${dayTurnsAt()}.`;
     case 6014:
       return "No device is linked to your Pawket Wallet. Nothing changed.";
     case 6015:
@@ -194,12 +158,6 @@ export function pawketErrorMessage(code: number): string {
   }
 }
 
-/**
- * A known Pawket program error code, if the error carries one: on a Kit
- * instruction error anywhere in the cause chain, relayed by the sponsor as
- * `programError`, or in log text — Kit's `#6002`, Anchor's `Error Number:
- * 6002`, or a raw `custom program error: 0x1772`.
- */
 export function extractProgramErrorCode(error: unknown): number | null {
   for (const e of errorChain(error)) {
     if (isSolanaError(e, SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM)) {
@@ -219,9 +177,10 @@ export function extractProgramErrorCode(error: unknown): number | null {
     const code = Number(contextual[1] ?? contextual[2] ?? contextual[3]);
     return isPawketCode(code) ? code : null;
   }
-  // Bare codes are word-boundaried so slot numbers and signatures can't false-positive.
-  const bare = /\b(600[0-7])\b/.exec(message);
-  return bare ? Number(bare[1]) : null;
+  for (const [digits] of message.matchAll(/\b\d{4}\b/g)) {
+    if (isPawketCode(Number(digits))) return Number(digits);
+  }
+  return null;
 }
 
 export function toUserFacingError(error: unknown): string {
@@ -245,7 +204,6 @@ export function toUserFacingError(error: unknown): string {
   if (errorChain(error).some((e) => isSolanaError(e, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE))) {
     return "Solana refused this transaction before it was sent. Nothing changed — try again.";
   }
-  // The connection dropped before anything was signed or sent: a phone in a tunnel, not a refusal.
   if (/failed to fetch|networkerror|network request failed|load failed|err_internet_disconnected/i.test(messageOf(error))) {
     return "Pawket could not reach Solana just now. Nothing was sent — try again once you are online.";
   }
@@ -268,13 +226,6 @@ interface ConfirmationRpc {
 
 export type ConfirmationOutcome = "confirmed" | "unknown";
 
-/**
- * Real confirmation wait: `sendTransaction` resolves after send, not after
- * finality. Polls signature status until confirmed/finalized, the 30s
- * timeout (then `unknown` — never `failed`), or a recorded on-chain error
- * (then throw, so the caller maps it like any send failure).
- */
-// shortcut: Polls once a second; use signature subscriptions when request volume warrants.
 export async function waitForConfirmation(
   client: ConfirmationRpc,
   signature: string,
@@ -285,8 +236,6 @@ export async function waitForConfirmation(
     const { value } = await client.rpc
       .getSignatureStatuses([signature as Signature])
       .send({ abortSignal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) })
-      // A missing reply says nothing about the transaction. Keep looking up
-      // this signature until the deadline; the recorded status below is decisive.
       .catch(() => ({ value: null }));
     const status = (Array.isArray(value) ? value[0] : null) as {
       confirmationStatus?: string;
@@ -298,13 +247,40 @@ export async function waitForConfirmation(
         status.confirmationStatus === "finalized")
     ) {
       if (status.err !== undefined && status.err !== null) {
-        throw new Error(
-          typeof status.err === "string" ? status.err : JSON.stringify(status.err),
+        const custom = (status.err as { InstructionError?: [unknown, { Custom?: unknown } | string] }).InstructionError?.[1];
+        const code = typeof custom === "object" && custom ? Number(custom.Custom) : NaN;
+        throw Object.assign(
+          new Error(typeof status.err === "string" ? status.err : JSON.stringify(status.err, (_key, value) => (typeof value === "bigint" ? Number(value) : value))),
+          Number.isInteger(code) ? { programError: code } : {},
         );
       }
       return "confirmed";
     }
     if (Date.now() >= deadline) return "unknown";
     await sleep(1000);
+  }
+}
+
+interface SettleRpc {
+  rpc: ConfirmationRpc["rpc"] & {
+    isBlockhashValid: (blockhash: never, config?: { commitment?: "processed" | "confirmed" | "finalized" }) => {
+      send: (options?: { abortSignal?: AbortSignal }) => Promise<{ value: boolean }>;
+    };
+  };
+}
+
+export type Settled = "confirmed" | "expired" | "unknown";
+
+export async function settleSignature(client: SettleRpc, signature: string, blockhash: string, timeoutMs = 120_000): Promise<Settled> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    if ((await waitForConfirmation(client, signature, 0)) === "confirmed") return "confirmed";
+    const valid = await client.rpc
+      .isBlockhashValid(blockhash as never, { commitment: "processed" })
+      .send({ abortSignal: AbortSignal.timeout(10_000) })
+      .then(({ value }) => value, () => true);
+    if (!valid) return (await waitForConfirmation(client, signature, 0)) === "confirmed" ? "confirmed" : "expired";
+    if (Date.now() >= deadline) return "unknown";
+    await sleep(3000);
   }
 }

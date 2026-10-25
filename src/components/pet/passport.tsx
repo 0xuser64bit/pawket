@@ -13,10 +13,10 @@ import {
 import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
 import { toCompanionRecord, type ChainGuestbook, type ChainGuild, type PetOnChain } from "@/lib/solana/accounts";
 import { GuildCrest } from "@/components/guilds/guild-crest";
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
-import { formatUtcDate } from "@/lib/utils/format";
+import { formatUtcDate, nameHeadingClass } from "@/lib/utils/format";
 import type { Keepsake } from "@/server/keepsake";
 import { Guestbook } from "./guestbook";
 import { KeepsakeCard } from "./keepsake";
@@ -26,14 +26,6 @@ import { StickerStrip } from "./sticker-strip";
 
 const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
 
-/**
- * A pet kept on Solana, as anyone can see it. Beside the record, its ID card
- * stays in view: the portrait, the name, its guild and what you can do —
- * visit, share, care if it is yours. The record is the page: the level and
- * the days in a row, the last cares, the guestbook, the stickers; what it is
- * on chain folds away. Read live from the program's accounts at request
- * time — nothing here is cached, kept or guessed by Pawket.
- */
 export function Passport({
   onChain,
   now,
@@ -43,17 +35,12 @@ export function Passport({
   guestbook = null,
   gatherings = 0,
 }: {
-  /** Guild events the pet checked in at. */
   gatherings?: number;
   onChain: PetOnChain;
-  /** Who waved at the pet, or null before anyone has. */
   guestbook?: ChainGuestbook | null;
-  /** The guild the pet is in, read from chain, or null. */
   guild?: ChainGuild | null;
   now: Date;
-  /** The pet's card, where keepsakes are on. */
   keepsake: Keepsake | null;
-  /** Whether Pawket can pay for a new card right now. */
   canKeep: boolean;
 }) {
   const { pet, passport } = onChain;
@@ -83,10 +70,10 @@ export function Passport({
               />
             </div>
             <div>
-              <h1 className="display-l" style={{ overflowWrap: "anywhere" }}>
+              <h1 className={nameHeadingClass(pet.name)} style={{ overflowWrap: "anywhere" }}>
                 {pet.name}
               </h1>
-              <p className="body-sm pk-muted">
+              <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
                 {SPECIES_LABEL[pet.species]} · {PERSONALITY_LABEL[pet.personality]} · adopted {formatUtcDate(record.createdAt)}
               </p>
             </div>
@@ -111,7 +98,6 @@ export function Passport({
               <ShareButton
                 name={pet.name}
                 label={`Share ${pet.name}'s record`}
-                image={`/pet/${pet.address}/opengraph-image`}
                 text={`${pet.name}, a ${SPECIES_LABEL[pet.species].toLowerCase()} kept on Solana in Pawket. Wave hello.`}
               />
             </div>

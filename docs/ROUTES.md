@@ -14,13 +14,14 @@ unwired route, and call a pet "on Solana" only when it was read from chain.
 (game)/pet/[id]            an address: the public Passport, from chain (with its guild and guestbook);
                            otherwise the record of a pet in this browser
 (game)/pet/[address]/visit you, in a pet's room on Solana: emotes, and a wave into its guestbook
-(game)/market              looks for SOL at fixed prices — 25 pieces, 12 rooms, 8 frames — paid from the Pawket Wallet; the closet read from chain
+(game)/market              looks for SOL at fixed prices — 25 pieces, 12 rooms, 8 frames — paid from the Pawket Wallet, and the room's things; the closet read from chain
 (game)/pulse               everything the program holds, counted and read live
 (game)/guilds              every guild on Solana, read live (test and delisted ones left out), and the rule
 (game)/guilds/new          founding a guild: name, motto, crest, the founding pet
 (game)/guilds/[slug]       a guild: its pets read from their accounts, together counts, join or leave, its events and polls, its coin
 (game)/guilds/[slug]/coin  a guild's coin: its terms and stage from chain, launch, quote, trade, graduate, claim
 /privacy                   the privacy policy, for the web and the Android app
+/new                       what changed lately, newest first (`src/config/news.ts`); the front door names the newest
 /api/health
 /api/sponsor               GET: is it up. POST { transaction }: signed first, as fee payer
 /api/rpc                   the browser's RPC: allow-listed reads and sends for Pawket's program, to SOLANA_RPC_URL
@@ -30,13 +31,15 @@ unwired route, and call a pet "on Solana" only when it was read from chain.
 /api/actions/guild/[slug]  Solana Action: a pet joins the guild
 /api/actions/icon          a square card for an Action (?pet=)
 /api/keepsake/[pet]        GET: the card's metadata, live. POST { account }: its creation, owner only
+/api/keepsake/[pet]/card   the card's picture: the pet's portrait and its record's numbers, read now
 /api/keepsake/collection   the collection's metadata
 /api/coins/[slug]/quote    GET: a quote on the curve or in the verified DAMM v2 pool
 /api/coins/[slug]/position GET ?account=: a wallet's locked positions in a graduated coin's pool, and their unclaimed fees
 /api/coins/[slug]/{launch,trade,graduate,claim}   POST { account, ... }: a transaction for the player to sign
 /api/coins/[slug]/metadata the coin's token metadata
 /actions.json              /adopt, /pet/* and /guilds/* unfurl as those Actions
-(game)/pet/[id]/opengraph-image, /opengraph-image   share cards
+/robots.txt, /sitemap.xml   crawlers read the production deployment only (never a preview, never /api), from its public pages
+(game)/pet/[id]/opengraph-image, (game)/guilds/[slug]/opengraph-image (its crest), /opengraph-image   share cards
 ```
 
 Redirects: anything under `/market` goes to `/market`; `/inventory`
@@ -48,8 +51,8 @@ The `(game)` group owns the shell: the label-sized bar (the wallet chip,
 once a wallet is connected, and the room switch) and the floating Dock. The
 dock is Home, Park, Playground, Market, Guilds, Profile. A pet on Solana and
 the Pulse light Park; a browser pet lights Profile, and so does the Pawket
-Wallet (reached from the wallet chip, Home's line under a pet on Solana, and
-Settings).
+Wallet (reached from the wallet chip, Home's line under a pet on Solana whose
+care this device cannot sign yet, and Settings).
 
 ## Server and client (normative)
 

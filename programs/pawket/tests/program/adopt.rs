@@ -1,5 +1,3 @@
-//! `adopt_pet`: the record a pet starts with, who pays for it, and which names it takes.
-
 use anchor_lang::{
     error::ErrorCode,
     prelude::Pubkey,
@@ -61,8 +59,6 @@ fn a_new_pet_starts_at_72_with_an_empty_passport() {
     assert_eq!(passport.recent, [CareMark::default(); 8]);
 }
 
-/// The web app decodes these bytes by hand (`src/lib/solana/accounts.ts`): sizes, discriminators
-/// and the fixed offsets ahead of the name are a contract.
 #[test]
 fn account_layouts_are_the_contract_the_web_app_decodes() {
     let mut env = Env::new();
@@ -126,7 +122,6 @@ fn names_are_two_to_twenty_four_utf8_bytes() {
         &env.send(&[adopt_ix(&id, &id, "abcdefghijklmnopqrstuvwxy")], &owner, &[]),
         PawketError::InvalidPetName,
     );
-    // Eight kana are 24 bytes: the limit counts bytes, not letters.
     ok(env.send(&[adopt_ix(&id, &id, "ねこねこねこねこ")], &owner, &[]));
     ok(env.send(&[adopt_ix(&id, &id, "Bo")], &owner, &[]));
     ok(env.send(&[adopt_ix(&id, &id, "abcdefghijklmnopqrstuvwx")], &owner, &[]));

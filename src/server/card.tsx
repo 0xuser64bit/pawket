@@ -10,15 +10,9 @@ import { calculateLevelFromXp } from "@/lib/game/math";
 import { projectGuestPet } from "@/lib/guest/pet";
 import { toCompanionRecord, type ChainGuild, type PetOnChain } from "@/lib/solana/accounts";
 import { iconPath } from "@/components/pk/icon";
+import { formatUtcDate } from "@/lib/utils/format";
 import { CREST_COLOURS, CREST_GLYPHS } from "@/lib/guilds/guild";
 
-/**
- * Pictures of a pet for outside the app: the card a shared link unfurls as
- * (`wide`, 1200×630) and the icon of a Solana Action (`square`). Drawn from
- * the record at request time; without a pet, the three species together.
- */
-
-/** The pet's paint in hex: the card is drawn without a stylesheet, so no token resolves. */
 const PAINT: PetPaint = {
   ink: DAYLIGHT.edge,
   rim: DAYLIGHT.surface,
@@ -59,7 +53,6 @@ const SPECIES_LOOKS: Look[] = [
   { form: "bun", temper: "cozy", feeling: "happy", wearing: null },
 ];
 
-/** How this pet looks right now, from its record. */
 function lookOf(onChain: PetOnChain): Look {
   const record = toCompanionRecord(onChain);
   const { form, temper, feeling, wearing } = petLook(record, projectGuestPet(record).mood);
@@ -68,7 +61,7 @@ function lookOf(onChain: PetOnChain): Look {
 
 let fonts: Promise<Array<{ name: string; data: ArrayBuffer; weight: 500 | 700 }>> | null = null;
 
-/** The brand's faces as TTF (the renderer reads no WOFF2), fetched once; none if the fetch fails. */
+/** The OG renderer reads no WOFF2, so the brand's faces are fetched as TTF. */
 function brandFonts() {
   fonts ??= (async () => {
     const css = await fetch(
@@ -85,15 +78,9 @@ function brandFonts() {
 }
 
 const escape = (value: string) => value.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
-/** SVG keeps these two in camelCase; every other prop is an attribute in kebab-case. */
 const attribute = (prop: string) =>
   prop === "className" ? "class" : prop === "viewBox" || prop === "preserveAspectRatio" ? prop : prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
-/**
- * PetArt as an SVG string. The renderer cannot draw fragments and no page
- * renderer may be imported here, so this serialises the drawing's own
- * element tree — plain SVG, no hooks.
- */
 function markup(node: ReactNode): string {
   if (node == null || typeof node === "boolean") return "";
   if (typeof node === "string" || typeof node === "number") return escape(String(node));
@@ -118,7 +105,6 @@ function petImage(look: Look): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
-/** The mark at a size, as an image the renderer can place: tokens resolve to their Daylight hex. */
 function pawImage(size: number): string {
   const svg = markup(<PawGlyph size={size} />)
     .replace(/var\(--([a-z-]+)\)/g, (_, token: string) => DAYLIGHT[token as Tone])
@@ -126,13 +112,12 @@ function pawImage(size: number): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
-/** Pawket's own icon, for a home screen: the paw at its fullest — shelf and highlights — on a `sun-soft` square. */
 export function pawIcon(size: number): ImageResponse {
   const glyph = Math.round(size * 0.66);
   return new ImageResponse(
     (
       <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", background: DAYLIGHT["sun-soft"] }}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={pawImage(glyph)} width={glyph} height={glyph} alt="" />
       </div>
     ),
@@ -155,11 +140,14 @@ function Pocket({ look, size }: { look: Look; size: number }) {
         overflow: "hidden",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={petImage(look)} width={size - 12} height={size - 12} alt="" />
     </div>
   );
 }
+
+const nameSize = (name: string, [roomy, longer, longest]: readonly [number, number, number]) =>
+  name.length <= 10 ? roomy : name.length <= 18 ? longer : longest;
 
 function facts(onChain: PetOnChain): string[] {
   const { pet, passport } = onChain;
@@ -215,7 +203,7 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
               ))}
             </div>
           )}
-          <div style={{ fontFamily: "Fraunces", fontSize: name.length > 12 ? 64 : 84, lineHeight: 1 }}>{name}</div>
+          <div style={{ fontFamily: "Fraunces", fontSize: nameSize(name, [84, 64, 52]), lineHeight: 1.05, maxWidth: 700, textAlign: "center" }}>{name}</div>
           <div style={{ fontSize: 30, color: DAYLIGHT["trim-cloth"] }}>{lines[onChain ? 1 : 0]}</div>
           {mark(onChain ? "ON SOLANA · PAWKET" : "ON SOLANA DEVNET", 24)}
         </div>
@@ -234,7 +222,7 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
             ))}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 22, marginTop: 8 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={pawImage(112)} width={112} height={112} alt="" />
             <div style={{ fontFamily: "Fraunces", fontSize: 92, lineHeight: 1 }}>Pawket</div>
           </div>
@@ -251,8 +239,8 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
     (
       <div style={{ ...base, alignItems: "center", padding: 72 }}>
         <Pocket look={lookOf(onChain)} size={440} />
-        <div style={{ display: "flex", flexDirection: "column", marginLeft: 64, gap: 20 }}>
-          <div style={{ fontFamily: "Fraunces", fontSize: name.length > 12 ? 72 : 104, lineHeight: 1 }}>{name}</div>
+        <div style={{ display: "flex", flexDirection: "column", marginLeft: 64, gap: 20, width: 552 }}>
+          <div style={{ fontFamily: "Fraunces", fontSize: nameSize(name, [104, 76, 56]), lineHeight: 1.05 }}>{name}</div>
           {lines.map((line) => (
             <div key={line} style={{ fontSize: 34, color: DAYLIGHT["trim-cloth"] }}>
               {line}
@@ -266,7 +254,63 @@ export async function petCard(onChain: PetOnChain | null, shape: "wide" | "squar
   );
 }
 
-/** A crest's fill and ink, as the Daylight values a PNG needs. */
+export async function keepsakeCard(onChain: PetOnChain, cluster: string): Promise<ImageResponse> {
+  const { pet, passport } = onChain;
+  const look = { ...lookOf(onChain), feeling: "happy" as const };
+  const since = formatUtcDate(new Date(toCompanionRecord(onChain).createdAt));
+  const numbers: Array<[string, string]> = [
+    ["LEVEL", String(calculateLevelFromXp(pet.xp))],
+    ["CARES", String(passport.careCount)],
+    ["BEST RUN", `${passport.bestStreak} ${passport.bestStreak === 1 ? "day" : "days"}`],
+  ];
+  return new ImageResponse(
+    (
+      <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", background: SKY[look.form], fontFamily: "Hanken Grotesk", color: DAYLIGHT.edge }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: 640,
+            height: 736,
+            padding: 32,
+            background: DAYLIGHT.surface,
+            border: `8px solid ${DAYLIGHT.edge}`,
+            borderRadius: 52,
+            boxShadow: `14px 14px 0 ${DAYLIGHT.edge}`,
+          }}
+        >
+          <Pocket look={look} size={320} />
+          <div style={{ fontFamily: "Fraunces", fontSize: nameSize(pet.name, [76, 58, 46]), lineHeight: 1.05, marginTop: 26, maxWidth: 560, textAlign: "center" }}>{pet.name}</div>
+          <div style={{ fontSize: 28, color: DAYLIGHT["trim-cloth"], marginTop: 12 }}>
+            {`${SPECIES_LABEL[pet.species]} · ${PERSONALITY_LABEL[pet.personality]}`}
+          </div>
+          <div style={{ display: "flex", gap: 14, marginTop: 24 }}>
+            {numbers.map(([k, v]) => (
+              <div key={k} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 172, padding: "10px 0", border: `3px solid ${DAYLIGHT.edge}`, borderRadius: 18, background: DAYLIGHT.ground }}>
+                <div style={{ fontSize: 17, letterSpacing: 2, color: DAYLIGHT["trim-cloth"] }}>{k}</div>
+                <div style={{ fontFamily: "Fraunces", fontSize: 34, lineHeight: 1.1 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: 552, marginTop: "auto", paddingTop: 18, borderTop: `3px dashed ${DAYLIGHT["trim-cloth"]}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={pawImage(36)} width={36} height={36} alt="" />
+              <div style={{ fontFamily: "Fraunces", fontSize: 28 }}>Pawket keepsake</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", fontSize: 18, letterSpacing: 1.5, color: DAYLIGHT["trim-cloth"] }}>
+              <div>{`SINCE ${since.toUpperCase()}`}</div>
+              <div>{`SOLANA ${cluster.toUpperCase()}`}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    { ...SQUARE, fonts: await brandFonts() },
+  );
+}
+
 const CREST_TONE: Record<(typeof CREST_COLOURS)[number]["id"], [Tone, Tone]> = {
   bloom: ["bloom", "ink-inverse"],
   pool: ["pool", "on-sun"],
@@ -276,46 +320,55 @@ const CREST_TONE: Record<(typeof CREST_COLOURS)[number]["id"], [Tone, Tone]> = {
   glass: ["trim-glass", "ink-inverse"],
 };
 
-/** A guild's square card: its crest, its name and motto, and how many pets are in it. */
-export async function guildCard(guild: ChainGuild): Promise<ImageResponse> {
+export async function guildCard(guild: ChainGuild, shape: "square" | "wide" = "square"): Promise<ImageResponse> {
   const [fill, on] = CREST_TONE[CREST_COLOURS[guild.colour]?.id ?? "bloom"];
   const glyph = CREST_GLYPHS[guild.crest] ?? "paw";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="220" height="220" fill="none" stroke="${DAYLIGHT[on]}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${iconPath(glyph)}"/></svg>`;
+  const crest = (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        width: 300,
+        height: 330,
+        background: DAYLIGHT[fill],
+        border: `10px solid ${DAYLIGHT[on]}`,
+        borderRadius: "34px 34px 46% 46%",
+        boxShadow: `12px 12px 0 ${DAYLIGHT.edge}`,
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`} width={220} height={220} alt="" />
+    </div>
+  );
+  const count = `${guild.memberCount} ${guild.memberCount === 1 ? "PET" : "PETS"} · A GUILD ON SOLANA`;
+  const base = { display: "flex", width: "100%", height: "100%", background: DAYLIGHT.ground, color: DAYLIGHT.edge, fontFamily: "Hanken Grotesk" } as const;
+
+  if (shape === "wide") {
+    return new ImageResponse(
+      (
+        <div style={{ ...base, alignItems: "center", padding: "0 88px", gap: 72 }}>
+          {crest}
+          <div style={{ display: "flex", flexDirection: "column", gap: 22, width: 652 }}>
+            <div style={{ fontFamily: "Fraunces", fontSize: nameSize(guild.name, [100, 80, 60]), lineHeight: 1.05 }}>{guild.name}</div>
+            {guild.motto ? <div style={{ fontSize: 34, color: DAYLIGHT["trim-cloth"] }}>{guild.motto}</div> : null}
+            <div style={{ display: "flex", marginTop: 14 }}>{mark(count, 24)}</div>
+          </div>
+        </div>
+      ),
+      { ...WIDE, fonts: await brandFonts() },
+    );
+  }
+
   return new ImageResponse(
     (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 26,
-          width: "100%",
-          height: "100%",
-          background: DAYLIGHT.ground,
-          color: DAYLIGHT.edge,
-          fontFamily: "Hanken Grotesk",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 300,
-            height: 330,
-            background: DAYLIGHT[fill],
-            border: `10px solid ${DAYLIGHT[on]}`,
-            borderRadius: "34px 34px 46% 46%",
-            boxShadow: `12px 12px 0 ${DAYLIGHT.edge}`,
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element -- drawn into a PNG, not a page */}
-          <img src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`} width={220} height={220} alt="" />
-        </div>
-        <div style={{ fontFamily: "Fraunces", fontSize: guild.name.length > 16 ? 60 : 80, lineHeight: 1 }}>{guild.name}</div>
+      <div style={{ ...base, flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 26 }}>
+        {crest}
+        <div style={{ fontFamily: "Fraunces", fontSize: nameSize(guild.name, [80, 64, 48]), lineHeight: 1.05, maxWidth: 700, textAlign: "center" }}>{guild.name}</div>
         {guild.motto ? <div style={{ fontSize: 30, color: DAYLIGHT["trim-cloth"], maxWidth: 680, textAlign: "center" }}>{guild.motto}</div> : null}
-        {mark(`${guild.memberCount} ${guild.memberCount === 1 ? "PET" : "PETS"} · A GUILD ON SOLANA`, 24)}
+        {mark(count, 24)}
       </div>
     ),
     { ...SQUARE, fonts: await brandFonts() },

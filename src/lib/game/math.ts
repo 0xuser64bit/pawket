@@ -17,22 +17,11 @@ export function clampStat(value: number): number {
   return Math.max(MIN_STAT, Math.min(MAX_STAT, Math.round(value)));
 }
 
-/**
- * `round(value − rate × hours)`, clamped. Round half up is floor(x + ½); in
- * 36000ths of a point (rate in tenths per hour, time in whole seconds) every
- * term is an integer, so this is exact — and identical to `decayed` in the
- * program (`programs/pawket/src/lib.rs`).
- */
 function decayStat(value: number, perHour: number, seconds: number): number {
   const scaled = value * 36_000 - Math.round(perHour * 10) * seconds + 18_000;
   return scaled <= 0 ? MIN_STAT : Math.min(MAX_STAT, Math.floor(scaled / 36_000));
 }
 
-/**
- * Drains vitals for time spent unattended. Pure and deterministic so callers
- * can project lazily: stored stats are the value at `statsUpdatedAt`, and the
- * live value is this function applied forward to now.
- */
 export function applyStatDecay(
   stats: PetStats,
   elapsedSeconds: number,
@@ -49,7 +38,6 @@ export function applyStatDecay(
   };
 }
 
-/** Whole seconds between two instants, never negative. */
 export function elapsedSecondsBetween(
   from: Date | string,
   to: Date = new Date(),
@@ -76,10 +64,6 @@ export function calculatePetMood(stats: PetStats): PetMood {
   return PetMood.Okay;
 }
 
-/**
- * Applies one care action to stats. Mirrors the on-chain deltas exactly;
- * `pnpm test` locks this (see `math.test.ts`).
- */
 export function applyCareAction(
   currentStats: PetStats,
   actionType: CareActionType,
@@ -116,8 +100,6 @@ export function validateCareCooldown(
   if (!lastActionAt) return { allowed: true };
 
   const last = lastActionAt instanceof Date ? lastActionAt : new Date(lastActionAt);
-  // Clamp: a future timestamp (clock skew, restored state) must not extend
-  // the cooldown past its full length.
   const elapsedSeconds = Math.max(
     0,
     Math.floor((now.getTime() - last.getTime()) / 1000),

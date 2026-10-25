@@ -18,7 +18,6 @@ describe("repository documentation", () => {
       expect(existsSync(resolve(dirname(file), path)), `${file}: ${target}`).toBe(true);
     }
     for (const [, path] of content.matchAll(/`([^`\n]+)`/g)) {
-      // Created locally by Android developers, not part of a checkout.
       if (path === "android/local.properties") continue;
       if (path.endsWith(".md")) {
         const relative = path.startsWith("docs/") ? path : resolve(dirname(file), path);

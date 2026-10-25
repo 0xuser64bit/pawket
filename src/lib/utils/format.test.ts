@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  dayTurnsAt,
   formatAgo,
   formatCountdown,
   formatSol,
+  formatLocalDate,
   formatUtcDate,
+  nameHeadingClass,
   parseSolToLamports,
   truncateAddress,
 } from "./format";
@@ -35,6 +38,14 @@ describe("formatUtcDate", () => {
   it("formats a UTC calendar date and refuses a bad value", () => {
     expect(formatUtcDate("2026-09-23T23:30:00.000Z")).toBe("23 Sep 2026");
     expect(formatUtcDate("not-a-date")).toBe("");
+  });
+});
+
+describe("formatLocalDate", () => {
+  it("formats the calendar date where the player is, whatever UTC says", () => {
+    expect(formatLocalDate(new Date(2026, 9, 23, 0, 14))).toBe("23 Oct 2026");
+    expect(formatLocalDate(new Date(2026, 9, 22, 23, 50))).toBe("22 Oct 2026");
+    expect(formatLocalDate("not-a-date")).toBe("");
   });
 });
 
@@ -98,5 +109,28 @@ describe("parseUnits / formatUnits", () => {
     expect(formatUnits("1000000000", 9)).toBe("1");
     expect(formatUnits(1_500_000n, 6)).toBe("1.5");
     expect(formatUnits(999n, 6, 2)).toBe("0");
+  });
+});
+
+describe("dayTurnsAt", () => {
+  const evening = new Date("2026-10-17T15:20:00Z");
+  it("says the UTC rollover in the viewer's own clock", () => {
+    expect(dayTurnsAt(evening, { locale: "en-US", timeZone: "America/Los_Angeles" })).toBe("at 5:00 PM here");
+    expect(dayTurnsAt(evening, { locale: "en-GB", timeZone: "Asia/Kolkata" })).toBe("at 5:30 here");
+  });
+  it("is midnight where local time is UTC", () => {
+    expect(dayTurnsAt(evening, { locale: "en-GB", timeZone: "UTC" })).toBe("at midnight");
+  });
+  it("counts from the UTC day it is now, even late in the local evening", () => {
+    expect(dayTurnsAt(new Date("2026-10-18T01:00:00Z"), { locale: "en-US", timeZone: "America/Los_Angeles" })).toBe("at 5:00 PM here");
+  });
+});
+
+describe("nameHeadingClass", () => {
+  it("steps a name's heading down only when a word in it is too long for a phone", () => {
+    expect(nameHeadingClass("Pepper")).toBe("display-l");
+    expect(nameHeadingClass("Sir Wigglesworth Pickles")).toBe("display-m");
+    expect(nameHeadingClass("Mr Whiskers Jr")).toBe("display-l");
+    expect(nameHeadingClass("Wigglesworth", "display-hero", "display-l")).toBe("display-l");
   });
 });

@@ -4,11 +4,6 @@ import { useRef } from "react";
 import { PawArt, PetArt } from "@/components/pk";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 
-/**
- * The front door's picture: the three pets on a hill under the sun, the
- * trail of paw prints they came by, and their eyes on the visitor's
- * pointer. Illustration, not a record — no names, no levels.
- */
 export function HeroPets() {
   const scope = useRef<HTMLDivElement>(null);
   useEyesFollow(scope);

@@ -1,0 +1,33 @@
+name: Watch
+
+on:
+  schedule:
+    - cron: "17 */4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE: https://pawket.world
+      RPC: https://api.devnet.solana.com
+      FLOOR_LAMPORTS: "2000000000"
+    steps:
+      - name: The site and its RPC answer
+        run: |
+          body=$(curl -fsS --max-time 30 "$SITE/api/health")
+          echo "$body"
+          echo "$body" | jq -e '.status == "ok"' > /dev/null
+      - name: The sponsor pays, with room to spare
+        run: |
+          sponsor=$(curl -fsS --max-time 30 "$SITE/api/sponsor")
+          echo "$sponsor" | jq -e '.available == true' > /dev/null || { echo "Sponsor unavailable: $sponsor"; exit 1; }
+          address=$(echo "$sponsor" | jq -r '.address')
+          lamports=$(curl -fsS --max-time 30 "$RPC" -H 'content-type: application/json' \
+            -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getBalance\",\"params\":[\"$address\",{\"commitment\":\"confirmed\"}]}" | jq -r '.result.value')
+          echo "The sponsor $address holds $lamports lamports."
+          [ "$lamports" -ge "$FLOOR_LAMPORTS" ] || { echo "The sponsor's float is below $FLOOR_LAMPORTS lamports: refill it."; exit 1; }

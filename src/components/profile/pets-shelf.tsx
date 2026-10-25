@@ -1,27 +1,26 @@
 "use client";
 
-import Link from "next/link";
+import { NavLink as Link, useNavigationWait } from "@/components/pk/nav-link";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { Button, ButtonLink, Card, Chip, Icon, PetFrame, Row, SectionLabel, Stack } from "@/components/pk";
+import { useCoats } from "@/lib/player/use-coats";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { projectGuestPet, type GuestPet } from "@/lib/guest/pet";
 import { useHere } from "@/lib/native/android";
 
-/**
- * Every pet the player keeps, on Solana first, then in this browser: each
- * one's face, level and where it lives, the way to its record, and the way
- * home. The last pocket on the shelf adopts another.
- */
 export function PetsShelf({ companion, onConnect }: { companion: CompanionState; onConnect: () => void }) {
   const router = useRouter();
+  const [opening, startOpening] = useTransition();
+  useNavigationWait(opening);
   const { here } = useHere();
   const home = companion.pet?.id;
   const onChain = new Set<string>(companion.owned.map((entry) => entry.pet.address));
 
   function bringHome(id: string) {
     companion.choose(id);
-    router.push("/home", { transitionTypes: ["nav-place"] });
+    startOpening(() => router.push("/home", { transitionTypes: ["nav-place"] }));
   }
 
   return (
@@ -57,10 +56,11 @@ export function PetsShelf({ companion, onConnect }: { companion: CompanionState;
 function PetCard({ pet, onChain, home, onHome }: { pet: GuestPet; onChain: boolean; home: boolean; onHome: () => void }) {
   const { here } = useHere();
   const { level, mood } = projectGuestPet(pet);
+  const coat = useCoats()(pet);
   return (
     <Card variant="flush">
       <Link href={`/pet/${pet.id}`} className="pk-card__art" aria-label={`${pet.name}'s record`} transitionTypes={["nav-forward"]}>
-        <PetFrame {...petLook(pet, mood)} sky={SPECIES_SKY[pet.species]} level={level} size="fluid" still />
+        <PetFrame {...petLook(pet, mood)} coat={coat.coat} patch={coat.patch} sky={SPECIES_SKY[pet.species]} level={level} size="fluid" still />
       </Link>
       <div className="pk-card__body">
         <h2 className="title">{pet.name}</h2>
@@ -80,7 +80,6 @@ function PetCard({ pet, onChain, home, onHome }: { pet: GuestPet; onChain: boole
   );
 }
 
-/** An empty shelf: one action, and what it does. */
 export function EmptyShelf() {
   const { here } = useHere();
   return (

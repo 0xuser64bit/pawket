@@ -9,12 +9,6 @@ import { absolute, actionError, actionJson, adoptLinkedAction, caller, postedAcc
 import { actionLimit, sponsoredForPlayer, sponsorState } from "@/server/sponsor";
 import { readPet } from "@/server/solana";
 
-/**
- * "Care for Pepper", as a Solana Action: the pet's card, live from chain,
- * and the four cares. Anyone can open it; only the owner's wallet can sign
- * one, and the program would refuse anyone else anyway.
- */
-
 export const dynamic = "force-dynamic";
 export const OPTIONS = preflight;
 
@@ -71,7 +65,8 @@ export async function POST(request: Request, { params }: Props) {
 
   const transaction = await sponsoredForPlayer(sponsor.signer, chainPet.owner, ({ owner }) => [
     getCareInstruction({ owner, pet: chainPet.address, passport: passport.address, action }),
-  ]);
+  ]).catch(() => null);
+  if (!transaction) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   return actionJson({
     type: "transaction",
     transaction,

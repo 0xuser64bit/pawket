@@ -64,8 +64,43 @@ embedded during the build. `scripts/vercel-env.sh` manages production config
 and marks the sponsor key sensitive. Preview builds default to devnet and have
 no sponsor unless configured.
 
+### Development during the hackathon freeze
+
+Keep `main` and its production deployment frozen for the submission. Work on
+`dev`; Vercel assigns that branch's Preview deployments to
+`https://dev.pawket.world`. Pushes to this branch update the development site.
+Development pull requests target `dev`, and merging or pushing to `main`
+requires the user's explicit release authorization.
+
+The branch starts at production commit `9748288d956bb9608a2d5061891f4d80cdaf7319`.
+Its branch-specific Preview configuration sets `NEXT_PUBLIC_APP_URL` to the
+development origin and uses public devnet RPC. Sponsorship is not configured
+for this preview; rent-bearing actions wait for sponsorship. Do not run the
+production-only `scripts/vercel-env.sh` to configure this branch.
+
+The two sites have separate browser storage and device keys, but share the
+same devnet program and its chain records. A program upgrade would affect
+both sites and needs its own explicit authorization and deployment plan.
+Use a separate test wallet: linking the development site's device replaces
+that owner's existing device link, and chain actions change shared records.
+The released Android app continues to open the production origin.
+
 Review the release diff and verification results before pushing. After a
 deploy, check `/api/health`, the configured cluster, sponsor availability,
 public reads and the changed player flow. A web release also changes the
 Android app's hosted content; validate it in the release APK when relevant.
 A program upgrade or native Android change has its own release procedure.
+
+## Watching it run
+
+`/api/health` answers whether the server's Solana RPC responds and how fast,
+whether the sponsor is paying, and which commit is deployed; it never shows a
+secret, a balance or a provider URL. Server errors log one JSON line
+(`"pawket":"server-error"`, from `instrumentation.ts`), a screen that broke in
+a browser logs `"pawket":"client-error"` through `/api/report` while its player
+is counted, and sponsor failures log `"pawket":"sponsor"`; each message is
+scrubbed of URLs and addresses (`src/lib/analytics/scrub.ts`). Search a
+deployment's runtime logs for those keys. The `Watch` workflow
+(`.github/workflows/watch.yml`) checks pawket.world's health and that the
+sponsor holds more than 2 SOL every four hours, and a failed run notifies the
+repository's owner; GitHub runs it only from the default branch.

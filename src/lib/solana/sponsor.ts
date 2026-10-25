@@ -11,34 +11,6 @@ import {
 } from "@solana/kit";
 import { DEVICE_VARIANTS, PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID, type PawketInstructionName } from "./program";
 
-/**
- * The sponsor pays network fees, and rent for a new pet, so a player can
- * adopt and care with an empty wallet. It holds a small devnet float and
- * signs only what this module allows: a transaction whose every instruction
- * is Pawket's, where the sponsor is the fee payer and appears in no
- * instruction except as the rent payer of `adopt_pet`, `found_guild`,
- * `join_guild`, `open_wallet`, `buy` (the closet, never the price),
- * `create_event`, `rsvp`, `create_poll`, `vote` and `wave`, or as the account
- * `leave_guild` hands that rent back to. A compute-budget instruction is
- * refused too, and more signatures than any Pawket transaction needs: a
- * priority fee and a padding of signers are the ways a caller could spend
- * the float faster.
- *
- * A linked device's action (`*_by_device`) is sponsored as its owner's would
- * be: the same kind, with the device and the Pawket Wallet where the owner
- * was, so the sponsor's one allowed place is one account later. The owner's
- * daily limit on the device bounds how often. It pays the fee for looking
- * after a Pawket Wallet too, and its rent — which `close_wallet` hands back
- * to whoever paid it (the sponsor may stand there to take it back), so
- * opening and closing cannot drain the float.
- *
- * The sponsor signs first and the wallet second. A wallet rewrites a
- * transaction that carries no signature yet (Phantom adds priority fees and
- * guard instructions), and the sponsor would refuse the rewrite; one that
- * already carries a signature it signs as it is. The client checks the
- * message came back unchanged before sending it.
- */
-
 export type SponsoredKind =
   | "adopt"
   | "care"
@@ -66,7 +38,6 @@ export type SponsoredKind =
 
 type DeviceName = (typeof DEVICE_VARIANTS)[keyof typeof DEVICE_VARIANTS];
 
-/** Each instruction's kind. A device's twin is its owner instruction's kind (`kindOf`). */
 export const KIND_OF: Record<Exclude<PawketInstructionName, DeviceName>, SponsoredKind> = {
   adoptPet: "adopt",
   performCareAction: "care",
@@ -98,12 +69,6 @@ const OWNER_OF = new Map<string, keyof typeof KIND_OF>(
   Object.entries(DEVICE_VARIANTS).map(([owner, device]) => [device, owner as keyof typeof KIND_OF]),
 );
 
-/**
- * Where the sponsor may appear in each instruction's accounts: the account
- * the program calls `payer` (rent it pays, or `leave_guild`'s rent it gets
- * back) or `rent_payer` (`close_wallet`'s). Nowhere else — `sponsor.test.ts`
- * holds every index to that name in the IDL.
- */
 export const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
   adopt: [1],
   care: [],
@@ -117,9 +82,7 @@ export const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
   withdraw: [],
   link: [],
   unlink: [],
-  // The rent it paid for the wallet, back to it.
   "close-wallet": [2],
-  // The payer of each: the closet's, the event's, the RSVP's, the poll's, the ballot's and the guestbook's rent.
   buy: [1],
   fund: [],
   settle: [],
@@ -132,25 +95,16 @@ export const SPONSOR_SLOTS: Record<SponsoredKind, readonly number[]> = {
   wave: [1],
 };
 
-/** The kinds that cost the sponsor rent: the scarce part of its float. */
 export const RENT_KINDS: readonly SponsoredKind[] = ["adopt", "found", "join", "open-wallet", "buy", "event", "rsvp", "poll", "vote", "wave"];
 
 const MAX_INSTRUCTIONS = 4;
-/**
- * Each signature is a fee the sponsor pays, and Anchor takes extra signer accounts without a
- * word: so no more than a Pawket transaction needs — the sponsor, the owner, a device being linked.
- */
+const MAX_RENT_INSTRUCTIONS = 1;
 const MAX_SIGNATURES = 3;
 
 export type SponsorCheck =
-  | { ok: true; kinds: SponsoredKind[] }
+  | { ok: true; kinds: SponsoredKind[]; rent: number }
   | { ok: false; reason: string };
 
-/**
- * The instruction's kind, and how many accounts later than its owner's the
- * sponsor's place is: 1 for a device's twin, which has the device and the
- * Pawket Wallet where the owner was. Null for none of Pawket's.
- */
 function kindOf(data: ReadonlyUint8Array | undefined): { kind: SponsoredKind; shift: number } | null {
   if (!data || data.length < 8) return null;
   for (const [name, discriminator] of Object.entries(PAWKET_DISCRIMINATORS)) {
@@ -190,6 +144,7 @@ export function checkSponsorable(
   }
 
   const kinds: SponsoredKind[] = [];
+  let rent = 0;
   for (const ix of message.instructions) {
     if (accounts[ix.programAddressIndex] !== programId) {
       return refuse("Only Pawket instructions are sponsored.");
@@ -198,19 +153,16 @@ export function checkSponsorable(
     if (!found) return refuse("That is not a Pawket instruction.");
     const { kind, shift } = found;
     if (kind === "fund" || kind === "settle") return refuse("Coin spending is never sponsored.");
-    const misplaced = (ix.accountIndices ?? []).some(
-      (index, position) => index === 0 && !SPONSOR_SLOTS[kind].includes(position - shift),
-    );
+    const indices = ix.accountIndices ?? [];
+    const misplaced = indices.some((index, position) => index === 0 && !SPONSOR_SLOTS[kind].includes(position - shift));
     if (misplaced) return refuse("The sponsor only pays; it takes no other part.");
+    if (RENT_KINDS.includes(kind) && indices.some((index) => index === 0)) rent++;
     kinds.push(kind);
   }
-  return { ok: true, kinds };
+  if (rent > MAX_RENT_INSTRUCTIONS) return refuse("The sponsor pays one new account's rent a transaction. Send them one at a time.");
+  return { ok: true, kinds, rent };
 }
 
-/**
- * A sliding-window limiter: true when `key` may act now.
- * shortcut: Limits apply per instance; use a shared store before mainnet.
- */
 export function createLimiter(limit: number, windowMs: number) {
   const hits = new Map<string, number[]>();
   return (key: string, now: number = Date.now()): boolean => {
@@ -226,7 +178,6 @@ export function createLimiter(limit: number, windowMs: number) {
 export class SponsorRefusal extends Error {
   constructor(
     message: string,
-    /** 400 not a transaction, 403 not one the sponsor signs, 429 slow down. */
     readonly status: 400 | 403 | 429,
   ) {
     super(message);
@@ -234,18 +185,10 @@ export class SponsorRefusal extends Error {
   }
 }
 
-/**
- * The sponsor's whole job: decode, check, and sign as fee payer — first,
- * before the player. Returns the transaction with the sponsor's signature
- * and every other slot as it came; throws `SponsorRefusal` with the reason.
- * Pawket's client sends with preflight on, so its own failures land nothing;
- * a caller who skips preflight can land one that fails, and the float pays
- * its fee, inside the same limits as any other.
- */
 export async function cosign(
   sponsor: KeyPairSigner,
   wireBase64: string,
-  limit?: (kinds: SponsoredKind[]) => boolean,
+  limit?: (check: { kinds: SponsoredKind[]; rent: number }) => boolean,
 ): Promise<{ transaction: string; kinds: SponsoredKind[] }> {
   let transaction: Transaction;
   try {
@@ -255,7 +198,7 @@ export async function cosign(
   }
   const check = checkSponsorable(transaction, sponsor.address);
   if (!check.ok) throw new SponsorRefusal(check.reason, 403);
-  if (limit && !limit(check.kinds)) {
+  if (limit && !limit(check)) {
     throw new SponsorRefusal("Too many in a row. Nothing was sent — try again in a while.", 429);
   }
   const signed = await partiallySignTransaction([sponsor.keyPair], transaction);

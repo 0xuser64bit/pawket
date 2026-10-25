@@ -1,12 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/**
- * The pages as the Android app runs them: with `window.PawketAndroid`, which
- * the app injects into Pawket's origin (android/…/PawketBridge.kt). Here a
- * stand-in records what the page asks and answers yes, so the web's half of
- * the bridge is checked in a real browser; the app's half has its own tests
- * and a device procedure (docs/ANDROID.md).
- */
 async function inTheApp(page: Page) {
   await page.addInitScript(() => {
     const posted: unknown[] = [];
@@ -67,7 +60,7 @@ test("in the app a pet lives in this app, a care is felt, and the bars follow th
   expect(requests.some((request) => request.op === "room")).toBe(true);
 
   await page.goto("/profile?tab=settings");
-  await expect(page.getByRole("button", { name: "Haptics on" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Haptics" })).toHaveAttribute("aria-pressed", "true");
   expect(problems.filter((text) => /hydrat|did not match/i.test(text))).toEqual([]);
 });
 
@@ -79,6 +72,6 @@ test("in a browser nothing is asked of a phone, and the words say this browser",
   await page.getByRole("button", { name: /take them home/i }).click();
   await expect(page.getByText(/In this browser/)).toBeVisible();
   await page.goto("/profile?tab=settings");
-  await expect(page.getByRole("button", { name: /Playground sound/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Pawket sound/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Haptics/ })).toHaveCount(0);
 });

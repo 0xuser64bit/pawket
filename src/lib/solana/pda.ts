@@ -62,7 +62,6 @@ export async function derivePassportPda(
   return { address: addr, bump };
 }
 
-/** A guild's account: seeded by its slug, so a slug is one guild. */
 export async function deriveGuildPda(
   slug: string,
   programId: string | Address = PAWKET_PROGRAM_ID,
@@ -75,7 +74,6 @@ export async function deriveGuildPda(
   return { address: addr, bump };
 }
 
-/** A pet's place in a guild: seeded by the pet, so a pet is in one guild at most. */
 export async function deriveMemberPda(
   pet: string | Address,
   programId: string | Address = PAWKET_PROGRAM_ID,
@@ -89,7 +87,6 @@ export async function deriveMemberPda(
   return { address: addr, bump };
 }
 
-/** A player's Pawket Wallet: seeded by its owner, so a wallet keeps one. */
 export async function deriveWalletPda(
   owner: string | Address,
   programId: string | Address = PAWKET_PROGRAM_ID,
@@ -112,32 +109,26 @@ async function derive(seeds: Array<Uint8Array | ReturnType<typeof bytesOf>>, pro
   return { address: addr, bump };
 }
 
-/** What an owner bought in the Market: seeded by the owner, so a wallet keeps one closet. */
 export function deriveClosetPda(owner: string | Address, programId: string | Address = PAWKET_PROGRAM_ID) {
   return derive([seed("closet"), bytesOf(owner, "owner")], programId);
 }
 
-/** A guild's event, by the id its founder chose (the app uses the start time, in seconds). */
 export function deriveEventPda(guild: string | Address, id: number, programId: string | Address = PAWKET_PROGRAM_ID) {
   return derive([seed("event"), bytesOf(guild, "guild"), u32Le(id)], programId);
 }
 
-/** One pet's RSVP to one event. */
 export function deriveRsvpPda(event: string | Address, pet: string | Address, programId: string | Address = PAWKET_PROGRAM_ID) {
   return derive([seed("rsvp"), bytesOf(event, "event"), bytesOf(pet, "pet")], programId);
 }
 
-/** A guild's poll, by the id its founder chose. */
 export function derivePollPda(guild: string | Address, id: number, programId: string | Address = PAWKET_PROGRAM_ID) {
   return derive([seed("poll"), bytesOf(guild, "guild"), u32Le(id)], programId);
 }
 
-/** One wallet's ballot in one poll: seeded by the wallet, so a person votes once. */
 export function deriveBallotPda(poll: string | Address, owner: string | Address, programId: string | Address = PAWKET_PROGRAM_ID) {
   return derive([seed("ballot"), bytesOf(poll, "poll"), bytesOf(owner, "owner")], programId);
 }
 
-/** A pet's guestbook. */
 export function deriveGuestbookPda(pet: string | Address, programId: string | Address = PAWKET_PROGRAM_ID) {
   return derive([seed("guestbook"), bytesOf(pet, "pet")], programId);
 }

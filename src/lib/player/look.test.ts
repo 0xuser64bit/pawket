@@ -53,6 +53,9 @@ describe("extras and matching", () => {
   it("matches the pet's hat or glasses where the player has one like it", () => {
     expect(twinWith("knit-beanie")).toEqual({ headwear: "beanie", headwearColour: "pool" });
     expect(twinWith("heart-glasses")).toEqual({ eyewear: "hearts" });
+    expect(twinWith("nap-ribbon")).toEqual({ headwear: "bow", headwearColour: "sprout" });
+    expect(twinWith("headphones")).toEqual({ headwear: "headphones", headwearColour: "pool" });
+    expect(twinWith("sunglasses")).toEqual({ eyewear: "shades" });
     expect(twinWith("wool-scarf")).toBeNull();
     expect(twinWith(null)).toBeNull();
   });

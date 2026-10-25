@@ -3,7 +3,6 @@ import { forgetDevice } from "./device";
 
 afterEach(() => vi.unstubAllGlobals());
 
-/** A controllable IndexedDB transaction; no key material or signatures involved. */
 function storage() {
   const request = { result: undefined, onerror: null as (() => void) | null };
   const transaction = { error: null as Error | null, oncomplete: null as (() => void) | null, onabort: null as (() => void) | null, objectStore: () => ({ delete: () => request }) };

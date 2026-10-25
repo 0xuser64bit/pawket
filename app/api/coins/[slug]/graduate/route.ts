@@ -3,12 +3,6 @@ import { coinError, guildOr404, postedFields } from "@/server/coins/routes";
 import { actionError, actionJson, caller, preflight } from "@/server/actions";
 import { actionLimit } from "@/server/sponsor";
 
-/**
- * POST { account }: a curve that raised its threshold, moved into its DAMM
- * v2 pool with its liquidity locked for good. Meteora's keepers do this on
- * mainnet; on devnet anyone may, and pays the new pool's rent.
- */
-
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const OPTIONS = preflight;

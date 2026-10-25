@@ -1,35 +1,8 @@
-/**
- * The human pack ships without a single animation, so the room's clips are
- * authored here and baked onto each body's own rest pose.
- *
- * A clip is a list of key poses. A pose says what an animator would say:
- * where the pelvis goes, how the spine and head turn, where each hand and
- * foot should be (two-bone IK with a pole for the elbow or knee), which way
- * a palm faces, how far the fingers curl. Keys are eased into each other and
- * `wobble(t)` adds continuous motion on top (breath, the wave itself, a
- * dance bounce). The baker samples at 30 fps, solves the IK and writes a
- * plain glTF animation — local rotations per joint, pelvis translation —
- * that any glTF player can run, and that the runtime crossfades.
- *
- * Space: the body's bind space. Y up, metres, facing +Z, the body's left on
- * +X. A rotation `[x, y, z]` is in degrees about those axes, applied at the
- * joint in its rest pose and carried by its parents (y turns left, x bends
- * forward, z tips toward -X). A hand target is an offset from its shoulder
- * as posed, a foot target an offset from its ankle at rest; with `abs` set
- * either is a point in bind space, and with `from` a hand target is an
- * offset from that joint at rest.
- */
 import { Matrix4, Quaternion, Vector3 } from "three";
 
 const DEG = Math.PI / 180;
 const FPS = 30;
 
-/* ------------------------------------------------------------------ rig */
-
-/**
- * The rest skeleton of one body: hierarchy, rest local transforms and rest
- * world transforms, keyed by joint name.
- */
 export function rigFrom(rootJoint) {
   const bones = new Map();
   const walk = (node, parent) => {
@@ -57,15 +30,12 @@ export function rigFrom(rootJoint) {
   return { bones, order, get: (name) => bones.get(name) };
 }
 
-/* ------------------------------------------------------------ pose maths */
-
 const euler = ([x = 0, y = 0, z = 0]) =>
   new Quaternion()
     .setFromAxisAngle(new Vector3(0, 1, 0), y * DEG)
     .multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), x * DEG))
     .multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), z * DEG));
 
-/** Rotation taking basis (a0, h0) to (a1, h1): bone axis and hinge axis. */
 function basisRotation(a0, h0, a1, h1) {
   const frame = (a, h) => {
     const x = a.clone().normalize();
@@ -77,7 +47,6 @@ function basisRotation(a0, h0, a1, h1) {
   return new Quaternion().setFromRotationMatrix(m);
 }
 
-/** Elbow or knee for a two-bone chain from `s` to `t`, bending toward `pole`. */
 function twoBone(s, t, l1, l2, pole) {
   const d = t.clone().sub(s);
   const dist = Math.min(Math.max(d.length(), Math.abs(l1 - l2) + 1e-4), l1 + l2 - 1e-4);
@@ -94,13 +63,9 @@ function twoBone(s, t, l1, l2, pole) {
 
 const ARM = { l: 1, r: -1 };
 
-/**
- * Solve one pose to local joint rotations (and the pelvis translation) on
- * this rig. Returns Map(name → { r: Quaternion, t?: Vector3 }).
- */
 function solve(rig, pose) {
   const out = new Map();
-  const world = new Map(); // name → { R: Quaternion, P: Vector3 }
+  const world = new Map();
 
   const place = (bone, localR, localT = bone.t) => {
     const parent = bone.parent ? world.get(bone.parent.name) : { R: new Quaternion(), P: new Vector3() };
@@ -109,11 +74,8 @@ function solve(rig, pose) {
     world.set(bone.name, { R, P });
     out.set(bone.name, { r: localR, t: localT === bone.t ? undefined : localT });
   };
-  /** Local rotation that gives the bone world rotation `R`. */
   const localFor = (bone, R) => world.get(bone.parent.name).R.clone().invert().multiply(R);
-  /** A rest-frame delta, carried by the parent. */
   const withDelta = (bone, D) => bone.r.clone().multiply(bone.worldR.clone().invert().multiply(D).multiply(bone.worldR));
-  /** World rotation that points the bone along `axis` with its hinge on `hinge`. */
   const aimed = (bone, restHinge, axis, hinge) => {
     const restAxis = bone.children.length
       ? bone.children[0].worldP.clone().sub(bone.worldP).normalize()
@@ -121,7 +83,6 @@ function solve(rig, pose) {
     return basisRotation(restAxis, restHinge, axis, hinge).multiply(bone.worldR);
   };
 
-  // Limb targets resolved once their root joint is placed.
   const ik = {};
   for (const bone of rig.order) {
     const name = bone.name;
@@ -146,7 +107,6 @@ function solve(rig, pose) {
       const l1 = fore.t.length();
       const l2 = hand.t.length();
       const { mid, end, bendAway } = twoBone(s, target, l1, l2, new Vector3(...(spec.pole ?? [0.3 * ARM[side], -0.4, -1])));
-      // Rest hinge: the axis the elbow flexes about in the T-pose.
       const restHinge = new Vector3(ARM[side], 0, 0).cross(new Vector3(0, 0, 1));
       const upperDir = mid.clone().sub(s).normalize();
       const foreDir = end.clone().sub(mid).normalize();
@@ -163,7 +123,6 @@ function solve(rig, pose) {
       continue;
     }
     if (/^hand_[lr]$/.test(name) && ik[side]?.spec.point) {
-      // Fingers along `point`, palm facing `palm`.
       const { spec } = ik[side];
       const restPalm = new Vector3(0, -1, 0);
       const R = basisRotation(
@@ -190,7 +149,6 @@ function solve(rig, pose) {
       let hinge = upperDir.clone().cross(lowerDir);
       if (hinge.lengthSq() < 1e-6) hinge = upperDir.clone().cross(bendAway);
       hinge.normalize();
-      // Knees point where the pole says even when the leg is straight.
       if (hinge.dot(new Vector3(1, 0, 0)) < 0) hinge.negate();
       ik[`leg_${side}`] = { lowerDir, hinge, restHinge, spec };
       place(bone, localFor(bone, aimed(bone, restHinge, upperDir, hinge)));
@@ -202,7 +160,6 @@ function solve(rig, pose) {
       continue;
     }
     if (/^foot_[lr]$/.test(name) && ik[`leg_${side}`]) {
-      // Feet keep their rest heading; `pitch` lifts the heel (+) or toes.
       const { spec } = ik[`leg_${side}`];
       const R = euler([spec.pitch ?? 0, spec.turn ?? 0, 0]).multiply(bone.worldR);
       place(bone, localFor(bone, R));
@@ -213,35 +170,29 @@ function solve(rig, pose) {
       continue;
     }
 
-    // Fingers: curl bends every finger segment toward the palm.
     const finger = name.match(/^(index|middle|ring|pinky|thumb)_0([123])_([lr])$/);
     if (finger) {
       const [, which, seg, s] = finger;
       const hand = pose[`fingers_${s}`] ?? {};
       const curl = which === "thumb" ? (hand.thumb ?? hand.curl ?? 0.3) * 0.5 : (hand[which] ?? hand.curl ?? 0.3);
       const amount = curl * [0, 70, 85, 55][Number(seg)];
-      // In the T-pose the palm faces down, so curling turns about Z.
-      // The thumb folds across the palm instead.
-      const axis = which === "thumb" ? [0, amount * 0.6 * ARM[s], -amount * 0.3 * ARM[s]] : [0, 0, -amount * ARM[s]];
+      const fan = seg === "1" && hand.spread ? ({ index: 1, middle: -1 }[which] ?? 0) * hand.spread * -ARM[s] : 0;
+      const axis = which === "thumb" ? [0, amount * 0.6 * ARM[s], -amount * 0.3 * ARM[s]] : [0, fan, -amount * ARM[s]];
       place(bone, withDelta(bone, euler(axis)));
       continue;
     }
 
-    // Plain rotations. (hand_* and foot_* name IK targets, not rotations.)
     const rot = pose[name];
     place(bone, Array.isArray(rot) ? withDelta(bone, euler(rot)) : bone.r.clone());
   }
   return out;
 }
 
-/* ---------------------------------------------------------------- timing */
-
 const ease = {
   linear: (x) => x,
   inOut: (x) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2),
   out: (x) => 1 - (1 - x) ** 3,
   in: (x) => x * x * x,
-  /** Overshoots a little and settles: a limb that lands. */
   settle: (x) => {
     const c = 1.4;
     return 1 + (c + 1) * (x - 1) ** 3 + c * (x - 1) ** 2;
@@ -250,7 +201,6 @@ const ease = {
 
 const isObject = (v) => v && typeof v === "object" && !Array.isArray(v);
 
-/** Deep-merge `b` over `a` (poses are partial; keys hold what they omit). */
 function over(a, b) {
   const out = { ...a };
   for (const [k, v] of Object.entries(b ?? {})) out[k] = isObject(v) && isObject(a?.[k]) ? over(a[k], v) : v;
@@ -270,7 +220,6 @@ function lerpValue(a, b, x) {
   return x < 0.5 ? a : b;
 }
 
-/** Add `b` onto `a`, number by number. */
 function plus(a, b) {
   if (b === undefined) return a;
   if (typeof a === "number" || a === undefined) return (a ?? 0) + (typeof b === "number" ? b : 0);
@@ -283,7 +232,6 @@ function plus(a, b) {
   return out;
 }
 
-/** The pose a clip holds at time `t`. */
 function poseAt(clip, t) {
   const keys = [];
   let acc = clip.base ?? {};
@@ -305,12 +253,9 @@ function poseAt(clip, t) {
   return clip.wobble ? plus(pose, clip.wobble(t)) : pose;
 }
 
-/* ------------------------------------------------------------- the clips */
-
 const wave = (t, period, amp, phase = 0) => Math.sin(((t / period) * 2 + phase) * Math.PI) * amp;
 const env = (t, a, b, fade = 0.25) => Math.min(1, Math.max(0, (t - a) / fade)) * Math.min(1, Math.max(0, (b - t) / fade));
 
-/** Standing, relaxed: the pose every clip starts and ends in. */
 const STAND = {
   pelvis: { at: [0, -0.012, 0], rot: [0, 0, 0] },
   spine_01: [-2, 0, 0],
@@ -328,7 +273,6 @@ const STAND = {
   fingers_r: { curl: 0.35, thumb: 0.3 },
 };
 
-/** Down on the right knee, left foot planted forward: petting height. */
 const KNEEL = {
   pelvis: { at: [0.01, -0.47, 0.02], rot: [6, -6, 0] },
   spine_01: [8, 0, 0],
@@ -340,19 +284,10 @@ const KNEEL = {
   foot_r: { at: [-0.02, 0.05, -0.37], pole: [-0.05, -0.6, 1], pitch: 38, toes: 50 },
 };
 
-/**
- * The pet stands facing a kneeling player, its centre at (-0.2, 0, 0.74)
- * in the player's space (the room's "front" formation), so its crown is
- * about here. The room anchors the hand to the real crown at runtime; this
- * only has to be close.
- */
 const PET_HEAD = [-0.2, 0.8, 0.6];
-/** The pet's mouth, facing a kneeling player. */
 const PET_MOUTH = [-0.19, 0.42, 0.34];
-/** Where the bowl goes down, just in front of the pet's mouth. */
 const BOWL_FLOOR = [-0.2, 0.11, 0.36];
 
-/** Both knees down, sitting back on the heels: low enough to reach the floor. */
 const SIT_BACK = {
   pelvis: { at: [0, -0.66, -0.1], rot: [14, 0, 0] },
   spine_01: [18, 0, 0],
@@ -369,8 +304,6 @@ const idle = {
   loop: true,
   base: STAND,
   keys: [{ t: 0 }, { t: 6 }],
-  // Weight drifts between the feet, the chest breathes twice, the head
-  // wanders a little. Every period divides 6 s, so the loop is seamless.
   wobble: (t) => ({
     pelvis: { at: [wave(t, 6, 0.012), wave(t, 3, 0.004, 0.5), 0], rot: [0, wave(t, 6, 2), wave(t, 6, -1.8)] },
     spine_01: [0, wave(t, 6, -1), wave(t, 6, 1.4)],
@@ -417,10 +350,6 @@ const hello = {
   },
 };
 
-/**
- * 120 BPM — a beat every half second, two bars, and it loops. Bar one is a
- * step-clap side to side; bar two raises the roof, sways, and points.
- */
 const BEAT = 0.5;
 const CHEST = {
   hand_l: { at: [-0.12, -0.24, 0.3], pole: [0.8, -0.6, -0.4], point: [-0.4, 0.5, 1], palm: [-1, 0, 0.2] },
@@ -473,7 +402,6 @@ const dance = {
     },
     { t: 8 * BEAT, pose: { ...CHEST, pelvis: { at: [0, 0, 0], rot: [0, 0, 0] }, spine_02: [0, 0, 0], spine_03: [0, 0, 0], Head: [0, 0, 0] } },
   ],
-  // A bounce on every beat, and the head nods with it.
   wobble: (t) => {
     const b = Math.abs(Math.cos((t / BEAT) * Math.PI));
     return {
@@ -484,7 +412,6 @@ const dance = {
   },
 };
 
-/** Kneel, reach the pet's head, stroke three times, get up. */
 const pet = {
   name: "Pet",
   duration: 5.6,
@@ -508,7 +435,6 @@ const pet = {
     { t: 4.7, pose: { hand_r: { at: [-0.2, 0.42, 0.28], abs: true, point: [0, -1, 0.2], palm: [0.6, 0, 0.4] }, fingers_r: { curl: 0.35 } } },
     { t: 5.6, pose: STAND },
   ],
-  // Three strokes from the head back along the pet, lifting between them.
   wobble: (t) => {
     const k = env(t, 1.45, 4.2, 0.15);
     if (!k) return {};
@@ -522,10 +448,6 @@ const pet = {
   },
 };
 
-/**
- * Both knees down with a bowl in both hands, bow to set it on the floor in
- * front of the pet, sit up and watch it eat, then get up.
- */
 const BOWL_HOLD = {
   hand_l: { at: [0.1, 0.95, 0.3], abs: true, pole: [1, -0.4, -0.3], point: [-0.5, 0, 1], palm: [-1, 0.2, 0] },
   hand_r: { at: [-0.14, 0.95, 0.3], abs: true, pole: [-1, -0.4, -0.3], point: [0.5, 0, 1], palm: [1, 0.2, 0] },
@@ -569,7 +491,6 @@ const feed = {
   ],
 };
 
-/** Crouch, hold a treat out at the pet's mouth, let it take it. */
 const treat = {
   name: "Treat",
   duration: 4.4,
@@ -597,7 +518,6 @@ const treat = {
   ],
 };
 
-/** Overhand throw: wind up, step into it, release, follow through. */
 const THROW_RELEASE = 0.78;
 const toss = {
   name: "Throw",
@@ -612,7 +532,6 @@ const toss = {
   ],
 };
 
-/** Three claps in front of the chest. */
 const clap = {
   name: "Clap",
   duration: 1.8,
@@ -630,17 +549,12 @@ const clap = {
   },
 };
 
-/** A finger to the lips: the pet is going to sleep. */
 const hush = {
   name: "Hush",
   duration: 2.8,
   base: STAND,
   keys: [
     { t: 0 },
-    // The index finger upright across the lips. The wrist is placed from the
-    // head joint, so it lands on either build: the lips sit about 3.5 cm
-    // above that joint and 11.5 cm in front of it once the room scales the
-    // head (HEAD_SCALE), and the finger's middle is 14 cm up from the wrist.
     { t: 0.55, ease: "out", pose: { hand_r: { at: [-0.01, -0.105, 0.14], from: "Head", pole: [-1, -1, -0.2], point: [0.05, 1, 0.1], palm: [0.1, 0, -1] }, fingers_r: { index: 0, middle: 0.95, ring: 1, pinky: 1, thumb: 0.8 }, Head: [8, 0, 6], spine_03: [4, 0, 0] } },
     { t: 2.1 },
     { t: 2.8, pose: STAND },
@@ -649,11 +563,6 @@ const hush = {
 
 const CLIPS = [idle, hello, dance, pet, feed, treat, toss, clap, hush];
 
-/**
- * Fists up, twice. Shipped on its own as `public/3d/emotes/cheer.glb`, the
- * way a future emote would arrive: a rig and a clip, no body. Rotations
- * only, so it plays on either build.
- */
 const cheer = {
   name: "Cheer",
   duration: 2.4,
@@ -682,14 +591,91 @@ const cheer = {
   },
 };
 
-export const EMOTE_CLIPS = [cheer];
+const heart = {
+  name: "Heart",
+  duration: 2.9,
+  base: STAND,
+  keys: [
+    { t: 0 },
+    {
+      t: 0.5,
+      ease: "settle",
+      pose: {
+        hand_l: { at: [0.13, 0.25, -0.01], from: "Head", pole: [1, 0.5, 0], point: [-1, 0.05, 0], palm: [0, -1, 0] },
+        hand_r: { at: [-0.13, 0.25, -0.01], from: "Head", pole: [-1, 0.5, 0], point: [1, 0.05, 0], palm: [0, -1, 0] },
+        fingers_l: { curl: 0.1, thumb: 0.15 },
+        fingers_r: { curl: 0.1, thumb: 0.15 },
+        spine_03: [-3, 0, 0],
+        Head: [-2, 0, 0],
+      },
+    },
+    { t: 2.35 },
+    { t: 2.9, pose: STAND },
+  ],
+  wobble: (t) => {
+    const k = env(t, 0.5, 2.35, 0.25);
+    const s = Math.sin((t - 0.5) * Math.PI * 1.6) * k;
+    return { pelvis: { rot: [0, 0, 2.5 * s] }, spine_02: [0, 0, -3.5 * s], Head: [0, 0, 7 * s] };
+  },
+};
 
-/* ----------------------------------------------------------------- bake */
+const peace = {
+  name: "Peace",
+  duration: 2.6,
+  base: STAND,
+  keys: [
+    { t: 0 },
+    {
+      t: 0.42,
+      ease: "settle",
+      pose: {
+        hand_r: { at: [-0.21, -0.03, 0.05], from: "Head", pole: [-1, -1, -0.2], point: [-0.25, 1, 0.05], palm: [0, 0, 1] },
+        fingers_r: { index: 0, middle: 0, ring: 1, pinky: 1, thumb: 0.9, spread: 14 },
+        hand_l: { at: [-0.02, -0.37, -0.03], pole: [1, -0.1, -0.7], point: [-0.35, -0.8, 0.35], palm: [-1, 0, 0] },
+        fingers_l: { curl: 0.25, thumb: 0.4 },
+        pelvis: { rot: [0, 0, -3] },
+        spine_03: [0, -4, 4],
+        Head: [2, -4, 12],
+      },
+    },
+    { t: 2.1 },
+    { t: 2.6, pose: STAND },
+  ],
+  wobble: (t) => {
+    const k = env(t, 0.5, 1.5, 0.1);
+    const s = Math.abs(Math.sin((t - 0.5) * Math.PI * 2)) * k;
+    return { hand_r: { at: [0, 0.025 * s, 0] }, Head: [0, 0, 2 * s] };
+  },
+};
 
-/**
- * Sample every clip on this rig and write glTF animations targeting the
- * rig's joint nodes. Joints that never leave their rest pose get no channel.
- */
+const thumbs = {
+  name: "Thumbs up",
+  duration: 2.3,
+  base: STAND,
+  keys: [
+    { t: 0 },
+    {
+      t: 0.4,
+      ease: "settle",
+      pose: {
+        hand_r: { at: [-0.08, 0.0, 0.24], pole: [-0.6, -1, -0.2], point: [0, 0, 1], palm: [1, 0, 0] },
+        fingers_r: { curl: 1, thumb: 0 },
+        spine_03: [2, -6, 0],
+        Head: [4, -4, -4],
+      },
+    },
+    { t: 1.8 },
+    { t: 2.3, pose: STAND },
+  ],
+  wobble: (t) => {
+    const k = env(t, 0.45, 1.35, 0.1);
+    const nod = Math.max(0, Math.sin((t - 0.45) * Math.PI * 2.2)) * k;
+    return { Head: [6 * nod, 0, 0], hand_r: { at: [0, 0.025 * nod, 0] } };
+  },
+};
+
+export const EMOTE_CLIPS = [cheer, heart, peace, thumbs];
+
 export function bake(doc, rig, clips = CLIPS, { rotationsOnly = false } = {}) {
   const buffer = doc.getRoot().listBuffers()[0];
   const report = [];
@@ -698,13 +684,11 @@ export function bake(doc, rig, clips = CLIPS, { rotationsOnly = false } = {}) {
     const times = Float32Array.from({ length: frames + 1 }, (_, i) => i / FPS);
     const tracks = new Map();
     for (let f = 0; f <= frames; f++) {
-      // A loop's last frame is its first, so the seam is exact.
       const t = clip.loop && f === frames ? 0 : times[f];
       const solved = solve(rig, poseAt(clip, t));
       for (const [name, { r, t: tr }] of solved) {
         if (!tracks.has(name)) tracks.set(name, { r: new Float32Array((frames + 1) * 4), t: tr ? new Float32Array((frames + 1) * 3) : null });
         const track = tracks.get(name);
-        // Keep quaternions on one hemisphere so interpolation takes the short way.
         if (f > 0) {
           const prev = track.r.subarray((f - 1) * 4, f * 4);
           if (prev[0] * r.x + prev[1] * r.y + prev[2] * r.z + prev[3] * r.w < 0) r.set(-r.x, -r.y, -r.z, -r.w);

@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-// Linux reserves scrollbar space; reproduce it on hosts with overlay scrollbars too.
 test.use({
   launchOptions: {
     args: ["--disable-features=OverlayScrollbar"],

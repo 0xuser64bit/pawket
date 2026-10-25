@@ -1,16 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
-
-/**
- * The phone around the page, when Pawket runs in its Android app
- * (`android/`): the share sheet, the gallery, the calendar, haptics, the
- * back gesture and the system bars, through `window.PawketAndroid` — which
- * the app injects into Pawket's own origin only (`PawketBridge.kt` lists
- * what it accepts). Outside the app nothing here exists: every request
- * answers that it was not made, and the page does what a browser can.
- *
- * It carries pictures, links and colours, never a key or a transaction:
- * signing is the wallet app's (Mobile Wallet Adapter) and Solana is the page's.
- */
+import type { CareReminder } from "@/lib/reminders/care";
 
 interface Bridge {
   postMessage(message: string): void;
@@ -20,7 +9,6 @@ interface Bridge {
 declare global {
   interface Window {
     PawketAndroid?: Bridge;
-    /** Called by the app on the system back: closes the newest open sheet, true if there was one. */
     pawketBack?: () => boolean;
   }
 }
@@ -33,7 +21,6 @@ export function inAndroidApp(): boolean {
   return bridge() !== null;
 }
 
-/** True in the Android app, once hydrated: false on the server and on the first render, like `useMounted`. */
 export function useAndroidApp(): boolean {
   return useSyncExternalStore(
     () => () => {},
@@ -42,12 +29,10 @@ export function useAndroidApp(): boolean {
   );
 }
 
-/** Where this device keeps what it keeps: "this app" in the Android app, "this browser" everywhere else. */
 export function useHere(): { here: string; Here: string } {
   return useAndroidApp() ? { here: "this app", Here: "This app" } : { here: "this browser", Here: "This browser" };
 }
 
-/** What the app answered: `ok`, or why not. "no-app" is a browser, where nothing was asked. */
 export interface Answer {
   ok: boolean;
   reason?: string;
@@ -58,7 +43,7 @@ const waiting = new Map<string, (answer: Answer) => void>();
 const heard = new WeakSet<Bridge>();
 let asked = 0;
 
-function ask(op: string, fields: Record<string, unknown>): Promise<Answer> {
+function ask(op: string, fields: Record<string, unknown>, wait = ANSWER_WAIT_MS): Promise<Answer> {
   const app = bridge();
   if (!app) return Promise.resolve({ ok: false, reason: "no-app" });
   if (!heard.has(app)) {
@@ -67,9 +52,7 @@ function ask(op: string, fields: Record<string, unknown>): Promise<Answer> {
       try {
         const answer = JSON.parse(String(data)) as Answer & { id?: string };
         if (answer.id) waiting.get(answer.id)?.({ ok: answer.ok === true, reason: answer.reason });
-      } catch {
-        // Not an answer of ours.
-      }
+      } catch {}
     });
   }
   const id = `a${++asked}`;
@@ -79,8 +62,7 @@ function ask(op: string, fields: Record<string, unknown>): Promise<Answer> {
       window.clearTimeout(timer);
       resolve(answer);
     };
-    // An answer that never comes (an older app) is a no, not a page that waits forever.
-    const timer = window.setTimeout(() => done({ ok: false, reason: "no-answer" }), ANSWER_WAIT_MS);
+    const timer = window.setTimeout(() => done({ ok: false, reason: "no-answer" }), wait);
     waiting.set(id, done);
     try {
       app.postMessage(JSON.stringify({ id, op, ...fields }));
@@ -90,27 +72,75 @@ function ask(op: string, fields: Record<string, unknown>): Promise<Answer> {
   });
 }
 
-/** A printed photo (a PNG data URL) into the phone's share sheet. */
 export function sharePicture(data: string, name: string, title: string): Promise<Answer> {
   return ask("share-image", { data, name, title });
 }
 
-/** A printed photo into the phone's gallery, under Pictures/Pawket. */
 export function savePicture(data: string, name: string): Promise<Answer> {
   return ask("save-image", { data, name });
 }
 
-/** A page of Pawket's into the share sheet. The app shares only links to Pawket. */
+export function shareCard(card: { data: string; name: string; title: string; url: string; text?: string }): Promise<Answer> {
+  return ask("share-card", card);
+}
+
 export function shareLink(link: { url: string; text?: string; title?: string }): Promise<Answer> {
   return ask("share-link", link);
 }
 
-/** A daily reminder, opened in the phone's calendar app for the player to save; nothing is scheduled here. */
 export function remindDaily(reminder: { title: string; notes: string; url: string; at: Date; days: number }): Promise<Answer> {
   return ask("remind", { ...reminder, at: reminder.at.getTime() });
 }
 
-/* -------------------------------------------------------------- haptics */
+const REMINDERS_KEY = "pawket.care-reminders";
+const reminderListeners = new Set<() => void>();
+const ALLOW_WAIT_MS = 120_000;
+
+function remindersOn(): boolean {
+  try {
+    return window.localStorage.getItem(REMINDERS_KEY) === "on";
+  } catch {
+    return false;
+  }
+}
+
+function keepReminders(on: boolean): void {
+  try {
+    if (on) window.localStorage.setItem(REMINDERS_KEY, "on");
+    else window.localStorage.removeItem(REMINDERS_KEY);
+  } catch {}
+  for (const listener of reminderListeners) listener();
+}
+
+export function useCareReminders(): [boolean, (on: boolean) => Promise<Answer>] {
+  const on = useSyncExternalStore(
+    (listener) => {
+      reminderListeners.add(listener);
+      return () => reminderListeners.delete(listener);
+    },
+    remindersOn,
+    () => false,
+  );
+  const set = async (next: boolean) => {
+    if (!next) {
+      keepReminders(false);
+      return ask("care-reminder", { on: false });
+    }
+    const answer = await ask("allow-reminders", {}, ALLOW_WAIT_MS);
+    if (answer.ok) keepReminders(true);
+    return answer;
+  };
+  return [on, set];
+}
+
+export async function setCareReminder(reminder: CareReminder | null): Promise<void> {
+  if (!remindersOn()) return;
+  const answer = await ask(
+    "care-reminder",
+    reminder ? { on: true, at: reminder.at.getTime(), title: reminder.title, text: reminder.text } : { on: false },
+  );
+  if (answer.reason === "not-allowed") keepReminders(false);
+}
 
 const HAPTICS_KEY = "pawket.haptics";
 const hapticListeners = new Set<() => void>();
@@ -123,7 +153,6 @@ function hapticsOn(): boolean {
   }
 }
 
-/** The app's haptics, on unless the player turned them off on this device. The phone's own setting still decides. */
 export function useHaptics(): [boolean, (on: boolean) => void] {
   const on = useSyncExternalStore(
     (listener) => {
@@ -137,31 +166,20 @@ export function useHaptics(): [boolean, (on: boolean) => void] {
     try {
       if (next) window.localStorage.removeItem(HAPTICS_KEY);
       else window.localStorage.setItem(HAPTICS_KEY, "off");
-    } catch {
-      // Blocked storage: the choice lasts until the page reloads.
-    }
+    } catch {}
     for (const listener of hapticListeners) listener();
     if (next) haptic("done");
   };
   return [on, set];
 }
 
-/**
- * One haptic, for a moment that counts: a care kept ("done"), a new level
- * ("cheer"), a care or send refused ("refuse"). Called when the thing has
- * happened — after the save, or after Solana confirmed — never while signing.
- */
-export function haptic(kind: "done" | "cheer" | "refuse"): void {
+export function haptic(kind: "done" | "cheer" | "refuse" | "tap"): void {
   const app = bridge();
   if (!app || !hapticsOn()) return;
   try {
     app.postMessage(JSON.stringify({ op: "haptic", kind }));
-  } catch {
-    // Optional feedback must never turn a saved or confirmed care into a failure.
-  }
+  } catch {}
 }
-
-/* ----------------------------------------------------------------- back */
 
 const backs: Array<() => void> = [];
 
@@ -172,10 +190,6 @@ function closeNewest(): boolean {
   return true;
 }
 
-/**
- * While the component is mounted, the phone's back gesture closes it — the
- * newest first — before it goes back a page. Does nothing in a browser.
- */
 export function useBackCloses(close: () => void): void {
   const latest = useRef(close);
   useEffect(() => {
@@ -193,9 +207,6 @@ export function useBackCloses(close: () => void): void {
   }, []);
 }
 
-/* ---------------------------------------------------------------- bars */
-
-/** Tells the app the room's ground colour, so the status and navigation bars wear it. */
 function paintBars(): void {
   const app = bridge();
   const style = getComputedStyle(document.documentElement);
@@ -203,12 +214,9 @@ function paintBars(): void {
   if (!app || !/^#[0-9a-f]{6}$/i.test(ground)) return;
   try {
     app.postMessage(JSON.stringify({ op: "room", ground, dark: style.colorScheme.includes("dark") }));
-  } catch {
-    // A disconnected native view keeps its last bar colour; the page still works.
-  }
+  } catch {}
 }
 
-/** In the app, the system bars follow the room: a pick (`data-theme`), or the device's light or dark. */
 export function useBarsFollowRoom(): void {
   useEffect(() => {
     if (!inAndroidApp()) return;

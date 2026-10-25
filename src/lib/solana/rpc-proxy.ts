@@ -1,11 +1,19 @@
-import { PAWKET_PROGRAM_ID } from "./program";
+import { getBase58Decoder } from "@solana/kit";
+import { PAWKET_ACCOUNTS, PAWKET_PROGRAM_ID } from "./program";
 
-/**
- * What a browser may ask Pawket's RPC proxy (`/api/rpc`): the calls the app
- * makes, one at a time, and a program scan only of Pawket's own program. The
- * proxy lets browsers read and send through the server's provider — its key
- * never leaves the server — without becoming an open RPC for anything else.
- */
+const KINDS: ReadonlySet<string> = new Set(
+  Object.values(PAWKET_ACCOUNTS).map((account) => getBase58Decoder().decode(Uint8Array.from(account.discriminator))),
+);
+
+function namesAKind(config: unknown): boolean {
+  const filters = (config as { filters?: unknown } | null)?.filters;
+  if (!Array.isArray(filters)) return false;
+  return filters.some((filter) => {
+    const memcmp = (filter as { memcmp?: { offset?: unknown; bytes?: unknown } } | null)?.memcmp;
+    return memcmp !== undefined && Number(memcmp.offset) === 0 && typeof memcmp.bytes === "string" && KINDS.has(memcmp.bytes);
+  });
+}
+
 const PROXIED_METHODS: ReadonlySet<string> = new Set([
   "getAccountInfo",
   "getBalance",
@@ -17,6 +25,7 @@ const PROXIED_METHODS: ReadonlySet<string> = new Set([
   "getSignaturesForAddress",
   "getTokenAccountsByOwner",
   "getTransaction",
+  "isBlockhashValid",
   "sendTransaction",
 ]);
 
@@ -30,6 +39,9 @@ export function checkRpcRequest(body: unknown, programId: string = PAWKET_PROGRA
   if (params !== undefined && !Array.isArray(params)) return { ok: false, reason: "Params are a list." };
   const first = (params as unknown[] | undefined)?.[0];
   if (method === "getProgramAccounts" && first !== programId) return { ok: false, reason: "Only Pawket's program is scanned here." };
+  if (method === "getProgramAccounts" && !namesAKind((params as unknown[])[1])) {
+    return { ok: false, reason: "A scan names one of Pawket's account kinds." };
+  }
   if (method === "getMultipleAccounts" && (!Array.isArray(first) || first.length > 100)) {
     return { ok: false, reason: "At most 100 accounts at a time." };
   }

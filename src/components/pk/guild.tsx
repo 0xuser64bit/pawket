@@ -2,13 +2,6 @@ import { Icon, type IconName } from "./icon";
 import { Meter } from "./game";
 import type { CoinStage } from "@/lib/coins/stage";
 
-/* ------------------------------------------------------------------ Crest */
-
-/**
- * A guild's mark: square-shouldered, flat-topped, and deliberately the
- * opposite of a pet's pocket. A guild never borrows a pet's frame, and a pet
- * never wears a crest as its portrait.
- */
 export function Crest({
   name,
   letter,
@@ -19,11 +12,8 @@ export function Crest({
 }: {
   name?: string;
   letter?: string;
-  /** The guild's own glyph, drawn instead of its initial. */
   glyph?: IconName;
-  /** The crest's fill: bloom unless the guild chose another hue. */
   color?: string;
-  /** Ink and outline on that fill. */
   on?: string;
   size?: "sm" | "lg";
 }) {
@@ -39,9 +29,6 @@ export function Crest({
   );
 }
 
-/* ----------------------------------------------------------- OfficialMark */
-
-/** Marks a coin whose creator was verified against its guild's founder. */
 export function OfficialMark({ label }: { label: string }) {
   return (
     <span className="pk-official">
@@ -51,12 +38,6 @@ export function OfficialMark({ label }: { label: string }) {
   );
 }
 
-/* ------------------------------------------------------------ LaunchStage */
-
-/**
- * The single source of what the interface will do. Never derive the stage in
- * the client — pass what the server read from chain.
- */
 const STAGES: Record<CoinStage, { dot: string; label: string }> = {
   dbc: { dot: "live", label: "Launch open · bonding curve" },
   pending: { dot: "wait", label: "Migration pending" },
@@ -75,13 +56,6 @@ export function LaunchStage({ stage, label }: { stage: CoinStage; label?: string
   );
 }
 
-/* --------------------------------------------------------- LaunchProgress */
-
-/**
- * Participation toward a published threshold, in countable `bloom` segments
- * — never a line, never a chart, never `sprout`. The disclaimer is part of
- * the component, and nothing here animates on load.
- */
 export function LaunchProgress({
   value,
   max = 10,

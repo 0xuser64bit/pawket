@@ -4,12 +4,6 @@ import BN from "bn.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChainGuild } from "@/lib/solana/accounts";
 
-/**
- * A guild's coin is the curve its founder made at the guild's coin address,
- * and nothing else is. Solana and Meteora are stood in for: one curve is
- * found there, made by `creator`. The whole life of a real coin is walked
- * against devnet (`pnpm e2e:coins`).
- */
 const sponsor = Keypair.generate();
 vi.mock("@/config/server-env", () => ({
   getServerEnv: () => ({ sponsorKeypair: JSON.stringify([...sponsor.secretKey]) }),

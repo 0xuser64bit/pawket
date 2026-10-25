@@ -10,11 +10,6 @@ import {
   presetForConfig,
 } from "./presets";
 
-/**
- * The presets are what a founder chooses between and what a buyer reads
- * before signing. Their numbers as Meteora takes them are held in
- * `src/server/coins/curve.test.ts`.
- */
 describe("guild coin presets", () => {
   it("split every fee three ways, and the three add up to the whole", () => {
     expect(feeSplitBps()).toEqual({ total: 100, meteora: 20, founder: 40, pawket: 40 });

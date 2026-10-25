@@ -4,11 +4,6 @@ import { useState } from "react";
 import { Icon, dismissToast, showToast } from "@/components/pk";
 import { truncateAddress } from "@/lib/utils/format";
 
-/**
- * An address or a signature: a fact, so mono, truncated no shorter than four
- * characters each side, and always beside a copy control. With `href` it
- * also opens on the Explorer.
- */
 export function AddressLine({ value, label, href }: { value: string; label: string; href?: string }) {
   const [copied, setCopied] = useState(false);
   return (

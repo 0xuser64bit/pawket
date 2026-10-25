@@ -1,15 +1,5 @@
 import { GUILD_LIMITS } from "@/lib/solana/program";
 
-/**
- * A guild, as the program keeps it and a screen draws it. A guild is a
- * name, a motto, a crest and the pets in it — and, if its founder launches
- * one, an optional coin — with nothing that reaches a vital, XP or a score
- * (`boundary.ts`).
- *
- * The crest's glyph and colour are indexes the program checks against
- * `GUILD_LIMITS`; these lists name them, in order. The colours are hues
- * from the design system, and bloom — the guild layer's own — comes first.
- */
 export const CREST_GLYPHS = ["paw", "star", "heart", "moon", "spark", "ball", "crown", "music"] as const;
 
 export const CREST_COLOURS = [
@@ -24,12 +14,6 @@ export const CREST_COLOURS = [
 const utf8 = new TextEncoder();
 const bytes = (value: string) => utf8.encode(value).length;
 
-/**
- * A guild's address from its name: lower case, letters and digits, words
- * joined by hyphens — `Sunbeam Club` is `sunbeam-club`. The program holds a
- * slug to the same rule (`valid_slug`), so two guilds cannot share a name
- * that differs only in case or spacing.
- */
 export function slugFor(name: string): string {
   return name
     .normalize("NFKD")
@@ -41,7 +25,14 @@ export function slugFor(name: string): string {
     .replace(/-+$/, "");
 }
 
-/** Addresses Pawket's own pages use, so no guild can take them. */
+export function nameFor(slug: string): string | null {
+  const name = slug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+  return isValidSlug(slug) && !RESERVED.has(slug) && slugFor(name) === slug ? name : null;
+}
+
 const RESERVED = new Set(["new"]);
 
 export function isValidSlug(slug: string): boolean {
@@ -59,7 +50,6 @@ export interface GuildDraft {
   colour: number;
 }
 
-/** What is wrong with a draft, in words, by field. Empty when the program would take it. */
 export function guildProblems(draft: GuildDraft): Partial<Record<keyof GuildDraft, string>> {
   const problems: Partial<Record<keyof GuildDraft, string>> = {};
   const name = draft.name.trim();

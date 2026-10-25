@@ -5,8 +5,6 @@ import { coinError, guildOr404 } from "@/server/coins/routes";
 import { actionError, caller } from "@/server/actions";
 import { actionLimit } from "@/server/sponsor";
 
-/** GET ?account=: a wallet's locked positions in a graduated coin's pool, and their unclaimed fees. */
-
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 

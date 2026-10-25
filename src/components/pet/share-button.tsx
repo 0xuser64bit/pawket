@@ -1,30 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Sheet, Stack } from "@/components/pk";
-import { inAndroidApp, shareLink } from "@/lib/native/android";
+import { inAndroidApp, savePicture, shareCard, shareLink } from "@/lib/native/android";
 
-/**
- * A link of Pawket's, opened as a sheet the way a photo is: the card it
- * unfurls as, the link itself, and the ways to pass it on — the phone's (or
- * browser's) share sheet, a copy, a post on X. Nothing is sent by opening
- * it, and cancelling a share says nothing.
- */
+const fileOf = (name: string) => `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "pawket"}-on-pawket`;
+
+const dataUrlOf = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+
+type Card = "loading" | "missing" | { file: File; url: string };
+
+function pageCard(): string {
+  const tag = document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content;
+  if (!tag) return "/opengraph-image";
+  const at = new URL(tag, window.location.href);
+  return `${at.pathname}${at.search}`;
+}
+
 export function ShareButton({
   name,
   label = "Share this record",
   url,
   text,
-  image = "/opengraph-image",
+  image,
   full = false,
 }: {
   name: string;
   label?: string;
-  /** The link; this page when left out. */
   url?: string;
-  /** The words that go with it. */
   text?: string;
-  /** The card the link unfurls as (its Open Graph image). */
   image?: string;
   full?: boolean;
 }) {
@@ -32,24 +42,51 @@ export function ShareButton({
   const [said, setSaid] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [card, setCard] = useState<"loading" | "shown" | "missing">("loading");
+  const [card, setCard] = useState<Card>("loading");
+  const [cardSrc, setCardSrc] = useState<string | null>(null);
   const title = `${name} on Pawket`;
-  // Known once the sheet is open, after a tap: whether there is a share sheet to hand it to.
+  const file = fileOf(name);
   const [canShare, setCanShare] = useState(false);
+  const [inApp, setInApp] = useState(false);
+
+  // Fetched ahead: navigator.share needs the tap's user activation, which awaiting the card would spend.
+  useEffect(() => {
+    if (!link || !cardSrc) return;
+    let alive = true;
+    let shown: string | null = null;
+    fetch(cardSrc)
+      .then((response) => (response.ok ? response.blob() : Promise.reject(new Error(String(response.status)))))
+      .then((blob) => {
+        if (!alive) return;
+        shown = URL.createObjectURL(blob);
+        setCard({ file: new File([blob], `${file}.png`, { type: blob.type || "image/png" }), url: shown });
+      })
+      .catch(() => alive && setCard("missing"));
+    return () => {
+      alive = false;
+      if (shown) URL.revokeObjectURL(shown);
+    };
+  }, [link, cardSrc, file]);
+
+  const picture = typeof card === "object" ? card.file : null;
 
   async function share() {
     if (!link || busy) return;
     setBusy(true);
     setSaid(undefined);
+    const words = text ?? title;
     try {
       if (inAndroidApp()) {
-        const answer = await shareLink({ url: link, title, ...(text ? { text } : {}) });
+        let answer = picture ? await shareCard({ data: await dataUrlOf(picture), name: file, title, url: link, text: words }) : null;
+        if (!answer || answer.reason === "unknown") answer = await shareLink({ url: link, title, ...(text ? { text } : {}) });
         if (!answer.ok) setSaid("The share sheet did not open. Copy the link instead.");
+      } else if (picture && navigator.canShare?.({ files: [picture] })) {
+        await navigator.share({ files: [picture], title, text: `${words} ${link}` });
       } else {
         await navigator.share({ url: link, title, ...(text ? { text } : {}) });
       }
     } catch (error) {
-      if (!(error instanceof Error && error.name === "AbortError")) setSaid("The link could not be shared. Copy it instead.");
+      if ((error as { name?: unknown } | null)?.name !== "AbortError") setSaid("The link could not be shared. Copy it instead.");
     } finally {
       setBusy(false);
     }
@@ -67,6 +104,15 @@ export function ShareButton({
     }
   }
 
+  async function save() {
+    if (!picture || busy) return;
+    setBusy(true);
+    setSaid("Saving…");
+    const answer = await savePicture(await dataUrlOf(picture), file).catch(() => ({ ok: false }));
+    setBusy(false);
+    setSaid(answer.ok ? "Saved to your gallery, in Pictures › Pawket." : "This phone did not save it. Nothing was kept.");
+  }
+
   const post = link ? `https://x.com/intent/post?${new URLSearchParams({ text: text ?? title, url: link })}` : "";
 
   return (
@@ -81,7 +127,10 @@ export function ShareButton({
         onClick={() => {
           setSaid(undefined);
           setCopied(false);
+          setInApp(inAndroidApp());
           setCanShare(inAndroidApp() || typeof navigator.share === "function");
+          setCard("loading");
+          setCardSrc(image ?? pageCard());
           setLink(url ?? window.location.href);
         }}
       />
@@ -110,25 +159,31 @@ export function ShareButton({
           )}
         >
           <Stack gap={4}>
-            {card === "missing" ? null : (
-              // The link's own card, as it unfurls where it is posted. Drawn by Pawket's server; nothing to optimise.
+            {card === "missing" ? null : typeof card === "object" ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={image}
-                alt={`How the link appears: ${name}`}
-                className={`pk-share__card${card === "loading" ? " pk-share__card--wait" : ""}`}
-                onLoad={() => setCard("shown")}
-                onError={() => setCard("missing")}
-              />
+              <img src={card.url} alt={`How the link appears: ${name}`} className="pk-share__card" />
+            ) : (
+              <div className="pk-share__card pk-share__card--wait" aria-hidden="true" />
             )}
             {text ? <p className="body-sm">{text}</p> : null}
             <div className="pk-share__link">
               <span className="label pk-faint">The link</span>
               <span className="pk-share__url">{link}</span>
             </div>
-            <a className="pk-share__post" href={post} target="_blank" rel="noreferrer">
-              Post it on X
-            </a>
+            <div className="pk-share__more">
+              {typeof card !== "object" ? null : inApp ? (
+                <button type="button" className="pk-share__post" disabled={busy} onClick={() => void save()}>
+                  Save the picture
+                </button>
+              ) : (
+                <a className="pk-share__post" href={card.url} download={`${file}.png`}>
+                  Save the picture
+                </a>
+              )}
+              <a className="pk-share__post" href={post} target="_blank" rel="noreferrer">
+                Post it on X
+              </a>
+            </div>
           </Stack>
         </Sheet>
       ) : null}

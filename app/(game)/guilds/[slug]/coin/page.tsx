@@ -32,15 +32,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 const sol = (lamports: string | bigint, places = 4) => `${formatUnits(lamports, 9, places)} SOL`;
 
-/**
- * A guild's coin: optional, like the guild. The head says whose it is and
- * where it is in its life; then the page is two things side by side — the
- * coin now (what a million cost, how far toward graduation, who holds it),
- * read live from Solana on Paper, and what a player can do with it. What
- * can go wrong, the terms, what it does and never does, and where it all is
- * on chain fold away below. The only place in Pawket a coin is traded —
- * never Home, a pet or the park.
- */
 export default async function CoinPage({ params }: Props) {
   const { slug } = await params;
   let guild: ChainGuild | null = null;

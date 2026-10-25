@@ -1,20 +1,16 @@
-# dependencies
 node_modules/
 .pnp
 .pnp.*
 
-# Next.js
 .next/
 out/
 build/
 next-env.d.ts
 
-# Env — never commit secrets. Only .env.example is tracked.
 .env
 .env.*
 !.env.example
 
-# IDE
 .claude/
 .idea/
 .vscode/*
@@ -22,7 +18,6 @@ next-env.d.ts
 *.swp
 *.swo
 
-# OS
 .DS_Store
 *.pem
 *.key
@@ -33,18 +28,14 @@ next-env.d.ts
 *.apk
 *.aab
 
-# TypeScript
 *.tsbuildinfo
 
-# Testing
 coverage/
 playwright-report/
 test-results/
 
-# Vercel
 .vercel
 
-# Solana program build output and keypairs. A keypair is never committed.
 target/
 .keys/
 *-keypair.json

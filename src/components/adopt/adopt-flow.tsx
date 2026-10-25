@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { addTransitionType, startTransition, useEffect, useRef, useState, ViewTransition, type CSSProperties, type ReactNode, type Ref } from "react";
+import { addTransitionType, startTransition, useEffect, useRef, useState, useTransition, ViewTransition, type CSSProperties, type ReactNode, type Ref } from "react";
 import {
   ARRIVE,
   Banner,
   Button,
+  Choice,
   Field,
   Icon,
   LEAVE,
@@ -26,19 +27,22 @@ import type { Address } from "@solana/kit";
 import { KeepSheet } from "@/components/home/keep-sheet";
 import { showToast } from "@/components/pk/toast";
 import { PetPersonality, PetSpecies } from "@/lib/game/enums";
-import { choosePet } from "@/lib/companion/use-companion";
+import { choosePet, useCompanion } from "@/lib/companion/use-companion";
 import { createGuestPet, nameTaken, projectGuestPet, type GuestPet } from "@/lib/guest/pet";
 import { removePet, savePet } from "@/lib/guest/storage";
+import { askBrowserToKeep } from "@/lib/utils/persist";
+import { record } from "@/lib/analytics/events";
 import { usePets } from "@/lib/guest/use-pets";
 import { useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend } from "@/lib/solana/use-send";
-import { formatUtcDate } from "@/lib/utils/format";
+import { formatLocalDate, nameHeadingClass } from "@/lib/utils/format";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 import { useBackCloses, useHere } from "@/lib/native/android";
+import { COATS, findCoat } from "@/lib/player/coats";
+import { chooseCoat } from "@/lib/player/use-coats";
 
 const SPECIES = [PetSpecies.LunaCat, PetSpecies.MossPup, PetSpecies.CloudBun];
 
-/** One line each, about the animal — what it is like to live with, not what it is worth. */
 const SPECIES_LINE: Record<PetSpecies, string> = {
   [PetSpecies.LunaCat]: "Naps in sunbeams and follows you from room to room.",
   [PetSpecies.MossPup]: "Meets you at the door like you were gone a year.",
@@ -58,14 +62,12 @@ const NAMES: Record<PetSpecies, string[]> = {
   [PetSpecies.CloudBun]: ["Tuesday", "Mochi", "Clover", "Dumpling", "Puff"],
 };
 
-/** "Pepper will have company." — the pets already here, named. */
 function companyLine(names: string[]): string {
   if (names.length === 1) return `${names[0]} will have company.`;
   if (names.length === 2) return `${names[0]} and ${names[1]} will have company.`;
   return `${names[0]}, ${names[1]} and ${names.length - 2} more will have company.`;
 }
 
-/** Three paws, one per step: the ones behind you filled, the one you are on outlined in sun. */
 function Steps({ step }: { step: 1 | 2 | 3 }) {
   return (
     <ol className="pk-steps" aria-label={`Step ${step} of 3`}>
@@ -88,11 +90,6 @@ function Bar({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
   );
 }
 
-/**
- * One step of the three. Going on, the next one comes in from the right as
- * this one steps left; Back runs the other way — the same motion as going
- * deeper into a place, and back out of it.
- */
 function StepView({ narrow = false, scope, children }: { narrow?: boolean; scope?: Ref<HTMLElement>; children: ReactNode }) {
   return (
     <ViewTransition enter={ARRIVE} exit={LEAVE} default="none">
@@ -103,7 +100,6 @@ function StepView({ narrow = false, scope, children }: { narrow?: boolean; scope
   );
 }
 
-/** The name stitched on the blanket, sized so a long one still fits across it. */
 function Tag({ name, empty }: { name: string; empty?: boolean }) {
   return (
     <span
@@ -121,27 +117,20 @@ function AdoptBack({ onBack }: { onBack: () => void }) {
   return <Button label="Back" tone="ghost" icon="left" className="pk-btn--flush" onClick={onBack} />;
 }
 
-/**
- * Three taps to a pet. A player keeps as many as they adopt: a new one
- * joins the others in this browser and comes home, and nobody already here
- * is touched on the way through.
- *
- * The pets are the page: all three sit large and alive, their eyes follow
- * the pointer, choosing one makes it hop, and the temperament you pick is
- * the face it wears from then on. The name is stitched on its blanket as
- * you type it.
- *
- * Each step replaces the last in place, so focus and scroll move to the new
- * step's heading — otherwise a keyboard or screen reader is left on a button
- * that no longer exists.
- */
 export function AdoptFlow() {
   const router = useRouter();
+  const [opening, startOpening] = useTransition();
+  const goHome = () => startOpening(() => router.push("/home", { transitionTypes: ["nav-place"] }));
+  useEffect(() => {
+    router.prefetch("/home");
+  }, [router]);
   const { ready, pets: residents } = usePets();
+  const { owned } = useCompanion();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [species, setSpecies] = useState<PetSpecies>(PetSpecies.LunaCat);
   const [hop, setHop] = useState(0);
   const [personality, setPersonality] = useState<PetPersonality>(PetPersonality.Curious);
+  const [coatId, setCoatId] = useState("classic");
   const [name, setName] = useState("");
   const [error, setError] = useState<string>();
   const [adopted, setAdopted] = useState<GuestPet>();
@@ -165,8 +154,6 @@ export function AdoptFlow() {
     });
   }
 
-  // On a phone the three are a row you swipe: the one you land on is the one
-  // chosen, so the button under them never names a pet you swiped past.
   useEffect(() => {
     const row = stage.current;
     if (step !== 1 || !row) return;
@@ -174,8 +161,6 @@ export function AdoptFlow() {
     const io = new IntersectionObserver(
       () => {
         if (row.scrollWidth <= row.clientWidth) return;
-        // Observer entries can describe the previous viewport after a resize.
-        // Read the current carousel so the CTA always names the visible pet.
         const center = row.getBoundingClientRect().left + row.clientWidth / 2;
         let closest: HTMLElement | undefined;
         let distance = Infinity;
@@ -201,6 +186,7 @@ export function AdoptFlow() {
 
   const form = SPECIES_ART[species];
   const sky = SPECIES_SKY[species];
+  const coat = findCoat(species, coatId);
   const temper = PERSONALITY_TEMPER[personality];
   const typed = name.trim();
 
@@ -216,31 +202,39 @@ export function AdoptFlow() {
       nameInput.current?.focus();
       return;
     }
+    if (nameTaken(owned.map((entry) => entry.pet), name)) {
+      setError(`Your wallet already keeps a pet called ${typed} on Solana. Give this one their own name, so they can be kept there too.`);
+      nameInput.current?.focus();
+      return;
+    }
     try {
       const created = createGuestPet({ name, species, personality });
       const saved = savePet(created);
-      if (saved) choosePet(created.id);
+      if (saved) welcome(created);
       setAdopted(created);
       setStored(saved);
       setError(undefined);
       go(3);
     } catch {
-      // The rule comes from the on-chain name seed (2–24 UTF-8 bytes); the
-      // sentence a player reads should not.
       setError(typed.length < 2 ? "A name needs at least two plain letters, or a single emoji." : "That name is too long. Shorten it; accents and emoji use more room.");
       nameInput.current?.focus();
     }
   }
 
+  function welcome(pet: GuestPet) {
+    choosePet(pet.id);
+    if (coat.id !== "classic") chooseCoat(pet.id, coat.id);
+    record({ name: "pet_adopted" });
+    void askBrowserToKeep();
+  }
+
   function retrySave() {
     if (!adopted) return;
     const saved = savePet(adopted);
-    if (saved) choosePet(adopted.id);
+    if (saved) welcome(adopted);
     setStored(saved);
   }
 
-  // The first step draws before this browser's pets are read: only the line
-  // about who will have company waits for them.
   if (step === 1) {
     return (
       <StepView key={1} scope={scope}>
@@ -318,7 +312,7 @@ export function AdoptFlow() {
         >
           <div className="pk-adopt__portrait" data-eyes>
             <span className="pk-adopt__plate">
-              <PetFrame form={form} temper={temper} sky={sky} size="lg" seed={species} />
+              <PetFrame form={form} temper={temper} sky={sky} size="lg" seed={species} coat={coat.coat} patch={coat.patch} />
               <Tag name={typed || "Your pet"} empty={!typed} />
             </span>
           </div>
@@ -338,7 +332,6 @@ export function AdoptFlow() {
                   maxLength={24}
                   value={name}
                   onChange={(event) => { setName(event.target.value); setError(undefined); }}
-                  placeholder={NAMES[species][0]}
                   error={error}
                   helper="Up to 24 plain letters; accents and emoji use more room. It is theirs for good."
                 />
@@ -358,6 +351,22 @@ export function AdoptFlow() {
               </div>
             </div>
 
+            <div>
+              <Choice
+                label={`Their coat: ${coat.name}`}
+                options={COATS[species].map((each) => ({ value: each.id, label: each.name }))}
+                value={coat.id}
+                swatch={(id) => {
+                  const each = findCoat(species, id);
+                  return `linear-gradient(135deg, ${each.coat} 0 62%, ${each.patch} 62%)`;
+                }}
+                onPick={setCoatId}
+              />
+              <p className="caption pk-faint" style={{ marginTop: "var(--space-2)" }}>
+                Change it any time in the wardrobe. It is kept in {here}, like their room.
+              </p>
+            </div>
+
             <fieldset className="pk-adopt__tempers">
               <legend className="label pk-faint">How would you describe them?</legend>
               <div className="pk-tempers">
@@ -372,7 +381,7 @@ export function AdoptFlow() {
                       className="pk-temper"
                     >
                       <span className="pk-temper__face">
-                        <PetFrame form={form} temper={PERSONALITY_TEMPER[option.value]} sky={sky} size="fluid" still />
+                        <PetFrame form={form} temper={PERSONALITY_TEMPER[option.value]} sky={sky} size="fluid" still coat={coat.coat} patch={coat.patch} />
                       </span>
                       <span className="pk-temper__words">
                         <span className="title">{PERSONALITY_LABEL[option.value]}</span>
@@ -410,13 +419,15 @@ export function AdoptFlow() {
               size="lg"
               level={projected?.level ?? 1}
               seed={kept}
+              coat={coat.coat}
+              patch={coat.patch}
             />
             <Tag name={kept} />
           </span>
         </div>
 
         <div>
-          <h1 ref={heading} tabIndex={-1} className="display-l">
+          <h1 ref={heading} tabIndex={-1} className={nameHeadingClass(kept)} style={{ overflowWrap: "anywhere" }}>
             {kept} is yours.
           </h1>
           <p className="body-lg pk-muted" style={{ marginTop: "var(--space-3)" }}>
@@ -432,14 +443,15 @@ export function AdoptFlow() {
                 rows={[
                   { k: "Name", v: kept },
                   { k: "Species", v: SPECIES_LABEL[species] },
+                  { k: "Coat", v: coat.name },
                   { k: "Temperament", v: PERSONALITY_LABEL[personality] },
-                  { k: "Adopted", v: adopted ? formatUtcDate(adopted.createdAt) : "Today" },
+                  { k: "Adopted", v: adopted ? formatLocalDate(adopted.createdAt) : "Today" },
                   { k: "Kept", v: `In ${here}` },
                 ]}
               />
             </Paper>
             <div className="pk-adopt__act">
-              <Button label="Take them home" size="lg" full icon="home" onClick={() => router.push("/home", { transitionTypes: ["nav-place"] })} />
+              <Button label="Take them home" size="lg" full icon="home" busy={opening} onClick={goHome} />
             </div>
             {adopted ? (
               <div className="pk-adopt__keep">
@@ -462,7 +474,7 @@ export function AdoptFlow() {
                     showToast({ id: `local-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
                   }
                   choosePet(address);
-                  router.push("/home", { transitionTypes: ["nav-place"] });
+                  goHome();
                 }}
               />
             ) : null}

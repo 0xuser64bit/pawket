@@ -1,22 +1,6 @@
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { Fragment, type CSSProperties, type ReactNode } from "react";
 
-/**
- * Flat geometry, 3px outline, built from the palette. There is no
- * photography in Pawket and no gradients. The pets themselves are in
- * `pet-art.tsx`; this file is the paw, the player and the mark.
- */
-
-/**
- * Pawket's own paw, on a 64 grid: four toe beans over a centre pad that is
- * a heart. Each bean is an egg, broader at its tip, leaning toward one point
- * below the pad, and every gap — bean to bean, bean to heart — is the same
- * 4.1, so the print reads as one thing. The heart is two circles meeting at
- * a rounded tip, plump because a pad is soft. The drawing sits 0.8 below
- * centre, where its weight balances.
- *
- * `shine` is a highlight per shape, every one lit from the upper right.
- */
 export const PAW = {
   beans: [
     "M6.03 19.86C8.51 17.97 12.26 18.72 14.42 21.54C17.06 24.98 17.05 29.42 14.72 31.2C12.4 32.98 8.11 31.84 5.47 28.39C3.31 25.57 3.56 21.75 6.03 19.86Z",
@@ -33,7 +17,6 @@ export const PAW = {
     "M55.07 21.08C56.24 21.21 57.16 21.94 57.56 23.04",
     "M40.35 33.58C41.96 33.93 43.33 34.99 44.05 36.47",
   ],
-  /** The middle of each shape, the beans then the heart: where the loader grows it from. */
   centres: [
     [10.4, 25.5],
     [23.4, 15.5],
@@ -46,19 +29,6 @@ export const PAW = {
 const SHAPES = [...PAW.beans, PAW.heart];
 const hundredths = (n: number) => Math.round(n * 100) / 100;
 
-/**
- * The paw at a size, as the mark draws it. Its shape is carried by the
- * fill, so it is the same paw in Daylight and Lamplight: the keyline sits
- * outside each shape, and it is the one thing a dark room swallows.
- *
- * Keyline and shelf are sized in pixels, not with the drawing, so they stay
- * the system's weights at every size. From 40px each shape stands on a
- * `sun-edge` shelf, as a button does; from 56px each catches a highlight.
- * Below that the paw is flat, two inks, which is what a 16px tab can hold.
- *
- * `moving` is the loader's: each shape is wrapped so CSS can grow it in, and
- * each face so it can press into its shelf (`PawLoader`).
- */
 export function PawGlyph({
   size,
   moving = false,
@@ -76,7 +46,6 @@ export function PawGlyph({
   const lit = size >= 56;
   const lowered = `translate(0 ${shelf})`;
 
-  // Every layer draws the five shapes in the same order: the beans left to right, then the heart.
   const each = (draw: (d: string, i: number) => ReactNode) =>
     SHAPES.map((d, i) =>
       moving ? (
@@ -110,7 +79,6 @@ export function PawGlyph({
       aria-hidden="true"
       style={moving ? ({ "--pk-shelf": `${shelf}px` } as CSSProperties) : undefined}
     >
-      {/* the shelf adds depth below, so the drawing rises by half of it to stay centred */}
       <g transform={shelf ? `translate(0 ${-shelf / 2})` : undefined}>
         <g fill={ink} stroke={ink} strokeWidth={hundredths(keyline * 2)} strokeLinejoin="round">
           {each((d, i) => (
@@ -127,14 +95,6 @@ export function PawGlyph({
   );
 }
 
-/**
- * A paw print, on a 64px grid with the same 3px outline the pets take: the
- * trail the pets leave across the front door.
- *
- * Four prints, told apart by silhouette alone: the cat's round beans, the
- * pup's broad pad with claws, the bun's long hind foot, and Pawket's own,
- * whose centre pad is a heart.
- */
 export type PawPrint = "cat" | "dog" | "bun" | "heart";
 
 const PAW_COATS: Record<PawPrint, string> = {
@@ -214,6 +174,28 @@ const HATS = {
       <circle r="3" fill="var(--trim-foil)" strokeWidth="2" />
     </g>
   ),
+  cat: (color: string) => (
+    <>
+      <path d="M40 24 37 4l17 12zM80 24 83 4 66 16z" fill={color} />
+      <path d="M42.4 17.6 40.8 9.6l7.6 5.4zM77.6 17.6 79.2 9.6l-7.6 5.4z" fill="var(--pet-blush)" stroke="none" />
+      <path d="M36 28c6-10 14-14 24-14s18 4 24 14" strokeWidth="4" fill="none" />
+    </>
+  ),
+  headphones: (color: string) => (
+    <>
+      <path d="M33 42C31 4 89 4 87 42" strokeWidth="9" fill="none" />
+      <path d="M33 42C31 4 89 4 87 42" stroke={color} strokeWidth="4" fill="none" />
+      <rect x="27" y="34" width="11" height="18" rx="5" fill={color} />
+      <rect x="82" y="34" width="11" height="18" rx="5" fill={color} />
+    </>
+  ),
+  witch: (color: string) => (
+    <>
+      <path d="M45 18L57-8Q64-22 78-15Q69-12 66-4L75 18z" fill={color} />
+      <path d="M47 11h26l1 6H46z" fill="var(--trim-foil)" />
+      <ellipse cx="60" cy="19" rx="31" ry="6" fill={color} />
+    </>
+  ),
   bunny: (color: string) => (
     <>
       <path d="M48 20c-6-12-6-26 0-28s10 14 8 28M72 20c6-12 6-26 0-28s-10 14-8 28" fill={color} />
@@ -223,7 +205,6 @@ const HATS = {
   ),
 };
 
-/** Glasses on the peg doll: round, hearts or shades. */
 const GLASSES = {
   round: (
     <g fill="none" strokeWidth="2.4">
@@ -239,6 +220,13 @@ const GLASSES = {
       <path d="M57.6 39.6h4.8" fill="none" />
     </g>
   ),
+  stars: (
+    <g strokeWidth="2.2" fill="var(--sun)">
+      <path d="M52 35.1 53.9 39.8 59 40.2 55.1 43.5 56.3 48.5 52 45.8 47.7 48.5 48.9 43.5 45 40.2 50.1 39.8z" />
+      <path d="M68 35.1 69.9 39.8 75 40.2 71.1 43.5 72.3 48.5 68 45.8 63.7 48.5 64.9 43.5 61 40.2 66.1 39.8z" />
+      <path d="M59 40.6h2" fill="none" />
+    </g>
+  ),
   shades: (
     <g strokeWidth="2.4">
       <rect x="44" y="37" width="15" height="10" rx="4" fill="var(--pet-eye)" />
@@ -252,11 +240,6 @@ export type GlassesName = keyof typeof GLASSES;
 
 export type HatName = keyof typeof HATS;
 
-/**
- * The player is a peg doll: a wooden-cream face, one colour for the rest of
- * the figure, dot eyes, a blush and a hat. There is no skin tone and no
- * likeness, so expression comes from colour and accessory.
- */
 export function PlayerArt({
   color = "var(--pool)",
   hat,
@@ -280,6 +263,9 @@ export function PlayerArt({
     party: "var(--sun)",
     flower: "var(--pet-blush)",
     bunny: "var(--surface)",
+    cat: "var(--surface-ink)",
+    witch: "var(--surface-ink)",
+    headphones: "var(--pool)",
   };
   return (
     <svg
@@ -310,15 +296,6 @@ export function PlayerArt({
   );
 }
 
-/**
- * The mark: a paw print, because Pawket is named for paws. Four toe beans
- * over a centre pad that is a heart — the thing a pet leaves behind, and the
- * care it is left for, drawn once (`PAW`).
- *
- * In a bar it is two inks, `sun` with an `on-sun` keyline, and the gaps stay
- * open at 16px; drawn large it stands on its shelf and catches the light
- * (`PawGlyph`). Check 16, 24, 40 and 96px in both rooms before changing it.
- */
 export function Mark({
   size = 28,
   type = 22,

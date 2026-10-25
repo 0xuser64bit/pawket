@@ -5,7 +5,6 @@ use solana_signer::Signer;
 
 use crate::harness::*;
 
-/// A guild founded by one owner's pet, with a second owner's pet in it, the sponsor paying.
 struct Gathering {
     sponsor: Keypair,
     founder: Keypair,
@@ -49,7 +48,6 @@ fn the_founder_plans_an_event_and_its_pets_say_they_are_going_and_check_in() {
     assert_eq!(env.event(&event).going, 2);
     assert!(env.send(&[rsvp_ix(&g.member.pubkey(), &g.sponsor.pubkey(), &g.member_pet, &event)], &g.sponsor, &[&g.member]).is_err(), "one RSVP per pet");
 
-    // Check-in opens fifteen minutes before the start.
     let check_in = |env: &mut Env| env.send(&[check_in_ix(&g.member.pubkey(), &g.member_pet, &event)], &g.member, &[]);
     expect_pawket(&check_in(&mut env), PawketError::NotCheckInTime);
     env.set_time(starts - CHECK_IN_EARLY_SECONDS);
@@ -86,7 +84,6 @@ fn only_the_founder_plans_and_only_the_guilds_pets_say_they_are_going() {
     ok(env.send(&[create_event_ix(&g.founder.pubkey(), &g.founder.pubkey(), &g.guild, 1, "Our party", "", starts, starts + HOUR)], &g.founder, &[]));
     let event = event_pda(&g.guild, 1);
 
-    // A pet in another guild is not this guild's.
     let stranger = env.player();
     let stranger_pet = env.adopt(&stranger, "Biscuit");
     ok(env.send(&[found_ix(&stranger.pubkey(), &stranger.pubkey(), &stranger_pet, "muddy-paws")], &stranger, &[]));
@@ -94,7 +91,6 @@ fn only_the_founder_plans_and_only_the_guilds_pets_say_they_are_going() {
         &env.send(&[rsvp_ix(&stranger.pubkey(), &stranger.pubkey(), &stranger_pet, &event)], &stranger, &[]),
         PawketError::NotInGuild,
     );
-    // Someone else's pet is not yours to bring.
     expect_pawket(
         &env.send(&[rsvp_ix(&stranger.pubkey(), &stranger.pubkey(), &g.member_pet, &event)], &stranger, &[]),
         PawketError::NotPetOwner,
@@ -117,7 +113,6 @@ fn an_event_is_held_to_its_rules() {
         plan("Nap", "", now - 2 * HOUR, now - HOUR),
         plan("Nap", "", now + HOUR, now + HOUR + 8 * DAY),
         plan("Nap", "", now + 61 * DAY, now + 61 * DAY + HOUR),
-        // A span too long to count is refused like any other, not left to overflow.
         plan("Nap", "", i64::MIN, now + HOUR),
     ] {
         expect_pawket(&env.send(&[ix], &g.founder, &[]), PawketError::InvalidEvent);
@@ -143,7 +138,6 @@ fn a_poll_takes_one_ballot_per_wallet_and_counts_them() {
     let ballot = env.ballot(&ballot_pda(&poll, &g.member.pubkey()));
     assert_eq!((ballot.owner, ballot.pet, ballot.option), (g.member.pubkey(), g.member_pet, 2));
 
-    // One person, one vote: a second pet of the same wallet does not vote again.
     let second = env.adopt(&g.member, "Nib");
     ok(env.send(&[join_ix(&g.member.pubkey(), &g.member.pubkey(), &second, &g.guild)], &g.member, &[]));
     assert!(env.send(&[vote_ix(&g.member.pubkey(), &g.member.pubkey(), &second, &poll, 1)], &g.member, &[]).is_err());
@@ -192,7 +186,6 @@ fn a_pet_goes_and_answers_only_on_its_own_place_in_the_guild() {
     ok(env.send(&[create_poll_ix(&founder, &founder, &g.guild, 1, "Where?", &["Rug", "Sun"], now + DAY)], &g.founder, &[]));
     let (event, poll) = (event_pda(&g.guild, 1), poll_pda(&g.guild, 1));
 
-    // An outsider's pet borrows a member's place in the guild.
     let outsider = env.player();
     let id = outsider.pubkey();
     let stray = env.adopt(&outsider, "Stray");
@@ -203,7 +196,6 @@ fn a_pet_goes_and_answers_only_on_its_own_place_in_the_guild() {
     ballot.accounts[3].pubkey = member_pda(&g.member_pet);
     expect_anchor(&env.send(&[ballot], &outsider, &[]), ErrorCode::ConstraintSeeds);
 
-    // Its own place, in another guild, is not a place in this one.
     ok(env.send(&[found_ix(&id, &id, &stray, "muddy-paws")], &outsider, &[]));
     expect_pawket(&env.send(&[vote_ix(&id, &id, &stray, &poll, 0)], &outsider, &[]), PawketError::NotInGuild);
     assert_eq!((env.event(&event).going, env.poll(&poll).votes), (0, [0; 4]));
@@ -237,7 +229,6 @@ fn a_pet_checks_in_only_on_its_own_rsvp() {
     ok(env.send(&[rsvp_ix(&founder, &founder, &g.founder_pet, &event)], &g.founder, &[]));
     env.set_time(starts);
 
-    // The member's pet never said it was going; it checks in on the founder's pet's word.
     let mut borrowed = check_in_ix(&g.member.pubkey(), &g.member_pet, &event);
     borrowed.accounts[3].pubkey = rsvp_pda(&event, &g.founder_pet);
     expect_anchor(&env.send(&[borrowed], &g.member, &[]), ErrorCode::ConstraintSeeds);

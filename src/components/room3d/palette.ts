@@ -1,15 +1,5 @@
 import { HAIR_COLOURS, type ClothColour, type HairColour } from "@/lib/player/look";
 
-/**
- * The room's materials are things, lit by the room: a pool-blue shirt is
- * the same shirt after dark, so materials take the Daylight token values
- * whatever the theme, and the light is what changes. These mirror `:root`
- * in `app/globals.css` — `palette.test.ts` fails if they drift. The pets'
- * coats are the same values, baked into their GLBs by the asset pipeline.
- *
- * What follows the theme comes from the page instead: the outline is the
- * theme's `edge`, and the backdrop is the theme's sky.
- */
 export const DAYLIGHT = {
   ground: "#f6efe2",
   surface: "#fffbf3",
@@ -44,7 +34,6 @@ export const DAYLIGHT = {
 
 export type Tone = keyof typeof DAYLIGHT;
 
-/** A cloth colour's token. Ink and cream are the two neutrals. */
 export const CLOTH_TONE: Record<ClothColour, Tone> = {
   pool: "pool",
   sun: "sun",

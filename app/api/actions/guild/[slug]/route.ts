@@ -7,14 +7,6 @@ import { absolute, actionError, actionJson, caller, postedAccount, preflight } f
 import { actionLimit, mayPayRent, sponsoredForPlayer, sponsorState } from "@/server/sponsor";
 import { readGuild, readOwnedPets } from "@/server/solana";
 
-/**
- * "Join Sunbeam Club", as a Solana Action: the guild's card, live from
- * chain, and one button. The pet that joins is the wallet's most recently
- * adopted pet on Solana that is in no guild yet; its owner signs, and
- * Pawket pays the fee and the rent. Optional, like every guild — and a
- * guild never changes a pet.
- */
-
 export const dynamic = "force-dynamic";
 export const OPTIONS = preflight;
 
@@ -44,6 +36,8 @@ export async function POST(request: Request, { params }: Props) {
   const { slug } = await params;
   const account = await postedAccount(request);
   if (!account || !isAddress(account)) return actionError("That is not a wallet address. Nothing was sent.");
+  const key = caller(request);
+  if (!actionLimit(key)) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
   const guild = await guildAt(slug);
   if (!guild || !isListed(guild)) return actionError("No guild has that name.", 404);
 
@@ -62,13 +56,13 @@ export async function POST(request: Request, { params }: Props) {
   if (!sponsor?.available) {
     return actionError(sponsor?.reason ?? "The sponsor cannot reach the network. Nothing was sent.", 503);
   }
-  const key = caller(request);
-  if (!mayPayRent(account) || !actionLimit(key)) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
+  if (!mayPayRent([account, key])) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
 
   const member = (await deriveMemberPda(free.pet.address)).address;
   const transaction = await sponsoredForPlayer(sponsor.signer, free.pet.owner, ({ owner, payer }) => [
     getJoinGuildInstruction({ owner, payer, pet: free.pet.address, guild: guild.address, member }),
-  ]);
+  ]).catch(() => null);
+  if (!transaction) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   return actionJson({
     type: "transaction",
     transaction,

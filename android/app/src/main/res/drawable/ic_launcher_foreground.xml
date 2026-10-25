@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Pawket's mark, drawn from public/favicon.svg at its full size (ink keyline,
-     shelf, sun, shine): a paw whose centre pad is a heart. Placed in the
-     adaptive icon's 108dp square inside the 66dp safe circle. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -12,7 +9,6 @@
         android:scaleY="0.9"
         android:translateX="25.2"
         android:translateY="23.4">
-        <!-- ink: the keyline around each shape, and the shelf below it -->
         <group android:translateY="1.92">
             <path
                 android:fillColor="@color/mark_ink"

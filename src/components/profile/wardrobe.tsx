@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
-import { Button, ButtonLink, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt } from "@/components/pk";
+import { NavLink as Link } from "@/components/pk/nav-link";
+import { Button, ButtonLink, Choice, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt } from "@/components/pk";
+import { COATS } from "@/lib/player/coats";
+import { chooseCoat, useCoats } from "@/lib/player/use-coats";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { MARKET_WEARABLES, WEARABLES, findWearable, wearableItem } from "@/lib/closet/catalog";
 import type { CompanionState } from "@/lib/companion/use-companion";
@@ -21,13 +23,6 @@ import type { PawketSender } from "@/lib/solana/use-send";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 import { useHere } from "@/lib/native/android";
 
-/**
- * The dressing room: any of your pets in the mirror, trying on whatever the
- * pointer or focus rests on before a tap wears it. Clothes change nothing
- * but looks; on Solana, putting one on is a signed record. Three are
- * free; the Market's nineteen are worn by a pet on Solana once its owner's
- * closet holds them — the program checks the closet, not this screen.
- */
 export function Wardrobe({ companion, sender }: { companion: CompanionState; sender: PawketSender }) {
   const [chosen, setChosen] = useState<string | null>(null);
   const pet = companion.all.find((p) => p.id === chosen) ?? companion.pet;
@@ -35,14 +30,15 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
   const worn = findWearable(pet?.wearing);
   const [notice, setNotice] = useState<string>();
   const { Here } = useHere();
-  /** A piece being tried on in the mirror (null: nothing on), before it is worn. */
   const [trying, setTrying] = useState<string | null | undefined>(undefined);
   const room = useRef<HTMLDivElement>(null);
   const closet = useCloset(companion.owner);
+  const coatOf = useCoats();
   const bought = new Set(closet.data?.items ?? []);
   useEyesFollow(room);
   if (!pet) return null;
   const shown = trying !== undefined ? trying : pet.wearing;
+  const coat = coatOf(pet);
   const free = WEARABLES.filter((item) => !item.price);
   const collected = MARKET_WEARABLES.filter((item) => bought.has(wearableItem(item.id)));
 
@@ -52,7 +48,6 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
       const next = setWearing(pet, id).wearing;
       const item = findWearable(next ?? id);
       const slot = wearableSlot(next);
-      // A Market piece goes on with `dress_owned`, which reads the owner's closet; the starters with `dress`.
       const closetAddress = slot > WEARABLE_COUNT ? (await deriveClosetPda(chain.pet.owner)).address : null;
       const result = await sender.act(
         next ? `Put the ${item?.name.toLowerCase()} on ${pet.name}` : `Take the ${item?.name.toLowerCase()} off ${pet.name}`,
@@ -96,9 +91,8 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
           first={
             <div className="pk-mirror">
               <div className="pk-mirror__glass" data-eyes>
-                {/* A piece going on (or off) is seen going on: the pet pops into it. */}
                 <div key={`${pet.id}:${shown ?? "none"}`} className="pk-pop-in">
-                  <PetFrame {...petLook({ ...pet, wearing: shown }, projectGuestPet(pet).mood)} sky={SPECIES_SKY[pet.species]} size="lg" />
+                  <PetFrame {...petLook({ ...pet, wearing: shown }, projectGuestPet(pet).mood)} coat={coat.coat} patch={coat.patch} sky={SPECIES_SKY[pet.species]} size="lg" />
                 </div>
               </div>
               <p className="body-sm pk-muted" aria-live="polite">
@@ -109,6 +103,19 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
                   : worn
                     ? `${pet.name} is wearing the ${worn.name.toLowerCase()}.`
                     : `${pet.name} is wearing nothing yet.`}
+              </p>
+              <Choice
+                label={`Coat: ${coat.name}`}
+                options={COATS[pet.species].map((each) => ({ value: each.id, label: each.name }))}
+                value={coat.id}
+                swatch={(id) => {
+                  const each = COATS[pet.species].find((one) => one.id === id)!;
+                  return `linear-gradient(135deg, ${each.coat} 0 62%, ${each.patch} 62%)`;
+                }}
+                onPick={(id) => setNotice(chooseCoat(pet.id, id) ? undefined : `${Here} did not store that.`)}
+              />
+              <p className="caption pk-faint">
+                Kept in {Here === "This app" ? "this app" : "this browser"}. {pet.name}&apos;s record, the Park and a visit show the classic coat.
               </p>
             </div>
           }

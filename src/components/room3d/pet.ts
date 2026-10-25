@@ -1,30 +1,31 @@
 import {
   AnimationMixer,
+  Color,
   Group,
   LoopRepeat,
   Quaternion,
   Vector3,
   type AnimationAction,
   type AnimationClip,
+  type BufferAttribute,
   type Mesh,
   type MeshStandardMaterial,
   type Object3D,
 } from "three";
 import type { PetCue } from "@/lib/room/moments";
-import { addOutline, toon } from "./materials";
+import { addOutline, disposeTree, toon } from "./materials";
 import { angleDelta, dampAngle } from "./rig";
 import { wearableFor } from "./wearables";
 
-/** Kenney's cube animals are about 1.6 m; ours come up to a person's thigh. */
 export const PET_SCALE = 0.47;
 
-/** Points on the body, in the body node's unscaled space. */
 const CROWN = new Vector3(0, 1.4, 0.1);
 const MOUTH = new Vector3(0, 0.46, 0.72);
 
 const WALK_SPEED = 0.55;
 const RUN_SPEED = 1.7;
 const TURN_RATE = 7;
+const HOP_SECONDS = 0.42;
 
 type Mode = "idle" | "eat" | "nibble" | "dance" | "sleep" | "happy" | "no";
 
@@ -35,12 +36,6 @@ interface Trip {
   done: () => void;
 }
 
-/**
- * The pet in the room: a Kenney cube animal in Pawket colours, moved by
- * walking and running between spots, animated by its own clips, and
- * finished with the small things the clips do not have — a hop, a lean
- * into a hand, lying down, and the design system's breath.
- */
 export class PetActor {
   readonly root = new Group();
   readonly body: Object3D;
@@ -61,7 +56,10 @@ export class PetActor {
   private lean = 0;
   private sleep = 0;
   private sleeping = false;
+  private held: string | null = null;
   private readonly carried = new Group();
+  private readonly meshes: Mesh[] = [];
+  private readonly baked = new Map<Mesh, BufferAttribute>();
   private readonly bodyRest: { position: Vector3; quaternion: Quaternion };
   breathe = true;
 
@@ -72,7 +70,7 @@ export class PetActor {
     this.root.name = "pet";
     this.body = this.model.getObjectByName("body")!;
     this.bodyRest = { position: this.body.position.clone(), quaternion: this.body.quaternion.clone() };
-    const meshes: Mesh[] = [];
+    const meshes = this.meshes;
     this.model.traverse((object) => {
       if (object.name.startsWith("leg-")) this.legs.push(object);
       if ((object as Mesh).isMesh) meshes.push(object as Mesh);
@@ -90,9 +88,37 @@ export class PetActor {
     this.play("idle", 0);
   }
 
-  /** Put on the wardrobe item, if there is one, in 3D. */
+  paint(baked: { main: string; second: string }, coat: { main: string; second: string }): void {
+    const from = [new Color(baked.main), new Color(baked.second)];
+    const to = [new Color(coat.main), new Color(coat.second)];
+    const near = (a: Color, b: Color) => Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) < 0.06;
+    const c = new Color();
+    for (const mesh of this.meshes) {
+      let original = this.baked.get(mesh);
+      if (!original) {
+        const colours = mesh.geometry.getAttribute("color") as BufferAttribute | undefined;
+        if (!colours) continue;
+        original = colours.clone();
+        mesh.geometry = mesh.geometry.clone();
+        this.baked.set(mesh, original);
+      }
+      const colours = mesh.geometry.getAttribute("color") as BufferAttribute;
+      for (let i = 0; i < original.count; i++) {
+        c.setRGB(original.getX(i), original.getY(i), original.getZ(i));
+        const k = from.findIndex((each) => near(each, c));
+        const out = k >= 0 ? to[k] : c;
+        colours.setXYZ(i, out.r, out.g, out.b);
+      }
+      colours.needsUpdate = true;
+    }
+  }
+
   wear(id: string | null): void {
-    this.body.getObjectByName("wearable")?.removeFromParent();
+    const worn = this.body.getObjectByName("wearable");
+    if (worn) {
+      worn.removeFromParent();
+      disposeTree(worn);
+    }
     const item = id ? wearableFor(id) : null;
     if (item) this.body.add(item);
   }
@@ -107,14 +133,33 @@ export class PetActor {
     this.base = action;
   }
 
+  hold(name: string | null, at = 0, hop = false): void {
+    const action = name ? this.actions.get(name) : undefined;
+    if (this.held) this.actions.get(this.held)!.paused = false;
+    this.held = action ? name : null;
+    if (!action) return;
+    this.wake();
+    this.stop();
+    this.play(name!, 0);
+    action.time = at;
+    action.paused = true;
+    this.hopAt = hop ? this.clock - HOP_SECONDS / 2 : -1;
+  }
+
   place(at: Vector3, yaw: number): void {
+    this.stop();
     this.root.position.copy(at);
     this.yaw = yaw;
     this.root.rotation.y = yaw;
-    this.trip = null;
   }
 
-  /** Walk or run to a spot, then turn to `face` (radians) if given. */
+  private stop(): void {
+    const trip = this.trip;
+    this.trip = null;
+    this.faceTo = null;
+    trip?.done();
+  }
+
   go(to: Vector3, { run = false, face = null }: { run?: boolean; face?: number | null } = {}): Promise<void> {
     this.wake();
     this.trip?.done();
@@ -136,7 +181,6 @@ export class PetActor {
     this.faceTo = Math.atan2(point.x - this.root.position.x, point.z - this.root.position.z);
   }
 
-  /** Turn toward the hand on the crown, and push up into it. */
   leanInto(point: Vector3 | null): void {
     this.leanTo = point ? point.clone() : null;
   }
@@ -164,7 +208,6 @@ export class PetActor {
         this.setMode("eat", Infinity);
         break;
       case "nibble":
-        // From a hand, not the floor: reach up and take small bites.
         this.setMode("nibble", Infinity);
         break;
       case "lean":
@@ -196,7 +239,6 @@ export class PetActor {
     return this.sleeping;
   }
 
-  /** Where a hand rests on the head, in world space. */
   crown(out = new Vector3()): Vector3 {
     return this.body.localToWorld(out.copy(CROWN));
   }
@@ -205,12 +247,10 @@ export class PetActor {
     return this.body.localToWorld(out.copy(MOUTH));
   }
 
-  /** Something held in the mouth (the ball) goes here. */
   get mouthSocket(): Object3D {
     return this.carried;
   }
 
-  /** Metres from the pet's centre to the front of its face. */
   get reachOfMouth(): number {
     return MOUTH.z * PET_SCALE;
   }
@@ -219,7 +259,6 @@ export class PetActor {
     this.clock += dt;
     if (this.mode !== "idle" && this.clock > this.modeUntil) this.mode = "idle";
 
-    // Travel: turn toward the goal first, then go, easing in at the end.
     let speed = 0;
     if (this.trip) {
       const offset = this.trip.to.clone().sub(this.root.position);
@@ -245,7 +284,6 @@ export class PetActor {
     }
     this.root.rotation.y = this.yaw;
 
-    // Clip choice.
     const turning = this.faceTo !== null && Math.abs(angleDelta(this.yaw, this.faceTo)) > 0.15;
     const want = this.sleeping
       ? "idle"
@@ -262,11 +300,10 @@ export class PetActor {
               : this.mode === "nibble"
                 ? "idle"
                 : this.mode;
-    this.play(want);
+    this.play(this.held ?? want);
     const walk = this.actions.get("walk");
     if (walk) walk.timeScale = this.trip ? Math.max(0.6, speed / WALK_SPEED) : 0.8;
 
-    // Blend weights: normalised, so the rest pose never shows through.
     let total = 0;
     for (const [action, state] of this.weights) {
       state.now += Math.sign(state.to - state.now) * Math.min(Math.abs(state.to - state.now), dt / 0.2);
@@ -276,36 +313,28 @@ export class PetActor {
       } else total += state.now;
     }
     for (const [action, state] of this.weights) action.setEffectiveWeight(total ? state.now / total : 0);
-    // Clips only write what they animate; start each frame from rest so the
-    // touches below never accumulate.
     this.body.position.copy(this.bodyRest.position);
     this.body.quaternion.copy(this.bodyRest.quaternion);
     this.mixer.update(still ? 0 : dt * (this.sleeping ? 0.35 : 1));
 
-    // Lying down: settle onto the tucked legs.
     this.sleep += ((this.sleeping ? 1 : 0) - this.sleep) * (1 - Math.exp(-3 * dt));
     for (const leg of this.legs) leg.scale.y = 1 - 0.7 * this.sleep;
     this.body.position.y -= 0.2 * this.sleep;
 
-    // The hop, with a squash as it lands.
     let lift = 0;
     let squash = 0;
     const h = this.clock - this.hopAt;
-    if (this.hopAt >= 0 && h < 0.42) {
-      const x = h / 0.42;
+    if (this.hopAt >= 0 && h < HOP_SECONDS) {
+      const x = h / HOP_SECONDS;
       lift = 4 * 0.13 * x * (1 - x);
       squash = x > 0.85 ? (x - 0.85) / 0.15 : x < 0.12 ? 1 - x / 0.12 : 0;
     }
-    // The breath — 1 → 1.035 × 0.975 over 3.6 s, from the feet — at a
-    // little over half strength, because the idle clip already bobs.
-    // Asleep, it slows.
     const period = 3.6 * (this.sleeping ? 1.6 : 1);
     const b = this.breathe && !still ? ((1 - Math.cos((this.clock / period) * Math.PI * 2)) / 2) * 0.6 : 0;
     const wide = PET_SCALE * (1 + 0.035 * b + 0.06 * squash);
     this.model.position.y = lift;
     this.model.scale.set(wide, PET_SCALE * (1 - 0.025 * b - 0.1 * squash), wide);
 
-    // Leaning into a hand: tip toward it and rise to meet it.
     this.lean += ((this.leanTo ? 1 : 0) - this.lean) * (1 - Math.exp(-5 * dt));
     if (this.lean > 0.001) {
       const toward = (this.leanTo ?? this.crown()).clone();
@@ -316,7 +345,6 @@ export class PetActor {
       this.body.position.y += 0.03 * this.lean;
     }
     if (this.mode === "nibble") {
-      // Quick little bites toward whatever it is leaning into.
       const bite = Math.max(0, Math.sin(this.clock * 13)) * 0.09;
       this.body.quaternion.multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), bite));
     }
@@ -325,5 +353,6 @@ export class PetActor {
   dispose(): void {
     this.mixer.stopAllAction();
     this.root.removeFromParent();
+    for (const mesh of this.baked.keys()) mesh.geometry.dispose();
   }
 }

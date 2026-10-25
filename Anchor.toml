@@ -12,8 +12,6 @@ pawket = "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74"
 [programs.devnet]
 pawket = "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74"
 
-# Localnet by default, so a stray `anchor deploy` never reaches a shared cluster.
-# Devnet deploys go through `pnpm program:deploy` (docs/SOLANA.md).
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"

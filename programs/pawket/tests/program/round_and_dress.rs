@@ -1,5 +1,3 @@
-//! `finish_round` (the playground's daily bonus) and `dress` (looks only).
-
 use pawket::{utc_day, PawketError, WEARABLE_COUNT};
 use solana_signer::Signer;
 

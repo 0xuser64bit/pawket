@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { Address } from "@solana/kit";
-import { useConnectedWallet, useIsWalletReady } from "@solana/kit-plugin-wallet/react";
+import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import { useRequest } from "@solana/react";
 import {
   Banner,
@@ -27,35 +27,24 @@ import { getPublicEnv } from "@/config/env";
 import { findWearable } from "@/lib/closet/catalog";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { CARE_DONE_LABEL } from "@/lib/game/appearance";
-import { rpc, wallet as walletClient } from "@/lib/solana/browser-client";
+import { rpc, wallet as walletClient, useWalletReady } from "@/lib/solana/browser-client";
 import { explorerAddressUrl, explorerTxUrl } from "@/lib/solana/cluster";
+import { WALLET_LIMITS } from "@/lib/solana/program";
 import {
   getCloseWalletInstruction,
   getDepositInstruction,
+  getReturnFloatInstruction,
   getUnlinkDeviceInstruction,
   getWithdrawInstruction,
 } from "@/lib/solana/instructions";
 import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
-import { formatAgo, formatSol, formatUtcDate, parseSolToLamports, truncateAddress } from "@/lib/utils/format";
-import { useMounted } from "@/lib/utils/use-mounted";
+import { dayTurnsAt, formatAgo, formatLocalDate, formatSol, parseSolToLamports, truncateAddress } from "@/lib/utils/format";
 import { forgetDevice } from "@/lib/wallet/device";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { fetchWalletHistory, type WalletEntry } from "@/lib/wallet/history";
 import { refreshPawketWallet, rentOfWallet, usePawketWallet, type PawketWalletState } from "@/lib/wallet/pawket-wallet";
 import { useHere } from "@/lib/native/android";
 import { DevnetFaucet } from "@/components/wallet/faucet";
-
-/**
- * The Pawket Wallet: one approval, then no pop-ups. The player's own wallet
- * links this browser once; from then on the browser signs whatever their pets
- * do on Solana — care, rounds, clothes, adoption, guilds, gatherings, waves —
- * inside the limits they set, while anything that spends SOL still asks the
- * wallet. Pawket pays the fees while it can; a balance the player puts in
- * pays them when it does not. Money moves only with the wallet's own approval,
- * including Market purchases and coins. Everything here is read from Solana.
- *
- * Money is Paper: statements, not celebrations, and nothing moves on it.
- */
 
 const DAYS = [
   { value: 1, label: "A day" },
@@ -67,20 +56,17 @@ const DAILY = [
   { value: 100, label: "100 a day" },
   { value: 250, label: "250 a day" },
 ] as const;
-/** A starting balance; a linked Pawket Wallet must hold SOL before it acts. */
 const PUT = [
   { value: 10_000_000, label: "0.01 SOL" },
   { value: 100_000_000, label: "0.1 SOL" },
   { value: 250_000_000, label: "0.25 SOL" },
 ] as const;
+const NOTHING_YET = { value: 0, label: "Nothing yet" } as const;
 const sol = (lamports: bigint) => `${formatSol(lamports)} SOL`;
 
 
 export function PawketWalletScreen() {
-  // The wallet is only known in the browser, after hydration.
-  const mounted = useMounted();
-  const walletReady = useIsWalletReady(walletClient);
-  const ready = mounted && walletReady;
+  const ready = useWalletReady();
   const connected = useConnectedWallet(walletClient);
   const owner = (connected?.account.address as Address | undefined) ?? null;
   const { here, Here } = useHere();
@@ -104,7 +90,7 @@ export function PawketWalletScreen() {
           <Card>
             <h2 className="title">Set up your Pawket Wallet</h2>
             <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-              Connect the wallet that keeps your pets. It owns the Pawket Wallet and approves once; then {here}
+              Connect the wallet that keeps your pets. It owns the Pawket Wallet and approves once; then {here}{" "}
               signs for your pets with no pop-up. Connecting signs nothing.
             </p>
             <div className="pk-foot">
@@ -141,7 +127,6 @@ export function PawketWalletScreen() {
   );
 }
 
-/** The rule every device lives inside. The program holds it to every line. */
 function Rules() {
   const { here } = useHere();
   const can = [
@@ -198,7 +183,6 @@ function Rules() {
   );
 }
 
-/** Opening, funding and linking this device in one approval. */
 function SetUp() {
   const { link, problem, busy } = useLinkBrowser();
   const sponsor = useSponsor();
@@ -206,7 +190,8 @@ function SetUp() {
   const rent = useRequest(rentOfWallet);
   const cluster = getPublicEnv().solanaCluster;
   const sponsored = Boolean(sponsor.data?.available);
-  const [put, setPut] = useState<number>(PUT[0].value);
+  const [picked, setPut] = useState<number | null>(null);
+  const put = picked ?? (sponsored ? NOTHING_YET.value : PUT[0].value);
   const [days, setDays] = useState<number>(30);
   const [daily, setDaily] = useState<number>(100);
   const deposit = BigInt(put);
@@ -215,18 +200,18 @@ function SetUp() {
     <Card>
       <h2 className="title">Set up your Pawket Wallet</h2>
       <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
-        Pawket acts on Solana only through it. Your wallet approves once — opening it, putting SOL in and linking{" "}
-        {here}. After that {here} signs what your pets do — care, rounds, outfits, guilds, gatherings and waves —
-        with no pop-up, and Market looks and guild coins spend this balance once your wallet approves. Every one of
-        them is in the history here.
+        Pawket acts on Solana only through it. Your wallet approves once — opening it, linking {here}, and putting
+        SOL in if you like. After that {here} signs what your pets do — care, rounds, outfits, guilds, gatherings
+        and waves — with no pop-up, and Market looks and guild coins spend this balance once your wallet approves.
+        Every one of them is in the history here.
       </p>
       <Stack gap={4} style={{ marginTop: "var(--space-4)" }}>
         <Choice label={`Link ${here} for`} options={DAYS} value={days} onPick={setDays} />
         <Choice label="At most" options={DAILY} value={daily} onPick={setDaily} />
-        <Choice label="Put in" options={PUT} value={put} onPick={setPut} />
+        <Choice label="Put in" options={sponsored ? [NOTHING_YET, ...PUT] : PUT} value={put} onPick={setPut} />
         <p className="caption pk-faint" style={{ marginTop: "calc(-1 * var(--space-2))" }}>
           {sponsored
-            ? "Pawket pays the network fees for your pets. The balance pays for Market looks and guild coins, with your approval; take out what is left whenever you like."
+            ? "Pawket pays the network fees for your pets, so the wallet can start empty. A balance pays for Market looks and guild coins, with your approval, and for fees if Pawket stops paying; take out what is left whenever you like."
             : `Pawket is not paying fees right now, so ${here} pays its own from what you put in — one fee an action, and the rest back whenever you like.`}
           <DevnetFaucet />
         </p>
@@ -252,11 +237,9 @@ function SetUp() {
   );
 }
 
-/** A Pawket Wallet that is open: what it holds, this device, moving money, and the history. */
 function Opened({ state, owner }: { state: PawketWalletState; owner: Address }) {
   const wallet = state.wallet!;
   const cluster = getPublicEnv().solanaCluster;
-  // When this screen was opened: what a link's end and a line's age are counted from.
   const [now] = useState(() => Date.now() / 1000);
   return (
     <Stack gap={5}>
@@ -295,7 +278,6 @@ function Opened({ state, owner }: { state: PawketWalletState; owner: Address }) 
   );
 }
 
-/** This device: linked or not, until when, how much of today is left, and the way out. */
 function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Address; now: number }) {
   const wallet = state.wallet!;
   const sender = usePawketSend();
@@ -308,12 +290,11 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
   const here = state.device && wallet.device === state.device.address;
   const elsewhere = wallet.device && !here;
   const expired = here && wallet.deviceExpiresAt <= now;
-  const until = formatUtcDate(new Date(wallet.deviceExpiresAt * 1000));
+  const until = formatLocalDate(new Date(wallet.deviceExpiresAt * 1000));
   const left = Math.max(0, wallet.dailyActions - wallet.actionsToday);
 
   async function unlinkHere() {
     if (!state.device) return;
-    // The device lets go of itself: it signs, and what it holds comes home. No prompt.
     const device = state.device;
     const result = await sender.asDevice(`Unlink ${place}`, device, () => [
       getUnlinkDeviceInstruction({ authority: device, wallet: wallet.address, device, deviceSigns: true }),
@@ -322,6 +303,18 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
       await forgetDevice(owner);
       await refreshPawketWallet(owner);
     }
+  }
+
+  const stranded = state.device && wallet.device !== state.device.address && state.deviceLamports > WALLET_LIMITS.feePerSignature
+    ? state.deviceLamports - WALLET_LIMITS.feePerSignature
+    : 0n;
+
+  async function returnFloat() {
+    if (!state.device || stranded <= 0n) return;
+    const device = state.device;
+    const home = await getReturnFloatInstruction({ device, owner, lamports: stranded });
+    const result = await sender.asDevice(`Return ${sol(stranded)} from ${place}`, device, () => [home]);
+    if (result?.outcome === "confirmed") await refreshPawketWallet(owner);
   }
 
   async function unlinkElsewhere() {
@@ -363,15 +356,14 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               <Banner
                 tone="wait"
                 title="Today's limit is reached"
-                body="This device can act again after midnight UTC. To continue sooner, link again with a higher daily limit below."
+                body={`This device can act again ${dayTurnsAt()}. To continue sooner, link again with a higher daily limit below.`}
               />
             ) : null}
             <Row gap={2} wrap>
-              {/* Set up, the way back to what it is for: the pets. */}
-              {state.balance > 0n ? <ButtonLink label="Back to your pets" icon="home" size="sm" href="/home" /> : null}
+              {state.linked ? <ButtonLink label="Back to your pets" icon="home" size="sm" href="/home" /> : null}
               <Button label={`Unlink ${place}`} tone="quiet" size="sm" disabled={sender.busy} onClick={() => void unlinkHere()} />
             </Row>
-            <details className="pk-wallet-more">
+            <details className="pk-more">
               <summary className="body-sm">Change how long, or how much a day</summary>
               <Stack gap={3} style={{ marginTop: "var(--space-3)" }}>
                 {limits}
@@ -387,7 +379,7 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               {expired
                 ? `Its link ran out on ${until}. Link it again to continue without pop-ups.`
                 : elsewhere
-                  ? `Another browser (${truncateAddress(wallet.device!)}) is linked. Linking this one takes its place; the other keeps what it holds for fees until it unlinks itself.`
+                  ? `Another browser (${truncateAddress(wallet.device!)}) is linked. Linking this one takes its place; the other can hand back what it holds for fees from its own Pawket Wallet screen.`
                   : `Pawket acts on Solana through a linked device. Link ${place}, and it signs what your pets do with no pop-up.`}
             </p>
             {limits}
@@ -395,6 +387,15 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
               <Button label={expired ? "Link it again" : `Link ${place}`} icon="bolt" tone="sun" disabled={sender.busy || linking.busy} onClick={() => void link()} />
               {elsewhere ? <Button label="Unlink the other device" tone="ghost" size="sm" disabled={sender.busy} onClick={() => void unlinkElsewhere()} /> : null}
             </Row>
+            {stranded > 0n ? (
+              <p className="caption pk-faint">
+                {Place}&apos;s old key still holds {sol(stranded + WALLET_LIMITS.feePerSignature)} from its fee float.{" "}
+                <button type="button" className="pk-linkish" disabled={sender.busy} onClick={() => void returnFloat()}>
+                  Send {sol(stranded)} back to your Pawket Wallet
+                </button>{" "}
+                (it pays its own fee; no pop-up).
+              </p>
+            ) : null}
           </>
         )}
         {problem ? <Banner tone="risk" title="Nothing was linked" body={problem} /> : null}
@@ -403,7 +404,6 @@ function ThisDevice({ state, owner, now }: { state: PawketWalletState; owner: Ad
   );
 }
 
-/** Putting money in and taking it out: always the wallet's own approval, and out only to the wallet. */
 function MoveMoney({ state, owner }: { state: PawketWalletState; owner: Address }) {
   const wallet = state.wallet!;
   const sender = usePawketSend();
@@ -468,17 +468,21 @@ function MoveMoney({ state, owner }: { state: PawketWalletState; owner: Address 
   );
 }
 
-/** Every line of the statement, read from Solana, newest first. */
-function History({ state, owner, now }: { state: PawketWalletState; owner: Address; now: number }) {
+export function History({ state, owner, now }: { state: PawketWalletState; owner: Address; now: number }) {
   const wallet = state.wallet!;
   const cluster = getPublicEnv().solanaCluster;
   const companion = useCompanion();
   const sponsor = useSponsor();
   const names = new Map(companion.owned.map((entry) => [entry.pet.address as string, entry.pet.name]));
   const paidBy = (entry: WalletEntry) =>
-    entry.feePayer === owner ? "paid by you" : entry.feePayer === sponsor.data?.address ? "paid by Pawket" : "paid by a device, from your balance";
+    entry.feePayer === owner
+      ? " · fee paid by you"
+      : sponsor.data?.address && entry.feePayer === sponsor.data.address
+        ? " · fee paid by Pawket"
+        : sponsor.data
+          ? " · fee paid by a device, from your balance"
+          : "";
   const rent = useRequest(rentOfWallet);
-  // Read again whenever the wallet moves; the rent first, since it is never the balance.
   const version = `${wallet.address}:${wallet.actions}:${wallet.deposited}:${wallet.withdrawn}:${wallet.spent}:${wallet.device}`;
   const first = useCallback(
     () => fetchWalletHistory(rpc, wallet.address, { rent: rent.data, limit: 6 }),
@@ -487,6 +491,7 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
   const page = useRequest(rent.data === undefined ? null : first);
   const [older, setOlder] = useState<{ version: string; entries: WalletEntry[]; next: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [missed, setMissed] = useState(false);
   const extra = older?.version === version ? older : null;
   const entries = [...(page.data?.entries ?? []), ...(extra?.entries ?? [])];
   const next = extra ? extra.next : (page.data?.next ?? null);
@@ -494,9 +499,12 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
   async function more() {
     if (!next) return;
     setLoading(true);
+    setMissed(false);
     try {
       const read = await fetchWalletHistory(rpc, wallet.address, { before: next, rent: rent.data });
       setOlder({ version, entries: [...(extra?.entries ?? []), ...read.entries], next: read.next });
+    } catch {
+      setMissed(true);
     } finally {
       setLoading(false);
     }
@@ -519,7 +527,7 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
                 <span className="pk-ledger__what">
                   <span className="body-sm">{describe(entry, names)}</span>
                   <span className="caption pk-faint">
-                    {entry.at ? formatAgo(now - entry.at) : "time unknown"} · fee {paidBy(entry)}
+                    {entry.at ? formatAgo(now - entry.at) : "time unknown"}{paidBy(entry)}
                     {entry.ok ? "" : " · refused, nothing changed"}
                   </span>
                 </span>
@@ -534,6 +542,11 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
         {next ? (
           <div style={{ marginTop: "var(--space-3)" }}>
             <Button tone="paper" label={loading ? "Reading…" : "Older"} disabled={loading} onClick={() => void more()} />
+            {missed ? (
+              <p role="status" className="caption pk-muted" style={{ marginTop: "var(--space-2)" }}>
+                Solana did not answer, so the older history could not be read. Nothing in it changed; try again.
+              </p>
+            ) : null}
           </div>
         ) : null}
       </Paper>
@@ -541,7 +554,6 @@ function History({ state, owner, now }: { state: PawketWalletState; owner: Addre
   );
 }
 
-/** One line of the history, in words. */
 function describe(entry: WalletEntry, names: Map<string, string>): string {
   const pet = entry.pet ? (names.get(entry.pet) ?? `a pet (${truncateAddress(entry.pet)})`) : "a pet";
   const words = entry.kinds.map((kind) => {
@@ -597,7 +609,6 @@ function describe(entry: WalletEntry, names: Map<string, string>): string {
   return words.join(" · ");
 }
 
-/** Closing it: the balance back to the wallet, the rent to whoever paid it. */
 function CloseWallet({ state, owner }: { state: PawketWalletState; owner: Address }) {
   const wallet = state.wallet!;
   const sender = usePawketSend();
@@ -611,7 +622,6 @@ function CloseWallet({ state, owner }: { state: PawketWalletState; owner: Addres
             getUnlinkDeviceInstruction({
               authority: signer,
               wallet: wallet.address,
-              // This device signs too, so what it holds comes home before the wallet closes.
               device: here ?? wallet.device,
               deviceSigns: Boolean(here),
             }),

@@ -15,7 +15,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: onChain ? `Visiting ${onChain.pet.name}` : "A visit" };
 }
 
-/** A visit to a pet kept on Solana: read from chain, drawn in its room with the visitor. */
 export default async function VisitPage({ params }: Props) {
   const { id } = await params;
   let onChain = null;

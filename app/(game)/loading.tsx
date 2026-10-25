@@ -1,14 +1,5 @@
 import { Columns, Screen } from "@/components/pk";
 
-/**
- * Moving between places holds still. Nothing loops here: no pulsing dots, no
- * shimmering skeletons — just the shape of what is coming, in the same
- * columns the screen will use, with the state said in words for anything
- * that cannot see it.
- *
- * The paw loader belongs to a wait with no known end, not to a navigation
- * the player already asked for.
- */
 export default function Loading() {
   return (
     <Screen>

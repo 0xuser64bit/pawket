@@ -1,10 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-/**
- * Waving from a pet's card, at the edges that need no network: who may, and
- * how often. Signing and sending is the same sponsored path as every Action.
- */
 const PET = "J3nMY26sQZiBod2RCwsUFrh8E5PW56Mhr4ksm8RFQJAp";
 const OWNER = "11111111111111111111111111111112";
 const VISITOR = "8Vp2LsXSrgjxbNsmWg5pTGsEk3ag8x1wGkzvWbJ4b3Zt";

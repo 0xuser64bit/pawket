@@ -1,57 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
-import { useConnectedWallet, useIsWalletReady } from "@solana/kit-plugin-wallet/react";
-import { useRequest } from "@solana/react";
+import { useConnectedWallet } from "@solana/kit-plugin-wallet/react";
 import type { Address } from "@solana/kit";
 import type { GuestPet } from "@/lib/guest/pet";
 import { usePets } from "@/lib/guest/use-pets";
 import { fetchPetsOnChain, toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
-import { rpc, wallet } from "@/lib/solana/browser-client";
+import { rpc, wallet, useWalletReady } from "@/lib/solana/browser-client";
 
-/**
- * The pet a screen draws, and every pet the player keeps. A player keeps as
- * many as they adopt: the connected wallet's pets on Solana, and the pets in
- * this browser. One of them is at home — the one they chose, else the first
- * on Solana, else the first adopted here. All of them arrive as the same
- * record shape, so every screen draws them with the same functions — only
- * how a care is saved differs.
- */
 export interface CompanionState {
-  /**
-   * False until the browser pets, the wallet and the wallet's pets have all
-   * settled once. After that it stays true: a wallet connected later swaps
-   * its pet in when it arrives (`reading` meanwhile), without blanking the screen.
-   */
   ready: boolean;
-  /** The connected wallet's pets are being read for the first time. */
   reading: boolean;
-  /** The pet at home: what Home, the playground and the wardrobe draw. */
   pet: GuestPet | null;
-  /** The chain entry of the pet at home, when it lives on Solana. */
   active: PetOnChain | null;
-  /** The pet at home, when it lives in this browser. */
   guest: GuestPet | null;
-  /** Every pet in this browser, oldest first. */
   guests: GuestPet[];
-  /** Every pet the connected wallet keeps on Solana, most recently adopted first. */
   owned: PetOnChain[];
-  /** Every pet, as records: on Solana first, then this browser's. */
   all: GuestPet[];
-  /** The connected wallet's address, or null. */
   owner: Address | null;
-  /** Whether the connected wallet can sign (a read-only wallet cannot). */
   canSign: boolean;
-  /** Solana did not answer; the screen falls back to the browser pets. */
   chainError: unknown;
-  refresh: () => void;
-  /** Bring a pet home, by its id (a browser id or an address). Remembered on this device. */
+  refresh: () => Promise<void>;
   choose: (id: string) => void;
 }
 
 const ACTIVE_KEY = "pawket.active-pet";
 
-/** Whether this page has settled once; see `CompanionState.ready`. */
 let settledOnce = false;
 const activeListeners = new Set<() => void>();
 
@@ -63,29 +37,98 @@ function readActive(): string | null {
   }
 }
 
-/** Bring a pet home, from anywhere (adoption has no companion to ask). */
 export function choosePet(id: string) {
   try {
     window.localStorage.setItem(ACTIVE_KEY, id);
-  } catch {
-    // Blocked storage: the choice lasts until the page reloads.
-  }
+  } catch {}
   for (const listener of activeListeners) listener();
 }
 
-/** The connected wallet's pets on Solana. Disabled while no wallet is connected. */
-function useOwnedPets(owner: Address | null) {
-  const fetcher = useCallback(
-    async () =>
-      (await fetchPetsOnChain(rpc, owner!)).sort((a, b) => b.pet.birthTimestamp - a.pet.birthTimestamp),
-    [owner],
-  );
-  return useRequest(owner ? fetcher : null);
+interface OwnedRead {
+  status: "loading" | "success" | "error";
+  data?: PetOnChain[];
+  error?: unknown;
+  at?: number;
 }
+
+const READ_DEADLINE_MS = 12_000;
+const FRESH_MS = 15_000;
+const ownedReads = new Map<Address, OwnedRead>();
+const ownedListeners = new Map<Address, Set<() => void>>();
+const generations = new Map<Address, number>();
+
+function publishOwned(owner: Address, read: OwnedRead) {
+  ownedReads.set(owner, read);
+  for (const listener of ownedListeners.get(owner) ?? []) listener();
+}
+
+export function refreshOwnedPets(owner: Address): Promise<void> {
+  const generation = (generations.get(owner) ?? 0) + 1;
+  generations.set(owner, generation);
+  const at = Date.now();
+  if (!ownedReads.has(owner)) publishOwned(owner, { status: "loading" });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Solana did not answer in time.")), READ_DEADLINE_MS);
+  });
+  return Promise.race([fetchPetsOnChain(rpc, owner), deadline])
+    .then(
+      (pets) => {
+        if (generations.get(owner) !== generation) return;
+        publishOwned(owner, { status: "success", data: pets.sort((a, b) => b.pet.birthTimestamp - a.pet.birthTimestamp), at });
+      },
+      (error: unknown) => {
+        if (generations.get(owner) !== generation) return;
+        publishOwned(owner, { status: "error", data: ownedReads.get(owner)?.data, error, at });
+      },
+    )
+    .finally(() => clearTimeout(timer));
+}
+
+function subscribeOwned(owner: Address | null, listener: () => void) {
+  if (!owner) return () => {};
+  const set = ownedListeners.get(owner) ?? new Set();
+  set.add(listener);
+  ownedListeners.set(owner, set);
+  const read = ownedReads.get(owner);
+  if (!read || (read.at !== undefined && Date.now() - read.at > FRESH_MS)) void refreshOwnedPets(owner);
+  return () => {
+    set.delete(listener);
+  };
+}
+
+function useOwnedPets(owner: Address | null) {
+  const read = useSyncExternalStore(
+    (listener) => subscribeOwned(owner, listener),
+    () => (owner ? ownedReads.get(owner) : undefined),
+    () => undefined,
+  );
+  const refresh = useCallback(() => (owner ? refreshOwnedPets(owner) : Promise.resolve()), [owner]);
+  return { status: read?.status, data: read?.data, error: read?.error, refresh };
+}
+
+const PATIENCE_MS = 4_000;
+let patienceOver = false;
+let patienceStarted = false;
+const patienceListeners = new Set<() => void>();
+function subscribePatience(listener: () => void) {
+  patienceListeners.add(listener);
+  if (!patienceStarted) {
+    patienceStarted = true;
+    setTimeout(() => {
+      patienceOver = true;
+      for (const each of patienceListeners) each();
+    }, PATIENCE_MS);
+  }
+  return () => {
+    patienceListeners.delete(listener);
+  };
+}
+const usePatienceOver = () => useSyncExternalStore(subscribePatience, () => patienceOver, () => false);
 
 export function useCompanion(): CompanionState {
   const { ready: guestReady, pets: guests } = usePets();
-  const walletReady = useIsWalletReady(wallet);
+  const walletReady = useWalletReady();
   const connected = useConnectedWallet(wallet);
   const owner = (connected?.account.address as Address | undefined) ?? null;
   const pets = useOwnedPets(owner);
@@ -107,12 +150,14 @@ export function useCompanion(): CompanionState {
   const all = useMemo(() => [...records, ...guests], [records, guests]);
   const chainSettled = !owner || pets.status === "success" || pets.status === "error" || pets.data !== undefined;
   const settled = guestReady && walletReady && chainSettled;
+  const patient = usePatienceOver();
+  const localFirst = guestReady && guests.length > 0 && (guests.some((each) => each.id === chosen) || patient);
   useEffect(() => {
     if (settled) settledOnce = true;
   }, [settled]);
 
   return {
-    ready: settled || (settledOnce && guestReady),
+    ready: settled || localFirst || (settledOnce && guestReady),
     reading: Boolean(owner) && !chainSettled,
     pet: record ?? guest,
     active,

@@ -1,53 +1,30 @@
 import { Group, Vector3, type AnimationClip, type Camera, type Mesh } from "three";
 import { PetMood } from "@/lib/game/enums";
-import { findMoment, momentLength, momentSentence, type Moment } from "@/lib/room/moments";
+import { findMoment, findPhotoPose, momentLength, momentSentence, type Moment } from "@/lib/room/moments";
 import type { HumanActor, HumanFrame } from "./human";
 import { PET_SCALE, type PetActor } from "./pet";
 import { brushHeadAt, makeProp, makeZ, type Prop } from "./props";
 import { angleDelta, dampAngle } from "./rig";
 import { BED } from "./set";
 
-/**
- * Staging. The player keeps their spot on the left of the room and turns;
- * the pet does the walking. In between moments both are alive on their
- * own — the pet wanders by its mood, the player watches it. A moment is
- * two phases: getting into position, then its timeline from the registry
- * (clips, pet cues, a prop, a hand on the pet), and back to living.
- */
-
-/**
- * Blocking. The player stands front-left and the pet lives back-right, on
- * a diagonal, so when the pet looks at the player its face turns to the
- * room, and the player reads in three-quarter or profile.
- */
 const HUMAN_HOME = new Vector3(-0.85, 0, 0.45);
 const HUMAN_REST_YAW = 0.5;
 const PET_HOME = new Vector3(0.6, 0, -0.2);
 const AREA = { minX: -0.15, maxX: 1.9, minZ: -1.0, maxZ: 0.45 };
 const DEG = Math.PI / 180;
 
-/** Where the pet stands, in the player's space, for each formation. */
 const SPOT = {
   front: new Vector3(-0.2, 0, 0.74),
-  /** Side-on to a kneeling player, so its face is to the room. */
   frontSide: new Vector3(-0.12, 0, 0.66),
-  /** Where the Treat clip offers the treat, and the Feed clip sets the bowl. */
   treat: new Vector3(-0.17, 0, 0.36),
   bowl: new Vector3(-0.2, 0, 0.38),
   beside: new Vector3(0.62, 0, 0.3),
   drop: new Vector3(0.28, 0, 0.82),
-  /** Where a thrown ball first lands. */
   throw: new Vector3(0.1, 0, 1.9),
 };
 
-/** Where the pet steps back to, in room space from the player, to watch a free moment. */
 const WATCH = new Vector3(1.1, 0, -0.45);
 
-/**
- * How far from the camera's bearing the player's face may turn. Past it a
- * head reads as the back of a head, so a target behind is watched over the
- * shoulder, only as far as the face still shows.
- */
 const FACE_LIMIT = 70 * Math.PI / 180;
 
 const forward = (yaw: number) => new Vector3(Math.sin(yaw), 0, Math.cos(yaw));
@@ -75,9 +52,7 @@ interface Run {
   bowlAt: Vector3 | null;
   fill: number;
   eating: boolean;
-  /** Fetch: the pet has reached the ball and can pick it up once it stops. */
   atBall: boolean;
-  /** Clips from the moment's own files are still on their way. */
   loading: boolean;
 }
 
@@ -109,7 +84,6 @@ export class Director {
   private mood: PetMood | null;
   private onStatus: (status: DirectorStatus) => void = () => {};
   private readonly loadClips: (src: string) => Promise<AnimationClip[]>;
-  /** Clips that arrived with an emote's own file; a new body gets them too. */
   private readonly extraClips: AnimationClip[] = [];
   reduced: boolean;
 
@@ -118,7 +92,6 @@ export class Director {
   private queued: string | null = null;
   private cooldown = 0;
   private clock = 0;
-  // Life between moments.
   private gaze: "pet" | "camera" | "window" = "pet";
   private gazeUntil = 0;
   private petBusyUntil = 0;
@@ -126,10 +99,11 @@ export class Director {
   private napUntil = 0;
   private stillHold = 0;
   private greeted = false;
+  private photoHold = false;
+  private poseAsk = 0;
   private readonly zs: Array<{ mesh: Mesh; born: number; drift: number }> = [];
   private lastZ = 0;
   private readonly windowPoint: Vector3;
-  /** Where the camera should look, and how close it should come (0–1). */
   readonly focus = new Vector3(0, 0.95, 0.1);
   zoom = 0;
 
@@ -159,7 +133,6 @@ export class Director {
     if (this.pet) this.pet.place(PET_HOME, -0.9);
   }
 
-  /** Swap in a newly dressed body without losing its place or its moment. */
   replaceHuman(next: HumanActor): void {
     const was = this.human;
     next.addClips(this.extraClips);
@@ -171,30 +144,28 @@ export class Director {
     if (this.reduced) this.pose();
   }
 
-  /** Ask for a moment. One can wait while another plays; a newer ask replaces it. */
   play(id: string): void {
     if (!findMoment(id)) return;
+    if (this.photoHold) void this.holdPhoto(null);
     if (this.run || this.cooldown > 0) {
       this.queued = id;
       return;
     }
-    this.start(id);
+    this.start(findMoment(id)!);
   }
 
-  /** Tap the pet: a happy wiggle, and the player looks. */
-  boop(): void {
-    if (!this.pet || this.run) return;
+  boop(): boolean {
+    if (!this.pet || this.run || this.photoHold) return false;
     this.pet.wake();
     this.pet.cue("happy");
     this.pet.faceTowards(this.human.root.position);
     this.gaze = "pet";
     this.gazeUntil = this.clock + 3;
     this.petBusyUntil = this.clock + 1.6;
+    return true;
   }
 
-  private start(id: string): void {
-    const moment = findMoment(id)!;
-    // Only a free moment makes sense in an empty room; the rest need the pet.
+  private start(moment: Moment): void {
     if (moment.formation !== "free" && !this.pet) return;
     const facing = this.facingFor(moment);
     this.run = {
@@ -218,7 +189,6 @@ export class Director {
       atBall: false,
       loading: false,
     };
-    // An emote whose clip ships in its own file: fetch it, then begin.
     const missing = moment.clips.filter((clip) => clip.src && !this.human.hasClip(clip.name));
     if (missing.length) {
       const run = this.run;
@@ -230,9 +200,7 @@ export class Director {
             this.human.addClips(clips);
           }
         })
-        .catch(() => {
-          // The player keeps idling; the moment still happens for the pet.
-        })
+        .catch(() => {})
         .finally(() => {
           run.loading = false;
           run.length = momentLength(moment, (name) => this.human.duration(name));
@@ -253,8 +221,6 @@ export class Director {
           });
         }
       } else if (this.pet.root.position.distanceTo(HUMAN_HOME) < 0.9) {
-        // Still under the player's feet from the last moment: step back to
-        // watch, so its face shows. The player does not wait for it.
         const watch = HUMAN_HOME.clone().add(WATCH);
         const yaw = yawToward(watch, HUMAN_HOME);
         if (this.reduced) this.pet.place(watch, yaw);
@@ -280,27 +246,21 @@ export class Director {
     if (moment.formation === "front") {
       const reach = this.pet!.reachOfMouth;
       if (moment.prop?.kind === "treat") {
-        // Mouth where the hand will be, turned most of the way to the room.
         const food = toWorld(HUMAN_HOME, facing, SPOT.treat);
         const toPlayer = yawToward(food, HUMAN_HOME);
         const yaw = toPlayer + angleDelta(toPlayer, yawToward(food, this.camera.position)) * 0.75;
         return { at: food.clone().sub(forward(yaw).multiplyScalar(reach + 0.03)), yaw };
       }
       if (moment.prop?.kind === "bowl") {
-        // Wait behind and aside of where the bowl will land, clear of the
-        // bow that sets it down, facing the room over it.
         const bowl = toWorld(HUMAN_HOME, facing, SPOT.bowl);
         const yaw = yawToward(bowl, this.camera.position) - 0.3;
         return { at: bowl.clone().sub(forward(yaw).multiplyScalar(reach + 0.3)).add(new Vector3(0.42, 0, 0)), yaw };
       }
       const at = toWorld(HUMAN_HOME, facing, moment.petFaces === "room" ? SPOT.frontSide : SPOT.front);
-      // Facing the room: toward the camera, turned a little to the player.
       const yaw = moment.petFaces === "room" ? yawToward(at, this.camera.position) - 0.35 : facing + Math.PI;
       return { at, yaw };
     }
     if (moment.formation === "beside") {
-      // Whichever side is toward the middle of the room: never between the
-      // player and the camera, where one would hide the other.
       const left = toWorld(HUMAN_HOME, facing, SPOT.beside);
       const right = toWorld(HUMAN_HOME, facing, SPOT.beside.clone().setX(-SPOT.beside.x));
       return { at: left.x >= right.x ? left : right, yaw: facing };
@@ -329,7 +289,6 @@ export class Director {
     }
   }
 
-  /** The chest: where the pet looks when it looks at the player. */
   private chest(): Vector3 {
     return this.human.root.position.clone().setY(1.2);
   }
@@ -350,7 +309,6 @@ export class Director {
         if (this.reduced) this.human.hold(clip.name, Math.max(0, moment.still - clip.at));
       }
     });
-    // Done with its clips while the moment plays on: the player idles.
     const last = moment.clips[moment.clips.length - 1];
     if (!this.reduced && !last.loop && t >= last.at + this.human.duration(last.name) && this.fire("idle", 0, t, run)) {
       this.human.play("Idle", { fade: 0.4, loop: true });
@@ -361,10 +319,7 @@ export class Director {
       moment.pet.forEach((step, i) => {
         if (!this.fire(`pet${i}`, step.at, t, run)) return;
         if (step.cue === "eat") {
-          // Go to the food, mouth first, turned so its face is to the room:
-          // round to the far side of a bowl, or up to the hand with a treat.
           if (run.bowlAt) {
-            // Up to the bowl, straight on, facing the room over it.
             const facing = yawToward(run.bowlAt, this.camera.position) - 0.3;
             const at = run.bowlAt.clone().sub(forward(facing).multiplyScalar(pet.reachOfMouth + 0.03));
             if (this.reduced) {
@@ -380,7 +335,6 @@ export class Director {
             pet.cue("sleep");
           } else pet.go(bed, { face: -0.3 }).then(() => pet.cue("sleep"));
         } else if (step.cue === "fetch") {
-          // The pet runs the moment the ball is in the air — see moveProp.
           run.fired.add("fetch:armed");
         } else {
           if (step.cue === "happy") run.eating = false;
@@ -389,7 +343,6 @@ export class Director {
       });
     }
 
-    // The prop: in hand, set down or thrown, then gone.
     const spec = moment.prop;
     if (spec) {
       if (this.fire("prop:show", spec.from, t, run)) {
@@ -409,7 +362,6 @@ export class Director {
       if (this.fire("prop:hide", spec.to, t, run)) run.propGone = true;
     }
 
-    // A hand on the pet: anchored to the real crown, the clip's stroke kept.
     const contact = moment.contact;
     if (contact && this.pet) {
       const w = this.reduced
@@ -420,14 +372,12 @@ export class Director {
       if (w > 0) {
         const pet = this.pet;
         if (contact.at === "mouth") {
-          // The treat is in the fingers: bring the fingers to the mouth.
           frame.reach = (wrist) => {
             const fingers = this.human.palm("r").sub(wrist);
             return pet.mouth().add(new Vector3(0, 0.03, 0)).sub(fingers);
           };
           pet.leanInto(pet.mouth().add(new Vector3(0, 0.2, 0)));
         } else {
-          // Anchored to the real crown; the clip's own stroke rides on top.
           frame.reach = (wrist) => {
             if (!run.anchor) run.anchor = wrist.clone();
             const brushing = moment.prop?.kind === "brush";
@@ -436,11 +386,9 @@ export class Director {
               const grip = brushHeadAt(this.human.palm("r"), wrist).sub(wrist);
               return crown.sub(grip).add(wrist.clone().sub(run.anchor));
             }
-            // The wrist sits a palm's length short of where the fingers land.
             const toward = crown.clone().sub(this.chest()).setY(0).normalize().multiplyScalar(-0.07);
             return crown.add(toward).add(wrist.clone().sub(run.anchor));
           };
-          // Push up into the hand (where it was last frame is close enough).
           pet.leanInto(this.human.bones.hand_r.getWorldPosition(new Vector3()));
         }
         frame.reachWeight = w;
@@ -449,7 +397,6 @@ export class Director {
       }
     }
 
-    // Food goes down while the pet eats from the bowl.
     if (run.prop?.setFill && run.eating && run.propState === "placed" && this.pet && !this.pet.moving) {
       run.fill = Math.max(0, run.fill - dt / 2.8);
       run.prop.setFill(run.fill);
@@ -471,8 +418,6 @@ export class Director {
     const o = prop.object;
     const target = run.propGone ? 0 : 1;
     run.propScale += Math.sign(target - run.propScale) * Math.min(Math.abs(target - run.propScale), this.reduced ? 1 : dt / 0.18);
-    // A pop: a touch past full size on the way in. In the pet's mouth it
-    // sits inside the scaled pet, so it is scaled back up to its own size.
     const pop = run.propGone ? run.propScale : run.propScale < 1 ? 1.12 * smooth(run.propScale * 1.2) : 1;
     o.scale.setScalar(Math.max(0.0001, pop) * (run.propState === "carried" ? 1 / PET_SCALE : 1));
     if (run.propGone && run.propScale <= 0) {
@@ -494,7 +439,6 @@ export class Director {
         o.position.copy(palm);
         o.quaternion.copy(hand.getWorldQuaternion(o.quaternion));
         if (prop.kind === "brush") {
-          // The hand bone's axes are the rig's, not the brush's: keep its bristles down.
           o.position.copy(brushHeadAt(palm, hand.getWorldPosition(new Vector3())));
           o.rotation.set(0, Math.atan2(o.position.x - palm.x, o.position.z - palm.z), 0);
         }
@@ -507,7 +451,6 @@ export class Director {
         o.position.lerpVectors(f.from, f.to, u);
         o.position.y = f.from.y * (1 - u) + 0.055 * u + 4 * 0.55 * u * (1 - u);
       } else {
-        // Two small bounces, then it rolls to a stop.
         const b = (run.t - f.start - 0.72) / 0.7;
         const along = Math.min(1, b);
         o.position.lerpVectors(f.to, f.rest, 1 - (1 - along) ** 2);
@@ -516,7 +459,6 @@ export class Director {
         o.rotation.x += dt * 9 * (1 - along);
         if (b >= 1) run.propState = "rest";
       }
-      // The pet goes the moment the ball is in the air.
       if (this.pet && run.fired.has("fetch:armed") && !run.fired.has("fetch:run")) {
         run.fired.add("fetch:run");
         const pet = this.pet;
@@ -528,7 +470,6 @@ export class Director {
       }
     }
 
-    // Picked up once it has stopped and the pet is there; brought back.
     if (this.pet && run.atBall && run.propState === "rest") {
       const pet = this.pet;
       run.propState = "carried";
@@ -547,10 +488,16 @@ export class Director {
     }
   }
 
-  /** Reduced motion: put everyone where the current state says, once. */
   pose(): void {
     this.human.root.rotation.y = this.humanYaw;
-    this.human.update(0, this.frame());
+    const frame = this.frame();
+    if (this.photoHold && this.run) {
+      const reduced = this.reduced;
+      this.reduced = true;
+      this.perform(0, this.run, frame);
+      this.reduced = reduced;
+    }
+    this.human.update(0, frame);
     this.pet?.update(0, true);
   }
 
@@ -577,7 +524,6 @@ export class Director {
     const run = this.run;
     if (run) {
       if (run.moment.lookAt === "room" || !this.pet) return this.camera.position.clone();
-      // A thrown ball is watched all the way there and back.
       if (run.prop?.kind === "ball") {
         if (run.propState === "held") return clampToArea(toWorld(HUMAN_HOME, this.humanYaw, SPOT.throw)).setY(0.3);
         return run.propState === "carried" || run.propState === "dropped" ? this.pet.mouth() : run.prop.object.position.clone();
@@ -590,7 +536,6 @@ export class Director {
     return this.pet.mouth();
   }
 
-  /** Between moments: the pet lives by its mood, and the player watches. */
   private live(): void {
     const now = this.clock;
     if (now > this.gazeUntil) {
@@ -633,8 +578,6 @@ export class Director {
         this.petBusyUntil = this.clock + 1.5 + Math.random() * 2.5;
       });
     };
-    // Left in front of the player by a moment: back out to watch, so
-    // neither hides the other.
     if (pet.root.position.z > HUMAN_HOME.z && pet.root.position.distanceTo(HUMAN_HOME) < 1) {
       const watch = HUMAN_HOME.clone().add(WATCH);
       trip(watch, yawToward(watch, HUMAN_HOME));
@@ -648,7 +591,6 @@ export class Director {
         break;
       }
       case "visit": {
-        // Up to the player's side, a little behind, to look up at them.
         const to = HUMAN_HOME.clone().add(new Vector3(0.62, 0, -0.32));
         trip(to, yawToward(to, HUMAN_HOME));
         this.gaze = "pet";
@@ -710,14 +652,57 @@ export class Director {
     }
   }
 
+  async holdPhoto(id: string | null): Promise<void> {
+    const spec = id ? findPhotoPose(id) : undefined;
+    if (id && !spec) return;
+    const ask = ++this.poseAsk;
+    const base = spec ? findMoment(spec.moment) : undefined;
+    for (const clip of base?.clips ?? []) {
+      if (!clip.src || this.human.hasClip(clip.name)) continue;
+      try {
+        const clips = await this.loadClips(clip.src);
+        this.extraClips.push(...clips);
+        this.human.addClips(clips);
+      } catch {}
+    }
+    if (ask !== this.poseAsk || (!spec && !this.photoHold)) return;
+    this.photoHold = false;
+    this.queued = null;
+    if (this.run) this.finish();
+    this.cooldown = 0;
+    if (!spec || !base) {
+      this.pet?.hold(null);
+      this.human.play("Idle", { fade: 0, loop: true });
+      this.pose();
+      return;
+    }
+    const reduced = this.reduced;
+    this.reduced = true;
+    const stage = this.pet ? spec.stage : { ...spec.stage, formation: "free" as const };
+    this.start({ ...base, ...stage, still: spec.still, pet: [], says: "You and {pet} pose for a photo." });
+    this.update(0);
+    this.update(0);
+    this.reduced = reduced;
+    if (this.pet) {
+      if (stage) this.pet.place(this.pet.root.position, yawToward(this.pet.root.position, this.camera.position) - 0.25);
+      this.pet.hold(spec.pet.clip, spec.pet.at, spec.pet.hop);
+      this.pet.update(0, true);
+      this.pet.root.updateMatrixWorld(true);
+    }
+    this.photoHold = true;
+    this.updateFocus(1);
+    this.pose();
+  }
+
   update(dt: number): void {
+    if (this.photoHold) { this.pose(); return; }
     this.clock += dt;
     if (this.cooldown > 0) {
       this.cooldown -= dt;
       if (this.cooldown <= 0 && this.queued) {
         const next = this.queued;
         this.queued = null;
-        this.start(next);
+        this.start(findMoment(next)!);
       }
     }
 
@@ -726,7 +711,6 @@ export class Director {
     if (run) {
       run.clock += dt;
       if (run.phase === "approach" && this.reduced) {
-        // Staged at once; held at its still second once its clips are here.
         this.humanYaw = run.humanYaw.to;
         if (!run.loading) {
           run.phase = "perform";
@@ -743,7 +727,6 @@ export class Director {
       } else {
         if (!this.reduced) run.t += dt;
         else this.stillHold -= dt;
-        // Once the ball is away, the player turns to follow it out, and the pet back.
         if (!this.reduced && this.pet && run.flight) {
           const ball = run.prop && (run.propState === "flying" || run.propState === "rest") ? run.prop.object.position : this.pet.root.position;
           const toward = Math.min(90 * DEG, Math.max(-10 * DEG, yawToward(HUMAN_HOME, ball)));
@@ -762,7 +745,6 @@ export class Director {
         } else if (!this.reduced) this.play("wave");
       }
       if (!this.reduced) {
-        // Between moments the body turns a little toward what the eyes follow.
         const pet = this.pet;
         const want =
           pet && this.gaze === "pet"
@@ -782,7 +764,6 @@ export class Director {
       this.human.update(dt, frame);
       this.pet?.update(dt);
     }
-    // Props follow hands and mouths as they are this frame, after the IK.
     if (this.run?.moment.prop) this.moveProp(dt, this.run);
     this.spawnZ(dt);
     this.updateFocus(dt);
@@ -802,12 +783,11 @@ export class Director {
     } else {
       target.copy(this.human.root.position).setY(0.95);
     }
-    const k = 1 - Math.exp(-(this.reduced ? 60 : 1.6) * dt);
+    const k = 1 - Math.exp(-(this.reduced || this.photoHold ? 60 : 1.6) * dt);
     this.focus.lerp(target, k);
     this.zoom += (zoom - this.zoom) * k;
   }
 
-  /** Who hears what the room is doing. Returns the way to stop listening. */
   listen(onStatus: (status: DirectorStatus) => void): () => void {
     this.onStatus = onStatus;
     return () => {
@@ -819,14 +799,12 @@ export class Director {
     this.mood = mood;
   }
 
-  /** Reduced motion on or off: everything holds still, and the pet stops breathing. */
   setReduced(reduced: boolean): void {
     this.reduced = reduced;
     if (this.pet) this.pet.breathe = !reduced;
     this.pose();
   }
 
-  /** Whether a moment is playing or waiting its turn. */
   get busy(): boolean {
     return this.run !== null || this.queued !== null;
   }

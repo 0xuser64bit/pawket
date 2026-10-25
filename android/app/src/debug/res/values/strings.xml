@@ -1,4 +1,3 @@
 <resources>
-    <!-- Named so a development build is never mistaken for the release beside it. -->
     <string name="app_name">Pawket dev</string>
 </resources>

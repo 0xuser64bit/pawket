@@ -28,7 +28,7 @@ to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”
   blank frame. A model that has arrived is marked the way `use` reads a
   settled promise, so it is drawn the same frame; one that failed to load is
   forgotten, so "Try the 3D room again" asks again.
-- Six GLBs in `public/3d/`, built by `pnpm assets:3d`:
+- Nine GLBs in `public/3d/`, built by `pnpm assets:3d`:
 
   | File | What | Size | Triangles (all variants) |
   | --- | --- | --- | --- |
@@ -38,6 +38,9 @@ to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”
   | `pets/dog.glb` | Moss pup, 7 clips | 31 KB | 490 |
   | `pets/bunny.glb` | Cloud bun, 7 clips | 34 KB | 575 |
   | `emotes/cheer.glb` | The Cheer emote: skeleton and one clip, no mesh | 34 KB | 0 |
+  | `emotes/heart.glb` | Heart: hands on the crown, elbows out for the lobes | 46 KB | 0 |
+  | `emotes/peace.glb` | Peace: a V beside the cheek, the other hand on the hip | 33 KB | 0 |
+  | `emotes/thumbs-up.glb` | Nice: a thumbs up beside the shoulder, with a nod | 30 KB | 0 |
 
   A dressed body draws about 25k triangles; the rest are variants switched
   off. Budget per character: under 5 MB and 100k triangles — the pipeline
@@ -143,6 +146,19 @@ channels that never leave rest.
 
 ## The runtime
 
+A photo can be posed: Wave, Cheer, Cuddle, Dance, Peace, Heart or Nice (`PHOTO_POSES` in
+`src/lib/room/moments.ts`). A pose borrows a moment's clip but is staged for
+the camera — the player turned to it and looking into it, the pet beside
+them facing it (in their arms for Cuddle) — and both hold one frame, the pet
+a frame of its own clip and, for Cheer and Dance, the top of a hop. A held
+frame looks straight at its target: a still has no time to turn a head.
+The photo is the next frame drawn after staging, so shadows and the camera
+have moved with it; a pose whose clip ships in its own file loads first,
+and the latest pose asked for wins. The room holds still until the sheet
+closes or another pose is chosen; Candid lets it live. If the room cannot
+draw, the last photo stays. Nothing saved changes. Emote status is announced
+to assistive technology without a visible sentence.
+
 | File | Job |
 | --- | --- |
 | `src/components/home/room.tsx` | The Room: 3D or flat, WebGL check, error boundary, context-loss recovery, off-screen pause, keyboard turning |
@@ -160,7 +176,7 @@ diagonal: when the pet looks at the player its face turns to the room. For a
 moment the pet comes to the player (the player turns, never walks) — in
 front for a pat, a treat or the bowl, beside (toward the middle of the room,
 never between the player and the camera) for a dance or a throw — and faces
-the room while being touched. A free moment (Wave, Cheer, Rest) leaves the
+the room while being touched. A free moment (Wave, Cheer, Heart, Nice, Rest) leaves the
 pet where it is, unless the last moment left it at the player's feet; then
 it steps back to watch. Wherever the player looks, their face turns no more
 than 70° from the camera: a pet behind them is watched over the shoulder.
@@ -171,6 +187,11 @@ pet's real crown (the clip's stroke rides on top) or brings the treat to its
 real mouth, and the pet leans into the hand.
 Brush uses that same stroke, with its handle gripped in the palm and its
 bristles kept down; contact targets the brush head rather than the bare hand.
+
+**Coat.** The pipeline bakes each species' coat into the model as two
+vertex colours (`BAKED` in `src/lib/player/coats.ts`). `PetActor.paint`
+swaps exactly those for the chosen coat's — eyes, muzzle and inner ears keep
+theirs — on the pet's own copy of the geometry, never the shared file.
 
 **Care.** A care button saves first. Only when `saveGuestPet` returns true
 does Home cue the moment (`CARE_MOMENT`); a refusal or a storage failure
@@ -185,6 +206,24 @@ contact shadows), shaders compiled asynchronously before the first frame,
 rendering stopped while the room is off screen or the tab hidden, one
 request per GLB for the life of the page, and the other build fetched once
 the room is quiet.
+
+## The room's things
+
+The picture, the plant, the rug, the pet's bed and the thing past the bed
+are the player's (`src/lib/room/decor.ts`). `set.ts` keeps a place for each
+(`SLOT_AT` in `src/components/room3d/decor.ts`) and `dress` swaps only the
+places whose thing changed, giving the old one's geometry back to the GPU.
+Every thing is built from primitives in the room's toon-and-ink language;
+small repeated parts (beans, petals, seeds, sprinkles) are merged into one
+mesh each. A lamp, the neon heart and the pumpkin lantern's grin light up after dark,
+and the clock keeps the device's time (`tick`). From September to November a
+few leaves drift down past the window, in 3D (`AUTUMN` in `set.ts`) and flat,
+and hang still when motion is reduced. Beds stay inside the old cushion's footprint and
+low enough that a napping pet is seen; `decor.test.ts` holds every thing to
+the catalog, the flat drawings (`src/components/home/decor-art.tsx`) and
+those limits. The flat room places the same things: a picture between the
+window and the shelf, the plant on the sill, the rug, the bed, and the thing
+past the bed where a wide frame shows it.
 
 ## Adding an emote
 
@@ -221,11 +260,17 @@ translation baked on one build sits a couple of centimetres off on the
 other.
 
 To author a clip the way the shipped ones are, add it to `CLIPS` (inside
-each body) or `EMOTE_CLIPS` (its own file) in `scripts/3d/motion.mjs` and
-run `pnpm assets:3d`.
+each body) or `EMOTE_CLIPS` (its own file, named after the clip) in
+`scripts/3d/motion.mjs` and run `pnpm assets:3d`. Fingers curl one by one
+and `spread` fans the index and middle apart (Peace's V). Check a pose in
+both places it is seen: playing, where a free moment turns the player toward
+the pet unless it sets `facing`, and as a photo, staged to the camera. A hand
+raised beside the face reads as a hand on the face once the head turns to
+the pet, so Heart and Nice face the room. Give a new emote a tune in
+`TUNES` (`src/lib/play/sound.ts`).
 
 ## Knobs
 
-`PET_SCALE` (`pet.ts`), `HEAD_SCALE` (`human.ts`), the formation spots and
+`SLOT_AT` (`decor.ts`), `PET_SCALE` (`pet.ts`), `HEAD_SCALE` (`human.ts`), the formation spots and
 blocking (`director.ts`), outline width (`room-3d.tsx`), the toon ramp
 (`materials.ts`), garment lines and thickness (`outfits.mjs`).

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Lamplight: the same room after dark (app/globals.css). -->
 <resources>
     <color name="pawket_ground">#17120E</color>
     <color name="pawket_ink">#F6EBDA</color>

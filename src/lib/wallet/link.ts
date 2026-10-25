@@ -8,15 +8,12 @@ import { usePawketSend } from "@/lib/solana/use-send";
 import { loadDevice, makeDevice } from "./device";
 import { refreshPawketWallet } from "./pawket-wallet";
 import { inAndroidApp } from "@/lib/native/android";
+import { askBrowserToKeep } from "@/lib/utils/persist";
+import { record } from "@/lib/analytics/events";
 
-/** A link's end: a few minutes inside the program's 30 days, so a clock running ahead is not refused. */
+/** Ten minutes inside the program's limit, so a clock running ahead is not refused. */
 const linkEnds = (days: number) => Math.floor(Date.now() / 1000) + Math.min(days * 86_400, WALLET_LIMITS.maxDeviceSeconds) - 600;
 
-/**
- * Linking this browser to the connected wallet's Pawket Wallet — opening it
- * first when there is none — in one approval, with the sponsor paying while
- * it is up. The browser's key is the one it keeps, or a new one made here.
- */
 export function useLinkBrowser() {
   const sender = usePawketSend();
   const [problem, setProblem] = useState<string>();
@@ -38,7 +35,9 @@ export function useLinkBrowser() {
       try {
         device = state.device ?? (await loadDevice(owner)) ?? (await makeDevice(owner));
       } catch (error) {
-        setProblem(error instanceof Error ? error.message : `${inAndroidApp() ? "This app" : "This browser"} cannot keep a device key. Nothing was linked.`);
+        const message = error instanceof Error ? error.message : "";
+        record({ name: "device_link_failed", reason: /Ed25519|WebView/.test(message) ? "webview" : /save|keep/.test(message) ? "storage" : "other" });
+        setProblem(message || `${inAndroidApp() ? "This app" : "This browser"} cannot keep a device key. Nothing was linked.`);
         return null;
       }
       const opening = !state.wallet;
@@ -48,7 +47,13 @@ export function useLinkBrowser() {
         ...(deposit > 0n ? [getDepositInstruction({ owner: signer, wallet, amount: deposit })] : []),
         getLinkDeviceInstruction({ owner: signer, wallet, device, expiresAt: linkEnds(days), dailyActions: daily }),
       ]);
-      if (result) await refreshPawketWallet(owner);
+      if (result) {
+        await refreshPawketWallet(owner);
+        if (result.outcome === "confirmed") {
+          record({ name: "wallet_linked", deposit: deposit > 0n ? "some" : "none" });
+          void askBrowserToKeep();
+        }
+      }
       return result;
     } finally { setPreparing(false); }
   }

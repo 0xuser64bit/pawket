@@ -28,14 +28,10 @@ import {
 import { projectGuestPet, streakAsOf, type GuestPet } from "@/lib/guest/pet";
 import { removePet } from "@/lib/guest/storage";
 import { usePets } from "@/lib/guest/use-pets";
-import { formatUtcDate } from "@/lib/utils/format";
+import { formatLocalDate, nameHeadingClass } from "@/lib/utils/format";
 import { StickerStrip } from "./sticker-strip";
 import { useHere } from "@/lib/native/android";
 
-/**
- * The record of a pet kept in this browser. An id this browser does not
- * keep is a plain miss: the pet may live in another browser.
- */
 export function PetScreen({ id }: { id: string }) {
   const { ready, pets } = usePets();
   const { here } = useHere();
@@ -55,6 +51,7 @@ export function PetScreen({ id }: { id: string }) {
       <Screen width="narrow">
         <BackLink label="Profile" href="/profile#shelf" />
         <EmptyState
+          heading="h1"
           icon="paw"
           title={pets.length ? `That pet is not in ${here}` : `No pet in ${here}`}
           body={
@@ -103,12 +100,12 @@ export function PetScreen({ id }: { id: string }) {
           <>
             <div className="pk-spread">
               <div>
-                <h1 className="display-l" style={{ overflowWrap: "anywhere" }}>
+                <h1 className={nameHeadingClass(pet.name)} style={{ overflowWrap: "anywhere" }}>
                   {pet.name}
                 </h1>
-                <p className="body-sm pk-muted">
+                <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
                   {SPECIES_LABEL[pet.species]} · {PERSONALITY_LABEL[pet.personality]} · adopted{" "}
-                  {formatUtcDate(pet.createdAt)}
+                  {formatLocalDate(pet.createdAt)}
                 </p>
               </div>
               <ButtonLink label="Dress" href="/profile?tab=wardrobe#shelf" icon="spark" size="sm" tone="quiet" />
@@ -144,11 +141,11 @@ export function PetScreen({ id }: { id: string }) {
             <Card variant="quiet">
               <div className="pk-spread">
                 <h2 className="title">Wearing</h2>
-                <span className="caption pk-faint">{worn ? "1 of 1" : "0 of 1"}</span>
+                <span className="caption pk-faint">One piece at a time</span>
               </div>
               <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
                 {worn
-                  ? `${worn.name}. It changes how they look in words, and nothing else.`
+                  ? `${worn.name}. It changes how they look, and nothing else.`
                   : "Nothing yet. Anything in the wardrobe can be worn, and none of it changes a vital."}
               </p>
             </Card>
@@ -167,7 +164,7 @@ export function PetScreen({ id }: { id: string }) {
                     <li key={`${entry.at}-${entry.action}`}>
                       <span>{CARE_DONE_LABEL[entry.action]}</span>
                       <span className="caption pk-faint">
-                        {formatUtcDate(entry.at)} · +{entry.xpGained} XP
+                        {formatLocalDate(entry.at)} · +{entry.xpGained} XP
                       </span>
                     </li>
                   ))}
@@ -184,10 +181,6 @@ export function PetScreen({ id }: { id: string }) {
   );
 }
 
-/**
- * Letting a pet go from this browser: last on its record, behind a second
- * press that says what goes with it — never one tap away on the daily room.
- */
 function LetGo({ pet, others }: { pet: GuestPet; others: number }) {
   const { here } = useHere();
   const router = useRouter();

@@ -1,8 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Pawket is not backed up (allowBackup is false), so on Android 10 and 11 nothing leaves
-   the phone. Were backup ever turned on, WebView storage and databases would still stay.
-   data_extraction_rules.xml covers Android 12 and later.
--->
+<?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
     <exclude domain="root" path="app_webview" />
     <exclude domain="database" path="." />

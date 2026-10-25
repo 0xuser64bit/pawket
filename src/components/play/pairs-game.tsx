@@ -7,11 +7,6 @@ import { PAIRS, dealPairs, flipCard, pairsScore, settle, type PairsState } from 
 import { nextRandom } from "@/lib/play/random";
 import { blip } from "@/lib/play/sound";
 
-/**
- * Six pieces of the wardrobe for this round's faces, picked by the seed —
- * one of each kind, so no two pairs look alike (a paper crown beside a gold
- * one, a red collar beside a bell collar) and a miss is never the art's fault.
- */
 export function facesFor(seed: number): string[] {
   const items = [...WEARABLES];
   let state = seed ^ 0x5f3759df;
@@ -28,12 +23,6 @@ export function facesFor(seed: number): string[] {
     .map((item) => item.id);
 }
 
-/**
- * Pairs, drawn: twelve cards on the table with the paw on their backs and
- * a piece of the wardrobe on their faces, and the pet beside them, who is
- * pleased by a pair and sorry about a miss. Cards are buttons, so a
- * keyboard plays it as well as a finger.
- */
 export function PairsGame({
   form,
   temper,
@@ -55,7 +44,6 @@ export function PairsGame({
   const finished = useRef(false);
   const found = state.found.filter(Boolean).length / 2;
 
-  // A miss is shown for a moment, then turned back.
   useEffect(() => {
     if (state.open.length !== 2 || paused) return;
     const timer = window.setTimeout(() => {

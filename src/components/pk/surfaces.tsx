@@ -1,18 +1,7 @@
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import type { CSSProperties, ReactNode } from "react";
 import { Icon, type IconName } from "./icon";
 
-/* -------------------------------------------------------------------- Card */
-
-/**
- * A Playroom surface: `surface` fill, a 2px `edge` outline, `shadow-sticker`
- * and `radius-lg`. A card looks die-cut, like a sticker resting on the page.
- * Cards do not scroll, clip or manage their own height.
- *
- * With `href` the whole card is the link — one target, one focus ring that
- * follows its corners — and it lifts and presses like anything else in the
- * Playroom a player can press.
- */
 export function Card({
   variant,
   href,
@@ -21,10 +10,8 @@ export function Card({
   style,
   children,
 }: {
-  /** `room` is a whole area, `ink` is the inverted panel, `flush` lets art bleed. */
   variant?: "room" | "ink" | "flush" | "quiet";
   href?: string;
-  /** For a link that opens the page at this card. */
   id?: string;
   className?: string;
   style?: CSSProperties;
@@ -47,14 +34,6 @@ export function Card({
   );
 }
 
-/* ------------------------------------------------------------------- Paper */
-
-/**
- * The Paper register: the surface every fact and every price appears on.
- * Everything here is a statement. Nothing on Paper persuades, celebrates, or
- * implies a direction of travel — and Paper does not compute or format, so
- * hand it values that have already been resolved.
- */
 export function Paper({
   title,
   meta,
@@ -67,7 +46,6 @@ export function Paper({
   title?: string;
   meta?: string;
   foot?: ReactNode;
-  /** The zigzag edge that marks the end of a disclosure. */
   torn?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -89,8 +67,6 @@ export function Paper({
     </section>
   );
   if (!torn) return sheet;
-  // The tear hangs below the sheet, outside its rule, in the colour the
-  // sheet ends in.
   return (
     <div className={className} style={style}>
       {sheet}
@@ -99,20 +75,12 @@ export function Paper({
   );
 }
 
-/* ----------------------------------------------------------------- Receipt */
-
 export interface ReceiptRow {
   k: string;
   v: string;
-  /** `warn` marks the figure most likely to hurt someone; `ok` a confirmed fact. */
   tone?: "warn" | "ok";
 }
 
-/**
- * Key-value lines for a quote, an allocation, a treasury statement or a
- * failure report. Two value tones exist and no more, so a single coloured
- * figure cannot be lost in a page of colour.
- */
 export function Receipt({
   rows,
   total,
@@ -151,8 +119,6 @@ export function Receipt({
           </div>
         </>
       ) : null}
-      {/* The one place on Paper where the text family appears, because a
-          caveat has to be read as a sentence. */}
       {note ? (
         <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
           {note}
@@ -161,8 +127,6 @@ export function Receipt({
     </div>
   );
 }
-
-/* ------------------------------------------------------------------ Banner */
 
 export type BannerTone = "risk" | "wait" | "done" | "guild" | "info";
 
@@ -174,12 +138,6 @@ const BANNER_ICON: Record<BannerTone, IconName> = {
   info: "info",
 };
 
-/**
- * A stated condition. A banner says what is true and what is unchanged —
- * that pairing is the pattern, not decoration. `wait` carries no colour at
- * all: a player mid-migration should feel informed, not reassured and not
- * alarmed. Use `risk` only where something can actually be lost.
- */
 export function Banner({
   tone = "info",
   title,
@@ -212,5 +170,13 @@ export function Banner({
       </div>
       {action ? <div className="pk-banner__action">{action}</div> : null}
     </div>
+  );
+}
+
+export function Problem({ children, small, id, style }: { children: ReactNode; small?: boolean; id?: string; style?: CSSProperties }) {
+  return (
+    <p id={id} role="alert" className={small ? "caption" : "body-sm"} style={{ color: "var(--alarm-text)", ...style }}>
+      {children}
+    </p>
   );
 }

@@ -16,11 +16,6 @@ import type { PropKind } from "@/lib/room/moments";
 import { addOutline, toon } from "./materials";
 import { DAYLIGHT, type Tone } from "./palette";
 
-/**
- * What a hand holds in a moment: the bowl, a treat, the brush, the ball —
- * and the drifting Z of a pet asleep. Metres, built at the room's scale.
- */
-
 function part(geometry: BufferGeometry, tone: Tone, { outline = true, double = false } = {}): Mesh {
   const mesh = new Mesh(geometry, toon({ color: DAYLIGHT[tone], ...(double ? { side: DoubleSide } : {}) }));
   if (outline) addOutline(mesh);
@@ -30,7 +25,6 @@ function part(geometry: BufferGeometry, tone: Tone, { outline = true, double = f
 export interface Prop {
   kind: PropKind;
   object: Group;
-  /** For the bowl: how much food is left, 0–1. */
   setFill?: (fill: number) => void;
 }
 
@@ -93,7 +87,6 @@ function brush(): Prop {
   return { kind: "brush", object: g };
 }
 
-/** The handle is gripped in the palm; the brush head stays level, ahead of the fingers. */
 export function brushHeadAt(palm: Vector3, wrist: Vector3): Vector3 {
   return palm.clone().add(palm.clone().sub(wrist).setY(0).normalize().multiplyScalar(0.07));
 }
@@ -113,7 +106,6 @@ export function makeProp(kind: PropKind): Prop {
   return prop;
 }
 
-/** A single Z, drawn flat and outlined, that a sleeping pet breathes out. */
 export function makeZ(): Mesh {
   const s = new Shape();
   s.moveTo(-0.05, 0.05);

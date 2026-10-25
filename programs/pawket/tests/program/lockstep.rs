@@ -1,6 +1,3 @@
-//! Replays `src/lib/game/lockstep.txt` against the program. The web app's guest record replays
-//! the same file (`src/lib/guest/lockstep.test.ts`); both must land on every number in it.
-
 use pawket::{decayed, utc_day, CareActionType, PawketError, DECAY_TENTHS_PER_HOUR};
 
 use crate::harness::*;
@@ -35,7 +32,6 @@ fn replays_lockstep_txt_to_the_same_numbers() {
                 let state = env.pet(&pet);
                 let passport = env.passport(&pet);
                 let today = utc_day(env.now());
-                // `streakAsOf`: a streak last fed before yesterday is already over.
                 let streak = if passport.last_active_day + 1 >= today {
                     passport.streak
                 } else {

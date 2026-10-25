@@ -10,7 +10,7 @@ in `src/lib/solana/send.ts`. [AGENTS.md](../AGENTS.md) is the change contract.
 | Authority | Scope |
 | --- | --- |
 | Owner wallet | Approves wallet management and spending; owns the pet and Pawket Wallet |
-| Linked device | Non-extractable WebCrypto key; program-limited non-money actions until expiry and daily limit; can unlink itself |
+| Linked device | Non-extractable WebCrypto key; program-limited non-money actions until expiry and daily limit; can unlink itself; once unlinked or replaced, can send its own leftover float to its owner's Pawket Wallet and nowhere else |
 | Sponsor | Server-only devnet fee/rent payer; also current keepsake collection authority and source of derived asset keys |
 | Program upgrade authority | Separate deploy wallet; never the sponsor |
 | Treasury | Receives Market purchases and partner coin fees; its signing key is not on the server |
@@ -56,14 +56,18 @@ preserves the known signature and yields `unknown`; no replacement is sent
 automatically. A chain care animates only after confirmation and reload.
 
 The sponsor accepts only the approved Pawket instruction/account roles,
-bounded signatures, no priority-fee instructions and no lookup tables. Its
-float floor and request limits bound abuse within each server instance.
+bounded signatures, no priority-fee instructions, no lookup tables and at
+most one rent-paying instruction a transaction. Its float floor, per-caller
+limits and an hourly rent budget measured from its own balance bound abuse.
 `SPONSOR_SLOTS` is held to the IDL. Sponsored claims must use current
 availability rather than assume the sponsor is online.
 
 ## Server and Android boundaries
 
-Server config and privileged modules import `server-only`. Public env values
+Server config and privileged modules import `server-only`. Every response
+forbids framing (`frame-ancestors 'none'`, `X-Frame-Options`), because a linked
+device signs some actions without a prompt; it also sends `nosniff`, a
+referrer policy and a permissions policy (`next.config.ts`). Public env values
 are client-safe; custom provider URLs belong in `SOLANA_RPC_URL`, with browser
 RPC set to `/api/rpc`. Direct browser RPC permits only the public Solana hosts
 or loopback endpoints without credentials or URL parameters. Coin route logs
@@ -74,7 +78,8 @@ Coin reads verify the pool address, mints and creator before using it.
 
 The Android bridge accepts only checked requests from the trusted origin's
 main frame. It carries photos, links, reminders, haptics and colors, never keys
-or transactions. External intents are restricted and rebuilt without supplied
+or transactions. A care reminder is a time within three days and capped plain
+words; its notification only opens the app. External intents are restricted and rebuilt without supplied
 components, extras or permission flags. Release WebView debugging and backups
 are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 
@@ -88,11 +93,29 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   (Q9). A pet with an RSVP can still check in after leaving.
 - Guestbooks check one wave per UTC day against the last eight visitors. After
   eight other waves a visitor can wave again. Counts are not Sybil-resistant.
-- Sponsor and API rate limits are in process memory; multiple instances each
-  allow their share. Shared enforcement and budget monitoring are mainnet work.
-- A stolen linked device can act within its expiry and limit, including its
-  permitted fee float. Unlinking ends its authorization; local deletion alone
-  does not revoke it on chain.
+- Per-caller limits are in process memory, so multiple instances each allow
+  their share; an IPv6 caller counts by its /64. The hourly rent budget is read
+  from the sponsor's balance, which every instance sees, plus the rents an
+  instance signed in the last two minutes. Shared enforcement and budget
+  monitoring are mainnet work.
+- A stolen linked device acts until its link ends (30 days at most) or the
+  owner unlinks it: up to its daily limit (500 at most) of non-money actions a
+  UTC day, for the owner's pets only. Each action refills at most one
+  5,000-lamport fee from the balance, so it can draw at most `daily_actions ×
+  5,000` lamports a day (2,500,000 at the maximum limit), and each coin trade
+  the owner approves tops its float back up to 1,000,000 lamports. It cannot
+  withdraw, buy or send the balance anywhere. Unlinking ends its authorization;
+  local deletion alone does not revoke it on chain.
+- Pawket's client always sends with preflight, but a caller holding a
+  sponsor-signed transaction can broadcast it without. One that fails on chain
+  still costs the float its fee, inside the same per-caller limits.
+- `finish_round` has no daily cap on chain. Only a pet's first round of a UTC
+  day earns XP, so repeating it changes nothing in the game; its cost is fees,
+  bounded by the sponsor's per-caller limits and a device's daily limit.
+- Guild slugs are first come, first served and never freed: a guild has no
+  close instruction, and the program reserves no names (the app refuses `new`,
+  its own create route). Delisting (`src/lib/guilds/delisted.ts`) hides a guild
+  from Pawket's surfaces; it cannot return a slug. Squatting is unresolved (Q9).
 - Pets, Passports, closets, events, RSVPs, polls, ballots and guestbooks have no
   close instruction. Their rent remains locked. Guild membership and Pawket
   Wallet have their own closure rules.
@@ -108,6 +131,15 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   through the test runtime; its required `log` feature is not enabled. Review
   these findings when upgrading the upstream runtime, rather than suppressing
   the advisories or replacing crypto dependencies independently.
+- `.cargo/audit.toml` accepts two constant-time advisories:
+  [RUSTSEC-2026-0385](https://rustsec.org/advisories/RUSTSEC-2026-0385.html)
+  (`ctutils` 0.4.2) and
+  [RUSTSEC-2026-0387](https://rustsec.org/advisories/RUSTSEC-2026-0387.html)
+  (`crypto-bigint` 0.5.5). Both arrive only through LiteSVM's runtime, a
+  dev-dependency. Neither is in the program's build graph (`cargo tree -i
+  <crate> -e normal -p pawket` prints nothing), and test keys hold no secrets.
+  `crypto-bigint`'s fix (0.7) is outside `elliptic-curve` 0.13's range. Remove
+  both entries at the next LiteSVM/Agave upgrade.
 
 ## Verification and incident handling
 

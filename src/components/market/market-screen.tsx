@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { Address } from "@solana/kit";
-import { Button, ButtonLink, ItemTile, PetArt, RARITY_LABEL, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice, type Rarity } from "@/components/pk";
+import { Button, ButtonLink, Choice, EmptyState, Field, ItemTile, PetArt, RARITY_LABEL, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice, type Rarity, Problem } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
@@ -12,7 +12,12 @@ import { useCompanion } from "@/lib/companion/use-companion";
 import { petLook } from "@/lib/game/appearance";
 import { projectGuestPet } from "@/lib/guest/pet";
 import { PHOTO_FRAMES } from "@/lib/market/frames";
+import { SHELF_FILTERS, isShelfFilter, onShelf, type ShelfEntry, type ShelfFilter } from "@/lib/market/shelf";
 import { FrameArt } from "./frame-art";
+import { DecorArt } from "@/components/home/decor-art";
+import { DECOR, SLOT_LABEL, decorOpen, isNewDecor, placeDecor, useRoomDecor, type DecorPiece } from "@/lib/room/decor";
+import { useMounted } from "@/lib/utils/use-mounted";
+import { useHere } from "@/lib/native/android";
 import { useCloset } from "@/lib/market/use-closet";
 import { useConnected } from "@/lib/solana/browser-client";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
@@ -23,24 +28,10 @@ import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
 import { formatUnits } from "@/lib/utils/format";
 import { DevnetFaucet } from "@/components/wallet/faucet";
 
-/**
- * The Market: looks for SOL, at the prices Pawket's program fixes for
- * everyone. The shelves are the screen; a tap on anything opens it as a
- * sheet — your own pet wearing it, or sitting in the room — with its price
- * and where the SOL goes, on Paper, and one button. A purchase is one signed
- * transaction: the price from the buyer's Pawket Wallet straight to Pawket's
- * treasury, the item into their closet on Solana for good. Pawket's sponsor
- * pays the network fee and the closet's rent. Nothing here changes a vital,
- * XP, a cooldown or a score, and nothing is resold.
- */
-
-interface Item {
-  id: number;
-  name: string;
-  line: string;
-  kind: "piece" | "room" | "frame";
+interface Item extends ShelfEntry {
+  id: number | string;
   art: React.ReactNode;
-  /** The catalog id of a piece, to try it on. */
+  decor?: DecorPiece;
   piece?: string;
   room?: ThemeId;
 }
@@ -50,6 +41,7 @@ const PIECES: Item[] = MARKET_WEARABLES.map((piece) => ({
   name: piece.name,
   line: "For any of your pets on Solana. Looks only.",
   kind: "piece",
+  tags: [piece.place, piece.kind, piece.price === MARKET.classicPrice ? "cloth" : "foil"],
   piece: piece.id,
   art: <WearableArt id={piece.id} className="pk-tile__piece" />,
 }));
@@ -59,26 +51,65 @@ const ROOMS: Item[] = THEMES.filter((theme) => roomItem(theme.id) !== null).map(
   name: theme.name,
   line: theme.line,
   kind: "room",
+  tags: [theme.scheme, "glass"],
   room: theme.id,
   art: <span className="pk-market-room" data-theme-preview={theme.id} aria-hidden="true" />,
 }));
 
 const FRAMES: Item[] = PHOTO_FRAMES.map((frame) => ({
-  id: frame.item, name: frame.name, line: frame.line, kind: "frame",
+  id: frame.item, name: frame.name, line: frame.line, kind: "frame", tags: ["copper", "photo"],
   art: <FrameArt id={frame.id} className="pk-market-frame" />,
 }));
 
+const DECOR_WORDS: Record<DecorPiece["slot"], string[]> = {
+  wall: ["wall", "painting", "picture", "art"],
+  corner: ["plant", "corner", "pot"],
+  rug: ["rug", "floor", "carpet"],
+  bed: ["bed", "nap", "sleep"],
+  side: ["furniture", "lamp", "shelf"],
+};
+
+const roomOf = (piece: DecorPiece) => THEMES.find((theme) => theme.id === piece.room);
+
+const THINGS: Item[] = DECOR.map((piece) => ({
+  id: piece.id,
+  name: piece.name,
+  line: piece.line,
+  kind: "decor",
+  tags: [...DECOR_WORDS[piece.slot], ...(piece.room ? [piece.room, "glass"] : ["free"])],
+  decor: piece,
+  art: <DecorArt id={piece.id} className="pk-market-decor" />,
+}));
+
+const SHELVES: ReadonlyArray<{ label: string; items: Item[]; note?: string }> = [
+  { label: "For your pets", items: PIECES },
+  { label: "Rooms", items: ROOMS },
+  {
+    label: "For your room",
+    items: THINGS,
+    note: "A picture, a plant, a rug, a bed and more, placed from Home. Most are free; each room above brings one of its own.",
+  },
+  { label: "For your photos", items: FRAMES, note: "Frame a moment with your pet. Save it or share it from Home." },
+];
+
 const sol = (lamports: bigint | string) => `${formatUnits(lamports, 9, 4)} SOL`;
 
-/**
- * Each shelf's material, so the trim says what kind of thing it is: the
- * classic pieces are cloth, the rest of the pieces foil, rooms glass and
- * frames copper. Looks only; it is written beside the price.
- */
+function useFragment(): string {
+  return useSyncExternalStore(
+    (changed) => {
+      window.addEventListener("hashchange", changed);
+      return () => window.removeEventListener("hashchange", changed);
+    },
+    () => window.location.hash.slice(1),
+    () => "",
+  );
+}
+
 function rarityOf(item: Item): Rarity {
-  if (item.kind === "room") return "glass";
+  if (item.kind === "room" || item.decor?.room) return "glass";
+  if (item.kind === "decor") return "cloth";
   if (item.kind === "frame") return "copper";
-  return marketPrice(item.id) === MARKET.classicPrice ? "cloth" : "foil";
+  return marketPrice(item.id as number) === MARKET.classicPrice ? "cloth" : "foil";
 }
 
 export function MarketScreen() {
@@ -87,18 +118,55 @@ export function MarketScreen() {
   const owner = (connected?.account.address as Address | undefined) ?? null;
   const closet = useCloset(owner);
   const choice = useThemeChoice();
+  const decor = useRoomDecor();
+  const mounted = useMounted();
   const [picked, setPicked] = useState<Item | null>(null);
   const owned = new Set(closet.data?.items ?? []);
+  const holds = (item: Item) => (item.decor ? Boolean(item.decor.room) && decorOpen(item.decor, owned) : owned.has(item.id as number));
+  const [query, setQuery] = useState("");
+  const [opened, setOpened] = useState<readonly string[]>([]);
+  const fragment = useFragment();
+  const filter: ShelfFilter = isShelfFilter(fragment) ? fragment : "all";
+  const narrowing = query.trim() !== "" || filter !== "all";
+  const shelves = SHELVES.map((shelf) => ({ ...shelf, shown: shelf.items.filter((item) => onShelf(item, query, filter, holds(item))) }));
+  const found = shelves.reduce((sum, shelf) => sum + shelf.shown.length, 0);
+
+  function narrow(next: ShelfFilter) {
+    window.history.replaceState(window.history.state, "", next === "all" ? window.location.pathname : `#${next}`);
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  }
+
+  function showEverything() {
+    setQuery("");
+    narrow("all");
+  }
 
   const tile = (item: Item) => {
-    const has = owned.has(item.id);
+    if (item.decor) {
+      const piece = item.decor;
+      const open = decorOpen(piece, owned);
+      return (
+        <button key={item.id} type="button" className="pk-tile-hit" aria-haspopup="dialog" onClick={() => setPicked(item)}>
+          <ItemTile
+            name={item.name}
+            kind={piece.room ? (open ? "With your room" : `With ${roomOf(piece)?.name}`) : SLOT_LABEL[piece.slot]}
+            rarity={rarityOf(item)}
+            price={piece.room ? undefined : "Free"}
+            art={item.art}
+            equipped={decor[piece.slot] === piece.id}
+            fresh={mounted && isNewDecor(piece, new Date())}
+          />
+        </button>
+      );
+    }
+    const has = owned.has(item.id as number);
     return (
       <button key={item.id} type="button" className="pk-tile-hit" aria-haspopup="dialog" onClick={() => setPicked(item)}>
         <ItemTile
           name={item.name}
           kind={has ? "In your closet" : `${RARITY_LABEL[rarityOf(item)]} ${item.kind}`}
           rarity={rarityOf(item)}
-          price={has ? undefined : sol(marketPrice(item.id)!)}
+          price={has ? undefined : sol(marketPrice(item.id as number)!)}
           art={item.art}
           equipped={has && item.room === choice}
         />
@@ -108,20 +176,64 @@ export function MarketScreen() {
 
   return (
     <Stack gap={6}>
-      <Stack gap={3}>
-        <SectionLabel count={`${MARKET.wearables}`}>For your pets</SectionLabel>
-        <div className="pk-tiles">{PIECES.map(tile)}</div>
-      </Stack>
-      <Stack gap={3}>
-        <SectionLabel count={`${MARKET.rooms}`}>Rooms</SectionLabel>
-        <div className="pk-tiles">{ROOMS.map(tile)}</div>
-      </Stack>
+      <search className="pk-market-find" aria-label="Find in the Market">
+        <Field
+          label="Search the Market"
+          type="search"
+          placeholder="Hats, pink rooms, glasses…"
+          enterKeyHint="search"
+          autoComplete="off"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <Choice label="Show" hideLabel className="pk-market-filters" options={SHELF_FILTERS} value={filter} onPick={narrow} />
+        <p className="pk-sr" role="status">
+          {narrowing ? `${found} ${found === 1 ? "thing" : "things"} on the shelves` : ""}
+        </p>
+      </search>
 
-      <Stack gap={3}>
-        <SectionLabel count={`${FRAMES.length}`}>For your photos</SectionLabel>
-        <p className="body-sm pk-muted">Frame a moment with your pet. Save it or share it from Home.</p>
-        <div className="pk-tiles">{FRAMES.map(tile)}</div>
-      </Stack>
+      {found === 0 ? (
+        <EmptyState
+          icon="search"
+          title={filter === "yours" && !owner ? "Your closet is on Solana" : "Nothing on the shelves matches"}
+          body={
+            filter === "yours" && !owner
+              ? "Connect the wallet that bought them, and what is yours shows here."
+              : filter === "yours" && !query.trim()
+                ? "Nothing bought yet. Everything you buy stays in your closet, for any of your pets."
+                : `Nothing here is called “${query.trim() || "that"}”${filter === "all" ? "" : ` in ${SHELF_FILTERS.find((each) => each.value === filter)!.label.toLowerCase()}`}. Try a shorter word, or another shelf.`
+          }
+          action={<Button label="Show everything" tone="quiet" size="sm" onClick={showEverything} />}
+        />
+      ) : (
+        shelves.map((shelf) => {
+          if (!shelf.shown.length) return null;
+          const row = !narrowing && !opened.includes(shelf.label);
+          return (
+            <Stack key={shelf.label} gap={3} className={row ? "pk-shelf--row" : undefined}>
+              <SectionLabel
+                count={narrowing ? `${shelf.shown.length} of ${shelf.items.length}` : `${shelf.items.length}`}
+                action={
+                  row ? (
+                    <button
+                      type="button"
+                      className="pk-linkish pk-shelf__all"
+                      aria-label={`See all ${shelf.items.length}: ${shelf.label.toLowerCase()}`}
+                      onClick={() => setOpened([...opened, shelf.label])}
+                    >
+                      See all {shelf.items.length}
+                    </button>
+                  ) : null
+                }
+              >
+                {shelf.label}
+              </SectionLabel>
+              {shelf.note && !narrowing ? <p className="body-sm pk-muted">{shelf.note}</p> : null}
+              <div className={row ? "pk-tiles pk-tiles--row" : "pk-tiles"}>{shelf.shown.map(tile)}</div>
+            </Stack>
+          );
+        })
+      )}
 
       <details className="pk-fold">
         <summary>
@@ -154,12 +266,20 @@ export function MarketScreen() {
         </Stack>
       </details>
 
-      {picked ? (
+      {picked?.decor ? (
+        <DecorSheet
+          piece={picked.decor}
+          open={decorOpen(picked.decor, owned)}
+          placed={decor[picked.decor.slot] === picked.decor.id}
+          onRoom={() => setPicked(ROOMS.find((room) => room.room === picked.decor!.room) ?? null)}
+          onDismiss={() => setPicked(null)}
+        />
+      ) : picked ? (
         <ItemSheet
           item={picked}
           owner={owner}
           canSign={Boolean(connected?.signer)}
-          has={owned.has(picked.id)}
+          has={owned.has(picked.id as number)}
           onBought={closet.refresh}
           onDismiss={() => setPicked(null)}
         />
@@ -168,7 +288,6 @@ export function MarketScreen() {
   );
 }
 
-/** One thing in the Market, as a sheet: drawn on your own pet or as the room, its price on Paper, one button. */
 function ItemSheet({
   item,
   owner,
@@ -188,11 +307,10 @@ function ItemSheet({
   const sponsor = useSponsor();
   const { pet } = useCompanion();
   const [connecting, setConnecting] = useState(false);
-  const price = marketPrice(item.id)!;
+  const price = marketPrice(item.id as number)!;
   const balance = sender.pawketWallet?.balance;
   const short = owner !== null && balance !== undefined && balance < price;
   const needsLink = owner !== null && !sender.pawketWallet?.linked;
-  // Your own pet, wearing it — or in the room — before anything is signed.
   const look = pet ? petLook(pet, projectGuestPet(pet).mood) : ({ form: "cat", temper: "curious", feeling: "happy", wearing: null, seed: item.name } as const);
 
   async function buy() {
@@ -200,7 +318,7 @@ function ItemSheet({
     const address = (await deriveClosetPda(owner)).address;
     const wallet = (await deriveWalletPda(owner)).address;
     const result = await sender.send(`Buy the ${item.name.toLowerCase()}`, ({ owner: signer, payer }) => [
-      getBuyWithWalletInstruction({ owner: signer, payer, closet: address, wallet, item: item.id }),
+      getBuyWithWalletInstruction({ owner: signer, payer, closet: address, wallet, item: item.id as number }),
     ]);
     if (result?.outcome === "confirmed") {
       onBought();
@@ -257,10 +375,75 @@ function ItemSheet({
         {has && item.kind === "frame" ? <p className="body-sm pk-muted">Ready for your next photo. Open Photo on Home and choose this frame.</p> : null}
         {has && item.piece ? <p className="body-sm pk-muted">Yours. Put it on from the wardrobe in Profile.</p> : null}
         {!has && short ? (
-          <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
+          <Problem>
             Your Pawket Wallet holds {sol(balance ?? 0n)}. Add SOL there before buying.<DevnetFaucet /> Nothing was sent.
-          </p>
+          </Problem>
         ) : null}
+      </Stack>
+    </Sheet>
+  );
+}
+
+function DecorSheet({
+  piece,
+  open,
+  placed,
+  onRoom,
+  onDismiss,
+}: {
+  piece: DecorPiece;
+  open: boolean;
+  placed: boolean;
+  onRoom: () => void;
+  onDismiss: () => void;
+}) {
+  const { here } = useHere();
+  const [said, setSaid] = useState<string>();
+  const room = roomOf(piece);
+  return (
+    <Sheet
+      title={piece.name}
+      meta={piece.room ? `With the ${room?.name} room` : "Free"}
+      register="room"
+      onDismiss={onDismiss}
+      foot={(dismiss) => (
+        <>
+          <div className="pk-spread">
+            <Button tone="quiet" label={placed ? "Done" : "Not now"} onClick={dismiss} />
+            {!open ? (
+              <Button label={`See the ${room?.name} room`} onClick={onRoom} />
+            ) : placed ? (
+              <ButtonLink label="See it at home" icon="home" href="/home" />
+            ) : (
+              <Button
+                label="Place in your room"
+                icon="sofa"
+                onClick={() => setSaid(placeDecor(piece.slot, piece.id) ? undefined : `${here === "this app" ? "This app" : "This browser"} did not keep it. Your room is as it was.`)}
+              />
+            )}
+          </div>
+          <p role="status" className="caption pk-faint" style={{ marginTop: said || placed ? "var(--space-2)" : 0 }}>
+            {said ?? (placed ? `In your room: ${SLOT_LABEL[piece.slot].toLowerCase()}. Change it any time from Home, under Decor.` : "")}
+          </p>
+        </>
+      )}
+    >
+      <Stack gap={4}>
+        <div className="pk-market-try pk-market-try--decor" aria-hidden="true">
+          <DecorArt id={piece.id} />
+        </div>
+        <div>
+          <h2 className="title">{piece.name}</h2>
+          <p className="body-sm pk-muted" style={{ marginTop: "var(--space-1)" }}>
+            {piece.line}{" "}
+            {piece.room
+              ? open
+                ? `It came with your ${room?.name} room.`
+                : `It comes with the ${room?.name} room: buy the room once, and this is yours too, on every device of the wallet.`
+              : `Free, for everyone. It stays in your room in ${here}.`}
+          </p>
+        </div>
+        <p className="body-sm pk-muted">Looks only: it changes no vital, XP, cooldown or score.</p>
       </Stack>
     </Sheet>
   );

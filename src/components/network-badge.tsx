@@ -3,16 +3,9 @@ import { APP_NAME } from "@/config/site";
 import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 import { truncateAddress } from "@/lib/utils/format";
 
-/**
- * Server Component: the cluster and program the client will actually use,
- * from one source. It is a fact, so it is set in the Paper register — mono,
- * hairline, no hue. The dot is never the only signal; the cluster is written
- * out beside it.
- */
 export function NetworkBadge() {
   const env = getPublicEnv();
   return (
-    // The one chip long enough to need a second line on a small phone.
     <p className="pk-chip pk-chip--paper" style={{ gap: "var(--space-2)", flexWrap: "wrap", whiteSpace: "normal" }}>
       <span
         aria-hidden="true"

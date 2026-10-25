@@ -1,39 +1,28 @@
 "use client";
 
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import { useState } from "react";
 import type { Address } from "@solana/kit";
-import { useConnectedWallet, useDisconnect, useIsWalletReady } from "@solana/kit-plugin-wallet/react";
-import { Button, ButtonLink, Icon, Sheet, Stack } from "@/components/pk";
+import { useConnectedWallet, useDisconnect } from "@solana/kit-plugin-wallet/react";
+import { Button, ButtonLink, Icon, Sheet, Stack, Problem } from "@/components/pk";
 import { getPublicEnv } from "@/config/env";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
-import { wallet } from "@/lib/solana/browser-client";
-import { deviceFallback } from "@/lib/solana/use-send";
-import { formatUtcDate, truncateAddress } from "@/lib/utils/format";
-import { useMounted } from "@/lib/utils/use-mounted";
+import { wallet, useWalletReady } from "@/lib/solana/browser-client";
+import { deviceFallback, needsSol, useSponsor } from "@/lib/solana/use-send";
+import { dayTurnsAt, formatLocalDate, truncateAddress } from "@/lib/utils/format";
 import { useLinkBrowser } from "@/lib/wallet/link";
 import { AddressLine } from "./address";
 import { WalletSheet } from "./wallet-sheet";
 import { useHere } from "@/lib/native/android";
 import { DevnetFaucet } from "@/components/wallet/faucet";
 
-/**
- * The wallet, in the shell, just before the room switch and drawn the same
- * way: "Connect" until one is connected, then its own mark and address —
- * with a bolt while this browser signs for it, so "no pop-ups" is visible
- * from every screen. Tapping it opens the wallet you are: the address, this
- * browser's link (or one approval to make it), and the way out.
- */
 export function WalletChip() {
-  const mounted = useMounted();
-  const ready = useIsWalletReady(wallet);
+  const ready = useWalletReady();
   const connected = useConnectedWallet(wallet);
-  // Which sheet is open: choosing a wallet, or the wallet you are. Connecting from the first never opens the second.
   const [open, setOpen] = useState<"connect" | "panel" | null>(null);
   const linking = useLinkBrowser();
   const { Here } = useHere();
-  // Nothing until the wallet has had its chance to reconnect: never a "Connect" that turns into an address.
-  if (!mounted || !ready) return <span className="pk-shell-btn pk-shell-btn--hold" aria-hidden="true" />;
+  if (!ready) return <span className="pk-shell-btn pk-shell-btn--hold" aria-hidden="true" />;
 
   if (!connected) {
     return (
@@ -50,7 +39,7 @@ export function WalletChip() {
   }
 
   const address = connected.account.address as Address;
-  const signsHere = deviceFallback(linking.state) === null && (linking.state?.balance ?? 0n) > 0n && !linking.state?.error;
+  const signsHere = deviceFallback(linking.state) === null && !linking.state?.error;
   return (
     <>
       <button
@@ -59,7 +48,7 @@ export function WalletChip() {
         aria-label={`Your wallet, ${truncateAddress(address)}${signsHere ? `. ${Here} signs with no pop-up` : ""}`}
         onClick={() => setOpen("panel")}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element -- a wallet's own data-URI mark */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="pk-shell-btn__mark" src={connected.wallet.icon} alt="" />
         <span className="pk-shell-btn__address">{truncateAddress(address)}</span>
         {signsHere ? (
@@ -75,7 +64,6 @@ export function WalletChip() {
   );
 }
 
-/** The wallet you are: whose it is, whether this browser signs for it, and the way out. */
 function WalletPanel({
   address,
   name,
@@ -95,6 +83,8 @@ function WalletPanel({
   const state = linking.state;
   const why = deviceFallback(state);
   const linkedWallet = state?.wallet;
+  const sponsor = useSponsor();
+  const sponsored = Boolean(sponsor.data?.available);
 
   return (
     <Sheet
@@ -119,7 +109,7 @@ function WalletPanel({
     >
       <Stack gap={4}>
         <div className="pk-wallet-who">
-          {/* eslint-disable-next-line @next/next/no-img-element -- a wallet's own data-URI mark */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={icon} alt="" />
           <div className="pk-fill">
             <p className="title">{name}</p>
@@ -135,11 +125,12 @@ function WalletPanel({
             <p className="body-sm pk-muted pk-fill">Reading your Pawket Wallet…</p>
           ) : state.error ? (
             <p className="body-sm pk-muted pk-fill">Pawket Wallet could not be read. Open it and try again.</p>
-          ) : state.balance <= 0n && why === null ? (
+          ) : needsSol(state.balance, sponsored) && why === null ? (
             <div className="pk-fill">
               <p className="title">Add SOL to Pawket Wallet</p>
               <p className="caption pk-muted">
-                {Here} is linked. Pawket acts on Solana from this balance — add some before caring, playing or buying.
+                {Here} is linked. Pawket is not paying fees right now, so {here} pays them from this balance: add some
+                before caring or playing.
                 <DevnetFaucet />
               </p>
               <div style={{ marginTop: "var(--space-3)" }}>
@@ -150,7 +141,7 @@ function WalletPanel({
             <div className="pk-fill">
               <p className="title">No pop-ups in {here}</p>
               <p className="caption pk-muted">
-                It signs for your pets until {formatUtcDate(new Date(linkedWallet!.deviceExpiresAt * 1000))} —{" "}
+                It signs for your pets until {formatLocalDate(new Date(linkedWallet!.deviceExpiresAt * 1000))} —{" "}
                 {linkedWallet!.actionsToday} of {linkedWallet!.dailyActions} today. Anything that spends SOL still asks.{" "}
                 <Link href="/wallet" onClick={onDismiss}>
                   Manage
@@ -161,7 +152,7 @@ function WalletPanel({
             <div className="pk-fill">
               <p className="title">Today&apos;s limit is used</p>
               <p className="caption pk-muted">
-                This device can act again after midnight UTC.{" "}
+                This device can act again {dayTurnsAt()}.{" "}
                 <Link href="/wallet" onClick={onDismiss}>
                   Change the limit
                 </Link>
@@ -180,15 +171,15 @@ function WalletPanel({
                   tone="sun"
                   size="sm"
                   icon="bolt"
-                  label={state.balance <= 0n ? "Link + add 0.01 SOL" : why === "expired" ? "Link it again" : `Link ${here}`}
-                  disabled={linking.busy}
-                  onClick={() => void linking.link({ deposit: state.balance > 0n ? 0n : 10_000_000n })}
+                  label={needsSol(state.balance, sponsored) ? "Link + add 0.01 SOL" : why === "expired" ? "Link it again" : `Link ${here}`}
+                  disabled={linking.busy || !sponsor.data}
+                  onClick={() => void linking.link({ deposit: needsSol(state.balance, sponsored) ? 10_000_000n : 0n })}
                 />
               </div>
               {linking.problem ? (
-                <p role="alert" className="caption" style={{ color: "var(--alarm-text)", marginTop: "var(--space-2)" }}>
+                <Problem small style={{ marginTop: "var(--space-2)" }}>
                   {linking.problem}
-                </p>
+                </Problem>
               ) : null}
             </div>
           )}

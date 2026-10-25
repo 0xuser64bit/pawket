@@ -1,24 +1,24 @@
 "use client";
 
 import { useId, useRef, type KeyboardEvent } from "react";
+import { Icon, type IconName } from "./icon";
 
-/**
- * One choice from a short list, as a radio group: arrow keys move the
- * choice, Tab leaves the group, and the room changes as you go.
- */
 export function Choice<T extends string | number>({
   label,
   options,
   value,
   onPick,
   swatch,
+  className,
+  hideLabel,
 }: {
   label: string;
-  options: ReadonlyArray<{ value: T; label: string }>;
+  options: ReadonlyArray<{ value: T; label: string; icon?: IconName }>;
   value: T;
   onPick: (value: T) => void;
-  /** Draw each option as a colour dot instead of a word. */
   swatch?: (value: T) => string;
+  className?: string;
+  hideLabel?: boolean;
 }) {
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
   const id = useId();
@@ -31,8 +31,8 @@ export function Choice<T extends string | number>({
     refs.current[next]?.focus();
   }
   return (
-    <div className="pk-look__row">
-      <span className="label pk-faint" id={id}>
+    <div className={["pk-look__row", className].filter(Boolean).join(" ")}>
+      <span className={hideLabel ? "pk-sr" : "label pk-faint"} id={id}>
         {label}
       </span>
       <div role="radiogroup" aria-labelledby={id} className="pk-choices">
@@ -55,7 +55,12 @@ export function Choice<T extends string | number>({
               onClick={() => onPick(option.value)}
               onKeyDown={(event) => onKeyDown(event, index)}
             >
-              {swatch ? null : option.label}
+              {swatch ? null : (
+                <>
+                  {option.icon ? <Icon name={option.icon} size={16} /> : null}
+                  {option.label}
+                </>
+              )}
             </button>
           );
         })}

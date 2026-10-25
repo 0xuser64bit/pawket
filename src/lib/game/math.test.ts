@@ -51,7 +51,6 @@ describe("applyStatDecay", () => {
   });
 
   it("drains at the locked hourly rates", () => {
-    // 24h: hunger −60, happiness −43.2→−43, energy −36, hygiene −28.8→−29
     expect(applyStatDecay(FULL, 24 * 3600)).toEqual({
       hunger: 12,
       happiness: 29,
@@ -123,7 +122,6 @@ describe("validateCareCooldown", () => {
     const result = validateCareCooldown(future, CareActionType.Feed, now);
     expect(result.allowed).toBe(false);
     if (!result.allowed) {
-      // Without the clamp this would be window + skew (5400s).
       expect(result.remainingSeconds).toBe(CARE_COOLDOWN_SECONDS);
     }
   });

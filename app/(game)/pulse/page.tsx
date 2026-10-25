@@ -17,11 +17,6 @@ export const runtime = "nodejs";
 const n = (value: number) => value.toLocaleString("en-US");
 const sol = (lamports: string) => `${formatUnits(lamports, 9, 3)} SOL`;
 
-/**
- * Pawket's pulse: every figure counted from the program's accounts, read
- * live, with nothing estimated and nothing added by hand — the same
- * accounts anyone can read on Explorer. Facts, so all of it is Paper.
- */
 export default async function PulsePage() {
   let pulse: Pulse | null = null;
   try {
@@ -72,8 +67,11 @@ export default async function PulsePage() {
                 { k: "Cares recorded", v: n(pulse.pets.cares) },
                 { k: "Rounds played", v: n(pulse.pets.rounds) },
                 { k: "Longest run", v: `${n(pulse.pets.bestRun)} days` },
+                { k: "Back a day after adoption", v: `${n(pulse.pets.returned.day.back)} of ${n(pulse.pets.returned.day.of)}` },
+                { k: "Back a week on", v: `${n(pulse.pets.returned.week.back)} of ${n(pulse.pets.returned.week.of)}` },
                 { k: "Waves in guestbooks", v: n(pulse.guestbook.waves) },
               ]}
+              note="Back: cared for or played with on a later UTC day than the one it was adopted, read from each Passport, among the pets old enough to have had the chance."
             />
           </Paper>
           <Paper title="Guilds" meta="Guild, event and poll accounts">
@@ -114,7 +112,7 @@ export default async function PulsePage() {
                 { k: "Pawket Wallets opened", v: n(pulse.wallets.opened) },
                 { k: "Done by a linked browser", v: n(pulse.wallets.deviceActions) },
               ]}
-              note="The treasury also receives Pawket's share of guild-coin fees, claimed from Meteora. It pays the network fees Pawket covers for everyone's pets."
+              note="The treasury also receives Pawket's share of guild-coin fees, claimed from Meteora. The network fees Pawket covers come from a separate sponsor key, never from the treasury."
             />
             <div className="pk-receipt" style={{ marginTop: "var(--space-3)" }}>
               <div className="pk-receipt__row">

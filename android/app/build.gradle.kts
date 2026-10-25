@@ -52,14 +52,12 @@ android {
 
     defaultConfig {
         applicationId = webShellApplicationId
-        // 29: pictures save through MediaStore with no storage permission.
         minSdk = 29
         targetSdk = 37
         versionCode = webShellVersionCode
         versionName = webShellVersionName
 
         buildConfigField("String", "SOLANA_MOBILE_URL", "\"${webShellUrl.escapeForBuildConfig()}\"")
-        // The host whose links open in the app (verified by its /.well-known/assetlinks.json).
         manifestPlaceholders["pawketHost"] = URI(webShellUrl).host
     }
 
@@ -76,7 +74,6 @@ android {
 
     buildTypes {
         debug {
-            // Beside the release on one phone, with its own storage, and named so it is never mistaken for it.
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }

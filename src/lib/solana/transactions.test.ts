@@ -3,7 +3,7 @@ import {
   SolanaError,
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
 } from "@solana/kit";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   extractProgramErrorCode,
   isActiveStage,
@@ -12,6 +12,7 @@ import {
   mobileWalletErrorCode,
   mobileWalletProblem,
   pawketErrorMessage,
+  settleSignature,
   toUserFacingError,
   waitForConfirmation,
 } from "./transactions";
@@ -22,7 +23,6 @@ describe("transaction errors", () => {
     expect(isUserRejection(new Error("boom"))).toBe(false);
   });
 
-  // Mobile Wallet Adapter wraps its own error as the cause of a plain one.
   const mwa = (name: string, code: string | number, message = "wallet said so") =>
     new Error(message, { cause: Object.assign(new Error(message), { name, code }) });
 
@@ -56,11 +56,11 @@ describe("transaction errors", () => {
 
   it("extracts embedded program codes", () => {
     expect(extractProgramErrorCode(new Error("custom 6002 here"))).toBe(6002);
+    expect(extractProgramErrorCode(new Error("block 1234, then custom 6029"))).toBe(6029);
     expect(extractProgramErrorCode(new Error("nope"))).toBeNull();
   });
 
   it("finds the code Kit hangs on the cause of a failed simulation", () => {
-    // The simulation fields do not matter here; the cause is the point.
     const failed = new SolanaError(SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE, {
       cause: getSolanaErrorFromTransactionError({ InstructionError: [0, { Custom: 6002 }] }),
     } as never);
@@ -87,7 +87,6 @@ describe("transaction errors", () => {
   it("tells an expired signature from a refusal", () => {
     expect(toUserFacingError(new Error("Transaction simulation failed: Blockhash not found"))).toMatch(/expired/);
     const cause = getSolanaErrorFromTransactionError("BlockhashNotFound");
-    // Production Kit errors carry codes, with developer text stripped out.
     Object.defineProperty(cause, "message", { value: "Solana error #7050008" });
     const failed = new SolanaError(SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE, {
       cause,
@@ -168,6 +167,15 @@ describe("waitForConfirmation", () => {
     await expect(waitForConfirmation(client, "sig")).rejects.toThrow();
   });
 
+  it("a landed program refusal keeps its code, so the player reads its sentence rather than JSON", async () => {
+    for (const code of [6013, 6013n]) {
+      const client = stubRpc([{ confirmationStatus: "confirmed", err: { InstructionError: [0, { Custom: code }] } }]);
+      const error = await waitForConfirmation(client, "sig").catch((caught: unknown) => caught);
+      expect(extractProgramErrorCode(error)).toBe(6013);
+      expect(toUserFacingError(error)).toBe(pawketErrorMessage(6013));
+    }
+  });
+
   it("resolves unknown when the timeout elapses", async () => {
     const client = stubRpc([null]);
     await expect(waitForConfirmation(client, "sig", 10)).resolves.toBe("unknown");
@@ -188,5 +196,38 @@ describe("waitForConfirmation", () => {
       throw new TypeError("Failed to fetch");
     } }) } };
     await expect(waitForConfirmation(client, "sig", 0)).resolves.toBe("unknown");
+  });
+});
+
+describe("settleSignature", () => {
+  const client = (statuses: unknown[], valid: boolean[]) => {
+    let looked = 0;
+    let asked = 0;
+    return {
+      rpc: {
+        getSignatureStatuses: () => ({ send: async () => ({ value: [statuses[Math.min(looked++, statuses.length - 1)]] }) }),
+        isBlockhashValid: () => ({ send: async () => ({ value: valid[Math.min(asked++, valid.length - 1)] }) }),
+      },
+    };
+  };
+
+  it("is confirmed once Solana records it, however late", async () => {
+    vi.useFakeTimers();
+    const settling = settleSignature(client([null, null, { confirmationStatus: "confirmed", err: null }], [true]), "sig", "hash");
+    await vi.advanceTimersByTimeAsync(10_000);
+    await expect(settling).resolves.toBe("confirmed");
+    vi.useRealTimers();
+  });
+
+  it("is expired when its blockhash ran out with nothing recorded: it can never land", async () => {
+    await expect(settleSignature(client([null], [false]), "sig", "hash")).resolves.toBe("expired");
+  });
+
+  it("is still unknown when the node keeps not knowing until the deadline", async () => {
+    await expect(settleSignature(client([null], [true]), "sig", "hash", 0)).resolves.toBe("unknown");
+  });
+
+  it("throws a refusal that landed, like a first confirmation would", async () => {
+    await expect(settleSignature(client([{ confirmationStatus: "confirmed", err: { InstructionError: [0, { Custom: 6002 }] } }], [true]), "sig", "hash")).rejects.toMatchObject({ programError: 6002 });
   });
 });

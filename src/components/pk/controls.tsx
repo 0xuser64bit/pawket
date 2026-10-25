@@ -1,15 +1,8 @@
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
+import { Problem } from "./surfaces";
 import { useId, type ComponentProps } from "react";
 import { Icon, type IconName } from "./icon";
 
-/* ------------------------------------------------------------------ Button */
-
-/**
- * Tone picks the meaning, not the mood. `sun` is the only tone for the main
- * action on a screen, and there is at most one per screen region. `paper` is
- * the only variant allowed on a Paper surface — square, hairline, mono, no
- * shelf, and deliberately unsatisfying to press.
- */
 type ButtonTone =
   | "sun"
   | "sprout"
@@ -63,16 +56,30 @@ export function Button({
   after,
   full,
   className,
+  busy = false,
+  disabled = false,
+  onClick,
   ...rest
-}: ButtonShape & Omit<ComponentProps<"button">, "className" | "children">) {
+}: ButtonShape & { busy?: boolean } & Omit<ComponentProps<"button">, "className" | "children">) {
+  const off = busy || disabled;
   return (
-    <button type="button" className={buttonClass({ label, tone, size, full, className })} {...rest}>
-      {buttonFace({ label, size, icon, after })}
+    <button
+      type="button"
+      className={buttonClass({ label, tone, size, full, className })}
+      {...rest}
+      aria-disabled={off || undefined}
+      aria-busy={busy || rest["aria-busy"]}
+      onClick={(event) => {
+        if (off) event.preventDefault();
+        else onClick?.(event);
+      }}
+    >
+      {busy ? <span className="pk-spinner" aria-hidden="true" /> : null}
+      {buttonFace({ label, size, icon: busy ? undefined : icon, after })}
     </button>
   );
 }
 
-/** The same face, when the control navigates rather than asks. */
 export function ButtonLink({
   label,
   tone,
@@ -91,8 +98,6 @@ export function ButtonLink({
   );
 }
 
-/* -------------------------------------------------------------------- Chip */
-
 type ChipTone = "sun" | "sprout" | "pool" | "bloom" | "alarm" | "plain" | "paper";
 
 interface ChipShape {
@@ -106,11 +111,6 @@ function chipClass({ tone, className }: ChipShape) {
   return ["pk-chip", tone && `pk-chip--${tone}`, className].filter(Boolean).join(" ");
 }
 
-/**
- * A small, non-interactive label for a trait, a rarity, a status or a filter.
- * Status chips always carry a word — `pool` and `alarm` are the opposing
- * pair, and colour is never the only signal.
- */
 export function Chip({ label, tone, icon, className }: ChipShape) {
   return (
     <span className={chipClass({ label, tone, className })}>
@@ -120,13 +120,6 @@ export function Chip({ label, tone, icon, className }: ChipShape) {
   );
 }
 
-/* ------------------------------------------------------------------- Field */
-
-/**
- * An input that looks carved into the surface rather than floating on it.
- * A trailing suffix — a currency, a unit — stays faint, so a number is never
- * glued to a word. An error takes a word, never a red border alone.
- */
 export function Field({
   label,
   icon = "search",
@@ -140,7 +133,6 @@ export function Field({
   label: string;
   icon?: IconName;
   suffix?: string;
-  /** Amounts inside a field are mono, like every other figure in Pawket. */
   amount?: boolean;
   error?: string;
   helper?: string;
@@ -164,9 +156,9 @@ export function Field({
         {suffix ? <span className="amount-sm pk-faint">{suffix}</span> : null}
       </div>
       {error ? (
-        <p id={describedBy} role="alert" className="body-sm" style={{ color: "var(--alarm-text)", marginTop: "var(--space-2)" }}>
+        <Problem id={describedBy} style={{ marginTop: "var(--space-2)" }}>
           {error}
-        </p>
+        </Problem>
       ) : helper ? (
         <p id={describedBy} className="body-sm pk-faint" style={{ marginTop: "var(--space-2)" }}>
           {helper}
@@ -176,36 +168,4 @@ export function Field({
   );
 }
 
-/* -------------------------------------------------------------------- Tabs */
-
-/**
- * Segmented switching within a single view, four options at most. It changes
- * elevation, not colour, so tabs never compete with the `sun` action on the
- * same screen. Moving between places uses the Dock instead.
- */
-export function Tabs({
-  items,
-  active,
-  label,
-  className,
-}: {
-  items: Array<{ key: string; label: string; href: string }>;
-  active: string;
-  label: string;
-  className?: string;
-}) {
-  return (
-    <nav className={["pk-tabs", className].filter(Boolean).join(" ")} aria-label={label}>
-      {items.map((item) => (
-        <Link
-          key={item.key}
-          href={item.href}
-          aria-current={item.key === active ? "page" : undefined}
-          className={["pk-tabs__t", item.key === active && "pk-tabs__t--on"].filter(Boolean).join(" ")}
-        >
-          {item.label}
-        </Link>
-      ))}
-    </nav>
-  );
-}
+export { Tabs } from "./tabs";

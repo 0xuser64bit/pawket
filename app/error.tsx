@@ -1,15 +1,17 @@
 "use client";
 
+import { useEffect } from "react";
 import { Banner, Button, ButtonLink, Screen, Stack } from "@/components/pk";
+import { reportError } from "@/lib/analytics/events";
 
-/** A screen failure cannot establish whether an earlier send reached Solana. */
 export default function GlobalError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
+  useEffect(() => reportError(error), [error]);
   return (
     <Screen width="narrow">
       <Stack gap={5} style={{ paddingTop: "var(--space-8)" }}>
@@ -23,7 +25,7 @@ export default function GlobalError({
           <p className="addr pk-faint">Error {error.digest}</p>
         ) : null}
         <div className="pk-acts">
-          <Button label="Try again" onClick={reset} icon="clock" />
+          <Button label="Try again" onClick={retry} icon="clock" />
           <ButtonLink label="Home" href="/home" tone="quiet" icon="home" />
         </div>
       </Stack>

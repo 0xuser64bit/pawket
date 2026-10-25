@@ -1,11 +1,6 @@
 import { Card, Icon } from "@/components/pk";
 import { BADGES, badgesFor, type BadgeContext, type BadgeRecord } from "@/lib/game/badges";
 
-/**
- * The stickers a pet's record has earned, in a row — read from the record
- * itself, so on a pet kept on Solana each one is something anyone can
- * check. Hook-free, so the Passport draws it on the server.
- */
 export function StickerStrip({ name, record, context }: { name: string; record: BadgeRecord; context: BadgeContext }) {
   const earned = new Set(badgesFor(record, context));
   const shown = BADGES.filter((badge) => earned.has(badge.id));

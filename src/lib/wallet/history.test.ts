@@ -43,7 +43,6 @@ describe("a Pawket Wallet's statement", () => {
     const keys = [OWNER, WALLET, DEVICE, "11111111111111111111111111111111", PAWKET_PROGRAM_ID];
     const ixs = [
       { programIdIndex: 4, accounts: [0, 0, 1, 3], data: data([...PAWKET_DISCRIMINATORS.openWallet]) },
-      // 100,000,000 lamports, little-endian
       { programIdIndex: 4, accounts: [0, 1, 3], data: data([...PAWKET_DISCRIMINATORS.deposit, 0, 225, 245, 5, 0, 0, 0, 0]) },
       { programIdIndex: 4, accounts: [0, 1, 2], data: data([...PAWKET_DISCRIMINATORS.linkDevice, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0]) },
     ];

@@ -5,6 +5,7 @@ const KEYS = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SOLANA_CLUSTER",
   "NEXT_PUBLIC_SOLANA_RPC_URL",
+  "VERCEL_ENV",
 ];
 
 const saved = Object.fromEntries(KEYS.map((k) => [k, process.env[k]]));
@@ -85,5 +86,23 @@ describe("guildReportUrl", () => {
     expect(params.get("subject")).toBe("Report: Sunbeam Club (sunbeam-club)");
     expect(params.get("body")).toContain("https://pawket.world/guilds/sunbeam-club");
     expect(params.get("body")).toContain("cannot remove it from Solana");
+  });
+  it("refuses an app URL that is not an http(s) origin", () => {
+    process.env.NEXT_PUBLIC_APP_URL = "pawket.world";
+    __resetEnvCacheForTests();
+    expect(() => getPublicEnv()).toThrow(/NEXT_PUBLIC_APP_URL/);
+  });
+
+  it("refuses a production build that would write localhost into metadata on Solana", () => {
+    process.env.VERCEL_ENV = "production";
+    for (const url of [undefined, "http://pawket.world", "https://localhost:3000"]) {
+      if (url) process.env.NEXT_PUBLIC_APP_URL = url;
+      else delete process.env.NEXT_PUBLIC_APP_URL;
+      __resetEnvCacheForTests();
+      expect(() => getPublicEnv()).toThrow(/production build needs NEXT_PUBLIC_APP_URL/);
+    }
+    process.env.NEXT_PUBLIC_APP_URL = "https://pawket.world";
+    __resetEnvCacheForTests();
+    expect(getPublicEnv().appUrl).toBe("https://pawket.world");
   });
 });

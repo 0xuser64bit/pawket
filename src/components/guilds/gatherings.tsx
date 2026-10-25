@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { useRequest } from "@solana/react";
 import { fetchEncodedAccounts, type Address } from "@solana/kit";
-import { Button, Chip, Field, Row, Stack } from "@/components/pk";
+import { Choice, DateTimeField, Button, Chip, Field, Row, Stack, Problem } from "@/components/pk";
 import { useCompanion } from "@/lib/companion/use-companion";
+import { yourPlace } from "./yours";
 import { fetchPetRsvps, type ChainEvent, type ChainPoll, type ChainRsvp } from "@/lib/solana/accounts";
 import { rpc } from "@/lib/solana/browser-client";
 import {
@@ -17,26 +18,23 @@ import {
 } from "@/lib/solana/instructions";
 import { deriveBallotPda, deriveEventPda, deriveMemberPda, derivePollPda, deriveRsvpPda } from "@/lib/solana/pda";
 import { GATHERING_LIMITS, PAWKET_ACCOUNTS } from "@/lib/solana/program";
-import { useSponsor, usePawketSend } from "@/lib/solana/use-send";
-
-/**
- * A guild's gatherings: events its founder plans and its pets go to, and
- * polls its founder asks and each wallet with a pet in it answers once.
- * Every one is a record on Solana — planned, RSVPed, checked in, voted —
- * with Pawket paying the fee and the rent while it can. None of it reaches
- * a vital, XP or a score; a vote has no weight but one.
- */
+import { rentWaits, useSponsor, usePawketSend } from "@/lib/solana/use-send";
+import { useMounted } from "@/lib/utils/use-mounted";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "Sun 12 Oct, 18:00 UTC": UTC, like the streak's day, so server and client agree. */
 function when(seconds: number): string {
   const d = new Date(seconds * 1000);
   const hh = String(d.getUTCHours()).padStart(2, "0");
   const mm = String(d.getUTCMinutes()).padStart(2, "0");
   return `${WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}, ${hh}:${mm} UTC`;
 }
+
+const localWhen = (seconds: number) =>
+  new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(
+    new Date(seconds * 1000),
+  );
 
 export function GuildGatherings({
   guild,
@@ -50,14 +48,15 @@ export function GuildGatherings({
   const companion = useCompanion();
   const sender = usePawketSend();
   const sponsor = useSponsor();
+  const waits = rentWaits(sponsor.data);
+  const mounted = useMounted();
+  const at = (seconds: number) => (mounted ? localWhen(seconds) : when(seconds));
   const router = useRouter();
-  // The page's moment: events open and close against it until the page is read again.
   const [now] = useState(() => Math.floor(Date.now() / 1000));
   const owner = companion.owner;
   const mine = useMemo(() => companion.owned.filter((entry) => entry.member?.guild === guild.address), [companion.owned, guild.address]);
-  const founder = owner !== null && owner === guild.founder;
+  const founder = yourPlace(companion, guild).founded;
 
-  // What this wallet's pets have RSVPed to, and which polls it has answered: read from Solana.
   const readMine = useCallback(async () => {
     const rsvps = (await Promise.all(mine.map((entry) => fetchPetRsvps(rpc, entry.pet.address)))).flat();
     const ballots = await Promise.all(polls.map(async (poll) => (await deriveBallotPda(poll.address, owner!)).address));
@@ -117,15 +116,17 @@ export function GuildGatherings({
           What&apos;s on
         </h2>
         <span className="caption pk-faint">
-          Kept on Solana · {sponsor.data?.available ? "Pawket pays the fee" : "a little devnet SOL each"}
+          Kept on Solana{sponsor.data?.available ? " · Pawket pays the fee" : waits ? " · new RSVPs and votes wait for Pawket's sponsor" : ""}
         </span>
       </div>
 
       {upcoming.length === 0 && open.length === 0 ? (
         <div className="pk-whats-on__empty">
           <p className="body-sm pk-muted">
-            Nothing planned yet.{" "}
-            {founder ? "Plan the first event, or ask the guild something, below." : `When ${guild.name}'s founder plans an event or asks a question, it is here.`}
+            {past.length || closed.length ? "Nothing coming up." : "Nothing planned yet."}{" "}
+            {founder
+              ? `Plan the ${past.length ? "next" : "first"} event, or ask the guild something, below.`
+              : `When ${guild.name}'s founder plans an event or asks a question, it is here.`}
           </p>
         </div>
       ) : null}
@@ -147,7 +148,7 @@ export function GuildGatherings({
               </div>
               {event.note ? <p className="body-sm pk-muted">{event.note}</p> : null}
               <p className="caption pk-faint">
-                {when(event.startsAt)} until {when(event.endsAt)} · {event.going} going · {event.came} came
+                {at(event.startsAt)} until {at(event.endsAt)} · {event.going} going · {event.came} came
               </p>
               {mine.length ? (
                 <Row gap={2} wrap>
@@ -174,7 +175,7 @@ export function GuildGatherings({
                         label={`Going with ${entry.pet.name}`}
                         tone="quiet"
                         size="sm"
-                        disabled={sender.busy || !companion.canSign}
+                        disabled={sender.busy || !companion.canSign || waits}
                         onClick={() => void going(event, entry.pet.address)}
                       />
                     );
@@ -196,7 +197,7 @@ export function GuildGatherings({
           <article key={poll.address} className="pk-poll">
             <div className="pk-spread">
               <h3 className="title">{poll.question}</h3>
-              <Chip label={shut ? "Closed" : `Until ${when(poll.closesAt)}`} icon="vote" />
+              <Chip label={shut ? "Closed" : `Until ${at(poll.closesAt)}`} icon="vote" />
             </div>
             <ul className="pk-poll__options">
               {poll.options.map((option, i) => {
@@ -216,7 +217,7 @@ export function GuildGatherings({
                       <button
                         type="button"
                         className="pk-poll__option pk-poll__option--vote"
-                        disabled={sender.busy || !companion.canSign}
+                        disabled={sender.busy || !companion.canSign || waits}
                         aria-label={`Vote ${option}, ${poll.votes[i]} so far`}
                         onClick={() => void vote(poll, i)}
                       >
@@ -246,7 +247,6 @@ export function GuildGatherings({
   );
 }
 
-/** What only the founder sees: planning an event, and asking the guild something. */
 function FounderDesk({
   guild,
   sender,
@@ -264,6 +264,7 @@ function FounderDesk({
   const [options, setOptions] = useState(["", "", "", ""]);
   const [days, setDays] = useState("3");
   const [problem, setProblem] = useState<string>();
+  const waits = rentWaits(useSponsor().data);
 
   async function plan() {
     const startsAt = Math.floor(new Date(start).getTime() / 1000);
@@ -314,22 +315,10 @@ function FounderDesk({
         <Stack gap={3}>
           <Field label="What it is" icon="star" placeholder="Sunday nap in the sun" maxLength={GATHERING_LIMITS.maxTitle} value={title} onChange={(e) => setTitle(e.target.value)} />
           <Field label="A line about it" icon="chat" placeholder="By the big window. Bring a blanket." maxLength={GATHERING_LIMITS.maxNote} value={note} onChange={(e) => setNote(e.target.value)} />
-          <label className="pk-field">
-            <span className="label pk-faint">Starts</span>
-            <input className="pk-field__input" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
-          </label>
-          <label className="pk-field">
-            <span className="label pk-faint">Hours</span>
-            <select className="pk-field__input" value={hours} onChange={(e) => setHours(e.target.value)}>
-              {["1", "2", "3", "6", "24"].map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </label>
+          <DateTimeField label="Starts" value={start} onChange={setStart} />
+          <Choice label="Duration" value={hours} onPick={setHours} options={["1", "2", "3", "6", "24"].map((value) => ({ value, label: `${value} ${value === "1" ? "hour" : "hours"}` }))} />
           <div>
-            <Button label="Plan it" tone="bloom" size="sm" icon="guild" disabled={sender.busy || title.trim().length < 3 || !start} onClick={() => void plan()} />
+            <Button label="Plan it" tone="bloom" size="sm" icon="guild" disabled={sender.busy || waits || title.trim().length < 3 || !start} onClick={() => void plan()} />
           </div>
         </Stack>
       </details>
@@ -351,36 +340,26 @@ function FounderDesk({
               onChange={(e) => setOptions(options.map((o, j) => (j === i ? e.target.value : o)))}
             />
           ))}
-          <label className="pk-field">
-            <span className="label pk-faint">Open for</span>
-            <select className="pk-field__input" value={days} onChange={(e) => setDays(e.target.value)}>
-              {[
-                ["1", "a day"],
-                ["3", "three days"],
-                ["7", "a week"],
-              ].map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Choice label="Open for" value={days} onPick={setDays} options={[
+            { value: "1", label: "A day" }, { value: "3", label: "Three days" }, { value: "7", label: "A week" },
+          ]} />
           <div>
             <Button
               label="Ask it"
               tone="bloom"
               size="sm"
               icon="vote"
-              disabled={sender.busy || question.trim().length < 3 || options.filter((o) => o.trim()).length < 2}
+              disabled={sender.busy || waits || question.trim().length < 3 || options.filter((o) => o.trim()).length < 2}
               onClick={() => void ask()}
             />
           </div>
         </Stack>
       </details>
+      {waits ? <p className="caption pk-faint">New events and polls wait until Pawket can cover their rent again.</p> : null}
       {problem ? (
-        <p role="alert" className="body-sm" style={{ color: "var(--alarm-text)" }}>
+        <Problem>
           {problem}
-        </p>
+        </Problem>
       ) : null}
     </Stack>
   );

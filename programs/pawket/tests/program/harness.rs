@@ -1,4 +1,3 @@
-//! LiteSVM harness for the pawket program: a clock, players, and one builder per instruction.
 #![allow(dead_code)]
 
 use anchor_lang::{
@@ -23,7 +22,6 @@ pub type TxResult = Result<TransactionMetadata, FailedTransactionMetadata>;
 
 pub const SO: &[u8] = include_bytes!(concat!(env!("CARGO_TARGET_TMPDIR"), "/../deploy/pawket.so"));
 
-/// 2026-10-01T10:00:00Z, UTC day 20727. `lockstep.txt` counts from here.
 pub const T0: i64 = 1_790_848_800;
 pub const HOUR: i64 = 3_600;
 pub const DAY: i64 = 86_400;
@@ -77,7 +75,6 @@ pub struct Env {
 }
 
 impl Env {
-    /// The program loaded, the clock at `T0`.
     pub fn new() -> Self {
         let mut svm = LiteSVM::new();
         svm.add_program(pawket::ID, SO).unwrap();
@@ -92,7 +89,6 @@ impl Env {
         kp
     }
 
-    /// A signer with no SOL: a player whose fees and rent a sponsor covers.
     pub fn broke(&mut self) -> Keypair {
         Keypair::new()
     }
@@ -165,7 +161,6 @@ impl Env {
         self.account(&guestbook_pda(pet))
     }
 
-    /// A Pawket Wallet's balance: its lamports above rent.
     pub fn balance(&self, owner: &Pubkey) -> u64 {
         let account = self.svm.get_account(&wallet_pda(owner)).unwrap();
         account.lamports - self.svm.minimum_balance_for_rent_exemption(account.data.len())
@@ -175,8 +170,6 @@ impl Env {
         self.svm.get_account(address).is_some_and(|a| a.lamports > 0)
     }
 
-    /// `value` as the program's account at `address`, at its full size: what only `init` makes on
-    /// a cluster, and only at its own address. For the tests that show a forged one is refused.
     pub fn forge<T: AccountSerialize + Space>(&mut self, address: &Pubkey, value: &T) {
         let mut data = Vec::new();
         value.try_serialize(&mut data).unwrap();
@@ -186,7 +179,6 @@ impl Env {
         self.svm.set_account(*address, account).unwrap();
     }
 
-    /// `ixs` with `fee_payer` paying; every keypair in `signers` signs.
     pub fn send(&mut self, ixs: &[Instruction], fee_payer: &Keypair, signers: &[&Keypair]) -> TxResult {
         let mut all: Vec<&Keypair> = vec![fee_payer];
         all.extend(signers.iter().copied().filter(|s| s.pubkey() != fee_payer.pubkey()));
@@ -201,7 +193,6 @@ impl Env {
         result
     }
 
-    /// The owner adopts and pays. Returns the pet's address.
     pub fn adopt(&mut self, owner: &Keypair, name: &str) -> Pubkey {
         ok(self.send(&[adopt_ix(&owner.pubkey(), &owner.pubkey(), name)], owner, &[]));
         pet_pda(&owner.pubkey(), name)
@@ -279,7 +270,6 @@ pub fn dress_ix(owner: &Pubkey, pet: &Pubkey, wearing: u8) -> Instruction {
     }
 }
 
-/// Found `slug` with `pet`, as the owner signs and `payer` pays.
 pub fn found_ix(owner: &Pubkey, payer: &Pubkey, pet: &Pubkey, slug: &str) -> Instruction {
     found_ix_with(owner, payer, pet, slug, "Sunbeam Club", "Naps first, questions later.", 0, 0)
 }
@@ -400,8 +390,6 @@ pub fn link_ix(owner: &Pubkey, device: &Pubkey, expires_at: i64, daily_actions: 
     }
 }
 
-/// `authority` (the owner or the device) unlinks `device` from `owner`'s wallet. When the device
-/// signs, pass `device_signs` so its meta is a signer and its float comes back.
 pub fn unlink_ix(authority: &Pubkey, owner: &Pubkey, device: &Pubkey, device_signs: bool) -> Instruction {
     let mut accounts = pawket::accounts::UnlinkDevice {
         authority: *authority,
@@ -642,10 +630,6 @@ pub fn wave_ix(visitor: &Pubkey, payer: &Pubkey, pet: &Pubkey) -> Instruction {
     }
 }
 
-/// `ix` as the owner's linked device signs it: the device and the owner's Pawket Wallet take the
-/// owner's place, the rest of the accounts stay as they were, and the arguments stay as they were
-/// behind the device instruction's own discriminator. The web app builds every device action this
-/// way (`asDeviceInstruction`), so each `*ByDevice` struct must keep this order.
 pub fn by_device(ix: Instruction, device: &Pubkey, owner: &Pubkey, discriminator: &[u8]) -> Instruction {
     use anchor_lang::prelude::AccountMeta;
     let mut accounts = vec![AccountMeta::new(*device, true), AccountMeta::new(wallet_pda(owner), false)];
@@ -657,7 +641,6 @@ pub fn by_device(ix: Instruction, device: &Pubkey, owner: &Pubkey, discriminator
     }
 }
 
-/// A plain system transfer, which any key may sign for its own lamports: `Transfer` is variant 2.
 pub fn transfer_ix(from: &Pubkey, to: &Pubkey, lamports: u64) -> Instruction {
     use anchor_lang::prelude::AccountMeta;
     Instruction {
@@ -687,6 +670,20 @@ pub fn expect_pawket(result: &TxResult, error: PawketError) {
     expect_custom(result, anchor_lang::error::ERROR_CODE_OFFSET + error as u32);
 }
 
+pub fn expect_pawket_at(result: &TxResult, index: u8, error: PawketError) {
+    use anchor_lang::solana_program::instruction::error::InstructionError;
+    let code = anchor_lang::error::ERROR_CODE_OFFSET + error as u32;
+    match result {
+        Err(failed) => assert_eq!(
+            failed.err,
+            TransactionError::InstructionError(index, InstructionError::Custom(code)),
+            "logs:\n{}",
+            failed.meta.pretty_logs()
+        ),
+        Ok(meta) => panic!("expected error {code} at instruction {index}, but it succeeded:\n{}", meta.pretty_logs()),
+    }
+}
+
 pub fn expect_anchor(result: &TxResult, error: anchor_lang::error::ErrorCode) {
     expect_custom(result, error as u32);
 }
@@ -709,7 +706,6 @@ pub fn expect_custom(result: &TxResult, code: u32) {
     }
 }
 
-/// An owner-approved Market purchase paid from Pawket Wallet.
 pub fn buy_with_wallet_ix(owner: &Pubkey, payer: &Pubkey, item: u8) -> Instruction {
     Instruction {
         program_id: pawket::ID,

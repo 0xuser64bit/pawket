@@ -1,16 +1,12 @@
 "use client";
 
 import { Icon, PetArt, SectionLabel } from "@/components/pk";
+import { DayTurns } from "@/components/pk/day-turns";
 import { BADGES, badgesFor } from "@/lib/game/badges";
 import { petLook } from "@/lib/game/appearance";
 import type { GuestPet } from "@/lib/guest/pet";
 import type { SocialRecord } from "@/lib/companion/use-social";
 
-/**
- * The sticker book: every sticker a pet's record can earn, and which of your
- * pets have earned it. Each is read from the record, so a sticker cannot be
- * bought and is never lost; one not yet earned says how.
- */
 export function StickerBook({
   pets,
   onChain,
@@ -20,7 +16,6 @@ export function StickerBook({
   pets: GuestPet[];
   onChain: Set<string>;
   inGuild: Set<string>;
-  /** Waves and gatherings, for pets on Solana. */
   social?: Map<string, SocialRecord>;
 }) {
   const earnedBy = new Map<string, GuestPet[]>();
@@ -36,6 +31,7 @@ export function StickerBook({
       <p className="body-sm pk-muted">
         Earned by care, by showing up, by playing and by being visited — read from each pet&apos;s record, so they
         cannot be bought and are never lost. They change nothing about a pet but its pride.
+        <DayTurns />
       </p>
       <ul className="pk-stickers">
         {BADGES.map((badge) => {

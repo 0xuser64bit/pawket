@@ -1,11 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/**
- * The 3D room on Home. Headless Chromium draws WebGL in software, so the
- * room is given time to come up; nothing here asserts pixels, only what the
- * room says it is doing and what a player can press.
- */
-
 async function adopt(page: Page, name = "Pepper") {
   await page.goto("/adopt");
   await page.getByRole("button", { name: /choose the luna cat/i }).click();
@@ -15,17 +9,16 @@ async function adopt(page: Page, name = "Pepper") {
   await expect(page.getByRole("heading", { name: `${name}'s room` })).toBeVisible();
 }
 
-/** The live room names itself and how to turn it. */
 const liveRoom = (page: Page) => page.getByRole("group", { name: /arrow keys turn the room/i });
 
 test("the room comes up in 3D and an emote plays in it", async ({ page }) => {
   await adopt(page);
-  // With 3D chosen, the flat room's characters never show while the 3D room builds: the frame holds a loader.
   await expect(page.locator(".pk-room__flat")).toBeHidden();
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
   await expect(page.locator(".pk-room__flat")).toBeHidden();
   await page.getByRole("button", { name: "Say" }).click();
   await page.getByRole("button", { name: "Wave" }).click();
+  await expect(page.locator(".pk-home__said")).toHaveCount(0);
   await expect(page.getByRole("status").filter({ hasText: "You wave. Pepper saw." })).toBeVisible();
   await expect(page.getByText(/do not change a vital, XP or the streak/i)).toBeVisible();
 });
@@ -39,6 +32,13 @@ test("the room takes a photo of the two of you, to save or share", async ({ page
   const save = photo.getByRole("link", { name: "Save the photo" });
   await expect(save).toHaveAttribute("download", /^pawket-pepper-\d{4}-\d{2}-\d{2}\.png$/);
   await expect(save).toHaveAttribute("href", /^data:image\/png;base64,/);
+  const candid = await save.getAttribute("href");
+  const record = await page.evaluate(() => localStorage.getItem("pawket.pets.v1"));
+  await expect(photo.getByRole("radiogroup", { name: "Pose" }).getByRole("radio")).toHaveText(["Candid", "Wave", "Cheer", "Cuddle", "Dance", "Peace", "Heart", "Nice"]);
+  await photo.getByRole("radio", { name: "Wave", exact: true }).click();
+  await expect(photo.getByRole("radio", { name: "Wave", exact: true })).toHaveAttribute("aria-checked", "true");
+  await expect(save).not.toHaveAttribute("href", candid!);
+  expect(await page.evaluate(() => localStorage.getItem("pawket.pets.v1"))).toBe(record);
   await photo.getByRole("button", { name: "Close", exact: true }).click();
   await expect(photo).toHaveCount(0);
 });
@@ -49,7 +49,6 @@ test("a care shows in the room only after it is saved", async ({ page }) => {
   await page.getByRole("button", { name: "Feed" }).click();
   await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "You set the bowl down. Pepper eats." })).toBeVisible();
-  // The next Feed is resting: no second moment can be asked for.
   await expect(page.getByRole("button", { name: /Feed/ })).toBeDisabled();
 });
 
@@ -68,8 +67,28 @@ test("the desktop care deck stays clear of the dock on short and tall screens", 
   }
 });
 
+test("back after hours away, the pet greets you once, and its record is untouched", async ({ page }) => {
+  await adopt(page);
+  await page.evaluate(() => {
+    const [pet] = JSON.parse(localStorage.getItem("pawket.pets.v1")!);
+    const hours = (n: number) => new Date(Date.now() - n * 3_600_000).toISOString();
+    localStorage.setItem("pawket.pets.v1", JSON.stringify([{ ...pet, createdAt: hours(10), statsUpdatedAt: hours(9) }]));
+    localStorage.setItem("pawket.room", "flat");
+  });
+  const record = await page.evaluate(() => localStorage.getItem("pawket.pets.v1"));
+  await page.reload();
+  await expect(page.getByRole("status").filter({ hasText: "You are back. Pepper missed you, and bounces to say so." })).toBeAttached();
+  await expect(page.getByText("Pepper missed you", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Back after 9 hours\. Pepper is /)).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("pawket.pets.v1"))).toBe(record);
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Pepper's room" })).toBeVisible();
+  await page.waitForTimeout(1_000);
+  await expect(page.getByText("Pepper missed you", { exact: true })).toHaveCount(0);
+});
+
 test("the flat room is a choice this device remembers", async ({ page }) => {
-  // Three 3D builds in software WebGL: more than the default thirty seconds when the suite runs in parallel.
   test.setTimeout(90_000);
   await adopt(page);
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
@@ -77,7 +96,6 @@ test("the flat room is a choice this device remembers", async ({ page }) => {
   await expect(page.locator(".pk-room__flat")).toBeVisible();
   await expect(liveRoom(page)).toHaveCount(0);
   await expect(page.locator(".pk-room canvas")).toHaveCount(0);
-  // Letting go of the canvas is not the room failing, and 3D comes straight back.
   await expect(page.getByText(/stopped drawing/)).toHaveCount(0);
   await page.getByRole("radio", { name: "3D room" }).click();
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
@@ -90,9 +108,27 @@ test("the flat room is a choice this device remembers", async ({ page }) => {
   await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
 });
 
+test("the room is decorated from Home, and a Market room's own thing waits for that room", async ({ page }) => {
+  await adopt(page);
+  await page.getByRole("radio", { name: "Flat room" }).click();
+  await page.getByRole("button", { name: "Decor" }).click();
+  const things = page.getByRole("group", { name: /what stands there/ });
+  await things.getByRole("button", { name: /^Wall clock/ }).click();
+  await expect(things.getByRole("button", { name: /^Wall clock/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".pk-room__scene circle[r='23']")).toHaveCount(1);
+  await things.getByRole("button", { name: /^Blossom scroll/ }).click();
+  await expect(page.getByText(/comes with the Blossom room, in the Market/)).toBeVisible();
+  await expect(things.getByRole("button", { name: /^Wall clock/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("radio", { name: "Bed", exact: true }).click();
+  await expect(things.getByRole("button", { name: "Nothing" })).toHaveCount(0);
+  await things.getByRole("button", { name: /^Cardboard box/ }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Decor" }).click();
+  await page.getByRole("radio", { name: "Bed", exact: true }).click();
+  await expect(page.getByRole("group", { name: /what stands there/ }).getByRole("button", { name: /^Cardboard box/ })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("your look is saved on this device and dresses the room", async ({ page }) => {
-  // Visit once before Home links here again: the prefetched or reused page
-  // must still open its editor when the new destination includes #look.
   await page.goto("/profile");
   await expect(page.locator(".pk-fold").first()).not.toHaveAttribute("open");
   await adopt(page);
@@ -110,7 +146,6 @@ test("your look is saved on this device and dresses the room", async ({ page }) 
 test("you can wear a hat and glasses, and match your pet's", async ({ page }) => {
   await adopt(page);
   await page.goto("/profile?tab=wardrobe#shelf");
-  // A previously worn piece remains visible when its catalog availability changes.
   await page.evaluate(() => {
     const state = JSON.parse(localStorage.getItem("pawket.pets.v1")!);
     state[0].wearing = "knit-beanie";
@@ -124,7 +159,6 @@ test("you can wear a hat and glasses, and match your pet's", async ({ page }) =>
   await expect(page.getByText("Matching Pepper.")).toBeVisible();
   await expect(page.getByText(/pool beanie, heart glasses$/)).toBeVisible();
   await page.reload();
-  // The fold is closed again, and its summary says how you look.
   await expect(page.getByText(/pool beanie, heart glasses$/)).toBeVisible();
 });
 
@@ -151,14 +185,16 @@ test.describe("without WebGL", () => {
     await adopt(page);
     await expect(page.locator(".pk-room__pet svg")).toBeVisible();
     await expect(page.locator(".pk-room canvas")).toHaveCount(0);
-    // No loader waits for a 3D room that will never come.
     await expect(page.getByText("Building the room in 3D")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Wave" })).toHaveCount(0);
     await expect(page.getByRole("radiogroup", { name: "Room view" })).toHaveCount(0);
-    // Care still works exactly as before.
     await page.getByRole("button", { name: "Feed" }).click();
     await expect(page.getByText(/Fed\. \+10 XP/)).toBeVisible();
-    // And the look says plainly where it is worn.
+    await page.getByRole("button", { name: "Say" }).click();
+    await page.getByRole("button", { name: "Wave" }).click();
+    await expect(page.locator(".pk-room__said")).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "You wave. Pepper saw." })).toBeVisible();
+    await expect(page.locator(".pk-room__said")).toHaveCount(0);
     await page.goto("/profile#look");
     await expect(page.getByText(/the flat room shows your top colour/i)).toBeVisible();
   });

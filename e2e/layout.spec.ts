@@ -1,6 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/** Every screen a player can actually open. */
 const SCREENS = [
   "/",
   "/adopt",
@@ -23,7 +22,6 @@ const SCREENS = [
   "/pet/11111111111111111111111111111111",
 ];
 
-/** Whatever sticks out past the right edge, named so a failure says where. */
 async function overflow(page: Page) {
   return page.evaluate(() => {
     const edge = document.documentElement.clientWidth;
@@ -35,18 +33,73 @@ async function overflow(page: Page) {
   });
 }
 
+async function cutLabels(page: Page) {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll(".pk-btn__label"))
+      .filter((el) => el.getBoundingClientRect().width > 0 && el.scrollWidth > el.clientWidth + 1)
+      .map((el) => el.textContent),
+  );
+}
+
 for (const width of [320, 375, 768]) {
-  test(`nothing scrolls sideways at ${width}px`, async ({ page }) => {
-    test.slow(); // This checks nineteen routes, including live RPC reads.
+  test(`nothing scrolls sideways at ${width}px, and no button hides a word`, async ({ page }) => {
+    test.slow();
     await page.setViewportSize({ width, height: 800 });
     for (const path of SCREENS) {
       await test.step(path, async () => {
         await page.goto(path);
         expect(await overflow(page), path).toEqual([]);
+        expect(await cutLabels(page), path).toEqual([]);
       });
     }
   });
 }
+
+test("the longest one-word name fits a small phone, and the pets shelf cuts nothing short", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  for (const name of ["Pepper", "Wolfeschlegelsteinhausen"]) {
+    await page.goto("/adopt");
+    await page.getByRole("button", { name: /choose the luna cat/i }).click();
+    await page.getByRole("textbox", { name: "Pet name" }).fill(name);
+    await page.getByRole("button", { name: /that’s the one/i }).click();
+    await expect(page.getByRole("heading", { name: `${name} is yours.` })).toBeVisible();
+    expect(await overflow(page), name).toEqual([]);
+  }
+  for (const width of [320, 375]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/profile#shelf");
+    await expect(page.getByRole("button", { name: "Bring home" })).toBeVisible();
+    const cut = await page
+      .locator(".pk-cards")
+      .evaluate((shelf) => Array.from(shelf.querySelectorAll(".pk-btn__label, .pk-chip > span")).filter((el) => el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent));
+    expect(cut, `${width}px`).toEqual([]);
+    expect(await overflow(page), `${width}px`).toEqual([]);
+  }
+});
+
+test("at the Android app's largest text size, no screen scrolls sideways", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  for (const path of ["/home", "/profile", "/playground", "/market", "/guilds", "/park", "/wallet", "/"]) {
+    await test.step(path, async () => {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+      await page.locator(".pk-boot").waitFor({ state: "detached" });
+      await page.evaluate(() => {
+        const all = Array.from(document.querySelectorAll<HTMLElement>("body *"));
+        const sizes = all.map((el) => getComputedStyle(el)).map((style) => [parseFloat(style.fontSize), style.lineHeight] as const);
+        all.forEach((el, i) => {
+          el.style.setProperty("font-size", `${sizes[i][0] * 2}px`, "important");
+          if (sizes[i][1].endsWith("px")) el.style.setProperty("line-height", `${parseFloat(sizes[i][1]) * 2}px`, "important");
+        });
+      });
+      expect(await overflow(page), path).toEqual([]);
+    });
+  }
+});
 
 test("the dock keeps every place on a small phone, whichever is lit", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });

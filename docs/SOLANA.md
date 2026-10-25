@@ -67,7 +67,9 @@ and a fresh read, not a cached discovery total.
 
 ## The Pawket Wallet
 
-App actions require a linked, funded Pawket Wallet. There is no owner-wallet
+App actions require a linked Pawket Wallet. While Pawket sponsors, it may be
+empty; Market looks, coins and the device's unsponsored fees spend its
+balance. There is no owner-wallet
 fallback. Wallet Standard supplies owner identity and signing; Android
 registers Mobile Wallet Adapter only in its shell. Connecting alone sends
 nothing. Wallet setup remains available through the shell and `/wallet`.
@@ -93,7 +95,7 @@ action with recovery instructions.
 The device receives a bounded fee float when linked. Without sponsorship,
 eligible non-rent actions use that float; each refill is capped at one network
 fee and the float's ceiling. Rent-bearing app actions wait for sponsorship.
-A positive Pawket Wallet balance is required even while sponsored. History
+While sponsored, a linked device acts with an empty balance. History
 comes from confirmed Solana transactions (`src/lib/wallet/history.ts`).
 
 ## Transaction lifecycle
@@ -128,9 +130,11 @@ bounded signatures, no lookup tables and no compute-budget instructions.
 `SPONSOR_SLOTS` is held to the IDL. Rent returned when leaving a guild or
 closing a wallet goes to the recorded payer.
 
-The sponsor stops below its float floor. Per-instance limits cap actions and
-rent-bearing requests; caller and aggregate rent limits share the same server
-module. Multiple instances each have their own allowance. Shared budget and
+The sponsor stops below its float floor. It pays at most one new account's
+rent a transaction. Per-instance limits cap each caller's actions and rents
+(Actions count the posted wallet as well as the address); the hourly rent
+budget is what the sponsor's balance has lost, plus rents signed in the last
+two minutes, so requests that never land cannot use it up. Shared budget and
 rate enforcement are mainnet requirements. UI copy must read current
 availability before saying Pawket pays. [SECURITY.md](SECURITY.md) records limits.
 
@@ -160,7 +164,11 @@ pet address with HMAC. `readKeepsake` verifies the account exists under Core
 before showing a card. Creation requires the owner, current sponsorship and
 no existing card. The sponsor covers rent and authority; the owner signs the
 prepared transaction through `sendPrepared`. Metadata is built from live pet
-reads under `/api/keepsake/[pet]`.
+reads under `/api/keepsake/[pet]`; its picture is `/api/keepsake/[pet]/card`
+(`keepsakeCard` in `src/server/card.tsx`): the pet's portrait in what the
+record says it wears, drawn happy because it is a keepsake, with its level,
+cares, best run and the day it was adopted, read live. An Action's icon is
+the one that draws the pet's mood.
 
 Rotating the sponsor changes discovery addresses and authority requirements.
 Q10 in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) must be resolved before rotation.
@@ -203,7 +211,9 @@ solana program deploy target/deploy/pawket.so \
 The program keypair is needed for initial deployment; upgrades use the deploy
 wallet's authority. Verify the source identity against the intended account.
 After an authorized upgrade, run `pnpm e2e:devnet` and the opt-in browser signing
-suites from [TESTING.md](TESTING.md). These create accounts and spend test SOL.
+suites from [TESTING.md](TESTING.md). These create accounts and spend test SOL:
+a separate test funder pays the test wallets, and the sponsor pays what it
+sponsors ([ENVIRONMENT.md](ENVIRONMENT.md), "Devnet test keys").
 [MAINNET.md](MAINNET.md) requires a separate release plan; do not repoint tests.
 
 For localnet, run a validator, set the cluster to `localnet` and public RPC to

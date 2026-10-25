@@ -8,7 +8,6 @@ function subscribe(listener: () => void) {
   return () => media.removeEventListener("change", listener);
 }
 
-/** True when the player has asked for less motion. False on the server. */
 export function useReducedMotion(): boolean {
   return useSyncExternalStore(subscribe, () => window.matchMedia(QUERY).matches, () => false);
 }

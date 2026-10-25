@@ -1,6 +1,8 @@
 import { ButtonLink, Mark, PetFrame, Screen, Stack } from "@/components/pk";
+import type { Metadata } from "next";
 
-/** An address with nothing at it: the mark, so the player knows where they are, and two ways back in. */
+export const metadata: Metadata = { title: "Wandered off", robots: { index: false } };
+
 export default function NotFound() {
   return (
     <Screen width="narrow">
@@ -14,7 +16,7 @@ export default function NotFound() {
         <div>
           <h1 className="display-m">This page wandered off</h1>
           <p className="body pk-muted" style={{ marginTop: "var(--space-3)" }}>
-            There is nothing at this address. Your pets, your progress and everything you own are untouched.
+            There is nothing at this address. Your pets, your progress and your looks are untouched.
           </p>
         </div>
         <div className="pk-acts">

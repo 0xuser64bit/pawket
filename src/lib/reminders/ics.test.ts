@@ -17,7 +17,7 @@ describe("a daily reminder", () => {
 
   it("escapes a stranger's name and folds long lines", () => {
     const odd = reminderIcs({ name: "Nib, the; brave", url: "https://x.test/home", at });
-    expect(odd).toContain("SUMMARY:Look in on Nib\\, the\; brave");
+    expect(odd).toContain("SUMMARY:Look in on Nib\\, the\\; brave");
     for (const line of odd.split("\r\n")) expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
   });
 });

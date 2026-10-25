@@ -1,14 +1,7 @@
 import { generateKeyPairSync } from "node:crypto";
 
-/**
- * A Wallet Standard wallet for tests, and only for tests: it is injected into
- * the page by Playwright (or by hand, to look at the flow), never bundled
- * with the app. It holds one Ed25519 key made here, signs transactions with
- * WebCrypto, and answers connect, disconnect and events like a real wallet.
- */
 export interface TestWallet {
   address: string;
-  /** A script that registers the wallet when run in the page. */
   script: string;
 }
 
@@ -37,7 +30,6 @@ export function createTestWallet(name = "Pawket Test Wallet"): TestWallet {
   return { address, script: `(${install.toString()})(${config});` };
 }
 
-/** Runs in the page. Kept self-contained: it is serialised with toString(). */
 function install(config: { name: string; address: string; pkcs8: string; publicKey: number[] }) {
   const publicKey = new Uint8Array(config.publicKey);
   const chains = ["solana:devnet", "solana:localnet", "solana:testnet"] as const;
@@ -71,7 +63,6 @@ function install(config: { name: string; address: string; pkcs8: string; publicK
   }
 
   async function signTransaction(wire: Uint8Array): Promise<Uint8Array> {
-    // Counted, so a test can tell what the wallet was asked to sign and what it was not.
     const counted = window as unknown as { __testWalletSigned?: number };
     counted.__testWalletSigned = (counted.__testWalletSigned ?? 0) + 1;
     const [count, signaturesAt] = shortvec(wire, 0);

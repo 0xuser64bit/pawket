@@ -1,26 +1,9 @@
 @import "tailwindcss";
 
-/* ============================================================================
-   Pawket design system.
-
-   Tokens first, then the two registers. Playroom is the game; Paper is
-   anything that costs money or states a fact. A call to action never wears
-   Paper, and a number that costs money never wears Playroom.
-   ========================================================================= */
-
-/* ---------------------------------------------------------------- tokens
-
-   Daylight is the default room. Every other theme is a complete set of the
-   same tokens, set on the root when a player picks it and on any element
-   marked data-theme-preview, so the picker can show each one in its own
-   colours. With no pick, the room follows the system: Daylight by day,
-   Lamplight after dark. */
-
 :root,
 [data-theme-preview="light"] {
   color-scheme: light;
 
-  /* grounds and surfaces — Daylight */
   --ground: #f6efe2;
   --surface: #fffbf3;
   --surface-sunk: #ece2d1;
@@ -29,7 +12,6 @@
   --paper-sunk: #ecece7;
   --rule: #85816f;
 
-  /* ink */
   --ink: #2a1e14;
   --ink-soft: #61513f;
   --ink-faint: #6f5f4a;
@@ -37,55 +19,45 @@
   --edge: #2a1e14;
   --edge-soft: #ded1bb;
 
-  /* sun — act */
   --sun: #ff8a3d;
   --sun-edge: #b8500f;
   --sun-text: #9e4409;
   --sun-soft: #ffe4cd;
 
-  /* sprout — grow */
   --sprout: #63b655;
   --sprout-edge: #3a7a31;
   --sprout-text: #2c6a25;
   --sprout-soft: #dcefd3;
 
-  /* pool — people and settled things */
   --pool: #7ba4ec;
   --pool-edge: #3a63ad;
   --pool-text: #2a5599;
   --pool-soft: #dfe8fb;
 
-  /* bloom — the guild layer and nothing else */
   --bloom: #b8407a;
   --bloom-edge: #7c2650;
   --bloom-text: #96305f;
   --bloom-soft: #f9dde9;
 
-  /* alarm — risk, failure, stop */
   --alarm: #d13a1f;
   --alarm-edge: #8f2412;
   --alarm-text: #a32a14;
   --alarm-soft: #fbdcd4;
 
-  /* type and outlines on a filled control */
   --on-sun: #2a1e14;
   --on-sprout: #2a1e14;
   --on-pool: #2a1e14;
   --on-bloom: #fff8ec;
   --on-alarm: #fff8ec;
 
-  /* focus is two bands, always drawn together */
   --focus: #12306e;
   --focus-contrast: #fff8ec;
 
-  /* rarity is a material, never a glow */
   --trim-cloth: #8c7a60;
   --trim-copper: #a45f2a;
   --trim-glass: #2d8296;
   --trim-foil: #95761a;
 
-  /* a pet's own colours: they are animals, so they do not swap at dusk the
-     way a surface does — eyes stay dark, a muzzle stays cream */
   --pet-eye: #2a1e14;
   --pet-shine: #ffffff;
   --pet-blush: #ff9f8f;
@@ -94,19 +66,15 @@
   --pet-cloud: #fbf8f4;
   --pet-cloud-shade: #c7d3f2;
 
-  /* what the flat room shows: the sun in Daylight, the moon and the lamp's
-     light in Lamplight */
   --pk-day: 1;
   --pk-night: 0;
 
-  /* depth is offset and outline, never blur — except a sheet */
   --shadow-sticker: 3px 3px 0 #2a1e14;
   --shadow-sticker-sm: 2px 2px 0 #2a1e14;
   --shadow-sticker-lift: 4px 4px 0 #2a1e14;
   --shadow-lift: 0 20px 44px -16px rgba(42, 30, 20, 0.35);
   --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
 
-  /* 4px-based spacing */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -123,7 +91,6 @@
   --control-lg: 56px;
   --touch-target: 44px;
 
-  /* radius carries the register, so it is never chosen for looks */
   --radius-paper: 4px;
   --radius-sm: 8px;
   --radius-md: 14px;
@@ -132,7 +99,6 @@
   --radius-room: 40px;
   --radius-pill: 999px;
 
-  /* three stroke weights and no others */
   --stroke-hair: 1px;
   --stroke-line: 2px;
   --stroke-shelf: 3px;
@@ -142,29 +108,20 @@
   --opacity-scrim: 0.72;
   --opacity-press: 0.9;
 
-  /* a pressable control moves on this curve; a sheet rises over 220ms */
   --ease-press: cubic-bezier(0.2, 0.9, 0.3, 1);
   --dur-press: 90ms;
   --dur-sheet: 220ms;
-  /* on a phone a sheet travels the whole height: in on a long settle, out
-     on a quick fall */
   --dur-sheet-in: 340ms;
   --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-sheet-out: cubic-bezier(0.4, 0, 0.9, 0.6);
-  /* one thing becoming another — a choice taking effect, a panel opening,
-     a room changing — eases out over 240ms; the room itself over 420ms */
   --ease-swap: cubic-bezier(0.22, 0.8, 0.3, 1);
   --dur-swap: 240ms;
   --dur-room: 420ms;
-  /* a choice settling into place, just past and back */
   --ease-spring: cubic-bezier(0.34, 1.5, 0.64, 1);
 
-  /* the focus ring: 2px focus at 2px offset, focus-contrast outside it */
   --focus-ring: calc(var(--stroke-line) * 2 + 2px);
 }
 
-/* Lamplight is the same room after dark, not a re-skin: warm near-black
-   ground, light edge outlines, every hue lightened so it takes dark on- ink. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     color-scheme: dark;
@@ -312,10 +269,6 @@
   --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* The cute rooms. Each keeps every hue at its job — sun acts, sprout grows,
-   pool is people, bloom is the guild layer, alarm is risk — and changes the
-   room around them. themes.test.ts holds each to the contrast floor. */
-/* Strawberry milk: the room in pink, with a coral sun. */
 :root[data-theme="strawberry"],
 [data-theme-preview="strawberry"] {
   color-scheme: light;
@@ -379,7 +332,6 @@
   --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
 }
 
-/* Honey: butter yellow and warm wood. */
 :root[data-theme="honey"],
 [data-theme-preview="honey"] {
   color-scheme: light;
@@ -443,7 +395,6 @@
   --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
 }
 
-/* Matcha latte: soft green, and calm. */
 :root[data-theme="matcha"],
 [data-theme-preview="matcha"] {
   color-scheme: light;
@@ -507,7 +458,6 @@
   --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
 }
 
-/* Seaside: sea glass and white sand. */
 :root[data-theme="seaside"],
 [data-theme-preview="seaside"] {
   color-scheme: light;
@@ -571,7 +521,6 @@
   --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
 }
 
-/* Lavender: lilac, and a little sleepy. */
 :root[data-theme="lavender"],
 [data-theme-preview="lavender"] {
   color-scheme: light;
@@ -635,7 +584,6 @@
   --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
 }
 
-/* Blossom (from the Market): cherry blossom, petal pink and plum. */
 :root[data-theme="blossom"],
 [data-theme-preview="blossom"] {
   color-scheme: light;
@@ -699,7 +647,6 @@
   --shadow-well: inset 0 2px 0 rgba(59, 31, 42, 0.12);
 }
 
-/* Aurora (from the Market): a green-lit night, for staying up late. */
 :root[data-theme="aurora"],
 [data-theme-preview="aurora"] {
   color-scheme: dark;
@@ -763,7 +710,6 @@
   --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* Terracotta: sun-baked clay and sand. */
 :root[data-theme="terracotta"],
 [data-theme-preview="terracotta"] {
   color-scheme: light;
@@ -827,7 +773,6 @@
   --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
 }
 
-/* Black ink on newsprint, and nothing else loud. */
 :root[data-theme="newsprint"],
 [data-theme-preview="newsprint"] {
   color-scheme: light;
@@ -891,7 +836,6 @@
   --shadow-well: inset 0 2px 0 rgba(42, 30, 20, 0.12);
 }
 
-/* Hot cocoa: dark chocolate and caramel. */
 :root[data-theme="cocoa"],
 [data-theme-preview="cocoa"] {
   color-scheme: dark;
@@ -955,7 +899,6 @@
   --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* An arcade after closing: violet, with neon. */
 :root[data-theme="arcade"],
 [data-theme-preview="arcade"] {
   color-scheme: dark;
@@ -1019,7 +962,6 @@
   --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* Starlight: a navy night with a gold moon. */
 :root[data-theme="starlight"],
 [data-theme-preview="starlight"] {
   color-scheme: dark;
@@ -1083,7 +1025,6 @@
   --shadow-well: inset 0 2px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* Tailwind reads the same tokens, so a utility can never drift from a token. */
 @theme inline {
   --color-ground: var(--ground);
   --color-surface: var(--surface);
@@ -1124,19 +1065,10 @@
   --radius-room: var(--radius-room);
 }
 
-/* ------------------------------------------------------------------ base
-
-   Tailwind's preflight already zeroes margins, sets border-box and strips
-   list and heading styles; only what it does not do lives here. */
-
 html {
   background: var(--ground);
-  /* every control draws its own press (a shelf, a tint, a squeeze), so the
-     browser's grey tap box would only flash a rectangle over a rounded thing */
   -webkit-tap-highlight-color: transparent;
-  /* a page that scrolls and one that does not keep the same width */
   scrollbar-gutter: stable;
-  /* focus and anchors land clear of the floating dock, not under it */
   scroll-padding-bottom: calc(var(--space-10) + env(safe-area-inset-bottom));
 }
 
@@ -1151,8 +1083,6 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* A headline never leaves one word on its last line, and a paragraph
-   avoids a lone word where it can. */
 h1,
 h2,
 h3 {
@@ -1162,30 +1092,35 @@ p,
 li {
   text-wrap: pretty;
 }
+a:not([class]) {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+@media (hover: hover) {
+  a:not([class]):hover {
+    text-decoration-thickness: 2px;
+  }
+}
 
 ::selection {
   background: var(--sun);
   color: var(--on-sun);
 }
 
-/* A control is pressed, not read: holding a finger on one never selects its
-   label or opens the browser's link menu over it. */
 :is(.pk-btn, .pk-dock__item, .pk-care, .pk-tool, .pk-choice, .pk-swatch, .pk-tabs__t, .pk-switch__pet, .pk-gamecard, .pk-tile-hit) {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
 }
 
-/* ------------------------------------------------------------------ type */
-
-/* Fraunces carries a SOFT and a WONK axis. Display text takes both; the
-   token classes set only size and weight. */
 .display-hero,
 .display-l,
 .display-m,
 .display-s {
   font-family: var(--font-display);
   font-variation-settings: "SOFT" 64, "WONK" 1;
+  overflow-wrap: break-word;
 }
 .title,
 .body-lg,
@@ -1299,8 +1234,6 @@ li {
 .pk-muted {
   color: var(--ink-soft);
 }
-/* Words about the hand in use: pointing where a pointer can hover, tapping
-   where a finger cannot. */
 .pk-if-hover {
   display: none;
 }
@@ -1316,11 +1249,6 @@ li {
   color: var(--ink-faint);
 }
 
-/* -------------------------------------------------------- layout helpers */
-
-/* A layout box may always be narrower than the longest thing in it: a
-   one-line button inside it ends in an ellipsis instead of pushing the page
-   wider than the phone. */
 .pk-stack {
   display: flex;
   flex-direction: column;
@@ -1360,8 +1288,6 @@ li {
   border: 0;
 }
 
-/* -------------------------------------------------------- the two registers */
-
 .pk-paper {
   background: var(--paper);
   color: var(--ink);
@@ -1390,8 +1316,6 @@ li {
   margin-left: auto;
   text-align: right;
 }
-/* The torn bottom edge of a disclosure. The sheet loses its bottom rule and
-   the teeth hang below it in the colour of whatever the sheet ends in. */
 .pk-paper--torn {
   border-bottom: 0;
   border-radius: var(--radius-paper) var(--radius-paper) 0 0;
@@ -1407,8 +1331,6 @@ li {
 .pk-tear--sunk {
   --tear: var(--paper-sunk);
 }
-
-/* ------------------------------------------------------ card (Playroom) */
 
 .pk-card {
   background: var(--surface);
@@ -1430,15 +1352,11 @@ li {
   color: var(--ink-inverse);
   border-color: var(--edge);
 }
-/* On surface-ink only ink-inverse reads, so secondary copy dims it rather
-   than reaching for ink-soft or ink-faint, which vanish there. */
 .pk-card--ink .pk-muted,
 .pk-card--ink .pk-faint {
   color: var(--ink-inverse);
   opacity: 0.72;
 }
-/* edge is the ink card's own colour, so a pocket on it is outlined in the
-   ink that reads there, and its sticker shadow would be invisible anyway */
 .pk-card--ink .pk-pet__frame {
   border-color: var(--ink-inverse);
   box-shadow: none;
@@ -1446,9 +1364,6 @@ li {
 .pk-card--quiet {
   box-shadow: none;
 }
-/* A collection card: the pocket bleeds to a 12px margin, the words sit
-   below it. Often a link, so it is a block: an inline link would pad only
-   its first line and push the pocket off the card's right edge. */
 .pk-card__art {
   display: block;
   padding: var(--space-3) var(--space-3) 0;
@@ -1459,9 +1374,6 @@ li {
 .pk-card__body > .title {
   overflow-wrap: anywhere;
 }
-/* A card that is a link lifts off the page under a pointer and presses
-   flat under a finger, like every other thing in the Playroom you can
-   press. */
 .pk-card--link {
   --pk-keep: var(--shadow-sticker);
   display: block;
@@ -1488,8 +1400,6 @@ li {
   padding: var(--space-4);
 }
 
-/* ------------------------------------------------ button: face and shelf */
-
 .pk-btn {
   --pk-face: var(--sun);
   --pk-shelf: var(--sun-edge);
@@ -1513,11 +1423,6 @@ li {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  /* A button is never squeezed by the words beside it and never grows a
-     second line: a label longer than its column ends in an ellipsis, so
-     every button in a row keeps the same height. Labels lead with the verb,
-     so what is cut is never what the button does. A ticking countdown never
-     changes its width. */
   flex-shrink: 0;
   max-width: 100%;
   min-width: 0;
@@ -1531,9 +1436,6 @@ li {
     border-bottom-width var(--dur-press) var(--ease-press),
     margin-bottom var(--dur-press) var(--ease-press);
 }
-/* The shelf is what makes a control read as an object. Pressing it moves
-   the face, never the page: whatever the shelf gains or loses, the bottom
-   margin gives back, so nothing below the button shifts. */
 @media (hover: hover) {
   .pk-btn:not(.pk-btn--paper, .pk-btn--ghost):hover {
     transform: translateY(-1px);
@@ -1548,8 +1450,8 @@ li {
 }
 .pk-btn__label {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .pk-btn > svg {
   flex: none;
@@ -1588,18 +1490,12 @@ li {
   --pk-shelf: var(--alarm-edge);
   --pk-on: var(--on-alarm);
 }
-/* quiet: the Playroom's secondary — outline and shelf, no hue */
 .pk-btn--quiet {
   --pk-face: var(--surface);
   --pk-shelf: var(--edge-soft);
   --pk-on: var(--ink);
   border-color: var(--edge);
 }
-/* ghost: no box at all; only for tertiary actions inside a card. It has no
-   shelf to press, so a finger tints it instead, in its own ink — which reads
-   on Playroom and Paper alike. Its padding is the tint's room; a ghost that
-   opens a row (`pk-btn--flush`) gives it back, so its words line up with the
-   column's edge rather than the tint's. */
 .pk-btn--ghost {
   background: transparent;
   border: 0;
@@ -1620,9 +1516,8 @@ li {
 }
 .pk-btn--flush {
   margin-left: calc(-1 * var(--space-3));
+  max-width: calc(100% + var(--space-3));
 }
-/* paper: the only button allowed on a Paper surface. Square, no shelf, and
-   deliberately unsatisfying to press. */
 .pk-btn--paper {
   background: var(--paper);
   color: var(--ink);
@@ -1641,13 +1536,17 @@ li {
   }
 }
 .pk-btn[disabled],
-.pk-btn[aria-disabled="true"],
-.pk-btn--off {
+.pk-btn[aria-disabled="true"] {
   opacity: var(--opacity-disabled);
   pointer-events: none;
 }
-
-/* ------------------------------------------------------------------ chip */
+.pk-btn--toggle[aria-pressed="false"] {
+  --pk-face: var(--surface-sunk);
+  --pk-on: var(--ink-faint);
+}
+.pk-btn--ghost.pk-btn--toggle[aria-pressed="false"] {
+  color: var(--ink-faint);
+}
 
 .pk-chip {
   display: inline-flex;
@@ -1717,16 +1616,12 @@ li {
   letter-spacing: 0.06em;
   color: var(--ink-soft);
 }
-/* ------------------------------------------------ pet frame: the pocket */
 
 .pk-pet {
   display: inline-flex;
   flex-direction: column;
   gap: var(--space-2);
 }
-/* The frame is a size container, so the badges on it answer to the pocket
-   they sit in rather than to the window: a mood never covers a small pet's
-   face, and a level stays legible on a large one. */
 .pk-pet__frame {
   position: relative;
   container-type: inline-size;
@@ -1742,8 +1637,6 @@ li {
   width: 104px;
   border-radius: var(--radius-lg);
 }
-/* The pet on its own screen: 240px on a phone, larger where the thing
-   itself has a column of its own. */
 .pk-pet--lg {
   width: min(100%, 240px);
 }
@@ -1855,10 +1748,6 @@ li {
   }
 }
 
-/* The rest of a pet's life rides on the breath: a blink every few
-   seconds and a tail that sways, offset per pet (`--pk-phase`) so a park
-   full of them is not in step. Eyes can follow a pointer where a screen
-   sets `--pk-look-x` / `--pk-look-y` (−1…1) on an ancestor. */
 .pk-blink {
   transform-box: fill-box;
   transform-origin: 50% 55%;
@@ -1895,15 +1784,11 @@ li {
   transition: transform 180ms var(--ease-press);
 }
 
-/* ------------------------------ meter: countable, never a smooth bar */
-
 .pk-meter {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-/* The count never breaks inside itself — a figure stays with its unit —
-   so where the two do not fit on one line, the count takes the next. */
 .pk-meter__head {
   display: flex;
   flex-wrap: wrap;
@@ -1966,15 +1851,6 @@ li {
   height: 8px;
 }
 
-/* ------------------------------------------------------------- nav dock
-
-   The six places, and the only persistent navigation. It floats 14px above
-   the foot of the view at every width: over the page while it scrolls, and
-   simply at the bottom when there is nothing to scroll.
-
-   - phone (< 720px): six equal targets, each with its name below its icon.
-   - tablet and desktop (>= 720px): centred, every slot labelled. */
-
 .pk-dock {
   position: fixed;
   left: max(var(--space-3), env(safe-area-inset-left));
@@ -2020,7 +1896,6 @@ li {
   flex: none;
   transition: transform var(--dur-press) var(--ease-press);
 }
-/* A finger on a place presses its glyph in, the way a button gives. */
 .pk-dock__item:active svg {
   transform: scale(0.86);
 }
@@ -2035,16 +1910,11 @@ li {
   color: var(--sun-text);
   border-color: var(--sun-text);
 }
-/* Guilds is the one slot that changes hue when active: the colour under a
-   player's thumb says which layer they are standing in. */
 .pk-dock__item--guild.pk-dock__item--on {
   background: var(--bloom-soft);
   color: var(--bloom-text);
   border-color: var(--bloom-text);
 }
-/* Once the dock has measured itself the lit slot is one pill behind the
-   places, sliding from the one you left to the one you chose — just past,
-   and back — and taking the guild's hue as it arrives there. */
 .pk-dock__pill {
   position: absolute;
   top: 0;
@@ -2116,11 +1986,8 @@ li {
   .pk-dock__short { display: none; }
 }
 
-/* ------------------------------------------------------------------ tabs */
-
 .pk-tabs {
   display: inline-flex;
-  /* a trough the size of its tabs, even inside a stretching column */
   align-self: flex-start;
   gap: var(--space-1);
   padding: 4px;
@@ -2152,8 +2019,6 @@ li {
     color: var(--ink);
   }
 }
-/* Every tab carries a 2px border already, transparent until it is on, so
-   switching tabs changes elevation and never size. */
 .pk-tabs__t--on {
   --pk-keep: var(--shadow-sticker-sm);
   background: var(--surface);
@@ -2161,8 +2026,6 @@ li {
   box-shadow: var(--shadow-sticker-sm);
   border-color: var(--edge);
 }
-
-/* ----------------------------------------------------------------- field */
 
 .pk-field__label { display: block; margin-bottom: var(--space-2); }
 .pk-field {
@@ -2199,7 +2062,6 @@ li {
 .pk-field__input::placeholder {
   color: var(--ink-faint);
 }
-/* the browser's own search decorations are not Pawket's */
 .pk-field__input::-webkit-search-decoration,
 .pk-field__input::-webkit-search-cancel-button {
   appearance: none;
@@ -2212,10 +2074,9 @@ li {
   border-color: var(--alarm-text);
 }
 
-/* ------------------------------------------------------------- item tile */
-
 .pk-tile {
   position: relative;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -2225,6 +2086,15 @@ li {
   border: var(--stroke-line) solid var(--edge);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sticker-sm);
+}
+.pk-tile__meta {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--space-2);
+  margin-top: auto;
+}
+.pk-tile__meta > .amount-sm {
+  white-space: nowrap;
 }
 .pk-tile__art {
   aspect-ratio: 5 / 4;
@@ -2239,7 +2109,6 @@ li {
   width: 40%;
   height: auto;
 }
-/* A drawn piece fills the well; an icon stays small inside it. */
 .pk-tile__art .pk-tile__piece {
   width: 72%;
 }
@@ -2267,8 +2136,12 @@ li {
   right: -6px;
   top: -6px;
 }
-
-/* --------------------------------------------------------------- receipt */
+.pk-tile__new {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  z-index: 1;
+}
 
 .pk-receipt {
   font-family: var(--font-mono);
@@ -2314,10 +2187,6 @@ li {
   color: var(--pool-text);
 }
 
-/* --------------------------------------------------------------- banners */
-
-/* The icon keeps its words beside it at any width; an action sits under the
-   words rather than squeezing them. */
 .pk-banner {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -2355,7 +2224,6 @@ li {
 .pk-banner--risk .pk-banner__title {
   color: var(--alarm-text);
 }
-/* Waiting has no hue: informed, not reassured and not alarmed. */
 .pk-banner--wait {
   background: var(--paper-sunk);
   border-color: var(--rule);
@@ -2372,11 +2240,6 @@ li {
   border-color: var(--bloom-text);
 }
 
-/* ---------------------------------------------------------------- guild */
-
-/* The crest heads the row rather than floating beside it, and the count
-   and the action share a foot, so the words get the width on a phone. The
-   name is the row's link and stretches over the whole of it. */
 .pk-guild {
   position: relative;
   display: flex;
@@ -2415,8 +2278,6 @@ li {
   gap: var(--space-2) var(--space-3);
   margin-top: var(--space-3);
 }
-/* Beside the count where there is room; on a line of its own, under the
-   words it belongs to, where there is not. */
 .pk-guild__foot > :last-child:not(:first-child) {
   position: relative;
 }
@@ -2469,8 +2330,6 @@ li {
   text-transform: uppercase;
 }
 
-/* ------------------------ launch readout: Paper, never a price chart */
-
 .pk-launch {
   font-family: var(--font-mono);
 }
@@ -2503,8 +2362,6 @@ li {
   background: var(--alarm);
 }
 
-/* -------------------------------------------------------------- presence */
-
 .pk-presence {
   display: inline-flex;
   align-items: center;
@@ -2518,8 +2375,6 @@ li {
   box-shadow: 0 0 0 2px var(--pool-edge);
   flex: none;
 }
-
-/* ---------------------------------------------------------- empty state */
 
 .pk-empty {
   display: flex;
@@ -2539,8 +2394,6 @@ li {
   color: var(--ink-faint);
 }
 
-/* ---------------------------------------------------------------- mark */
-
 .pk-mark {
   display: inline-flex;
   align-items: center;
@@ -2554,18 +2407,6 @@ li {
   font-weight: 600;
   letter-spacing: -0.02em;
 }
-
-/* --------------------------------------------------------- app scaffolding
-
-   Three widths, and the same three everywhere:
-
-   - phone   < 720px   one column at the width of the phone, space-5 gutters
-   - tablet  720–1023  one column, never wider than 680px, so a room or a
-                       pocket stays in proportion
-   - desktop >= 1024   a place spreads to 1120px and composes in two
-                       columns, while a flow that asks for one decision (a
-                       quote, a disclosure, a record) keeps a 640px reading
-                       measure. */
 
 :root {
   --gutter: var(--space-5);
@@ -2586,12 +2427,9 @@ li {
   padding-right: max(var(--gutter), env(safe-area-inset-right));
   padding-bottom: var(--space-9);
 }
-/* Under the shell, the last card never sits beneath the floating dock. */
 .pk-shell ~ .pk-screen {
   padding-bottom: calc(var(--space-10) + env(safe-area-inset-bottom));
 }
-/* A screen with no shell above it (a lost address, a failure) keeps clear of
-   the notch itself. */
 .pk-screen:not(.pk-shell ~ .pk-screen) {
   padding-top: calc(var(--space-2) + env(safe-area-inset-top));
 }
@@ -2612,21 +2450,19 @@ li {
   gap: var(--space-2) var(--space-4);
   padding: var(--space-3) 0 var(--space-4);
 }
-/* A display title's line is tighter than its descenders, so the line under
-   it keeps clear of the g, the p and the y — in a screen's bar, and in any
-   head that sets a title beside its action. */
+.pk-screen__bar > * {
+  min-width: 0;
+}
 :is(.pk-screen__bar, .pk-spread) :is(.display-l, .display-m) + p {
   margin-top: var(--space-2);
 }
 
-/* The shell bar: the mark and the two facts about this session. Label-sized
-   and hue-free, because nothing in the shell may outrank the animal below
-   it, and it scrolls away with the page; the dock is what stays. */
 .pk-shell__bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
   width: 100%;
   max-width: calc(680px + 2 * var(--gutter));
   margin-inline: auto;
@@ -2643,12 +2479,6 @@ li {
     max-width: calc(1120px + 2 * var(--gutter));
   }
 }
-/* The two shell buttons are one family: the wallet (Connect, or its mark and
-   address) and the room switch beside it. An address keeps its case and its
-   mono; a bolt on it says this browser signs with no pop-up. Until the
-   wallet has had its chance to reconnect, a blank of the same size holds
-   the place, so nothing jumps and "Connect" never flashes for a wallet that
-   is there. */
 .pk-shell-btn {
   gap: 6px;
   min-height: 44px;
@@ -2686,7 +2516,6 @@ li {
   padding: 0;
 }
 @media (max-width: 400px) {
-  /* A phone keeps the mark, the wallet's own mark and the room's name. */
   .pk-shell-btn__address {
     display: none;
   }
@@ -2695,8 +2524,6 @@ li {
   }
 }
 
-/* The wallet you are: its mark and address, then this browser's link — the
-   one thing worth doing here, lit sun when it is on. */
 .pk-wallet-who {
   display: flex;
   align-items: center;
@@ -2738,8 +2565,6 @@ li {
 }
 
 
-/* The thing and what you can do to it: stacked in that order until there is
-   room to set them side by side. */
 .pk-columns,
 .pk-columns__first,
 .pk-columns__second {
@@ -2755,7 +2580,6 @@ li {
     column-gap: var(--space-8);
     align-items: start;
   }
-  /* a pocket portrait takes the narrower column and the details the wider */
   .pk-columns--portrait {
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   }
@@ -2765,21 +2589,16 @@ li {
   }
 }
 
-/* The shape of a scene still on its way: the room's proportions, held
-   still. */
 .pk-loading__scene {
   aspect-ratio: 335 / 236;
   max-height: 440px;
   border-radius: var(--radius-room);
 }
 
-/* A pocket portrait sits centred in whatever column it is given. */
 .pk-portrait {
   display: grid;
-  justify-items: center;
+  justify-items: start;
 }
-/* Rows of the same kind — guilds, events, games — run in one column until
-   a desktop gives them two. */
 .pk-rows {
   display: grid;
   gap: var(--space-3);
@@ -2791,8 +2610,6 @@ li {
   }
 }
 
-/* A phone bar holds the mark and the theme switch in 320px: the mark keeps
-   only its glyph (the name stays for anything reading the link). */
 @media (max-width: 359px) {
   .pk-shell__bar .pk-mark__name {
     position: absolute;
@@ -2804,7 +2621,6 @@ li {
   }
 }
 
-/* Visible only to the keyboard, and only until it is used. */
 .pk-skip {
   position: absolute;
   left: var(--space-3);
@@ -2826,8 +2642,6 @@ li {
   background: var(--surface-sunk);
 }
 
-/* A sheet is the only thing in Pawket allowed to float, and shadow-lift is
-   the only blurred shadow. The dock sits behind the scrim, not above it. */
 .pk-scrim {
   position: fixed;
   inset: 0;
@@ -2836,8 +2650,6 @@ li {
   align-items: flex-end;
   justify-content: center;
   overscroll-behavior: contain;
-  /* only the dim comes and goes, never the sheet on it; a sheet dragged
-     down lets the room through as it goes */
   background: color-mix(in srgb, var(--ground) calc(72% * (1 - var(--pk-drag, 0) * 0.7)), transparent);
   animation: pk-dim var(--dur-sheet) var(--ease-press);
 }
@@ -2846,9 +2658,6 @@ li {
     background-color: transparent;
   }
 }
-/* Anchored to the foot of a phone, where a thumb is; a centred dialog where
-   there is a pointer and room. Either way it never outgrows the view: the
-   body scrolls and the foot with its two buttons stays put. */
 .pk-sheet {
   display: flex;
   flex-direction: column;
@@ -2902,13 +2711,9 @@ li {
 .pk-sheet .pk-paper__foot {
   padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
 }
-/* The grabber: a phone's sign that the sheet is a thing that can be pulled
-   down. Wider screens centre the sheet and have no use for it. */
 .pk-sheet__grab {
   display: none;
 }
-/* The actions in a sheet's foot are written Cancel first, the main one
-   last. Wider screens set them in a row, Cancel apart on the left. */
 .pk-sheet .pk-paper__foot > .pk-spread {
   justify-content: flex-end;
   gap: var(--space-2);
@@ -2919,8 +2724,6 @@ li {
   }
 }
 @media (max-width: 719px) {
-  /* A phone's sheet rises from the bottom edge — the whole of it — and falls
-     back there when it goes. */
   .pk-sheet {
     animation: pk-sheet-up var(--dur-sheet-in) var(--ease-sheet);
   }
@@ -2940,14 +2743,11 @@ li {
     background: var(--rule);
     opacity: 0.5;
   }
-  /* The head is the handle: a finger on it drags the sheet, not the page. */
   .pk-sheet__grab,
   .pk-sheet > .pk-paper__head {
     touch-action: none;
     user-select: none;
   }
-  /* Under the thumb: the main action across the whole width, first; the
-     others beneath it, side by side, every one the same height. */
   .pk-sheet .pk-paper__foot > .pk-spread {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2988,8 +2788,6 @@ li {
     padding-bottom: var(--space-3);
   }
 }
-/* The Playroom sheet: a card over the dimmed room, its head a title in
-   words and its foot on the card's own ground. */
 .pk-sheet--room {
   background: var(--surface);
   border: var(--stroke-line) solid var(--edge);
@@ -3037,7 +2835,6 @@ li {
   }
 }
 
-/* The landing page: 1200px, bands at space-9, gutters at 72px. */
 .pk-band {
   --band-gutter: var(--gutter);
   width: 100%;
@@ -3052,7 +2849,6 @@ li {
   }
 }
 
-/* Motion is decorative everywhere it appears. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -3069,12 +2865,6 @@ li {
   }
 }
 
-/* -------------------------------------------------- the room, on Home
-
-   The room is a place, not a dashboard. Pet and player share one scene
-   inside a radius-room panel, and nothing floats over the animal: chips and
-   cards live below it, so the top half of Home is always the pet. */
-
 .pk-room {
   position: relative;
   container-type: size;
@@ -3085,10 +2875,6 @@ li {
   box-shadow: var(--shadow-sticker);
   overflow: hidden;
 }
-/* The flat room is one drawing sliced to fill the frame, with the player
-   and the pet (in its basket) placed on top of it. They are sized from the
-   room's height and placed along its width, so a wider room gives the two
-   of them more floor, not bigger heads. */
 .pk-room__scene {
   position: absolute;
   inset: 0;
@@ -3130,20 +2916,22 @@ li {
   width: 100%;
   height: 100%;
 }
+.pk-room__nook--boop {
+  padding: 0;
+  border: 0;
+  border-radius: 40%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
 .pk-room__pet svg {
   width: 100%;
   height: 100%;
   display: block;
 }
 
-/* A recessed square holding an icon, used as a card's leading mark. */
 
-
-/* A collection should look like a shelf, not a table. Pet cards answer to
-   the shelf they are on, not the window: never fewer than two to a row and
-   never more than four, about 180px each between — so a pet in a guild's
-   half-width column is as legible as one on the park's full width. Item
-   tiles are smaller and simply fill the shelf at no less than 148px each. */
 .pk-cards {
   --pk-cards-gap: var(--space-3);
   display: grid;
@@ -3163,8 +2951,19 @@ li {
     --pk-cards-gap: var(--space-5);
   }
 }
-/* A crowd — everyone in the park — is six to a row on a desktop, three on a
-   phone held wide: faces to scan, not portraits to study. */
+@media (max-width: 479px) {
+  .pk-cards:not(.pk-cards--dense) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pk-cards:not(.pk-cards--dense) > .pk-card--flush {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: center;
+  }
+  .pk-cards:not(.pk-cards--dense) > .pk-card--flush > .pk-card__art {
+    padding: var(--space-3) 0 var(--space-3) var(--space-3);
+  }
+}
 .pk-cards--dense {
   grid-template-columns: repeat(
     auto-fill,
@@ -3176,8 +2975,6 @@ li {
     --pk-cards-gap: var(--space-4);
   }
 }
-/* Held upright, a phone's crowd is three faces to a row: the name, the level
-   and the guild's crest, with the counts left to each pet's Passport. */
 @media (max-width: 719px) {
   .pk-cards--dense {
     --pk-cards-gap: var(--space-2);
@@ -3199,9 +2996,6 @@ li {
     display: none;
   }
 }
-/* An empty pocket on the shelf: dashed where a card would be outlined, and
-   never lifted. It takes the whole row on a phone, where half a row is too
-   narrow to read in. */
 .pk-slot {
   display: flex;
   flex-direction: column;
@@ -3221,12 +3015,51 @@ li {
   grid-template-columns: repeat(auto-fill, minmax(min(148px, 100%), 1fr));
   gap: var(--space-3);
 }
-/* The tile is the control. The button itself has no second frame; the tile
-   lifts under a pointer and presses flat under a finger, like a card that
-   is a link. */
+@media (max-width: 719px) {
+  .pk-tiles--row {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: min(45%, 172px);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    margin-inline: calc(-1 * var(--gutter));
+    padding: 2px var(--gutter) var(--space-3);
+    scrollbar-width: none;
+  }
+  .pk-tiles--row::-webkit-scrollbar {
+    display: none;
+  }
+  .pk-tiles--row > * {
+    scroll-snap-align: start;
+  }
+  .pk-tiles--row .pk-tile > .pk-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+  .pk-shelf--row .pk-section-count {
+    display: none;
+  }
+}
+.pk-linkish.pk-shelf__all {
+  position: relative;
+}
+.pk-linkish.pk-shelf__all::after {
+  content: "";
+  position: absolute;
+  inset: -11px -8px;
+}
+@media (min-width: 720px) {
+  .pk-linkish.pk-shelf__all {
+    display: none;
+  }
+}
 .pk-tile-hit {
   display: block;
   width: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
   border: 0;
@@ -3268,11 +3101,6 @@ li {
   align-items: baseline;
 }
 
-/* ---------------------------------------------------- the boundary lists
-
-   Can and cannot, checks in pool and crosses in alarm, each line short
-   enough to remember. This is the screen support points at. */
-
 .pk-bounds li {
   display: flex;
   gap: var(--space-3);
@@ -3283,13 +3111,6 @@ li {
   width: 16px;
   font-weight: 700;
 }
-
-/* ------------------------------------------------------- the landing page
-
-   The order is the argument: hero, the loop as six pills, four pillars, an
-   ink band for the Playground, a full bloom-soft band for guilds, then a
-   Paper block stating the asset model, then the footer. Its widths are the
-   product's: one column below 1024px, two from there. */
 
 .pk-landing__head {
   display: flex;
@@ -3306,10 +3127,6 @@ li {
   align-items: center;
   gap: var(--space-3);
 }
-/* The theme switch lives in the header. On a phone the header holds the
-   mark and the switch only: the hero's own Adopt is right beneath it, and
-   two sun buttons in one view would leave the player choosing between
-   identical doors. */
 .pk-landing__theme--head {
   display: inline-flex;
 }
@@ -3366,9 +3183,6 @@ li {
     gap: 56px;
   }
 }
-/* On a phone the front door is the title, the three pets, then the way in
-   — the picture first, not after a screen of words — and the two ways in
-   are the same width, one above the other. */
 @media (max-width: 1023px) {
   .pk-hero {
     gap: var(--space-5);
@@ -3376,12 +3190,48 @@ li {
   .pk-hero > .pk-stack {
     display: contents;
   }
-  .pk-hero__chip { order: 1; }
-  .pk-hero__title { order: 2; }
-  .pk-heroscene { order: 3; aspect-ratio: 4 / 3; }
-  .pk-hero__go { order: 4; }
+  .pk-hero__title { order: 1; }
+  .pk-heroscene { order: 2; aspect-ratio: 4 / 3; }
+  .pk-hero__go { order: 3; }
+  .pk-hero__new { order: 4; }
   .pk-hero__lede { order: 5; }
   .pk-hero__note { order: 6; }
+}
+.pk-hero__note {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+.pk-hero__new {
+  align-self: flex-start;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: 6px var(--space-3);
+  border: var(--stroke-hair) solid var(--edge-soft);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.pk-hero__new > svg:first-child {
+  color: var(--sun-edge);
+}
+@media (hover: hover) {
+  .pk-hero__new:hover {
+    border-color: var(--edge);
+  }
+}
+.pk-news__see {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--space-2);
+  font-weight: 600;
 }
 @media (max-width: 719px) {
   .pk-hero__go {
@@ -3422,15 +3272,8 @@ li {
     grid-template-columns: 1.1fr 1fr;
     align-items: start;
   }
-  .pk-split--table {
-    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.6fr);
-    align-items: start;
-  }
 }
 
-/* The asset model, in the same table Pawket uses internally. On a phone
-   each row becomes a short record — the thing, then its three answers,
-   each under its own label — because four columns do not fit a hand. */
 .pk-assets {
   width: 100%;
   border-collapse: collapse;
@@ -3526,8 +3369,6 @@ li {
   gap: var(--space-3) var(--space-5);
 }
 
-/* At phone width four tabs share the trough rather than scrolling off it,
-   and on the smallest phones they sit two by two. */
 @media (max-width: 479px) {
   .pk-tabs {
     display: flex;
@@ -3547,25 +3388,9 @@ li {
   }
 }
 
-/* The mark has its own real box, tall enough to tap. */
 @media (any-pointer: coarse), (max-width: 719px) {
   a.pk-mark { min-height: var(--touch-target); }
 }
-
-/* ------------------------------------------------------ the paw loader
-
-   The one place a second loop is allowed, for a wait with no known end:
-   the mark itself, alive. Nothing shows for 250ms, so a quick wait never
-   flashes it. Then it draws itself — the beans pop out left to right, 70ms
-   apart, and the heart lands last with a softer overshoot so it never
-   touches them. From 1s it taps: each bean lifts, presses into its shelf
-   on the press curve and springs back, 110ms after the one before, and
-   200ms after the fourth press the heart beats, a full press then a half.
-   Then stillness, and again every 2s.
-
-   Playroom only. Never on Paper — nothing animates there, and a playful
-   cycle while money moves is the wrong feeling. Never as a route-change
-   skeleton either. */
 
 .pk-paw-loader {
   display: inline-grid;
@@ -3591,11 +3416,9 @@ li {
 }
 .pk-paw__beat {
   animation-name: pk-paw-beat;
-  /* the fourth bean presses 210ms into its tap; the heart's press lands 200ms after it */
   animation-delay: 1.65s;
 }
 
-/* A bean pops out of nothing, a little past full size, and settles. */
 @keyframes pk-paw-grow {
   0% {
     transform: scale(0);
@@ -3631,9 +3454,6 @@ li {
   }
 }
 
-/* One tap, as a button takes a finger: it lifts as under a pointer, drops
-   into its shelf with a squash, comes back up on the press curve
-   (--ease-press) and settles. 2s per lap. */
 @keyframes pk-paw-tap {
   0% {
     transform: none;
@@ -3656,7 +3476,6 @@ li {
     transform: none;
   }
 }
-/* lub-dub: no lift, a full press, then a half one */
 @keyframes pk-paw-beat {
   0% {
     transform: none;
@@ -3680,7 +3499,6 @@ li {
   }
 }
 
-/* A screen waiting on this browser: the words arrive with the paw. */
 .pk-waiting {
   display: flex;
   align-items: center;
@@ -3688,8 +3506,6 @@ li {
   padding: var(--space-4) 0;
   animation: pk-fade 200ms ease-out 250ms backwards;
 }
-/* A whole screen waiting: the paw at full size, centred in the space the
-   screen is about to fill, its words beneath. */
 .pk-waiting--page {
   flex-direction: column;
   justify-content: center;
@@ -3698,7 +3514,6 @@ li {
   text-align: center;
 }
 
-/* The cold boot: the paw, then its name once the heart has landed. */
 .pk-splash {
   min-height: 100dvh;
   display: grid;
@@ -3719,12 +3534,6 @@ li {
   }
 }
 
-/* The splash on a full load: over everything, in the ground colour, the
-   paw drawing itself from the first paint — the loader's 250ms hold is for
-   a wait that may end at once, and this one is shown on purpose, so every
-   beat comes 190ms sooner. Once the page has arrived it lifts away, the paw
-   rising a touch as the ground fades; should no script ever run, it goes
-   on its own. */
 .pk-boot {
   position: fixed;
   inset: 0;
@@ -3773,9 +3582,6 @@ li {
   }
 }
 
-/* Under reduced motion the paw is simply there, whole, and so are the
-   words. This has to beat the global rule, which would still play each
-   animation once in an instant. */
 @media (prefers-reduced-motion: reduce) {
   .pk-paw__grow,
   .pk-paw__tap,
@@ -3786,19 +3592,9 @@ li {
   }
 }
 
-/* ------------------------------------------------------- Home: the stage
-
-   The room is the whole width of the screen. The deck floats under it,
-   separate from the frame on a phone, tucked over its foot on desktop: how the pet
-   is, the four cares as round buttons, and three tools whose panels open
-   below. On a desktop the deck is one row; narrower it stacks. */
-
 .pk-room--stage {
   max-height: none;
 }
-/* On a desktop the room is a wide stage, but never so tall that the deck on
-   its foot falls under the dock: on a laptop's short screen it gives up
-   height, not the care buttons. */
 @media (min-width: 1024px) {
   .pk-room--stage {
     aspect-ratio: 16 / 7;
@@ -3809,23 +3605,37 @@ li {
   }
 }
 
-/* Whose room on the left; where the pet lives, or the way to keep it on
-   Solana, on the right. Under them the family takes a row of its own, the
-   whole width, and scrolls when it outgrows it. */
-.pk-home-screen .pk-screen__bar { flex-wrap: nowrap; align-items: flex-start; }
-.pk-home-screen .pk-screen__bar > div:first-child { flex: 1; min-width: 0; }
+.pk-home-screen .pk-screen__bar { flex-wrap: wrap; align-items: flex-start; }
+.pk-home-screen .pk-screen__bar > div:first-child { flex: 1 1 7em; min-width: 0; }
 .pk-home-screen .pk-screen__bar > :is(.pk-chip, .pk-btn) { flex-shrink: 0; white-space: nowrap; }
 .pk-home-screen h1 { overflow-wrap: anywhere; }
+@media (max-width: 479px) {
+  .pk-home-screen .pk-screen__bar > div.pk-home__title--long { flex-basis: 100%; }
+}
 .pk-home__pets { min-width: 0; margin-bottom: var(--space-3); }
-/* The ring's room is the strip's padding: the faces start on the column's edge. */
+.pk-home__signing { display: flex; align-items: flex-start; gap: var(--space-2); }
+.pk-paste {
+  width: 100%;
+  min-height: calc(var(--control-md) * 2);
+  padding: var(--space-3) var(--space-4);
+  resize: vertical;
+  color: var(--ink);
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-well);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: max(16px, 0.8rem);
+  overflow-wrap: anywhere;
+}
+.pk-paste:focus-visible { outline: var(--stroke-line) solid var(--focus); outline-offset: 2px; }
+.pk-paste__file { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.pk-paste__file input { max-width: 100%; }
+.pk-home__signing > svg { flex: none; margin-top: 2px; }
 .pk-home__pets > .pk-switch {
   max-width: calc(100% + 2 * var(--space-2));
   margin-inline: calc(-1 * var(--space-2));
 }
-.pk-home__said:empty { display: none; }
-
-/* The view switch sits in the room's top corner, on the wall, clear of the
-   pet: two segments in a trough, the one in use raised on its shelf. */
 .pk-room__corner {
   position: absolute;
   top: var(--space-3);
@@ -3872,8 +3682,6 @@ li {
     color: var(--ink);
   }
 }
-/* A finger gets the full target: each segment answers 44px, the extra
-   reaching invisibly past the trough. */
 @media (any-pointer: coarse), (max-width: 719px) {
   .pk-viewswitch__view {
     position: relative;
@@ -3886,8 +3694,6 @@ li {
     inset: -4px -1px;
   }
 }
-/* Under the day: the way to the record, as a row you can press, and the
-   rest of the family beneath it in quiet words. */
 .pk-home__foot {
   display: grid;
   justify-items: start;
@@ -3897,8 +3703,6 @@ li {
 .pk-home__foot > .pk-rowcard {
   justify-self: stretch;
 }
-/* A card that is one line you can press: what it opens, a line of what is
-   there, and the way in. */
 .pk-rowcard {
   display: flex;
   align-items: center;
@@ -3918,7 +3722,6 @@ li {
   flex: none;
   color: var(--ink-soft);
 }
-/* A button that reads as a link inside a line of words. */
 .pk-linkish {
   display: inline;
   padding: 0;
@@ -3931,8 +3734,6 @@ li {
   text-underline-offset: 3px;
   cursor: pointer;
 }
-/* Keeping a pet on Solana: its face, the level it has here, and the level 1
-   it starts at there — the trade, drawn, before the wallet opens. */
 .pk-keep {
   display: flex;
   align-items: center;
@@ -3976,15 +3777,10 @@ li {
   border: var(--stroke-line) dashed var(--edge-soft);
   border-radius: var(--radius-lg);
 }
-/* A card's foot — its actions, or its last word — sits at the bottom of a
-   card that is a flex column. */
 .pk-foot {
   margin-top: auto;
   padding-top: var(--space-4);
 }
-/* A card's actions: a row where there is room; on a phone, one above the
-   other at the full width, so two ways forward are never two different
-   lengths. A ghost keeps its own width, under them. */
 .pk-acts {
   display: flex;
   flex-wrap: wrap;
@@ -4094,7 +3890,124 @@ li {
   }
 }
 
-/* Level as ten countable segments round the number. */
+.pk-deck__tools {
+  flex-wrap: wrap;
+}
+.pk-deck__tools > .pk-tool {
+  flex: 1 1 0;
+  min-width: var(--touch-target);
+  max-width: 72px;
+}
+@media (max-width: 359px) {
+  .pk-deck__tools {
+    gap: var(--space-1);
+  }
+  .pk-deck__tools > .pk-tool {
+    padding-inline: 0;
+  }
+}
+
+.pk-decor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.pk-decor__slots .pk-choices {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-inline: calc(-1 * var(--space-2));
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  scrollbar-width: none;
+}
+.pk-decor__slots .pk-choices::-webkit-scrollbar {
+  display: none;
+}
+.pk-decor__slots .pk-choice {
+  flex: none;
+}
+.pk-decor__things {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: var(--space-2);
+}
+.pk-decor__thing {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-1);
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    transform var(--dur-press) var(--ease-press),
+    box-shadow var(--dur-press) var(--ease-press);
+}
+.pk-decor__thing[aria-pressed="true"] {
+  --pk-keep: var(--shadow-sticker-sm);
+  border-color: var(--edge);
+  box-shadow: var(--shadow-sticker-sm);
+  transform: translateY(-1px);
+}
+.pk-decor__thing:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+.pk-decor__art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  color: var(--ink-faint);
+}
+.pk-decor__art svg {
+  width: 84%;
+  height: 84%;
+}
+.pk-decor__thing--locked .pk-decor__art svg {
+  opacity: 0.5;
+}
+.pk-decor__new {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+}
+.pk-decor__lock {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+}
+.pk-decor__name {
+  overflow-wrap: anywhere;
+}
+.pk-decor__with {
+  margin-top: -2px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+}
+
 .pk-ring {
   position: relative;
   flex: none;
@@ -4136,8 +4049,6 @@ li {
   color: var(--sprout-text);
 }
 
-/* A vital, minimized: its glyph, name and count on one line, then five
-   segments across the whole column — a bar you can count at a glance. */
 .pk-mini {
   display: grid;
   gap: 5px;
@@ -4190,8 +4101,6 @@ li {
   font-variant-numeric: tabular-nums;
 }
 
-/* A care: a round face on a shelf, its name below. The one the pet wants
-   is in sun; a resting one counts down where its name was. */
 .pk-care {
   position: relative;
   display: flex;
@@ -4220,8 +4129,6 @@ li {
   border-radius: var(--radius-pill);
   background: var(--pk-face);
   color: var(--pk-on);
-  /* pressed on the press curve; a care going to rest, or becoming the one
-     the pet wants, greys or warms over a moment rather than at once */
   transition:
     transform var(--dur-press) var(--ease-press),
     border-bottom-width var(--dur-press) var(--ease-press),
@@ -4239,30 +4146,28 @@ li {
   border-bottom-color: var(--sun-edge);
 }
 @media (hover: hover) {
-  .pk-care:not([disabled]):hover .pk-care__face {
+  .pk-care:not([disabled], [aria-disabled="true"]):hover .pk-care__face {
     transform: translateY(-1px);
     border-bottom-width: calc(var(--stroke-line) + var(--stroke-shelf) + 1px);
     margin-bottom: -1px;
   }
 }
-.pk-care:not([disabled]):active .pk-care__face {
+.pk-care:not([disabled], [aria-disabled="true"]):active .pk-care__face {
   transform: translateY(var(--stroke-shelf));
   border-bottom-width: var(--stroke-line);
   margin-bottom: var(--stroke-shelf);
 }
-.pk-care[disabled] {
+.pk-care:is([disabled], [aria-disabled="true"]) {
   cursor: default;
 }
-/* Resting: the shelf drops away, the edge breaks into dashes and the face
-   counts down in full ink, so the time left is read, not squinted at. */
-.pk-care[disabled] .pk-care__face {
+.pk-care:is([disabled], [aria-disabled="true"]) .pk-care__face {
   --pk-face: var(--surface-sunk);
   border-style: dashed;
   border-color: var(--edge-soft);
   border-bottom-width: var(--stroke-line);
   color: var(--ink-soft);
 }
-.pk-care[disabled] .pk-care__label {
+.pk-care:is([disabled], [aria-disabled="true"]) .pk-care__label {
   color: var(--ink-faint);
 }
 .pk-care__label {
@@ -4273,8 +4178,6 @@ li {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-/* What a saved care earned, said once where the thumb is: a small sprout
-   tag that rises off the face and goes. The toast says the rest. */
 .pk-care__gain {
   position: absolute;
   top: -10px;
@@ -4328,7 +4231,6 @@ li {
   font-variant-numeric: tabular-nums;
 }
 
-/* A tool: a glyph over its word, no box until it is open. */
 .pk-tool {
   display: flex;
   flex-direction: column;
@@ -4364,11 +4266,6 @@ li {
   }
 }
 
-/* Today's round, in one band under the room: the title and the count, then
-   the five things that make a good day as a row of marks that fill in as
-   they happen — read like a tracker, never pressed like a button (only the
-   round, which happens in the playground, is a way there). No card around
-   it: it is a line of the room's day, not a thing to open. */
 .pk-today {
   display: grid;
   gap: var(--space-3);
@@ -4466,7 +4363,6 @@ li {
   }
 }
 
-/* Who is home: every pet as a face in a circle, the one at home ringed. */
 .pk-switch {
   display: flex;
   flex-wrap: nowrap;
@@ -4503,8 +4399,6 @@ li {
   border-color: var(--edge);
   box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--sun);
 }
-/* A passive check marks a pet read from Solana. Keeping a browser pet is a
-   labelled button below the deck, with its own full touch target. */
 .pk-switch__slot {
   position: relative;
   display: inline-grid;
@@ -4530,9 +4424,6 @@ li {
   height: 16px;
   pointer-events: none;
 }
-/* The last circle adopts another: a plus, centred, on the dashed edge an
-   empty pocket has. The face rule above enlarges and lowers a pet to sit
-   on the circle's rim; a glyph is drawn at its own size, in the middle. */
 .pk-switch__pet--add {
   place-items: center;
   border-style: dashed;
@@ -4565,12 +4456,6 @@ li {
   }
 }
 
-/* ------------------------------------------------------- the profile
-
-   You in your room, the same stage as Home, with a plate floating on its
-   foot: your name, and what you and your pets have done together, counted.
-   Then the look, then everything you keep. */
-
 .pk-anchor {
   scroll-margin-top: var(--space-6);
 }
@@ -4578,6 +4463,7 @@ li {
   position: relative;
   z-index: 2;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   margin: 0 0 var(--space-3);
   padding: var(--space-4);
@@ -4671,9 +4557,6 @@ li {
   transform: scale(0.98);
   background: var(--surface-sunk);
 }
-/* The last pocket on a shelf of pets: empty, the same size as the cards
-   beside it, a plus where a pet would sit — so it takes the next place on
-   the shelf, even on a phone. */
 .pk-slot--pocket {
   grid-column: auto;
   align-items: center;
@@ -4690,8 +4573,6 @@ li {
   color: var(--ink-soft);
 }
 
-/* The sticker book: a sticker is a disc in its hue's soft tint, its glyph
-   in the hue's text colour. One not yet earned is a dashed outline. */
 .pk-stickers {
   list-style: none;
   display: grid;
@@ -4709,8 +4590,6 @@ li {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-/* On a phone the book is two stickers to a row, each a disc over its name,
-   so seventeen read as a page of a sticker book rather than a long list. */
 @media (max-width: 719px) {
   .pk-stickers {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4822,17 +4701,26 @@ li {
   transform: none;
 }
 
-/* ------------------------------------------------------- guilds
-
-   A guild's page leads with its crest, square-shouldered and in its own
-   colour, beside its name and motto; its pets are a shelf like any other.
-   The founding form picks a glyph and a colour as radios. */
-
+.pk-screen__bar:has(> .pk-guild-head) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) fit-content(50%);
+}
 .pk-guild-head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-5);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 719px) {
+  .pk-screen__bar:has(> .pk-guild-head) {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-5);
+  }
+  .pk-screen__bar:has(> .pk-guild-head) .display-l {
+    font-size: 34px;
+    line-height: 38px;
+  }
 }
 .pk-park-more {
   display: flex;
@@ -4840,8 +4728,6 @@ li {
   padding-top: var(--space-2);
 }
 
-/* Under a guild's shelf of pets, what it has done together, joining it and
-   its facts: one row of cards, one height, on a desktop; stacked on a phone. */
 .pk-guild-facts {
   display: grid;
   gap: var(--space-4);
@@ -4877,25 +4763,37 @@ li {
   box-shadow: var(--shadow-sticker-sm);
 }
 
-.pk-time {
-  padding: var(--space-1) var(--space-2);
-  border: var(--stroke-line) solid var(--edge-soft);
-  border-radius: var(--radius-md);
-  background: var(--surface-sunk);
-  color: var(--ink);
-  font: inherit;
-  font-family: var(--font-mono);
+
+.pk-market-find {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
 }
-.pk-time:focus-visible {
-  outline: var(--stroke-line) solid var(--focus);
-  outline-offset: 2px;
+.pk-market-filters .pk-choices {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-inline: calc(-1 * var(--gutter));
+  padding: var(--space-1) var(--gutter) var(--space-2);
+  scroll-padding-inline: var(--gutter);
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, transparent, #000 var(--space-4), #000 calc(100% - var(--space-7)), transparent);
 }
-
-/* ------------------------------------------------------- the Market
-
-   A room for sale is drawn as itself: a swatch in its own tokens, the
-   ground with a card on it, like the room picker's. */
-
+.pk-market-filters .pk-choices::-webkit-scrollbar {
+  display: none;
+}
+.pk-market-filters .pk-choice {
+  flex: none;
+}
+@media (min-width: 720px) {
+  .pk-market-filters .pk-choices {
+    flex-wrap: wrap;
+    overflow: visible;
+    margin-inline: 0;
+    padding-inline: 0;
+    mask-image: none;
+  }
+}
 .pk-market-room {
   display: block;
   width: 100%;
@@ -4909,8 +4807,6 @@ li {
   border: var(--stroke-line) solid var(--edge-soft);
 }
 
-/* A pet's record: its ID card — portrait, name, guild, what you can do —
-   stays in view beside the record on a desktop, and comes first on a phone. */
 .pk-passport-id {
   display: grid;
   justify-items: start;
@@ -4921,10 +4817,6 @@ li {
   margin-bottom: var(--space-2);
 }
 
-/* A guild's page: the head is its introduction — crest, name, motto, facts,
-   and the way in for your pets, all in one place. Below it, what is on is
-   the page; the pets, what they did together, the coin and the record sit
-   in the column beside it. */
 .pk-guild-hero {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -4932,7 +4824,6 @@ li {
   gap: var(--space-4) var(--space-5);
 }
 @media (max-width: 560px) {
-  /* A phone keeps the crest beside the name, smaller, so the way in is in view. */
   .pk-guild-hero {
     column-gap: var(--space-3);
   }
@@ -5032,8 +4923,6 @@ li {
 .pk-stat-row dd {
   margin: 2px 0 0;
 }
-/* What is on: each event a card with its date as a calendar leaf, each poll
-   its answers as bars that are the count, never a percentage. */
 .pk-whats-on {
   display: grid;
   gap: var(--space-4);
@@ -5082,7 +4971,9 @@ li {
 .pk-event__day {
   margin-top: 4px;
   font-family: var(--font-display);
+  font-variation-settings: "SOFT" 64, "WONK" 1;
   font-size: 26px;
+  font-weight: 600;
 }
 .pk-event__weekday {
   margin-top: 4px;
@@ -5155,8 +5046,6 @@ li {
   font-weight: 600;
 }
 
-/* The item, tried on: your pet wearing it, or sitting in the room, large,
-   on the room's own ground — the one Playroom thing on the sale's Paper. */
 .pk-market-try {
   display: grid;
   place-items: end center;
@@ -5174,9 +5063,24 @@ li {
   height: 196px;
   width: auto;
 }
+.pk-market-try--decor {
+  place-items: center;
+  padding: var(--space-4);
+}
+.pk-market-try--decor > svg {
+  max-width: 100%;
+  max-height: 180px;
+}
+.pk-tile__art:has(.pk-market-decor) {
+  position: relative;
+}
+.pk-tile__art .pk-market-decor {
+  position: absolute;
+  inset: 10%;
+  width: 80%;
+  height: 80%;
+}
 
-/* The coin now: what a million cost, as the one large figure on its Paper —
-   mono, hue-free, a statement and never a ticker. */
 .pk-coin-now {
   display: grid;
   gap: var(--space-1);
@@ -5193,19 +5097,11 @@ li {
   margin-bottom: var(--space-4);
 }
 @media (min-width: 1024px) {
-  /* The ticket stays in view beside the coin while the page scrolls. */
   .pk-columns--portrait > .pk-columns__second:has(.pk-ticket) {
     position: sticky;
     top: var(--space-4);
   }
 }
-
-/* ------------------------------------------------------- guild coins
-
-   A coin's facts and its quotes are Paper: the corner falls to 4px, the
-   type goes mono and the colour drains out. What can go wrong is a numbered
-   list read in the text family, and agreeing to it is a plain checkbox in
-   ink — a box ticked, never a toggle that celebrates. */
 
 .pk-risks {
   display: grid;
@@ -5226,11 +5122,34 @@ details > .pk-risks {
   cursor: pointer;
 }
 .pk-consent input {
+  appearance: none;
   flex: none;
-  width: 18px;
-  height: 18px;
-  margin: 2px 0 0;
-  accent-color: var(--ink);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-paper);
+  background: var(--paper);
+  cursor: pointer;
+  transition: background-color var(--dur-press) var(--ease-press);
+}
+.pk-consent input::after {
+  content: "";
+  width: 6px;
+  height: 11px;
+  margin-top: -2px;
+  border: solid var(--paper);
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform var(--dur-press) var(--ease-spring);
+}
+.pk-consent input:checked {
+  background: var(--ink);
+}
+.pk-consent input:checked::after {
+  transform: rotate(45deg) scale(1);
 }
 .pk-coin-pin {
   display: inline-flex;
@@ -5249,6 +5168,10 @@ details > .pk-risks {
   margin: 0;
   padding: 0;
   border: 0;
+}
+.pk-fieldset > legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
 }
 .pk-crests {
   display: grid;
@@ -5299,7 +5222,6 @@ details > .pk-risks {
   box-shadow: var(--shadow-sticker-sm);
 }
 
-/* The room's print uses the shared sheet: the same focus, safe areas and close motion. */
 .pk-photo__print {
   display: block;
   width: 100%;
@@ -5311,8 +5233,29 @@ details > .pk-risks {
   aspect-ratio: 4 / 3;
   background: var(--surface-sunk);
 }
-/* A link, shared, the way a photo is: the card it unfurls as, printed on its
-   shelf, then the link itself — one tap selects all of it — and a post. */
+.pk-photo .pk-photo__print {
+  transition: opacity var(--dur-swap) var(--ease-swap);
+  animation: pk-photo-flash 480ms var(--ease-swap);
+}
+.pk-photo[aria-busy="true"] .pk-photo__print {
+  opacity: 0.55;
+}
+@keyframes pk-photo-flash {
+  from {
+    filter: brightness(1.8) saturate(0.5);
+  }
+}
+.pk-photo__poses .pk-choices {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.pk-photo__poses .pk-choice {
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) 0;
+  font-size: 12px;
+  line-height: 14px;
+}
 .pk-share__card {
   display: block;
   width: 100%;
@@ -5343,19 +5286,27 @@ details > .pk-risks {
   user-select: all;
   -webkit-user-select: all;
 }
+.pk-share__more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+}
 .pk-share__post {
   justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--ink);
+  font: inherit;
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
+  cursor: pointer;
 }
-
-/* ------------------------------------------------------- rooms (themes)
-
-   A room is a whole set of tokens. The switch in the shell shows a dot of its ground and sun; the picker shows every
-   room as a small drawing in that room's own tokens (data-theme-preview),
-   so a preview can never disagree with the room it opens. */
+.pk-share__post:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
 
 .pk-theme-dot {
   position: relative;
@@ -5431,8 +5382,6 @@ details > .pk-risks {
   .pk-theme__words > .title { font-size: 14px; line-height: 20px; }
 }
 
-/* The drawing: the room's ground, a card on it with the sun and a sprout
-   bar, and a pet sitting in front. */
 .pk-swatch-room {
   position: relative;
   display: block;
@@ -5482,14 +5431,6 @@ details > .pk-risks {
   height: auto;
 }
 
-/* ---------------------------------------------- focus: two bands, drawn last
-
-   2px of focus at a 2px offset with focus-contrast outside it, so the ring
-   survives both a cream ground and surface-ink. It comes last so it wins
-   over any resting box-shadow; a control that must keep its own shadow
-   under the ring hands it over as --pk-keep. A control that draws its ring
-   on a wrapper (a field) opts out below. */
-
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: var(--stroke-line) solid var(--focus);
   outline-offset: 2px;
@@ -5502,18 +5443,6 @@ details > .pk-risks {
   outline: 0;
   box-shadow: none;
 }
-
-/* ------------------------------------------------ the room, drawn in 3D
-
-   The same frame, radius and sticker shadow; the canvas fills it. With 3D
-   chosen, the flat room is not shown while the 3D one builds — a refresh
-   never flashes its characters first. The frame holds the paw instead,
-   centred over the room's own wall and floor, with the wait in words; the
-   canvas fades in under it (420ms) as it fades out. Choosing 3D from the
-   flat room, the flat room clears to the paw the same way. Leaving 3D, the
-   flat room is back at once underneath and the canvas fades off it. The
-   frame is focusable once it is live, so the arrow keys can turn it, and it
-   keeps its sticker shadow under the focus ring. */
 
 .pk-room {
   --pk-keep: var(--shadow-sticker);
@@ -5553,7 +5482,6 @@ details > .pk-risks {
     opacity var(--dur-room) var(--ease-swap),
     visibility 0s linear 0s;
 }
-/* The room it will be: a floor under the wall, so the paw waits in a place. */
 .pk-room__loading::before {
   content: "";
   position: absolute;
@@ -5586,7 +5514,6 @@ details > .pk-risks {
   cursor: grabbing;
 }
 
-/* A cue in the flat room: the pet hops once and lands on its feet. */
 .pk-room__pet--hop {
   animation: pk-hop 460ms var(--ease-press);
   transform-origin: 50% 100%;
@@ -5608,12 +5535,76 @@ details > .pk-risks {
     transform: none;
   }
 }
-
-/* ------------------------------------------------ how you look
-
-   A short list is a row of choices; a colour is a dot. The chosen one is
-   lifted onto a sticker shadow — elevation, not colour — so no choice
-   competes with the sun action on the screen. */
+.pk-room__leaf {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pk-leaf-fall 9s linear infinite;
+}
+@keyframes pk-leaf-fall {
+  from {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(14px, 100px) rotate(170deg);
+  }
+  to {
+    transform: translate(-8px, 200px) rotate(340deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pk-room__leaf {
+    animation: none !important;
+    transform: translate(0, 60px);
+  }
+}
+.pk-room__doll--hop {
+  animation: pk-hop 460ms var(--ease-press);
+  transform-origin: 50% 100%;
+}
+.pk-room__said {
+  position: absolute;
+  z-index: 2;
+  left: 64%;
+  top: -14%;
+  display: grid;
+  place-items: center;
+  width: 34%;
+  aspect-ratio: 1;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: 50% 50% 50% 14%;
+  background: var(--surface);
+  color: var(--sun-edge);
+  box-shadow: var(--shadow-sticker);
+  animation: pk-said 1800ms var(--ease-swap) both;
+}
+.pk-room__said svg {
+  width: 58%;
+  height: 58%;
+}
+@keyframes pk-said {
+  0% {
+    opacity: 0;
+    transform: translateY(14%) scale(0.5);
+  }
+  12% {
+    opacity: 1;
+    transform: none;
+  }
+  82% {
+    opacity: 1;
+    transform: translateY(-8%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pk-room__said,
+  .pk-room__doll--hop {
+    animation: none !important;
+  }
+}
 
 .pk-look {
   margin-top: var(--space-5);
@@ -5629,6 +5620,10 @@ details > .pk-risks {
   gap: var(--space-2);
 }
 .pk-choice {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   min-height: 36px;
   padding: 0 var(--space-3);
   border: var(--stroke-line) solid var(--edge-soft);
@@ -5669,8 +5664,6 @@ details > .pk-risks {
   .pk-choice {
     min-height: var(--touch-target);
   }
-  /* 40px dots keep six to a row on a phone; each still answers a 44px
-     finger, the extra two pixels round it invisible. */
   .pk-swatch {
     position: relative;
     width: 40px;
@@ -5693,9 +5686,6 @@ details > .pk-risks {
   border: var(--stroke-line) dashed var(--edge-soft);
   border-radius: var(--radius-md);
 }
-/* The parts of a look are tabs, so they wear the tabs' trough — the same
-   one as the profile's shelf — and never look like the choices beneath
-   them. */
 .pk-look__tabs {
   display: flex;
   flex-wrap: wrap;
@@ -5725,9 +5715,6 @@ details > .pk-risks {
   .pk-look__tabs .pk-choice { font-size: 11px; }
 }
 
-/* ------------------------------------------------------- the wallet layer
-   An address or a signature is a fact: mono, truncated no shorter than four
-   characters each side, and always beside a copy control. */
 .pk-addr {
   display: inline-flex;
   align-items: center;
@@ -5762,7 +5749,6 @@ details > .pk-risks {
     flex: none;
   }
 }
-/* A wallet in the picker: its own mark, then its name. */
 .pk-wallet-pick {
   justify-content: flex-start;
 }
@@ -5772,13 +5758,6 @@ details > .pk-risks {
   border-radius: 4px;
   flex: none;
 }
-
-/* ------------------------------------------------------- adoption
-
-   The pets are the page. Three sit large and alive on the first step, the
-   one you choose lifts into a sun ring and hops; on the second its name is
-   stitched on its blanket as you type, and each temperament is shown as
-   the face it would wear. No dock: there is nowhere else to be yet. */
 
 .pk-adopt {
   width: 100%;
@@ -5833,8 +5812,6 @@ details > .pk-risks {
   }
 }
 
-/* Three across from a tablet up; on a phone they are a row you swipe,
-   each most of the width, so a pet is never thumbnail-sized. */
 .pk-adopt__stage {
   display: grid;
   grid-auto-flow: column;
@@ -5918,16 +5895,10 @@ details > .pk-risks {
   margin: var(--space-4) auto 0;
   text-align: center;
 }
-/* The step's one action. On a phone it stays under the thumb — pinned to
-   the foot of the screen on the ground's own colour, over whatever scrolls
-   beneath it — so choosing, naming and going home never wait on a scroll,
-   and above the keyboard while a name is typed. */
 .pk-adopt__act {
   max-width: 440px;
   margin: var(--space-4) auto 0;
 }
-/* Naming and the welcome are columns read from the left: their action
-   takes the column's width, like the field above it. */
 @media (min-width: 720px) {
   .pk-adopt__name-step .pk-adopt__act,
   .pk-adopt--narrow .pk-adopt__act {
@@ -5959,7 +5930,6 @@ details > .pk-risks {
   }
 }
 
-/* Step two: the pet you chose, large, with its name on its blanket. */
 .pk-adopt__name-step {
   display: grid;
   gap: var(--space-6);
@@ -5980,9 +5950,6 @@ details > .pk-risks {
   display: grid;
   justify-items: center;
 }
-/* The pet and its blanket are one thing: the name is stitched on in the
-   blanket's own units, so it is sized to the frame it sits in, shrinks to
-   fit a long name across it, and hops when the pet does. */
 .pk-adopt__plate {
   position: relative;
   display: block;
@@ -6024,7 +5991,6 @@ details > .pk-risks {
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
-/* A name is a name, not a label: set as it will be written. */
 .pk-adopt__suggest {
   min-height: var(--touch-target);
   cursor: pointer;
@@ -6091,7 +6057,6 @@ details > .pk-risks {
     box-shadow: var(--shadow-sticker), 0 0 0 4px var(--ground), 0 0 0 calc(4px + var(--stroke-line)) var(--sun-text);
   }
 }
-/* Small, so it shows the face alone: the frame is zoomed onto the head. */
 .pk-temper__face {
   display: block;
   aspect-ratio: 1;
@@ -6127,22 +6092,11 @@ details > .pk-risks {
   .pk-temper__words > .caption { grid-column: 1 / -1; }
 }
 
-/* ------------------------------------------------------- the playground
-
-   Three games, each a drawn place: Catch is a garden, Hop is the park path,
-   Copy is one giant paw whose toe beans are the buttons. The pet is the
-   player's own, drawn whole. Fields are sized in their own units
-   (container queries), so a phone and a desktop play the same round. */
-
 .pk-games {
   display: grid;
   gap: var(--space-5);
   grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
 }
-/* A game is a card you press anywhere to play today's round: its Play
-   button reaches over the whole card, and the card lifts and presses with
-   it. Practice sits above that reach, in the same row, so neither of the
-   two ways in is outside the card. */
 .pk-gamecard {
   position: relative;
   display: grid;
@@ -6164,7 +6118,6 @@ details > .pk-risks {
   transform: translate(1px, 1px);
   box-shadow: var(--shadow-sticker-sm);
 }
-/* At the card's foot, so a row of cards puts every Play on one line. */
 .pk-gamecard__go {
   display: flex;
   align-items: center;
@@ -6172,8 +6125,7 @@ details > .pk-risks {
   margin-top: auto;
   padding-top: var(--space-2);
 }
-/* It may not move under a finger or a pointer: a transform would pull its
-   reach back to the button and leave the card. The card presses instead. */
+/* A transform would make the button, not the card, the ::after's containing block. */
 .pk-gamecard__play,
 .pk-gamecard .pk-btn.pk-gamecard__play:is(:hover, :active) {
   position: static;
@@ -6359,9 +6311,6 @@ details > .pk-risks {
   color: var(--ink);
 }
 
-/* Pairs: twelve cards on the table and the pet beside them. A card turns
-   over in 3D on the press curve; under reduced motion it simply shows its
-   other side. */
 .pk-pairs {
   display: grid;
   gap: var(--space-4);
@@ -6480,8 +6429,6 @@ details > .pk-risks {
   inset: 0;
   background: var(--pool-soft);
 }
-/* Sky clouds are soft and outline-free, so they never read as the storm
-   clouds a player has to dodge. */
 .pk-game__cloud {
   position: absolute;
   width: 20cqw;
@@ -6591,7 +6538,6 @@ details > .pk-risks {
   max-width: 36ch;
 }
 
-/* Hop: far hills drift, the path's dashes run, the pet bobs as it goes. */
 .pk-game__hills {
   position: absolute;
   left: 0;
@@ -6651,7 +6597,6 @@ details > .pk-risks {
   }
 }
 
-/* Copy: a giant paw. The centre pad holds the pet; the four beans play. */
 .pk-paws {
   display: grid;
   gap: var(--space-5);
@@ -6737,12 +6682,6 @@ details > .pk-risks {
   text-align: center;
 }
 
-/* ------------------------------------------------------- the park, drawn
-
-   The pets that are out stand on the lawn, each wandering a few steps on
-   its spot at its own pace, with its name under it. Depth is scale. The
-   frame is a place like the room: radius-room, 2px edge, the sticker. */
-
 .pk-parkscene {
   position: relative;
   aspect-ratio: 16 / 7;
@@ -6781,8 +6720,6 @@ details > .pk-risks {
   width: calc(30cqh * var(--pk-depth, 1));
   translate: -50% 0;
 }
-/* A phone's park holds eight on its own spots, so nobody stands on anybody
-   and every name tag is clear of the heads in front of it. */
 @media (max-width: 719px) {
   .pk-parkscene__pet {
     --pk-depth: var(--pk-phone-s, 1);
@@ -6838,7 +6775,6 @@ details > .pk-risks {
   border-color: var(--on-pool);
   color: var(--on-pool);
 }
-/* A few steps one way, a look around, a few steps back. */
 @keyframes pk-wander {
   0%,
   100% {
@@ -6858,11 +6794,8 @@ details > .pk-risks {
   }
 }
 
-/* The pulse's headline: five counts as large mono figures in one band, then
-   the statements behind them in columns that keep their own heights. */
 .pk-headline {
   display: grid;
-  /* two to a row on a phone, all five in one band where there is room */
   grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: var(--space-4);
   margin: 0;
@@ -6889,8 +6822,6 @@ details > .pk-risks {
   margin-bottom: var(--space-5);
 }
 
-/* Under the park: its three counts in one strip, and the adoption link that
-   travels as a Blink beside them. */
 .pk-parkstrip {
   display: flex;
   flex-wrap: wrap;
@@ -6968,7 +6899,6 @@ details > .pk-risks {
   background: var(--surface-sunk);
   color: var(--ink-soft);
 }
-/* A pet's face in a circle, for a line in a list. */
 .pk-avatar {
   display: block;
   width: 40px;
@@ -6986,8 +6916,6 @@ details > .pk-risks {
   translate: 0 18%;
 }
 
-/* The wardrobe's mirror: the pet large, wearing what is on — or what is
-   being tried on, before a tap makes it so. */
 .pk-mirror {
   display: grid;
   gap: var(--space-3);
@@ -7004,13 +6932,10 @@ details > .pk-risks {
   width: min(100%, 360px);
 }
 
-/* ------------------------------------------------------ the front door */
-
 .pk-landing__hero {
   padding-top: var(--space-6);
   padding-bottom: var(--space-8);
 }
-/* The hero picture: the three pets on a hill, eyes on the visitor. */
 .pk-heroscene {
   position: relative;
   aspect-ratio: 1.12;
@@ -7062,7 +6987,6 @@ details > .pk-risks {
   width: 100%;
 }
 
-/* Live figures, read from the program: Paper, because they are facts. */
 .pk-live {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7071,7 +6995,7 @@ details > .pk-risks {
 }
 @media (min-width: 720px) {
   .pk-live {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 }
 .pk-live__fig {
@@ -7088,11 +7012,30 @@ details > .pk-risks {
   margin-bottom: var(--space-6);
 }
 
-/* A day with them: four cards, each drawn rather than iconned. */
 .pk-days {
   display: grid;
   gap: var(--space-5);
   grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+}
+@media (max-width: 719px) {
+  .pk-days {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: min(78%, 320px);
+    gap: var(--space-4);
+    margin-inline: calc(-1 * var(--gutter));
+    padding: var(--space-1) var(--gutter) var(--space-4);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+  }
+  .pk-days::-webkit-scrollbar {
+    display: none;
+  }
+  .pk-day {
+    scroll-snap-align: start;
+  }
 }
 .pk-day {
   display: grid;
@@ -7199,7 +7142,241 @@ details > .pk-risks {
   rotate: -8deg;
 }
 
-/* Keep them on Solana: the one inverted band, ink for the layer underneath. */
+.pk-landing__band {
+  padding-bottom: var(--space-9);
+}
+
+.pk-roomshow {
+  display: grid;
+  gap: var(--space-6);
+}
+.pk-roomshow__head {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .pk-roomshow__head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 56px;
+  }
+}
+.pk-roomshow__photos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5) var(--space-2) var(--space-6);
+}
+.pk-roomshow__print {
+  position: relative;
+  flex: 0 0 34%;
+  margin: 0;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker);
+  rotate: -4deg;
+  transition:
+    rotate var(--dur-swap) var(--ease-spring),
+    translate var(--dur-swap) var(--ease-spring);
+}
+.pk-roomshow__print + .pk-roomshow__print {
+  margin-inline-start: -2%;
+}
+.pk-roomshow__print:nth-child(2) {
+  z-index: 1;
+  rotate: 2deg;
+  translate: 0 -10px;
+}
+.pk-roomshow__print:nth-child(3) {
+  rotate: 5deg;
+}
+.pk-roomshow__print::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -10px;
+  left: 50%;
+  width: 72px;
+  height: 22px;
+  translate: -50% 0;
+  rotate: -3deg;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--sun-soft) 78%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--edge) 14%, transparent);
+}
+.pk-roomshow__print img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--radius-md) - 2px);
+}
+@media (hover: hover) {
+  .pk-roomshow__print:hover {
+    z-index: 2;
+    rotate: 0deg;
+    translate: 0 -6px;
+  }
+}
+@media (max-width: 1023px) {
+  .pk-roomshow__photos {
+    justify-content: flex-start;
+    gap: var(--space-4);
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: max(var(--gutter), calc((100% - min(78%, 420px)) / 2));
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+  }
+  .pk-roomshow__photos::-webkit-scrollbar {
+    display: none;
+  }
+  .pk-roomshow__print {
+    flex-basis: min(78%, 420px);
+    scroll-snap-align: center;
+  }
+  .pk-roomshow__print + .pk-roomshow__print {
+    margin-inline-start: 0;
+  }
+  .pk-roomshow__print:nth-child(2) {
+    translate: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pk-roomshow__print {
+    transition: none;
+  }
+}
+.pk-roomshow__things {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (max-width: 479px) {
+  .pk-roomshow__things {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.pk-roomshow__things li {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  border: var(--stroke-line) solid var(--edge-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  box-shadow: var(--shadow-well);
+}
+.pk-roomshow__things svg {
+  width: 74%;
+  height: 74%;
+}
+
+.pk-day__coats {
+  position: absolute;
+  right: 6%;
+  bottom: 7%;
+  display: flex;
+  gap: 3px;
+}
+.pk-day__coats span {
+  width: 9cqh;
+  aspect-ratio: 1;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-pill);
+}
+
+.pk-shelfshow {
+  display: grid;
+  gap: var(--space-5);
+}
+.pk-shelfshow__tiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(156px, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-1) var(--space-3);
+  color: inherit;
+  text-decoration: none;
+}
+@media (max-width: 1023px) {
+  .pk-shelfshow__tiles {
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: var(--gutter);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+  }
+  .pk-shelfshow__tiles::-webkit-scrollbar {
+    display: none;
+  }
+  .pk-shelfshow__tiles > * {
+    scroll-snap-align: start;
+  }
+}
+@media (hover: hover) {
+  .pk-shelfshow__tiles:hover .pk-tile {
+    translate: 0 -2px;
+  }
+}
+
+.pk-owned {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 720px) {
+  .pk-owned {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.pk-owned__col {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker);
+}
+.pk-owned__col ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pk-owned__col li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: var(--space-2);
+}
+.pk-owned__col li::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-top: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--sprout);
+  box-shadow: 0 0 0 2px var(--edge);
+}
+.pk-owned__col--paper {
+  border: var(--stroke-hair) solid var(--rule);
+  border-radius: var(--radius-paper);
+  background: var(--paper);
+  box-shadow: none;
+}
+.pk-owned__col--paper li::before {
+  border-radius: 1px;
+  background: var(--trim-foil);
+}
+.pk-owned__more {
+  margin-top: var(--space-5);
+}
+
 .pk-solana {
   padding: var(--space-7) var(--space-5);
   border: var(--stroke-line) solid var(--edge);
@@ -7263,8 +7440,6 @@ details > .pk-risks {
     gap: var(--space-3);
   }
 }
-/* On the smallest phones the portrait stands over the name, so a name is
-   never broken inside a word to fit beside it. */
 @media (max-width: 399px) {
   .pk-passcard__head {
     grid-template-columns: minmax(0, 1fr);
@@ -7274,7 +7449,6 @@ details > .pk-risks {
   }
 }
 
-/* The last word: three pets, the question, the door. */
 .pk-finale {
   display: grid;
   justify-items: center;
@@ -7298,16 +7472,6 @@ details > .pk-risks {
   width: clamp(80px, 25vw, 184px);
 }
 
-/* ------------------------------------------------------------------ motion
-
-   One thing becoming another is seen happening, never cut: a choice taking
-   effect, a tab's panel arriving, a sentence that changed, a page coming
-   in. All of it eases out on --ease-swap over --dur-swap (240ms) — quick
-   enough never to wait on, long enough to follow — and moves a few pixels
-   at most. A state that changes transitions; content that is replaced is
-   remounted (a new key) and eases in. Nothing here loops, and under
-   reduced motion all of it is instant (the global rule). */
-
 @keyframes pk-swap-in {
   from {
     opacity: 0;
@@ -7328,7 +7492,6 @@ details > .pk-risks {
   }
 }
 
-/* Content that was replaced: a tab's panel, a pet's things, a sentence. */
 .pk-swap-in {
   animation: pk-swap-in var(--dur-swap) var(--ease-swap);
 }
@@ -7339,14 +7502,6 @@ details > .pk-risks {
   animation: pk-pop-in 320ms var(--ease-swap);
 }
 
-/* Going somewhere: only the screen moves, as a view transition (`Screen`
-   names the way in and out). The old screen lets go quickly so it never
-   competes; the new one arrives a beat later and more gently. Into
-   something deeper the new screen comes from the right while the old one
-   steps left; back, the other way; to another place in the dock, a fade
-   and a rise. The shell and the dock are the room's walls: they change in
-   place, at once — the dock's own pill does the travelling. A browser
-   without view transitions simply shows the new screen. */
 ::view-transition {
   pointer-events: none;
 }
@@ -7356,8 +7511,6 @@ details > .pk-risks {
 ::view-transition-new(root) {
   animation: none;
 }
-/* The dock and the toasts ride above the screen that is arriving, as they
-   do on the page: never under it, and changed in place. */
 .pk-dock {
   view-transition-name: pk-dock;
 }
@@ -7448,9 +7601,6 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
   }
 }
 
-/* A pick takes effect: the chosen one rises onto its shelf, just past and
-   back, and the one it replaced lets go. Transitions, so nothing moves on
-   arrival — only when a choice changes. */
 .pk-choice,
 .pk-tabs__t,
 .pk-tool,
@@ -7482,9 +7632,6 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
   transition-duration: var(--dur-press);
 }
 
-/* Everything a finger can press gives under it, for the moment it is held:
-   a card-like row presses flat, a line in a list takes a tint that reaches a
-   little past its words, a choice squeezes, a pet in the park ducks. */
 .pk-guild:has(.pk-guild__name:active) {
   transform: translate(1px, 1px);
   box-shadow: var(--shadow-sticker-sm);
@@ -7511,8 +7658,6 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
   scale: 0.94;
 }
 
-/* Counts that change — a vital after a care, a level filling — fill in,
-   segment by segment, rather than flipping. */
 .pk-meter__seg,
 .pk-mini__seg {
   transition:
@@ -7523,11 +7668,9 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
   transition: stroke var(--dur-swap) var(--ease-swap);
 }
 
-/* Five emotes, five equal tiles: one row, never three and two of different
-   widths. On a phone each is its glyph over its word. */
 .pk-emotes {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-2);
   margin-top: var(--space-4);
 }
@@ -7547,12 +7690,10 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
   }
 }
 
-/* What a tool on the deck opens below it rises into place. */
 .pk-deck__panel > * {
   animation: pk-swap-in var(--dur-swap) var(--ease-swap);
 }
 
-/* The look as a sentence, and what was said about it. */
 .pk-look__panel {
   animation: pk-swap-in var(--dur-swap) var(--ease-swap);
 }
@@ -7568,7 +7709,6 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
   transition: background-color var(--dur-swap) var(--ease-swap);
 }
 
-/* The flat room's peg doll changing: a squash and a stretch, from its feet. */
 .pk-room__who--dressed {
   animation: pk-dressed 460ms var(--ease-swap);
   transform-origin: 50% 100%;
@@ -7588,8 +7728,6 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
   }
 }
 
-/* Changing rooms (themes) crossfades the whole page, where the browser can
-   (the room switch marks the document while it does). */
 html[data-transition="room"]::view-transition-old(*) {
   display: block;
   animation: pk-vt-fade-out var(--dur-room) var(--ease-swap) both;
@@ -7598,54 +7736,70 @@ html[data-transition="room"]::view-transition-new(*) {
   animation: pk-vt-fade-in var(--dur-room) var(--ease-swap) both;
 }
 
-/* Toasts: what a send is doing, in the corner and over the page — never in
-   it. A sticker card like any other, small: the mark says wait, done or
-   refused; the words say what; a toast that is done goes by itself. Above
-   the shell bar on a phone, where the dock is not; top right where there is
-   room. */
 .pk-toasts {
   position: fixed;
   z-index: 40;
   top: max(var(--space-3), env(safe-area-inset-top));
-  left: max(var(--gutter), env(safe-area-inset-left));
-  right: max(var(--gutter), env(safe-area-inset-right));
+  left: 50%;
+  translate: -50% 0;
+  width: min(360px, calc(100% - 2 * max(var(--gutter), env(safe-area-inset-left), env(safe-area-inset-right))));
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: column-reverse;
   gap: var(--space-2);
   pointer-events: none;
 }
-@media (min-width: 720px) {
-  .pk-toasts {
-    left: auto;
-    width: 380px;
-    top: calc(var(--space-10) + var(--space-2));
-  }
-}
 .pk-toast {
+  position: relative;
+  z-index: 1;
   pointer-events: auto;
+  touch-action: none;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 26px minmax(0, 1fr) 26px;
   align-items: start;
-  gap: var(--space-3);
-  width: 100%;
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  gap: 10px;
+  padding: 9px;
   background: var(--surface);
   color: var(--ink);
   border: var(--stroke-line) solid var(--edge);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sticker);
-  animation: pk-toast-in var(--dur-sheet) var(--ease-press);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sticker-sm);
+  transform-origin: bottom center;
+  transition:
+    transform var(--dur-swap) var(--ease-spring),
+    translate var(--dur-swap) var(--ease-swap),
+    opacity var(--dur-swap) var(--ease-swap);
+  animation: pk-toast-in 320ms var(--ease-spring);
+}
+.pk-toasts:not([data-open]) .pk-toast[data-depth]:not([data-depth="0"]) {
+  position: absolute;
+  inset: 0;
+  z-index: calc(-1 * var(--depth));
+  transform: translateY(calc(var(--depth) * 10px)) scale(calc(1 - var(--depth) * 0.05));
+}
+.pk-toasts:not([data-open]) .pk-toast[data-depth]:not([data-depth="0"]) > * {
+  visibility: hidden;
+}
+.pk-toasts:not([data-open]) .pk-toast[data-leaving] {
+  position: absolute;
+  inset: 0 0 auto;
+}
+.pk-toast[data-leaving] {
+  pointer-events: none;
+  animation: pk-toast-out 200ms var(--ease-swap) forwards;
+}
+.pk-toast__words {
+  min-width: 0;
 }
 .pk-toast__mark {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  margin-top: 1px;
+  width: 26px;
+  height: 26px;
+  margin-top: -4px;
   border-radius: var(--radius-pill);
   background: var(--surface-sunk);
   color: var(--ink-soft);
+  animation: pk-toast-pop 360ms var(--ease-spring) 60ms both;
 }
 .pk-toast--done .pk-toast__mark {
   background: var(--pool-soft);
@@ -7664,16 +7818,16 @@ html[data-transition="room"]::view-transition-new(*) {
 }
 .pk-toast__title {
   font-family: var(--font-text);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 13.5px;
+  line-height: 18px;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 .pk-toast__body {
-  margin-top: 2px;
+  margin-top: 1px;
   font-family: var(--font-text);
-  font-size: 13px;
-  line-height: 19px;
+  font-size: 12.5px;
+  line-height: 17px;
   color: var(--ink-soft);
   overflow-wrap: anywhere;
 }
@@ -7682,16 +7836,24 @@ html[data-transition="room"]::view-transition-new(*) {
   font-weight: 600;
 }
 .pk-toast__close {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  margin: -2px -2px 0 0;
+  width: 26px;
+  height: 26px;
+  margin-top: -4px;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-soft);
   cursor: pointer;
+}
+.pk-toast__close::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: inherit;
 }
 @media (hover: hover) {
   .pk-toast__close:hover {
@@ -7702,6 +7864,25 @@ html[data-transition="room"]::view-transition-new(*) {
 .pk-toast__close:focus-visible {
   outline: var(--stroke-line) solid var(--focus);
   outline-offset: 1px;
+}
+@keyframes pk-toast-in {
+  from {
+    opacity: 0;
+    translate: 0 -14px;
+    scale: 0.94;
+  }
+}
+@keyframes pk-toast-out {
+  to {
+    opacity: 0;
+    scale: 0.92;
+  }
+}
+@keyframes pk-toast-pop {
+  from {
+    scale: 0.3;
+    opacity: 0;
+  }
 }
 .pk-spinner {
   width: 14px;
@@ -7716,21 +7897,12 @@ html[data-transition="room"]::view-transition-new(*) {
     transform: rotate(1turn);
   }
 }
-@keyframes pk-toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .pk-spinner {
     animation-duration: 2.4s;
   }
 }
 
-/* A fold: detail a screen keeps closed until asked for — a quiet card whose
-   summary is one row, the title and a line beside it, and a chevron that
-   turns. Never the thing a screen is for: that stays open, above it. */
 .pk-fold {
   border: var(--stroke-line) solid var(--edge-soft);
   border-radius: var(--radius-lg);
@@ -7784,12 +7956,6 @@ html[data-transition="room"]::view-transition-new(*) {
   }
 }
 
-/* ------------------------------------------------------ the Pawket Wallet
-
-   Money is Paper: the balance is a figure on a statement, the history is a
-   ledger read from Solana, and nothing on either moves. The statement sits
-   beside this browser's link. */
-
 .pk-wallet-top {
   display: grid;
   gap: var(--space-4);
@@ -7813,13 +7979,32 @@ html[data-transition="room"]::view-transition-new(*) {
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
-.pk-wallet-more summary {
-  cursor: pointer;
+.pk-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
   color: var(--ink-soft);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.pk-more > summary::-webkit-details-marker {
+  display: none;
+}
+.pk-more > summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: var(--stroke-line) solid currentColor;
+  border-bottom: var(--stroke-line) solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--dur-press) var(--ease-press);
+}
+.pk-more[open] > summary::after {
+  transform: translateY(2px) rotate(225deg);
 }
 
-/* A ledger: one line a transaction, what it was on the left, how the
-   balance moved on the right — the figure is the link to the explorer. */
 .pk-ledger {
   display: grid;
   margin: 0;
@@ -7853,7 +8038,6 @@ html[data-transition="room"]::view-transition-new(*) {
   text-underline-offset: 3px;
 }
 
-/* Keep the whole game and its controls reachable when a phone turns sideways. */
 @media (orientation: landscape) and (max-height: 500px) {
   .pk-pairs { grid-template-columns: minmax(0, 1fr) var(--space-10); padding: var(--space-3); gap: var(--space-3); }
   .pk-pairs__board { grid-template-columns: repeat(6, minmax(0, 1fr)); }
@@ -7862,6 +8046,271 @@ html[data-transition="room"]::view-transition-new(*) {
   .pk-paws__paw { width: min(100%, calc(100svh - var(--space-10) - var(--space-9))); }
 }
 
-/* A photo frame on the shelf: a small print in that frame (FrameArt). */
 .pk-tile__art .pk-market-frame { width: 74%; height: auto; }
 .pk-market-try .pk-market-frame { width: auto; height: 196px; align-self: center; }
+
+.pk-nav-progress {
+  position: fixed;
+  z-index: 50;
+  top: env(safe-area-inset-top, 0);
+  left: 0;
+  width: 100%;
+  height: 3px;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: var(--sun);
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-swap) var(--ease-swap);
+}
+.pk-nav-progress[data-on] {
+  opacity: 1;
+  animation: pk-nav-grow 10s cubic-bezier(0.1, 0.8, 0.2, 1) 150ms both;
+}
+@keyframes pk-nav-grow {
+  from {
+    transform: scaleX(0.08);
+  }
+  to {
+    transform: scaleX(0.94);
+  }
+}
+button.pk-tabs__t { font-family: var(--font-text); }
+button.pk-tabs__t:not(.pk-tabs__t--on) { background: transparent; }
+
+.pk-guild--yours {
+  background: var(--bloom-soft);
+  border-color: var(--bloom-edge);
+  box-shadow: 2px 2px 0 var(--bloom-edge);
+}
+@media (hover: hover) {
+  .pk-guild--yours:has(.pk-guild__name:hover) {
+    box-shadow: 3px 3px 0 var(--bloom-edge);
+  }
+}
+.pk-guild--yours:has(.pk-guild__name:active) {
+  box-shadow: 1px 1px 0 var(--bloom-edge);
+}
+.pk-guild__you {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+  padding: 2px var(--space-2) 2px 2px;
+  border: var(--stroke-line) solid var(--bloom-text);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--bloom-text);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pk-guild__you .pk-avatar {
+  width: 24px;
+  height: 24px;
+  border-width: 1.5px;
+}
+.pk-guild__you .pk-avatar + .pk-avatar {
+  margin-left: -10px;
+}
+.pk-guild__you > :not(.pk-avatar):first-child {
+  padding-left: var(--space-1);
+}
+.pk-chip--yours {
+  background: var(--bloom);
+  border-color: var(--edge);
+  color: var(--on-bloom);
+}
+
+.pk-date-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-sunk);
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.pk-date-trigger > span {
+  flex: 1;
+}
+.pk-date-trigger > svg:last-child {
+  transform: rotate(90deg);
+  color: var(--ink-soft);
+}
+.pk-date-trigger--time {
+  display: inline-flex;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+@media (any-pointer: coarse), (max-width: 719px) {
+  .pk-date-trigger--time {
+    min-height: var(--touch-target);
+  }
+}
+.pk-calendar {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+.pk-calendar__month {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  text-align: center;
+}
+.pk-calendar__month .pk-btn {
+  width: 44px;
+  padding: 0;
+}
+.pk-calendar__month .pk-btn__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.pk-calendar__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+}
+.pk-calendar__week + .pk-calendar__week {
+  margin-top: 2px;
+}
+.pk-calendar__day {
+  position: relative;
+  width: 100%;
+  min-height: 40px;
+  font: inherit;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border: var(--stroke-line) solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-swap) var(--ease-swap),
+    border-color var(--dur-swap) var(--ease-swap),
+    box-shadow var(--dur-swap) var(--ease-swap),
+    transform var(--dur-swap) var(--ease-spring);
+}
+.pk-calendar__day[data-outside] {
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+.pk-calendar__day:disabled {
+  color: var(--ink-faint);
+  font-weight: 400;
+  opacity: 0.45;
+  cursor: default;
+}
+.pk-calendar__day[aria-current="date"]::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 2px);
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--sun);
+}
+[aria-selected="true"] > .pk-calendar__day {
+  background: var(--surface);
+  border-color: var(--edge);
+  box-shadow: var(--shadow-sticker-sm);
+  transform: translateY(-1px);
+}
+@media (hover: hover) {
+  [aria-selected="false"] > .pk-calendar__day:not(:disabled):hover {
+    background: var(--surface-sunk);
+  }
+}
+.pk-calendar__day:active:not(:disabled) {
+  transform: scale(0.95);
+  transition-duration: var(--dur-press);
+}
+.pk-calendar__when {
+  margin-top: var(--space-4);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pk-clock {
+  display: grid;
+  gap: var(--space-3);
+}
+.pk-clock .pk-choice {
+  padding-inline: 0;
+  font-variant-numeric: tabular-nums;
+}
+.pk-clock__hours .pk-choices {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.pk-clock__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.pk-clock__quarters .pk-choices,
+.pk-clock__half .pk-choices {
+  display: grid;
+  grid-template-columns: repeat(4, 48px);
+}
+.pk-clock__half .pk-choices {
+  grid-template-columns: repeat(2, 48px);
+}
+
+.pk-room-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.pk-soundswitch {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  color: var(--ink-faint);
+  box-shadow: var(--shadow-sticker-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-swap) var(--ease-swap),
+    color var(--dur-swap) var(--ease-swap);
+}
+.pk-soundswitch[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+}
+.pk-soundswitch:active {
+  transform: scale(0.95);
+}
+@media (any-pointer: coarse), (max-width: 719px) {
+  .pk-soundswitch {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+

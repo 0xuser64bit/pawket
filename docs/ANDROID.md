@@ -13,7 +13,9 @@ player key or transaction engine.
 | `android/app/src/main/java/app/pawket/android/MainActivity.kt` | WebView lifecycle, back, splash/offline screens, renderer recovery, shortcuts and App Links |
 | `WebShellViewClient.kt` / `WebShellChromeClient.kt` | Trusted-origin navigation, wallet intents, new windows and permission refusal |
 | `PawketBridge.kt` | Validated native operations for the trusted main frame |
-| `android/app/src/test/…/BoundaryTest.kt` | Origin, image and filename boundary tests |
+| `CareReminder.kt` | The one care reminder: checked fields, an inexact alarm and its notification |
+| `ShellRules.kt` | What a frame or a page reached without a link may load; when a dying renderer waits for the player |
+| `android/app/src/test/…/BoundaryTest.kt` / `ShellRulesTest.kt` / `CareReminderTest.kt` | Origin, image, filename, frame, posted-page, renderer-retry and reminder tests |
 | `src/lib/native/android.ts` | Page bridge and "this app"/"this browser" wording |
 | `src/lib/solana/browser-client.ts` | Android-only Mobile Wallet Adapter registration |
 | `public/.well-known/assetlinks.json` | Package and release signer permitted to open site links |
@@ -22,6 +24,9 @@ player key or transaction engine.
 The current release opens `https://pawket.world/home`. Only its exact scheme,
 host and port load inside. External sites open in a browser; wallet intents
 start the wallet app. File, content and data URLs cannot navigate the WebView.
+Frames load only that origin or an empty document. A page reached without a
+link — a form posted to another site — opens in the browser, and the app goes
+back to where it was.
 Release start URLs require HTTPS. Cleartext is allowed only for localhost and
 127.0.0.1, including Mobile Wallet Adapter's local connection.
 
@@ -29,22 +34,30 @@ Release start URLs require HTTPS. Cleartext is allowed only for localhost and
 
 Android registers Mobile Wallet Adapter as a Wallet Standard wallet. Wallet
 apps authorize and return signed transactions through the shared `send.ts`;
-the bridge never signs. Every Solana app action requires a linked, funded
-Pawket Wallet. Setup and money require owner approval; non-money actions use
+the bridge never signs. Every Solana app action requires a linked Pawket
+Wallet, holding SOL where it is spent. Setup and money require owner approval; non-money actions use
 the non-extractable device key within its expiry and daily limit.
 
 A declined, closed or missing wallet sends nothing. Uncertain broadcast or
 confirmation replies preserve the existing signature for lookup, without
 resending. Care moments and haptics wait for confirmation. Local MWA patches
-close sessions after failure, retry expired authorization within the same
-session, reject account changes and bound waiting; `mobile-session.test.ts`
-holds those behaviors. Consumer-wallet compatibility requires device testing.
+close sessions after failure, reject account changes and bound waiting. A
+wallet's token is sent for a silent re-authorization only while it is under
+45 minutes old: Phantom's lapse within hours and Solflare's within days, and a
+wallet sent a lapsed one can open with nothing to sign. Past that, the visit
+asks the wallet afresh, then signs. A token the wallet refuses ends the visit
+at once, and the next visit asks afresh; no second ask is made in the same
+visit. While a wallet app is open, the send's toast offers "Stop waiting",
+which ends the visit, signs nothing and also makes the next visit ask afresh.
+`src/lib/solana/mobile-session.test.ts` holds those behaviors. Consumer-wallet
+compatibility requires device testing.
 
 Back closes the latest page overlay, then page history, then backgrounds the
 root app. Configuration changes do not reload a waiting send. The WebView
 pauses when hidden without stopping wallet-response timers. Saved navigation
 is restored only within the current trusted origin; renderer loss creates a
-new WebView. There is no pull-to-refresh. Insets account for system bars and
+new WebView, and a second loss within a minute waits on the retry screen, which
+starts again from the first page. There is no pull-to-refresh. Insets account for system bars and
 the keyboard; text follows the phone's font setting.
 
 ## Native bridge
@@ -59,15 +72,25 @@ a JVM boundary test and a documented permission reason.
 | `share-image` | Validated PNG in a unique cache file, shared through a read-only FileProvider URI; old files cleared | None |
 | `save-image` | MediaStore image in `Pictures/Pawket`; failed writes remove partial images | None on minSdk 29+ |
 | `share-link` | Pawket-origin link through the share sheet | None |
+| `share-card` | A record's card (validated PNG, staged like `share-image`) with its Pawket-origin link and words, so a chat shows the picture; an older app answers `unknown` and the page shares the link alone | None |
 | `remind` | Calendar editor with a daily reminder for 30 days; the player saves it | None |
-| `haptic` | Done, cheer or refusal feedback respecting phone and app settings | None |
+| `allow-reminders` | Asked when the player turns care reminders on (Home or Settings); answers whether the phone lets Pawket post | `POST_NOTIFICATIONS` on Android 13+, asked only here |
+| `care-reminder` | Sets or clears the one care reminder: a time within three days and plain words (control characters removed, lengths capped), as an inexact alarm; tapping it opens the app where it was left | None more |
+| `haptic` | Done, cheer, refusal or a boop's light tap, respecting phone and app settings (an older app ignores a kind it does not know) | None |
 | `room` | Validated ground color and day/night system bars | None |
 
 The bridge accepts no key, transaction, filesystem path or URL to load.
 External intent URLs become fresh restricted navigation intents, without
-supplied components, selectors, extras or permission flags. The only Android
-capability permission is INTERNET; AndroidX's app-private signature permission
-adds no runtime prompt or data access.
+supplied components, selectors, extras or permission flags. The app's
+permissions are INTERNET and POST_NOTIFICATIONS. The second is the care
+reminder's, the one thing the app says while it is closed; Android 13 and later
+ask for it only when the player turns care reminders on, and refusing leaves
+them off. The page works out when a pet will first need care
+(`src/lib/reminders/care.ts`, from the program's decay, moved to 09:00–21:00 on
+the phone's clock) and sets one reminder, replaced whenever a record changes;
+nothing about it leaves the phone, and a restart clears it until Pawket is
+opened again. AndroidX's app-private signature permission adds no runtime
+prompt or data access.
 
 ## Storage and recovery
 
@@ -128,8 +151,11 @@ publisher's keystore, with passwords supplied through its supported environment
 or local Keychain. Never commit or include the keystore/password in a source
 archive, APK or release evidence. Back up both securely under owner control.
 
-Verify that the release signer matches `assetlinks.json` and the package,
-version and trusted origin match `android/gradle.properties`. Store the signed
+The script refuses uncommitted changes under `android/` or `public/.well-known/`,
+an APK whose package or version differs from `android/gradle.properties`, and
+a signer `assetlinks.json` does not list; it prints the shell commit and the
+hosted web commit (`/api/health`). CI runs it on every push with a throwaway key,
+which it must build, sign and refuse at the signer check. Store the signed
 APK with its SHA-256, signer fingerprint, shell source commit, hosted web commit,
 cluster, device matrix, results and public receipts. Keep that evidence with
 the release artifacts outside tracked product documentation. Publication
@@ -158,6 +184,7 @@ TalkBack pass; emulator results do not close that gate.
 | Passport and App Links | Same wallet's chain pet returns; trusted public links open in release |
 | Back, keyboard, large text, TalkBack, games and 3D/flat | Controls remain accessible; no gesture reloads a send |
 | Haptic setting and calendar editor | Preference persists; player controls calendar save; no new runtime permissions |
+| Care reminders | Turning on asks once on Android 13+, and a refusal leaves them off; a pet left alone is named at the predicted waking hour; tapping opens the app without reloading it; off clears it |
 | Offline cold open and uncertain send | Retry screen; recover known signature before a new action |
 
 Reproduce failures with the recorded versions, fix the owning layer and rerun

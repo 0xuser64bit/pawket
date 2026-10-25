@@ -8,11 +8,15 @@ import {
   getBase64EncodedWireTransaction,
   getSignatureFromTransaction,
   getTransactionDecoder,
+  partiallySignTransaction,
   pipe,
+  setTransactionMessageFeePayer,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
   SolanaError,
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
+  type Address,
+  type Transaction,
 } from "@solana/kit";
 import { describe, expect, it, vi } from "vitest";
 import { CONFIRMATION_TIMEOUT_MS, type TransactionStage } from "./transactions";
@@ -123,7 +127,7 @@ describe("broadcast uncertainty", () => {
       } }),
     } as unknown as SendRpc;
     await expect(sendPawket({ rpc, owner, sponsor: null, instructions: () => [] })).resolves.toEqual({
-      signature: expect.any(String), outcome: "confirmed", sponsored: false,
+      signature: expect.any(String), outcome: "confirmed", sponsored: false, blockhash: "11111111111111111111111111111111",
     });
     expect(sent).toBe(1);
   });
@@ -139,5 +143,63 @@ describe("broadcast uncertainty", () => {
       getSignatureStatuses: () => { throw new Error("Must not confirm a refused simulation"); },
     } as unknown as SendRpc;
     await expect(sendPawket({ rpc, owner, sponsor: null, instructions: () => [] })).rejects.toBe(refusal);
+  });
+});
+
+describe("message integrity", () => {
+  const first = { blockhash: blockhash("11111111111111111111111111111111"), lastValidBlockHeight: 1n };
+  const other = { blockhash: blockhash("SysvarC1ock11111111111111111111111111111111"), lastValidBlockHeight: 1n };
+  const paidBy = (payer: Address, lifetime = first) => compileTransaction(pipe(
+    createTransactionMessage({ version: "legacy" }),
+    (m) => setTransactionMessageFeePayer(payer, m),
+    (m) => setTransactionMessageLifetimeUsingBlockhash(lifetime, m),
+  ));
+  const rpcThatMustNotSend = () => {
+    const send = vi.fn();
+    const rpc = {
+      getLatestBlockhash: () => ({ send: async () => ({ value: first }) }),
+      sendTransaction: () => ({ send }),
+      getSignatureStatuses: () => ({ send }),
+    } as unknown as SendRpc;
+    return { rpc, send };
+  };
+  const rewriting = (address: Address, into: Transaction) => ({
+    address,
+    modifyAndSignTransactions: vi.fn(async () => [into]),
+  });
+
+  it("refuses a sponsor reply that is not the transaction it was given, before the wallet sees it", async () => {
+    const owner = await generateKeyPairSigner();
+    const sponsor = await generateKeyPairSigner();
+    const signTransactions = vi.fn();
+    const { rpc, send } = rpcThatMustNotSend();
+    const cosign = async () => getBase64EncodedWireTransaction(await partiallySignTransaction([sponsor.keyPair], paidBy(sponsor.address, other)));
+    await expect(sendPawket({ rpc, owner: { ...owner, signTransactions }, sponsor: sponsor.address, instructions: () => [], cosign }))
+      .rejects.toThrow(/sponsor returned a different transaction.*Nothing was sent/);
+    expect(signTransactions).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("refuses a wallet that changes a transaction the sponsor already signed", async () => {
+    const owner = await generateKeyPairSigner();
+    const sponsor = await generateKeyPairSigner();
+    const { rpc, send } = rpcThatMustNotSend();
+    const wallet = rewriting(owner.address, paidBy(sponsor.address, other));
+    const cosign = async (wire: string) => getBase64EncodedWireTransaction(await partiallySignTransaction([sponsor.keyPair], getTransactionDecoder().decode(getBase64Encoder().encode(wire))));
+    await expect(sendPawket({ rpc, owner: wallet as never, sponsor: sponsor.address, instructions: () => [], cosign }))
+      .rejects.toThrow(/wallet changed the transaction.*Nothing was sent/);
+    expect(wallet.modifyAndSignTransactions).toHaveBeenCalledOnce();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("refuses a wallet that changes a prepared transaction another key already signed", async () => {
+    const owner = await generateKeyPairSigner();
+    const cosigner = await generateKeyPairSigner();
+    const { rpc, send } = rpcThatMustNotSend();
+    const prepared = await partiallySignTransaction([cosigner.keyPair], paidBy(cosigner.address));
+    const wallet = rewriting(owner.address, paidBy(cosigner.address, other));
+    await expect(sendPrepared({ rpc, owner: wallet as never, prepare: async () => getBase64EncodedWireTransaction(prepared) }))
+      .rejects.toThrow(/wallet changed the transaction.*Nothing was sent/);
+    expect(send).not.toHaveBeenCalled();
   });
 });

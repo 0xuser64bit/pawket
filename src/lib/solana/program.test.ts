@@ -50,12 +50,6 @@ import {
   WEARABLE_COUNT,
 } from "./program";
 
-/**
- * `program.ts` is hand-written; the IDL is what `anchor build` says the
- * program is. Every number the client encodes or decodes is held to it, so a
- * program change that skips the client fails here, not on devnet.
- */
-
 const A = "11111111111111111111111111111111";
 const B = "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74";
 const camel = (snake: string) => snake.replace(/_(\w)/g, (_, c: string) => c.toUpperCase());
@@ -96,7 +90,6 @@ const BUILT: Record<string, Instruction> = {
   deposit: getDepositInstruction({ owner: A, wallet: A, amount: 50_000_000n }),
   withdraw: getWithdrawInstruction({ owner: A, wallet: A, amount: 1n }),
   link_device: getLinkDeviceInstruction({ owner: A, wallet: A, device: B, expiresAt: 1_790_848_800, dailyActions: 300 }),
-  // As the IDL has it; a device that signs its own unlink is a signer there too (below).
   unlink_device: getUnlinkDeviceInstruction({ authority: A, wallet: A, device: B, deviceSigns: false }),
   close_wallet: getCloseWalletInstruction({ owner: A, wallet: A, rentPayer: A }),
   fund_wallet_spend: getWalletSpendInstruction({ owner: A, wallet: A, device: B, keep: 0n, amount: 1n }),
@@ -111,7 +104,6 @@ const BUILT: Record<string, Instruction> = {
   vote: getVoteInstruction({ owner: A, payer: A, pet: A, member: A, poll: A, ballot: A, option: 1 }),
   wave: getWaveInstruction({ visitor: A, payer: A, pet: A, guestbook: A }),
 };
-// Every device twin, built the one way the app builds it: from its owner's instruction.
 const snake = (camelName: string) => camelName.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 for (const [owner, device] of Object.entries(DEVICE_VARIANTS)) {
   BUILT[snake(device)] = asDeviceInstruction(BUILT[snake(owner)], { device: A, wallet: A });
@@ -170,7 +162,6 @@ describe("program.ts against the IDL", () => {
     expect(link.slice(16)).toEqual([44, 1]);
     expect(Array.from(BUILT.deposit.data ?? []).slice(8)).toEqual([128, 240, 250, 2, 0, 0, 0, 0]);
     expect(Array.from(BUILT.dress_by_device.data ?? []).slice(8)).toEqual([0]);
-    // The device signs a link, and an unlink it gives its float back on.
     expect(BUILT.link_device.accounts?.[2]).toMatchObject({ address: B, role: AccountRole.WRITABLE_SIGNER });
     expect(getUnlinkDeviceInstruction({ authority: A, wallet: A, device: B, deviceSigns: true }).accounts?.[2]).toMatchObject({
       address: B,
@@ -187,7 +178,6 @@ describe("program.ts against the IDL", () => {
       expect(twin.args, device).toEqual(mine.args);
       expect(twin.accounts.map((a) => a.name), device).toEqual(["device", "wallet", ...mine.accounts.slice(1).map((a) => a.name)]);
     }
-    // Every `*_by_device` instruction the program has is a twin here; nothing that moves money is.
     const twins = idl.instructions.filter((ix) => ix.name.endsWith("_by_device")).map((ix) => camel(ix.name)).sort();
     expect([...Object.values(DEVICE_VARIANTS)].sort()).toEqual(twins);
     for (const money of ["buy", "buyWithWallet", "fundWalletSpend", "settleWalletSpend", "deposit", "withdraw", "openWallet", "linkDevice", "closeWallet"]) expect(DEVICE_VARIANTS).not.toHaveProperty(money);
@@ -207,7 +197,6 @@ describe("program.ts against the IDL", () => {
     const args = idl.instructions.find((ix) => ix.name === "found_guild")!.args.map((a) => a.name);
     expect(args).toEqual(["slug", "name", "motto", "crest", "colour"]);
     const data = Array.from(BUILT.found_guild.data ?? []);
-    // discriminator, then "sunbeam-club" as a u32-prefixed string
     expect(data.slice(8, 12)).toEqual([12, 0, 0, 0]);
     expect(String.fromCharCode(...data.slice(12, 24))).toBe("sunbeam-club");
     expect(data.slice(-2)).toEqual([0, 0]);
@@ -235,7 +224,6 @@ describe("program.ts against the IDL", () => {
   it("numbers the whole wardrobe and nothing past it: the three starters, then the Market's", () => {
     expect(WEARABLE_COUNT + MARKET.wearables).toBe(WEARABLES.length);
     expect(WEARABLES.slice(0, WEARABLE_COUNT).every((item) => !item.price)).toBe(true);
-    // Each piece's price is the program's: the classics at the classic price, the rest at the wearable price.
     WEARABLES.slice(WEARABLE_COUNT).forEach((item, i) => expect(item.price, item.id).toBe(marketPrice(WEARABLE_COUNT + 1 + i)));
     expect(WEARABLES.slice(WEARABLE_COUNT, WEARABLE_COUNT + MARKET.classicWearables).every((item) => item.price === MARKET.classicPrice)).toBe(true);
     expect(WEARABLES.slice(WEARABLE_COUNT + MARKET.classicWearables).every((item) => item.price === MARKET.wearablePrice)).toBe(true);
@@ -271,7 +259,6 @@ describe("program.ts against the IDL", () => {
     expect(Number(constant("MAX_POLL_QUESTION_LEN"))).toBe(GATHERING_LIMITS.maxQuestion);
     expect(Number(constant("MAX_POLL_OPTION_LEN"))).toBe(GATHERING_LIMITS.maxOption);
     expect(Number(constant("MAX_POLL_OPTIONS"))).toBe(GATHERING_LIMITS.maxOptions);
-    // A poll's options go on the wire as a u32-counted list of strings.
     const poll = Array.from(BUILT.create_poll.data ?? []);
     expect(poll.slice(8, 12)).toEqual([7, 0, 0, 0]);
   });

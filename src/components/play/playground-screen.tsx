@@ -24,6 +24,9 @@ import { DAILY_GOAL_REWARD_XP } from "@/lib/game/constants";
 import { SPECIES_SKY, petLook } from "@/lib/game/appearance";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { recordPlay, utcDay, type GuestPet } from "@/lib/guest/pet";
+import { dayTurnsAt } from "@/lib/utils/format";
+import { useMounted } from "@/lib/utils/use-mounted";
+import { record } from "@/lib/analytics/events";
 import { readPet, savePet } from "@/lib/guest/storage";
 import { getFinishRoundInstruction } from "@/lib/solana/instructions";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
@@ -43,12 +46,10 @@ const GAMES: Array<{ id: GameId; name: string; line: string; unit: (score: numbe
   { id: "pairs", name: "Pairs", line: "Twelve cards, six pairs from the wardrobe. Find them all, missing as little as you can.", unit: (n) => `${n} points` },
 ];
 
-/** A finished round: the score, and — for a pet in this browser — what was saved. */
 type Outcome = {
   game: GameId;
   score: number;
   best: boolean;
-  /** The day's shared round, and its best on this device. */
   daily: boolean;
   dailyBest: boolean;
   xpGained: number;
@@ -59,16 +60,6 @@ type Outcome = {
 const noop = () => () => {};
 const randomSeed = () => Math.floor(Math.random() * 2 ** 31);
 
-/**
- * Four games, each one round. Finishing any of them is the day's round:
- * the first of a UTC day adds the daily XP, once, to the pet that played.
- * The score is the player's; nothing about the pet changes it, and it
- * changes nothing about the pet. Today's round is the same for everyone on
- * the same UTC day, so a score can be compared by sharing it; practice is
- * a new round every time. A pet in this browser keeps the round at once; a
- * pet on Solana keeps it when the player records it — a send is never made
- * for them.
- */
 export function PlaygroundScreen() {
   const companion = useCompanion();
   const { ready, refresh } = companion;
@@ -77,17 +68,19 @@ export function PlaygroundScreen() {
   const [game, setGame] = useState<GameId | null>(null);
   const [daily, setDaily] = useState(true);
   const [round, setRound] = useState(randomSeed);
+  const [day, setDay] = useState(() => utcDay(new Date()));
   const [outcome, setOutcome] = useState<Outcome>();
   const [paused, setPaused] = useState(false);
   const field = useRef<HTMLDivElement>(null);
   const [sound, setSound] = useSound();
+  const mounted = useMounted();
   const today = utcDay(new Date());
   const stored = useSyncExternalStore(noop, () => JSON.stringify([readBest(), readDaily(today)]), () => "[{},{}]");
   const [bests, todays] = JSON.parse(stored) as [Partial<Record<GameId, number>>, Partial<Record<GameId, number>>];
 
   const pet = companion.all.find((p) => p.id === chosen) ?? companion.pet;
   const chain = companion.owned.find((entry) => entry.pet.address === pet?.id) ?? null;
-  const seed = game && daily ? dailySeed(game, today) : round;
+  const seed = game && daily ? dailySeed(game, day) : round;
 
   function play(id: GameId, asDaily = daily) {
     sender.reset();
@@ -95,6 +88,7 @@ export function PlaygroundScreen() {
     setPaused(false);
     setDaily(asDaily);
     setRound(randomSeed());
+    setDay(utcDay(new Date()));
     setGame(id);
   }
 
@@ -111,10 +105,9 @@ export function PlaygroundScreen() {
     (score: number) => {
       if (!game || !pet) return;
       const isBest = keepBest(game, score);
-      const dailyBest = daily ? keepDaily(game, today, score) : false;
+      const dailyBest = daily ? keepDaily(game, day, score) : false;
       const base = { game, score, best: isBest, daily, dailyBest };
       if (chain) {
-        // Kept on Solana only when the player records it; the bonus is the program's call.
         setOutcome({ ...base, xpGained: recordPlay(pet, new Date()).xpGained, saved: false, onChain: true });
         return;
       }
@@ -125,9 +118,10 @@ export function PlaygroundScreen() {
       }
       const result = recordPlay(current, new Date());
       const saved = savePet(result.pet);
+      if (saved) record({ name: "round_finished", where: "browser", game });
       setOutcome({ ...base, xpGained: result.xpGained, saved, onChain: false });
     },
-    [game, pet, chain, daily, today],
+    [game, pet, chain, daily, day],
   );
 
   async function recordRound() {
@@ -135,6 +129,7 @@ export function PlaygroundScreen() {
     const result = await sender.act(`Finish a round with ${pet.name}`, ({ owner }) => [
       getFinishRoundInstruction({ owner, pet: chain.pet.address, passport: chain.passport.address }),
     ]);
+    if (result?.outcome === "confirmed" && game) record({ name: "round_finished", where: "solana", game });
     if (result) refresh();
   }
 
@@ -145,15 +140,17 @@ export function PlaygroundScreen() {
       <ScreenBar>
         <div>
           <h1 className="display-l">Playground</h1>
-          <p className="caption pk-faint">Four games. Any one of them is today&apos;s round.</p>
+          <p className="caption pk-faint">
+            Four games. Any one of them is today&apos;s round{mounted ? `, and a new one comes ${dayTurnsAt()}` : ""}.
+          </p>
         </div>
         <Row gap={2}>
           <Button
-            label={sound ? "Sound on" : "Sound off"}
+            label="Sound"
             icon="music"
             tone="ghost"
             size="sm"
-            className="pk-btn--flush"
+            className="pk-btn--flush pk-btn--toggle"
             aria-pressed={sound}
             onClick={() => setSound(!sound)}
           />
@@ -189,7 +186,7 @@ export function PlaygroundScreen() {
             <div>
               <Row gap={2} wrap>
                 <h2 className="display-m">{current.name}</h2>
-                <Chip label={daily ? `Today's round · ${today}` : "Practice"} tone={daily ? "sun" : undefined} icon={daily ? "star" : "ball"} />
+                <Chip label={daily ? "Today's round" : "Practice"} tone={daily ? "sun" : undefined} icon={daily ? "star" : "ball"} />
               </Row>
               <p className="body-sm pk-muted">{current.line}</p>
             </div>
@@ -214,7 +211,7 @@ export function PlaygroundScreen() {
                 name={current.name}
                 unit={current.unit}
                 bestScore={bests[current.id]}
-                day={today}
+                day={day}
                 sender={sender}
                 onRecord={() => void recordRound()}
                 onAgain={() => play(current.id)}
@@ -243,7 +240,6 @@ function Field({ game, pet, seed, paused, onFinish }: { game: GameId; pet: Guest
   return <CopyGame form={form} temper={temper} wearing={wearing} sky={SPECIES_SKY[pet.species]} seed={seed} paused={paused} onFinish={onFinish} />;
 }
 
-/** The four games as cards, each drawn with the player's own pet in it. */
 function Picker({
   pet,
   pets,
@@ -342,7 +338,6 @@ function Picker({
                   ) : null}
                 </span>
                 <span className="body-sm pk-muted">{game.line}</span>
-                {/* Play covers the whole card, so the drawing is a target too; Practice sits above it. */}
                 <span className="pk-gamecard__go">
                   <Button label="Play" icon="ball" tone="sprout" size="sm" className="pk-gamecard__play" aria-label={`Play ${game.name}, today's round`} onClick={() => onPlay(game.id, true)} />
                   <Button label="Practice" tone="ghost" size="sm" className="pk-gamecard__practice" aria-label={`Practise ${game.name}, a new round`} onClick={() => onPlay(game.id, false)} />
@@ -386,8 +381,6 @@ function Result({
 }) {
   const { Here } = useHere();
   const recorded = sender.tx.stage === "confirmed";
-  // A round ends where it was played; on a phone the score is below it, so
-  // it comes up to meet the player rather than waiting to be found.
   const card = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -425,7 +418,6 @@ function Result({
             {line} {bestScore != null && !outcome.best ? `Your best here is ${bestScore}.` : ""}
           </p>
         </div>
-        {/* The one thing to do next across the width; the rest beneath it, side by side. */}
         <div className="pk-result__acts">
           {outcome.onChain && !recorded ? (
             <Button label="Record the round" icon="spark" tone="sun" full disabled={sender.busy} onClick={onRecord} />

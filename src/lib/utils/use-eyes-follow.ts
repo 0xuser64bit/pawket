@@ -2,15 +2,8 @@
 
 import { useEffect, type RefObject } from "react";
 
-/** How far a pointer has to be, in pet-widths, for the eyes to reach the edge of their range. */
 const REACH = 1.6;
 
-/**
- * Every pet inside `scope` that is marked `data-eyes` looks toward the
- * pointer from where it sits: its eyes move a few units toward it (see
- * `.pk-pet-eyes`). Off for anyone who asked for less motion. One pointer
- * listener and one write per frame, whatever the number of pets.
- */
 export function useEyesFollow(scope: RefObject<HTMLElement | null>, enabled = true) {
   useEffect(() => {
     if (!enabled || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;

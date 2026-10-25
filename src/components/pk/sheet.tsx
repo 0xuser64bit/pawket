@@ -5,20 +5,6 @@ import { createPortal } from "react-dom";
 import { useBackCloses } from "@/lib/native/android";
 import { Icon } from "./icon";
 
-/**
- * A decision that costs money arrives as a Paper sheet over a dimmed
- * Playroom, anchored to the foot of a phone and centred where there is room,
- * with its controls in the `paper-sunk` foot. The corner radius falling from
- * 20px to 4px is the warning; the copy only confirms it. Anything else that
- * needs the whole screen for a moment — choosing a wallet, the wallet you
- * are — is the same sheet in the Playroom (`register="room"`): a card, its
- * title in words, no warning to give.
- *
- * It is a modal in behaviour as well as looks: it renders into the body, so
- * everything behind it goes inert; focus moves into it; and Escape, a tap
- * on the dimmed room, the phone's back gesture in the Android app, or
- * dragging it down by its head leaves by the same door as Cancel.
- */
 export function Sheet({
   title,
   meta,
@@ -31,7 +17,6 @@ export function Sheet({
   meta?: ReactNode;
   foot?: ReactNode | ((dismiss: () => void) => ReactNode);
   register?: "paper" | "room";
-  /** Cancel. Escape and the scrim do the same. */
   onDismiss: () => void;
   children: ReactNode;
 }) {
@@ -54,9 +39,6 @@ export function Sheet({
   useBackCloses(dismiss);
   useEffect(() => () => { if (closing.current !== null) clearTimeout(closing.current); }, []);
 
-  // On a phone the sheet is a thing in the hand: its head drags it down, and
-  // let go past a third of the way (or with a flick) it leaves the way Cancel
-  // does; short of that it settles back. The dimmed room lightens as it goes.
   const drag = useRef<{ from: number; dy: number; y: number; t: number; v: number } | null>(null);
   function grab(event: PointerEvent<HTMLElement>) {
     const target = event.target as HTMLElement;
@@ -70,7 +52,6 @@ export function Sheet({
     const el = sheet.current;
     if (!d || !el) return;
     const raw = event.clientY - d.from;
-    // Down follows the finger; up gives a little, then holds.
     d.dy = raw > 0 ? raw : raw / 5;
     const dt = event.timeStamp - d.t;
     if (dt > 0) d.v = (event.clientY - d.y) / dt;
@@ -96,7 +77,6 @@ export function Sheet({
     const layer = scrim.current;
     if (!layer?.parentElement) return;
     const behind = Array.from(layer.parentElement.children).filter(
-      // Toasts stay awake: a send made from a sheet says how it went over it.
       (el): el is HTMLElement => el !== layer && el instanceof HTMLElement && !el.inert && !el.hasAttribute("data-toasts"),
     );
     for (const el of behind) el.inert = true;
@@ -104,7 +84,7 @@ export function Sheet({
     const overflow = root.style.overflow;
     root.style.overflow = "hidden";
     const before = document.activeElement as HTMLElement | null;
-    sheet.current?.focus();
+    (sheet.current?.querySelector<HTMLElement>("[data-autofocus]") ?? sheet.current)?.focus();
     return () => {
       for (const el of behind) el.inert = false;
       root.style.overflow = overflow;
@@ -154,7 +134,6 @@ export function Sheet({
           <button type="button" className="pk-sheet__close" aria-label={`Close ${title}`} onClick={dismiss}><Icon name="close" size={16} /></button>
         </header>
         <div className="pk-paper__body">{children}</div>
-        {/* The render prop receives an event callback; it does not read the timer ref during render. */}
         {/* eslint-disable-next-line react-hooks/refs */}
         {foot ? <footer className="pk-paper__foot">{typeof foot === "function" ? foot(dismiss) : foot}</footer> : null}
       </section>

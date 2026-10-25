@@ -1,12 +1,12 @@
 package app.pawket.android
 
+import android.view.HapticFeedbackConstants
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import java.util.Base64
 
-/** What the shell lets in: the origin it trusts, and what the bridge takes as a picture or a file name. */
 class BoundaryTest {
     private val png = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3)
 
@@ -14,6 +14,16 @@ class BoundaryTest {
         bytes: ByteArray,
         type: String = "image/png",
     ) = "data:$type;base64," + Base64.getEncoder().encodeToString(bytes)
+
+    @Test
+    fun aHapticIsOneOfTheKindsTheSystemAlreadyHasAndNothingElse() {
+        assertEquals(HapticFeedbackConstants.CLOCK_TICK, PawketBridge.hapticEffect("tap", true))
+        assertEquals(HapticFeedbackConstants.CONFIRM, PawketBridge.hapticEffect("done", true))
+        assertEquals(HapticFeedbackConstants.VIRTUAL_KEY, PawketBridge.hapticEffect("cheer", false))
+        assertEquals(HapticFeedbackConstants.REJECT, PawketBridge.hapticEffect("refuse", true))
+        assertNull(PawketBridge.hapticEffect("buzz", true))
+        assertNull(PawketBridge.hapticEffect("", false))
+    }
 
     @Test
     fun anOriginIsSchemeHostAndAPortThatIsNotTheDefault() {
@@ -61,5 +71,12 @@ class BoundaryTest {
         assertEquals("etc-passwd", PawketBridge.fileName("../../etc/passwd"))
         assertEquals("pawket", PawketBridge.fileName("///"))
         assertEquals(60, PawketBridge.fileName("a".repeat(200)).length)
+    }
+
+    @Test
+    fun sharedWordsAreCappedAndEndWithTheLink() {
+        assertEquals("Mango, kept on Solana. https://pawket.world/pet/x", PawketBridge.shareWords("Mango, kept on Solana.", "https://pawket.world/pet/x"))
+        assertEquals("https://pawket.world/pet/x", PawketBridge.shareWords("   ", "https://pawket.world/pet/x"))
+        assertEquals(280 + 1 + 4, PawketBridge.shareWords("a".repeat(500), "link").length)
     }
 }

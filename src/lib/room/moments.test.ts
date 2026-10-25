@@ -5,7 +5,6 @@ import { ICON_NAMES } from "@/components/pk/icon";
 import { CareActionType } from "@/lib/game/enums";
 import { CARE_MOMENT, EMOTES, FORMATIONS, MOMENTS, PET_CUES, PROPS, findMoment, momentLength, momentSentence } from "./moments";
 
-/** Clip names and durations straight out of a shipped GLB's JSON chunk. */
 function clipsIn(file: string): Map<string, number> {
   const bytes = fs.readFileSync(path.join(process.cwd(), "public/3d", file));
   const json = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString("utf8"));
@@ -53,7 +52,6 @@ describe("moment registry", () => {
       if (moment.prop) {
         expect(PROPS).toContain(moment.prop.kind);
         expect(moment.prop.from).toBeLessThan(moment.prop.to);
-        // A prop needs a moment to shrink away before its moment ends.
         expect(moment.prop.to, moment.id).toBeLessThanOrEqual(length - 0.2);
       }
       if (moment.contact) {

@@ -1,25 +1,15 @@
-/**
- * Collects Pawket's side of every guild coin into its treasury: the
- * partner's share of each curve's trading fees, each coin's launch fee, and
- * what Pawket's half of each graduated pool's locked liquidity has earned.
- * The treasury's key signs and pays; it never touches anyone else's share,
- * and the liquidity itself stays locked.
- *
- *   pnpm dlx tsx scripts/claim-coin-fees.mts            # devnet
- *   pnpm dlx tsx scripts/claim-coin-fees.mts mainnet-beta
- *
- * The treasury's key is .keys/treasury.json (TREASURY_KEYPAIR overrides). It
- * is never put on the server.
- */
 import { readFileSync } from "node:fs";
 import { Connection, Keypair, sendAndConfirmTransaction, type Transaction } from "@solana/web3.js";
 import { DynamicBondingCurveClient, U64_MAX } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { CpAmm, getTokenProgram, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
 import { COIN_CONFIGS, PAWKET_TREASURY, type CoinCluster } from "../src/lib/coins/presets";
+import { isGenesisOf } from "../src/lib/solana/cluster";
 
 const cluster = (process.argv[2] ?? "devnet") as CoinCluster;
+if (cluster !== "devnet" && cluster !== "mainnet-beta") throw new Error("usage: tsx scripts/claim-coin-fees.mts [devnet|mainnet-beta]");
 const url = process.env.SOLANA_RPC_URL ?? (cluster === "devnet" ? "https://api.devnet.solana.com" : "https://api.mainnet-beta.solana.com");
 const connection = new Connection(url, "confirmed");
+if (!isGenesisOf(cluster, await connection.getGenesisHash())) throw new Error(`${url} is not ${cluster}. Nothing was signed.`);
 const dbc = new DynamicBondingCurveClient(connection, "confirmed");
 const damm = new CpAmm(connection);
 const treasury = Keypair.fromSecretKey(

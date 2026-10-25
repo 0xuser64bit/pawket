@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { NavLink as Link } from "@/components/pk/nav-link";
 import {
   ReadFailure,
   ButtonLink,
@@ -24,6 +24,7 @@ import { projectGuestPet, streakAsOf, utcDay } from "@/lib/guest/pet";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { getPublicEnv } from "@/config/env";
 import { AdoptLink } from "@/components/park/adopt-link";
+import { DayTurns } from "@/components/pk/day-turns";
 import { readAllPets, readGuilds } from "@/server/solana";
 import { GuildCrest } from "@/components/guilds/guild-crest";
 import { isListed } from "@/lib/guilds/delisted";
@@ -35,11 +36,6 @@ export const metadata: Metadata = {
 };
 export const dynamic = "force-dynamic";
 
-/**
- * Where pets on Solana are seen by everyone: read live from the program,
- * nothing ranked by money because nothing here has a price. Who was out
- * today comes first; then everyone, most cared-for first.
- */
 const CARE_ICON: Record<CareActionType, IconName> = {
   [CareActionType.Feed]: "bowl",
   [CareActionType.Play]: "ball",
@@ -47,7 +43,6 @@ const CARE_ICON: Record<CareActionType, IconName> = {
   [CareActionType.Rest]: "clock",
 };
 
-/** The park shows this many of everyone at first — three rows of six — the most cared for. The rest are a tap away. */
 const FIRST_LOOK = 18;
 
 export default async function ParkPage({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
@@ -56,8 +51,6 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
   let guilds = new Map<string, ChainGuild>();
   try {
     pets = await readAllPets();
-    // Each pet's guild, by its address: the crest beside its name. A guild list
-    // that does not come back is a park without crests, not a failure.
     guilds = new Map((await readGuilds().catch(() => [])).filter(isListed).map((guild) => [guild.address, guild]));
   } catch {
     return (
@@ -81,7 +74,6 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
     .sort((a, b) => b.entry.passport.careCount - a.entry.passport.careCount || b.record.xp - a.record.xp);
   const outToday = shown.filter(({ out }) => out);
   const looks = new Map(shown.map(({ entry, record, projected }) => [entry.pet.address, petLook(record, projected.mood)]));
-  // Out today first, then the most cared for: the ones in the park right now.
   const scene: ParkPet[] = [...outToday, ...shown.filter(({ out }) => !out)].slice(0, PARK_CAPACITY).map(({ entry, out }) => ({
     address: entry.pet.address,
     name: entry.pet.name,
@@ -89,7 +81,6 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
     out,
   }));
   const cares = pets.reduce((sum, { passport }) => sum + passport.careCount, 0);
-  // Every Passport keeps its last eight cares: together, what just happened in the park.
   const lately = pets
     .flatMap(({ pet, passport }) => passport.recent.map((mark) => ({ pet, ...mark })))
     .sort((a, b) => b.at - a.at)
@@ -140,8 +131,9 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
             </div>
             <p className="caption pk-faint" style={{ marginTop: "var(--space-3)" }}>
               {outToday.length > 0
-                ? `${outToday.length} out today, in UTC, name tags in blue. Tap one for their record.`
-                : "Nobody has been cared for yet today, in UTC. These are the most cared for; the first care of the day brings a pet out."}
+                ? `${outToday.length} out today, name tags in blue. Tap one for their record.`
+                : "Nobody has been cared for yet today. These are the most cared for; the first care of the day brings a pet out."}
+              <DayTurns />
             </p>
           </div>
 
@@ -170,7 +162,7 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
                 })}
               </ul>
               <p className="caption pk-faint" style={{ marginTop: "var(--space-2)" }}>
-                Each line is a transaction signed by the pet&apos;s owner.
+                Each line is a transaction signed by the pet&apos;s owner, or by a device they linked.
               </p>
             </section>
           ) : null}

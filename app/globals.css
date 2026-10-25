@@ -6125,7 +6125,6 @@ details > .pk-risks {
   margin-top: auto;
   padding-top: var(--space-2);
 }
-/* A transform would make the button, not the card, the ::after's containing block. */
 .pk-gamecard__play,
 .pk-gamecard .pk-btn.pk-gamecard__play:is(:hover, :active) {
   position: static;

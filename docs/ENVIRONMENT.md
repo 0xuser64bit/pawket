@@ -60,7 +60,7 @@ uses localhost. Android's start URL is checked against the official origin by
 The `dev` branch uses a branch-specific Vercel Preview value of
 `NEXT_PUBLIC_APP_URL=https://dev.pawket.world`; production values stay scoped
 to Production. Its public RPC and cluster are devnet, with no preview sponsor
-key configured. See `DEVELOPMENT.md` for the hackathon freeze workflow.
+key configured. See `DEVELOPMENT.md` for the release workflow.
 
 `www.pawket.world` redirects to the apex with paths and queries preserved.
 Keep `pawket-pets.vercel.app` serving older APKs and metadata URIs; redirecting

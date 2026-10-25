@@ -199,12 +199,15 @@ Program upgrades need an explicit deploy plan even on devnet. Build and run
 `pnpm program:test`; inspect the IDL diff and preserve existing account layouts,
 instruction identities, item slots and errors unless a migration is approved.
 Record the current deployed binary before upgrading, check new size and extend
-the program account if required. Store keys and recovery artifacts outside
-tracked source. An approved deploy uses:
+the program account if required. The loader extends by at least 10,240 bytes,
+and the CLI's automatic extension asks only for the shortfall, so extend first
+by the larger of the two and deploy with `--no-auto-extend`. Store keys and
+recovery artifacts outside tracked source. An approved deploy uses:
 
 ```sh
+solana program extend PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74 10240 --url devnet
 solana program deploy target/deploy/pawket.so \
-  --program-id .keys/pawket-program.json --url devnet \
+  --program-id .keys/pawket-program.json --url devnet --no-auto-extend \
   --keypair ~/.config/solana/id.json --with-compute-unit-price 10000
 ```
 

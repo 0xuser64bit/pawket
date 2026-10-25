@@ -5,13 +5,13 @@ Product context lives in `docs/PRODUCT.md`,
 architecture in `docs/ARCHITECTURE.md`. This file is the contract for how an
 agent works in this repo.
 
-## Hackathon submission freeze
+## Releases
 
-`main` serves the submitted version at `https://pawket.world`. Do not merge
-into or push to `main` until the user explicitly authorizes a release.
-Continue development on `dev`, which deploys to `https://dev.pawket.world`.
-Target `dev` when opening development pull requests. See
-`docs/DEVELOPMENT.md` for the deployment boundaries.
+`main` deploys `https://pawket.world`; `dev` deploys
+`https://dev.pawket.world`. Develop on `dev` and target it with development
+pull requests. A release is a pull request from `dev` to `main`, merged only
+when the user authorizes it. See `docs/DEVELOPMENT.md` for the deployment
+boundaries.
 
 ## Product context
 

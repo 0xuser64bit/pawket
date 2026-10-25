@@ -138,7 +138,7 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
   it("cares, plays a round and dresses, and reads it all back", async () => {
     await send(() => [getCareInstruction({ owner, pet, passport, action: CareActionType.Feed })]);
     await send(() => [getFinishRoundInstruction({ owner, pet, passport })]);
-    await send(() => [getDressInstruction({ owner, pet, wearing: wearableSlot("leaf-sprout") })]);
+    await send(() => [getDressInstruction({ owner, pet, wearing: wearableSlot("paper-crown") })]);
 
     const onChain = await fetchPetOnChain(rpc, pet);
     expect(onChain).not.toBeNull();
@@ -148,7 +148,7 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     expect(record.careLog.map((entry) => entry.action)).toEqual([CareActionType.Feed]);
     expect(record.streak.count).toBe(1);
     expect(record.plays).toBe(1);
-    expect(record.wearing).toBe("leaf-sprout");
+    expect(record.wearing).toBe("paper-crown");
   });
 
   it("refuses a care still cooling down before anyone pays for it", async () => {
@@ -295,7 +295,7 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
 
     const rent = await rpc.getMinimumBalanceForRentExemption(157n).send();
     const history = await fetchWalletHistory(rpc, wallet, { rent });
-    expect(history.entries.map((entry) => entry.kinds.join("+"))).toEqual(["close", "unlink", "leave", "wave", "join", "adopt", "open+link"]);
+    expect(history.entries.map((entry) => entry.kinds.join("+"))).toEqual(["close", "unlink", "leave", "wave", "join", "adopt", "open+link", "card"]);
     expect(history.entries[3]).toMatchObject({ pet: theirs, feePayer: sponsor.address, change: 0n });
   });
 
@@ -405,8 +405,8 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     const rsvp = (await deriveRsvpPda(event, pet)).address;
     await send(({ payer }) => [
       getCreateEventInstruction({ owner, payer, guild: testGuild, event, founderMember: member, id: startsAt, title: "Devnet nap", note: "Made by the devnet test.", startsAt, endsAt: now + 3_600 }),
-      getRsvpInstruction({ owner, payer, pet, member, event, rsvp }),
     ]);
+    await send(({ payer }) => [getRsvpInstruction({ owner, payer, pet, member, event, rsvp })]);
     await send(() => [getCheckInInstruction({ owner, pet, event, rsvp, member })]);
     const [planned] = await fetchGuildEvents(rpc, testGuild);
     expect(planned).toMatchObject({ title: "Devnet nap", going: 1, came: 1 });
@@ -416,8 +416,8 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     const ballot = (await deriveBallotPda(poll, owner.address)).address;
     await send(({ payer }) => [
       getCreatePollInstruction({ owner, payer, guild: testGuild, poll, founderMember: member, id: now, question: "Where next?", options: ["Window", "Rug"], closesAt: now + 3_600 }),
-      getVoteInstruction({ owner, payer, pet, member, poll, ballot, option: 1 }),
     ]);
+    await send(({ payer }) => [getVoteInstruction({ owner, payer, pet, member, poll, ballot, option: 1 })]);
     const [asked] = await fetchGuildPolls(rpc, testGuild);
     expect(asked).toMatchObject({ question: "Where next?", options: ["Window", "Rug"], votes: [0, 1] });
     expect((await fetchBallot(rpc, poll, owner.address))?.option).toBe(1);

@@ -64,16 +64,17 @@ embedded during the build. `scripts/vercel-env.sh` manages production config
 and marks the sponsor key sensitive. Preview builds default to devnet and have
 no sponsor unless configured.
 
-### Development during the hackathon freeze
+### Development and releases
 
-Keep `main` and its production deployment frozen for the submission. Work on
-`dev`; Vercel assigns that branch's Preview deployments to
+Work on `dev`; Vercel assigns that branch's Preview deployments to
 `https://dev.pawket.world`. Pushes to this branch update the development site.
-Development pull requests target `dev`, and merging or pushing to `main`
-requires the user's explicit release authorization.
+Development pull requests target `dev`. A release is a pull request from `dev`
+to `main`, merged only with the user's explicit authorization; `main`'s ruleset
+requires the web, program, android, audit and secrets checks. The hackathon
+submission (commit `9748288`) stays at its own deployment,
+`https://pawket-g9a4tvamv-init-0ne.vercel.app`, behind Vercel's login.
 
-The branch starts at production commit `9748288d956bb9608a2d5061891f4d80cdaf7319`.
-Its branch-specific Preview configuration sets `NEXT_PUBLIC_APP_URL` to the
+The `dev` branch's Preview configuration sets `NEXT_PUBLIC_APP_URL` to the
 development origin and uses public devnet RPC. Sponsorship is not configured
 for this preview; rent-bearing actions wait for sponsorship. Do not run the
 production-only `scripts/vercel-env.sh` to configure this branch.

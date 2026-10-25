@@ -131,6 +131,15 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   through the test runtime; its required `log` feature is not enabled. Review
   these findings when upgrading the upstream runtime, rather than suppressing
   the advisories or replacing crypto dependencies independently.
+- `.cargo/audit.toml` accepts two constant-time advisories:
+  [RUSTSEC-2026-0385](https://rustsec.org/advisories/RUSTSEC-2026-0385.html)
+  (`ctutils` 0.4.2) and
+  [RUSTSEC-2026-0387](https://rustsec.org/advisories/RUSTSEC-2026-0387.html)
+  (`crypto-bigint` 0.5.5). Both arrive only through LiteSVM's runtime, a
+  dev-dependency. Neither is in the program's build graph (`cargo tree -i
+  <crate> -e normal -p pawket` prints nothing), and test keys hold no secrets.
+  `crypto-bigint`'s fix (0.7) is outside `elliptic-curve` 0.13's range. Remove
+  both entries at the next LiteSVM/Agave upgrade.
 
 ## Verification and incident handling
 

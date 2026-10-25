@@ -82,7 +82,6 @@ export function Toasts() {
       className="pk-toasts"
       data-toasts
       data-open={fanned ? "" : undefined}
-      // The one live region, mounted before any toast: a region or alert nested in it is announced twice.
       aria-live="polite"
       onPointerEnter={(event) => event.pointerType === "mouse" && setOpen(true)}
       onPointerLeave={(event) => event.pointerType === "mouse" && setOpen(false)}

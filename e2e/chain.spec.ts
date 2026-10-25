@@ -141,8 +141,8 @@ test("Market purchases spend Pawket Wallet and unlock a room and photo frame", a
   await expect(page.locator("html")).toHaveAttribute("data-theme", "starlight");
   await page.getByRole("button", { name: "Photo", exact: true }).click();
   const photo = page.getByRole("dialog", { name: /A photo:/ });
-  await expect(photo.getByRole("combobox", { name: "Photo frame" })).toBeVisible();
-  await photo.getByRole("combobox", { name: "Photo frame" }).selectOption("sunshine");
+  await photo.getByRole("radiogroup", { name: "Frame" }).getByRole("radio", { name: "Sunshine" }).click();
+  await expect(photo.getByRole("radio", { name: "Sunshine" })).toBeChecked();
   await expect(photo.getByRole("link", { name: "Save the photo" })).toBeVisible();
   await photo.getByRole("button", { name: "Close", exact: true }).click();
   await page.goto("/wallet");

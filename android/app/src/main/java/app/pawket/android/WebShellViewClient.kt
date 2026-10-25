@@ -1,5 +1,6 @@
 package app.pawket.android
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.webkit.RenderProcessGoneDetail
@@ -9,6 +10,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.core.net.toUri
 
+@SuppressLint("MissingOnRenderProcessGone")
 class WebShellViewClient(private val activity: MainActivity) : WebViewClient() {
     override fun shouldOverrideUrlLoading(
         view: WebView,

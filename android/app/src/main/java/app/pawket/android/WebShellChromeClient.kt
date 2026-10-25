@@ -1,5 +1,6 @@
 package app.pawket.android
 
+import android.annotation.SuppressLint
 import android.os.Message
 import android.util.Log
 import android.webkit.ConsoleMessage
@@ -26,6 +27,7 @@ class WebShellChromeClient(private val activity: MainActivity) : WebChromeClient
         return true
     }
 
+    @SuppressLint("MissingOnRenderProcessGone")
     override fun onCreateWindow(
         view: WebView,
         isDialog: Boolean,

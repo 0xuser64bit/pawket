@@ -1,7 +1,16 @@
 import "server-only";
 
-import { createHmac } from "node:crypto";
-import { Connection, Keypair, PublicKey, TransactionInstruction, type Transaction } from "@solana/web3.js";
+import {
+  Connection,
+  Keypair,
+  PACKET_DATA_SIZE,
+  PublicKey,
+  TransactionInstruction,
+  TransactionMessage,
+  VersionedTransaction,
+  type AddressLookupTableAccount,
+  type Transaction,
+} from "@solana/web3.js";
 import BN from "bn.js";
 import {
   DAMM_V2_MIGRATION_FEE_ADDRESS,
@@ -18,8 +27,8 @@ import {
 } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { CpAmm, derivePoolAuthority, getTokenProgram, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
 import { getPublicEnv } from "@/config/env";
-import { getServerEnv, serverRpcUrl } from "@/config/server-env";
-import { COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type PresetId } from "@/lib/coins/presets";
+import { serverRpcUrl } from "@/config/server-env";
+import { COIN_LOOKUP_TABLES, COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type CoinCluster, type PresetId } from "@/lib/coins/presets";
 import { coinStage, type CoinStage } from "@/lib/coins/stage";
 import { DELISTED_SLUGS } from "@/lib/guilds/delisted";
 import { fetchWallet, type ChainGuild } from "@/lib/solana/accounts";
@@ -27,6 +36,7 @@ import type { Address, Instruction } from "@solana/kit";
 import { deriveWalletPda } from "@/lib/solana/pda";
 import { getWalletSpendInstruction } from "@/lib/solana/instructions";
 import { PAWKET_ACCOUNTS, WALLET_LIMITS } from "@/lib/solana/program";
+import { derivedSeed } from "@/server/derive";
 import { sponsorRpc } from "@/server/sponsor";
 
 const WRAPPED_SOL = new PublicKey("So11111111111111111111111111111111111111112");
@@ -42,10 +52,8 @@ const dbc = () => new DynamicBondingCurveClient(rpc(), "confirmed");
 const damm = () => new CpAmm(rpc());
 
 function coinKeypair(slug: string): Keypair | null {
-  const keypair = getServerEnv().sponsorKeypair;
-  if (!keypair) return null;
-  const secret = Uint8Array.from(JSON.parse(keypair) as number[]).subarray(0, 32);
-  return Keypair.fromSeed(createHmac("sha256", secret).update(`pawket guild coin ${slug}`).digest());
+  const seed = derivedSeed(`pawket guild coin ${slug}`);
+  return seed ? Keypair.fromSeed(seed) : null;
 }
 
 export interface CoinState {
@@ -215,7 +223,7 @@ export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, 
     const config = presetConfig(cluster, preset.id);
     return config ? [new PublicKey(config)] : [];
   });
-  if (offered.length === 0 || !getServerEnv().sponsorKeypair) return stages;
+  if (offered.length === 0 || !coinKeypair("")) return stages;
 
   const candidates = guilds.flatMap((guild) => {
     const mint = coinKeypair(guild.slug)!.publicKey;
@@ -360,7 +368,7 @@ export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: b
   };
 }
 
-async function forPlayer(transaction: Transaction, player: PublicKey, signers: Keypair[] = []): Promise<string> {
+async function forPlayer(transaction: Transaction, player: PublicKey, signers: Keypair[] = [], lookup?: AddressLookupTableAccount): Promise<string> {
   const owner = player.toBase58() as Address;
   const wallet = await fetchWallet(sponsorRpc(), owner);
   if (!wallet || !wallet.device || wallet.deviceExpiresAt <= Date.now() / 1000) throw new CoinRefusal("Link this device in your Pawket Wallet first.", 409);
@@ -378,17 +386,19 @@ async function forPlayer(transaction: Transaction, player: PublicKey, signers: K
     keys: (ix.accounts ?? []).map((meta) => ({ pubkey: new PublicKey(meta.address), isSigner: meta.role >= 2, isWritable: (meta.role & 1) === 1 })),
   });
   const bracket = (amount?: bigint) => legacy(getWalletSpendInstruction({ owner, wallet: address, device: deviceAddress, keep: BigInt(keep), amount }));
-  transaction.feePayer = device;
-  transaction.recentBlockhash = blockhash.blockhash;
-  transaction.instructions.unshift(bracket(0n));
-  transaction.add(bracket());
-  const fee = (await rpc().getFeeForMessage(transaction.compileMessage(), "confirmed")).value;
+  const compile = (amount: bigint) => {
+    const message = new TransactionMessage({ payerKey: device, recentBlockhash: blockhash.blockhash, instructions: [bracket(amount), ...transaction.instructions, bracket()] });
+    return lookup ? message.compileToV0Message([lookup]) : message.compileToLegacyMessage();
+  };
+  const fee = (await rpc().getFeeForMessage(compile(0n), "confirmed")).value;
   if (fee === null || deviceBalance < fee + 890_880) throw new CoinRefusal("Add SOL and relink this device in Pawket Wallet to fill its network-fee balance.", 409);
   const refill = WALLET_LIMITS.deviceFloat > BigInt(deviceBalance - fee) ? WALLET_LIMITS.deviceFloat - BigInt(deviceBalance - fee) : 0n;
   if (balance <= refill) throw new CoinRefusal("Add SOL to your Pawket Wallet to cover this transaction.", 409);
-  transaction.instructions[0] = bracket(balance - refill);
-  if (signers.length) transaction.partialSign(...signers);
-  return transaction.serialize({ requireAllSignatures: false, verifySignatures: false }).toString("base64");
+  const signed = new VersionedTransaction(compile(balance - refill));
+  if (signers.length) signed.sign(signers);
+  const wire = signed.serialize();
+  if (wire.length > PACKET_DATA_SIZE) throw new CoinRefusal("That transaction is too large for Solana. Nothing was signed.", 500);
+  return Buffer.from(wire).toString("base64");
 }
 
 export async function launchTransaction({
@@ -495,7 +505,10 @@ export async function graduateTransaction(guild: ChainGuild, payer: string): Pro
     pool: coin.curve.address,
     dammConfig,
   });
-  return forPlayer(transaction, new PublicKey(payer), [firstPositionNftKeypair, secondPositionNftKeypair]);
+  const table = COIN_LOOKUP_TABLES[getPublicEnv().solanaCluster as CoinCluster];
+  const lookup = table ? (await rpc().getAddressLookupTable(new PublicKey(table))).value : null;
+  if (!lookup) throw new CoinRefusal("Graduation is not set up on this network yet. Nothing was sent.", 503);
+  return forPlayer(transaction, new PublicKey(payer), [firstPositionNftKeypair, secondPositionNftKeypair], lookup);
 }
 
 export async function claimTransaction(guild: ChainGuild, founder: string): Promise<string> {

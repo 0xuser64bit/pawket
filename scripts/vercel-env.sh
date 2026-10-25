@@ -19,3 +19,5 @@ default_rpc=$([ -n "${SOLANA_RPC_URL:-}" ] && echo /api/rpc || echo https://api.
 put NEXT_PUBLIC_SOLANA_RPC_URL "${NEXT_PUBLIC_SOLANA_RPC_URL:-$default_rpc}"
 put SPONSOR_KEYPAIR "$(cat .keys/sponsor.json)" sensitive
 if [ -n "${SOLANA_RPC_URL:-}" ]; then put SOLANA_RPC_URL "$SOLANA_RPC_URL" sensitive; fi
+if [ -n "${DERIVATION_SECRET:-}" ]; then put DERIVATION_SECRET "$DERIVATION_SECRET" sensitive; fi
+if [ -n "${COLLECTION_AUTHORITY_KEYPAIR:-}" ]; then put COLLECTION_AUTHORITY_KEYPAIR "$COLLECTION_AUTHORITY_KEYPAIR" sensitive; fi

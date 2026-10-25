@@ -29,11 +29,11 @@ import java.util.Base64
 
 class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessageListener {
     fun attach(view: WebView) {
-        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            WebViewCompat.addWebMessageListener(view, OBJECT_NAME, setOf(activity.origin), this)
+        } else {
             Log.w(MainActivity.TAG, "This WebView cannot take messages: Pawket runs here as it would in a browser")
-            return
         }
-        WebViewCompat.addWebMessageListener(view, OBJECT_NAME, setOf(activity.origin), this)
     }
 
     override fun onPostMessage(
@@ -70,6 +70,7 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         }
     }
 
+    @SuppressLint("RequiresFeature")
     private fun reply(
         proxy: JavaScriptReplyProxy,
         id: String,
@@ -259,6 +260,7 @@ class PawketBridge(private val activity: MainActivity) : WebViewCompat.WebMessag
         private val PNG_SIGNATURE = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
         private const val PNG_DATA_URL = "data:image/png;base64,"
 
+        @SuppressLint("InlinedApi")
         fun hapticEffect(
             kind: String,
             modern: Boolean,

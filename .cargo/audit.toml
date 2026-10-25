@@ -1,2 +1,2 @@
 [advisories]
-ignore = ["RUSTSEC-2026-0385", "RUSTSEC-2026-0387"]
+ignore = ["RUSTSEC-2026-0387"]

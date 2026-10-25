@@ -16,6 +16,21 @@ function show(...titles: string[]) {
   act(() => titles.forEach((title) => showToast({ id: title, tone: "done", title })));
 }
 
+it("is one live region from before the first toast, and no toast nests another", () => {
+  render(<Toasts />);
+  const region = document.querySelector(".pk-toasts")!;
+  expect(region.getAttribute("aria-live")).toBe("polite");
+  act(() => {
+    showToast({ id: "saved", tone: "done", title: "Saved" });
+    showToast({ id: "refused", tone: "risk", title: "Refused" });
+    showToast({ id: "waiting", tone: "wait", title: "Still waiting" });
+  });
+  expect(cards()).toHaveLength(3);
+  expect(region.querySelectorAll("[aria-live], [role=alert], [role=status], [role=log]")).toHaveLength(0);
+  for (const id of ["saved", "refused", "waiting"]) dismissToast(id);
+  act(() => vi.runAllTimers());
+});
+
 it("keeps the newest in front and at most three, the rest tucked behind it", () => {
   render(<Toasts />);
   show("one", "two", "three", "four");

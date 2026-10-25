@@ -106,7 +106,7 @@ does not revoke its chain link. A current WebView with WebCrypto Ed25519 is
 required for linking; unsupported versions show update guidance. No exportable
 key or owner-wallet fallback is provided. Local play remains available.
 
-Release 0.1.0 used `pawket-pets.vercel.app`; 0.1.1 uses `pawket.world`. Storage
+Release 0.1.0 used `pawket-pets.vercel.app`; 0.1.1 and later use `pawket.world`. Storage
 and keys do not move across origins. Keep the previous host serving older APKs
 and metadata. Players can keep a local pet on Solana before changing origin,
 then reconnect the same wallet and approve a new device link on the new origin.

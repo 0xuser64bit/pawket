@@ -98,11 +98,14 @@ function markup(node: ReactNode): string {
   return `<${String(element.type)}${attrs}>${markup(element.props.children)}</${String(element.type)}>`;
 }
 
-function petImage(look: Look): string {
-  const svg = markup(
+export function petSvg(look: Look): string {
+  return markup(
     <PetArt {...look} coat={COAT[look.form][0]} patch={COAT[look.form][1]} rim still colours={PAINT} />,
   ).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
+
+function petImage(look: Look): string {
+  return `data:image/svg+xml;base64,${Buffer.from(petSvg(look)).toString("base64")}`;
 }
 
 function pawImage(size: number): string {

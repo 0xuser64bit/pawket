@@ -51,7 +51,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: program-cache
         with:
           path: |
             ~/.cargo/bin/anchor
@@ -85,6 +86,18 @@ jobs:
         run: git diff --exit-code src/lib/solana/idl/pawket.json
       - name: LiteSVM suite
         run: cargo test -p pawket
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        # A pull request's 2 GB cache only crowds the repository's 10 GB; pushes to dev and main seed it.
+        if: github.event_name == 'push' && steps.program-cache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ~/.cargo/bin/anchor
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.local/share/solana
+            ~/.cache/solana
+            target
+          key: ${{ steps.program-cache.outputs.cache-primary-key }}
 
   android:
     runs-on: ubuntu-latest

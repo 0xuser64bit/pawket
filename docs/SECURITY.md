@@ -11,7 +11,7 @@ in `src/lib/solana/send.ts`. [AGENTS.md](../AGENTS.md) is the change contract.
 | --- | --- |
 | Owner wallet | Approves wallet management and spending; owns the pet and Pawket Wallet |
 | Linked device | Non-extractable WebCrypto key; program-limited non-money actions until expiry and daily limit; can unlink itself; once unlinked or replaced, can send its own leftover float to its owner's Pawket Wallet and nowhere else |
-| Sponsor | Server-only devnet fee/rent payer; also current keepsake collection authority and source of derived asset keys |
+| Sponsor | Server-only devnet fee/rent payer; also the keepsake collection's authority and the derivation secret, unless `COLLECTION_AUTHORITY_KEYPAIR` and `DERIVATION_SECRET` are set |
 | Program upgrade authority | Separate deploy wallet; never the sponsor |
 | Treasury | Receives Market purchases and partner coin fees; its signing key is not on the server |
 
@@ -39,6 +39,9 @@ instructions to the same owner, wallet and reserved existing owner SOL.
 Missing, reordered or mismatched settlement, or spending reserved owner SOL,
 rolls the transaction back. Change and sale proceeds return to Pawket Wallet.
 The device's fee refill is capped. The sponsor refuses these coin brackets.
+A coin transaction may be v0 with Pawket's frozen lookup table; the browser
+still requires the brackets' owner, wallet and device among the transaction's
+own keys (`send.test.ts`).
 
 Release builds retain overflow checks. Counters saturate where specified;
 caller-controlled amounts and spans are validated. Decay has a bounded horizon
@@ -85,9 +88,11 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 
 ## Known limits and release blockers
 
-- Keepsake and coin derivation uses the sponsor secret. Rotating it changes
-  addresses and can lose app discovery or permit duplicate creation. Separate
-  derivation-secret storage and collection authority are unresolved (Q10).
+- Keepsake and coin addresses derive from `DERIVATION_SECRET`, which falls
+  back to the sponsor's seed. Until it is pinned, rotating the sponsor changes
+  those addresses and can lose app discovery or permit duplicate creation.
+  Anyone holding it can compute every derived key, so it is kept like the
+  sponsor key.
 - A founder keeps the coin's fee rights after the founding pet leaves: the
   pool records the founder's wallet, outside the program. Events, polls and
   launches stop while that pet is out of the guild.
@@ -132,15 +137,14 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   through the test runtime; its required `log` feature is not enabled. Review
   these findings when upgrading the upstream runtime, rather than suppressing
   the advisories or replacing crypto dependencies independently.
-- `.cargo/audit.toml` accepts two constant-time advisories:
-  [RUSTSEC-2026-0385](https://rustsec.org/advisories/RUSTSEC-2026-0385.html)
-  (`ctutils` 0.4.2) and
+- `.cargo/audit.toml` accepts one constant-time advisory,
   [RUSTSEC-2026-0387](https://rustsec.org/advisories/RUSTSEC-2026-0387.html)
-  (`crypto-bigint` 0.5.5). Both arrive only through LiteSVM's runtime, a
-  dev-dependency. Neither is in the program's build graph (`cargo tree -i
-  <crate> -e normal -p pawket` prints nothing), and test keys hold no secrets.
-  `crypto-bigint`'s fix (0.7) is outside `elliptic-curve` 0.13's range. Remove
-  both entries at the next LiteSVM/Agave upgrade.
+  (`crypto-bigint` 0.5.5). It arrives only through LiteSVM's runtime, a
+  dev-dependency, and is not in the program's build graph (`cargo tree -i
+  crypto-bigint -e normal -p pawket` prints nothing). Test keys hold no
+  secrets. Its fix (0.7) needs `k256` 0.14, which no Agave release had
+  adopted as of 4.3.2 (checked 25 October 2026). Remove the entry once one
+  does. `ctutils` took its fix (0.4.5) for RUSTSEC-2026-0385.
 
 ## Verification and incident handling
 
@@ -161,8 +165,8 @@ gitleaks git --redact --log-opts=--all .
 Investigate a suspected compromised authority from its verified address and
 recent signatures. Stop affected server signing and product promotion,
 preserve public receipts and logs without secrets, and contact the responsible
-operator. Resolve Q10 before changing a derivation key; do not assume rotation
-preserves asset addresses. Reconcile uncertain sends by signature before retrying.
+operator. Pin `DERIVATION_SECRET` before rotating the sponsor, and never change a set
+derivation secret: every derived address would move. Reconcile uncertain sends by signature before retrying.
 Record affected authorities, timeline, mitigation and recovery verification.
 Mainnet operational ownership and response procedures must be approved under
 `MAINNET.md` before release.
@@ -180,4 +184,4 @@ check release assets separately and enable the host's secret protection where
 available. A scan cannot prove that no secret exists. If a real credential is
 found in history, stop publication, identify its authority and exposure, and
 coordinate revocation and history remediation with the operator. Sponsor
-rotation additionally requires Q10; deleting a file alone does not revoke a key.
+rotation additionally requires `DERIVATION_SECRET` pinned first; deleting a file alone does not revoke a key.

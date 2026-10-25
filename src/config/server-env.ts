@@ -12,6 +12,8 @@ const optional = z.preprocess(
 const serverEnvSchema = z.object({
   solanaRpcUrl: optional,
   sponsorKeypair: optional,
+  derivationSecret: optional,
+  collectionAuthorityKeypair: optional,
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -20,6 +22,8 @@ export function getServerEnv(): ServerEnv {
   return serverEnvSchema.parse({
     solanaRpcUrl: process.env.SOLANA_RPC_URL,
     sponsorKeypair: process.env.SPONSOR_KEYPAIR,
+    derivationSecret: process.env.DERIVATION_SECRET,
+    collectionAuthorityKeypair: process.env.COLLECTION_AUTHORITY_KEYPAIR,
   });
 }
 

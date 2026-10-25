@@ -37,7 +37,6 @@ export interface Wearable {
   price?: bigint;
 }
 
-/** Append only: a piece's place here, from 1, is its slot on chain. */
 export const WEARABLES: readonly Wearable[] = [
   { id: "wool-scarf", name: "Wool scarf", place: "neck", kind: "Scarf", icon: "scarf" },
   { id: "paper-crown", name: "Paper crown", place: "head", kind: "Crown", icon: "crown" },

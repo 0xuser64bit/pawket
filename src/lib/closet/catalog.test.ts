@@ -16,14 +16,36 @@ describe("wearable catalog", () => {
     }
   });
 
-  it("keeps the first six where the program has always stored them", () => {
-    expect(WEARABLES.slice(0, 6).map((item) => item.id)).toEqual([
+  it("only ever appends: each piece keeps the slot the program stores it at", () => {
+    expect(WEARABLES.map((item) => item.id)).toEqual([
       "wool-scarf",
       "paper-crown",
       "red-collar",
       "star-pin",
       "rain-cape",
       "nap-ribbon",
+      "bow-tie",
+      "round-glasses",
+      "party-hat",
+      "bandana",
+      "knit-beanie",
+      "heart-glasses",
+      "bee-wings",
+      "little-backpack",
+      "strawberry-hat",
+      "bell-collar",
+      "flower-crown",
+      "leaf-sprout",
+      "halo",
+      "wizard-hat",
+      "sun-hat",
+      "gold-crown",
+      "cowboy-hat",
+      "chef-hat",
+      "sunglasses",
+      "headphones",
+      "beret",
+      "necktie",
     ]);
   });
 

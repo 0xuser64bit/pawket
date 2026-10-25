@@ -1,7 +1,7 @@
 import "server-only";
 
-import { createHmac } from "node:crypto";
 import {
+  createKeyPairSignerFromBytes,
   createKeyPairSignerFromPrivateKeyBytes,
   createNoopSigner,
   fetchEncodedAccount,
@@ -15,14 +15,17 @@ import { PERSONALITY_LABEL, SPECIES_LABEL } from "@/lib/game/appearance";
 import type { PetOnChain } from "@/lib/solana/accounts";
 import { getCreateKeepsakeInstruction, MPL_CORE_PROGRAM_ID, PAWKET_COLLECTION } from "@/lib/solana/core";
 import { deriveWalletPda } from "@/lib/solana/pda";
+import { derivedSeed } from "./derive";
 import { signedBySponsor, sponsorRpc } from "./sponsor";
 
 async function keepsakeSigner(pet: Address): Promise<KeyPairSigner | null> {
-  const keypair = getServerEnv().sponsorKeypair;
-  if (!keypair) return null;
-  const secret = Uint8Array.from(JSON.parse(keypair) as number[]).subarray(0, 32);
-  const seed = createHmac("sha256", secret).update(`pawket keepsake ${pet}`).digest();
-  return createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(seed));
+  const seed = derivedSeed(`pawket keepsake ${pet}`);
+  return seed ? createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(seed)) : null;
+}
+
+async function collectionAuthority(sponsor: KeyPairSigner): Promise<KeyPairSigner> {
+  const own = getServerEnv().collectionAuthorityKeypair;
+  return own ? createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(own) as number[])) : sponsor;
 }
 
 export interface Keepsake {
@@ -48,7 +51,7 @@ export async function keepsakeTransaction(sponsor: KeyPairSigner, { pet }: PetOn
     getCreateKeepsakeInstruction({
       asset,
       collection: PAWKET_COLLECTION,
-      authority: sponsor,
+      authority: await collectionAuthority(sponsor),
       payer: sponsor,
       owner: createNoopSigner(pet.owner),
       pet: pet.address,

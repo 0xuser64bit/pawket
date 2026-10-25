@@ -44,7 +44,7 @@ export type HairColour = keyof typeof HAIR_COLOURS;
 export const lookSchema = z.object({
   version: z.literal(1),
   body: z.enum(BODIES),
-  skin: z.number().int().min(0).max(SKIN_TONES.length - 1),
+  skin: z.int().check(z.minimum(0), z.maximum(SKIN_TONES.length - 1)),
   hair: z.enum(HAIRSTYLES),
   hairColour: z.enum(Object.keys(HAIR_COLOURS) as [HairColour, ...HairColour[]]),
   beard: z.boolean(),

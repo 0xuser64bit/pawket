@@ -61,9 +61,9 @@ and mainnet sponsorship is disabled.
 ## A keepsake is a frozen card
 
 Metaplex Core provides one permanently frozen card pointing to the pet PDA.
-It cannot transfer or burn. The program record remains the pet. Address
-recovery currently depends on the sponsor secret; secret separation is still
-unresolved (Q10).
+It cannot transfer or burn. The program record remains the pet. Its address
+comes from `DERIVATION_SECRET`, which keeps every card's address through a
+sponsor rotation once it is pinned (below).
 
 ## Cosmetics are fixed-price entitlements
 
@@ -171,3 +171,40 @@ Settled on 25 October 2026 (formerly Q9):
 - **Names.** Slugs remain first come, first served. The program refuses only
   `new`, which the create route uses. Delisting is Pawket's remedy for a
   squatted or abusive name. There is no on-chain dispute path.
+
+## Derived addresses and the collection's authority have their own keys
+
+Settled on 25 October 2026 (formerly Q10):
+
+- **Derivation secret.** Keepsake and coin keys come from `DERIVATION_SECRET`
+  by HMAC (`src/server/derive.ts`). Unset, it falls back to the sponsor key's
+  seed, which every address so far used, so nothing moved.
+- **Rotating the sponsor.** Pin the derivation secret to the current seed
+  first; after that, a rotation changes no derived address. Once set, it never
+  changes.
+- **Collection authority.** `COLLECTION_AUTHORITY_KEYPAIR` signs keepsakes as
+  the collection's authority, falling back to the sponsor. Using a key of its
+  own needs the collection's update authority moved on chain first.
+- **Storage.** Both are stored and backed up like the sponsor key.
+
+## The program backlog, weighed
+
+Weighed on 25 October 2026. None of these four goes into the next upgrade.
+
+- **Records stay; nothing closes for its rent.** A pet's Passport, closet,
+  guild events, polls, guestbook, RSVPs and ballots are its history.
+  - The "Went to a gathering" sticker is read from checked-in RSVPs, and a
+    ballot is the voter's own answer.
+  - Closing them for rent would take what a player earned.
+  - Mainnet budgets that rent as permanent, or has players pay their own.
+- **The coin-trade float refill stays.** Each owner-approved trade refills
+  the device to its whole float, at most 0.001 SOL. Refilling only the base
+  fee, as `act` does, would leave a two-signature trade with a priority fee
+  short, until the device fell below rent and trades failed.
+- **No daily cap on recorded rounds.** Only a pet's first round of a UTC day
+  earns XP, so repeats change nothing. A device's daily limit and the
+  sponsor's per-caller limits bound their fees. A cap needs a counter, which
+  means migrating every Passport's layout.
+- **The guestbook's eight-visitor window stays.** A visitor pushed out of the
+  last eight can wave again that day. Waves are a greeting, not a score, and
+  tracking each visitor would put rent on every wave.

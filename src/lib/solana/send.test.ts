@@ -1,7 +1,10 @@
 // @vitest-environment node
 import {
+  address,
+  appendTransactionMessageInstructions,
   blockhash,
   compileTransaction,
+  compressTransactionMessageUsingAddressLookupTables,
   createTransactionMessage,
   generateKeyPairSigner,
   getBase64Encoder,
@@ -19,6 +22,8 @@ import {
   type Transaction,
 } from "@solana/kit";
 import { describe, expect, it, vi } from "vitest";
+import { getWalletSpendInstruction } from "./instructions";
+import { deriveWalletPda } from "./pda";
 import { CONFIRMATION_TIMEOUT_MS, type TransactionStage } from "./transactions";
 import { sendPawket, sendPrepared, type SendRpc } from "./send";
 
@@ -71,6 +76,36 @@ describe("broadcast uncertainty", () => {
       (m) => setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockhash("11111111111111111111111111111111"), lastValidBlockHeight: 1n }, m),
     ));
     await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: sign }, extraSigner: { ...device, signTransactions: sign }, prepare: async () => getBase64EncodedWireTransaction(prepared), sponsored: false })).rejects.toThrow(/does not use your Pawket Wallet/);
+    expect(sign).not.toHaveBeenCalled();
+  });
+
+  async function bracketed(lookup: boolean) {
+    const owner = await generateKeyPairSigner();
+    const device = await generateKeyPairSigner();
+    const wallet = (await deriveWalletPda(owner.address)).address;
+    const bracket = (amount?: bigint) => getWalletSpendInstruction({ owner: owner.address, wallet, device: device.address, keep: 0n, amount });
+    const message = pipe(
+      createTransactionMessage({ version: 0 }),
+      (m) => setTransactionMessageFeePayer(device.address, m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockhash("11111111111111111111111111111111"), lastValidBlockHeight: 1n }, m),
+      (m) => appendTransactionMessageInstructions([bracket(0n), bracket()], m),
+    );
+    const table = address("AddressLookupTab1e1111111111111111111111111");
+    const prepared = compileTransaction(lookup ? compressTransactionMessageUsingAddressLookupTables(message, { [table]: [wallet] }) : message);
+    return { owner, device, prepare: async () => getBase64EncodedWireTransaction(prepared) };
+  }
+
+  it("lets a v0 coin transaction through while its Pawket Wallet accounts are its own keys", async () => {
+    const { owner, device, prepare } = await bracketed(false);
+    const reached = vi.fn(async () => { throw new Error("the owner was asked"); });
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare, sponsored: false })).rejects.toThrow("the owner was asked");
+    expect(reached).toHaveBeenCalledOnce();
+  });
+
+  it("refuses a v0 transaction whose Pawket Wallet comes from a lookup table, before any signer is called", async () => {
+    const { owner, device, prepare } = await bracketed(true);
+    const sign = vi.fn();
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: sign }, extraSigner: { ...device, signTransactions: sign }, prepare, sponsored: false })).rejects.toThrow(/does not use your Pawket Wallet/);
     expect(sign).not.toHaveBeenCalled();
   });
 

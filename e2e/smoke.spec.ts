@@ -400,6 +400,22 @@ test("the profile names you, counts what you have done, and keeps three outfits"
   await expect(page.getByRole("heading", { name: "Arth", exact: true })).toBeVisible();
 });
 
+test("a game card opens its game from anywhere on the card, not only its button", async ({ page }) => {
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: "Cloud bun", exact: true }).click();
+  await page.getByRole("button", { name: /choose the cloud bun/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Tuesday");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await page.getByRole("button", { name: /take them home/i }).click();
+
+  await page.goto("/playground");
+  await page.locator(".pk-boot").waitFor({ state: "detached" });
+  const card = page.getByRole("article", { name: "Hop" });
+  const box = (await card.boundingBox())!;
+  await page.mouse.click(box.x + 12, box.y + 12);
+  await expect(page.getByRole("application", { name: /^Hop/ })).toBeVisible();
+});
+
 test("a playground round finishes and keeps a daily bonus", async ({ page }) => {
   await page.goto("/adopt");
   await page.getByRole("button", { name: "Cloud bun", exact: true }).click();

@@ -668,7 +668,6 @@ function phase(seed: string | undefined): string | undefined {
   return `-${(Math.abs(h) % 40) / 10}s`;
 }
 
-/** Hook-free: `src/server/card.tsx` serialises this tree to SVG without React. */
 export function PetArt({
   form,
   temper = "curious",

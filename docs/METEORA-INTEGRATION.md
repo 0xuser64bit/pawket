@@ -88,8 +88,8 @@ must be approved and verified before mainnet is enabled (Q3, Q6).
 
 - Legal review of the coin copy, the disclosure and the asset-model row
   (Q6). Until it is signed, `COIN_CONFIGS` has no mainnet entry and the
-  coin page says coins are off there. Address derivation also requires
-  Q10 to be resolved.
+  coin page says coins are off there. A mainnet `DERIVATION_SECRET` is
+  set and backed up before the first launch (`ENVIRONMENT.md`).
 - An approved config-deployment and verification plan with reviewed preset
   parameters and treasury authority (`MAINNET.md`). Partner-fee claims run
   from the treasury's operational tool, never the server.
@@ -108,5 +108,6 @@ app/api/coins/[slug]/*         quote, launch, trade, graduate, claim, metadata
 app/(game)/guilds/[slug]/coin  the coin's page; src/components/coins/coin-desk.tsx its controls
 scripts/coin-presets.mts       makes the preset configs on a cluster
 scripts/claim-coin-fees.mts    Pawket's partner fees, launch fees and locked-LP fees, into the treasury
+scripts/coin-lookup-table.mts  the frozen lookup table graduation needs on a cluster (COIN_LOOKUP_TABLES)
 src/server/coins/devnet.test.ts  a coin's whole life on devnet (pnpm e2e:coins)
 ```

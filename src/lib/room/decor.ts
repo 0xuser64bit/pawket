@@ -105,7 +105,7 @@ export function shownDecor(chosen: RoomDecor, owned: ReadonlySet<number>): RoomD
 
 const decorSchema = z.object({
   version: z.literal(1),
-  slots: z.object(Object.fromEntries(DECOR_SLOTS.map((slot) => [slot, z.string().max(40).nullable()])) as Record<DecorSlot, z.ZodNullable<z.ZodString>>),
+  slots: z.object(Object.fromEntries(DECOR_SLOTS.map((slot) => [slot, z.nullable(z.string().check(z.maxLength(40)))])) as Record<DecorSlot, z.ZodMiniNullable<z.ZodMiniString>>),
 });
 
 export function parseDecor(raw: unknown): RoomDecor {

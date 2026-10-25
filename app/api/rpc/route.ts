@@ -28,7 +28,6 @@ export async function POST(request: Request) {
   const caller = callerOf(request);
   if (!anyCall(caller) || (check.method === "sendTransaction" && !sends(caller))) return refuse(id, "Too many in a row. Ask again in a moment.", 429);
 
-  // Send what was checked, never the raw text: a second parser could read it differently.
   const upstream = await fetch(serverRpcUrl(), {
     method: "POST",
     headers: { "content-type": "application/json" },

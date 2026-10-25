@@ -12,11 +12,11 @@ Mainnet requires a separate human-approved deploy plan.
 | Treasury | Fixed devnet recipient in program and client constants | Approved recipient and signer policy; program/client changes verified together |
 | Sponsorship | Devnet-only hot key; float floor and per-instance limits | Explicit fee/rent policy, shared rate limiting, total budget enforcement, monitoring and replenishment ownership |
 | Pawket Wallet | Linked device and positive balance required for app transactions | Review all money paths, fee float, unlink/close, recovery and mainnet fee policy; no implicit owner-wallet fallback |
-| Keepsakes and coins | Keys derived from sponsor secret | Resolve derivation-secret backup/migration and collection authority separation (Q10) |
+| Keepsakes and coins | Keys derived from `DERIVATION_SECRET` (the sponsor's seed unless set); the sponsor signs as collection authority unless `COLLECTION_AUTHORITY_KEYPAIR` is set | A mainnet derivation secret and collection authority of their own, recorded and backed up before the first card or coin |
 | Coins | Devnet preset configs only | Legal/policy approval (Q6), approved mainnet parameters and recipients (Q3), verified config accounts and pool routing |
 | Market | Prices fixed by the program | Approved real-SOL prices; source parity and treasury validation |
 | RPC and discovery | Direct scans with short shared caches | Measured capacity, provider and monitoring ownership (Q4) |
-| Persistent rent | Most account types cannot close | Approved retention/rent policy; any recovery instruction needs its own program design and review |
+| Persistent rent | Records are permanent by decision (`DECISIONS.md`) | A budget that treats that rent as spent for good, or players paying their own rent |
 | Android | Same hosted product; device checks separate | Supported consumer-wallet/WebView matrix and physical release validation |
 
 Devnet records do not migrate automatically. Mainnet starts with different
@@ -30,14 +30,12 @@ These changes wait for an authorized program upgrade, each with its LiteSVM
 test written first and no seed or discriminator change; listing them here
 authorizes none of them.
 
-- Coin-trade float: `fund_wallet_spend` tops a device back up to its whole
-  float each trade; refilling only the fee paid would match `act`.
-- Rounds: an optional daily cap on `finish_round`, which earns XP once a day.
-- Guestbooks: the once-a-day wave check reaches only the last eight visitors.
-- Rent: close instructions for the account types that have none, under an
-  approved retention policy.
 - Room things, if they are ever sold on their own: item ids and prices in
   `item_price`, after the 12 rooms' own things stay free with their rooms.
+
+The coin-trade float, a daily round cap, the guestbook's window and close
+instructions were weighed on 25 October 2026 and left as they are
+(`DECISIONS.md`).
 
 ## Cost and availability planning
 
@@ -53,7 +51,7 @@ promise that Market revenue or coin fees will fund operations without a budget.
 
 ## Release gates
 
-- [ ] Q6 and Q10 resolved; Q3 and Q4 settled for the planned load.
+- [ ] Q6 resolved; Q3 and Q4 settled for the planned load.
 - [ ] Program and server security review complete; findings closed or explicitly accepted.
 - [ ] Upgrade, treasury, collection and derivation authorities recorded and recoverable.
 - [ ] Fee/rent policy, shared limits, budgets and alert ownership approved.

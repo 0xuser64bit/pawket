@@ -1,5 +1,5 @@
 use anchor_lang::{Discriminator, Space};
-use pawket::{Guild, GuildMember, PawketError, MAX_MOTTO_LEN};
+use pawket::{Guild, GuildMember, PawketError, MAX_MOTTO_LEN, RESERVED_SLUGS};
 use solana_keypair::Keypair;
 use solana_signer::Signer;
 
@@ -68,6 +68,20 @@ fn slugs_names_mottos_and_crests_are_held_to_their_rules() {
 
     ok(env.send(&[found("abc", "ねこ会", &"a".repeat(MAX_MOTTO_LEN), 7, 5)], &owner, &[]));
     assert_eq!(env.guild("abc").name, "ねこ会");
+}
+
+#[test]
+fn nobody_founds_a_guild_at_an_address_pawket_keeps_for_its_own_pages() {
+    let mut env = Env::new();
+    let owner = env.player();
+    let id = owner.pubkey();
+    let pet = env.adopt(&owner, "Pepper");
+    assert_eq!(RESERVED_SLUGS, ["new"]);
+    for slug in RESERVED_SLUGS {
+        expect_pawket(&env.send(&[found_ix(&id, &id, &pet, slug)], &owner, &[]), PawketError::ReservedGuildSlug);
+        assert!(!env.exists(&guild_pda(slug)));
+    }
+    ok(env.send(&[found_ix(&id, &id, &pet, "news")], &owner, &[]));
 }
 
 #[test]

@@ -502,7 +502,7 @@
       "name": "check_in",
       "docs": [
         "At the event — from fifteen minutes before it starts until it ends — a pet that said it was",
-        "going checks in, once."
+        "going, and is still in the guild, checks in, once."
       ],
       "discriminator": [
         209,
@@ -546,6 +546,31 @@
               {
                 "kind": "account",
                 "path": "event"
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "member",
+          "docs": [
+            "A pet checks in only while it is still in the event's guild."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
               },
               {
                 "kind": "account",
@@ -636,6 +661,28 @@
               }
             ]
           }
+        },
+        {
+          "name": "member",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pet"
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -701,8 +748,9 @@
     {
       "name": "create_event",
       "docs": [
-        "A guild's founder plans an event: a title, a line about it, when it starts and ends. `id` is",
-        "the founder's to choose (the app uses the start time), so a guild's events need no counter."
+        "While the founding pet is in the guild, its founder plans an event: a title, a line about it,",
+        "when it starts and ends. `id` is the founder's to choose (the app uses the start time), so a",
+        "guild's events need no counter."
       ],
       "discriminator": [
         49,
@@ -756,6 +804,32 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "founder_member",
+          "docs": [
+            "The founding pet's place in the guild: a founder plans and asks only while it is there."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guild.founder_pet",
+                "account": "Guild"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -866,6 +940,29 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "founder_member",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guild.founder_pet",
+                "account": "Guild"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -894,8 +991,9 @@
     {
       "name": "create_poll",
       "docs": [
-        "A guild's founder asks the guild something: two to four options, open from ten minutes to",
-        "fourteen days. Each wallet with a pet in the guild answers once; no weight, no token."
+        "While the founding pet is in the guild, its founder asks the guild something: two to four",
+        "options, open from ten minutes to fourteen days. Each wallet with a pet in the guild answers",
+        "once; no weight, no token."
       ],
       "discriminator": [
         182,
@@ -948,6 +1046,29 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "founder_member",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guild.founder_pet",
+                "account": "Guild"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -1055,6 +1176,29 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "founder_member",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guild.founder_pet",
+                "account": "Guild"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -1513,7 +1657,7 @@
       "name": "found_guild",
       "docs": [
         "A pet founds a guild and is its first member. The slug is the guild's address, so a name is",
-        "one guild; `payer` covers the rent of both accounts."
+        "one guild, and none of `RESERVED_SLUGS`; `payer` covers the rent of both accounts."
       ],
       "discriminator": [
         251,
@@ -3689,6 +3833,11 @@
       "code": 6029,
       "name": "AlreadyWavedToday",
       "msg": "You waved at this pet today already."
+    },
+    {
+      "code": 6030,
+      "name": "ReservedGuildSlug",
+      "msg": "That guild address is kept for Pawket's own pages."
     }
   ],
   "types": [

@@ -27,11 +27,11 @@
 //! good. A piece from the Market is worn with `dress_owned`; nothing bought changes a vital, XP, a
 //! cooldown or a score.
 //!
-//! A guild's founder can plan events (`GuildEvent`, `[b"event", guild, id]`) that its pets RSVP to
-//! and check in at (`EventRsvp`, `[b"rsvp", event, pet]`), and open polls (`GuildPoll`,
-//! `[b"poll", guild, id]`) that each wallet with a pet in the guild answers once (`Ballot`,
-//! `[b"ballot", poll, owner]`). Anyone but its owner can wave at a pet, once a UTC day; its
-//! `Guestbook` (`[b"guestbook", pet]`) keeps the last eight.
+//! While the pet that founded a guild is in it, the guild's founder can plan events (`GuildEvent`,
+//! `[b"event", guild, id]`) that its pets RSVP to and, while still in it, check in at (`EventRsvp`,
+//! `[b"rsvp", event, pet]`), and open polls (`GuildPoll`, `[b"poll", guild, id]`) that each wallet
+//! with a pet in the guild answers once (`Ballot`, `[b"ballot", poll, owner]`). Anyone but its owner
+//! can wave at a pet, once a UTC day; its `Guestbook` (`[b"guestbook", pet]`) keeps the last eight.
 //!
 //! Nothing here moves value except rent, which `payer` covers so a sponsor can adopt (or found, or
 //! join, or open a closet, an event, a poll, a guestbook) on a player's behalf while the player
@@ -67,6 +67,9 @@ pub const MEMBER_SEED: &[u8] = b"member";
 /// A guild's slug is its seed: 3 to 24 of `a-z`, `0-9` and `-`, never starting or ending with `-`.
 pub const MIN_SLUG_LEN: usize = 3;
 pub const MAX_SLUG_LEN: usize = 24;
+/// Slugs Pawket's own pages answer at, which no guild takes: `GUILD_LIMITS.reserved` in
+/// `src/lib/solana/program.ts`.
+pub const RESERVED_SLUGS: [&str; 1] = ["new"];
 /// What a guild is called, in UTF-8 bytes.
 pub const MIN_GUILD_NAME_LEN: usize = 3;
 pub const MAX_GUILD_NAME_LEN: usize = 32;
@@ -181,7 +184,7 @@ pub mod pawket {
     }
 
     /// A pet founds a guild and is its first member. The slug is the guild's address, so a name is
-    /// one guild; `payer` covers the rent of both accounts.
+    /// one guild, and none of `RESERVED_SLUGS`; `payer` covers the rent of both accounts.
     pub fn found_guild(
         ctx: Context<FoundGuild>,
         slug: String,
@@ -523,8 +526,9 @@ pub mod pawket {
         put_on(&mut ctx.accounts.pet, wearing)
     }
 
-    /// A guild's founder plans an event: a title, a line about it, when it starts and ends. `id` is
-    /// the founder's to choose (the app uses the start time), so a guild's events need no counter.
+    /// While the founding pet is in the guild, its founder plans an event: a title, a line about it,
+    /// when it starts and ends. `id` is the founder's to choose (the app uses the start time), so a
+    /// guild's events need no counter.
     pub fn create_event(
         ctx: Context<CreateEvent>,
         id: u32,
@@ -569,7 +573,7 @@ pub mod pawket {
     }
 
     /// At the event — from fifteen minutes before it starts until it ends — a pet that said it was
-    /// going checks in, once.
+    /// going, and is still in the guild, checks in, once.
     pub fn check_in(ctx: Context<CheckIn>) -> Result<()> {
         arrive(&mut ctx.accounts.event, &mut ctx.accounts.rsvp)
     }
@@ -581,8 +585,9 @@ pub mod pawket {
         arrive(&mut a.event, &mut a.rsvp)
     }
 
-    /// A guild's founder asks the guild something: two to four options, open from ten minutes to
-    /// fourteen days. Each wallet with a pet in the guild answers once; no weight, no token.
+    /// While the founding pet is in the guild, its founder asks the guild something: two to four
+    /// options, open from ten minutes to fourteen days. Each wallet with a pet in the guild answers
+    /// once; no weight, no token.
     pub fn create_poll(
         ctx: Context<CreatePoll>,
         id: u32,
@@ -719,6 +724,7 @@ fn found(
     bumps: (u8, u8),
 ) -> Result<()> {
     require!(valid_slug(&slug), PawketError::InvalidGuildSlug);
+    require!(!RESERVED_SLUGS.contains(&slug.as_str()), PawketError::ReservedGuildSlug);
     require!(
         (MIN_GUILD_NAME_LEN..=MAX_GUILD_NAME_LEN).contains(&name.len()),
         PawketError::InvalidGuildName
@@ -1674,6 +1680,12 @@ pub struct CreateEventByDevice<'info> {
     )]
     pub event: Account<'info, GuildEvent>,
     pub system_program: Program<'info, System>,
+    #[account(
+        seeds = [MEMBER_SEED, guild.founder_pet.as_ref()],
+        bump = founder_member.bump,
+        constraint = founder_member.guild == guild.key() @ PawketError::NotGuildFounder
+    )]
+    pub founder_member: Account<'info, GuildMember>,
 }
 
 #[derive(Accounts)]
@@ -1731,6 +1743,12 @@ pub struct CheckInByDevice<'info> {
         bump = rsvp.bump
     )]
     pub rsvp: Account<'info, EventRsvp>,
+    #[account(
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump = member.bump,
+        constraint = member.guild == event.guild @ PawketError::NotInGuild
+    )]
+    pub member: Account<'info, GuildMember>,
 }
 
 #[derive(Accounts)]
@@ -1758,6 +1776,12 @@ pub struct CreatePollByDevice<'info> {
     )]
     pub poll: Account<'info, GuildPoll>,
     pub system_program: Program<'info, System>,
+    #[account(
+        seeds = [MEMBER_SEED, guild.founder_pet.as_ref()],
+        bump = founder_member.bump,
+        constraint = founder_member.guild == guild.key() @ PawketError::NotGuildFounder
+    )]
+    pub founder_member: Account<'info, GuildMember>,
 }
 
 #[derive(Accounts)]
@@ -1838,6 +1862,13 @@ pub struct CreateEvent<'info> {
     )]
     pub event: Account<'info, GuildEvent>,
     pub system_program: Program<'info, System>,
+    /// The founding pet's place in the guild: a founder plans and asks only while it is there.
+    #[account(
+        seeds = [MEMBER_SEED, guild.founder_pet.as_ref()],
+        bump = founder_member.bump,
+        constraint = founder_member.guild == guild.key() @ PawketError::NotGuildFounder
+    )]
+    pub founder_member: Account<'info, GuildMember>,
 }
 
 #[derive(Accounts)]
@@ -1879,6 +1910,13 @@ pub struct CheckIn<'info> {
         bump = rsvp.bump
     )]
     pub rsvp: Account<'info, EventRsvp>,
+    /// A pet checks in only while it is still in the event's guild.
+    #[account(
+        seeds = [MEMBER_SEED, pet.key().as_ref()],
+        bump = member.bump,
+        constraint = member.guild == event.guild @ PawketError::NotInGuild
+    )]
+    pub member: Account<'info, GuildMember>,
 }
 
 #[derive(Accounts)]
@@ -1898,6 +1936,12 @@ pub struct CreatePoll<'info> {
     )]
     pub poll: Account<'info, GuildPoll>,
     pub system_program: Program<'info, System>,
+    #[account(
+        seeds = [MEMBER_SEED, guild.founder_pet.as_ref()],
+        bump = founder_member.bump,
+        constraint = founder_member.guild == guild.key() @ PawketError::NotGuildFounder
+    )]
+    pub founder_member: Account<'info, GuildMember>,
 }
 
 #[derive(Accounts)]
@@ -2369,4 +2413,6 @@ pub enum PawketError {
     CannotWaveAtOwnPet,
     #[msg("You waved at this pet today already.")]
     AlreadyWavedToday,
+    #[msg("That guild address is kept for Pawket's own pages.")]
+    ReservedGuildSlug,
 }

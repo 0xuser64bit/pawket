@@ -64,7 +64,7 @@ fn a_device_does_everything_its_owner_signs_for_and_the_owner_signs_nothing() {
 
     let starts = env.now() + DAY;
     let id = starts as u32;
-    let plan = create_event_ix(&owner, &sponsor, &guild, id, "Sunday nap", "By the window.", starts, starts + HOUR);
+    let plan = create_event_ix(&owner, &sponsor, &guild, &d.pet, id, "Sunday nap", "By the window.", starts, starts + HOUR);
     ok(d.send(&mut env, plan, ix::CreateEventByDevice::DISCRIMINATOR));
     let event = event_pda(&guild, id);
     assert_eq!(env.event(&event).creator, owner);
@@ -76,7 +76,7 @@ fn a_device_does_everything_its_owner_signs_for_and_the_owner_signs_nothing() {
     assert!(env.rsvp(&rsvp_pda(&event, &d.pet)).came);
 
     let closes = env.now() + DAY;
-    let ask = create_poll_ix(&owner, &sponsor, &guild, 1, "Where next?", &["Window", "Rug"], closes);
+    let ask = create_poll_ix(&owner, &sponsor, &guild, &d.pet, 1, "Where next?", &["Window", "Rug"], closes);
     ok(d.send(&mut env, ask, ix::CreatePollByDevice::DISCRIMINATOR));
     let poll = poll_pda(&guild, 1);
     ok(d.send(&mut env, vote_ix(&owner, &sponsor, &d.pet, &poll, 1), ix::VoteByDevice::DISCRIMINATOR));
@@ -121,11 +121,11 @@ fn a_device_acts_for_its_owners_pets_and_no_one_elses() {
     );
     let now = env.now();
     expect_pawket(
-        &d.send(&mut env, create_event_ix(&owner, &sponsor, &guild, 1, "Hijack", "", now + HOUR, now + 2 * HOUR), ix::CreateEventByDevice::DISCRIMINATOR),
+        &d.send(&mut env, create_event_ix(&owner, &sponsor, &guild, &theirs, 1, "Hijack", "", now + HOUR, now + 2 * HOUR), ix::CreateEventByDevice::DISCRIMINATOR),
         PawketError::NotGuildFounder,
     );
     expect_pawket(
-        &d.send(&mut env, create_poll_ix(&owner, &sponsor, &guild, 1, "Whose?", &["Mine", "Yours"], now + DAY), ix::CreatePollByDevice::DISCRIMINATOR),
+        &d.send(&mut env, create_poll_ix(&owner, &sponsor, &guild, &theirs, 1, "Whose?", &["Mine", "Yours"], now + DAY), ix::CreatePollByDevice::DISCRIMINATOR),
         PawketError::NotGuildFounder,
     );
     expect_pawket(
@@ -149,8 +149,8 @@ fn every_twin_that_takes_a_pet_refuses_one_its_owner_does_not_keep() {
     ok(env.send(&[found_ix(&s, &s, &theirs, "muddy-paws")], &stranger, &[]));
     let guild = guild_pda("muddy-paws");
     let starts = env.now() + HOUR;
-    let plan = create_event_ix(&s, &s, &guild, 1, "Nap", "", starts, starts + HOUR);
-    ok(env.send(&[plan, create_poll_ix(&s, &s, &guild, 1, "Where?", &["Rug", "Sun"], starts + HOUR)], &stranger, &[]));
+    let plan = create_event_ix(&s, &s, &guild, &theirs, 1, "Nap", "", starts, starts + HOUR);
+    ok(env.send(&[plan, create_poll_ix(&s, &s, &guild, &theirs, 1, "Where?", &["Rug", "Sun"], starts + HOUR)], &stranger, &[]));
     let (event, poll) = (event_pda(&guild, 1), poll_pda(&guild, 1));
 
     let attempts = [
@@ -169,6 +169,51 @@ fn every_twin_that_takes_a_pet_refuses_one_its_owner_does_not_keep() {
     expect_pawket(&check_in, PawketError::NotPetOwner);
     let held = env.event(&event);
     assert_eq!((held.going, held.came, env.poll(&poll).votes, env.pet(&theirs).wearing), (1, 0, [0; 4], 0));
+}
+
+#[test]
+fn a_device_plans_asks_and_checks_in_only_while_its_pet_is_in_the_guild() {
+    let mut env = Env::new();
+    let d = linked(&mut env, 50);
+    let (owner, sponsor, o) = (d.owner.pubkey(), d.sponsor.pubkey(), &d.owner);
+    ok(env.send(&[found_ix(&owner, &owner, &d.pet, "sunbeam-club")], o, &[]));
+    let guild = guild_pda("sunbeam-club");
+    let starts = env.now() + HOUR;
+    ok(env.send(&[create_event_ix(&owner, &owner, &guild, &d.pet, 1, "Nap", "", starts, starts + HOUR)], o, &[]));
+    let event = event_pda(&guild, 1);
+    ok(env.send(&[rsvp_ix(&owner, &owner, &d.pet, &event)], o, &[]));
+    let neighbour = env.player();
+    let mochi = env.adopt(&neighbour, "Mochi");
+    ok(env.send(&[join_ix(&neighbour.pubkey(), &neighbour.pubkey(), &mochi, &guild)], &neighbour, &[]));
+    ok(env.send(&[leave_ix(&owner, &d.pet, &guild, &owner)], o, &[]));
+    env.set_time(starts);
+
+    let twins = [
+        (
+            create_event_ix(&owner, &sponsor, &guild, &d.pet, 2, "Picnic", "", starts + HOUR, starts + 2 * HOUR),
+            ix::CreateEventByDevice::DISCRIMINATOR,
+            PawketError::NotGuildFounder,
+        ),
+        (
+            create_poll_ix(&owner, &sponsor, &guild, &d.pet, 1, "When?", &["Now", "Later"], starts + DAY),
+            ix::CreatePollByDevice::DISCRIMINATOR,
+            PawketError::NotGuildFounder,
+        ),
+        (check_in_ix(&owner, &d.pet, &event), ix::CheckInByDevice::DISCRIMINATOR, PawketError::NotInGuild),
+    ];
+    for (owners_ix, discriminator, _) in &twins {
+        expect_anchor(&d.send(&mut env, owners_ix.clone(), discriminator), ErrorCode::AccountNotInitialized);
+        let mut borrowed = owners_ix.clone();
+        borrowed.accounts.last_mut().unwrap().pubkey = member_pda(&mochi);
+        expect_anchor(&d.send(&mut env, borrowed, discriminator), ErrorCode::ConstraintSeeds);
+    }
+    ok(env.send(&[found_ix(&owner, &owner, &d.pet, "window-seat")], o, &[]));
+    for (owners_ix, discriminator, error) in twins {
+        expect_pawket(&d.send(&mut env, owners_ix, discriminator), error);
+    }
+    assert_eq!(env.event(&event).came, 0);
+    assert!(!env.exists(&event_pda(&guild, 2)));
+    assert!(!env.exists(&poll_pda(&guild, 1)));
 }
 
 #[test]
@@ -273,11 +318,11 @@ fn every_twin(env: &mut Env, d: &Linked) -> Vec<(&'static str, Instruction, &'st
     let guild = guild_pda("sunbeam-club");
     ok(env.send(&[join_ix(&owner, &owner, &clover, &guild)], o, &[]));
     let starts = env.now() + HOUR;
-    let plans = [1, 2].map(|id| create_event_ix(&owner, &owner, &guild, id, "Nap", "", starts, starts + HOUR));
+    let plans = [1, 2].map(|id| create_event_ix(&owner, &owner, &guild, &d.pet, id, "Nap", "", starts, starts + HOUR));
     ok(env.send(&plans, o, &[]));
     let (open, going) = (event_pda(&guild, 1), event_pda(&guild, 2));
     ok(env.send(&[rsvp_ix(&owner, &owner, &d.pet, &going)], o, &[]));
-    ok(env.send(&[create_poll_ix(&owner, &owner, &guild, 1, "Where?", &["Rug", "Sun"], starts + DAY)], o, &[]));
+    ok(env.send(&[create_poll_ix(&owner, &owner, &guild, &d.pet, 1, "Where?", &["Rug", "Sun"], starts + DAY)], o, &[]));
     let poll = poll_pda(&guild, 1);
     ok(env.send(&[buy_ix(&owner, &owner, WEARABLE_COUNT + 1)], o, &[]));
     let neighbour = env.player();
@@ -291,10 +336,10 @@ fn every_twin(env: &mut Env, d: &Linked) -> Vec<(&'static str, Instruction, &'st
         ("round", round_ix(&owner, &d.pet), ix::FinishRoundByDevice::DISCRIMINATOR),
         ("dress", dress_ix(&owner, &d.pet, 1), ix::DressByDevice::DISCRIMINATOR),
         ("dress owned", dress_owned_ix(&owner, &d.pet, WEARABLE_COUNT + 1), ix::DressOwnedByDevice::DISCRIMINATOR),
-        ("plan", create_event_ix(&owner, &sponsor, &guild, 3, "Picnic", "", starts, starts + HOUR), ix::CreateEventByDevice::DISCRIMINATOR),
+        ("plan", create_event_ix(&owner, &sponsor, &guild, &d.pet, 3, "Picnic", "", starts, starts + HOUR), ix::CreateEventByDevice::DISCRIMINATOR),
         ("go", rsvp_ix(&owner, &sponsor, &d.pet, &open), ix::RsvpByDevice::DISCRIMINATOR),
         ("check in", check_in_ix(&owner, &d.pet, &going), ix::CheckInByDevice::DISCRIMINATOR),
-        ("ask", create_poll_ix(&owner, &sponsor, &guild, 2, "When?", &["Now", "Later"], starts + DAY), ix::CreatePollByDevice::DISCRIMINATOR),
+        ("ask", create_poll_ix(&owner, &sponsor, &guild, &d.pet, 2, "When?", &["Now", "Later"], starts + DAY), ix::CreatePollByDevice::DISCRIMINATOR),
         ("vote", vote_ix(&owner, &sponsor, &d.pet, &poll, 0), ix::VoteByDevice::DISCRIMINATOR),
         ("wave", wave_ix(&owner, &sponsor, &mochi), ix::WaveByDevice::DISCRIMINATOR),
     ]

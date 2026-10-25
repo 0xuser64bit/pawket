@@ -88,9 +88,9 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 - Keepsake and coin derivation uses the sponsor secret. Rotating it changes
   addresses and can lose app discovery or permit duplicate creation. Separate
   derivation-secret storage and collection authority are unresolved (Q10).
-- The founder retains event/poll powers after the founding pet leaves. Coin
-  launch checks membership at the API, but program role succession is unresolved
-  (Q9). A pet with an RSVP can still check in after leaving.
+- A founder keeps the coin's fee rights after the founding pet leaves: the
+  pool records the founder's wallet, outside the program. Events, polls and
+  launches stop while that pet is out of the guild.
 - Guestbooks check one wave per UTC day against the last eight visitors. After
   eight other waves a visitor can wave again. Counts are not Sybil-resistant.
 - Per-caller limits are in process memory, so multiple instances each allow
@@ -113,9 +113,10 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   day earns XP, so repeating it changes nothing in the game; its cost is fees,
   bounded by the sponsor's per-caller limits and a device's daily limit.
 - Guild slugs are first come, first served and never freed: a guild has no
-  close instruction, and the program reserves no names (the app refuses `new`,
-  its own create route). Delisting (`src/lib/guilds/delisted.ts`) hides a guild
-  from Pawket's surfaces; it cannot return a slug. Squatting is unresolved (Q9).
+  close instruction, and the program reserves only `new`, the app's own create
+  route (`RESERVED_SLUGS`). Delisting (`src/lib/guilds/delisted.ts`) hides a
+  guild from Pawket's surfaces; it cannot return a slug. There is no on-chain
+  dispute path for a squatted name (`DECISIONS.md`).
 - Pets, Passports, closets, events, RSVPs, polls, ballots and guestbooks have no
   close instruction. Their rent remains locked. Guild membership and Pawket
   Wallet have their own closure rules.

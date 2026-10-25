@@ -14,10 +14,11 @@ const NOWHERE: YourPlace = { founded: false, pets: [] };
 
 export function yourPlace(
   { ready, owner, owned }: { ready: boolean; owner: string | null; owned: PetOnChain[] },
-  guild: { address: string; founder: string },
+  guild: { address: string; founderPet: string },
 ): YourPlace {
   if (!ready || !owner) return NOWHERE;
-  return { founded: owner === guild.founder, pets: owned.filter((entry) => entry.member?.guild === guild.address) };
+  const pets = owned.filter((entry) => entry.member?.guild === guild.address);
+  return { founded: pets.some((entry) => entry.pet.address === guild.founderPet), pets };
 }
 
 export function YourBadge({ founded, pets }: YourPlace) {
@@ -35,7 +36,7 @@ export function YourBadge({ founded, pets }: YourPlace) {
   );
 }
 
-export function GuildRole({ guild }: { guild: { address: string; founder: string } }) {
+export function GuildRole({ guild }: { guild: { address: string; founderPet: string } }) {
   const { founded, pets } = yourPlace(useCompanion(), guild);
   if (!founded && pets.length === 0) return null;
   return <Chip label={founded ? "Your guild · founder" : "Your guild · member"} tone="bloom" icon={founded ? "crown" : "check"} className="pk-chip--yours" />;

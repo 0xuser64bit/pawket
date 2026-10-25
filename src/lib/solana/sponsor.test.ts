@@ -269,10 +269,10 @@ describe("checkSponsorable", () => {
   it("pays the rent of a guild's events, RSVPs, polls and ballots, and of a guestbook, and stands in for nobody", async () => {
     const EVENT = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
     const event = (payer: TransactionSigner, who: TransactionSigner = owner) =>
-      getCreateEventInstruction({ owner: who, payer, guild: GUILD, event: EVENT, id: 1, title: "Sunday nap", note: "", startsAt: 1, endsAt: 2 });
+      getCreateEventInstruction({ owner: who, payer, guild: GUILD, event: EVENT, founderMember: MEMBER, id: 1, title: "Sunday nap", note: "", startsAt: 1, endsAt: 2 });
     const rsvp = (payer: TransactionSigner) => getRsvpInstruction({ owner, payer, pet: PET, member: MEMBER, event: EVENT, rsvp: WALLET });
     const poll = (payer: TransactionSigner) =>
-      getCreatePollInstruction({ owner, payer, guild: GUILD, poll: EVENT, id: 1, question: "Which rug?", options: ["Red", "Blue"], closesAt: 9 });
+      getCreatePollInstruction({ owner, payer, guild: GUILD, poll: EVENT, founderMember: MEMBER, id: 1, question: "Which rug?", options: ["Red", "Blue"], closesAt: 9 });
     const vote = (payer: TransactionSigner, who: TransactionSigner = owner) =>
       getVoteInstruction({ owner: who, payer, pet: PET, member: MEMBER, poll: EVENT, ballot: WALLET, option: 1 });
     const wave = (payer: TransactionSigner, who: TransactionSigner = owner) => getWaveInstruction({ visitor: who, payer, pet: PET, guestbook: WALLET });
@@ -281,7 +281,7 @@ describe("checkSponsorable", () => {
     }
     const four = await built((payer) => [event(payer), rsvp(payer), poll(payer), vote(payer)]);
     expect(checkSponsorable(four, sponsor.address)).toEqual({ ok: false, reason: expect.stringMatching(/one new account's rent a transaction/) });
-    const checkIn = await built(() => [getCheckInInstruction({ owner, pet: PET, event: EVENT, rsvp: WALLET }), getWaveInstruction({ visitor: owner, payer: owner, pet: PET, guestbook: WALLET })]);
+    const checkIn = await built(() => [getCheckInInstruction({ owner, pet: PET, event: EVENT, rsvp: WALLET, member: MEMBER }), getWaveInstruction({ visitor: owner, payer: owner, pet: PET, guestbook: WALLET })]);
     expect(checkSponsorable(checkIn, sponsor.address)).toEqual({ ok: true, kinds: ["check-in", "wave"], rent: 0 });
     expect(checkSponsorable(await built((payer) => [wave(payer)]), sponsor.address)).toEqual({ ok: true, kinds: ["wave"], rent: 1 });
     for (const asSomeone of [(p: TransactionSigner) => event(p, p), (p: TransactionSigner) => vote(p, p), (p: TransactionSigner) => wave(p, p)]) {

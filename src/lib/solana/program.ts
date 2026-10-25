@@ -67,6 +67,7 @@ export const GUILD_LIMITS = {
   maxMotto: 80,
   crests: 8,
   colours: 6,
+  reserved: ["new"],
 } as const;
 
 export const WALLET_LIMITS = {
@@ -201,5 +202,6 @@ export const PAWKET_ERROR_CODES = {
   6027: "UNKNOWN_OPTION",
   6028: "CANNOT_WAVE_AT_OWN_PET",
   6029: "ALREADY_WAVED_TODAY",
+  6030: "RESERVED_GUILD_SLUG",
 } as const;
 

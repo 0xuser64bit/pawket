@@ -24,20 +24,6 @@ Mainnet coins remain blocked pending legal review of disclosure and utility,
 launch terms, jurisdiction policy, moderation, support and incident ownership.
 Devnet behavior is not evidence of mainnet readiness. See `MAINNET.md`.
 
-## Q9 — Founder powers after the founding pet leaves
-
-The coin launch route checks the founding pet is still in the guild.
-The program still lets the founder create events and polls after that pet
-leaves, and the founder retains coin fee rights. Decide whether departure ends
-the role, whether rejoining restores it, and whether succession exists before
-an additive program upgrade. Existing RSVPs can still check in after leaving.
-
-The same upgrade should settle who may hold a name. Slugs are first come,
-first served and never freed, and the program reserves none: anyone can found
-a slug another community is known by, or `new`, which the app's create route
-uses. Delisting only hides a guild from Pawket. Decide on reserved names, a
-dispute path, or neither, before mainnet.
-
 ## Q10 — Address derivation and key rotation
 
 Keepsake and coin keys are currently derived from `SPONSOR_KEYPAIR` by HMAC.

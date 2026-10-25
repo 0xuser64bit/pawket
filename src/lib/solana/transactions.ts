@@ -87,7 +87,7 @@ export function isInsufficientFunds(error: unknown): boolean {
 }
 
 const MIN_CODE = 6000;
-const MAX_CODE = 6029;
+const MAX_CODE = 6030;
 const isPawketCode = (code: unknown): code is number =>
   typeof code === "number" && Number.isInteger(code) && code >= MIN_CODE && code <= MAX_CODE;
 
@@ -134,7 +134,7 @@ export function pawketErrorMessage(code: number): string {
     case 6019:
       return "An event needs a 3 to 48 character title, and to end after it starts, within 7 days and within 60 days from now. No event was planned.";
     case 6020:
-      return "Only the guild's founder can do that. Nothing changed.";
+      return "Only the guild's founder can do that, while the pet that founded it is in it. Nothing changed.";
     case 6021:
       return "That pet is not in this guild. Nothing changed.";
     case 6022:
@@ -153,6 +153,8 @@ export function pawketErrorMessage(code: number): string {
       return "That is your own pet — wave at someone else's. Nothing changed.";
     case 6029:
       return "You waved at this pet today already. It is in their guestbook.";
+    case 6030:
+      return "That address is one of Pawket's own pages. Choose another name. No guild was founded.";
     default:
       return "The program refused it. Nothing changed.";
   }

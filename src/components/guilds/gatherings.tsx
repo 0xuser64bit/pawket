@@ -41,7 +41,7 @@ export function GuildGatherings({
   events,
   polls,
 }: {
-  guild: { address: string; name: string; founder: string };
+  guild: { address: string; name: string; founderPet: string };
   events: ChainEvent[];
   polls: ChainPoll[];
 }) {
@@ -87,8 +87,9 @@ export function GuildGatherings({
 
   async function checkIn(event: ChainEvent, pet: Address) {
     const rsvp = (await deriveRsvpPda(event.address, pet)).address;
+    const member = (await deriveMemberPda(pet)).address;
     const result = await sender.act(`Check in at ${event.title}`, ({ owner: signer }) => [
-      getCheckInInstruction({ owner: signer, pet, event: event.address, rsvp }),
+      getCheckInInstruction({ owner: signer, pet, event: event.address, rsvp, member }),
     ]);
     if (result?.outcome === "confirmed") done();
   }
@@ -252,7 +253,7 @@ function FounderDesk({
   sender,
   onDone,
 }: {
-  guild: { address: string; name: string };
+  guild: { address: string; name: string; founderPet: string };
   sender: ReturnType<typeof usePawketSend>;
   onDone: () => void;
 }) {
@@ -272,9 +273,10 @@ function FounderDesk({
     const endsAt = startsAt + Math.round(Number(hours) * 3600);
     setProblem(undefined);
     const event = (await deriveEventPda(guild.address, startsAt)).address;
+    const founderMember = (await deriveMemberPda(guild.founderPet)).address;
     try {
       const result = await sender.act(`Plan ${title.trim()}`, ({ owner, payer }) => [
-        getCreateEventInstruction({ owner, payer, guild: guild.address, event, id: startsAt, title, note, startsAt, endsAt }),
+        getCreateEventInstruction({ owner, payer, guild: guild.address, event, founderMember, id: startsAt, title, note, startsAt, endsAt }),
       ]);
       if (result?.outcome === "confirmed") {
         setTitle("");
@@ -290,10 +292,11 @@ function FounderDesk({
     const id = Math.floor(Date.now() / 1000);
     const chosen = options.map((option) => option.trim()).filter(Boolean);
     const poll = (await derivePollPda(guild.address, id)).address;
+    const founderMember = (await deriveMemberPda(guild.founderPet)).address;
     setProblem(undefined);
     try {
       const result = await sender.act(`Ask “${question.trim()}”`, ({ owner, payer }) => [
-        getCreatePollInstruction({ owner, payer, guild: guild.address, poll, id, question, options: chosen, closesAt: id + Number(days) * 86_400 }),
+        getCreatePollInstruction({ owner, payer, guild: guild.address, poll, founderMember, id, question, options: chosen, closesAt: id + Number(days) * 86_400 }),
       ]);
       if (result?.outcome === "confirmed") {
         setQuestion("");

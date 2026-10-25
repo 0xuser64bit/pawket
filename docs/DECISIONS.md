@@ -107,7 +107,7 @@ web3.js v1. The rest of the app uses Solana Kit. Two constrained devnet presets
 use SOL, immutable supply and permanently locked DAMM v2 liquidity. Chain reads
 decide the stage and verify the derived pool. The server checks the coin's
 creator matches the founder and requires the founding pet's membership for
-launch; founder powers in the program still need a decision (Q9).
+launch; the program holds events and polls to the same membership (below).
 
 ## Aggregate counts of the core loop
 
@@ -156,3 +156,18 @@ on, and it reaches only phones with the app; the web keeps calendar reminders.
 available for older APKs and metadata. Local records and device keys do not
 move across origins; the same wallet recovers chain pets and approves a new
 device link. Android updates keep the package and signer.
+
+## A founder's powers follow the founding pet
+
+Settled on 25 October 2026 (formerly Q9):
+
+- **Founder powers.** A guild's founder plans events and polls only while the
+  pet that founded the guild is a member. Every event and poll instruction
+  reads that pet's member account, so the powers return when it rejoins.
+  Nothing transfers the role.
+- **Check-in.** A pet checks in only while it is in the event's guild.
+- **Coins.** The coin launch route already required the founding pet. The
+  founder's fee claims stay with the wallet the pool records.
+- **Names.** Slugs remain first come, first served. The program refuses only
+  `new`, which the create route uses. Delisting is Pawket's remedy for a
+  squatted or abusive name. There is no on-chain dispute path.

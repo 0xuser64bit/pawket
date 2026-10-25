@@ -124,7 +124,7 @@ export default async function GuildPage({ params }: Props) {
         <div className="pk-columns">
           <div className="pk-columns__first">
             {delisted ? null : (
-              <GuildGatherings guild={{ address: guild.address, name: guild.name, founder: guild.founder }} events={gatherings.events} polls={gatherings.polls} />
+              <GuildGatherings guild={{ address: guild.address, name: guild.name, founderPet: guild.founderPet }} events={gatherings.events} polls={gatherings.polls} />
             )}
           </div>
 

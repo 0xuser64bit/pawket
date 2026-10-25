@@ -175,7 +175,7 @@ export async function sendPrepared({
   let prepared = decode(await prepare());
   if (extraSigner) {
     const message = getCompiledTransactionMessageDecoder().decode(prepared.messageBytes);
-    if (message.version !== "legacy") throw new Error("This transaction does not use your Pawket Wallet. Nothing was signed or sent.");
+    if (message.version !== "legacy" && message.version !== 0) throw new Error("This transaction does not use your Pawket Wallet. Nothing was signed or sent.");
     const keys = message.staticAccounts;
     const first = message.instructions[0];
     const last = message.instructions.at(-1);

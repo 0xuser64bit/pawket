@@ -2,7 +2,7 @@
 import { getOpenWalletInstruction, getDepositInstruction, getLinkDeviceInstruction } from "@/lib/solana/instructions";
 import { deriveWalletPda } from "@/lib/solana/pda";
 import { type Address } from "@solana/kit";
-import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction, TransactionInstruction, sendAndConfirmTransaction } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction, TransactionInstruction, VersionedTransaction, sendAndConfirmTransaction } from "@solana/web3.js";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { ChainGuild } from "@/lib/solana/accounts";
 import { assertSponsorHasRoom, sponsorKeypairJson, testFunderKeypairJson } from "../../../e2e/devnet";
@@ -20,9 +20,9 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
   let coins: typeof import("./meteora");
 
   const sign = async (wire: string, signer: Keypair) => {
-    const transaction = Transaction.from(Buffer.from(wire, "base64"));
+    const transaction = VersionedTransaction.deserialize(Buffer.from(wire, "base64"));
     const before = await connection.getBalance(signer.publicKey);
-    transaction.partialSign(signer, device);
+    transaction.sign([signer, device]);
     const signature = await connection.sendRawTransaction(transaction.serialize(), { preflightCommitment: "confirmed" });
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
     const result = await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");

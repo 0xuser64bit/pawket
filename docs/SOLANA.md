@@ -187,7 +187,11 @@ Both bind the same owner, wallet and reserved existing owner SOL through the
 real instructions sysvar. SDK spending uses Pawket Wallet; settlement returns
 change and sale proceeds. Missing, reordered or mismatched brackets, or
 consuming reserved SOL, roll back. The linked device pays only network fees;
-the sponsor refuses the brackets.
+the sponsor refuses the brackets. Graduation's migration is too large for a
+legacy transaction, so it goes as v0 through Pawket's frozen lookup table
+(`COIN_LOOKUP_TABLES`, made by `scripts/coin-lookup-table.mts`). The browser
+signs a v0 coin transaction only while the brackets' owner, wallet and device
+are the transaction's own keys, never ones a lookup table supplies.
 
 [METEORA-INTEGRATION.md](METEORA-INTEGRATION.md) owns presets, stages, quotes,
 routing and operational scripts. [GUILDS.md](GUILDS.md) owns membership and

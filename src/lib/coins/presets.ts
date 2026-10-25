@@ -48,6 +48,10 @@ export const COIN_CONFIGS: Partial<Record<CoinCluster, Record<PresetId, string>>
   },
 };
 
+export const COIN_LOOKUP_TABLES: Partial<Record<CoinCluster, string>> = {
+  devnet: "Ai62VAmD447gFxcfwz7Q2fMEefsaLBQwjeZaJJ6qh5oR",
+};
+
 export const PAWKET_TREASURY = "SEpAw5iTAXf4j5YUsgpLD8UTKLCT6xqUAkecnvJvWfw";
 
 export function findPreset(id: string | null | undefined): CoinPreset | undefined {

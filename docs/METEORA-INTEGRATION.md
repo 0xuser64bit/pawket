@@ -108,5 +108,6 @@ app/api/coins/[slug]/*         quote, launch, trade, graduate, claim, metadata
 app/(game)/guilds/[slug]/coin  the coin's page; src/components/coins/coin-desk.tsx its controls
 scripts/coin-presets.mts       makes the preset configs on a cluster
 scripts/claim-coin-fees.mts    Pawket's partner fees, launch fees and locked-LP fees, into the treasury
+scripts/coin-lookup-table.mts  the frozen lookup table graduation needs on a cluster (COIN_LOOKUP_TABLES)
 src/server/coins/devnet.test.ts  a coin's whole life on devnet (pnpm e2e:coins)
 ```

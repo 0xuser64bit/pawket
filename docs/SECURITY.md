@@ -39,6 +39,9 @@ instructions to the same owner, wallet and reserved existing owner SOL.
 Missing, reordered or mismatched settlement, or spending reserved owner SOL,
 rolls the transaction back. Change and sale proceeds return to Pawket Wallet.
 The device's fee refill is capped. The sponsor refuses these coin brackets.
+A coin transaction may be v0 with Pawket's frozen lookup table; the browser
+still requires the brackets' owner, wallet and device among the transaction's
+own keys (`send.test.ts`).
 
 Release builds retain overflow checks. Counters saturate where specified;
 caller-controlled amounts and spans are validated. Decay has a bounded horizon

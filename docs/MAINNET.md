@@ -26,9 +26,9 @@ constitute approval for prices or launches using real SOL.
 
 ## The next program upgrade
 
-Main and the devnet program are frozen in review. These changes wait for the
-next authorized upgrade, each with its LiteSVM test written first and no seed or
-discriminator change; listing them here authorizes none of them.
+These changes wait for an authorized program upgrade, each with its LiteSVM
+test written first and no seed or discriminator change; listing them here
+authorizes none of them.
 
 - Coin-trade float: `fund_wallet_spend` tops a device back up to its whole
   float each trade; refilling only the fee paid would match `act`.

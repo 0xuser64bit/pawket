@@ -2,7 +2,7 @@ import { isAddress } from "@solana/kit";
 import { getWaveInstruction } from "@/lib/solana/instructions";
 import { deriveGuestbookPda } from "@/lib/solana/pda";
 import { actionError, actionJson, caller, postedAccount, preflight } from "@/server/actions";
-import { actionLimit, mayPayRent, sponsoredForPlayer, sponsorState } from "@/server/sponsor";
+import { actionLimit, mayPayFee, mayPayRent, sponsoredForPlayer, sponsorState } from "@/server/sponsor";
 import { readGuestbook, readPet } from "@/server/solana";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: Props) {
 
   const sponsor = await sponsorState().catch(() => null);
   if (!sponsor?.available) return actionError(sponsor?.reason ?? "The sponsor cannot reach the network. Nothing was sent.", 503);
-  if (!book && !mayPayRent([account, who])) {
+  if (book ? !mayPayFee() : !mayPayRent([account, who])) {
     return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
   }
 

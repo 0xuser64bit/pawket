@@ -7,10 +7,13 @@ const VISITOR = "8Vp2LsXSrgjxbNsmWg5pTGsEk3ag8x1wGkzvWbJ4b3Zt";
 const readPet = vi.fn(async () => ({ pet: { address: PET, owner: OWNER, name: "Pepper" }, passport: {}, member: null }));
 const readGuestbook = vi.fn();
 const sponsoredForPlayer = vi.fn(async () => "base64-transaction");
+const mayPayFee = vi.fn(() => true);
+const mayPayRent = vi.fn(() => true);
 vi.mock("@/server/solana", () => ({ readPet, readGuestbook }));
 vi.mock("@/server/sponsor", () => ({
   actionLimit: () => true,
-  mayPayRent: () => true,
+  mayPayFee,
+  mayPayRent,
   sponsorState: async () => ({ available: true, address: "Sponsor", signer: {} }),
   sponsoredForPlayer,
 }));
@@ -27,6 +30,20 @@ describe("waving from a pet's card", () => {
   beforeEach(() => {
     readGuestbook.mockReset().mockResolvedValue(null);
     sponsoredForPlayer.mockClear();
+    mayPayFee.mockClear();
+    mayPayRent.mockClear();
+  });
+
+  it("charges a first wave to the rent budget and a later one to the fee budget, and stops when the hour's is spent", async () => {
+    const { POST } = await import("./[pet]/route");
+    expect((await POST(posted(VISITOR), params)).status).toBe(200);
+    expect([mayPayRent.mock.calls.length, mayPayFee.mock.calls.length]).toEqual([1, 0]);
+    readGuestbook.mockResolvedValue({ waves: 1, recent: [] });
+    expect((await POST(posted(VISITOR), params)).status).toBe(200);
+    expect([mayPayRent.mock.calls.length, mayPayFee.mock.calls.length]).toEqual([1, 1]);
+    mayPayFee.mockReturnValueOnce(false);
+    expect((await POST(posted(VISITOR), params)).status).toBe(429);
+    expect(sponsoredForPlayer).toHaveBeenCalledTimes(2);
   });
 
   it("builds a wave for anyone but the owner", async () => {

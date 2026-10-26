@@ -8,7 +8,7 @@ async function sponsor() {
 }
 
 const SOL = 1_000_000_000n;
-const ONE_RENT = 3_500_000n;
+const ONE_RENT = 4_500_000n + 15_000n;
 const at = (ip: string | null) => new Request("http://localhost/api/sponsor", { headers: ip ? { "x-forwarded-for": ip } : {} });
 
 describe("caller", () => {
@@ -51,5 +51,33 @@ describe("mayPayRent", () => {
     expect(mayPayRent(["late"], 400_001)).toBe(false);
     noteFloat(12n * SOL - 499_000_000n, 300_001 + 60 * 60 * 1000);
     expect(mayPayRent(["next-hour"], 300_002 + 60 * 60 * 1000)).toBe(true);
+  });
+});
+
+describe("mayPayFee", () => {
+  it("pays nothing before the sponsor's balance has been read", async () => {
+    const { mayPayFee } = await sponsor();
+    expect(mayPayFee()).toBe(false);
+  });
+
+  it("stops paying fees too once the hour's budget is gone, whoever asks", async () => {
+    const { mayPayFee, mayPayRent, noteFloat } = await sponsor();
+    noteFloat(10n * SOL, 0);
+    expect(mayPayFee(1)).toBe(true);
+    noteFloat(10n * SOL - 500_000_000n, 2);
+    expect(mayPayFee(3)).toBe(false);
+    expect(mayPayRent(["fresh"], 4)).toBe(false);
+    noteFloat(10n * SOL - 500_000_000n, 3 + 60 * 60 * 1000);
+    expect(mayPayFee(4 + 60 * 60 * 1000)).toBe(true);
+  });
+
+  it("counts fees it signed lately, so a burst cannot outrun the balance it reads", async () => {
+    const { mayPayFee, mayPayRent, noteFloat } = await sponsor();
+    noteFloat(10n * SOL, 0);
+    let signed = 0;
+    while (mayPayFee(1000)) signed++;
+    expect(BigInt(signed)).toBe(500_000_000n / 15_000n);
+    expect(mayPayRent(["fresh"], 1001)).toBe(false);
+    expect(mayPayFee(1000 + 120_000)).toBe(true);
   });
 });

@@ -22,6 +22,18 @@ describe("caller", () => {
   });
 });
 
+describe("sponsorAddress", () => {
+  it("is unknown, never a thrown error carrying the key, when the sponsor's key is malformed", async () => {
+    const { sponsorAddress } = await sponsor();
+    vi.stubEnv("SPONSOR_KEYPAIR", `'${JSON.stringify(Array.from({ length: 64 }, (_, i) => 200 + (i % 50)))}'`);
+    try {
+      await expect(sponsorAddress()).resolves.toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+});
+
 describe("mayPayRent", () => {
   it("pays nothing before the sponsor's balance has been read", async () => {
     const { mayPayRent } = await sponsor();

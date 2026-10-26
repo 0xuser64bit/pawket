@@ -24,6 +24,12 @@ it("keeps every derived address when the sponsor rotates, once the derivation se
   expect(derivedSeed("pawket guild coin sunbeam-club")).toEqual(before);
 });
 
+it("refuses a malformed sponsor key by name, without quoting the secret it falls back to", () => {
+  vi.stubEnv("SPONSOR_KEYPAIR", `${keypair(201).slice(0, -1)},]`);
+  vi.stubEnv("DERIVATION_SECRET", "");
+  expect(() => derivedSeed("pawket keepsake Pet1")).toThrow(/^SPONSOR_KEYPAIR is not a keypair: a JSON array of 64 bytes\.$/);
+});
+
 it("refuses a derivation secret that is not 32 bytes of hex, and derives nothing with no secret at all", () => {
   vi.stubEnv("SPONSOR_KEYPAIR", keypair(7));
   vi.stubEnv("DERIVATION_SECRET", "not-a-secret");

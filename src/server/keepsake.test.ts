@@ -38,4 +38,7 @@ it("signs a keepsake with the sponsor as the collection's authority unless a sep
   const authority = await key();
   vi.stubEnv("COLLECTION_AUTHORITY_KEYPAIR", JSON.stringify(Array.from(authority)));
   expect(await authorityOf(sponsor)).toBe((await createKeyPairSignerFromBytes(authority)).address);
+
+  vi.stubEnv("COLLECTION_AUTHORITY_KEYPAIR", `'${JSON.stringify(Array.from(authority))}'`);
+  await expect(keepsakeTransaction(await createKeyPairSignerFromBytes(sponsor), pet)).rejects.toThrow(/^COLLECTION_AUTHORITY_KEYPAIR is not a keypair: a JSON array of 64 bytes\.$/);
 });

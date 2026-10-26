@@ -10,7 +10,7 @@ import {
   type KeyPairSigner,
 } from "@solana/kit";
 import { getPublicEnv } from "@/config/env";
-import { getServerEnv } from "@/config/server-env";
+import { getServerEnv, keypairBytes } from "@/config/server-env";
 import { PERSONALITY_LABEL, SPECIES_LABEL } from "@/lib/game/appearance";
 import type { PetOnChain } from "@/lib/solana/accounts";
 import { getCreateKeepsakeInstruction, MPL_CORE_PROGRAM_ID, PAWKET_COLLECTION } from "@/lib/solana/core";
@@ -25,7 +25,7 @@ async function keepsakeSigner(pet: Address): Promise<KeyPairSigner | null> {
 
 async function collectionAuthority(sponsor: KeyPairSigner): Promise<KeyPairSigner> {
   const own = getServerEnv().collectionAuthorityKeypair;
-  return own ? createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(own) as number[])) : sponsor;
+  return own ? createKeyPairSignerFromBytes(keypairBytes("COLLECTION_AUTHORITY_KEYPAIR", own)) : sponsor;
 }
 
 export interface Keepsake {

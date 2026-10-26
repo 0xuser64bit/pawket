@@ -6,7 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChainGuild } from "@/lib/solana/accounts";
 
 const sponsor = Keypair.generate();
-vi.mock("@/config/server-env", () => ({
+vi.mock("@/config/server-env", async (actual) => ({
+  ...(await actual<typeof import("@/config/server-env")>()),
   getServerEnv: () => ({ sponsorKeypair: JSON.stringify([...sponsor.secretKey]) }),
   serverRpcUrl: () => "http://127.0.0.1:8899",
 }));

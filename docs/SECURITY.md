@@ -103,11 +103,20 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 - Guestbooks check one wave per UTC day against the last eight visitors. After
   eight other waves a visitor can wave again. Counts are not Sybil-resistant.
 - Per-caller limits are in process memory, so multiple instances each allow
-  their share; an IPv6 caller counts by its /64. The hourly budget is read
+  their share; an IPv6 caller counts by its /64, and an instance forgets every
+  caller once it tracks more than 10,000 keys (an Action's posted wallet is a
+  key too). A caller is the first `X-Forwarded-For` address, which Vercel sets
+  itself; behind a proxy that passes a client's own header through, a caller
+  would choose its key. The hourly budget is read
   from the sponsor's balance, which every instance sees, plus the fees and
   rents an instance signed in the last two minutes, so callers spread over
   many addresses still stop at it. Shared enforcement and budget monitoring
   are mainnet work.
+- Pages send no script Content-Security-Policy, only `frame-ancestors`. A
+  script injected into Pawket's origin could act as this browser's linked
+  device without a prompt, within its link's limits above. A nonce-based
+  script policy, tested with the room's renderer and the wallet adapters, is
+  mainnet work.
 - A stolen linked device acts until its link ends (30 days at most) or the
   owner unlinks it: up to its daily limit (500 at most) of non-money actions a
   UTC day, for the owner's pets only. Each action refills at most one

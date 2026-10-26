@@ -388,11 +388,11 @@ export async function fetchPetOnChain(rpc: Rpc<GetMultipleAccountsApi>, petAddre
   const memberAddress = (await deriveMemberPda(address)).address;
   const [petAccount, passportAccount, memberAccount] = await fetchEncodedAccounts(rpc, [address, passportAddress, memberAddress]);
   if (!petAccount.exists || !passportAccount.exists) return null;
-  if (petAccount.programAddress !== PAWKET_PROGRAM_ID) return null;
+  if (petAccount.programAddress !== PAWKET_PROGRAM_ID || passportAccount.programAddress !== PAWKET_PROGRAM_ID) return null;
   return {
     pet: decodePet(address, petAccount.data),
     passport: decodePassport(passportAddress, passportAccount.data),
-    member: memberAccount.exists ? decodeMember(memberAddress, memberAccount.data) : null,
+    member: memberAccount.exists && memberAccount.programAddress === PAWKET_PROGRAM_ID ? decodeMember(memberAddress, memberAccount.data) : null,
   };
 }
 
@@ -411,11 +411,11 @@ async function withRecords(rpc: Rpc<GetMultipleAccountsApi>, pets: ChainPet[]): 
   pets.forEach((pet, i) => {
     const passport = accounts[i];
     const member = accounts[pets.length + i];
-    if (!passport.exists) return;
+    if (!passport.exists || passport.programAddress !== PAWKET_PROGRAM_ID) return;
     out.push({
       pet,
       passport: decodePassport(passports[i], passport.data),
-      member: member.exists ? decodeMember(members[i], member.data) : null,
+      member: member.exists && member.programAddress === PAWKET_PROGRAM_ID ? decodeMember(members[i], member.data) : null,
     });
   });
   return out;

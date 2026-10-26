@@ -6,7 +6,7 @@ import { projectGuestPet, streakAsOf } from "@/lib/guest/pet";
 import { toCompanionRecord } from "@/lib/solana/accounts";
 import { getCareInstruction } from "@/lib/solana/instructions";
 import { absolute, actionError, actionJson, adoptLinkedAction, caller, postedAccount, preflight } from "@/server/actions";
-import { actionLimit, sponsoredForPlayer, sponsorState } from "@/server/sponsor";
+import { actionLimit, mayPayFee, sponsoredForPlayer, sponsorState } from "@/server/sponsor";
 import { readPet } from "@/server/solana";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +61,7 @@ export async function POST(request: Request, { params }: Props) {
   if (!sponsor?.available) {
     return actionError(sponsor?.reason ?? "The sponsor cannot reach the network. Nothing was sent.", 503);
   }
-  if (!actionLimit(caller(request))) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
+  if (!actionLimit(caller(request)) || !mayPayFee()) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
 
   const transaction = await sponsoredForPlayer(sponsor.signer, chainPet.owner, ({ owner }) => [
     getCareInstruction({ owner, pet: chainPet.address, passport: passport.address, action }),

@@ -1,9 +1,10 @@
-import { address } from "@solana/kit";
+import { address, getBase64Decoder } from "@solana/kit";
 import { describe, expect, it } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { guestPetSchema, projectGuestPet, cooldownsFor } from "@/lib/guest/pet";
-import { decodeGuild, decodeMember, decodePassport, decodePet, displayName, toCompanionRecord, wearableSlot } from "./accounts";
-import { PAWKET_ACCOUNTS } from "./program";
+import { decodeGuild, decodeMember, decodePassport, decodePet, displayName, fetchPetOnChain, fetchPetsOnChain, toCompanionRecord, wearableSlot } from "./accounts";
+import { deriveMemberPda, derivePassportPda } from "./pda";
+import { PAWKET_ACCOUNTS, PAWKET_PROGRAM_ID } from "./program";
 
 const OWNER = address("11111111111111111111111111111111");
 const PET = address("J3nMY26sQZiBod2RCwsUFrh8E5PW56Mhr4ksm8RFQJAp");
@@ -206,5 +207,43 @@ describe("wearableSlot", () => {
     expect(wearableSlot("wool-scarf")).toBe(1);
     expect(wearableSlot("nap-ribbon")).toBe(6);
     expect(() => wearableSlot("top-hat")).toThrow();
+  });
+});
+
+describe("reading a pet", () => {
+  const SYSTEM = "11111111111111111111111111111111";
+  const memberBytes = () => {
+    const bytes = new Uint8Array(PAWKET_ACCOUNTS.member.size);
+    bytes.set(PAWKET_ACCOUNTS.member.discriminator, 0);
+    bytes.set(new Uint8Array(32).fill(2), 40);
+    return bytes;
+  };
+  const chain = (accounts: Map<string, { owner: string; data: Uint8Array }>) => {
+    const info = (key: string) => {
+      const account = accounts.get(key);
+      return account ? { data: [getBase64Decoder().decode(account.data), "base64"], executable: false, lamports: 890_880n, owner: account.owner, space: BigInt(account.data.length) } : null;
+    };
+    return {
+      getMultipleAccounts: (keys: string[]) => ({ send: async () => ({ context: { slot: 1n }, value: keys.map(info) }) }),
+      getProgramAccounts: () => ({ send: async () => [{ pubkey: PET, account: info(PET)! }] }),
+    } as never;
+  };
+  const world = async (member: { owner: string; data: Uint8Array }) =>
+    chain(new Map([
+      [PET, { owner: PAWKET_PROGRAM_ID, data: petBytes() }],
+      [(await derivePassportPda(PET)).address, { owner: PAWKET_PROGRAM_ID, data: passportBytes([], 0) }],
+      [(await deriveMemberPda(PET)).address, member],
+    ]));
+
+  it("takes lamports someone sent to its member address for no guild, so nobody can break its reads", async () => {
+    const rpc = await world({ owner: SYSTEM, data: new Uint8Array(0) });
+    expect(await fetchPetOnChain(rpc, PET)).toMatchObject({ pet: { name: "Pepper" }, member: null });
+    expect((await fetchPetsOnChain(rpc)).map(({ pet, member }) => [pet.name, member])).toEqual([["Pepper", null]]);
+  });
+
+  it("reads the member account the program made", async () => {
+    const rpc = await world({ owner: PAWKET_PROGRAM_ID, data: memberBytes() });
+    expect((await fetchPetOnChain(rpc, PET))?.member?.guild).toBe(address("8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR"));
+    expect((await fetchPetsOnChain(rpc))[0].member).not.toBeNull();
   });
 });

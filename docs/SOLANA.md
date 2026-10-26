@@ -130,11 +130,13 @@ bounded signatures, no lookup tables and no compute-budget instructions.
 `SPONSOR_SLOTS` is held to the IDL. Rent returned when leaving a guild or
 closing a wallet goes to the recorded payer.
 
-The sponsor stops below its float floor. It pays at most one new account's
-rent a transaction. Per-instance limits cap each caller's actions and rents
-(Actions count the posted wallet as well as the address); the hourly rent
-budget is what the sponsor's balance has lost, plus rents signed in the last
-two minutes, so requests that never land cannot use it up. Shared budget and
+The sponsor stops below its float floor. It pays the rent of at most one
+instruction a transaction (an adoption or a founding makes two accounts).
+Per-instance limits cap each caller's actions and rents (for rent, Actions
+count the posted wallet as well as the address); the hourly budget, which
+every fee and rent counts against, is what the sponsor's balance has lost,
+plus what it signed in the last two minutes, so requests that never land
+cannot use it up. Shared budget and
 rate enforcement are mainnet requirements. UI copy must read current
 availability before saying Pawket pays. [SECURITY.md](SECURITY.md) records limits.
 
@@ -195,7 +197,9 @@ the sponsor refuses the brackets. Graduation's migration is too large for a
 legacy transaction, so it goes as v0 through Pawket's frozen lookup table
 (`COIN_LOOKUP_TABLES`, made by `scripts/coin-lookup-table.mts`). The browser
 signs a v0 coin transaction only while the brackets' owner, wallet and device
-are the transaction's own keys, never ones a lookup table supplies.
+are the transaction's own keys, never ones a lookup table supplies. The device
+signs a coin transaction, without a prompt, only when it appears in no
+instruction between the brackets and no priority fee is asked of it.
 
 [METEORA-INTEGRATION.md](METEORA-INTEGRATION.md) owns presets, stages, quotes,
 routing and operational scripts. [GUILDS.md](GUILDS.md) owns membership and

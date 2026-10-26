@@ -5,6 +5,7 @@ const mock = vi.hoisted(() => ({
   state: vi.fn(),
   cosign: vi.fn(),
   actionLimit: vi.fn(() => true),
+  mayPayFee: vi.fn(() => true),
   mayPayRent: vi.fn(() => true),
   spent: vi.fn(),
   address: vi.fn(async () => "Sp0nsor1111111111111111111111111111111111111"),
@@ -12,6 +13,7 @@ const mock = vi.hoisted(() => ({
 vi.mock("@/server/sponsor", () => ({
   sponsorState: mock.state,
   actionLimit: mock.actionLimit,
+  mayPayFee: mock.mayPayFee,
   mayPayRent: mock.mayPayRent,
   sponsorSpent: mock.spent,
   sponsorAddress: mock.address,
@@ -57,16 +59,20 @@ describe("the sponsor route", () => {
     expect(logged.join("\n")).not.toContain("SECRET");
   });
 
-  it("hands the co-signer this caller's limit, and the rent budget only when there is rent", async () => {
+  it("hands the co-signer this caller's limit and the hour's budget: the fee alone, or the fee and the rent", async () => {
     mock.cosign.mockResolvedValue({ transaction: "signed", kinds: [] });
     const answer = await post({ transaction: "AQ==" });
     expect([answer.status, await answer.json()]).toEqual([200, { transaction: "signed" }]);
     expect(mock.spent).toHaveBeenCalledOnce();
     const limit = mock.cosign.mock.calls[0][2] as (check: { kinds: string[]; rent: number }) => boolean;
     expect(limit({ kinds: ["care"], rent: 0 })).toBe(true);
+    expect(mock.mayPayFee).toHaveBeenCalledOnce();
     expect(mock.mayPayRent).not.toHaveBeenCalled();
+    mock.mayPayFee.mockReturnValueOnce(false);
+    expect(limit({ kinds: ["care"], rent: 0 })).toBe(false);
     expect(limit({ kinds: ["adopt"], rent: 1 })).toBe(true);
     expect(mock.mayPayRent).toHaveBeenCalledWith(["203.0.113.7"]);
+    expect(mock.mayPayFee).toHaveBeenCalledTimes(2);
     mock.mayPayRent.mockReturnValueOnce(false);
     expect(limit({ kinds: ["adopt"], rent: 1 })).toBe(false);
     mock.actionLimit.mockReturnValueOnce(false);

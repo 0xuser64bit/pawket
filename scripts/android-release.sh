@@ -20,7 +20,7 @@ commit="$(git rev-parse HEAD)"
 prop() { sed -n "s/^$1=//p" "$root/android/gradle.properties"; }
 
 cd "$root/android"
-./gradlew --console=plain clean assembleRelease \
+./gradlew --no-daemon --console=plain clean assembleRelease \
   -PSOLANA_MOBILE_KEYSTORE_PATH="$keystore" \
   -PSOLANA_MOBILE_KEYSTORE_ALIAS=pawket
 

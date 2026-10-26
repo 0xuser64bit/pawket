@@ -108,7 +108,7 @@ also change appearance only.
 ## Fairness and abuse limits
 
 - Reuse on-chain cooldown as the primary throttle (can't farm faster than 30m/action on-chain).
-- Rate limits: the RPC proxy, the Actions and the coin routes limit each caller, and the rent the sponsor pays is limited per key and by an hourly budget read from its balance (`mayPayRent`, `src/server/sponsor.ts`).
+- Rate limits: the RPC proxy, the Actions and the coin routes limit each caller, and what the sponsor pays is limited per key and, fees and rent alike, by an hourly budget read from its balance (`mayPayFee`, `mayPayRent`, `src/server/sponsor.ts`).
 - There is no bot detection or review queue. Wallet and guestbook counts are not Sybil-resistant.
 - No pay-to-win also means no "energy refill for SOL" — rejected explicitly. Rest is the only energy path.
 

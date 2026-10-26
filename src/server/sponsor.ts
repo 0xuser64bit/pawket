@@ -76,24 +76,35 @@ const HOUR = 60 * 60 * 1000;
 export const actionLimit = createLimiter(240, HOUR);
 const rentPerKey = createLimiter(20, HOUR);
 
-const RENT_BUDGET_LAMPORTS = 500_000_000n;
-const ONE_RENT_LAMPORTS = 3_500_000n;
+const HOURLY_BUDGET_LAMPORTS = 500_000_000n;
+const ONE_RENT_LAMPORTS = 4_500_000n;
+const ONE_FEE_LAMPORTS = 15_000n;
 const IN_FLIGHT_MS = 120_000;
 
-let spend: { since: number; from: bigint; now: bigint; signed: number[] } | null = null;
+let spend: { since: number; from: bigint; now: bigint; signed: { at: number; lamports: bigint }[] } | null = null;
 
 export function noteFloat(lamports: bigint, at = Date.now()) {
   if (!spend || at - spend.since >= HOUR || lamports > spend.from) spend = { since: at, from: lamports, now: lamports, signed: [] };
   else spend.now = lamports;
 }
 
-export function mayPayRent(keys: readonly string[], at = Date.now()): boolean {
-  if (!keys.every((key) => rentPerKey(key, at))) return false;
+function withinBudget(lamports: bigint, at: number): boolean {
   if (!spend) return false;
-  spend.signed = spend.signed.filter((signedAt) => at - signedAt < IN_FLIGHT_MS);
-  const committed = spend.from - spend.now + BigInt(spend.signed.length + 1) * ONE_RENT_LAMPORTS;
-  if (committed > RENT_BUDGET_LAMPORTS) return false;
-  spend.signed.push(at);
+  spend.signed = spend.signed.filter((signed) => at - signed.at < IN_FLIGHT_MS);
+  const inFlight = spend.signed.reduce((sum, signed) => sum + signed.lamports, 0n);
+  return spend.from - spend.now + inFlight + lamports <= HOURLY_BUDGET_LAMPORTS;
+}
+
+export function mayPayFee(at = Date.now()): boolean {
+  if (!withinBudget(ONE_FEE_LAMPORTS, at)) return false;
+  spend!.signed.push({ at, lamports: ONE_FEE_LAMPORTS });
+  return true;
+}
+
+export function mayPayRent(keys: readonly string[], at = Date.now()): boolean {
+  const lamports = ONE_RENT_LAMPORTS + ONE_FEE_LAMPORTS;
+  if (!withinBudget(lamports, at) || !keys.every((key) => rentPerKey(key, at))) return false;
+  spend!.signed.push({ at, lamports });
   return true;
 }
 

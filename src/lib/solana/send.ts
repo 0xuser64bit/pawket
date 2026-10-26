@@ -34,6 +34,9 @@ import { CONFIRMATION_TIMEOUT_MS, waitForConfirmation, type ConfirmationOutcome,
 
 export type SendRpc = Rpc<GetLatestBlockhashApi & SendTransactionApi & GetSignatureStatusesApi>;
 
+const COMPUTE_BUDGET = "ComputeBudget111111111111111111111111111111";
+const SET_COMPUTE_UNIT_PRICE = 3;
+
 export interface SendOptions {
   rpc: SendRpc;
   owner: TransactionSigner;
@@ -183,6 +186,13 @@ export async function sendPrepared({
     const matches = (ix: typeof first | undefined, discriminator: readonly number[]) => ix && keys[ix.programAddressIndex] === PAWKET_PROGRAM_ID && discriminator.every((byte, i) => ix.data?.[i] === byte) && keys[ix.accountIndices?.[0] ?? -1] === owner.address && keys[ix.accountIndices?.[1] ?? -1] === wallet && keys[ix.accountIndices?.[2] ?? -1] === extraSigner.address;
     if (keys[0] !== extraSigner.address || !matches(first, PAWKET_DISCRIMINATORS.fundWalletSpend) || !matches(last, PAWKET_DISCRIMINATORS.settleWalletSpend)) {
       throw new Error("This transaction does not use your Pawket Wallet. Nothing was signed or sent.");
+    }
+    const middle = message.instructions.slice(1, -1);
+    if (
+      middle.some((ix) => (ix.accountIndices ?? []).some((index) => keys[index] === extraSigner.address)) ||
+      middle.some((ix) => keys[ix.programAddressIndex] === COMPUTE_BUDGET && ix.data?.[0] === SET_COMPUTE_UNIT_PRICE)
+    ) {
+      throw new Error("This transaction asks this device for more than its network fee. Nothing was signed or sent.");
     }
     prepared = await walletSigns(extraSigner, prepared);
   }

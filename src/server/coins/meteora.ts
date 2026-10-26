@@ -14,9 +14,11 @@ import {
 import BN from "bn.js";
 import {
   DAMM_V2_MIGRATION_FEE_ADDRESS,
+  DAMM_V2_PROGRAM_ID,
   deriveDammV2PoolAddress,
   deriveDbcPoolAddress,
   deriveDbcPoolAuthority,
+  DYNAMIC_BONDING_CURVE_PROGRAM_ID,
   DynamicBondingCurveClient,
   getCurrentPoint,
   getPriceFromSqrtPrice,
@@ -145,7 +147,7 @@ async function liveCoin(guild: ChainGuild): Promise<LiveCoin | null> {
   const listed = !DELISTED_SLUGS.has(guild.slug);
   const pools = offered.map((config) => deriveDbcPoolAddress(WRAPPED_SOL, mint.publicKey, config));
   const accounts = await rpc().getMultipleAccountsInfo(pools);
-  const found = accounts.findIndex((account) => account !== null);
+  const found = accounts.findIndex((account) => account?.owner.equals(DYNAMIC_BONDING_CURVE_PROGRAM_ID));
   const base: CoinState = {
     slug: guild.slug,
     name: coinName(guild.name),
@@ -233,7 +235,7 @@ export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, 
   const coder = dbc().state.getProgram().coder;
   const launched: Array<{ slug: string; listed: boolean; raised: bigint; threshold: bigint; migrated: boolean; damm: PublicKey | null }> = [];
   for (const [i, account] of accounts.entries()) {
-    if (!account) continue;
+    if (!account?.owner.equals(DYNAMIC_BONDING_CURVE_PROGRAM_ID)) continue;
     const { guild, mint, config } = candidates[i];
     const pool = coder.accounts.decode<VirtualPool>("virtualPool", account.data).poolState;
     if (!pool.creator.equals(new PublicKey(guild.founder))) continue;
@@ -251,7 +253,7 @@ export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, 
   }
   const graduated = launched.filter((coin) => coin.damm);
   const dammAccounts = graduated.length ? await rpc().getMultipleAccountsInfo(graduated.map((coin) => coin.damm!)) : [];
-  const verified = new Set(graduated.filter((_, i) => dammAccounts[i] !== null).map((coin) => coin.slug));
+  const verified = new Set(graduated.filter((_, i) => dammAccounts[i]?.owner.equals(DAMM_V2_PROGRAM_ID)).map((coin) => coin.slug));
   for (const coin of launched) {
     stages.set(
       coin.slug,

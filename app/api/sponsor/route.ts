@@ -3,7 +3,7 @@ import { z } from "zod";
 import { scrub } from "@/lib/analytics/scrub";
 import { cosign, SponsorRefusal } from "@/lib/solana/sponsor";
 import { caller as callerOf } from "@/server/actions";
-import { actionLimit, mayPayRent, sponsorAddress, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
+import { actionLimit, mayPayFee, mayPayRent, sponsorAddress, sponsorSpent, sponsorState, type SponsorState } from "@/server/sponsor";
 
 export const runtime = "nodejs";
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   const caller = callerOf(request);
   try {
     const { transaction } = await cosign(current.signer, body.data.transaction, ({ rent }) =>
-      actionLimit(caller) && (rent === 0 || mayPayRent([caller])),
+      actionLimit(caller) && (rent === 0 ? mayPayFee() : mayPayRent([caller])),
     );
     sponsorSpent();
     return NextResponse.json({ transaction });

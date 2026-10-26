@@ -1,4 +1,4 @@
-import { AccountRole, address, getU32Encoder, type Address, type Instruction } from "@solana/kit";
+import { AccountRole, address, getAddressEncoder, getU32Encoder, type Address, type Instruction, type ReadonlyUint8Array } from "@solana/kit";
 import { concatBytes, encodeAnchorString, signerMeta, type SignerInput } from "./instructions";
 import { parseAddress } from "./pda";
 
@@ -12,6 +12,8 @@ const DATA_STATE_ACCOUNT = 0;
 const PLUGIN_PERMANENT_FREEZE_DELEGATE = 5;
 const PLUGIN_ATTRIBUTES = 6;
 const AUTHORITY_UPDATE_AUTHORITY = 2;
+const KEY_ASSET_V1 = 1;
+const UPDATED_BY_COLLECTION = 2;
 
 const SYSTEM_PROGRAM = address("11111111111111111111111111111111");
 const CORE = address(MPL_CORE_PROGRAM_ID);
@@ -71,6 +73,12 @@ export function getCreateKeepsakeInstruction(input: KeepsakeInput): Instruction 
       NONE, // externalPluginAdapters
     ),
   };
+}
+
+/** An account at a pet's card address is its card only as an asset of Pawket's collection held by the pet's owner. */
+export function isKeepsakeOf(data: ReadonlyUint8Array, owner: string | Address): boolean {
+  const at = (offset: number, key: string | Address) => getAddressEncoder().encode(address(key)).every((byte, i) => data[offset + i] === byte);
+  return data.length >= 66 && data[0] === KEY_ASSET_V1 && at(1, owner) && data[33] === UPDATED_BY_COLLECTION && at(34, PAWKET_COLLECTION);
 }
 
 export function getCreateCollectionInstruction(input: {

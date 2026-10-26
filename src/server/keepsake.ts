@@ -13,7 +13,7 @@ import { getPublicEnv } from "@/config/env";
 import { getServerEnv, keypairBytes } from "@/config/server-env";
 import { PERSONALITY_LABEL, SPECIES_LABEL } from "@/lib/game/appearance";
 import type { PetOnChain } from "@/lib/solana/accounts";
-import { getCreateKeepsakeInstruction, MPL_CORE_PROGRAM_ID, PAWKET_COLLECTION } from "@/lib/solana/core";
+import { getCreateKeepsakeInstruction, isKeepsakeOf, MPL_CORE_PROGRAM_ID, PAWKET_COLLECTION } from "@/lib/solana/core";
 import { deriveWalletPda } from "@/lib/solana/pda";
 import { derivedSeed } from "./derive";
 import { signedBySponsor, sponsorRpc } from "./sponsor";
@@ -33,11 +33,11 @@ export interface Keepsake {
   made: boolean;
 }
 
-export async function readKeepsake(pet: Address): Promise<Keepsake | null> {
-  const signer = await keepsakeSigner(pet);
+export async function readKeepsake(pet: { address: Address; owner: Address }): Promise<Keepsake | null> {
+  const signer = await keepsakeSigner(pet.address);
   if (!signer) return null;
   const account = await fetchEncodedAccount(sponsorRpc(), signer.address);
-  return { address: signer.address, made: account.exists && account.programAddress === MPL_CORE_PROGRAM_ID };
+  return { address: signer.address, made: account.exists && account.programAddress === MPL_CORE_PROGRAM_ID && isKeepsakeOf(account.data, pet.owner) };
 }
 
 function keepsakeUri(pet: string): string {

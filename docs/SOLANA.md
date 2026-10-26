@@ -166,8 +166,8 @@ is a checked source constant; its authority is the sponsor unless
 
 `src/server/keepsake.ts` derives an asset signer from the pet address and
 `DERIVATION_SECRET` (`src/server/derive.ts`; the sponsor's seed unless set)
-with HMAC. `readKeepsake` verifies the account exists under Core
-before showing a card. Creation requires the owner, current sponsorship and
+with HMAC. `readKeepsake` shows a card only when the account at that address
+is a Core asset of Pawket's collection held by the pet's owner (`isKeepsakeOf`). Creation requires the owner, current sponsorship and
 no existing card. The sponsor covers rent and the collection's authority
 signs; the owner signs the
 prepared transaction through `sendPrepared`. Metadata is built from live pet

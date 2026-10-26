@@ -62,7 +62,7 @@ export async function POST(request: Request, { params }: Props) {
   if (!sponsor?.available) {
     return actionError(sponsor?.reason ?? "The sponsor cannot reach the network. Nothing was sent.", 503);
   }
-  const keepsake = await readKeepsake(onChain.pet.address).catch(() => null);
+  const keepsake = await readKeepsake(onChain.pet).catch(() => null);
   if (!keepsake) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   if (keepsake.made) return actionError(`${name}'s card is already in this wallet. Nothing was sent.`, 409);
   if (!mayPayRent([account, who])) {

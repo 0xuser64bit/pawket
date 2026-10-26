@@ -10,6 +10,7 @@ import {
 import { dayTurnsAt } from "@/lib/utils/format";
 
 export const CONFIRMATION_TIMEOUT_MS = 30_000;
+const STATUS_READ_MS = 5_000;
 
 export type TransactionStage =
   | "idle"
@@ -237,7 +238,7 @@ export async function waitForConfirmation(
   for (;;) {
     const { value } = await client.rpc
       .getSignatureStatuses([signature as Signature])
-      .send({ abortSignal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) })
+      .send({ abortSignal: AbortSignal.timeout(Math.max(STATUS_READ_MS, deadline - Date.now())) })
       .catch(() => ({ value: null }));
     const status = (Array.isArray(value) ? value[0] : null) as {
       confirmationStatus?: string;

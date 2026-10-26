@@ -227,6 +227,20 @@ describe("settleSignature", () => {
     await expect(settleSignature(client([null], [true]), "sig", "hash", 0)).resolves.toBe("unknown");
   });
 
+  it("hears a confirmation that takes a network round trip, after the blockhash ran out", async () => {
+    const answers = (value: unknown) => ({ send: ({ abortSignal }: { abortSignal?: AbortSignal } = {}) => new Promise<{ value: unknown }>((resolve, reject) => {
+      const reply = setTimeout(() => resolve({ value }), 5);
+      abortSignal?.addEventListener("abort", () => (clearTimeout(reply), reject(abortSignal.reason)));
+    }) });
+    const network = {
+      rpc: {
+        getSignatureStatuses: () => answers([{ confirmationStatus: "confirmed", err: null }]),
+        isBlockhashValid: () => answers(false) as { send: () => Promise<{ value: boolean }> },
+      },
+    };
+    await expect(settleSignature(network, "sig", "hash")).resolves.toBe("confirmed");
+  });
+
   it("throws a refusal that landed, like a first confirmation would", async () => {
     await expect(settleSignature(client([{ confirmationStatus: "confirmed", err: { InstructionError: [0, { Custom: 6002 }] } }], [true]), "sig", "hash")).rejects.toMatchObject({ programError: 6002 });
   });

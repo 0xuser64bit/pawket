@@ -161,8 +161,20 @@ export function pawketErrorMessage(code: number): string {
   }
 }
 
+/** The index of the instruction whose custom error refused a transaction, when the error says. */
+export function refusingInstruction(error: unknown): number | null {
+  for (const e of errorChain(error)) {
+    if (isSolanaError(e, SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM)) return Number.isInteger(e.context.index) ? e.context.index : null;
+    const relayed = typeof e === "object" ? (e as { instruction?: unknown }).instruction : undefined;
+    if (typeof relayed === "number") return relayed;
+  }
+  return null;
+}
+
+/** Pawket's own code, never another program's: every Anchor program numbers its errors from 6000. */
 export function extractProgramErrorCode(error: unknown): number | null {
   for (const e of errorChain(error)) {
+    if (typeof e === "object" && (e as { foreign?: unknown }).foreign === true) return null;
     if (isSolanaError(e, SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM)) {
       return isPawketCode(e.context.code) ? e.context.code : null;
     }
@@ -244,11 +256,11 @@ async function readStatus(client: ConfirmationRpc, signature: string, waitMs: nu
 function landed(status: Status | undefined): boolean {
   if (!status || (status.confirmationStatus !== "confirmed" && status.confirmationStatus !== "finalized")) return false;
   if (status.err !== undefined && status.err !== null) {
-    const custom = (status.err as { InstructionError?: [unknown, { Custom?: unknown } | string] }).InstructionError?.[1];
+    const [index, custom] = (status.err as { InstructionError?: [unknown, { Custom?: unknown } | string] }).InstructionError ?? [];
     const code = typeof custom === "object" && custom ? Number(custom.Custom) : NaN;
     throw Object.assign(
       new Error(typeof status.err === "string" ? status.err : JSON.stringify(status.err, (_key, value) => (typeof value === "bigint" ? Number(value) : value))),
-      Number.isInteger(code) ? { programError: code } : {},
+      Number.isInteger(code) ? { programError: code, instruction: Number(index) } : {},
     );
   }
   return true;

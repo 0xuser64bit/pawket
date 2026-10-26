@@ -19,6 +19,7 @@ import {
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
   SolanaError,
+  SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM,
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
   type Address,
   type Instruction,
@@ -27,9 +28,10 @@ import {
 } from "@solana/kit";
 import { getTransferSolInstruction } from "@solana-program/system";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getWalletSpendInstruction } from "./instructions";
+import { CareActionType } from "@/lib/game/enums";
+import { getCareInstruction, getWalletSpendInstruction } from "./instructions";
 import { deriveWalletPda } from "./pda";
-import { CONFIRMATION_TIMEOUT_MS, type TransactionStage } from "./transactions";
+import { CONFIRMATION_TIMEOUT_MS, extractProgramErrorCode, pawketErrorMessage, toUserFacingError, type TransactionStage } from "./transactions";
 import { sendPawket, sendPrepared, type SendRpc } from "./send";
 
 describe("broadcast uncertainty", () => {
@@ -456,6 +458,38 @@ describe("a send that lands", () => {
     await expect(sendPrepared({ rpc, owner: wallet as never, prepare: async () => getBase64EncodedWireTransaction(prepared) }))
       .rejects.toThrow(/wallet changed the transaction.*Nothing was sent/);
     expect(sent).toHaveLength(0);
+  });
+
+  it("words another program's refusal as Solana's, never as one of Pawket's own sentences", async () => {
+    const owner = await generateKeyPairSigner();
+    const other = { programAddress: address("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"), data: Uint8Array.of(1) };
+    const care = (signer: Parameters<typeof getCareInstruction>[0]["owner"]) =>
+      getCareInstruction({ owner: signer, pet: "J3nMY26sQZiBod2RCwsUFrh8E5PW56Mhr4ksm8RFQJAp", passport: "FEJ7fHr3JBuYMDZ67UsWZfaGVo2S4dMizG6T3xp1BQMm", action: CareActionType.Feed });
+    const refused = async (index: number) => {
+      const { rpc } = landing();
+      const refusal = new SolanaError(SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE, { cause: new SolanaError(SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM, { code: 6002, index }) } as never);
+      (rpc as unknown as { sendTransaction: unknown }).sendTransaction = () => ({ send: async () => { throw refusal; } });
+      return sendPawket({ rpc, owner, sponsor: null, instructions: ({ owner: signer }) => [care(signer), other] }).catch((caught: unknown) => caught);
+    };
+    const theirs = await refused(1);
+    expect(extractProgramErrorCode(theirs)).toBeNull();
+    expect(toUserFacingError(theirs)).toBe("Solana refused this transaction before it was sent. Nothing changed — try again.");
+    const ours = await refused(0);
+    expect(extractProgramErrorCode(ours)).toBe(6002);
+    expect(toUserFacingError(ours)).toBe(pawketErrorMessage(6002));
+  });
+
+  it("keeps another program's landed refusal out of Pawket's sentences too, and its signature", async () => {
+    const owner = await generateKeyPairSigner();
+    const { rpc, sent } = landing();
+    (rpc as unknown as { getSignatureStatuses: unknown }).getSignatureStatuses = () => ({ send: async () => ({ value: [{ confirmationStatus: "confirmed", err: { InstructionError: [1, { Custom: 6008 }] } }] }) });
+    const other = { programAddress: address("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"), data: Uint8Array.of(1) };
+    const error = await sendPawket({
+      rpc, owner, sponsor: null,
+      instructions: ({ owner: signer }) => [getTransferSolInstruction({ source: signer, destination: address("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"), amount: 1n }), other],
+    }).catch((caught: unknown) => caught);
+    expect(extractProgramErrorCode(error)).toBeNull();
+    expect(error).toMatchObject({ programError: 6008, instruction: 1, signature: getSignatureFromTransaction(decodeWire(sent[0].wire)) });
   });
 
   it("keeps the signature on a refusal that landed, so it can still be looked up", async () => {

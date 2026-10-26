@@ -30,7 +30,7 @@ import {
 } from "@solana/kit";
 import { deriveWalletPda } from "./pda";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
-import { CONFIRMATION_TIMEOUT_MS, waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
+import { CONFIRMATION_TIMEOUT_MS, refusingInstruction, waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
 
 export type SendRpc = Rpc<GetLatestBlockhashApi & SendTransactionApi & GetSignatureStatusesApi>;
 
@@ -224,12 +224,22 @@ async function land(
   onStage?.("sending");
   const wire = getBase64EncodedWireTransaction(signed);
   const signature = getSignatureFromTransaction(signed);
-  const blockhash = getCompiledTransactionMessageDecoder().decode(signed.messageBytes).lifetimeToken;
+  const message = getCompiledTransactionMessageDecoder().decode(signed.messageBytes);
+  const blockhash = message.lifetimeToken;
+  const programOf = (index: number) => {
+    const at = message.version === 1 ? message.instructionHeaders[index]?.programAccountIndex : message.instructions[index]?.programAddressIndex;
+    return at === undefined ? undefined : message.staticAccounts[at];
+  };
+  const refusedByAnother = (error: unknown) => {
+    const index = refusingInstruction(error);
+    const program = index === null ? undefined : programOf(index);
+    return program !== undefined && program !== PAWKET_PROGRAM_ID ? { foreign: true } : {};
+  };
   try {
     await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" })
       .send({ abortSignal: AbortSignal.timeout(CONFIRMATION_TIMEOUT_MS) });
   } catch (error) {
-    if (isSolanaError(error, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE)) throw error;
+    if (isSolanaError(error, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE)) throw Object.assign(error, refusedByAnother(error));
   }
 
   onStage?.("confirming");
@@ -237,7 +247,7 @@ async function land(
   try {
     outcome = await waitForConfirmation({ rpc }, signature);
   } catch (error) {
-    throw Object.assign(error instanceof Error ? error : new Error(String(error)), { signature });
+    throw Object.assign(error instanceof Error ? error : new Error(String(error)), { signature }, refusedByAnother(error));
   }
   onStage?.(outcome);
   return { signature, outcome, sponsored, blockhash };

@@ -115,6 +115,10 @@ signature and reports `unknown`; no replacement is sent automatically. It
 keeps settling after a reload, and says it never reached Solana only once its
 blockhash has run out and Solana's transaction history has no record of it.
 Declining sends nothing. There is no optimistic chain adoption, care or purchase.
+A refusal reads as one of Pawket's own sentences only when Pawket's program
+raised it; another program's, such as a coin's curve refusing a trade over its
+slippage, reads as Solana's refusal, since every Anchor program counts its
+errors from 6000.
 
 Sponsor-first signing prevents wallet-added priority or guard instructions
 from silently widening what the sponsor pays. A wallet that changes an already

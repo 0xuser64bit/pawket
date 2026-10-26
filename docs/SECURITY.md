@@ -96,7 +96,10 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   back to the sponsor's seed. Until it is pinned, rotating the sponsor changes
   those addresses and can lose app discovery or permit duplicate creation.
   Anyone holding it can compute every derived key, so it is kept like the
-  sponsor key.
+  sponsor key. Such a holder can take a derived address before Pawket does,
+  but cannot make it count: a card is read only as an asset of Pawket's
+  collection held by the pet's owner, and a coin only as its founder's curve,
+  so a taken address shows no card, or a coin Pawket cannot launch.
 - A founder keeps the coin's fee rights after the founding pet leaves: the
   pool records the founder's wallet, outside the program. Events, polls and
   launches stop while that pet is out of the guild.

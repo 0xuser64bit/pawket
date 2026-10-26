@@ -14,6 +14,7 @@ import {
   pipe,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
+  setTransactionMessagePriorityFeeLamports,
   type Blockhash,
   type Instruction,
   type KeyPairSigner,
@@ -115,6 +116,17 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(ownerPays, sponsor.address)).toMatchObject({ ok: false });
     const strangerPays = await built(() => [care()], createNoopSigner((await generateKeyPairSigner()).address));
     expect(checkSponsorable(strangerPays, sponsor.address)).toEqual({ ok: false, reason: "The sponsor must be the fee payer." });
+  });
+
+  it("refuses a v1 transaction, whose header can ask a priority fee without an instruction", async () => {
+    const v1 = compileTransaction(pipe(
+      createTransactionMessage({ version: 1 }),
+      (m) => setTransactionMessageFeePayerSigner(createNoopSigner(sponsor.address), m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash(LIFETIME, m),
+      (m) => setTransactionMessagePriorityFeeLamports(1_000_000n, m),
+      (m) => appendTransactionMessageInstructions([care()], m),
+    ));
+    expect(checkSponsorable(v1, sponsor.address)).toEqual({ ok: false, reason: "Only legacy and v0 transactions are sponsored." });
   });
 
   it("refuses what is not a transaction, and a version it does not know", () => {

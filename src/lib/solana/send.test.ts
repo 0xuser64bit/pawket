@@ -18,6 +18,7 @@ import {
   setTransactionMessageFeePayer,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
+  setTransactionMessagePriorityFeeLamports,
   SolanaError,
   SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM,
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
@@ -333,6 +334,21 @@ describe("a coin transaction's brackets", () => {
       ).rejects.toThrow("This transaction does not use your Pawket Wallet. Nothing was signed or sent.");
       expect(sign, why).not.toHaveBeenCalled();
     }
+  });
+
+  it("signs no v1 transaction, whose header can ask the device for a priority fee", async () => {
+    const { owner, device, bracket } = await parties();
+    const v1 = compileTransaction(pipe(
+      createTransactionMessage({ version: 1 }),
+      (m) => setTransactionMessageFeePayer(device.address, m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash(lifetime, m),
+      (m) => setTransactionMessagePriorityFeeLamports(1_000_000n, m),
+      (m) => appendTransactionMessageInstructions([bracket(1n), bracket()], m),
+    ));
+    const sign = vi.fn();
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: sign }, extraSigner: { ...device, signTransactions: sign }, prepare: async () => getBase64EncodedWireTransaction(v1), sponsored: false }))
+      .rejects.toThrow("This transaction does not use your Pawket Wallet. Nothing was signed or sent.");
+    expect(sign).not.toHaveBeenCalled();
   });
 
   it("lets through another program's instruction that only looks like a fee price", async () => {

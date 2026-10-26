@@ -212,7 +212,7 @@ describe("broadcast uncertainty", () => {
       } }),
     } as unknown as SendRpc;
     await expect(sendPawket({ rpc, owner, sponsor: null, instructions: () => [] })).resolves.toEqual({
-      signature: expect.any(String), outcome: "confirmed", sponsored: false, blockhash: "11111111111111111111111111111111",
+      signature: expect.any(String), outcome: "confirmed", sponsored: false, blockhash: "11111111111111111111111111111111", programs: [],
     });
     expect(sent).toBe(1);
   });
@@ -404,7 +404,10 @@ describe("a send that lands", () => {
     const landed = decodeWire(sent[0].wire);
     for (const signer of [sponsor, owner, mint]) expect(landed.signatures[signer.address], signer.address).toBeTruthy();
     expect(owner.signTransactions).toHaveBeenCalledOnce();
-    expect(result).toEqual({ signature: getSignatureFromTransaction(landed), outcome: "confirmed", sponsored: true, blockhash: lifetime.blockhash });
+    expect(result).toEqual({
+      signature: getSignatureFromTransaction(landed), outcome: "confirmed", sponsored: true, blockhash: lifetime.blockhash,
+      programs: ["11111111111111111111111111111111", "11111111111111111111111111111111"],
+    });
   });
 
   it("has the owner pay when no one else does, and leaves no signing timer behind", async () => {

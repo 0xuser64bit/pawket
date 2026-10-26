@@ -30,7 +30,7 @@ import {
 } from "@solana/kit";
 import { deriveWalletPda } from "./pda";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
-import { CONFIRMATION_TIMEOUT_MS, refusingInstruction, waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
+import { attributeRefusal, CONFIRMATION_TIMEOUT_MS, waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
 
 export type SendRpc = Rpc<GetLatestBlockhashApi & SendTransactionApi & GetSignatureStatusesApi>;
 
@@ -60,6 +60,8 @@ export interface SendResult {
   outcome: ConfirmationOutcome;
   sponsored: boolean;
   blockhash: string;
+  /** The program each instruction calls, so a refusal that comes later can be told apart. */
+  programs: readonly string[];
 }
 
 export class RelayError extends Error {
@@ -226,20 +228,15 @@ async function land(
   const signature = getSignatureFromTransaction(signed);
   const message = getCompiledTransactionMessageDecoder().decode(signed.messageBytes);
   const blockhash = message.lifetimeToken;
-  const programOf = (index: number) => {
-    const at = message.version === 1 ? message.instructionHeaders[index]?.programAccountIndex : message.instructions[index]?.programAddressIndex;
-    return at === undefined ? undefined : message.staticAccounts[at];
-  };
-  const refusedByAnother = (error: unknown) => {
-    const index = refusingInstruction(error);
-    const program = index === null ? undefined : programOf(index);
-    return program !== undefined && program !== PAWKET_PROGRAM_ID ? { foreign: true } : {};
-  };
+  const programs = (message.version === 1
+    ? message.instructionHeaders.map((ix) => ix.programAccountIndex)
+    : message.instructions.map((ix) => ix.programAddressIndex)
+  ).map((index) => message.staticAccounts[index]);
   try {
     await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" })
       .send({ abortSignal: AbortSignal.timeout(CONFIRMATION_TIMEOUT_MS) });
   } catch (error) {
-    if (isSolanaError(error, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE)) throw Object.assign(error, refusedByAnother(error));
+    if (isSolanaError(error, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE)) throw attributeRefusal(error, programs);
   }
 
   onStage?.("confirming");
@@ -247,8 +244,8 @@ async function land(
   try {
     outcome = await waitForConfirmation({ rpc }, signature);
   } catch (error) {
-    throw Object.assign(error instanceof Error ? error : new Error(String(error)), { signature }, refusedByAnother(error));
+    throw attributeRefusal(Object.assign(error instanceof Error ? error : new Error(String(error)), { signature }), programs);
   }
   onStage?.(outcome);
-  return { signature, outcome, sponsored, blockhash };
+  return { signature, outcome, sponsored, blockhash, programs };
 }

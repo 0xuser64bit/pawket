@@ -15,7 +15,7 @@ import { asDeviceInstruction } from "./instructions";
 import { RelayError, sendPawket, sendPrepared, type SendOptions, type SendResult } from "./send";
 import { refreshOwnedPets } from "@/lib/companion/use-companion";
 import { dayTurnsAt } from "@/lib/utils/format";
-import { extractProgramErrorCode, isActiveStage, isUserRejection, settleSignature, toUserFacingError, type TransactionStage } from "./transactions";
+import { attributeRefusal, extractProgramErrorCode, isActiveStage, isUserRejection, settleSignature, toUserFacingError, type TransactionStage } from "./transactions";
 
 const KIND: Partial<Record<PawketInstructionName, SendKind>> = {
   adoptPet: "adopt", performCareAction: "care", finishRound: "round", dress: "dress", dressOwned: "dress",
@@ -113,6 +113,7 @@ interface Pending {
   blockhash: string;
   label: string;
   owner: string | null;
+  programs?: readonly string[];
 }
 const PENDING_KEY = "pawket.pending-sends";
 function pendingSends(): Pending[] {
@@ -145,7 +146,7 @@ async function settleLater(pending: Pending, show: (next: Partial<TxState>) => v
       show({ stage: "failed", error: "It never reached Solana, so nothing changed. Try again." });
     }
   } catch (error) {
-    show({ stage: "failed", error: toUserFacingError(error) });
+    show({ stage: "failed", error: toUserFacingError(attributeRefusal(error, pending.programs)) });
   } finally {
     keepPending(pendingSends().filter((each) => each.signature !== pending.signature));
   }
@@ -225,7 +226,7 @@ export function usePawketSend() {
         show({ stage: result.outcome, signature: result.signature, sponsored: result.sponsored });
         record({ name: "send_outcome", kind, outcome: outcomeOf(result) });
         if (result.outcome === "confirmed") haptic("done");
-        else void settleLater({ signature: result.signature, blockhash: result.blockhash, label, owner }, show);
+        else void settleLater({ signature: result.signature, blockhash: result.blockhash, label, owner, programs: result.programs }, show);
         return result;
       } catch (error) {
         record({ name: "send_outcome", kind, outcome: outcomeOf(null, error) });

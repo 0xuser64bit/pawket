@@ -149,6 +149,22 @@ describe("send routing (no wallet signing)", () => {
     expect(last).toMatchObject({ title: "Feed Mango: it did not go through", tone: "risk" });
     expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
   });
+  it("words a refusal that lands after a reload by the program that raised it", async () => {
+    const pawket = "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74";
+    const curve = "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN";
+    window.sessionStorage.setItem("pawket.pending-sends", JSON.stringify([
+      { signature: "theirs", blockhash: "hash", label: "Buy SEAT", owner, programs: [pawket, curve, pawket] },
+      { signature: "ours", blockhash: "hash", label: "Feed Mango", owner, programs: [pawket] },
+    ]));
+    mock.settle.mockImplementation(async (_client: unknown, signature: string) => {
+      throw Object.assign(new Error("{}"), signature === "theirs" ? { programError: 6002, instruction: 1 } : { programError: 6002, instruction: 0 });
+    });
+    await act(async () => { render(<ResumeSends />); });
+    const said = mock.toast.mock.calls.map(([toast]) => JSON.stringify(toast));
+    expect(said.some((toast) => toast.includes("Buy SEAT") && toast.includes("cooling down"))).toBe(false);
+    expect(said.some((toast) => toast.includes("Feed Mango") && toast.includes("cooling down"))).toBe(true);
+  });
+
   it("says a coin trade refused because the wallet's SOL moved meanwhile is to be quoted again", async () => {
     sponsor(); mock.app = true;
     const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);

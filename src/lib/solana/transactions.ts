@@ -8,6 +8,7 @@ import {
   type Signature,
 } from "@solana/kit";
 import { dayTurnsAt } from "@/lib/utils/format";
+import { PAWKET_PROGRAM_ID } from "./program";
 
 export const CONFIRMATION_TIMEOUT_MS = 30_000;
 const STATUS_READ_MS = 5_000;
@@ -169,6 +170,14 @@ export function refusingInstruction(error: unknown): number | null {
     if (typeof relayed === "number") return relayed;
   }
   return null;
+}
+
+/** Marks a refusal raised by another program's instruction, so it never reads as one of Pawket's sentences. */
+export function attributeRefusal<T>(error: T, programs: readonly (string | undefined)[] | undefined): T {
+  const index = refusingInstruction(error);
+  const program = index === null ? undefined : programs?.[index];
+  if (program !== undefined && program !== PAWKET_PROGRAM_ID && typeof error === "object" && error !== null) Object.assign(error, { foreign: true });
+  return error;
 }
 
 /** Pawket's own code, never another program's: every Anchor program numbers its errors from 6000. */

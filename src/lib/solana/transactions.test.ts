@@ -241,6 +241,38 @@ describe("settleSignature", () => {
     await expect(settleSignature(network, "sig", "hash")).resolves.toBe("confirmed");
   });
 
+  it("finds a send that landed before a reload in the ledger, once the recent statuses have let it go", async () => {
+    const searched: unknown[] = [];
+    const reloaded = {
+      rpc: {
+        getSignatureStatuses: (_signatures: readonly string[], config?: { searchTransactionHistory?: boolean }) => ({
+          send: async () => {
+            searched.push(config?.searchTransactionHistory ?? false);
+            return { value: [config?.searchTransactionHistory ? { confirmationStatus: "finalized", err: null } : null] };
+          },
+        }),
+        isBlockhashValid: () => ({ send: async () => ({ value: false }) }),
+      },
+    };
+    await expect(settleSignature(reloaded, "sig", "hash")).resolves.toBe("confirmed");
+    expect(searched).toEqual([false, true]);
+  });
+
+  it("is unknown, never expired, when the last look at the ledger does not answer", async () => {
+    const offline = {
+      rpc: {
+        getSignatureStatuses: (_signatures: readonly string[], config?: { searchTransactionHistory?: boolean }) => ({
+          send: async () => {
+            if (config?.searchTransactionHistory) throw new TypeError("Failed to fetch");
+            return { value: [null] };
+          },
+        }),
+        isBlockhashValid: () => ({ send: async () => ({ value: false }) }),
+      },
+    };
+    await expect(settleSignature(offline, "sig", "hash")).resolves.toBe("unknown");
+  });
+
   it("throws a refusal that landed, like a first confirmation would", async () => {
     await expect(settleSignature(client([{ confirmationStatus: "confirmed", err: { InstructionError: [0, { Custom: 6002 }] } }], [true]), "sig", "hash")).rejects.toMatchObject({ programError: 6002 });
   });

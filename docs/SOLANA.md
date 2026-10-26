@@ -111,7 +111,9 @@ Every app send goes through `usePawketSend` and `send.ts`:
 
 Preparation and signing have bounded waits. A late signature is discarded,
 never broadcast. A lost broadcast/confirmation answer keeps the known
-signature and reports `unknown`; no replacement is sent automatically.
+signature and reports `unknown`; no replacement is sent automatically. It
+keeps settling after a reload, and says it never reached Solana only once its
+blockhash has run out and Solana's transaction history has no record of it.
 Declining sends nothing. There is no optimistic chain adoption, care or purchase.
 
 Sponsor-first signing prevents wallet-added priority or guard instructions

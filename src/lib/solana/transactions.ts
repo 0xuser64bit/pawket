@@ -223,11 +223,36 @@ interface ConfirmationRpc {
   rpc: {
     getSignatureStatuses: (
       signatures: readonly Signature[],
+      config?: { searchTransactionHistory?: boolean },
     ) => { send: (options?: { abortSignal?: AbortSignal }) => Promise<{ value: unknown }> };
   };
 }
 
 export type ConfirmationOutcome = "confirmed" | "unknown";
+
+type Status = { confirmationStatus?: string; err?: unknown } | null;
+
+/** The signature's status, `null` when the node knows nothing of it, `undefined` when the read failed. */
+async function readStatus(client: ConfirmationRpc, signature: string, waitMs: number, history = false): Promise<Status | undefined> {
+  const signatures = [signature as Signature];
+  const { value } = await (history ? client.rpc.getSignatureStatuses(signatures, { searchTransactionHistory: true }) : client.rpc.getSignatureStatuses(signatures))
+    .send({ abortSignal: AbortSignal.timeout(Math.max(STATUS_READ_MS, waitMs)) })
+    .catch(() => ({ value: undefined }));
+  return Array.isArray(value) ? ((value[0] ?? null) as Status) : undefined;
+}
+
+function landed(status: Status | undefined): boolean {
+  if (!status || (status.confirmationStatus !== "confirmed" && status.confirmationStatus !== "finalized")) return false;
+  if (status.err !== undefined && status.err !== null) {
+    const custom = (status.err as { InstructionError?: [unknown, { Custom?: unknown } | string] }).InstructionError?.[1];
+    const code = typeof custom === "object" && custom ? Number(custom.Custom) : NaN;
+    throw Object.assign(
+      new Error(typeof status.err === "string" ? status.err : JSON.stringify(status.err, (_key, value) => (typeof value === "bigint" ? Number(value) : value))),
+      Number.isInteger(code) ? { programError: code } : {},
+    );
+  }
+  return true;
+}
 
 export async function waitForConfirmation(
   client: ConfirmationRpc,
@@ -236,29 +261,7 @@ export async function waitForConfirmation(
 ): Promise<ConfirmationOutcome> {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
-    const { value } = await client.rpc
-      .getSignatureStatuses([signature as Signature])
-      .send({ abortSignal: AbortSignal.timeout(Math.max(STATUS_READ_MS, deadline - Date.now())) })
-      .catch(() => ({ value: null }));
-    const status = (Array.isArray(value) ? value[0] : null) as {
-      confirmationStatus?: string;
-      err?: unknown;
-    } | null;
-    if (
-      status &&
-      (status.confirmationStatus === "confirmed" ||
-        status.confirmationStatus === "finalized")
-    ) {
-      if (status.err !== undefined && status.err !== null) {
-        const custom = (status.err as { InstructionError?: [unknown, { Custom?: unknown } | string] }).InstructionError?.[1];
-        const code = typeof custom === "object" && custom ? Number(custom.Custom) : NaN;
-        throw Object.assign(
-          new Error(typeof status.err === "string" ? status.err : JSON.stringify(status.err, (_key, value) => (typeof value === "bigint" ? Number(value) : value))),
-          Number.isInteger(code) ? { programError: code } : {},
-        );
-      }
-      return "confirmed";
-    }
+    if (landed(await readStatus(client, signature, deadline - Date.now()))) return "confirmed";
     if (Date.now() >= deadline) return "unknown";
     await sleep(1000);
   }
@@ -282,7 +285,11 @@ export async function settleSignature(client: SettleRpc, signature: string, bloc
       .isBlockhashValid(blockhash as never, { commitment: "processed" })
       .send({ abortSignal: AbortSignal.timeout(10_000) })
       .then(({ value }) => value, () => true);
-    if (!valid) return (await waitForConfirmation(client, signature, 0)) === "confirmed" ? "confirmed" : "expired";
+    if (!valid) {
+      // Nodes keep recent statuses only a minute or two: after a reload or a long pause, only the ledger still knows.
+      const status = await readStatus(client, signature, 0, true);
+      return landed(status) ? "confirmed" : status === null ? "expired" : "unknown";
+    }
     if (Date.now() >= deadline) return "unknown";
     await sleep(3000);
   }

@@ -197,7 +197,9 @@ the sponsor refuses the brackets. Graduation's migration is too large for a
 legacy transaction, so it goes as v0 through Pawket's frozen lookup table
 (`COIN_LOOKUP_TABLES`, made by `scripts/coin-lookup-table.mts`). The browser
 signs a v0 coin transaction only while the brackets' owner, wallet and device
-are the transaction's own keys, never ones a lookup table supplies.
+are the transaction's own keys, never ones a lookup table supplies. The device
+signs a coin transaction, without a prompt, only when it appears in no
+instruction between the brackets and no priority fee is asked of it.
 
 [METEORA-INTEGRATION.md](METEORA-INTEGRATION.md) owns presets, stages, quotes,
 routing and operational scripts. [GUILDS.md](GUILDS.md) owns membership and

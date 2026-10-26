@@ -4,6 +4,7 @@ import {
   appendTransactionMessageInstructions,
   blockhash,
   compileTransaction,
+  createNoopSigner,
   compressTransactionMessageUsingAddressLookupTables,
   createTransactionMessage,
   generateKeyPairSigner,
@@ -21,6 +22,7 @@ import {
   type Address,
   type Transaction,
 } from "@solana/kit";
+import { getTransferSolInstruction } from "@solana-program/system";
 import { describe, expect, it, vi } from "vitest";
 import { getWalletSpendInstruction } from "./instructions";
 import { deriveWalletPda } from "./pda";
@@ -99,6 +101,35 @@ describe("broadcast uncertainty", () => {
     const { owner, device, prepare } = await bracketed(false);
     const reached = vi.fn(async () => { throw new Error("the owner was asked"); });
     await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare, sponsored: false })).rejects.toThrow("the owner was asked");
+    expect(reached).toHaveBeenCalledOnce();
+  });
+
+  it("refuses to let its device pay for anything but the network fee, before any signer is called", async () => {
+    const owner = await generateKeyPairSigner();
+    const device = await generateKeyPairSigner();
+    const wallet = (await deriveWalletPda(owner.address)).address;
+    const bracket = (amount?: bigint) => getWalletSpendInstruction({ owner: owner.address, wallet, device: device.address, keep: 0n, amount });
+    const elsewhere = address("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
+    const priority = { programAddress: address("ComputeBudget111111111111111111111111111111"), data: Uint8Array.of(3, 1, 0, 0, 0, 0, 0, 0, 0) };
+    const limit = { programAddress: address("ComputeBudget111111111111111111111111111111"), data: Uint8Array.of(2, 0, 0x27, 9, 0) };
+    const prepared = (middle: Parameters<typeof appendTransactionMessageInstructions>[0]) => async () => getBase64EncodedWireTransaction(compileTransaction(pipe(
+      createTransactionMessage({ version: "legacy" }),
+      (m) => setTransactionMessageFeePayer(device.address, m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockhash("11111111111111111111111111111111"), lastValidBlockHeight: 1n }, m),
+      (m) => appendTransactionMessageInstructions([bracket(1n), ...middle, bracket()], m),
+    )));
+    for (const middle of [
+      [getTransferSolInstruction({ source: createNoopSigner(device.address), destination: elsewhere, amount: 1_000_000n })],
+      [limit, priority],
+    ]) {
+      const sign = vi.fn();
+      await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: sign }, extraSigner: { ...device, signTransactions: sign }, prepare: prepared(middle), sponsored: false }))
+        .rejects.toThrow(/more than its network fee/);
+      expect(sign).not.toHaveBeenCalled();
+    }
+    const reached = vi.fn(async () => { throw new Error("the owner was asked"); });
+    const trade = [limit, getTransferSolInstruction({ source: createNoopSigner(owner.address), destination: elsewhere, amount: 1n })];
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepared(trade), sponsored: false })).rejects.toThrow("the owner was asked");
     expect(reached).toHaveBeenCalledOnce();
   });
 

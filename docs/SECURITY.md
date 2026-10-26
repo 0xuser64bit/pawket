@@ -41,7 +41,9 @@ rolls the transaction back. Change and sale proceeds return to Pawket Wallet.
 The device's fee refill is capped. The sponsor refuses these coin brackets.
 A coin transaction may be v0 with Pawket's frozen lookup table; the browser
 still requires the brackets' owner, wallet and device among the transaction's
-own keys (`send.test.ts`).
+own keys. The device, which signs without a prompt, appears in no instruction
+between the brackets and pays no priority fee, so its signature covers its
+network fee and nothing else (`send.test.ts`).
 
 Release builds retain overflow checks. Counters saturate where specified;
 caller-controlled amounts and spans are validated. Decay has a bounded horizon
@@ -120,6 +122,13 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 - `finish_round` has no daily cap on chain. Only a pet's first round of a UTC
   day earns XP, so repeating it changes nothing in the game; its cost is fees,
   bounded by the sponsor's per-caller limits and a device's daily limit.
+- A coin transaction funds the owner's account with the whole Pawket Wallet
+  balance for its duration, because the SDK's costs (accounts it opens, a
+  launch's fee) vary, and settlement returns what is left. The owner's own SOL
+  is held by `keep`, and the owner approves the transaction in their wallet, but
+  that wallet shows the owner's balance unchanged: what the server built between
+  the brackets decides what the funded balance pays for. Funding only what a
+  trade needs, checked in the browser, is mainnet work.
 - Guild slugs are first come, first served and never freed: a guild has no
   close instruction, and the program reserves only `new`, the app's own create
   route (`RESERVED_SLUGS`). Delisting (`src/lib/guilds/delisted.ts`) hides a

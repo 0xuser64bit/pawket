@@ -42,8 +42,9 @@ The device's fee refill is capped. The sponsor refuses these coin brackets.
 A coin transaction may be v0 with Pawket's frozen lookup table; the browser
 still requires the brackets' owner, wallet and device among the transaction's
 own keys. The device, which signs without a prompt, appears in no instruction
-between the brackets and pays no priority fee, so its signature covers its
-network fee and nothing else (`send.test.ts`).
+between the brackets and pays no priority fee, no signature a precompile
+verifies and at most four signatures (a graduation's), so its signature covers
+its network fee and nothing else (`send.test.ts`).
 
 Release builds retain overflow checks. Counters saturate where specified;
 caller-controlled amounts and spans are validated. Decay has a bounded horizon

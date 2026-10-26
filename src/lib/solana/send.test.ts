@@ -1,5 +1,6 @@
 // @vitest-environment node
 import {
+  AccountRole,
   address,
   appendTransactionMessageInstructions,
   blockhash,
@@ -112,6 +113,13 @@ describe("broadcast uncertainty", () => {
     const elsewhere = address("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
     const priority = { programAddress: address("ComputeBudget111111111111111111111111111111"), data: Uint8Array.of(3, 1, 0, 0, 0, 0, 0, 0, 0) };
     const limit = { programAddress: address("ComputeBudget111111111111111111111111111111"), data: Uint8Array.of(2, 0, 0x27, 9, 0) };
+    const verifies = (program: string) => ({ programAddress: address(program), data: Uint8Array.of(40, 0) });
+    const mints = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner()]);
+    const signedBy = (count: number) => ({
+      programAddress: address("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"),
+      accounts: mints.slice(0, count).map((mint) => ({ address: mint.address, role: AccountRole.READONLY_SIGNER })),
+      data: Uint8Array.of(1),
+    });
     const prepared = (middle: Parameters<typeof appendTransactionMessageInstructions>[0]) => async () => getBase64EncodedWireTransaction(compileTransaction(pipe(
       createTransactionMessage({ version: "legacy" }),
       (m) => setTransactionMessageFeePayer(device.address, m),
@@ -121,6 +129,10 @@ describe("broadcast uncertainty", () => {
     for (const middle of [
       [getTransferSolInstruction({ source: createNoopSigner(device.address), destination: elsewhere, amount: 1_000_000n })],
       [limit, priority],
+      [verifies("Ed25519SigVerify111111111111111111111111111")],
+      [verifies("KeccakSecp256k11111111111111111111111111111")],
+      [verifies("Secp256r1SigVerify1111111111111111111111111")],
+      [signedBy(3)],
     ]) {
       const sign = vi.fn();
       await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: sign }, extraSigner: { ...device, signTransactions: sign }, prepare: prepared(middle), sponsored: false }))
@@ -130,7 +142,9 @@ describe("broadcast uncertainty", () => {
     const reached = vi.fn(async () => { throw new Error("the owner was asked"); });
     const trade = [limit, getTransferSolInstruction({ source: createNoopSigner(owner.address), destination: elsewhere, amount: 1n })];
     await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepared(trade), sponsored: false })).rejects.toThrow("the owner was asked");
-    expect(reached).toHaveBeenCalledOnce();
+    const graduation = [limit, signedBy(2)];
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepared(graduation), sponsored: false })).rejects.toThrow("the owner was asked");
+    expect(reached).toHaveBeenCalledTimes(2);
   });
 
   it("refuses a v0 transaction whose Pawket Wallet comes from a lookup table, before any signer is called", async () => {

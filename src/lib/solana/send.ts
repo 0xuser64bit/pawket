@@ -36,6 +36,14 @@ export type SendRpc = Rpc<GetLatestBlockhashApi & SendTransactionApi & GetSignat
 
 const COMPUTE_BUDGET = "ComputeBudget111111111111111111111111111111";
 const SET_COMPUTE_UNIT_PRICE = 3;
+/** The fee payer pays for each signature these verify, as for the transaction's own. */
+const PRECOMPILES: ReadonlySet<string> = new Set([
+  "Ed25519SigVerify111111111111111111111111111",
+  "KeccakSecp256k11111111111111111111111111111",
+  "Secp256r1SigVerify1111111111111111111111111",
+]);
+/** A graduation's: the device, the owner and two position mints. */
+const MAX_COIN_SIGNATURES = 4;
 
 export interface SendOptions {
   rpc: SendRpc;
@@ -189,8 +197,10 @@ export async function sendPrepared({
     }
     const middle = message.instructions.slice(1, -1);
     if (
+      message.header.numSignerAccounts > MAX_COIN_SIGNATURES ||
       middle.some((ix) => (ix.accountIndices ?? []).some((index) => keys[index] === extraSigner.address)) ||
-      middle.some((ix) => keys[ix.programAddressIndex] === COMPUTE_BUDGET && ix.data?.[0] === SET_COMPUTE_UNIT_PRICE)
+      middle.some((ix) => keys[ix.programAddressIndex] === COMPUTE_BUDGET && ix.data?.[0] === SET_COMPUTE_UNIT_PRICE) ||
+      middle.some((ix) => PRECOMPILES.has(keys[ix.programAddressIndex]))
     ) {
       throw new Error("This transaction asks this device for more than its network fee. Nothing was signed or sent.");
     }

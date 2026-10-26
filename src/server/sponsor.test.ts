@@ -74,10 +74,9 @@ describe("mayPayFee", () => {
   it("counts fees it signed lately, so a burst cannot outrun the balance it reads", async () => {
     const { mayPayFee, mayPayRent, noteFloat } = await sponsor();
     noteFloat(10n * SOL, 0);
-    let signed = 0;
-    while (mayPayFee(1000)) signed++;
-    expect(BigInt(signed)).toBe(500_000_000n / 15_000n);
-    expect(mayPayRent(["fresh"], 1001)).toBe(false);
+    noteFloat(10n * SOL - 500_000_000n + 30_000n, 1);
+    expect([mayPayFee(1000), mayPayFee(1001), mayPayFee(1002)]).toEqual([true, true, false]);
+    expect(mayPayRent(["fresh"], 1003)).toBe(false);
     expect(mayPayFee(1000 + 120_000)).toBe(true);
   });
 });

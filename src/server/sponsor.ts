@@ -17,7 +17,7 @@ import {
   type TransactionSigner,
 } from "@solana/kit";
 import { getPublicEnv } from "@/config/env";
-import { getServerEnv, serverRpcUrl } from "@/config/server-env";
+import { getServerEnv, keypairBytes, serverRpcUrl } from "@/config/server-env";
 import { createPatientRpc } from "@/lib/solana/rpc";
 import { checkSponsorable, createLimiter } from "@/lib/solana/sponsor";
 
@@ -45,10 +45,9 @@ export async function sponsorState(): Promise<SponsorState> {
   const keypair = getServerEnv().sponsorKeypair;
   if (!keypair) return { available: false, reason: "Fees are not covered on this deployment." };
   signer ??= Promise.resolve()
-    .then(() => createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(keypair) as number[])))
+    .then(() => createKeyPairSignerFromBytes(keypairBytes("SPONSOR_KEYPAIR", keypair)))
     .catch((error: unknown) => {
       signer = null;
-      // Name only: JSON.parse's message quotes its input — the secret key.
       console.error("[sponsor] SPONSOR_KEYPAIR is not a valid keypair:", error instanceof Error ? error.name : "unknown");
       throw new Error("The sponsor's key is not valid on this deployment.");
     });
@@ -67,9 +66,9 @@ export async function sponsorState(): Promise<SponsorState> {
 export async function sponsorAddress(): Promise<string | null> {
   const keypair = getServerEnv().sponsorKeypair;
   if (!keypair) return null;
-  return createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(keypair) as number[]))
-    .then((key) => key.address)
-    .catch(() => null);
+  return Promise.resolve()
+    .then(() => createKeyPairSignerFromBytes(keypairBytes("SPONSOR_KEYPAIR", keypair)))
+    .then((key) => key.address, () => null);
 }
 
 const HOUR = 60 * 60 * 1000;

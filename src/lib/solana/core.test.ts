@@ -1,6 +1,6 @@
-import { AccountRole, generateKeyPairSigner } from "@solana/kit";
+import { AccountRole, address, generateKeyPairSigner, getAddressEncoder } from "@solana/kit";
 import { describe, expect, it } from "vitest";
-import { getCreateCollectionInstruction, getCreateKeepsakeInstruction, MPL_CORE_PROGRAM_ID, PAWKET_COLLECTION } from "./core";
+import { getCreateCollectionInstruction, getCreateKeepsakeInstruction, isKeepsakeOf, MPL_CORE_PROGRAM_ID, PAWKET_COLLECTION } from "./core";
 
 const str = (value: string) => [value.length, 0, 0, 0, ...new TextEncoder().encode(value)];
 const PET = "Cve24bjLvziU3b9T3tTFLjv9vXqFTeZEDTcMpXxcr8zC";
@@ -55,5 +55,24 @@ describe("keepsake instructions (Metaplex Core)", () => {
       AccountRole.WRITABLE_SIGNER,
       AccountRole.READONLY,
     ]);
+  });
+});
+
+describe("isKeepsakeOf", () => {
+  const OWNER = "3S6RvbyUvbCqyAEKNu3gGHDJoi7ZZB3JwQ7gFsDRhjEs";
+  const bytes = (key: string) => [...getAddressEncoder().encode(address(key))];
+  const asset = ({ kind = 1, owner = OWNER, authority = 2, collection = PAWKET_COLLECTION } = {}) =>
+    Uint8Array.from([kind, ...bytes(owner), authority, ...bytes(collection), ...str("Pepper"), ...str("u"), 0]);
+
+  it("is a card of Pawket's collection, held by the pet's owner", () => {
+    expect(isKeepsakeOf(asset(), OWNER)).toBe(true);
+  });
+
+  it("is not another owner's asset, one outside the collection, or something else at the address", () => {
+    expect(isKeepsakeOf(asset({ owner: PET }), OWNER)).toBe(false);
+    expect(isKeepsakeOf(asset({ collection: PET }), OWNER)).toBe(false);
+    expect(isKeepsakeOf(asset({ authority: 1 }), OWNER)).toBe(false);
+    expect(isKeepsakeOf(asset({ kind: 5 }), OWNER)).toBe(false);
+    expect(isKeepsakeOf(asset().subarray(0, 65), OWNER)).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHmac } from "node:crypto";
-import { getServerEnv } from "@/config/server-env";
+import { getServerEnv, keypairBytes } from "@/config/server-env";
 
 export function derivedSeed(label: string): Buffer | null {
   const { derivationSecret, sponsorKeypair } = getServerEnv();
@@ -12,7 +12,7 @@ export function derivedSeed(label: string): Buffer | null {
     }
     secret = Buffer.from(derivationSecret, "hex");
   } else if (sponsorKeypair) {
-    secret = Uint8Array.from(JSON.parse(sponsorKeypair) as number[]).subarray(0, 32);
+    secret = keypairBytes("SPONSOR_KEYPAIR", sponsorKeypair).subarray(0, 32);
   } else {
     return null;
   }

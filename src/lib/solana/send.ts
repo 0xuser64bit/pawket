@@ -30,12 +30,20 @@ import {
 } from "@solana/kit";
 import { deriveWalletPda } from "./pda";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
-import { CONFIRMATION_TIMEOUT_MS, waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
+import { attributeRefusal, CONFIRMATION_TIMEOUT_MS, waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
 
 export type SendRpc = Rpc<GetLatestBlockhashApi & SendTransactionApi & GetSignatureStatusesApi>;
 
 const COMPUTE_BUDGET = "ComputeBudget111111111111111111111111111111";
 const SET_COMPUTE_UNIT_PRICE = 3;
+/** The fee payer pays for each signature these verify, as for the transaction's own. */
+const PRECOMPILES: ReadonlySet<string> = new Set([
+  "Ed25519SigVerify111111111111111111111111111",
+  "KeccakSecp256k11111111111111111111111111111",
+  "Secp256r1SigVerify1111111111111111111111111",
+]);
+/** A graduation's: the device, the owner and two position mints. */
+const MAX_COIN_SIGNATURES = 4;
 
 export interface SendOptions {
   rpc: SendRpc;
@@ -52,6 +60,8 @@ export interface SendResult {
   outcome: ConfirmationOutcome;
   sponsored: boolean;
   blockhash: string;
+  /** The program each instruction calls, so a refusal that comes later can be told apart. */
+  programs: readonly string[];
 }
 
 export class RelayError extends Error {
@@ -189,8 +199,10 @@ export async function sendPrepared({
     }
     const middle = message.instructions.slice(1, -1);
     if (
+      message.header.numSignerAccounts > MAX_COIN_SIGNATURES ||
       middle.some((ix) => (ix.accountIndices ?? []).some((index) => keys[index] === extraSigner.address)) ||
-      middle.some((ix) => keys[ix.programAddressIndex] === COMPUTE_BUDGET && ix.data?.[0] === SET_COMPUTE_UNIT_PRICE)
+      middle.some((ix) => keys[ix.programAddressIndex] === COMPUTE_BUDGET && ix.data?.[0] === SET_COMPUTE_UNIT_PRICE) ||
+      middle.some((ix) => PRECOMPILES.has(keys[ix.programAddressIndex]))
     ) {
       throw new Error("This transaction asks this device for more than its network fee. Nothing was signed or sent.");
     }
@@ -214,12 +226,17 @@ async function land(
   onStage?.("sending");
   const wire = getBase64EncodedWireTransaction(signed);
   const signature = getSignatureFromTransaction(signed);
-  const blockhash = getCompiledTransactionMessageDecoder().decode(signed.messageBytes).lifetimeToken;
+  const message = getCompiledTransactionMessageDecoder().decode(signed.messageBytes);
+  const blockhash = message.lifetimeToken;
+  const programs = (message.version === 1
+    ? message.instructionHeaders.map((ix) => ix.programAccountIndex)
+    : message.instructions.map((ix) => ix.programAddressIndex)
+  ).map((index) => message.staticAccounts[index]);
   try {
     await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" })
       .send({ abortSignal: AbortSignal.timeout(CONFIRMATION_TIMEOUT_MS) });
   } catch (error) {
-    if (isSolanaError(error, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE)) throw error;
+    if (isSolanaError(error, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE)) throw attributeRefusal(error, programs);
   }
 
   onStage?.("confirming");
@@ -227,8 +244,8 @@ async function land(
   try {
     outcome = await waitForConfirmation({ rpc }, signature);
   } catch (error) {
-    throw Object.assign(error instanceof Error ? error : new Error(String(error)), { signature });
+    throw attributeRefusal(Object.assign(error instanceof Error ? error : new Error(String(error)), { signature }), programs);
   }
   onStage?.(outcome);
-  return { signature, outcome, sponsored, blockhash };
+  return { signature, outcome, sponsored, blockhash, programs };
 }

@@ -21,6 +21,9 @@ describe("Solana Actions", () => {
     });
     for (const response of [rules, OPTIONS(), await adoptCard(at("/api/actions/adopt"))]) {
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+      expect(response.headers.get("Access-Control-Allow-Methods")).toBe("GET,POST,PUT,OPTIONS");
+      expect(response.headers.get("Access-Control-Allow-Headers")).toBe("Content-Type, Authorization, Content-Encoding, Accept-Encoding, X-Action-Version, X-Blockchain-Ids");
+      expect(response.headers.get("Access-Control-Expose-Headers")).toBe("X-Action-Version, X-Blockchain-Ids");
       expect(response.headers.get("X-Action-Version")).toBe("2.4");
       expect(response.headers.get("X-Blockchain-Ids")).toBe("solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG");
     }
@@ -32,8 +35,19 @@ describe("Solana Actions", () => {
     const [linked] = card.links.actions;
     expect(linked.type).toBe("transaction");
     expect(linked.href).toBe("/api/actions/adopt?species={species}&personality={personality}&name={name}");
-    expect(linked.parameters.map((p: { name: string }) => p.name)).toEqual(["species", "personality", "name"]);
+    expect(linked.label).toBe("Adopt");
+    expect(linked.parameters.map(({ name, label, required }: { name: string; label: string; required: boolean }) => [name, label, required])).toEqual([
+      ["species", "Who is coming home?", true],
+      ["personality", "How would you describe them?", true],
+      ["name", "Their name, 2 to 24 characters", true],
+    ]);
     expect(linked.parameters[0].options.map((o: { value: string }) => o.value)).toEqual(["luna_cat", "moss_pup", "cloud_bun"]);
+    expect(linked.parameters[1].options).toEqual([
+      { label: "Curious", value: "curious" },
+      { label: "Cozy", value: "cozy" },
+      { label: "Brave", value: "brave" },
+      { label: "Mischief", value: "mischief" },
+    ]);
   });
 
   it("refuses before building anything, in one sentence each", async () => {

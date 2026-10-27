@@ -1,5 +1,6 @@
 // @vitest-environment node
 import {
+  AccountRole,
   address,
   appendTransactionMessageInstructions,
   blockhash,
@@ -17,16 +18,21 @@ import {
   setTransactionMessageFeePayer,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
+  setTransactionMessagePriorityFeeLamports,
   SolanaError,
+  SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM,
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
   type Address,
+  type Instruction,
+  type KeyPairSigner,
   type Transaction,
 } from "@solana/kit";
 import { getTransferSolInstruction } from "@solana-program/system";
-import { describe, expect, it, vi } from "vitest";
-import { getWalletSpendInstruction } from "./instructions";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { CareActionType } from "@/lib/game/enums";
+import { getCareInstruction, getWalletSpendInstruction } from "./instructions";
 import { deriveWalletPda } from "./pda";
-import { CONFIRMATION_TIMEOUT_MS, type TransactionStage } from "./transactions";
+import { CONFIRMATION_TIMEOUT_MS, extractProgramErrorCode, pawketErrorMessage, toUserFacingError, type TransactionStage } from "./transactions";
 import { sendPawket, sendPrepared, type SendRpc } from "./send";
 
 describe("broadcast uncertainty", () => {
@@ -112,6 +118,13 @@ describe("broadcast uncertainty", () => {
     const elsewhere = address("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
     const priority = { programAddress: address("ComputeBudget111111111111111111111111111111"), data: Uint8Array.of(3, 1, 0, 0, 0, 0, 0, 0, 0) };
     const limit = { programAddress: address("ComputeBudget111111111111111111111111111111"), data: Uint8Array.of(2, 0, 0x27, 9, 0) };
+    const verifies = (program: string) => ({ programAddress: address(program), data: Uint8Array.of(40, 0) });
+    const mints = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner()]);
+    const signedBy = (count: number) => ({
+      programAddress: address("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"),
+      accounts: mints.slice(0, count).map((mint) => ({ address: mint.address, role: AccountRole.READONLY_SIGNER })),
+      data: Uint8Array.of(1),
+    });
     const prepared = (middle: Parameters<typeof appendTransactionMessageInstructions>[0]) => async () => getBase64EncodedWireTransaction(compileTransaction(pipe(
       createTransactionMessage({ version: "legacy" }),
       (m) => setTransactionMessageFeePayer(device.address, m),
@@ -121,6 +134,10 @@ describe("broadcast uncertainty", () => {
     for (const middle of [
       [getTransferSolInstruction({ source: createNoopSigner(device.address), destination: elsewhere, amount: 1_000_000n })],
       [limit, priority],
+      [verifies("Ed25519SigVerify111111111111111111111111111")],
+      [verifies("KeccakSecp256k11111111111111111111111111111")],
+      [verifies("Secp256r1SigVerify1111111111111111111111111")],
+      [signedBy(3)],
     ]) {
       const sign = vi.fn();
       await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: sign }, extraSigner: { ...device, signTransactions: sign }, prepare: prepared(middle), sponsored: false }))
@@ -130,7 +147,9 @@ describe("broadcast uncertainty", () => {
     const reached = vi.fn(async () => { throw new Error("the owner was asked"); });
     const trade = [limit, getTransferSolInstruction({ source: createNoopSigner(owner.address), destination: elsewhere, amount: 1n })];
     await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepared(trade), sponsored: false })).rejects.toThrow("the owner was asked");
-    expect(reached).toHaveBeenCalledOnce();
+    const graduation = [limit, signedBy(2)];
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepared(graduation), sponsored: false })).rejects.toThrow("the owner was asked");
+    expect(reached).toHaveBeenCalledTimes(2);
   });
 
   it("refuses a v0 transaction whose Pawket Wallet comes from a lookup table, before any signer is called", async () => {
@@ -193,7 +212,7 @@ describe("broadcast uncertainty", () => {
       } }),
     } as unknown as SendRpc;
     await expect(sendPawket({ rpc, owner, sponsor: null, instructions: () => [] })).resolves.toEqual({
-      signature: expect.any(String), outcome: "confirmed", sponsored: false, blockhash: "11111111111111111111111111111111",
+      signature: expect.any(String), outcome: "confirmed", sponsored: false, blockhash: "11111111111111111111111111111111", programs: [],
     });
     expect(sent).toBe(1);
   });
@@ -267,5 +286,269 @@ describe("message integrity", () => {
     await expect(sendPrepared({ rpc, owner: wallet as never, prepare: async () => getBase64EncodedWireTransaction(prepared) }))
       .rejects.toThrow(/wallet changed the transaction.*Nothing was sent/);
     expect(send).not.toHaveBeenCalled();
+  });
+});
+
+describe("a coin transaction's brackets", () => {
+  const lifetime = { blockhash: blockhash("11111111111111111111111111111111"), lastValidBlockHeight: 1n };
+  const elsewhere = address("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
+
+  async function parties() {
+    const [owner, device, stranger] = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner()]);
+    const wallet = (await deriveWalletPda(owner.address)).address;
+    const bracket = (amount?: bigint, at: { owner?: Address; wallet?: Address; device?: Address } = {}) =>
+      getWalletSpendInstruction({ owner: createNoopSigner(at.owner ?? owner.address), wallet: at.wallet ?? wallet, device: at.device ?? device.address, keep: 0n, amount });
+    const prepare = (instructions: Instruction[], payer: Address = device.address) => async () => getBase64EncodedWireTransaction(compileTransaction(pipe(
+      createTransactionMessage({ version: "legacy" }),
+      (m) => setTransactionMessageFeePayer(payer, m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash(lifetime, m),
+      (m) => appendTransactionMessageInstructions(instructions, m),
+    )));
+    return { owner, device, stranger, wallet, bracket, prepare };
+  }
+
+  it("signs nothing unless the device pays the fee and the first and last instructions are its own owner's brackets", async () => {
+    const { owner, device, stranger, bracket, prepare } = await parties();
+    const trade = getTransferSolInstruction({ source: createNoopSigner(owner.address), destination: elsewhere, amount: 1n });
+    const onAnotherProgram = { ...bracket(1n), programAddress: address("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG") };
+    const almostFund = { ...bracket(1n), data: Uint8Array.from(bracket(1n).data!, (byte, i) => (i === 7 ? byte ^ 1 : byte)) };
+    const bare = { programAddress: bracket(1n).programAddress };
+    const fundsNoOne = { programAddress: bracket(1n).programAddress, data: bracket(1n).data };
+    for (const [why, prepared] of [
+      ["the owner pays", prepare([bracket(1n), trade, bracket()], owner.address)],
+      ["no funding first", prepare([trade, bracket()])],
+      ["settled twice, never funded", prepare([bracket(), trade, bracket()])],
+      ["no settling last", prepare([bracket(1n), trade])],
+      ["brackets on another program", prepare([onAnotherProgram, trade, bracket()])],
+      ["a funding that is almost the program's", prepare([almostFund, trade, bracket()])],
+      ["an instruction with nothing in it", prepare([bare, trade, bracket()])],
+      ["a funding that names no accounts", prepare([fundsNoOne, trade, bracket()])],
+      ["someone else's Pawket Wallet", prepare([bracket(1n, { owner: stranger.address }), trade, bracket(undefined, { owner: stranger.address })])],
+      ["a wallet that is not the owner's", prepare([bracket(1n, { wallet: elsewhere }), trade, bracket(undefined, { wallet: elsewhere })])],
+      ["another device's brackets", prepare([bracket(1n, { device: stranger.address }), trade, bracket(undefined, { device: stranger.address })])],
+    ] as const) {
+      const sign = vi.fn();
+      await expect(
+        sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: sign }, extraSigner: { ...device, signTransactions: sign }, prepare: prepared, sponsored: false }),
+        why,
+      ).rejects.toThrow("This transaction does not use your Pawket Wallet. Nothing was signed or sent.");
+      expect(sign, why).not.toHaveBeenCalled();
+    }
+  });
+
+  it("signs no v1 transaction, whose header can ask the device for a priority fee", async () => {
+    const { owner, device, bracket } = await parties();
+    const v1 = compileTransaction(pipe(
+      createTransactionMessage({ version: 1 }),
+      (m) => setTransactionMessageFeePayer(device.address, m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash(lifetime, m),
+      (m) => setTransactionMessagePriorityFeeLamports(1_000_000n, m),
+      (m) => appendTransactionMessageInstructions([bracket(1n), bracket()], m),
+    ));
+    const sign = vi.fn();
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: sign }, extraSigner: { ...device, signTransactions: sign }, prepare: async () => getBase64EncodedWireTransaction(v1), sponsored: false }))
+      .rejects.toThrow("This transaction does not use your Pawket Wallet. Nothing was signed or sent.");
+    expect(sign).not.toHaveBeenCalled();
+  });
+
+  it("lets through another program's instruction that only looks like a fee price", async () => {
+    const { owner, device, bracket, prepare } = await parties();
+    const reached = vi.fn(async () => { throw new Error("the owner was asked"); });
+    const lookalike = { programAddress: address("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"), data: Uint8Array.of(3, 1, 0, 0, 0, 0, 0, 0, 0) };
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepare([bracket(1n), lookalike, bracket()]), sponsored: false }))
+      .rejects.toThrow("the owner was asked");
+  });
+});
+
+describe("a send that lands", () => {
+  const lifetime = { blockhash: "11111111111111111111111111111111", lastValidBlockHeight: 1n };
+  const decodeWire = (wire: string) => getTransactionDecoder().decode(getBase64Encoder().encode(wire));
+
+  function landing() {
+    const asked: unknown[] = [];
+    const sent: { wire: string; options: unknown }[] = [];
+    const rpc = {
+      getLatestBlockhash: (config: unknown) => ({ send: async (options: { abortSignal?: AbortSignal }) => {
+        asked.push(config, options.abortSignal instanceof AbortSignal);
+        return { value: lifetime };
+      } }),
+      sendTransaction: (wire: string, options: unknown) => ({ send: async () => void sent.push({ wire, options }) }),
+      getSignatureStatuses: () => ({ send: async () => ({ value: [{ confirmationStatus: "confirmed", err: null }] }) }),
+    } as unknown as SendRpc;
+    return { rpc, asked, sent };
+  }
+
+  it("sends what the sponsor and the wallet both signed, with every stage shown, and says it was sponsored", async () => {
+    const [key, sponsor, mint] = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner()]);
+    const owner = { ...key, signTransactions: vi.fn(key.signTransactions) };
+    const { rpc, asked, sent } = landing();
+    const stages: TransactionStage[] = [];
+    const given: { owner?: string; payer?: string }[] = [];
+    const cosign = async (wire: string) => getBase64EncodedWireTransaction(await partiallySignTransaction([sponsor.keyPair], decodeWire(wire)));
+    const result = await sendPawket({
+      rpc, owner, sponsor: sponsor.address, cosign, onStage: (stage) => stages.push(stage),
+      instructions: ({ owner: signer, payer }) => {
+        given.push({ owner: signer.address, payer: payer.address });
+        return [getTransferSolInstruction({ source: signer, destination: mint.address, amount: 1n }), {
+          programAddress: address("11111111111111111111111111111111"),
+          accounts: [{ address: mint.address, role: AccountRole.WRITABLE_SIGNER, signer: mint }],
+          data: Uint8Array.of(),
+        }];
+      },
+    });
+    expect(given).toEqual([{ owner: owner.address, payer: sponsor.address }]);
+    expect(asked).toEqual([{ commitment: "confirmed" }, true]);
+    expect(stages).toEqual(["preparing", "signing", "sending", "confirming", "confirmed"]);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].options).toEqual({ encoding: "base64", preflightCommitment: "confirmed" });
+    const landed = decodeWire(sent[0].wire);
+    for (const signer of [sponsor, owner, mint]) expect(landed.signatures[signer.address], signer.address).toBeTruthy();
+    expect(owner.signTransactions).toHaveBeenCalledOnce();
+    expect(result).toEqual({
+      signature: getSignatureFromTransaction(landed), outcome: "confirmed", sponsored: true, blockhash: lifetime.blockhash,
+      programs: ["11111111111111111111111111111111", "11111111111111111111111111111111"],
+    });
+  });
+
+  it("has the owner pay when no one else does, and leaves no signing timer behind", async () => {
+    const owner = await generateKeyPairSigner();
+    const { rpc, sent } = landing();
+    const given: string[] = [];
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const result = await sendPawket({ rpc, owner, sponsor: null, instructions: ({ payer }) => (given.push(payer.address), []) });
+      expect(result).toMatchObject({ outcome: "confirmed", sponsored: false });
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+    expect(given).toEqual([owner.address]);
+    expect(decodeWire(sent[0].wire).signatures[owner.address]).toBeTruthy();
+  });
+
+  it("takes a wallet that signs by handing the transaction back, unchanged", async () => {
+    const [owner, sponsor] = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner()]);
+    const { rpc, sent } = landing();
+    const cosign = async (wire: string) => getBase64EncodedWireTransaction(await partiallySignTransaction([sponsor.keyPair], decodeWire(wire)));
+    const wallet = {
+      address: owner.address,
+      modifyAndSignTransactions: async (transactions: readonly Transaction[]) => Promise.all(transactions.map((transaction) => partiallySignTransaction([owner.keyPair], transaction))),
+    };
+    const pays = () => [getTransferSolInstruction({ source: createNoopSigner(owner.address), destination: sponsor.address, amount: 1n })];
+    await expect(sendPawket({ rpc, owner: wallet as never, sponsor: sponsor.address, cosign, instructions: pays })).resolves.toMatchObject({ outcome: "confirmed" });
+    expect(decodeWire(sent[0].wire).signatures[owner.address]).toBeTruthy();
+  });
+
+  it("refuses a wallet that can only send, since Pawket's fee payer must sign first", async () => {
+    const [owner, sponsor] = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner()]);
+    const { rpc, sent } = landing();
+    const cosign = async (wire: string) => getBase64EncodedWireTransaction(await partiallySignTransaction([sponsor.keyPair], decodeWire(wire)));
+    const sendsOnly = { address: owner.address, signAndSendTransactions: vi.fn() };
+    await expect(sendPawket({ rpc, owner: sendsOnly as never, sponsor: sponsor.address, cosign, instructions: () => [] }))
+      .rejects.toThrow("This wallet can only send, not sign, so Pawket cannot pay its fee. Nothing was sent.");
+    expect(sendsOnly.signAndSendTransactions).not.toHaveBeenCalled();
+    expect(sent).toHaveLength(0);
+  });
+
+  it("counts a prepared send as sponsored unless told otherwise, and lets a wallet adjust one nobody else signed", async () => {
+    const owner = await generateKeyPairSigner();
+    const { rpc, sent } = landing();
+    const unsigned = (lifetimeHash: string) => compileTransaction(pipe(
+      createTransactionMessage({ version: "legacy" }),
+      (m) => setTransactionMessageFeePayer(owner.address, m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockhash(lifetimeHash), lastValidBlockHeight: 1n }, m),
+    ));
+    const adjusted = await partiallySignTransaction([owner.keyPair], unsigned("SysvarC1ock11111111111111111111111111111111"));
+    const wallet = { address: owner.address, modifyAndSignTransactions: async () => [adjusted] };
+    const result = await sendPrepared({ rpc, owner: wallet as never, prepare: async () => getBase64EncodedWireTransaction(unsigned(lifetime.blockhash)) });
+    expect(result).toMatchObject({ outcome: "confirmed", sponsored: true, blockhash: "SysvarC1ock11111111111111111111111111111111" });
+    expect(sent).toHaveLength(1);
+  });
+
+  it("refuses a wallet that changes a prepared transaction another key signed, though the owner has a slot in it too", async () => {
+    const [owner, cosigner] = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner()]);
+    const { rpc, sent } = landing();
+    const both = (lifetimeHash: string) => compileTransaction(pipe(
+      createTransactionMessage({ version: "legacy" }),
+      (m) => setTransactionMessageFeePayer(cosigner.address, m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockhash(lifetimeHash), lastValidBlockHeight: 1n }, m),
+      (m) => appendTransactionMessageInstructions([getTransferSolInstruction({ source: createNoopSigner(owner.address), destination: cosigner.address, amount: 1n })], m),
+    ));
+    const prepared = await partiallySignTransaction([cosigner.keyPair], both(lifetime.blockhash));
+    const wallet = { address: owner.address, modifyAndSignTransactions: async () => [both("SysvarC1ock11111111111111111111111111111111")] };
+    await expect(sendPrepared({ rpc, owner: wallet as never, prepare: async () => getBase64EncodedWireTransaction(prepared) }))
+      .rejects.toThrow(/wallet changed the transaction.*Nothing was sent/);
+    expect(sent).toHaveLength(0);
+  });
+
+  it("words another program's refusal as Solana's, never as one of Pawket's own sentences", async () => {
+    const owner = await generateKeyPairSigner();
+    const other = { programAddress: address("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"), data: Uint8Array.of(1) };
+    const care = (signer: Parameters<typeof getCareInstruction>[0]["owner"]) =>
+      getCareInstruction({ owner: signer, pet: "J3nMY26sQZiBod2RCwsUFrh8E5PW56Mhr4ksm8RFQJAp", passport: "FEJ7fHr3JBuYMDZ67UsWZfaGVo2S4dMizG6T3xp1BQMm", action: CareActionType.Feed });
+    const refused = async (index: number) => {
+      const { rpc } = landing();
+      const refusal = new SolanaError(SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE, { cause: new SolanaError(SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM, { code: 6002, index }) } as never);
+      (rpc as unknown as { sendTransaction: unknown }).sendTransaction = () => ({ send: async () => { throw refusal; } });
+      return sendPawket({ rpc, owner, sponsor: null, instructions: ({ owner: signer }) => [care(signer), other] }).catch((caught: unknown) => caught);
+    };
+    const theirs = await refused(1);
+    expect(extractProgramErrorCode(theirs)).toBeNull();
+    expect(toUserFacingError(theirs)).toBe("Solana refused this transaction before it was sent. Nothing changed — try again.");
+    const ours = await refused(0);
+    expect(extractProgramErrorCode(ours)).toBe(6002);
+    expect(toUserFacingError(ours)).toBe(pawketErrorMessage(6002));
+  });
+
+  it("keeps another program's landed refusal out of Pawket's sentences too, and its signature", async () => {
+    const owner = await generateKeyPairSigner();
+    const { rpc, sent } = landing();
+    (rpc as unknown as { getSignatureStatuses: unknown }).getSignatureStatuses = () => ({ send: async () => ({ value: [{ confirmationStatus: "confirmed", err: { InstructionError: [1, { Custom: 6008 }] } }] }) });
+    const other = { programAddress: address("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"), data: Uint8Array.of(1) };
+    const error = await sendPawket({
+      rpc, owner, sponsor: null,
+      instructions: ({ owner: signer }) => [getTransferSolInstruction({ source: signer, destination: address("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"), amount: 1n }), other],
+    }).catch((caught: unknown) => caught);
+    expect(extractProgramErrorCode(error)).toBeNull();
+    expect(error).toMatchObject({ programError: 6008, instruction: 1, signature: getSignatureFromTransaction(decodeWire(sent[0].wire)) });
+  });
+
+  it("keeps the signature on a refusal that landed, so it can still be looked up", async () => {
+    const owner = await generateKeyPairSigner();
+    const { rpc, sent } = landing();
+    (rpc as unknown as { getSignatureStatuses: unknown }).getSignatureStatuses = () => ({ send: async () => ({ value: [{ confirmationStatus: "confirmed", err: { InstructionError: [0, { Custom: 6002 }] } }] }) });
+    const error = await sendPawket({ rpc, owner, sponsor: null, instructions: () => [] }).catch((caught: unknown) => caught);
+    expect(error).toMatchObject({ programError: 6002, signature: getSignatureFromTransaction(decodeWire(sent[0].wire)) });
+  });
+});
+
+describe("the sponsor relay", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  async function relayed(reply: Response | ((wire: string, sponsor: KeyPairSigner) => Promise<Response>)) {
+    const [owner, sponsor] = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner()]);
+    const fetched = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(async (_url, init) =>
+      reply instanceof Response ? reply : reply((JSON.parse(String(init.body)) as { transaction: string }).transaction, sponsor));
+    vi.stubGlobal("fetch", fetched);
+    const rpc = { getLatestBlockhash: () => ({ send: async () => ({ value: { blockhash: "11111111111111111111111111111111", lastValidBlockHeight: 1n } }) }) } as unknown as SendRpc;
+    const outcome = await sendPawket({ rpc, owner: { ...owner, signTransactions: async () => { throw new Error("the owner was asked"); } }, sponsor: sponsor.address, instructions: () => [] }).catch((caught: unknown) => caught);
+    return { outcome, fetched, sponsor };
+  }
+
+  it("posts the transaction to /api/sponsor as JSON, and hands the wallet what the sponsor signed", async () => {
+    const { outcome, fetched } = await relayed(async (wire, sponsor) =>
+      Response.json({ transaction: getBase64EncodedWireTransaction(await partiallySignTransaction([sponsor.keyPair], getTransactionDecoder().decode(getBase64Encoder().encode(wire)))) }));
+    const [url, init] = fetched.mock.calls[0];
+    expect([url, init.method, new Headers(init.headers).get("content-type")]).toEqual(["/api/sponsor", "POST", "application/json"]);
+    expect(Object.keys(JSON.parse(String(init.body)))).toEqual(["transaction"]);
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+    expect(outcome).toMatchObject({ message: "the owner was asked" });
+  });
+
+  it("passes on why the sponsor refused, and its status, or says it did not sign", async () => {
+    const refused = await relayed(Response.json({ error: "Too many in a row." }, { status: 429 }));
+    expect(refused.outcome).toMatchObject({ name: "RelayError", message: "Too many in a row.", status: 429 });
+    const silent = await relayed(new Response("<html>", { status: 502 }));
+    expect(silent.outcome).toMatchObject({ name: "RelayError", message: "The sponsor did not sign it. Nothing was sent.", status: 502 });
+    const empty = await relayed(Response.json({}));
+    expect(empty.outcome).toMatchObject({ name: "RelayError", message: "The sponsor did not sign it. Nothing was sent.", status: 200 });
   });
 });

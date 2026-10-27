@@ -209,7 +209,7 @@ describe.skipIf(!RUN)("Pawket on devnet", { timeout: 180_000 }, () => {
     const result = await sendPrepared({ rpc, owner, prepare: () => keepsakeTransaction(sponsor, onChain!) });
     expect(result).toMatchObject({ outcome: "confirmed", sponsored: true });
 
-    const keepsake = await readKeepsake(pet);
+    const keepsake = await readKeepsake(onChain!.pet);
     expect(keepsake?.made).toBe(true);
     const account = await fetchEncodedAccount(rpc, keepsake!.address);
     expect(account.exists && account.programAddress).toBe(MPL_CORE_PROGRAM_ID);

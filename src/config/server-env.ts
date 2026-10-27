@@ -27,6 +27,18 @@ export function getServerEnv(): ServerEnv {
   });
 }
 
+/** A keypair variable's 64 bytes. A malformed one is refused by name only: JSON.parse's own message quotes its input. */
+export function keypairBytes(name: "SPONSOR_KEYPAIR" | "COLLECTION_AUTHORITY_KEYPAIR", json: string): Uint8Array {
+  let bytes: unknown;
+  try {
+    bytes = JSON.parse(json);
+  } catch {}
+  if (!Array.isArray(bytes) || bytes.length !== 64 || !bytes.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)) {
+    throw new Error(`${name} is not a keypair: a JSON array of 64 bytes.`);
+  }
+  return Uint8Array.from(bytes as number[]);
+}
+
 export function serverRpcUrl(): string {
   const own = getServerEnv().solanaRpcUrl;
   if (own) return own;

@@ -111,8 +111,14 @@ Every app send goes through `usePawketSend` and `send.ts`:
 
 Preparation and signing have bounded waits. A late signature is discarded,
 never broadcast. A lost broadcast/confirmation answer keeps the known
-signature and reports `unknown`; no replacement is sent automatically.
+signature and reports `unknown`; no replacement is sent automatically. It
+keeps settling after a reload, and says it never reached Solana only once its
+blockhash has run out and Solana's transaction history has no record of it.
 Declining sends nothing. There is no optimistic chain adoption, care or purchase.
+A refusal reads as one of Pawket's own sentences only when Pawket's program
+raised it; another program's, such as a coin's curve refusing a trade over its
+slippage, reads as Solana's refusal, since every Anchor program counts its
+errors from 6000.
 
 Sponsor-first signing prevents wallet-added priority or guard instructions
 from silently widening what the sponsor pays. A wallet that changes an already
@@ -164,8 +170,8 @@ is a checked source constant; its authority is the sponsor unless
 
 `src/server/keepsake.ts` derives an asset signer from the pet address and
 `DERIVATION_SECRET` (`src/server/derive.ts`; the sponsor's seed unless set)
-with HMAC. `readKeepsake` verifies the account exists under Core
-before showing a card. Creation requires the owner, current sponsorship and
+with HMAC. `readKeepsake` shows a card only when the account at that address
+is a Core asset of Pawket's collection held by the pet's owner (`isKeepsakeOf`). Creation requires the owner, current sponsorship and
 no existing card. The sponsor covers rent and the collection's authority
 signs; the owner signs the
 prepared transaction through `sendPrepared`. Metadata is built from live pet
@@ -199,7 +205,8 @@ legacy transaction, so it goes as v0 through Pawket's frozen lookup table
 signs a v0 coin transaction only while the brackets' owner, wallet and device
 are the transaction's own keys, never ones a lookup table supplies. The device
 signs a coin transaction, without a prompt, only when it appears in no
-instruction between the brackets and no priority fee is asked of it.
+instruction between the brackets, no priority fee is asked of it, no
+precompile verifies a signature and it carries at most four signatures.
 
 [METEORA-INTEGRATION.md](METEORA-INTEGRATION.md) owns presets, stages, quotes,
 routing and operational scripts. [GUILDS.md](GUILDS.md) owns membership and

@@ -42,7 +42,9 @@ sponsor ever rotates, back it up like the sponsor key, and never change it once
 set: every derived address would move. `COLLECTION_AUTHORITY_KEYPAIR` (a
 keypair's JSON array) signs keepsakes as the collection's authority; unset, the
 sponsor does. Move the collection's update authority on chain to that key
-before setting it. Keep server keys out of logs, source, client bundles and APKs.
+before setting it. Keep server keys out of logs, source, client bundles and APKs:
+a malformed keypair is refused by its variable's name alone (`keypairBytes` in
+`src/config/server-env.ts`), because a JSON parser's own error quotes its input.
 Operational scripts document their own local key inputs; do not put a player's
 wallet secret in an application environment variable.
 

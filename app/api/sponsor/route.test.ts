@@ -91,13 +91,26 @@ describe("the sponsor route", () => {
     expect(logged.join("\n")).not.toMatch(/SECRET|4Nd1mBQ/);
   });
 
-  it("tells a monitor it is up, and keeps the public address when the network is down", async () => {
-    expect(await (await GET()).json()).toEqual({ available: true, address: "Sp0nsor" });
+  it("tells a monitor it is up, and keeps the public address when the network is down, never from a cache", async () => {
+    const up = await GET();
+    expect([await up.json(), up.headers.get("cache-control")]).toEqual([{ available: true, address: "Sp0nsor" }, "no-store"]);
     mock.state.mockRejectedValueOnce(new Error("timeout"));
-    expect(await (await GET()).json()).toEqual({
+    const down = await GET();
+    expect(await down.json()).toEqual({
       available: false,
       reason: "The sponsor cannot reach the network.",
       address: "Sp0nsor1111111111111111111111111111111111111",
     });
+    expect(down.headers.get("cache-control")).toBe("no-store");
+    expect(logged.map((line) => JSON.parse(line))).toEqual([{ pawket: "sponsor", where: "status", name: "Error", message: "timeout" }]);
+  });
+
+  it("says what it wants when the body is wrong, and that nothing was sent when it cannot tell", async () => {
+    const wrong = await post({ wire: "AQ==" });
+    expect(await wrong.json()).toEqual({ error: "Send { transaction } as base64. Nothing was sent." });
+    mock.state.mockRejectedValueOnce(new Error("timeout"));
+    const unsure = await post({ transaction: "AQ==" });
+    expect(await unsure.json()).toEqual({ error: "The sponsor cannot reach the network. Nothing was sent." });
+    expect(JSON.parse(logged[0])).toMatchObject({ pawket: "sponsor", where: "state" });
   });
 });

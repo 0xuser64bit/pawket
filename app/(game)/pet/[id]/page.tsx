@@ -48,7 +48,7 @@ export default async function PetPage({ params }: Props) {
     );
   }
   const [keepsake, sponsor, guild, guestbook, gatherings] = await Promise.all([
-    readKeepsake(onChain.pet.address).catch(() => null),
+    readKeepsake(onChain.pet).catch(() => null),
     sponsorState().catch(() => null),
     onChain.member ? readGuildAt(onChain.member.guild).catch(() => null) : null,
     readGuestbook(onChain.pet.address).catch(() => null),

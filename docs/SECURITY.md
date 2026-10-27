@@ -42,8 +42,9 @@ The device's fee refill is capped. The sponsor refuses these coin brackets.
 A coin transaction may be v0 with Pawket's frozen lookup table; the browser
 still requires the brackets' owner, wallet and device among the transaction's
 own keys. The device, which signs without a prompt, appears in no instruction
-between the brackets and pays no priority fee, so its signature covers its
-network fee and nothing else (`send.test.ts`).
+between the brackets and pays no priority fee, no signature a precompile
+verifies and at most four signatures (a graduation's), so its signature covers
+its network fee and nothing else (`send.test.ts`).
 
 Release builds retain overflow checks. Counters saturate where specified;
 caller-controlled amounts and spans are validated. Decay has a bounded horizon
@@ -95,18 +96,30 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   back to the sponsor's seed. Until it is pinned, rotating the sponsor changes
   those addresses and can lose app discovery or permit duplicate creation.
   Anyone holding it can compute every derived key, so it is kept like the
-  sponsor key.
+  sponsor key. Such a holder can take a derived address before Pawket does,
+  but cannot make it count: a card is read only as an asset of Pawket's
+  collection held by the pet's owner, and a coin only as its founder's curve,
+  so a taken address shows no card, or a coin Pawket cannot launch.
 - A founder keeps the coin's fee rights after the founding pet leaves: the
   pool records the founder's wallet, outside the program. Events, polls and
   launches stop while that pet is out of the guild.
 - Guestbooks check one wave per UTC day against the last eight visitors. After
   eight other waves a visitor can wave again. Counts are not Sybil-resistant.
 - Per-caller limits are in process memory, so multiple instances each allow
-  their share; an IPv6 caller counts by its /64. The hourly budget is read
+  their share; an IPv6 caller counts by its /64, and an instance forgets every
+  caller once it tracks more than 10,000 keys (an Action's posted wallet is a
+  key too). A caller is the first `X-Forwarded-For` address, which Vercel sets
+  itself; behind a proxy that passes a client's own header through, a caller
+  would choose its key. The hourly budget is read
   from the sponsor's balance, which every instance sees, plus the fees and
   rents an instance signed in the last two minutes, so callers spread over
   many addresses still stop at it. Shared enforcement and budget monitoring
   are mainnet work.
+- Pages send no script Content-Security-Policy, only `frame-ancestors`. A
+  script injected into Pawket's origin could act as this browser's linked
+  device without a prompt, within its link's limits above. A nonce-based
+  script policy, tested with the room's renderer and the wallet adapters, is
+  mainnet work.
 - A stolen linked device acts until its link ends (30 days at most) or the
   owner unlinks it: up to its daily limit (500 at most) of non-money actions a
   UTC day, for the owner's pets only. Each action refills at most one

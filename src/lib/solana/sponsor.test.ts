@@ -1,8 +1,10 @@
 // @vitest-environment node
 import {
   AccountRole,
+  address,
   appendTransactionMessageInstructions,
   compileTransaction,
+  compressTransactionMessageUsingAddressLookupTables,
   createNoopSigner,
   createTransactionMessage,
   generateKeyPairSigner,
@@ -12,13 +14,14 @@ import {
   pipe,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
+  setTransactionMessagePriorityFeeLamports,
   type Blockhash,
   type Instruction,
   type KeyPairSigner,
   type TransactionSigner,
 } from "@solana/kit";
 import { getTransferSolInstruction } from "@solana-program/system";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import {
   getAdoptPetInstruction,
@@ -111,6 +114,48 @@ describe("checkSponsorable", () => {
   it("refuses to be anything but the fee payer", async () => {
     const ownerPays = await built((payer) => [adopt(payer)], owner);
     expect(checkSponsorable(ownerPays, sponsor.address)).toMatchObject({ ok: false });
+    const strangerPays = await built(() => [care()], createNoopSigner((await generateKeyPairSigner()).address));
+    expect(checkSponsorable(strangerPays, sponsor.address)).toEqual({ ok: false, reason: "The sponsor must be the fee payer." });
+  });
+
+  it("refuses a v1 transaction, whose header can ask a priority fee without an instruction", async () => {
+    const v1 = compileTransaction(pipe(
+      createTransactionMessage({ version: 1 }),
+      (m) => setTransactionMessageFeePayerSigner(createNoopSigner(sponsor.address), m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash(LIFETIME, m),
+      (m) => setTransactionMessagePriorityFeeLamports(1_000_000n, m),
+      (m) => appendTransactionMessageInstructions([care()], m),
+    ));
+    expect(checkSponsorable(v1, sponsor.address)).toEqual({ ok: false, reason: "Only legacy and v0 transactions are sponsored." });
+  });
+
+  it("refuses what is not a transaction, and a version it does not know", () => {
+    for (const messageBytes of [Uint8Array.of(1, 2, 3), Uint8Array.of(0x81, 1, 0, 0)]) {
+      expect(checkSponsorable({ messageBytes, signatures: {} } as unknown as Parameters<typeof checkSponsorable>[0], sponsor.address)).toEqual({
+        ok: false,
+        reason: "That is not a transaction.",
+      });
+    }
+  });
+
+  it("signs a v0 transaction, but none that reads its accounts from a lookup table it cannot see", async () => {
+    const message = pipe(
+      createTransactionMessage({ version: 0 }),
+      (m) => setTransactionMessageFeePayerSigner(createNoopSigner(sponsor.address), m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash(LIFETIME, m),
+      (m) => appendTransactionMessageInstructions([care()], m),
+    );
+    expect(checkSponsorable(compileTransaction(message), sponsor.address)).toEqual({ ok: true, kinds: ["care"], rent: 0 });
+    const table = address("AddressLookupTab1e1111111111111111111111111");
+    const looked = compileTransaction(compressTransactionMessageUsingAddressLookupTables(message, { [table]: [address(PASSPORT)] }));
+    expect(checkSponsorable(looked, sponsor.address)).toEqual({ ok: false, reason: "Lookup tables are not sponsored." });
+  });
+
+  it("signs one to four instructions, never none and never five", async () => {
+    const between = /^Between 1 and 4 instructions are sponsored\.$/;
+    expect(checkSponsorable(await built(() => []), sponsor.address)).toEqual({ ok: false, reason: expect.stringMatching(between) });
+    expect(checkSponsorable(await built(() => Array.from({ length: 4 }, () => care())), sponsor.address)).toMatchObject({ ok: true, kinds: ["care", "care", "care", "care"] });
+    expect(checkSponsorable(await built(() => Array.from({ length: 5 }, () => care())), sponsor.address)).toEqual({ ok: false, reason: expect.stringMatching(between) });
   });
 
   it("refuses a transfer out of its own float", async () => {
@@ -159,7 +204,7 @@ describe("checkSponsorable", () => {
     const extra = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner()]);
     const ix = care();
     const padded = { ...ix, accounts: [...(ix.accounts ?? []), ...extra.map(({ address }) => ({ address, role: AccountRole.READONLY_SIGNER }))] };
-    expect(checkSponsorable(await built(() => [padded]), sponsor.address)).toMatchObject({ ok: false });
+    expect(checkSponsorable(await built(() => [padded]), sponsor.address)).toEqual({ ok: false, reason: "At most 3 signatures are sponsored." });
     const link = await built(() => [getLinkDeviceInstruction({ owner, wallet: WALLET, device: DEVICE, expiresAt: 1_790_848_800, dailyActions: 200 })]);
     expect(checkSponsorable(link, sponsor.address)).toEqual({ ok: true, kinds: ["link"], rent: 0 });
   });
@@ -253,8 +298,10 @@ describe("checkSponsorable", () => {
     expect(checkSponsorable(buy, sponsor.address)).toEqual({ ok: true, kinds: ["buy"], rent: 1 });
     const asWallet = await built((payer) => [getBuyWithWalletInstruction({ owner, payer, closet: CLOSET, wallet: payer.address, item: 19 })]);
     expect(checkSponsorable(asWallet, sponsor.address)).toMatchObject({ ok: false });
-    const coin = await built(() => [getWalletSpendInstruction({ owner, wallet: WALLET, device: DEVICE, amount: 1n, keep: 10n })]);
-    expect(checkSponsorable(coin, sponsor.address)).toMatchObject({ ok: false });
+    for (const amount of [1n, undefined]) {
+      const coin = await built(() => [getWalletSpendInstruction({ owner, wallet: WALLET, device: DEVICE, amount, keep: 10n })]);
+      expect(checkSponsorable(coin, sponsor.address)).toEqual({ ok: false, reason: "Coin spending is never sponsored." });
+    }
     const asBuyer = await built((payer) => [getBuyInstruction({ owner: payer, payer, closet: CLOSET, item: 19 })]);
     expect(checkSponsorable(asBuyer, sponsor.address)).toMatchObject({ ok: false });
     const wear = await built(() => [getDressOwnedInstruction({ owner, pet: PET, closet: CLOSET, wearing: 19 })]);
@@ -300,10 +347,13 @@ describe("checkSponsorable", () => {
 
   it("refuses an instruction it does not know, even on the Pawket program", async () => {
     const odd = { ...care(), data: new Uint8Array(9) };
-    expect(checkSponsorable(await built(() => [odd]), sponsor.address)).toEqual({
-      ok: false,
-      reason: "That is not a Pawket instruction.",
-    });
+    const bare = { programAddress: care().programAddress };
+    for (const unknown of [odd, bare]) {
+      expect(checkSponsorable(await built(() => [unknown]), sponsor.address)).toEqual({
+        ok: false,
+        reason: "That is not a Pawket instruction.",
+      });
+    }
   });
 });
 
@@ -324,13 +374,15 @@ describe("cosign", () => {
     const wire = getBase64EncodedWireTransaction(await built((payer) => [care(payer)]));
     const refusal = await cosign(sponsor, wire).catch((error: unknown) => error);
     expect(refusal).toBeInstanceOf(SponsorRefusal);
-    expect((refusal as SponsorRefusal).status).toBe(403);
-    await expect(cosign(sponsor, "not base64!")).rejects.toMatchObject({ status: 400 });
+    expect(refusal).toMatchObject({ name: "SponsorRefusal", status: 403, message: "The sponsor only pays; it takes no other part." });
+    await expect(cosign(sponsor, "not base64!")).rejects.toMatchObject({ name: "SponsorRefusal", status: 400, message: "That is not a transaction." });
   });
 
-  it("stops when the limiter says so", async () => {
-    const wire = getBase64EncodedWireTransaction(await built(() => [care()]));
-    await expect(cosign(sponsor, wire, () => false)).rejects.toMatchObject({ status: 429 });
+  it("stops when the limiter says so, and hands it what it would pay for", async () => {
+    const wire = getBase64EncodedWireTransaction(await built((payer) => [adopt(payer)]));
+    const limit = vi.fn(() => false);
+    await expect(cosign(sponsor, wire, limit)).rejects.toMatchObject({ status: 429, message: "Too many in a row. Nothing was sent — try again in a while." });
+    expect(limit).toHaveBeenCalledWith({ ok: true, kinds: ["adopt"], rent: 1 });
   });
 });
 
@@ -339,5 +391,20 @@ describe("createLimiter", () => {
     const allow = createLimiter(2, 1000);
     expect([allow("a", 0), allow("a", 10), allow("a", 20), allow("b", 20)]).toEqual([true, true, false, true]);
     expect(allow("a", 1011)).toBe(true);
+  });
+
+  it("forgets a hit exactly one window later, and never counts a refused one", () => {
+    const allow = createLimiter(1, 1000);
+    expect([allow("a", 5000), allow("a", 5999), allow("a", 6000), allow("a", 6999)]).toEqual([true, false, true, false]);
+  });
+
+  it("keeps at most 10,000 callers in memory, starting over past that", () => {
+    const allow = createLimiter(1, 1000);
+    expect([allow("first", 0), allow("first", 1)]).toEqual([true, false]);
+    for (let i = 0; i < 9_999; i++) allow(`caller-${i}`, 2);
+    expect(allow("first", 3)).toBe(false);
+    allow("one-more", 4);
+    allow("past-the-bound", 5);
+    expect(allow("first", 6)).toBe(true);
   });
 });

@@ -163,14 +163,21 @@ export function checkSponsorable(
   return { ok: true, kinds, rent };
 }
 
+const LIMITER_KEYS = 10_000;
+
 export function createLimiter(limit: number, windowMs: number) {
+  // Kept in the order callers were last heard from, so the one to forget first is the quietest.
   const hits = new Map<string, number[]>();
   return (key: string, now: number = Date.now()): boolean => {
     const recent = (hits.get(key) ?? []).filter((at) => now - at < windowMs);
     const allowed = recent.length < limit;
     if (allowed) recent.push(now);
-    if (hits.size > 10_000) hits.clear();
+    hits.delete(key);
     hits.set(key, recent);
+    for (const [quietest] of hits) {
+      if (hits.size <= LIMITER_KEYS) break;
+      hits.delete(quietest);
+    }
     return allowed;
   };
 }

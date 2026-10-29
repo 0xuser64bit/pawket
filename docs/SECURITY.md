@@ -106,11 +106,12 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 - Guestbooks check one wave per UTC day against the last eight visitors. After
   eight other waves a visitor can wave again. Counts are not Sybil-resistant.
 - Per-caller limits are in process memory, so multiple instances each allow
-  their share; an IPv6 caller counts by its /64, and an instance forgets every
-  caller once it tracks more than 10,000 keys (an Action's posted wallet is a
-  key too). A caller is the first `X-Forwarded-For` address, which Vercel sets
-  itself; behind a proxy that passes a client's own header through, a caller
-  would choose its key. The hourly budget is read
+  their share; an IPv6 caller counts by its /64. An instance remembers the
+  10,000 keys it heard from most recently (an Action's posted wallet is a key
+  too) and forgets the quietest first, which gains a caller holding that many
+  keys nothing it did not have. A caller is the first `X-Forwarded-For`
+  address, which Vercel sets itself; behind a proxy that passes a client's own
+  header through, a caller would choose its key. The hourly budget is read
   from the sponsor's balance, which every instance sees, plus the fees and
   rents an instance signed in the last two minutes, so callers spread over
   many addresses still stop at it. Shared enforcement and budget monitoring

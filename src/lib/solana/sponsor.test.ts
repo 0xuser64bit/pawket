@@ -398,13 +398,25 @@ describe("createLimiter", () => {
     expect([allow("a", 5000), allow("a", 5999), allow("a", 6000), allow("a", 6999)]).toEqual([true, false, true, false]);
   });
 
-  it("keeps at most 10,000 callers in memory, starting over past that", () => {
+  it("remembers the 10,000 callers heard from most recently, a refused one included", () => {
     const allow = createLimiter(1, 1000);
-    expect([allow("first", 0), allow("first", 1)]).toEqual([true, false]);
-    for (let i = 0; i < 9_999; i++) allow(`caller-${i}`, 2);
-    expect(allow("first", 3)).toBe(false);
+    expect([allow("busy", 0), allow("quiet", 0), allow("busy", 1)]).toEqual([true, true, false]);
+    for (let i = 0; i < 9_998; i++) allow(`caller-${i}`, 2);
+    // 10,000 callers. Refused again, the busy one is now the latest heard from.
+    expect(allow("busy", 3)).toBe(false);
+    // One more forgets the caller heard from longest ago, and only that one.
     allow("one-more", 4);
-    allow("past-the-bound", 5);
-    expect(allow("first", 6)).toBe(true);
+    expect(allow("busy", 5)).toBe(false);
+    expect(allow("caller-1", 5)).toBe(false);
+    expect(allow("quiet", 6)).toBe(true);
+  });
+
+  it("never forgets a caller that keeps calling, however many others pass through", () => {
+    const allow = createLimiter(1, 1000);
+    allow("busy", 0);
+    for (let i = 0; i < 30_000; i++) {
+      allow(`caller-${i}`, 1);
+      if (i % 5_000 === 0) expect(allow("busy", 1)).toBe(false);
+    }
   });
 });

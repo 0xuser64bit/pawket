@@ -20,4 +20,10 @@ describe("a daily reminder", () => {
     expect(odd).toContain("SUMMARY:Look in on Nib\\, the\\; brave");
     for (const line of odd.split("\r\n")) expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
   });
+
+  it("keeps a name's line breaks, a lone carriage return too, inside its own line", () => {
+    const sly = reminderIcs({ name: "Nib\rBEGIN:VALARM\nX\r\nY", url: "https://x.test/home", at });
+    expect(sly).toContain("SUMMARY:Look in on Nib\\nBEGIN:VALARM\\nX\\nY");
+    for (const line of sly.split("\r\n")) expect(line).not.toMatch(/[\r\n]/);
+  });
 });

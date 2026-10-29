@@ -26,6 +26,16 @@ class ShellRulesTest {
     }
 
     @Test
+    fun onlyPawketsOwnPageOpensAnotherApp() {
+        assertTrue(ShellRules.launchAllowed(pawket, pawket))
+        assertFalse(ShellRules.launchAllowed("https://evil.example", pawket))
+        assertFalse(ShellRules.launchAllowed("http://pawket.world", pawket))
+        assertFalse(ShellRules.launchAllowed("https://pawket.world:8443", pawket))
+        assertFalse(ShellRules.launchAllowed("", pawket))
+        assertFalse(ShellRules.launchAllowed("", ""))
+    }
+
+    @Test
     fun aRendererThatDiesTwiceInAMinuteWaitsForThePlayer() {
         val crashes = CrashWindow()
         assertTrue(crashes.bringBack(0))

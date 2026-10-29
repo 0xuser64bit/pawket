@@ -17,7 +17,11 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          {
+            key: "Content-Security-Policy",
+            // Mobile Wallet Adapter opens a phone's wallet from a hidden frame in Firefox, hence solana-wallet:.
+            value: "frame-ancestors 'none'; frame-src 'self' solana-wallet:; form-action 'self'",
+          },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

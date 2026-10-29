@@ -73,8 +73,10 @@ availability rather than assume the sponsor is online.
 
 Server config and privileged modules import `server-only`. Every response
 forbids framing (`frame-ancestors 'none'`, `X-Frame-Options`), because a linked
-device signs some actions without a prompt; it also sends `nosniff`, a
-referrer policy and a permissions policy (`next.config.ts`). Public env values
+device signs some actions without a prompt. Its pages frame only Pawket and a
+phone wallet's `solana-wallet:` link, which Mobile Wallet Adapter opens from
+a hidden frame in Firefox, and post forms only to Pawket. Every response also
+sends `nosniff`, a referrer policy and a permissions policy (`next.config.ts`). Public env values
 are client-safe; custom provider URLs belong in `SOLANA_RPC_URL`, with browser
 RPC set to `/api/rpc`. Direct browser RPC permits only the public Solana hosts
 or loopback endpoints without credentials or URL parameters. Coin route logs
@@ -84,7 +86,8 @@ Meteora SDKs and web3.js v1 remain in `src/server/coins/` and operational script
 Coin reads verify the pool address, mints and creator before using it.
 
 The Android bridge accepts only checked requests from the trusted origin's
-main frame. It carries photos, links, reminders, haptics and colors, never keys
+main frame. Wallet, intent and mail links open another app only from that
+origin's page. It carries photos, links, reminders, haptics and colors, never keys
 or transactions. A care reminder is a time within three days and capped plain
 words; its notification only opens the app. External intents are restricted and rebuilt without supplied
 components, extras or permission flags. Release WebView debugging and backups
@@ -116,7 +119,7 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   rents an instance signed in the last two minutes, so callers spread over
   many addresses still stop at it. Shared enforcement and budget monitoring
   are mainnet work.
-- Pages send no script Content-Security-Policy, only `frame-ancestors`. A
+- Pages send no script Content-Security-Policy, only frame and form rules. A
   script injected into Pawket's origin could act as this browser's linked
   device without a prompt, within its link's limits above. A nonce-based
   script policy, tested with the room's renderer and the wallet adapters, is

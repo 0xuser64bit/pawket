@@ -14,19 +14,22 @@ player key or transaction engine.
 | `WebShellViewClient.kt` / `WebShellChromeClient.kt` | Trusted-origin navigation, wallet intents, new windows and permission refusal |
 | `PawketBridge.kt` | Validated native operations for the trusted main frame |
 | `CareReminder.kt` | The one care reminder: checked fields, an inexact alarm and its notification |
-| `ShellRules.kt` | What a frame or a page reached without a link may load; when a dying renderer waits for the player |
-| `android/app/src/test/…/BoundaryTest.kt` / `ShellRulesTest.kt` / `CareReminderTest.kt` | Origin, image, filename, frame, posted-page, renderer-retry and reminder tests |
+| `ShellRules.kt` | What a frame or a page reached without a link may load; which page may open another app; when a dying renderer waits for the player |
+| `android/app/src/test/…/BoundaryTest.kt` / `ShellRulesTest.kt` / `CareReminderTest.kt` | Origin, image, filename, frame, posted-page, app-launch, renderer-retry and reminder tests |
 | `src/lib/native/android.ts` | Page bridge and "this app"/"this browser" wording |
 | `src/lib/solana/browser-client.ts` | Android-only Mobile Wallet Adapter registration |
 | `public/.well-known/assetlinks.json` | Package and release signer permitted to open site links |
 | `scripts/android-release.sh` | Signed build and release metadata |
 
 The current release opens `https://pawket.world/home`. Only its exact scheme,
-host and port load inside. External sites open in a browser; wallet intents
-start the wallet app. File, content and data URLs cannot navigate the WebView.
-Frames load only that origin or an empty document. A page reached without a
-link — a form posted to another site — opens in the browser, and the app goes
-back to where it was.
+host and port load inside. External sites open in a browser; wallet, intent
+and mail links start another app only from Pawket's own page. File, content
+and data URLs cannot navigate the WebView. Frames load only that origin or an
+empty document. A page reached without a link — a form posted to another
+site — opens in the browser, and the app goes back to where it was. A frame's
+first load and a posted form never reach those checks, so every page's
+`Content-Security-Policy` also limits frames to Pawket and a phone wallet's
+link, and forms to Pawket (`next.config.ts`).
 Release start URLs require HTTPS. Cleartext is allowed only for localhost and
 127.0.0.1, including Mobile Wallet Adapter's local connection.
 

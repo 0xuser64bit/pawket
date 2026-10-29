@@ -12,6 +12,12 @@ object ShellRules {
         origin: String,
         trusted: String,
     ): Boolean = scheme?.lowercase() !in setOf("http", "https") || origin == trusted
+
+    /** A wallet, intent or mail link opens another app only from Pawket's own page. */
+    fun launchAllowed(
+        pageOrigin: String,
+        trusted: String,
+    ): Boolean = pageOrigin.isNotEmpty() && pageOrigin == trusted
 }
 
 class CrashWindow(

@@ -18,12 +18,14 @@ class WebShellViewClient(private val activity: MainActivity) : WebViewClient() {
     ): Boolean {
         val url = request.url
         if (!request.isForMainFrame) return !ShellRules.frameAllowed(url.scheme, url.origin(), activity.origin)
-        when (url.scheme?.lowercase()) {
-            "http", "https" -> {
-                if (activity.isTrusted(url)) return false
-                activity.openOutside(url)
-            }
-
+        val scheme = url.scheme?.lowercase()
+        if (scheme == "http" || scheme == "https") {
+            if (activity.isTrusted(url)) return false
+            activity.openOutside(url)
+            return true
+        }
+        if (!ShellRules.launchAllowed(view.url?.toUri()?.origin().orEmpty(), activity.origin)) return true
+        when (scheme) {
             "solana-wallet" -> {
                 if (activity.launch(Intent(Intent.ACTION_VIEW, url))) {
                     // Mobile Wallet Adapter waits for a blur to know the wallet opened, and a WebView never blurs.

@@ -75,6 +75,11 @@ const KIND: Partial<Record<keyof typeof PAWKET_DISCRIMINATORS, WalletEntryKind>>
   waveByDevice: "wave",
 };
 const PET_AT: Partial<Record<WalletEntryKind, number>> = { care: 2, round: 2, dress: 2, leave: 2, "check-in": 2, adopt: 3, found: 3, join: 3, rsvp: 3, vote: 3, wave: 3 };
+// The account the program checks is the Pawket Wallet; every other instruction holds it second. Any
+// transaction may mention a wallet, so an instruction is this wallet's only when it holds it there.
+const WALLET_AT: Partial<Record<keyof typeof PAWKET_DISCRIMINATORS, number>> = { openWallet: 2, buyWithWallet: 5 };
+// `getCreateKeepsakeInstruction` names the Pawket Wallet after Core's eight accounts.
+const CARD_WALLET_AT = 8;
 const ACTION_OF = Object.fromEntries(Object.entries(CARE_ACTION_VARIANTS).map(([action, index]) => [index, action])) as Record<
   number,
   CareActionType
@@ -96,8 +101,24 @@ const base58 = getBase58Encoder();
 const u64At = (data: ArrayLike<number>, offset: number) =>
   Array.from({ length: 8 }, (_, i) => BigInt(data[offset + i])).reduce((sum, byte, i) => sum + (byte << BigInt(8 * i)), 0n);
 
-export function entryFrom(signature: string, tx: ReadTransaction, wallet: Address, rent = 0n): WalletEntry | null {
+export interface StatementOptions {
+  /** The wallet account's rent, left out of its balance. */
+  rent?: bigint;
+  /** Who acts for the wallet. A refused transaction changed nothing, so it is listed only when one of them paid its fee. */
+  owner?: Address;
+  device?: Address | null;
+}
+
+export function entryFrom(
+  signature: string,
+  tx: ReadTransaction,
+  wallet: Address,
+  { rent = 0n, owner, device }: StatementOptions = {},
+): WalletEntry | null {
   const { accountKeys, instructions } = tx.transaction.message;
+  const ok = tx.meta?.err == null;
+  // Nothing in a refused transaction was checked, so anyone could have named this wallet in it.
+  if (!ok && accountKeys[0] !== owner && accountKeys[0] !== device) return null;
   const delta = (index: number) =>
     tx.meta && index >= 0 ? BigInt(tx.meta.postBalances[index]) - BigInt(tx.meta.preBalances[index]) : 0n;
   const entry: WalletEntry = {
@@ -107,11 +128,11 @@ export function entryFrom(signature: string, tx: ReadTransaction, wallet: Addres
     change: 0n,
     fee: BigInt(tx.meta?.fee ?? 0),
     feePayer: accountKeys[0] as Address,
-    ok: tx.meta?.err == null,
+    ok,
   };
   for (const ix of instructions) {
     const data = base58.encode(ix.data);
-    if (accountKeys[ix.programIdIndex] === MPL_CORE_PROGRAM_ID && data[0] === 20 && accountKeys[ix.accounts[1]] === PAWKET_COLLECTION && ix.accounts.some((i) => accountKeys[i] === wallet)) {
+    if (accountKeys[ix.programIdIndex] === MPL_CORE_PROGRAM_ID && data[0] === 20 && accountKeys[ix.accounts[1]] === PAWKET_COLLECTION && accountKeys[ix.accounts[CARD_WALLET_AT]] === wallet) {
       entry.kinds.push("card");
       continue;
     }
@@ -120,7 +141,7 @@ export function entryFrom(signature: string, tx: ReadTransaction, wallet: Addres
       PAWKET_DISCRIMINATORS[key].every((byte, i) => data[i] === byte),
     );
     const kind = name ? KIND[name] : undefined;
-    if (!kind) continue;
+    if (!name || !kind || accountKeys[ix.accounts[WALLET_AT[name] ?? 1]] !== wallet) continue;
     entry.kinds.push(kind);
     if (kind === "care") entry.action = ACTION_OF[data[8]];
     if (kind === "dress") entry.wearing = data[8] === 0 ? null : (WEARABLES[data[8] - 1]?.id ?? null);
@@ -146,7 +167,7 @@ export type HistoryRpc = Rpc<GetSignaturesForAddressApi & GetTransactionApi>;
 export async function fetchWalletHistory(
   rpc: HistoryRpc,
   wallet: Address,
-  { before, limit = 12, rent = 0n }: { before?: string; limit?: number; rent?: bigint } = {},
+  { before, limit = 12, ...statement }: { before?: string; limit?: number } & StatementOptions = {},
 ): Promise<{ entries: WalletEntry[]; next: string | null }> {
   const signatures = await rpc
     .getSignaturesForAddress(wallet, { limit, before: before as Signature | undefined, commitment: "confirmed" })
@@ -158,7 +179,7 @@ export async function fetchWalletHistory(
         const tx = await rpc
           .getTransaction(signature, { encoding: "json", maxSupportedTransactionVersion: 0, commitment: "confirmed" })
           .send();
-        return tx ? entryFrom(signature, tx as unknown as ReadTransaction, wallet, rent) : null;
+        return tx ? entryFrom(signature, tx as unknown as ReadTransaction, wallet, statement) : null;
       }),
     );
     for (const entry of read) if (entry) entries.push(entry);

@@ -102,7 +102,7 @@ export function mayPayFee(at = Date.now()): boolean {
 
 export function mayPayRent(keys: readonly string[], at = Date.now()): boolean {
   const lamports = ONE_RENT_LAMPORTS + ONE_FEE_LAMPORTS;
-  if (!withinBudget(lamports, at) || !keys.every((key) => rentPerKey(key, at))) return false;
+  if (!withinBudget(lamports, at) || !rentPerKey(keys, at)) return false;
   spend!.signed.push({ at, lamports });
   return true;
 }

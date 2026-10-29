@@ -155,6 +155,10 @@ describe("mayPayRent", () => {
     for (let i = 0; i < 20; i++) expect(mayPayRent(["wallet", `ip-${i}`], i)).toBe(true);
     expect(mayPayRent(["wallet", "ip-new"], 30)).toBe(false);
     expect(mayPayRent(["other-wallet", "ip-new"], 31)).toBe(true);
+    // An address past its share posting someone else's wallet costs that wallet nothing.
+    for (let i = 0; i < 19; i++) expect(mayPayRent([`posted-${i}`, "ip-new"], 40 + i)).toBe(true);
+    for (let i = 0; i < 25; i++) expect(mayPayRent(["someone", "ip-new"], 60 + i)).toBe(false);
+    expect(mayPayRent(["someone", "ip-fresh"], 90)).toBe(true);
   });
 
   it("bounds the hour by what the sponsor's balance actually lost, plus what was signed lately", async () => {

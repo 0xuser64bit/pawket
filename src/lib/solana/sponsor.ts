@@ -165,15 +165,19 @@ export function checkSponsorable(
 
 const LIMITER_KEYS = 10_000;
 
+/** A call counts against every key it names, and only when each of them allows it. */
 export function createLimiter(limit: number, windowMs: number) {
   // Kept in the order callers were last heard from, so the one to forget first is the quietest.
   const hits = new Map<string, number[]>();
-  return (key: string, now: number = Date.now()): boolean => {
-    const recent = (hits.get(key) ?? []).filter((at) => now - at < windowMs);
-    const allowed = recent.length < limit;
-    if (allowed) recent.push(now);
-    hits.delete(key);
-    hits.set(key, recent);
+  return (keys: string | readonly string[], now: number = Date.now()): boolean => {
+    const named = [...new Set(typeof keys === "string" ? [keys] : keys)];
+    const recent = named.map((key) => (hits.get(key) ?? []).filter((at) => now - at < windowMs));
+    const allowed = recent.every((times) => times.length < limit);
+    named.forEach((key, i) => {
+      if (allowed) recent[i].push(now);
+      hits.delete(key);
+      hits.set(key, recent[i]);
+    });
     for (const [quietest] of hits) {
       if (hits.size <= LIMITER_KEYS) break;
       hits.delete(quietest);

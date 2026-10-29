@@ -393,6 +393,16 @@ describe("createLimiter", () => {
     expect(allow("a", 1011)).toBe(true);
   });
 
+  it("counts a call against all of its keys or none of them", () => {
+    const allow = createLimiter(1, 1000);
+    expect(allow("spent", 0)).toBe(true);
+    expect(allow(["wallet", "spent"], 1)).toBe(false);
+    expect(allow(["spent", "wallet"], 2)).toBe(false);
+    expect(allow(["wallet", "fresh"], 3)).toBe(true);
+    expect(allow(["fresh"], 4)).toBe(false);
+    expect(allow(["twice", "twice"], 5)).toBe(true);
+  });
+
   it("forgets a hit exactly one window later, and never counts a refused one", () => {
     const allow = createLimiter(1, 1000);
     expect([allow("a", 5000), allow("a", 5999), allow("a", 6000), allow("a", 6999)]).toEqual([true, false, true, false]);

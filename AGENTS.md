@@ -149,8 +149,9 @@ PAWKET_ANDROID_KEYSTORE=… scripts/android-release.sh   # the signed release AP
 - **No custody.** Never ask for, log, upload, or persist a player's seed
   phrase or key. Wallets sign. The only keys the app holds are server-only:
   its devnet sponsor (`SPONSOR_KEYPAIR`), which signs only what
-  `checkSponsorable` allows and, unless `COLLECTION_AUTHORITY_KEYPAIR` is set,
-  the keepsakes `src/server/keepsake.ts` builds as the collection's authority;
+  `checkSponsorable` allows and the keepsakes `src/server/keepsake.ts`
+  builds, paying their fee and rent and, unless `COLLECTION_AUTHORITY_KEYPAIR`
+  is set, signing as the collection's authority;
   that collection authority when set, which signs only those keepsakes; and
   `DERIVATION_SECRET`, which only derives keepsake and coin addresses. None is
   the program's upgrade authority. The one key made for a player is a Pawket Wallet's

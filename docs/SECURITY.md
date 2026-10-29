@@ -10,7 +10,7 @@ in `src/lib/solana/send.ts`. [AGENTS.md](../AGENTS.md) is the change contract.
 | Authority | Scope |
 | --- | --- |
 | Owner wallet | Approves wallet management and spending; owns the pet and Pawket Wallet |
-| Linked device | Non-extractable WebCrypto key; program-limited non-money actions until expiry and daily limit; can unlink itself; once unlinked or replaced, can send its own leftover float to its owner's Pawket Wallet and nowhere else |
+| Linked device | Non-extractable WebCrypto key; program-limited non-money actions until expiry and daily limit; can unlink itself; once unlinked or replaced, the app sends its leftover float only to its owner's Pawket Wallet, though the float (1,000,000 lamports at most) is in the device's own account, which its key alone controls |
 | Sponsor | Server-only devnet fee/rent payer; also the keepsake collection's authority and the derivation secret, unless `COLLECTION_AUTHORITY_KEYPAIR` and `DERIVATION_SECRET` are set |
 | Program upgrade authority | Separate deploy wallet; never the sponsor |
 | Treasury | Receives Market purchases and partner coin fees; its signing key is not on the server |
@@ -126,7 +126,9 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   mainnet work.
 - A stolen linked device acts until its link ends (30 days at most) or the
   owner unlinks it: up to its daily limit (500 at most) of non-money actions a
-  UTC day, for the owner's pets only. Each action refills at most one
+  UTC day, as the owner's pets (a wave greets any pet; a pet may join any
+  guild). Its own float, 1,000,000 lamports at most, is in the device's own
+  account, so a stolen key can send that anywhere. Each action refills at most one
   5,000-lamport fee from the balance, so it can draw at most `daily_actions ×
   5,000` lamports a day (2,500,000 at the maximum limit), and each coin trade
   the owner approves tops its float back up to 1,000,000 lamports. It cannot

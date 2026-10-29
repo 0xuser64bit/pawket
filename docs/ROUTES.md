@@ -23,8 +23,9 @@ unwired route, and call a pet "on Solana" only when it was read from chain.
 /privacy                   the privacy policy, for the web and the Android app
 /new                       what changed lately, newest first (`src/config/news.ts`); the front door names the newest
 /api/health
+/api/report                a page's error, its path and words scrubbed, logged; 30 an hour per caller
 /api/sponsor               GET: is it up. POST { transaction }: signed first, as fee payer
-/api/rpc                   the browser's RPC: allow-listed reads and sends for Pawket's program, to SOLANA_RPC_URL
+/api/rpc                   the browser's RPC: allow-listed methods to SOLANA_RPC_URL; a send may carry any program's instructions, as a coin trade carries Meteora's
 /api/actions/adopt         Solana Action: adopt straight onto Solana
 /api/actions/care/[pet]    Solana Action: the four cares for the owner; a wave or an adoption for anyone else
 /api/actions/wave/[pet]    Solana Action (POST): a wave, any wallet but the owner's, once a UTC day

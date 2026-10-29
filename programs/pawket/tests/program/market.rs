@@ -1,6 +1,9 @@
 use anchor_lang::{Discriminator, Space};
 use pawket::{Closet, PawketError, CLASSIC_PRICE_LAMPORTS, ROOM_PRICE_LAMPORTS, TREASURY, WEARABLE_COUNT, WEARABLE_PRICE_LAMPORTS};
+use solana_keypair::Keypair;
 use solana_signer::Signer;
+
+type Instruction = anchor_lang::solana_program::instruction::Instruction;
 
 use crate::harness::*;
 
@@ -158,6 +161,12 @@ fn a_linked_device_dresses_a_pet_in_what_its_owner_bought() {
         &env.send(&[dress_owned_by_device_ix(&device.pubkey(), &owner.pubkey(), &pet, HALO + 1)], &device, &[]),
         PawketError::NotInCloset,
     );
+    let other = env.player();
+    ok(env.send(&[buy_ix(&other.pubkey(), &other.pubkey(), HALO + 1)], &other, &[]));
+    let mut borrowed = dress_owned_by_device_ix(&device.pubkey(), &owner.pubkey(), &pet, HALO + 1);
+    borrowed.accounts[3].pubkey = closet_pda(&other.pubkey());
+    expect_anchor(&env.send(&[borrowed], &device, &[]), anchor_lang::error::ErrorCode::ConstraintSeeds);
+    assert_eq!(env.pet(&pet).wearing, HALO);
 }
 
 #[test]
@@ -244,4 +253,106 @@ fn owner_approved_external_spending_returns_change_and_sale_proceeds_to_pawket_w
     expect_pawket_at(&env.send(&[fund, settle], &device, &[&owner]), 0, PawketError::DeviceExpired);
     assert_eq!(env.lamports(&owner.pubkey()), keep);
     assert_eq!(env.balance(&owner.pubkey()), before);
+}
+
+#[test]
+fn a_funded_purchase_is_held_to_what_the_market_sells_its_treasury_and_the_owners_closet() {
+    let mut env = Env::new();
+    let (owner, sponsor, thief) = (env.player(), env.player(), env.player());
+    ok(env.send(&[open_wallet_ix(&owner.pubkey(), &sponsor.pubkey()), deposit_ix(&owner.pubkey(), 200_000_000)], &sponsor, &[&owner]));
+    let (balance, treasury) = (env.balance(&owner.pubkey()), env.lamports(&TREASURY));
+    let buy = |item: u8| buy_with_wallet_ix(&owner.pubkey(), &sponsor.pubkey(), item);
+    for item in [0, 1, LAST_PIECE + 1, 79, LAST_FRAME + 1, 255] {
+        expect_pawket(&env.send(&[buy(item)], &sponsor, &[&owner]), PawketError::UnknownItem);
+    }
+    let elsewhere = buy_with_wallet_ix_to(&owner.pubkey(), &sponsor.pubkey(), HALO, &thief.pubkey());
+    expect_anchor(&env.send(&[elsewhere], &sponsor, &[&owner]), anchor_lang::error::ErrorCode::ConstraintAddress);
+    let forged = Closet { owner: thief.pubkey(), items: [0; 32], count: 0, spent: 0, bump: 0 };
+    env.forge(&closet_pda(&owner.pubkey()), &forged);
+    expect_anchor(&env.send(&[buy(HALO)], &sponsor, &[&owner]), anchor_lang::error::ErrorCode::ConstraintRaw);
+    assert_eq!(env.balance(&owner.pubkey()), balance);
+    assert_eq!(env.lamports(&TREASURY), treasury);
+}
+
+/// A spend funded for the owner's approved transaction: its opening and settling halves.
+struct Spend {
+    owner: Keypair,
+    device: Keypair,
+    keep: u64,
+    balance: u64,
+}
+
+fn spend_ready(env: &mut Env) -> Spend {
+    let (owner, device, sponsor) = (env.player(), env.broke(), env.player());
+    ok(env.send(&[open_wallet_ix(&owner.pubkey(), &sponsor.pubkey()), deposit_ix(&owner.pubkey(), 100_000_000)], &sponsor, &[&owner]));
+    ok(env.send(&[link_ix(&owner.pubkey(), &device.pubkey(), env.now() + DAY, 100)], &sponsor, &[&owner, &device]));
+    let (keep, balance) = (env.lamports(&owner.pubkey()), env.balance(&owner.pubkey()));
+    Spend { owner, device, keep, balance }
+}
+
+impl Spend {
+    fn halves(&self, keep: u64, amount: u64) -> [Instruction; 2] {
+        [Some(amount), None].map(|amount| wallet_spend_ix(&self.owner.pubkey(), &self.device.pubkey(), keep, amount))
+    }
+
+    fn untouched(&self, env: &Env) {
+        assert_eq!(env.lamports(&self.owner.pubkey()), self.keep);
+        assert_eq!(env.balance(&self.owner.pubkey()), self.balance);
+    }
+}
+
+#[test]
+fn a_spend_opens_first_on_exactly_what_the_owner_holds_and_within_the_balance() {
+    let mut env = Env::new();
+    let s = spend_ready(&mut env);
+    let (owner, device, bystander) = (&s.owner, &s.device, env.player());
+    let [fund, settle] = s.halves(s.keep, 1_000_000);
+    // Funding comes first, even after an instruction that leaves the owner's SOL alone.
+    let aside = transfer_ix(&bystander.pubkey(), &device.pubkey(), 1);
+    expect_pawket_at(&env.send(&[aside, fund, settle], device, &[owner, &bystander]), 1, PawketError::InvalidAmount);
+    // The SOL the owner keeps is exactly what it holds, so a settlement can neither sweep nor spend any of it.
+    for keep in [s.keep - 1, s.keep + 1] {
+        expect_pawket_at(&env.send(&s.halves(keep, 1_000_000), device, &[owner]), 0, PawketError::InvalidAmount);
+    }
+    // Nothing past the balance is funded, not even what settling would hand straight back.
+    expect_pawket_at(&env.send(&s.halves(s.keep, s.balance + 1), device, &[owner]), 0, PawketError::InsufficientBalance);
+    s.untouched(&env);
+}
+
+#[test]
+fn a_spend_opens_and_settles_only_with_pawkets_own_instructions_on_the_real_record_of_them() {
+    let mut env = Env::new();
+    let s = spend_ready(&mut env);
+    let (owner, device) = (&s.owner, &s.device);
+    let [fund, settle] = s.halves(s.keep, 20_000_000);
+    // A program anyone may deploy, given the same accounts and bytes, neither settles a spend nor opens one.
+    let any = env.any_program();
+    let elsewhere = |ix: &Instruction| Instruction { program_id: any, ..ix.clone() };
+    expect_pawket_at(&env.send(&[fund.clone(), elsewhere(&settle)], device, &[owner]), 0, PawketError::InvalidAmount);
+    expect_pawket_at(&env.send(&[elsewhere(&fund), settle.clone()], device, &[owner]), 1, PawketError::InvalidAmount);
+    // Nor does another of Pawket's instructions of the same length on the same owner and wallet.
+    let mut deposit = deposit_ix(&owner.pubkey(), 1);
+    deposit.data.extend_from_slice(&s.keep.to_le_bytes());
+    expect_pawket_at(&env.send(&[deposit, settle.clone()], device, &[owner]), 1, PawketError::InvalidAmount);
+    // Both halves read the transaction's own instructions, never an account made to look like them.
+    let mut forged = fund;
+    forged.accounts[3].pubkey = Keypair::new().pubkey();
+    expect_anchor(&env.send(&[forged, settle], device, &[owner]), anchor_lang::error::ErrorCode::ConstraintAddress);
+    s.untouched(&env);
+}
+
+#[test]
+fn nobody_funds_a_spend_from_a_wallet_that_is_not_theirs() {
+    let mut env = Env::new();
+    let s = spend_ready(&mut env);
+    let (stranger, payer) = (env.player(), env.player());
+    let keep = env.lamports(&stranger.pubkey());
+    // The stranger signs as owner over this wallet and its linked device, which signs nothing here,
+    // and sends what it is funded away before settling.
+    let [mut fund, mut settle] = [Some(90_000_000), None].map(|amount| wallet_spend_ix(&stranger.pubkey(), &s.device.pubkey(), keep, amount));
+    fund.accounts[1].pubkey = wallet_pda(&s.owner.pubkey());
+    settle.accounts[1].pubkey = wallet_pda(&s.owner.pubkey());
+    let away = transfer_ix(&stranger.pubkey(), &payer.pubkey(), 90_000_000);
+    expect_anchor(&env.send(&[fund, away, settle], &payer, &[&stranger]), anchor_lang::error::ErrorCode::ConstraintSeeds);
+    s.untouched(&env);
 }

@@ -20,6 +20,8 @@ use solana_transaction_error::TransactionError;
 
 pub type TxResult = Result<TransactionMetadata, FailedTransactionMetadata>;
 
+solana_program_runtime::declare_process_instruction!(AnyProgram, 150, |_invoke_context| { Ok(()) });
+
 pub const SO: &[u8] = include_bytes!(concat!(env!("CARGO_TARGET_TMPDIR"), "/../deploy/pawket.so"));
 
 pub const T0: i64 = 1_790_848_800;
@@ -91,6 +93,17 @@ impl Env {
 
     pub fn broke(&mut self) -> Keypair {
         Keypair::new()
+    }
+
+    /// A program that accepts any instruction and does nothing, as anyone may deploy one.
+    pub fn any_program(&mut self) -> Pubkey {
+        let id = Keypair::new().pubkey();
+        self.svm.add_builtin(id, AnyProgram::vm);
+        // Held by the native loader, as the runtime's own builtins are.
+        let loader = anchor_lang::pubkey!("NativeLoader1111111111111111111111111111111");
+        let account = solana_account::Account { lamports: 1, data: b"any".to_vec(), owner: loader, executable: true, rent_epoch: 0 };
+        self.svm.set_account(id, account).unwrap();
+        id
     }
 
     pub fn set_time(&mut self, unix_timestamp: i64) {
@@ -713,11 +726,15 @@ pub fn expect_custom(result: &TxResult, code: u32) {
 }
 
 pub fn buy_with_wallet_ix(owner: &Pubkey, payer: &Pubkey, item: u8) -> Instruction {
+    buy_with_wallet_ix_to(owner, payer, item, &pawket::TREASURY)
+}
+
+pub fn buy_with_wallet_ix_to(owner: &Pubkey, payer: &Pubkey, item: u8, treasury: &Pubkey) -> Instruction {
     Instruction {
         program_id: pawket::ID,
         accounts: pawket::accounts::BuyWithWallet {
             owner: *owner, payer: *payer, closet: closet_pda(owner),
-            treasury: pawket::TREASURY, system_program: system_program::ID, wallet: wallet_pda(owner),
+            treasury: *treasury, system_program: system_program::ID, wallet: wallet_pda(owner),
         }.to_account_metas(None),
         data: pawket::instruction::BuyWithWallet { item }.data(),
     }

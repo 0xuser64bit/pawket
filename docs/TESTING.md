@@ -4,7 +4,7 @@
 
 | Layer                          | Where                                   | Runner   |
 | ------------------------------ | --------------------------------------- | -------- |
-| The program, every instruction | `programs/pawket/tests/program/` (incl. `market.rs`, `gatherings.rs`, `guestbook.rs`) | cargo + LiteSVM (`pnpm program:test`) |
+| The program, every instruction and guard | `programs/pawket/tests/program/` (incl. `market.rs`, `gatherings.rs`, `guestbook.rs`) | cargo + LiteSVM (`pnpm program:test`) |
 | Program ↔ browser math         | `src/lib/game/lockstep.txt`, replayed by `lockstep.rs` and `src/lib/guest/lockstep.test.ts` | both |
 | Game math                      | `src/lib/game/*.test.ts`                | Vitest   |
 | Solana PDAs / instruction bytes| `src/lib/solana/*.test.ts`              | Vitest   |
@@ -76,6 +76,17 @@ gitleaks git --redact --log-opts=--all .  # every local Git ref, including old c
   (different name → different address), plus validation rejections.
 - If a locked value changes, the seeds or encoding changed — that is a
   breaking on-chain change, not a test fix. Stop and confirm intent.
+
+## Program guards
+
+Deleting any one of the program's 147 account constraints and `require!`
+checks fails a LiteSVM test, except two that cannot change an outcome:
+settlement's checks of its funding's owner, wallet and `keep` repeat what
+funding already checked of the same pair, and settlement runs only after
+that funding succeeded. A spend's tests stand in for a program anyone may
+deploy with `Env::any_program`, which accepts any instruction. Rerun the
+deletions when adding a guard; a new one belongs with a test that fails
+without it.
 
 ## Verification boundaries
 

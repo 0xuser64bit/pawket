@@ -103,6 +103,8 @@ eligible non-rent actions use that float; each refill is capped at one network
 fee and the float's ceiling. Rent-bearing app actions wait for sponsorship.
 While sponsored, a linked device acts with an empty balance. History
 comes from confirmed Solana transactions (`src/lib/wallet/history.ts`).
+Versioned transactions resolve instruction and balance indices against their
+static keys followed by loaded writable and then loaded readonly addresses.
 Any transaction may mention a wallet, so an instruction reads as the
 wallet's only when it holds the wallet in the account the program checks,
 and a refused one, which nothing checked, only when the owner, the current

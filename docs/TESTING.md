@@ -1,5 +1,16 @@
 # Testing
 
+## Frontend stress checks
+
+`pnpm e2e:audit` runs axe accessibility scans, copy-import failure/race and
+receipt-recovery scenarios, real round-to-backup restoration, profile history,
+and five responsive widths (320–1920px) with keyboard-only sheet checks in
+Chromium, Firefox and WebKit. Install those browsers with
+`pnpm exec playwright install chromium firefox webkit`. Like the ordinary E2E
+suite, use `CI=1` after `pnpm verify` to exercise the production build.
+RPC failure injection is local to the browser test; it never sends a transaction.
+Automated axe results are not a substitute for keyboard and screen-reader checks.
+
 ## Layers
 
 | Layer                          | Where                                   | Runner   |

@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "e2e:audit": "playwright test --config playwright.audit.config.ts",
     "e2e:devnet": "PAWKET_DEVNET=1 vitest run src/lib/solana/devnet.test.ts",
     "e2e:coins": "PAWKET_DEVNET=1 vitest run src/server/coins/devnet.test.ts",
     "assets:3d": "node scripts/3d/build.mjs",
@@ -44,6 +45,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@gltf-transform/core": "4.5.1",
     "@gltf-transform/extensions": "4.5.1",
     "@gltf-transform/functions": "4.5.1",

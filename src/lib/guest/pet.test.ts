@@ -438,7 +438,7 @@ describe("pet storage", () => {
   });
 
   it("recovers extra rounds in old copies with no modification timestamp", () => {
-    const { modifiedAt: _modifiedAt, ...legacy } = createGuestPet(INPUT);
+    const legacy = { ...createGuestPet(INPUT), modifiedAt: undefined };
     savePet(legacy);
     expect(bringBackPets([{ ...legacy, plays: 1, xp: 25 }])).toMatchObject({ updated: [{ plays: 1, xp: 25 }] });
     expect(bringBackPets([legacy])).toMatchObject({ updated: [], same: 1 });

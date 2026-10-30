@@ -15,6 +15,10 @@ A guild of three pets → founder launches on a preset → DBC curve → thresho
 Players never need to understand the pool transition: the coin's page shows
 one stage at a time (`LaunchStage`) and offers only what that stage allows.
 
+Guild discovery and Pulse read curve and graduated-pool accounts in batches
+of at most 100, preserving account order when resolving each guild's stage.
+Missing or wrong-program graduated pools remain pending, not tradable.
+
 ## Routing and approval rules
 
 1. **Presets only.** A founder picks `gentle` or `lively`

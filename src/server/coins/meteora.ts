@@ -252,7 +252,7 @@ export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, 
     });
   }
   const graduated = launched.filter((coin) => coin.damm);
-  const dammAccounts = graduated.length ? await rpc().getMultipleAccountsInfo(graduated.map((coin) => coin.damm!)) : [];
+  const dammAccounts = (await Promise.all(chunks(graduated, 100).map((chunk) => rpc().getMultipleAccountsInfo(chunk.map((coin) => coin.damm!))))).flat();
   const verified = new Set(graduated.filter((_, i) => dammAccounts[i]?.owner.equals(DAMM_V2_PROGRAM_ID)).map((coin) => coin.slug));
   for (const coin of launched) {
     stages.set(

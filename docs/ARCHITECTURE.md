@@ -86,6 +86,10 @@ Unknown outcomes retain the existing signature. No optimistic chain care or
 replacement send is permitted. `SOLANA.md` describes the owner-approved Actions
 flow and prepared coin/keepsake transactions.
 
+The shared RPC transport retries HTTP 429 responses within its bounded retry
+budget. Cancellation and read deadlines also stop the backoff immediately,
+clearing its timer and preventing another request with the cancelled signal.
+
 The room draws saved or confirmed moments and never mutates a record. Its
 renderer and assets load only when a room needs them; flat rendering provides
 fallback and the player's explicit alternative.

@@ -68,8 +68,8 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
         title: "Still waiting",
         body: (
           <>
-            {title}: signed, not confirmed yet. Pawket keeps checking for a couple of minutes and says how it ends; try it again only if
-            it did not land. Nothing changes here until Solana confirms it.{look}
+            {title}: signed, not confirmed yet. {tx.error ?? "Pawket keeps checking for a couple of minutes and says how it ends; try it again only if it did not land."}{" "}
+            Nothing changes here until Solana confirms it.{look}
           </>
         ),
       };
@@ -102,4 +102,3 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
       };
   }
 }
-

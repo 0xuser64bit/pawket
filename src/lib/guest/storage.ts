@@ -126,6 +126,11 @@ export interface Brought {
   same: number;
 }
 
+function changedAt(pet: GuestPet): number {
+  const modified = Date.parse(pet.modifiedAt ?? "");
+  return Math.max(Date.parse(pet.statsUpdatedAt), Number.isFinite(modified) ? modified : 0);
+}
+
 export function bringBackPets(incoming: readonly GuestPet[]): Brought | null {
   if (typeof window === "undefined") return null;
   const stored = loadStored();
@@ -138,7 +143,10 @@ export function bringBackPets(incoming: readonly GuestPet[]): Brought | null {
     if (at < 0) {
       pets.push(pet);
       result.added.push(pet);
-    } else if (Date.parse(pet.statsUpdatedAt) > Date.parse(pets[at].statsUpdatedAt)) {
+    } else if (changedAt(pet) > changedAt(pets[at]) || (
+      !pet.modifiedAt && !pets[at].modifiedAt && pet.statsUpdatedAt === pets[at].statsUpdatedAt &&
+      pet.plays > pets[at].plays && pet.xp >= pets[at].xp
+    )) {
       pets[at] = pet;
       result.updated.push(pet);
     } else {

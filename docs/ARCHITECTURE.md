@@ -41,7 +41,11 @@ aside under `pawket.pets.v1.unreadable.<time>`, never deleted. After an
 adoption or a device link the app asks the browser to keep its storage
 (`navigator.storage.persist`). Profile saves a copy of the browser's pets as
 text or a file and brings them back (`src/lib/guest/copy.ts`); a copy's
-progress stays local and never reaches Solana. Player settings,
+progress stays local and never reaches Solana. A local record's optional
+`modifiedAt` tracks care, rounds and clothing independently of `statsUpdatedAt`,
+which remains the vitals' decay clock. Restore takes the newer record; old
+copies without this metadata retain care-time comparison, with extra rounds
+breaking a tied care timestamp only when XP does not regress. Player settings,
 looks, best scores and active pet selection also stay on the device, scoped
 to the origin. `useSyncExternalStore` provides cached snapshots and storage
 change notifications. Android uses its own WebView storage.

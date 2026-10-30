@@ -149,6 +149,19 @@ describe("send routing (no wallet signing)", () => {
     expect(last).toMatchObject({ title: "Feed Mango: it did not go through", tone: "risk" });
     expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
   });
+  it("retains an unresolved signature for another reload and stops claiming to confirm it", async () => {
+    window.sessionStorage.setItem("pawket.pending-sends", JSON.stringify([{ signature: "unresolved", blockhash: "hash", label: "Feed Mango", owner }]));
+    mock.settle.mockResolvedValueOnce("unknown");
+    let first!: ReturnType<typeof render>;
+    await act(async () => { first = render(<ResumeSends />); });
+    expect(JSON.parse(window.sessionStorage.getItem("pawket.pending-sends")!)).toMatchObject([{ signature: "unresolved" }]);
+    expect(mock.toast.mock.calls.at(-1)![0]).toMatchObject({ title: "Still waiting" });
+    first.unmount();
+    mock.settle.mockResolvedValueOnce("confirmed");
+    await act(async () => { render(<ResumeSends />); });
+    expect(mock.settle).toHaveBeenCalledTimes(2);
+    expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
+  });
   it("words a refusal that lands after a reload by the program that raised it", async () => {
     const pawket = "PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74";
     const curve = "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN";

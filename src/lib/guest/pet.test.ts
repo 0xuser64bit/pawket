@@ -420,6 +420,30 @@ describe("pet storage", () => {
     expect(loadPets().map((p) => p.xp)).toEqual([90, 0]);
   });
 
+  it("restores rounds without resetting the care decay clock, and rejects older copies", () => {
+    const original = createGuestPet({ ...INPUT, now: new Date("2026-10-01T10:00:00Z") });
+    savePet(original);
+    const played = recordPlay(original, new Date("2026-10-01T11:00:00Z")).pet;
+    expect(bringBackPets([played])).toMatchObject({ updated: [played], same: 0 });
+    expect(readPet(original.id)).toMatchObject({ xp: 25, plays: 1, statsUpdatedAt: original.statsUpdatedAt });
+    expect(bringBackPets([original])).toMatchObject({ updated: [], same: 1 });
+  });
+
+  it("restores later clothing without changing care or progression", () => {
+    const original = createGuestPet({ ...INPUT, now: new Date("2026-10-01T10:00:00Z") });
+    savePet(original);
+    const dressed = setWearing(original, "halo", new Date("2026-10-01T11:00:00Z"));
+    expect(bringBackPets([dressed])).toMatchObject({ updated: [dressed], same: 0 });
+    expect(readPet(original.id)).toMatchObject({ wearing: "halo", statsUpdatedAt: original.statsUpdatedAt, xp: 0, plays: 0 });
+  });
+
+  it("recovers extra rounds in old copies with no modification timestamp", () => {
+    const legacy = { ...createGuestPet(INPUT), modifiedAt: undefined };
+    savePet(legacy);
+    expect(bringBackPets([{ ...legacy, plays: 1, xp: 25 }])).toMatchObject({ updated: [{ plays: 1, xp: 25 }] });
+    expect(bringBackPets([legacy])).toMatchObject({ updated: [], same: 1 });
+  });
+
   it("brings nothing back, and says so, when storage cannot be written", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage blocked"); });
     expect(bringBackPets([createGuestPet(INPUT)])).toBeNull();

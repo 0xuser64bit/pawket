@@ -67,6 +67,11 @@ and a fresh read, not a cached discovery total.
 
 ## The Pawket Wallet
 
+Unresolved sends retain their signature in this tab's session storage. If the
+bounded confirmation check still cannot determine an outcome, the toast says so
+and keeps its Explorer link; reloading checks the same receipt again, never
+resubmits it. Only a definitive outcome clears that pending receipt.
+
 App actions require a linked Pawket Wallet. While Pawket sponsors, it may be
 empty; Market looks, coins and the device's unsponsored fees spend its
 balance. There is no owner-wallet

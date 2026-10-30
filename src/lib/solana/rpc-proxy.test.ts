@@ -52,6 +52,18 @@ describe("checkRpcRequest", () => {
     }
   });
 
+  it.each([null, 0, "filter", [], true].map((memcmp) => ({ memcmp })))("refuses malformed memcmp $memcmp without throwing", ({ memcmp }) => {
+    expect(checkRpcRequest(call("getProgramAccounts", [PAWKET_PROGRAM_ID, { filters: [{ memcmp }] }]))).toEqual(
+      refused("A scan names one of Pawket's account kinds."),
+    );
+  });
+
+  it.each([null, "0", [], {}, { toString: 0, valueOf: 0 }].map((offset) => ({ offset })))("requires a numeric zero offset instead of coercing $offset", ({ offset }) => {
+    expect(checkRpcRequest(call("getProgramAccounts", [PAWKET_PROGRAM_ID, { filters: [{ memcmp: { offset, bytes: pets } }] }]))).toEqual(
+      refused("A scan names one of Pawket's account kinds."),
+    );
+  });
+
   it("says what it refuses, and quotes at most 40 characters of a method it does not ask", () => {
     expect(checkRpcRequest(7)).toEqual(refused("One JSON-RPC request at a time."));
     expect(checkRpcRequest({ jsonrpc: "2.0", method: 7 })).toEqual(refused("That is not a JSON-RPC request."));

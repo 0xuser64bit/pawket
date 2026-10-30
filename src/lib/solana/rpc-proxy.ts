@@ -10,7 +10,7 @@ function namesAKind(config: unknown): boolean {
   if (!Array.isArray(filters)) return false;
   return filters.some((filter) => {
     const memcmp = (filter as { memcmp?: { offset?: unknown; bytes?: unknown } } | null)?.memcmp;
-    return memcmp !== undefined && Number(memcmp.offset) === 0 && typeof memcmp.bytes === "string" && KINDS.has(memcmp.bytes);
+    return memcmp !== null && typeof memcmp === "object" && memcmp.offset === 0 && typeof memcmp.bytes === "string" && KINDS.has(memcmp.bytes);
   });
 }
 

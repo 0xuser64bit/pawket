@@ -81,7 +81,9 @@ are client-safe; custom provider URLs belong in `SOLANA_RPC_URL`, with browser
 RPC set to `/api/rpc`. Direct browser RPC permits only the public Solana hosts
 or loopback endpoints without credentials or URL parameters. Coin route logs
 omit raw upstream errors, which can contain provider URLs. The RPC proxy
-allow-lists methods and validates requests.
+allow-lists methods and validates requests. Program scans require a known
+account discriminator at numeric offset zero; malformed filters return a
+JSON-RPC rejection without contacting the provider.
 Meteora SDKs and web3.js v1 remain in `src/server/coins/` and operational scripts.
 Coin reads verify the pool address, mints and creator before using it.
 

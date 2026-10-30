@@ -1,5 +1,5 @@
 import { SolanaError, SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR, type RpcTransport } from "@solana/kit";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { patient } from "./rpc";
 
 const busy = (headers = new Headers()) =>
@@ -18,6 +18,63 @@ function scripted(script: unknown[]) {
 }
 
 describe("a patient transport", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("does not start a cancelled request", async () => {
+    const reason = new DOMException("No longer needed", "AbortError");
+    const { transport, calls } = scripted([{ result: 1 }]);
+    await expect(patient(transport)({ ...request, signal: AbortSignal.abort(reason) })).rejects.toBe(reason);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("cancels a retry wait immediately without leaving a timer or sending again", async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const reason = new DOMException("Read timed out", "TimeoutError");
+    const { transport, calls } = scripted([busy(new Headers({ "retry-after": "8" })), { result: 1 }]);
+    const rejected = vi.fn();
+    const remove = vi.spyOn(controller.signal, "removeEventListener");
+    const pending = patient(transport)({ ...request, signal: controller.signal }).catch(rejected);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(vi.getTimerCount()).toBe(1);
+    controller.abort(reason);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(rejected).toHaveBeenCalledExactlyOnceWith(reason);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(remove).toHaveBeenCalledWith("abort", expect.any(Function));
+    await vi.advanceTimersByTimeAsync(8_000);
+    await pending;
+    expect(calls).toHaveLength(1);
+  });
+
+  it("does not wait when the signal was cancelled while a 429 was returning", async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const reason = new Error("Cancelled");
+    const transport = (async () => {
+      controller.abort(reason);
+      throw busy();
+    }) as RpcTransport;
+    const rejected = vi.fn();
+    const pending = patient(transport)({ ...request, signal: controller.signal }).catch(rejected);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(rejected).toHaveBeenCalledExactlyOnceWith(reason);
+    expect(vi.getTimerCount()).toBe(0);
+    await pending;
+  });
+
+  it("removes the abort listener after a retry wait finishes", async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const remove = vi.spyOn(controller.signal, "removeEventListener");
+    const { transport } = scripted([busy(), { result: 7 }]);
+    const pending = patient(transport, { wait: () => 50 })({ ...request, signal: controller.signal });
+    await vi.advanceTimersByTimeAsync(50);
+    await expect(pending).resolves.toEqual({ result: 7 });
+    expect(remove).toHaveBeenCalledWith("abort", expect.any(Function));
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("asks again after a 429, and answers once the node does", async () => {
     const { transport, calls } = scripted([busy(), busy(), { result: 7 }]);
     await expect(patient(transport, { wait: () => 0 })(request)).resolves.toEqual({ result: 7 });

@@ -36,6 +36,40 @@ function compiled(ix: Instruction, payer: string): ReadTransaction {
 }
 
 describe("a Pawket Wallet's statement", () => {
+  it("resolves a v0 transaction's writable and readonly lookup addresses", () => {
+    const deposit = { programIdIndex: 1, accounts: [0, 3, 4], data: data([...PAWKET_DISCRIMINATORS.deposit, ...getU64Encoder().encode(5_000_000n)]) };
+    const transaction = tx([OWNER, PAWKET_PROGRAM_ID], [deposit], [10_000_000, 1, 1, 2_000_000, 1], [4_995_000, 1, 1, 7_000_000, 1]);
+    Object.assign(transaction.meta!, { loadedAddresses: { writable: [PET, WALLET], readonly: [SYSTEM] } });
+    expect(entryFrom("v0", transaction, WALLET, { rent: 2_000_000n })).toMatchObject({
+      kinds: ["deposit"], feePayer: OWNER, amount: 5_000_000n, change: 5_000_000n,
+    });
+    expect(transaction.transaction.message.accountKeys).toEqual([OWNER, PAWKET_PROGRAM_ID]);
+  });
+
+  it("resolves readonly pet references in refused v0 transactions", () => {
+    const care = { programIdIndex: 1, accounts: [0, 2, 3], data: data([...PAWKET_DISCRIMINATORS.careByDevice, 2]) };
+    const transaction = tx([DEVICE, PAWKET_PROGRAM_ID], [care], [10_000, 1, 2_000_000, 1], [5_000, 1, 2_000_000, 1], { InstructionError: [0, "ReadonlyDataModified"] });
+    Object.assign(transaction.meta!, { loadedAddresses: { writable: [WALLET], readonly: [PET] } });
+    expect(entryFrom("v0", transaction, WALLET, { device: DEVICE as Address })).toMatchObject({ kinds: ["care"], pet: PET, change: 0n, ok: false });
+  });
+
+  it("recognizes a historical device link whose wallet came from a lookup table", async () => {
+    const refused = tx([DEVICE, WALLET, PET, PAWKET_PROGRAM_ID], [
+      { programIdIndex: 3, accounts: [0, 1, 2], data: data([...PAWKET_DISCRIMINATORS.careByDevice, 2]) },
+    ], [10_000, 1, 1, 1], [5_000, 1, 1, 1], { InstructionError: [0, { Custom: 6000 }] });
+    const link = tx([OWNER, DEVICE, PAWKET_PROGRAM_ID], [
+      { programIdIndex: 2, accounts: [0, 3, 1], data: data([...PAWKET_DISCRIMINATORS.linkDevice]) },
+    ], [1, 1, 1, 1], [1, 1, 1, 1]);
+    Object.assign(link.meta!, { loadedAddresses: { writable: [WALLET], readonly: [] } });
+    const rpc = {
+      getSignaturesForAddress: (account: string) => ({ send: async () => account === WALLET ? [{ signature: "refused" }] : [{ signature: "linked", err: null }] }),
+      getTransaction: (signature: string) => ({ send: async () => signature === "refused" ? refused : link }),
+    } as unknown as HistoryRpc;
+    expect((await fetchWalletHistory(rpc, WALLET, { owner: OWNER as Address })).entries).toMatchObject([
+      { signature: "refused", ok: false, feePayer: DEVICE },
+    ]);
+  });
+
   it.each([null, STRANGER])("keeps a former device's refused receipts after unlinking or replacing it with %s", async (device) => {
     const keys = [DEVICE, WALLET, PET, PAWKET_PROGRAM_ID];
     const care = { programIdIndex: 3, accounts: [0, 1, 2], data: data([...PAWKET_DISCRIMINATORS.careByDevice, 2]) };

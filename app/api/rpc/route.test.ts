@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, expect, it, vi } from "vitest";
+import { PAWKET_PROGRAM_ID } from "@/lib/solana/program";
 
 vi.mock("@/server/actions", () => ({ caller: () => "203.0.113.7" }));
 vi.mock("@/config/server-env", () => ({ serverRpcUrl: () => "https://rpc.example/" }));
@@ -26,6 +27,18 @@ it("sends nothing on that it refuses", async () => {
   vi.stubGlobal("fetch", upstream);
   const response = await POST(new Request("http://localhost/api/rpc", { method: "POST", body: '{"jsonrpc":"2.0","id":2,"method":"requestAirdrop","params":[]}' }));
   expect(response.status).toBe(400);
+  expect(upstream).not.toHaveBeenCalled();
+});
+
+it("refuses a null memcmp filter as JSON-RPC without calling the provider", async () => {
+  const upstream = vi.fn();
+  vi.stubGlobal("fetch", upstream);
+  const response = await POST(new Request("http://localhost/api/rpc", {
+    method: "POST",
+    body: JSON.stringify({ jsonrpc: "2.0", id: 3, method: "getProgramAccounts", params: [PAWKET_PROGRAM_ID, { filters: [{ memcmp: null }] }] }),
+  }));
+  expect(response.status).toBe(400);
+  expect(await response.json()).toEqual({ jsonrpc: "2.0", id: 3, error: { code: -32600, message: "A scan names one of Pawket's account kinds." } });
   expect(upstream).not.toHaveBeenCalled();
 });
 

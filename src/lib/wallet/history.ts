@@ -87,7 +87,13 @@ const ACTION_OF = Object.fromEntries(Object.entries(CARE_ACTION_VARIANTS).map(([
 
 export interface ReadTransaction {
   blockTime: bigint | number | null;
-  meta: { fee: bigint | number; err: unknown; preBalances: readonly (bigint | number)[]; postBalances: readonly (bigint | number)[] } | null;
+  meta: {
+    fee: bigint | number;
+    err: unknown;
+    preBalances: readonly (bigint | number)[];
+    postBalances: readonly (bigint | number)[];
+    loadedAddresses?: { writable: readonly string[]; readonly: readonly string[] };
+  } | null;
   transaction: {
     message: {
       accountKeys: readonly string[];
@@ -97,6 +103,12 @@ export interface ReadTransaction {
 }
 
 const base58 = getBase58Encoder();
+
+function accountKeysOf(tx: ReadTransaction): readonly string[] {
+  const keys = tx.transaction.message.accountKeys;
+  const loaded = tx.meta?.loadedAddresses;
+  return loaded ? [...keys, ...loaded.writable, ...loaded.readonly] : keys;
+}
 
 const u64At = (data: ArrayLike<number>, offset: number) =>
   Array.from({ length: 8 }, (_, i) => BigInt(data[offset + i])).reduce((sum, byte, i) => sum + (byte << BigInt(8 * i)), 0n);
@@ -115,7 +127,8 @@ export function entryFrom(
   wallet: Address,
   { rent = 0n, owner, device }: StatementOptions = {},
 ): WalletEntry | null {
-  const { accountKeys, instructions } = tx.transaction.message;
+  const { instructions } = tx.transaction.message;
+  const accountKeys = accountKeysOf(tx);
   const ok = tx.meta?.err == null;
   // Nothing in a refused transaction was checked, so anyone could have named this wallet in it.
   if (!ok && accountKeys[0] !== owner && accountKeys[0] !== device) return null;
@@ -174,7 +187,8 @@ async function wasLinked(rpc: HistoryRpc, wallet: Address, device: Address, befo
       ));
       for (const transaction of transactions) {
         if (!transaction?.meta || transaction.meta.err !== null) continue;
-        const { accountKeys, instructions } = transaction.transaction.message;
+        const { instructions } = transaction.transaction.message;
+        const accountKeys = accountKeysOf(transaction);
         if (instructions.some((instruction) => {
           if (accountKeys[instruction.programIdIndex] !== PAWKET_PROGRAM_ID || accountKeys[instruction.accounts[1]] !== wallet || accountKeys[instruction.accounts[2]] !== device) return false;
           const bytes = base58.encode(instruction.data);

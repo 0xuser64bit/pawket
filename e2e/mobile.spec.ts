@@ -278,13 +278,15 @@ test("starter choices stay small and every Market category opens a readable shar
 
 test("on a phone each Market shelf is a row to swipe, and opens whole on asking", async ({ page }) => {
   await page.goto("/market");
-  const pets = page.locator(".pk-tiles").first();
-  await expect(pets).toHaveClass(/pk-tiles--row/);
-  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThan(3000);
-  expect(await pets.evaluate((row) => row.scrollWidth > row.clientWidth)).toBe(true);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  const all = page.getByRole("button", { name: "See all 25: for your pets" });
   await page.locator(".pk-boot").waitFor({ state: "detached" });
+  const pets = page.locator(".pk-tiles").first();
+  await expect(pets).toBeVisible();
+  await expect(pets).toHaveClass(/pk-tiles--row/);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThan(3000);
+  await expect.poll(() => pets.evaluate((row) => row.scrollWidth > row.clientWidth)).toBe(true);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const all = page.getByRole("button", { name: "See all 25: for your pets" });
+  await expect(all).toBeVisible();
   const box = (await all.boundingBox())!;
   for (const y of [box.y - 10, box.y + box.height + 10]) {
     expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("button")?.textContent, { x: box.x + box.width / 2, y })).toBe("See all 25");

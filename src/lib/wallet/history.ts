@@ -164,6 +164,29 @@ export function entryFrom(
 
 export type HistoryRpc = Rpc<GetSignaturesForAddressApi & GetTransactionApi>;
 
+async function wasLinked(rpc: HistoryRpc, wallet: Address, device: Address, before: Signature): Promise<boolean> {
+  const limit = 100;
+  for (;;) {
+    const signatures = await rpc.getSignaturesForAddress(device, { before, limit, commitment: "confirmed" }).send();
+    for (let offset = 0; offset < signatures.length; offset += 4) {
+      const transactions = await Promise.all(signatures.slice(offset, offset + 4).map(async ({ signature, err }) =>
+        err ? null : rpc.getTransaction(signature, { encoding: "json", maxSupportedTransactionVersion: 0, commitment: "confirmed" }).send(),
+      ));
+      for (const transaction of transactions) {
+        if (!transaction?.meta || transaction.meta.err !== null) continue;
+        const { accountKeys, instructions } = transaction.transaction.message;
+        if (instructions.some((instruction) => {
+          if (accountKeys[instruction.programIdIndex] !== PAWKET_PROGRAM_ID || accountKeys[instruction.accounts[1]] !== wallet || accountKeys[instruction.accounts[2]] !== device) return false;
+          const bytes = base58.encode(instruction.data);
+          return PAWKET_DISCRIMINATORS.linkDevice.every((byte, index) => bytes[index] === byte);
+        })) return true;
+      }
+    }
+    if (signatures.length < limit) return false;
+    before = signatures[signatures.length - 1].signature;
+  }
+}
+
 export async function fetchWalletHistory(
   rpc: HistoryRpc,
   wallet: Address,
@@ -179,7 +202,13 @@ export async function fetchWalletHistory(
         const tx = await rpc
           .getTransaction(signature, { encoding: "json", maxSupportedTransactionVersion: 0, commitment: "confirmed" })
           .send();
-        return tx ? entryFrom(signature, tx as unknown as ReadTransaction, wallet, statement) : null;
+        if (!tx) return null;
+        const transaction = tx as unknown as ReadTransaction;
+        const entry = entryFrom(signature, transaction, wallet, statement);
+        if (entry || !tx.meta?.err || !statement.owner) return entry;
+        const device = tx.transaction.message.accountKeys[0] as Address;
+        const historical = entryFrom(signature, transaction, wallet, { ...statement, device });
+        return historical && await wasLinked(rpc, wallet, device, signature) ? historical : null;
       }),
     );
     for (const entry of read) if (entry) entries.push(entry);

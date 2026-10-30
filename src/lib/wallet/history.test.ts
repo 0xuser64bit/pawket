@@ -1,10 +1,10 @@
 import { createNoopSigner, getAddressDecoder, getBase58Decoder, getU64Encoder, type Address, type Instruction } from "@solana/kit";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CareActionType } from "@/lib/game/enums";
 import { getCreateKeepsakeInstruction, PAWKET_COLLECTION } from "@/lib/solana/core";
 import idl from "@/lib/solana/idl/pawket.json";
 import { MARKET, PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "@/lib/solana/program";
-import { entryFrom, type ReadTransaction } from "./history";
+import { entryFrom, fetchWalletHistory, type HistoryRpc, type ReadTransaction } from "./history";
 
 const DEVICE = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
 const WALLET = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin" as Address;
@@ -36,6 +36,52 @@ function compiled(ix: Instruction, payer: string): ReadTransaction {
 }
 
 describe("a Pawket Wallet's statement", () => {
+  it.each([null, STRANGER])("keeps a former device's refused receipts after unlinking or replacing it with %s", async (device) => {
+    const keys = [DEVICE, WALLET, PET, PAWKET_PROGRAM_ID];
+    const care = { programIdIndex: 3, accounts: [0, 1, 2], data: data([...PAWKET_DISCRIMINATORS.careByDevice, 2]) };
+    const refused = tx(keys, [care], [10_000, 1, 1, 1], [5_000, 1, 1, 1], { InstructionError: [0, { Custom: 6000 }] });
+    const linkKeys = [OWNER, WALLET, DEVICE, PAWKET_PROGRAM_ID];
+    const link = tx(linkKeys, [{ programIdIndex: 3, accounts: [0, 1, 2], data: data([...PAWKET_DISCRIMINATORS.linkDevice]) }], [1, 1, 1, 1], [1, 1, 1, 1]);
+    const signatures = vi.fn((account: string) => ({ send: async () => account === WALLET ? [{ signature: "refused" }] : [{ signature: "linked", err: null }] }));
+    const transactions = vi.fn((signature: string) => ({ send: async () => signature === "refused" ? refused : link }));
+    const rpc = { getSignaturesForAddress: signatures, getTransaction: transactions } as unknown as HistoryRpc;
+    const page = await fetchWalletHistory(rpc, WALLET, { owner: OWNER as Address, device });
+    expect(page.entries).toMatchObject([{ signature: "refused", feePayer: DEVICE, fee: 5_000n, ok: false }]);
+    expect(signatures).toHaveBeenCalledWith(DEVICE, expect.objectContaining({ before: "refused" }));
+  });
+
+  it("does not trust failed links or successful links to someone else's wallet as historical device authority", async () => {
+    const keys = [STRANGER, WALLET, PET, PAWKET_PROGRAM_ID];
+    const care = { programIdIndex: 3, accounts: [0, 1, 2], data: data([...PAWKET_DISCRIMINATORS.careByDevice, 2]) };
+    const refused = tx(keys, [care], [10_000, 1, 1, 1], [5_000, 1, 1, 1], { InstructionError: [0, { Custom: 6000 }] });
+    const link = (wallet: string, err: unknown) => tx([OWNER, wallet, STRANGER, PAWKET_PROGRAM_ID], [{ programIdIndex: 3, accounts: [0, 1, 2], data: data([...PAWKET_DISCRIMINATORS.linkDevice]) }], [1, 1, 1, 1], [1, 1, 1, 1], err);
+    const records: Record<string, ReadTransaction> = { refused, failed: link(WALLET, {}), unrelated: link(STRANGERS_WALLET, null) };
+    const rpc = {
+      getSignaturesForAddress: (account: string) => ({ send: async () => account === WALLET ? [{ signature: "refused" }] : [{ signature: "failed", err: null }, { signature: "unrelated", err: null }] }),
+      getTransaction: (signature: string) => ({ send: async () => records[signature] }),
+    } as unknown as HistoryRpc;
+    expect((await fetchWalletHistory(rpc, WALLET, { owner: OWNER as Address })).entries).toEqual([]);
+  });
+
+  it("pages back to a historical link and propagates an unavailable proof so the statement can retry", async () => {
+    const keys = [DEVICE, WALLET, PET, PAWKET_PROGRAM_ID];
+    const refused = tx(keys, [{ programIdIndex: 3, accounts: [0, 1, 2], data: data([...PAWKET_DISCRIMINATORS.careByDevice, 2]) }], [10_000, 1, 1, 1], [5_000, 1, 1, 1], {});
+    const linkKeys = [OWNER, WALLET, DEVICE, PAWKET_PROGRAM_ID];
+    const linked = tx(linkKeys, [{ programIdIndex: 3, accounts: [0, 1, 2], data: data([...PAWKET_DISCRIMINATORS.linkDevice]) }], [1, 1, 1, 1], [1, 1, 1, 1]);
+    const signatures = vi.fn()
+      .mockReturnValueOnce({ send: async () => [{ signature: "refused" }] })
+      .mockReturnValueOnce({ send: async () => Array.from({ length: 100 }, (_, index) => ({ signature: `failed-${index}`, err: {} })) })
+      .mockReturnValueOnce({ send: async () => [{ signature: "linked", err: null }] });
+    const transactions = vi.fn((signature: string) => ({ send: async () => signature === "refused" ? refused : linked }));
+    const rpc = { getSignaturesForAddress: signatures, getTransaction: transactions } as unknown as HistoryRpc;
+    expect((await fetchWalletHistory(rpc, WALLET, { owner: OWNER as Address })).entries).toMatchObject([{ signature: "refused", ok: false }]);
+    expect(signatures).toHaveBeenLastCalledWith(DEVICE, expect.objectContaining({ before: "failed-99" }));
+    expect(transactions).toHaveBeenCalledTimes(2);
+    signatures.mockReturnValueOnce({ send: async () => [{ signature: "refused" }] })
+      .mockReturnValueOnce({ send: async () => { throw new Error("RPC unavailable"); } });
+    await expect(fetchWalletHistory(rpc, WALLET, { owner: OWNER as Address })).rejects.toThrow("RPC unavailable");
+  });
+
   it("reads a device's care as the care, the pet, and one fee out of the balance", () => {
     const keys = [DEVICE, WALLET, PET, PASSPORT, PAWKET_PROGRAM_ID];
     const care = { programIdIndex: 4, accounts: [0, 1, 2, 3], data: data([...PAWKET_DISCRIMINATORS.careByDevice, 2]) };

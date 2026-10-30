@@ -100,8 +100,13 @@ While sponsored, a linked device acts with an empty balance. History
 comes from confirmed Solana transactions (`src/lib/wallet/history.ts`).
 Any transaction may mention a wallet, so an instruction reads as the
 wallet's only when it holds the wallet in the account the program checks,
-and a refused one, which nothing checked, only when the owner or the linked
-device paid its fee.
+and a refused one, which nothing checked, only when the owner, the current
+device or a previously linked device paid its fee. For a former device,
+history checks a successful link to this wallet before the refused transaction,
+paging through that device's confirmed transactions. These additional reads
+may take longer; a failed RPC read leaves the page retryable rather than
+silently discarding its receipts. Replacing or unlinking a device does not
+remove its earlier fee receipts.
 
 ## Transaction lifecycle
 

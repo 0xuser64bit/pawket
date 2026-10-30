@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Card, Row, Stack, Problem } from "@/components/pk";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { MAX_COPY_LENGTH, petsCopy, readPetsCopy } from "@/lib/guest/copy";
@@ -23,6 +23,10 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
   const [text, setText] = useState("");
   const [problem, setProblem] = useState<string>();
   const [brought, setBrought] = useState<string>();
+  const [reading, setReading] = useState(false);
+  const readVersion = useRef(0);
+
+  useEffect(() => () => { readVersion.current += 1; }, []);
 
   async function copyText() {
     const copy = petsCopy(local, new Date(), readCoatChoices());
@@ -50,6 +54,8 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
   }
 
   async function chooseFile(file: File | undefined) {
+    const version = ++readVersion.current;
+    setReading(false);
     setProblem(undefined);
     setBrought(undefined);
     if (!file) return;
@@ -57,7 +63,15 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
       setProblem("That file is far larger than a copy of pets. Nothing was brought back.");
       return;
     }
-    setText(await file.text());
+    setReading(true);
+    try {
+      const copy = await file.text();
+      if (version === readVersion.current) setText(copy);
+    } catch {
+      if (version === readVersion.current) setProblem("Pawket could not read that file. Choose it again, or paste the copy instead. Nothing was brought back.");
+    } finally {
+      if (version === readVersion.current) setReading(false);
+    }
   }
 
   function bringBack() {
@@ -126,6 +140,8 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
               spellCheck={false}
               value={text}
               onChange={(event) => {
+                readVersion.current += 1;
+                setReading(false);
                 setText(event.target.value);
                 setProblem(undefined);
               }}
@@ -133,12 +149,16 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
             {app ? null : (
               <label className="caption pk-faint pk-paste__file">
                 Or choose the file:{" "}
-                <input type="file" accept=".json,application/json" onChange={(event) => void chooseFile(event.target.files?.[0])} />
+                <input type="file" accept=".json,application/json" onChange={(event) => {
+                  void chooseFile(event.target.files?.[0]);
+                  event.target.value = "";
+                }} />
               </label>
             )}
             <div>
-              <Button label="Bring them back" icon="paw" size="sm" disabled={!text.trim()} onClick={bringBack} />
+              <Button label="Bring them back" icon="paw" size="sm" busy={reading} disabled={!text.trim()} onClick={bringBack} />
             </div>
+            <p aria-live="polite" className={reading ? "caption pk-faint" : "pk-sr"}>{reading ? "Reading the copy…" : ""}</p>
             {problem ? (
               <Problem>
                 {problem}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRequest } from "@solana/react";
 import { fetchEncodedAccounts, type Address } from "@solana/kit";
 import { Choice, DateTimeField, Button, Chip, Field, Row, Stack, Problem } from "@/components/pk";
@@ -52,7 +52,32 @@ export function GuildGatherings({
   const mounted = useMounted();
   const at = (seconds: number) => (mounted ? localWhen(seconds) : when(seconds));
   const router = useRouter();
-  const [now] = useState(() => Math.floor(Date.now() / 1000));
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const boundaries = [
+      ...events.flatMap((event) => [event.startsAt - GATHERING_LIMITS.checkInEarlySeconds, event.endsAt]),
+      ...polls.map((poll) => poll.closesAt),
+    ];
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => {
+      clearTimeout(timer);
+      const current = Date.now();
+      setNow(Math.floor(current / 1000));
+      const next = Math.min(...boundaries.filter((boundary) => boundary * 1000 > current));
+      if (Number.isFinite(next)) timer = setTimeout(refresh, Math.min(next * 1000 - current, 2_147_483_647));
+    };
+    const resume = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    refresh();
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [events, polls]);
   const owner = companion.owner;
   const mine = useMemo(() => companion.owned.filter((entry) => entry.member?.guild === guild.address), [companion.owned, guild.address]);
   const founder = yourPlace(companion, guild).founded;

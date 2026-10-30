@@ -327,3 +327,18 @@ fn a_device_can_pay_for_its_own_unlinking_and_leave_nothing_behind() {
     assert!(!env.exists(&s.device.pubkey()));
     assert_eq!(env.balance(&s.owner.pubkey()), balance + DEVICE_FLOAT_LAMPORTS - FEE_PER_SIGNATURE);
 }
+
+#[test]
+fn unlinking_takes_back_only_the_linked_devices_own_float() {
+    let mut env = Env::new();
+    let (owner, device, bystander) = (env.player(), env.broke(), env.player());
+    ok(env.send(&[open_wallet_ix(&owner.pubkey(), &owner.pubkey()), deposit_ix(&owner.pubkey(), 10_000_000)], &owner, &[]));
+    ok(env.send(&[link_ix(&owner.pubkey(), &device.pubkey(), env.now() + DAY, 10)], &owner, &[&device]));
+    let (balance, held) = (env.balance(&owner.pubkey()), env.lamports(&bystander.pubkey()));
+    // Another key that signs in the device's place is not the device, and keeps what it holds.
+    let unlink = unlink_ix(&owner.pubkey(), &owner.pubkey(), &bystander.pubkey(), true);
+    expect_anchor(&env.send(&[unlink], &owner, &[&bystander]), anchor_lang::error::ErrorCode::ConstraintAddress);
+    assert_eq!(env.lamports(&bystander.pubkey()), held);
+    assert_eq!(env.balance(&owner.pubkey()), balance);
+    assert_eq!(env.wallet(&owner.pubkey()).device, device.pubkey());
+}

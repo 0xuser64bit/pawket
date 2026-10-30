@@ -1906,6 +1906,7 @@ dependencies = [
  "solana-instructions-sysvar",
  "solana-keypair",
  "solana-message",
+ "solana-program-runtime",
  "solana-signer",
  "solana-transaction",
  "solana-transaction-error",

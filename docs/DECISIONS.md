@@ -61,7 +61,8 @@ and mainnet sponsorship is disabled.
 ## A keepsake is a frozen card
 
 Metaplex Core provides one permanently frozen card pointing to the pet PDA.
-It cannot transfer or burn. The program record remains the pet. Its address
+It cannot transfer or burn while the collection's authority, its freeze
+delegate, leaves it frozen. The program record remains the pet. Its address
 comes from `DERIVATION_SECRET`, which keeps every card's address through a
 sponsor rotation once it is pinned (below).
 

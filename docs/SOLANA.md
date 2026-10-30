@@ -71,7 +71,8 @@ App actions require a linked Pawket Wallet. While Pawket sponsors, it may be
 empty; Market looks, coins and the device's unsponsored fees spend its
 balance. There is no owner-wallet
 fallback. Wallet Standard supplies owner identity and signing; Android
-registers Mobile Wallet Adapter only in its shell. Connecting alone sends
+registers Mobile Wallet Adapter on Android, in the app and in Android
+browsers alike. Connecting alone sends
 nothing. Wallet setup remains available through the shell and `/wallet`.
 
 The owner's signature opens the wallet, deposits or withdraws, links a device,
@@ -89,7 +90,7 @@ revoke an existing chain link.
 care, rounds, dressing, adoption, guild membership, gatherings and waves,
 within the link's expiry and daily allowance. The program enforces the scope.
 The device may unlink itself but cannot authorize spending. An absent link,
-failed fresh read, expired link, exhausted limit or empty balance blocks an
+failed fresh read, expired link, exhausted limit or, unsponsored, an empty balance blocks an
 action with recovery instructions.
 
 The device receives a bounded fee float when linked. Without sponsorship,
@@ -97,6 +98,15 @@ eligible non-rent actions use that float; each refill is capped at one network
 fee and the float's ceiling. Rent-bearing app actions wait for sponsorship.
 While sponsored, a linked device acts with an empty balance. History
 comes from confirmed Solana transactions (`src/lib/wallet/history.ts`).
+Any transaction may mention a wallet, so an instruction reads as the
+wallet's only when it holds the wallet in the account the program checks,
+and a refused one, which nothing checked, only when the owner, the current
+device or a previously linked device paid its fee. For a former device,
+history checks a successful link to this wallet before the refused transaction,
+paging through that device's confirmed transactions. These additional reads
+may take longer; a failed RPC read leaves the page retryable rather than
+silently discarding its receipts. Replacing or unlinking a device does not
+remove its earlier fee receipts.
 
 ## Transaction lifecycle
 
@@ -162,8 +172,10 @@ indexes endpoints; `src/server/actions.ts` owns the response helpers.
 
 ## Keepsakes (Metaplex Core)
 
-A keepsake is a permanently frozen card pointing to the pet account. It
-cannot transfer or burn; the Pet PDA remains authoritative. Core instructions
+A keepsake is a frozen card pointing to the pet account. Its permanent
+freeze delegate is the collection's authority, so it cannot transfer or burn
+unless that authority thaws it, which nothing in Pawket does; the Pet PDA
+remains authoritative. Core instructions
 live in `src/lib/solana/core.ts` with byte-level tests. The collection address
 is a checked source constant; its authority is the sponsor unless
 `COLLECTION_AUTHORITY_KEYPAIR` is set.

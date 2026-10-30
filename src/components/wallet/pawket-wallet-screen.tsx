@@ -480,12 +480,14 @@ export function History({ state, owner, now }: { state: PawketWalletState; owner
       : sponsor.data?.address && entry.feePayer === sponsor.data.address
         ? " · fee paid by Pawket"
         : sponsor.data
-          ? " · fee paid by a device, from your balance"
+          ? // A refused transaction undoes the device's refill, so only its own float paid.
+            ` · fee paid by a device${entry.ok ? ", from your balance" : ""}`
           : "";
   const rent = useRequest(rentOfWallet);
   const version = `${wallet.address}:${wallet.actions}:${wallet.deposited}:${wallet.withdrawn}:${wallet.spent}:${wallet.device}`;
+  const statement = { rent: rent.data, owner, device: wallet.device };
   const first = useCallback(
-    () => fetchWalletHistory(rpc, wallet.address, { rent: rent.data, limit: 6 }),
+    () => fetchWalletHistory(rpc, wallet.address, { ...statement, limit: 6 }),
     [wallet.address, version, rent.data], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const page = useRequest(rent.data === undefined ? null : first);
@@ -501,7 +503,7 @@ export function History({ state, owner, now }: { state: PawketWalletState; owner
     setLoading(true);
     setMissed(false);
     try {
-      const read = await fetchWalletHistory(rpc, wallet.address, { before: next, rent: rent.data });
+      const read = await fetchWalletHistory(rpc, wallet.address, { ...statement, before: next });
       setOlder({ version, entries: [...(extra?.entries ?? []), ...read.entries], next: read.next });
     } catch {
       setMissed(true);

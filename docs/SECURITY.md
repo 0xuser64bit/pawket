@@ -10,7 +10,7 @@ in `src/lib/solana/send.ts`. [AGENTS.md](../AGENTS.md) is the change contract.
 | Authority | Scope |
 | --- | --- |
 | Owner wallet | Approves wallet management and spending; owns the pet and Pawket Wallet |
-| Linked device | Non-extractable WebCrypto key; program-limited non-money actions until expiry and daily limit; can unlink itself; once unlinked or replaced, can send its own leftover float to its owner's Pawket Wallet and nowhere else |
+| Linked device | Non-extractable WebCrypto key; program-limited non-money actions until expiry and daily limit; can unlink itself; once unlinked or replaced, the app sends its leftover float only to its owner's Pawket Wallet, though the float (1,000,000 lamports at most) is in the device's own account, which its key alone controls |
 | Sponsor | Server-only devnet fee/rent payer; also the keepsake collection's authority and the derivation secret, unless `COLLECTION_AUTHORITY_KEYPAIR` and `DERIVATION_SECRET` are set |
 | Program upgrade authority | Separate deploy wallet; never the sponsor |
 | Treasury | Receives Market purchases and partner coin fees; its signing key is not on the server |
@@ -73,8 +73,10 @@ availability rather than assume the sponsor is online.
 
 Server config and privileged modules import `server-only`. Every response
 forbids framing (`frame-ancestors 'none'`, `X-Frame-Options`), because a linked
-device signs some actions without a prompt; it also sends `nosniff`, a
-referrer policy and a permissions policy (`next.config.ts`). Public env values
+device signs some actions without a prompt. Its pages frame only Pawket and a
+phone wallet's `solana-wallet:` link, which Mobile Wallet Adapter opens from
+a hidden frame in Firefox, and post forms only to Pawket. Every response also
+sends `nosniff`, a referrer policy and a permissions policy (`next.config.ts`). Public env values
 are client-safe; custom provider URLs belong in `SOLANA_RPC_URL`, with browser
 RPC set to `/api/rpc`. Direct browser RPC permits only the public Solana hosts
 or loopback endpoints without credentials or URL parameters. Coin route logs
@@ -84,7 +86,8 @@ Meteora SDKs and web3.js v1 remain in `src/server/coins/` and operational script
 Coin reads verify the pool address, mints and creator before using it.
 
 The Android bridge accepts only checked requests from the trusted origin's
-main frame. It carries photos, links, reminders, haptics and colors, never keys
+main frame. Wallet, intent and mail links open another app only from that
+origin's page. It carries photos, links, reminders, haptics and colors, never keys
 or transactions. A care reminder is a time within three days and capped plain
 words; its notification only opens the app. External intents are restricted and rebuilt without supplied
 components, extras or permission flags. Release WebView debugging and backups
@@ -106,23 +109,26 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 - Guestbooks check one wave per UTC day against the last eight visitors. After
   eight other waves a visitor can wave again. Counts are not Sybil-resistant.
 - Per-caller limits are in process memory, so multiple instances each allow
-  their share; an IPv6 caller counts by its /64, and an instance forgets every
-  caller once it tracks more than 10,000 keys (an Action's posted wallet is a
-  key too). A caller is the first `X-Forwarded-For` address, which Vercel sets
-  itself; behind a proxy that passes a client's own header through, a caller
-  would choose its key. The hourly budget is read
+  their share; an IPv6 caller counts by its /64. An instance remembers the
+  10,000 keys it heard from most recently (an Action's posted wallet is a key
+  too) and forgets the quietest first, which gains a caller holding that many
+  keys nothing it did not have. A caller is the first `X-Forwarded-For`
+  address, which Vercel sets itself; behind a proxy that passes a client's own
+  header through, a caller would choose its key. The hourly budget is read
   from the sponsor's balance, which every instance sees, plus the fees and
   rents an instance signed in the last two minutes, so callers spread over
   many addresses still stop at it. Shared enforcement and budget monitoring
   are mainnet work.
-- Pages send no script Content-Security-Policy, only `frame-ancestors`. A
+- Pages send no script Content-Security-Policy, only frame and form rules. A
   script injected into Pawket's origin could act as this browser's linked
   device without a prompt, within its link's limits above. A nonce-based
   script policy, tested with the room's renderer and the wallet adapters, is
   mainnet work.
 - A stolen linked device acts until its link ends (30 days at most) or the
   owner unlinks it: up to its daily limit (500 at most) of non-money actions a
-  UTC day, for the owner's pets only. Each action refills at most one
+  UTC day, as the owner's pets (a wave greets any pet; a pet may join any
+  guild). Its own float, 1,000,000 lamports at most, is in the device's own
+  account, so a stolen key can send that anywhere. Each action refills at most one
   5,000-lamport fee from the balance, so it can draw at most `daily_actions ×
   5,000` lamports a day (2,500,000 at the maximum limit), and each coin trade
   the owner approves tops its float back up to 1,000,000 lamports. It cannot

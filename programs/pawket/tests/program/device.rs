@@ -3,6 +3,7 @@ use pawket::{
     instruction as ix, CareActionType, Guestbook, PawketError, PawketWallet, CHECK_IN_EARLY_SECONDS, DEVICE_FLOAT_LAMPORTS,
     MAX_DAILY_ACTIONS, WEARABLE_COUNT,
 };
+use anchor_lang::prelude::Pubkey;
 use solana_keypair::Keypair;
 use solana_signer::Signer;
 
@@ -217,6 +218,65 @@ fn a_device_plans_asks_and_checks_in_only_while_its_pet_is_in_the_guild() {
 }
 
 #[test]
+fn a_device_leaves_only_the_guild_its_pet_is_in_and_the_rent_goes_back_to_whoever_paid_it() {
+    let mut env = Env::new();
+    let d = linked(&mut env, 50);
+    let (owner, o) = (d.owner.pubkey(), &d.owner);
+    ok(env.send(&[found_ix(&owner, &owner, &d.pet, "sunbeam-club")], o, &[]));
+    let neighbour = env.player();
+    let mochi = env.adopt(&neighbour, "Mochi");
+    ok(env.send(&[found_ix(&neighbour.pubkey(), &neighbour.pubkey(), &mochi, "cloud-nine")], &neighbour, &[]));
+    let (sunbeam, cloud) = (guild_pda("sunbeam-club"), guild_pda("cloud-nine"));
+    let leave = |guild: &Pubkey, payer: &Pubkey| leave_ix(&owner, &d.pet, guild, payer);
+
+    let wrong_guild = d.send(&mut env, leave(&cloud, &owner), ix::LeaveGuildByDevice::DISCRIMINATOR);
+    expect_anchor(&wrong_guild, ErrorCode::ConstraintHasOne);
+    let to_the_device = d.send(&mut env, leave(&sunbeam, &d.device.pubkey()), ix::LeaveGuildByDevice::DISCRIMINATOR);
+    expect_anchor(&to_the_device, ErrorCode::ConstraintHasOne);
+    assert_eq!((env.guild("sunbeam-club").member_count, env.guild("cloud-nine").member_count), (1, 1));
+    assert!(env.exists(&member_pda(&d.pet)));
+    let rent = env.lamports(&member_pda(&d.pet));
+    let before = env.lamports(&owner);
+    ok(d.send(&mut env, leave(&sunbeam, &owner), ix::LeaveGuildByDevice::DISCRIMINATOR));
+    assert_eq!(env.lamports(&owner) - before, rent);
+}
+
+#[test]
+fn a_device_goes_votes_and_checks_in_only_in_its_pets_own_guild_on_its_own_rsvp() {
+    let mut env = Env::new();
+    let d = linked(&mut env, 50);
+    let (owner, sponsor, o) = (d.owner.pubkey(), d.sponsor.pubkey(), &d.owner);
+    let neighbour = env.player();
+    let n = neighbour.pubkey();
+    let mochi = env.adopt(&neighbour, "Mochi");
+    ok(env.send(&[found_ix(&n, &n, &mochi, "cloud-nine")], &neighbour, &[]));
+    let cloud = guild_pda("cloud-nine");
+    let starts = env.now() + HOUR;
+    let plan = create_event_ix(&n, &n, &cloud, &mochi, 1, "Nap", "", starts, starts + HOUR);
+    let ask = create_poll_ix(&n, &n, &cloud, &mochi, 1, "Where?", &["Rug", "Sun"], starts + DAY);
+    ok(env.send(&[plan, ask], &neighbour, &[]));
+    let (event, poll) = (event_pda(&cloud, 1), poll_pda(&cloud, 1));
+    ok(env.send(&[rsvp_ix(&n, &n, &mochi, &event)], &neighbour, &[]));
+
+    // In a guild of its own, the pet neither goes to another guild's event nor answers its poll.
+    ok(env.send(&[found_ix(&owner, &owner, &d.pet, "sunbeam-club")], o, &[]));
+    let going = d.send(&mut env, rsvp_ix(&owner, &sponsor, &d.pet, &event), ix::RsvpByDevice::DISCRIMINATOR);
+    expect_pawket(&going, PawketError::NotInGuild);
+    let ballot = d.send(&mut env, vote_ix(&owner, &sponsor, &d.pet, &poll, 0), ix::VoteByDevice::DISCRIMINATOR);
+    expect_pawket(&ballot, PawketError::NotInGuild);
+
+    // In that guild, a pet with no RSVP of its own does not check in on another pet's.
+    let clover = env.adopt(o, "Clover");
+    ok(env.send(&[join_ix(&owner, &owner, &clover, &cloud)], o, &[]));
+    env.set_time(starts);
+    let mut borrowed = check_in_ix(&owner, &clover, &event);
+    borrowed.accounts[3].pubkey = rsvp_pda(&event, &mochi);
+    expect_anchor(&d.send(&mut env, borrowed, ix::CheckInByDevice::DISCRIMINATOR), ErrorCode::ConstraintSeeds);
+    assert!(!env.rsvp(&rsvp_pda(&event, &mochi)).came);
+    assert_eq!((env.event(&event).going, env.event(&event).came, env.poll(&poll).votes), (1, 0, [0; 4]));
+}
+
+#[test]
 fn every_kind_of_action_counts_toward_the_daily_limit() {
     let mut env = Env::new();
     let d = linked(&mut env, 2);
@@ -245,6 +305,11 @@ fn a_device_with_no_float_acts_only_while_someone_else_pays_its_fee() {
     ok(env.send(&[care], &d.sponsor, &[&d.device]));
 
     ok(env.send(&[deposit_ix(&d.owner.pubkey(), DEVICE_FLOAT_LAMPORTS)], &d.owner, &[]));
+    // A balance never tops a device that holds nothing up into a sliver below rent.
+    let balance = env.balance(&d.owner.pubkey());
+    let rest = care_by_device_ix(&d.device.pubkey(), &d.owner.pubkey(), &d.pet, CareActionType::Rest);
+    ok(env.send(&[rest], &d.sponsor, &[&d.device]));
+    assert_eq!((env.lamports(&d.device.pubkey()), env.balance(&d.owner.pubkey())), (0, balance));
     let week = env.now() + 7 * DAY;
     ok(env.send(&[link_ix(&d.owner.pubkey(), &d.device.pubkey(), week, 50)], &d.sponsor, &[&d.owner, &d.device]));
     assert_eq!(env.lamports(&d.device.pubkey()), DEVICE_FLOAT_LAMPORTS);

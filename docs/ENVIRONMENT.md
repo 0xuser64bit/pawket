@@ -31,7 +31,8 @@ prevents a client import of privileged modules.
 An unset key disables sponsorship. A linked device then pays eligible app
 fees from its Pawket Wallet float, so the wallet must hold SOL; rent-bearing
 actions wait for sponsorship.
-Mainnet sponsorship is disabled. The sponsor signs only approved Pawket roles,
+Mainnet sponsorship is disabled. The sponsor signs only approved Pawket roles
+and pays for keepsakes (`src/server/keepsake.ts`),
 never acts as program upgrade authority, and is not the treasury.
 
 Two optional server-only keys take over jobs the sponsor key otherwise does.

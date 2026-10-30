@@ -393,18 +393,40 @@ describe("createLimiter", () => {
     expect(allow("a", 1011)).toBe(true);
   });
 
+  it("counts a call against all of its keys or none of them", () => {
+    const allow = createLimiter(1, 1000);
+    expect(allow("spent", 0)).toBe(true);
+    expect(allow(["wallet", "spent"], 1)).toBe(false);
+    expect(allow(["spent", "wallet"], 2)).toBe(false);
+    expect(allow(["wallet", "fresh"], 3)).toBe(true);
+    expect(allow(["fresh"], 4)).toBe(false);
+    expect(allow(["twice", "twice"], 5)).toBe(true);
+  });
+
   it("forgets a hit exactly one window later, and never counts a refused one", () => {
     const allow = createLimiter(1, 1000);
     expect([allow("a", 5000), allow("a", 5999), allow("a", 6000), allow("a", 6999)]).toEqual([true, false, true, false]);
   });
 
-  it("keeps at most 10,000 callers in memory, starting over past that", () => {
+  it("remembers the 10,000 callers heard from most recently, a refused one included", () => {
     const allow = createLimiter(1, 1000);
-    expect([allow("first", 0), allow("first", 1)]).toEqual([true, false]);
-    for (let i = 0; i < 9_999; i++) allow(`caller-${i}`, 2);
-    expect(allow("first", 3)).toBe(false);
+    expect([allow("busy", 0), allow("quiet", 0), allow("busy", 1)]).toEqual([true, true, false]);
+    for (let i = 0; i < 9_998; i++) allow(`caller-${i}`, 2);
+    // 10,000 callers. Refused again, the busy one is now the latest heard from.
+    expect(allow("busy", 3)).toBe(false);
+    // One more forgets the caller heard from longest ago, and only that one.
     allow("one-more", 4);
-    allow("past-the-bound", 5);
-    expect(allow("first", 6)).toBe(true);
+    expect(allow("busy", 5)).toBe(false);
+    expect(allow("caller-1", 5)).toBe(false);
+    expect(allow("quiet", 6)).toBe(true);
+  });
+
+  it("never forgets a caller that keeps calling, however many others pass through", () => {
+    const allow = createLimiter(1, 1000);
+    allow("busy", 0);
+    for (let i = 0; i < 30_000; i++) {
+      allow(`caller-${i}`, 1);
+      if (i % 5_000 === 0) expect(allow("busy", 1)).toBe(false);
+    }
   });
 });

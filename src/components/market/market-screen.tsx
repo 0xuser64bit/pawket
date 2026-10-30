@@ -261,7 +261,7 @@ export function MarketScreen() {
           </div>
           <p className="body-sm pk-muted">
             Every sale goes from the buyer&apos;s Pawket Wallet straight to the treasury; only an upgrade of the program changes a
-            price. The treasury pays the network fees Pawket covers for everyone&apos;s pets.
+            price. The network fees Pawket covers come from a separate sponsor key, never from the treasury.
           </p>
         </Stack>
       </details>

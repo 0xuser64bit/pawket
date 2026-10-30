@@ -551,8 +551,37 @@ test("no page can be framed by another site, and responses carry the basic heade
   for (const path of ["/", "/home", "/api/health"]) {
     const headers = (await request.get(path)).headers();
     expect(headers["content-security-policy"], path).toContain("frame-ancestors 'none'");
+    expect(headers["content-security-policy"], path).toContain("frame-src 'self' solana-wallet:");
+    expect(headers["content-security-policy"], path).toContain("form-action 'self'");
     expect(headers["x-frame-options"], path).toBe("DENY");
     expect(headers["x-content-type-options"], path).toBe("nosniff");
     expect(headers["referrer-policy"], path).toBe("strict-origin-when-cross-origin");
   }
+});
+
+test("a page frames and posts forms only to Pawket itself", async ({ page }) => {
+  await page.goto("/home");
+  const framed = page.evaluate(
+    () =>
+      new Promise<string>((resolve) => {
+        document.addEventListener("securitypolicyviolation", (event) => resolve(event.effectiveDirective), { once: true });
+        const frame = document.createElement("iframe");
+        frame.src = "https://example.com/";
+        document.body.append(frame);
+      }),
+  );
+  expect(await framed).toBe("frame-src");
+  const posted = page.evaluate(
+    () =>
+      new Promise<string>((resolve) => {
+        document.addEventListener("securitypolicyviolation", (event) => resolve(event.effectiveDirective), { once: true });
+        const form = document.createElement("form");
+        form.method = "post";
+        form.action = "https://example.com/";
+        document.body.append(form);
+        form.submit();
+      }),
+  );
+  expect(await posted).toBe("form-action");
+  expect(await page.evaluate(() => location.href)).toMatch(/\/home$/);
 });

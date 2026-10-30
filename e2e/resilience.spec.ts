@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { dailySeed } from "../src/lib/play/best";
+import { dealPairs } from "../src/lib/play/pairs";
 
 test.use({ reducedMotion: "reduce" });
 
@@ -65,4 +67,31 @@ test("an unresolved receipt survives a reload and keeps its Explorer link", asyn
   await page.reload();
   await expect(page.getByText(/Recorded on Solana/)).toBeVisible();
   expect(await page.evaluate(() => sessionStorage.getItem("pawket.pending-sends"))).toBeNull();
+});
+
+test("a copy restores a finished round even when no care happened", async ({ page }) => {
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  await page.getByRole("button", { name: /take them home/i }).click();
+  const original = await page.evaluate(() => localStorage.getItem("pawket.pets.v1")!);
+  await page.goto("/playground");
+  await page.getByRole("button", { name: /^Play Pairs/ }).click();
+  const { cards } = dealPairs(dailySeed("pairs", new Date().toISOString().slice(0, 10)));
+  const board = page.getByRole("group", { name: /^Pairs\./ });
+  for (let face = 0; face < 6; face++) {
+    await board.getByRole("button").nth(cards.indexOf(face)).click();
+    await board.getByRole("button").nth(cards.lastIndexOf(face)).click();
+  }
+  await expect(page.getByText(/\+25 XP for playing today/)).toBeVisible();
+  const copy = await page.evaluate(() => localStorage.getItem("pawket.pets.v1")!);
+  await page.evaluate((original) => localStorage.setItem("pawket.pets.v1", original), original);
+  await page.goto("/profile");
+  await page.getByText("Bring pets back", { exact: true }).click();
+  await page.getByLabel("Paste a copy").fill(copy);
+  await page.getByRole("button", { name: "Bring them back" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Pepper came back with a newer record." })).toBeVisible();
+  const restored = await page.evaluate(() => JSON.parse(localStorage.getItem("pawket.pets.v1")!)[0]);
+  expect(restored).toMatchObject({ plays: 1, xp: 25, statsUpdatedAt: JSON.parse(original)[0].statsUpdatedAt });
 });

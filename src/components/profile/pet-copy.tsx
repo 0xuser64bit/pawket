@@ -89,7 +89,7 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
     }
     const parts = [
       result.added.length ? `${names(result.added)} ${result.added.length === 1 ? "is" : "are"} back in ${here}.` : "",
-      result.updated.length ? `${names(result.updated)} came back with later care.` : "",
+      result.updated.length ? `${names(result.updated)} came back with a newer record.` : "",
       result.same ? `${pets(result.same)} ${result.same === 1 ? "was" : "were"} here already, as new as the copy.` : "",
       read.unreadable ? `${pets(read.unreadable)} in the copy could not be read.` : "",
     ].filter(Boolean);

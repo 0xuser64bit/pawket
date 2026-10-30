@@ -133,8 +133,10 @@ function keepPending(list: Pending[]) {
 
 async function settleLater(pending: Pending, show: (next: Partial<TxState>) => void) {
   keepPending([...pendingSends().filter((each) => each.signature !== pending.signature), pending]);
+  let resolved = false;
   try {
     const settled = await settleSignature({ rpc }, pending.signature, pending.blockhash);
+    resolved = settled !== "unknown";
     if (settled === "confirmed") {
       show({ stage: "confirmed" });
       haptic("done");
@@ -144,11 +146,14 @@ async function settleLater(pending: Pending, show: (next: Partial<TxState>) => v
       }
     } else if (settled === "expired") {
       show({ stage: "failed", error: "It never reached Solana, so nothing changed. Try again." });
+    } else {
+      show({ stage: "unknown", error: "Solana still has not answered. Reload to check this receipt again, or look on Explorer before trying again." });
     }
   } catch (error) {
+    resolved = true;
     show({ stage: "failed", error: toUserFacingError(attributeRefusal(error, pending.programs)) });
   } finally {
-    keepPending(pendingSends().filter((each) => each.signature !== pending.signature));
+    if (resolved) keepPending(pendingSends().filter((each) => each.signature !== pending.signature));
   }
 }
 

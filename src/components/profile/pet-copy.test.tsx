@@ -45,3 +45,41 @@ it("says plainly when a paste is not a copy, and changes nothing", () => {
   expect(screen.getByRole("alert").textContent).toMatch(/not a copy Pawket made/);
   expect(loadPets()).toEqual([]);
 });
+
+it("keeps a newer paste when an earlier file finishes reading", async () => {
+  let finish!: (text: string) => void;
+  const file = Object.assign(new File(["old"], "old.json"), {
+    text: () => new Promise<string>((resolve) => { finish = resolve; }),
+  });
+  const view = render(<PetCopy companion={companion([])} />);
+  fireEvent.change(view.container.querySelector('input[type="file"]')!, { target: { files: [file] } });
+  const paste = screen.getByLabelText("Paste a copy");
+  fireEvent.change(paste, { target: { value: "newer paste" } });
+  await act(async () => finish("old file"));
+  expect(paste).toHaveValue("newer paste");
+});
+
+it("ignores an older file when a newer file finishes first", async () => {
+  let finish!: (text: string) => void;
+  const slow = Object.assign(new File(["old"], "slow.json"), {
+    text: () => new Promise<string>((resolve) => { finish = resolve; }),
+  });
+  const fast = Object.assign(new File(["new"], "new.json"), { text: async () => "newer file" });
+  const view = render(<PetCopy companion={companion([])} />);
+  const input = view.container.querySelector('input[type="file"]')!;
+  fireEvent.change(input, { target: { files: [slow] } });
+  await act(async () => fireEvent.change(input, { target: { files: [fast] } }));
+  await act(async () => finish("old file"));
+  expect(screen.getByLabelText("Paste a copy")).toHaveValue("newer file");
+});
+
+it("makes a failed file read recoverable and leaves the existing copy intact", async () => {
+  const file = Object.assign(new File(["broken"], "broken.json"), {
+    text: async () => { throw new Error("File no longer available"); },
+  });
+  const view = render(<PetCopy companion={companion([])} />);
+  fireEvent.change(screen.getByLabelText("Paste a copy"), { target: { value: "existing paste" } });
+  await act(async () => fireEvent.change(view.container.querySelector('input[type="file"]')!, { target: { files: [file] } }));
+  expect(screen.getByRole("alert")).toHaveTextContent(/could not read that file/i);
+  expect(screen.getByLabelText("Paste a copy")).toHaveValue("existing paste");
+});

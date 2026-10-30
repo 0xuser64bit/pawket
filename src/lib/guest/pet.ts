@@ -56,6 +56,7 @@ export const guestPetSchema = z.object({
   xp: countSchema(),
   createdAt: z.string(),
   statsUpdatedAt: z.string(),
+  modifiedAt: z.optional(z.string()),
   lastActionAt: z.record(z.enum(CareActionType), z.nullable(z.string())),
   careLog: z.array(careLogEntrySchema).check(z.maxLength(CARE_LOG_LIMIT)),
   streak: streakSchema,
@@ -161,6 +162,7 @@ export function createGuestPet(input: AdoptGuestInput): GuestPet {
     xp: 0,
     createdAt: now,
     statsUpdatedAt: now,
+    modifiedAt: now,
     lastActionAt: emptyLastAction(),
     careLog: [],
     streak: { count: 0, lastDay: null, best: 0 },
@@ -227,6 +229,7 @@ export function applyGuestCare(
       stats,
       xp: pet.xp + xpGained,
       statsUpdatedAt: stamped,
+      modifiedAt: stamped,
       lastActionAt: { ...pet.lastActionAt, [action]: stamped },
       careLog: [...pet.careLog, { action, at: stamped, xpGained }].slice(-CARE_LOG_LIMIT),
       streak: nextStreak(pet.streak, now),
@@ -248,10 +251,10 @@ export function cooldownsFor(
   return out;
 }
 
-export function setWearing(pet: GuestPet, wearableId: string | null): GuestPet {
+export function setWearing(pet: GuestPet, wearableId: string | null, now: Date = new Date()): GuestPet {
   if (wearableId !== null && !isWearableId(wearableId)) return pet;
   const wearing = pet.wearing === wearableId ? null : wearableId;
-  return { ...pet, wearing };
+  return { ...pet, wearing, modifiedAt: now.toISOString() };
 }
 
 export interface PlayRecord {
@@ -266,6 +269,7 @@ export function recordPlay(pet: GuestPet, now: Date = new Date()): PlayRecord {
     xpGained,
     pet: {
       ...pet,
+      modifiedAt: now.toISOString(),
       xp: pet.xp + xpGained,
       plays: pet.plays + 1,
       lastDailyPlayDay: day,

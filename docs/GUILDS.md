@@ -34,6 +34,12 @@ Events have program-checked times and RSVPs per pet. Check-in uses that RSVP
 within the allowed window. Polls accept one ballot per wallet with a pet in
 the guild; coin balance and number of pets never increase vote weight.
 
+An open guild page updates check-in availability at the early check-in window,
+moves events to the past at their end time and closes voting at the poll's
+closing time. It schedules the next boundary rather than ticking every second,
+and catches up when the page becomes visible or regains focus. These are local
+display updates; the program still checks times when a transaction is sent.
+
 A founder's powers follow the founding pet. The program reads that pet's
 member account for every event and poll, so they stop while it is out of the
 guild and return if it rejoins. Nobody succeeds to the role: such a guild keeps

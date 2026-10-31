@@ -4259,8 +4259,12 @@ a:not([class]) {
   color: var(--ink);
   box-shadow: var(--shadow-sticker-sm);
 }
+.pk-tool:disabled {
+  color: var(--ink-faint);
+  cursor: default;
+}
 @media (hover: hover) {
-  .pk-tool:not([aria-expanded="true"]):hover {
+  .pk-tool:not(:disabled, [aria-expanded="true"]):hover {
     background: var(--surface-sunk);
     color: var(--ink);
   }
@@ -7643,7 +7647,7 @@ html:not([data-transition="room"])::view-transition-old(pk-toasts) {
   box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 7%, transparent);
   border-radius: var(--radius-sm);
 }
-.pk-tool:active {
+.pk-tool:not(:disabled):active {
   background-color: color-mix(in srgb, currentColor 10%, transparent);
 }
 .pk-temper:active,
@@ -8311,5 +8315,4 @@ button.pk-tabs__t:not(.pk-tabs__t--on) { background: transparent; }
     height: 44px;
   }
 }
-
 

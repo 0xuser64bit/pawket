@@ -1,5 +1,7 @@
 import "server-only";
 
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { Fragment, isValidElement, type ReactElement, type ReactNode } from "react";
 import { ImageResponse } from "next/og";
 import { PawGlyph } from "@/components/pk/art";
@@ -59,21 +61,19 @@ function lookOf(onChain: PetOnChain): Look {
   return { form, temper, feeling, wearing };
 }
 
-let fonts: Promise<Array<{ name: string; data: ArrayBuffer; weight: 500 | 700 }>> | null = null;
+let fonts: Promise<Array<{ name: string; data: Buffer; weight: 500 | 700 }>> | null = null;
 
-/** The OG renderer reads no WOFF2, so the brand's faces are fetched as TTF. */
 function brandFonts() {
-  fonts ??= (async () => {
-    const css = await fetch(
-      "https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=Hanken+Grotesk:wght@500",
-    ).then((r) => r.text());
-    const urls = [...css.matchAll(/src: url\((.+?\.ttf)\)/g)].map((m) => m[1]);
-    const [display, text] = await Promise.all(urls.slice(0, 2).map((url) => fetch(url).then((r) => r.arrayBuffer())));
-    return [
+  fonts ??= Promise.all([
+    readFile(join(process.cwd(), "src/fonts/Fraunces-700.ttf")),
+    readFile(join(process.cwd(), "src/fonts/HankenGrotesk-500.ttf")),
+  ]).then(([display, text]) => [
       { name: "Fraunces", data: display, weight: 700 as const },
       { name: "Hanken Grotesk", data: text, weight: 500 as const },
-    ];
-  })().catch(() => []);
+    ]).catch(() => {
+      fonts = null;
+      return [];
+    });
   return fonts;
 }
 

@@ -126,9 +126,10 @@ function pendingSends(): Pending[] {
 }
 function keepPending(list: Pending[]) {
   try {
-    if (list.length) window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(list.slice(-5)));
+    if (list.length) window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(list));
     else window.sessionStorage.removeItem(PENDING_KEY);
-  } catch {}
+    return true;
+  } catch { return false; }
 }
 
 async function settleLater(pending: Pending, show: (next: Partial<TxState>) => void) {
@@ -207,7 +208,7 @@ export function usePawketSend() {
       kind: SendKind,
       signer: TransactionSigner | null | undefined,
       by: NonNullable<TxState["by"]>,
-      go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void, show: (next: Partial<TxState>) => void) => Promise<SendResult>,
+      go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void, onSigned: NonNullable<SendOptions["onSigned"]>) => Promise<SendResult>,
       done?: string,
     ) => {
       if (sending) return null;
@@ -227,13 +228,23 @@ export function usePawketSend() {
       }
       show({});
       try {
-        const result = await go(signer, (stage) => show({ stage }), show);
+        const result = await go(signer, (stage) => show({ stage }), (receipt) => {
+          const pending = { signature: receipt.signature, blockhash: receipt.blockhash, programs: receipt.programs, label, owner };
+          if (!keepPending([...pendingSends().filter((each) => each.signature !== pending.signature), pending])) {
+            throw new Error("This browser could not save the transaction receipt. Free some storage and try again. Nothing was sent.");
+          }
+          show({ signature: receipt.signature, sponsored: receipt.sponsored });
+        });
         show({ stage: result.outcome, signature: result.signature, sponsored: result.sponsored });
         record({ name: "send_outcome", kind, outcome: outcomeOf(result) });
-        if (result.outcome === "confirmed") haptic("done");
+        if (result.outcome === "confirmed") {
+          keepPending(pendingSends().filter((each) => each.signature !== result.signature));
+          haptic("done");
+        }
         else void settleLater({ signature: result.signature, blockhash: result.blockhash, label, owner, programs: result.programs }, show);
         return result;
       } catch (error) {
+        if (state.signature) keepPending(pendingSends().filter((each) => each.signature !== state.signature));
         record({ name: "send_outcome", kind, outcome: outcomeOf(null, error) });
         if (error instanceof PawketWalletNeeded) {
           show({ stage: "failed", error: error.message, needs: error.need });
@@ -263,7 +274,7 @@ export function usePawketSend() {
         kindOf(instructions),
         signer,
         by,
-        async (owner, onStage) => {
+        async (owner, onStage, onSigned) => {
           const built = instructions({ owner, payer: owner });
           const management = built.every((ix) => ix.programAddress === PAWKET_PROGRAM_ID && ["openWallet", "deposit", "withdraw", "linkDevice", "unlinkDevice", "closeWallet"].some((name) =>
             PAWKET_DISCRIMINATORS[name as keyof typeof PAWKET_DISCRIMINATORS].every((byte, i) => ix.data?.[i] === byte)));
@@ -280,6 +291,7 @@ export function usePawketSend() {
             instructions,
             feePayer: state?.device ?? undefined,
             onStage,
+            onSigned,
           });
         },
       ),
@@ -294,12 +306,13 @@ export function usePawketSend() {
 
   const sendFromServer = useCallback(
     (label: string, path: string, fields: Record<string, unknown> = {}, { sponsored = true } = {}): Promise<SendResult | null> =>
-      run(label, path.startsWith("/api/keepsake/") ? "keepsake" : "coin", connected?.signer, "wallet", async (owner, onStage) => {
+      run(label, path.startsWith("/api/keepsake/") ? "keepsake" : "coin", connected?.signer, "wallet", async (owner, onStage, onSigned) => {
         const state = await requirePawketWallet(owner.address, { spends: !sponsored });
         return sendPrepared({
           rpc,
           owner,
           onStage,
+          onSigned,
           sponsored,
           extraSigner: sponsored ? undefined : state.device!,
           prepare: async () => {
@@ -333,7 +346,7 @@ export function usePawketSend() {
 
   const act = useCallback(
     (label: string, instructions: SendOptions["instructions"], done?: string): Promise<SendResult | null> =>
-      run(label, kindOf(instructions), connected?.signer, "device", async (walletSigner, onStage) => {
+      run(label, kindOf(instructions), connected?.signer, "device", async (walletSigner, onStage, onSigned) => {
         const state = await readPawketWallet(walletSigner.address);
         if (state.error) throw new Error("Pawket could not read your Pawket Wallet. Try again once you are online. Nothing was sent.");
         const fallback = deviceFallback(state);
@@ -351,7 +364,7 @@ export function usePawketSend() {
             ? "Pawket cannot cover this action's account rent right now. Try again when sponsorship returns. Nothing was sent."
             : "Your Pawket Wallet needs SOL for this app's network fees while sponsorship is unavailable. Add SOL and relink this app in your Pawket Wallet. Nothing was sent.");
         }
-        return sendPawket({ rpc, owner: device, sponsor: sponsorAddress, instructions: ({ payer }) => twins(payer), onStage });
+        return sendPawket({ rpc, owner: device, sponsor: sponsorAddress, instructions: ({ payer }) => twins(payer), onStage, onSigned });
       }, done),
     [connected, run],
   );

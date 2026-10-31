@@ -44,9 +44,9 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
           ),
       };
     case "sending":
-      return { id, tone: "wait", title, body: "On its way to Solana." };
+      return { id, tone: "wait", title, body: <>On its way to Solana.{look}</> };
     case "confirming":
-      return { id, tone: "wait", title, body: "Waiting for Solana to confirm it." };
+      return { id, tone: "wait", title, body: <>Waiting for Solana to confirm it.{look}</> };
     case "confirmed": {
       const paid = tx.by === "device" ? "no pop-up" : tx.sponsored ? "Pawket paid the fee" : "you paid the fee";
       return {

@@ -16,7 +16,8 @@ type Props = { params: Promise<{ pet: string }> };
 
 export async function GET(request: Request, { params }: Props) {
   const { pet } = await params;
-  const onChain = isAddress(pet) ? await readPet(pet).catch(() => null) : null;
+  const onChain = isAddress(pet) ? await readPet(pet).catch(() => undefined) : null;
+  if (onChain === undefined) return actionError("Solana did not answer. Try again in a moment.", 503);
   if (!onChain) return actionError("No pet lives at that address.", 404);
   const record = toCompanionRecord(onChain);
   const now = new Date();
@@ -48,7 +49,8 @@ export async function POST(request: Request, { params }: Props) {
   if (!action || !Object.values(CareActionType).includes(action)) return actionError("Choose feed, play, brush or rest.");
   const account = await postedAccount(request);
   if (!account || !isAddress(account)) return actionError("That is not a wallet address. Nothing was sent.");
-  const onChain = isAddress(pet) ? await readPet(pet).catch(() => null) : null;
+  const onChain = isAddress(pet) ? await readPet(pet).catch(() => undefined) : null;
+  if (onChain === undefined) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   if (!onChain) return actionError("No pet lives at that address.", 404);
   const { pet: chainPet, passport } = onChain;
   if (chainPet.owner !== account) {

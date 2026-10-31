@@ -47,7 +47,9 @@ export async function POST(request: Request) {
   }
   const owner = account as Address;
   const pet = (await derivePetPda(owner, name)).address;
-  if (await fetchPetOnChain(sponsorRpc(), pet).catch(() => null)) {
+  const existing = await fetchPetOnChain(sponsorRpc(), pet).catch(() => undefined);
+  if (existing === undefined) return actionError("Solana did not answer. Nothing was made — try again.", 503);
+  if (existing) {
     return actionError(`This wallet already keeps a pet named ${name}. Pick another name.`, 409);
   }
   if (!mayPayRent([account, who])) {

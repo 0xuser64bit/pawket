@@ -13,12 +13,13 @@ export const OPTIONS = preflight;
 type Props = { params: Promise<{ slug: string }> };
 
 async function guildAt(slug: string) {
-  return isValidSlug(slug) ? await readGuild(slug).catch(() => null) : null;
+  return isValidSlug(slug) ? await readGuild(slug).catch(() => undefined) : null;
 }
 
 export async function GET(request: Request, { params }: Props) {
   const { slug } = await params;
   const guild = await guildAt(slug);
+  if (guild === undefined) return actionError("Solana did not answer. Try again in a moment.", 503);
   if (!guild || !isListed(guild)) return actionError("No guild has that name.", 404);
   return actionJson({
     type: "action",
@@ -39,6 +40,7 @@ export async function POST(request: Request, { params }: Props) {
   const key = caller(request);
   if (!actionLimit(key)) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
   const guild = await guildAt(slug);
+  if (guild === undefined) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   if (!guild || !isListed(guild)) return actionError("No guild has that name.", 404);
 
   const pets = await readOwnedPets(account).catch(() => null);

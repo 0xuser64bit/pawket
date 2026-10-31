@@ -8,17 +8,20 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const env = getPublicEnv();
   const started = Date.now();
-  const rpc = await sponsorRpc()
-    .getSlot({ commitment: "confirmed" })
-    .send({ abortSignal: AbortSignal.timeout(5_000) })
-    .then(
-      () => ({ ok: true, ms: Date.now() - started }),
-      () => ({ ok: false, ms: Date.now() - started }),
-    );
-  const sponsor = await sponsorState().then(
-    (state) => (state.available ? { available: true } : { available: false, reason: state.reason }),
-    () => ({ available: false, reason: "The sponsor cannot reach the network." }),
-  );
+  const abortSignal = AbortSignal.timeout(5_000);
+  const [rpc, sponsor] = await Promise.all([
+    sponsorRpc()
+      .getSlot({ commitment: "confirmed" })
+      .send({ abortSignal })
+      .then(
+        () => ({ ok: true, ms: Date.now() - started }),
+        () => ({ ok: false, ms: Date.now() - started }),
+      ),
+    sponsorState({ abortSignal }).then(
+      (state) => (state.available ? { available: true } : { available: false, reason: state.reason }),
+      () => ({ available: false, reason: "The sponsor cannot reach the network." }),
+    ),
+  ]);
   return NextResponse.json(
     {
       status: rpc.ok ? "ok" : "degraded",

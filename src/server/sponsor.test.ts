@@ -5,10 +5,10 @@ import { CareActionType } from "@/lib/game/enums";
 import { getCareInstruction } from "@/lib/solana/instructions";
 import { caller, postedAccount } from "./actions";
 
-const chain = vi.hoisted(() => ({ balance: 0n, reads: 0, asked: [] as unknown[][] }));
+const chain = vi.hoisted(() => ({ balance: 0n, reads: 0, asked: [] as unknown[][], signals: [] as (AbortSignal | undefined)[] }));
 vi.mock("@/lib/solana/rpc", () => ({
   createPatientRpc: () => ({
-    getBalance: (...args: unknown[]) => ({ send: async () => (chain.reads++, chain.asked.push(["getBalance", ...args]), { value: chain.balance }) }),
+    getBalance: (...args: unknown[]) => ({ send: async (options?: { abortSignal?: AbortSignal }) => (chain.reads++, chain.signals.push(options?.abortSignal), chain.asked.push(["getBalance", ...args]), { value: chain.balance }) }),
     getLatestBlockhash: (...args: unknown[]) => ({ send: async () => (chain.asked.push(["getLatestBlockhash", ...args]), { value: { blockhash: "11111111111111111111111111111111", lastValidBlockHeight: 1n } }) }),
   }),
 }));
@@ -34,9 +34,21 @@ afterEach(() => {
   vi.restoreAllMocks();
   chain.reads = 0;
   chain.asked = [];
+  chain.signals = [];
 });
 
 describe("sponsorState", () => {
+  it("bounds float reads by default and propagates a caller's cancellation", async () => {
+    vi.stubEnv("SPONSOR_KEYPAIR", JSON.stringify(Array.from(await keypair())));
+    const { sponsorState, sponsorSpent } = await sponsor();
+    await sponsorState();
+    expect(chain.signals[0]).toBeInstanceOf(AbortSignal);
+    sponsorSpent();
+    const controller = new AbortController();
+    await sponsorState({ abortSignal: controller.signal });
+    expect(chain.signals[1]).toBe(controller.signal);
+  });
+
   it("pays nothing on mainnet, whatever key it holds, and nothing without a key", async () => {
     vi.stubEnv("SPONSOR_KEYPAIR", JSON.stringify(Array.from(await keypair())));
     vi.stubEnv("NEXT_PUBLIC_SOLANA_CLUSTER", "mainnet-beta");

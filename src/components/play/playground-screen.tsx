@@ -10,6 +10,7 @@ import {
   EmptyState,
   PawGlyph,
   PetArt,
+  Problem,
   Row,
   Screen,
   ScreenBar,
@@ -52,6 +53,7 @@ type Outcome = {
   best: boolean;
   daily: boolean;
   dailyBest: boolean;
+  scoresSaved: boolean;
   xpGained: number;
   saved: boolean;
   onChain: boolean;
@@ -106,7 +108,10 @@ export function PlaygroundScreen() {
       if (!game || !pet) return;
       const isBest = keepBest(game, score);
       const dailyBest = daily ? keepDaily(game, day, score) : false;
-      const base = { game, score, best: isBest, daily, dailyBest };
+      const base = {
+        game, score, best: isBest === true, daily, dailyBest: dailyBest === true,
+        scoresSaved: isBest !== null && dailyBest !== null,
+      };
       if (chain) {
         setOutcome({ ...base, xpGained: recordPlay(pet, new Date()).xpGained, saved: false, onChain: true });
         return;
@@ -417,6 +422,7 @@ function Result({
           <p className="body-sm pk-muted" style={{ marginTop: "var(--space-2)" }}>
             {line} {bestScore != null && !outcome.best ? `Your best here is ${bestScore}.` : ""}
           </p>
+          {!outcome.scoresSaved ? <Problem small>{Here} could not store all of your best scores.</Problem> : null}
         </div>
         <div className="pk-result__acts">
           {outcome.onChain && !recorded ? (

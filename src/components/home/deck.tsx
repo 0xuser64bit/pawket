@@ -183,12 +183,11 @@ export function Deck({
             </button>
           );
         })}
-        {onSnap ? (
-          <button type="button" className="pk-tool" onClick={onSnap}>
-            <Icon name="camera" size={18} />
-            <span>Photo</span>
-          </button>
-        ) : null}
+        <button type="button" className="pk-tool" onClick={onSnap} disabled={!onSnap}
+          title={onSnap ? undefined : "Photos need the 3D room. Choose 3D and wait for it to finish drawing."}>
+          <Icon name="camera" size={18} />
+          <span>Photo</span>
+        </button>
         <Link href="/profile#look" className="pk-tool">
           <Icon name="person" size={18} />
           <span>Look</span>

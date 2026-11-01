@@ -50,8 +50,9 @@ export default async function ParkPage({ searchParams }: { searchParams: Promise
   let pets: PetOnChain[];
   let guilds = new Map<string, ChainGuild>();
   try {
-    pets = await readAllPets();
-    guilds = new Map((await readGuilds().catch(() => [])).filter(isListed).map((guild) => [guild.address, guild]));
+    const [foundPets, foundGuilds] = await Promise.all([readAllPets(), readGuilds().catch(() => [])]);
+    pets = foundPets;
+    guilds = new Map(foundGuilds.filter(isListed).map((guild) => [guild.address, guild]));
   } catch {
     return (
       <Screen>

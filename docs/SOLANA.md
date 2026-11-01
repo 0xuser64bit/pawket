@@ -67,10 +67,13 @@ and a fresh read, not a cached discovery total.
 
 ## The Pawket Wallet
 
-Unresolved sends retain their signature in this tab's session storage. If the
+Signed sends retain their signature, blockhash and instruction programs in this
+tab's session storage before broadcast. If the receipt cannot be stored, nothing
+is sent. Sending and confirming toasts already expose the Explorer link. If the
 bounded confirmation check still cannot determine an outcome, the toast says so
 and keeps its Explorer link; reloading checks the same receipt again, never
-resubmits it. Only a definitive outcome clears that pending receipt.
+resubmits it. Only a definitive outcome clears that pending receipt; newer sends
+never evict unresolved receipts.
 
 App actions require a linked Pawket Wallet. While Pawket sponsors, it may be
 empty; Market looks, coins and the device's unsponsored fees spend its
@@ -87,7 +90,8 @@ its recorded payer.
 
 A device key is generated as non-extractable WebCrypto Ed25519 and committed
 to IndexedDB before linking. The owner approves its expiry and daily limit;
-the device co-signs. Unsupported browsers receive update guidance. Loss of
+the device co-signs. Concurrent first links atomically reuse the same stored key
+instead of replacing each other's identity. Unsupported browsers receive update guidance. Loss of
 local storage requires a new owner-approved link; local deletion does not
 revoke an existing chain link.
 

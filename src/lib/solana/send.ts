@@ -52,6 +52,7 @@ export interface SendOptions {
   feePayer?: TransactionSigner;
   instructions: (signers: { owner: TransactionSigner; payer: TransactionSigner }) => Instruction[];
   onStage?: (stage: TransactionStage) => void;
+  onSigned?: (receipt: Omit<SendResult, "outcome">) => void;
   cosign?: (wireBase64: string) => Promise<string>;
 }
 
@@ -128,6 +129,7 @@ export async function sendPawket({
   feePayer,
   instructions,
   onStage,
+  onSigned,
   cosign = askSponsor,
 }: SendOptions): Promise<SendResult> {
   onStage?.("preparing");
@@ -169,7 +171,7 @@ export async function sendPawket({
     signed = await signingDeadline(() => partiallySignTransactionMessageWithSigners(message));
   }
 
-  return land(rpc, signed, onStage, sponsor !== null);
+  return land(rpc, signed, onStage, sponsor !== null, onSigned);
 }
 
 export async function sendPrepared({
@@ -177,9 +179,10 @@ export async function sendPrepared({
   owner,
   prepare,
   onStage,
+  onSigned,
   sponsored = true,
   extraSigner,
-}: Pick<SendOptions, "rpc" | "owner" | "onStage"> & {
+}: Pick<SendOptions, "rpc" | "owner" | "onStage" | "onSigned"> & {
   prepare: () => Promise<string>;
   sponsored?: boolean;
   extraSigner?: TransactionSigner;
@@ -214,7 +217,7 @@ export async function sendPrepared({
   if (signedBefore && !same(signed.messageBytes, prepared.messageBytes)) {
     throw new Error("Your wallet changed the transaction, so Pawket's signature no longer fits it. Nothing was sent.");
   }
-  return land(rpc, signed, onStage, sponsored);
+  return land(rpc, signed, onStage, sponsored, onSigned);
 }
 
 async function land(
@@ -222,8 +225,8 @@ async function land(
   signed: Transaction,
   onStage: SendOptions["onStage"],
   sponsored: boolean,
+  onSigned: SendOptions["onSigned"],
 ): Promise<SendResult> {
-  onStage?.("sending");
   const wire = getBase64EncodedWireTransaction(signed);
   const signature = getSignatureFromTransaction(signed);
   const message = getCompiledTransactionMessageDecoder().decode(signed.messageBytes);
@@ -232,6 +235,8 @@ async function land(
     ? message.instructionHeaders.map((ix) => ix.programAccountIndex)
     : message.instructions.map((ix) => ix.programAddressIndex)
   ).map((index) => message.staticAccounts[index]);
+  onSigned?.({ signature, blockhash, programs, sponsored });
+  onStage?.("sending");
   try {
     await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" })
       .send({ abortSignal: AbortSignal.timeout(CONFIRMATION_TIMEOUT_MS) });

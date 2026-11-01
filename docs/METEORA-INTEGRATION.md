@@ -18,6 +18,8 @@ one stage at a time (`LaunchStage`) and offers only what that stage allows.
 Guild discovery and Pulse read curve and graduated-pool accounts in batches
 of at most 100, preserving account order when resolving each guild's stage.
 Missing or wrong-program graduated pools remain pending, not tradable.
+Holder analytics are read only for display and crest eligibility; quotes,
+transaction preparation and position fees never wait for that optional scan.
 
 ## Routing and approval rules
 

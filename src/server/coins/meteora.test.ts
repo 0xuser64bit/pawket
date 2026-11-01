@@ -8,6 +8,7 @@ import { presetConfig } from "@/lib/coins/presets";
 import { derivedSeed } from "@/server/derive";
 
 const sponsor = Keypair.generate();
+const quotes = vi.hoisted(() => ({ swap: vi.fn() }));
 vi.mock("@/config/server-env", async (actual) => ({
   ...(await actual<typeof import("@/config/server-env")>()),
   getServerEnv: () => ({ sponsorKeypair: JSON.stringify([...sponsor.secretKey]) }),
@@ -29,7 +30,9 @@ const curve = () => ({
 });
 vi.mock("@meteora-ag/dynamic-bonding-curve-sdk", async (actual) => ({
   ...(await actual<typeof import("@meteora-ag/dynamic-bonding-curve-sdk")>()),
+  getCurrentPoint: async () => new BN(1),
   DynamicBondingCurveClient: class {
+    pool = { swapQuote2: quotes.swap };
     state = {
       getPool: async () => curve(),
       getPoolConfig: async () => ({ migrationQuoteThreshold: new BN(1_000_000), migrationFeeOption: 0 }),
@@ -49,8 +52,55 @@ describe("a guild's coin", () => {
   const dust = { owner: SystemProgram.programId, data: Buffer.alloc(0) } as unknown as AccountInfo<Buffer>;
   beforeEach(() => {
     migrated = 0;
+    quotes.swap.mockReset().mockReturnValue({
+      includedFeeInputAmount: new BN(100),
+      outputAmount: new BN(90),
+      minimumAmountOut: new BN(89),
+      tradingFee: new BN(1),
+      protocolFee: new BN(0),
+      referralFee: new BN(0),
+      nextSqrtPrice: new BN(2).pow(new BN(64)),
+    });
     vi.spyOn(Connection.prototype, "getMultipleAccountsInfo").mockResolvedValue([pool, null]);
     vi.spyOn(Connection.prototype, "getProgramAccounts").mockResolvedValue([]);
+  });
+
+  it("quotes from verified pool state without scanning optional holder analytics", async () => {
+    creator = founder;
+    const holders = vi.spyOn(Connection.prototype, "getProgramAccounts").mockImplementation(() => new Promise(() => {}));
+    const { quoteTrade } = await import("./meteora");
+    expect(await quoteTrade({ ...guild, slug: "quoted-without-holders" }, "buy", 100n, 100)).toMatchObject({
+      route: "curve", amountIn: "100", amountUsed: "100", amountOut: "90", minimumOut: "89", fee: "1",
+    });
+    expect(holders).not.toHaveBeenCalled();
+    expect(quotes.swap).toHaveBeenCalledOnce();
+  });
+
+  it("never waits for holder analytics to determine claim, graduation or position availability", async () => {
+    creator = founder;
+    const holders = vi.spyOn(Connection.prototype, "getProgramAccounts").mockResolvedValue([]);
+    const candidate = { ...guild, slug: "actions-without-holders" };
+    const { claimTransaction, graduateTransaction, readPositionFees } = await import("./meteora");
+    await expect(claimTransaction(candidate, founder.toBase58())).rejects.toThrow("There is nothing to claim yet.");
+    await expect(graduateTransaction(candidate, founder.toBase58())).rejects.toThrow("The curve has not raised its threshold yet.");
+    expect(await readPositionFees(candidate, founder.toBase58())).toBeNull();
+    expect(holders).not.toHaveBeenCalled();
+  });
+
+  it("still reads and caches holder analytics for the coin's display", async () => {
+    creator = founder;
+    const owner = Keypair.generate().publicKey;
+    const data = Buffer.alloc(40);
+    owner.toBuffer().copy(data);
+    data.writeBigUInt64LE(123n, 32);
+    const holders = vi.spyOn(Connection.prototype, "getProgramAccounts").mockResolvedValue([
+      { pubkey: Keypair.generate().publicKey, account: { ...pool, data } },
+    ]);
+    const { readCoin } = await import("./meteora");
+    const candidate = { ...guild, slug: "display-with-holders" };
+    expect((await readCoin(candidate))?.holders).toEqual({ count: 1, topTenPercent: 100 });
+    expect((await readCoin(candidate))?.holders).toEqual({ count: 1, topTenPercent: 100 });
+    expect(holders).toHaveBeenCalledOnce();
   });
 
   it.each([100, 101, 201])("reads %i migrated coins in bounded batches without losing pool order", async (count) => {

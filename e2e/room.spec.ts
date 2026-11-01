@@ -11,6 +11,38 @@ async function adopt(page: Page, name = "Pepper") {
 
 const liveRoom = (page: Page) => page.getByRole("group", { name: /arrow keys turn the room/i });
 
+for (const width of [320, 1024, 1280]) {
+  test(`care controls stay in place while the 3D room loads at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    let release!: () => void;
+    const assetsReady = new Promise<void>((resolve) => { release = resolve; });
+    await page.route("**/3d/**", async (route) => {
+      await assetsReady;
+      await route.continue();
+    });
+    const requested = page.waitForRequest((request) => request.url().includes("/3d/"));
+    try {
+      await adopt(page);
+      await requested;
+      await expect(page.getByRole("status").filter({ hasText: "Building the room in 3D" })).toBeVisible();
+      await expect(page.locator(".pk-boot")).toHaveCount(0);
+      const play = page.getByRole("button", { name: "Play", exact: true });
+      const before = (await play.boundingBox())!;
+      release();
+      await expect(liveRoom(page)).toBeVisible({ timeout: 45_000 });
+      await expect(page.getByRole("button", { name: "Photo", exact: true })).toBeEnabled();
+      const after = (await play.boundingBox())!;
+      expect(after.x).toBeCloseTo(before.x, 1);
+      expect(after.y).toBeCloseTo(before.y, 1);
+      expect(after.width).toBeCloseTo(before.width, 1);
+      expect(after.height).toBeCloseTo(before.height, 1);
+    } finally {
+      release();
+    }
+  });
+}
+
 test("the room comes up in 3D and an emote plays in it", async ({ page }) => {
   await adopt(page);
   await expect(page.locator(".pk-room__flat")).toBeHidden();

@@ -18,8 +18,7 @@ function readJson(key: string): Record<string, unknown> {
 const score = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : undefined;
 
-export function readBest(): Partial<Record<GameId, number>> {
-  const stored = readJson(KEY);
+function scoresFrom(stored: Record<string, unknown>): Partial<Record<GameId, number>> {
   const out: Partial<Record<GameId, number>> = {};
   for (const id of GAME_IDS) {
     const value = score(stored[id]);
@@ -28,12 +27,18 @@ export function readBest(): Partial<Record<GameId, number>> {
   return out;
 }
 
-export function keepBest(game: GameId, value: number): boolean {
+export function readBest(): Partial<Record<GameId, number>> {
+  return scoresFrom(readJson(KEY));
+}
+
+export function keepBest(game: GameId, value: number): boolean | null {
   const best = readBest();
   if (value <= (best[game] ?? 0)) return false;
   try {
     window.localStorage.setItem(KEY, JSON.stringify({ ...best, [game]: value }));
-  } catch {}
+  } catch {
+    return null;
+  }
   return true;
 }
 
@@ -44,19 +49,18 @@ export function dailySeed(game: GameId, day: string): number {
 export function readDaily(day: string): Partial<Record<GameId, number>> {
   const stored = readJson(DAILY_KEY);
   if (stored.day !== day) return {};
-  const out: Partial<Record<GameId, number>> = {};
-  for (const id of GAME_IDS) {
-    const value = score(stored[id]);
-    if (value !== undefined) out[id] = value;
-  }
-  return out;
+  return scoresFrom(stored);
 }
 
-export function keepDaily(game: GameId, day: string, value: number): boolean {
-  const today = readDaily(day);
+export function keepDaily(game: GameId, day: string, value: number): boolean | null {
+  const stored = readJson(DAILY_KEY);
+  if (typeof stored.day === "string" && Date.parse(stored.day) > Date.parse(day)) return false;
+  const today = stored.day === day ? scoresFrom(stored) : {};
   if (value <= (today[game] ?? -1)) return false;
   try {
     window.localStorage.setItem(DAILY_KEY, JSON.stringify({ ...today, day, [game]: value }));
-  } catch {}
+  } catch {
+    return null;
+  }
   return true;
 }

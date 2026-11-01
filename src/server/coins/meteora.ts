@@ -209,13 +209,14 @@ async function liveCoin(guild: ChainGuild): Promise<LiveCoin | null> {
         pawketUnclaimed: big(curveState.partnerQuoteFee).toString(),
         total: big(curveState.metrics.totalTradingQuoteFee).toString(),
       },
-      holders: await readHolders(mint.publicKey),
     },
   };
 }
 
 export async function readCoin(guild: ChainGuild): Promise<CoinState | null> {
-  return (await liveCoin(guild))?.state ?? null;
+  const coin = await liveCoin(guild);
+  if (!coin) return null;
+  return { ...coin.state, holders: coin.curve ? await readHolders(coin.mint.publicKey) : null };
 }
 
 export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, CoinStage>> {

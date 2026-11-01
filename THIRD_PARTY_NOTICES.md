@@ -11,8 +11,9 @@ licenses; the MIT license does not replace them.
 | Hanken Grotesk | [Hanken Grotesk project](https://github.com/marcologous/hanken-grotesk) | [SIL Open Font License 1.1](src/fonts/HankenGrotesk.LICENSE.txt) |
 | DM Mono | [DM Mono project](https://github.com/googlefonts/dm-mono) | [SIL Open Font License 1.1](src/fonts/DMMono.LICENSE.txt) |
 
-Fonts are bundled locally in `src/fonts/`; preserve their copyright and
-license notices when redistributing the source or font files. Fraunces is an
+Fonts are bundled locally in `src/fonts/`, including static TrueType faces
+from Google Fonts for server-rendered share cards; preserve their copyright
+and license notices when redistributing the source or font files. The web Fraunces face is an
 instance of the upstream variable font, cut with fontTools'
 `varLib.instancer`: weight fixed at 600 and Wonky at 1, Softness limited to
 64–100, optical size kept. Fraunces declares no Reserved Font Name, so the

@@ -44,7 +44,7 @@ export function saveLook(look: PlayerLook): boolean {
 export function subscribeLook(listener: () => void): () => void {
   listeners.add(listener);
   const onStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEY) {
+    if (event.key === STORAGE_KEY || event.key === null) {
       cache = null;
       listener();
     }

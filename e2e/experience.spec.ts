@@ -1,5 +1,19 @@
 import { expect, test } from "@playwright/test";
 
+test("clearing storage in another tab resets the live look without a reload", async ({ page, context }) => {
+  await page.goto("/profile");
+  await page.getByText("How you look", { exact: true }).click();
+  await page.getByRole("tab", { name: "Shoes", exact: true }).click();
+  await page.getByRole("radio", { name: "Boots", exact: true }).click();
+  await expect(page.getByRole("radio", { name: "Boots", exact: true })).toHaveAttribute("aria-checked", "true");
+  const other = await context.newPage();
+  await other.goto("/privacy");
+  await other.evaluate(() => localStorage.clear());
+  await expect(page.getByRole("radio", { name: "Sneakers", exact: true })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByRole("radio", { name: "Boots", exact: true })).toHaveAttribute("aria-checked", "false");
+  expect(await page.evaluate(() => localStorage.getItem("pawket.player-look.v1"))).toBeNull();
+});
+
 test("profile tabs switch locally, preserve history and support the keyboard", async ({ page }) => {
   await page.goto("/profile#shelf");
   await expect(page.getByRole("tab", { name: "Pets", exact: true })).toHaveAttribute("aria-selected", "true");
@@ -46,8 +60,9 @@ test("offline, a place waits inside Pawket and opens by itself once the connecti
   await expect(page.getByText("You are offline")).toBeVisible();
   expect(page.url()).toMatch(/^http:\/\/localhost:\d+\//);
   await context.setOffline(false);
-  await expect(page.getByRole("heading", { name: "Park", level: 1 })).toBeVisible();
   await expect(page.getByText("Back online")).toBeVisible();
+  await expect(page).toHaveURL(/\/park$/);
+  await expect(page.getByRole("heading", { name: "Park", level: 1 })).toBeVisible();
 });
 
 test("a guild's whole card is its link, not only its name", async ({ page }) => {

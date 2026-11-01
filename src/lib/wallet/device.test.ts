@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { forgetDevice } from "./device";
+import { IDBFactory } from "fake-indexeddb";
+import { forgetDevice, loadDevice, makeDevice } from "./device";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -13,6 +14,28 @@ function storage() {
 }
 
 describe("device storage commits", () => {
+  it("keeps one non-extractable identity when first links race across tabs", async () => {
+    vi.stubGlobal("indexedDB", new IDBFactory());
+    expect(await Promise.all([loadDevice("owner"), loadDevice("owner")])).toEqual([null, null]);
+    const [first, second] = await Promise.all([makeDevice("owner"), makeDevice("owner")]);
+    const saved = await loadDevice("owner");
+    expect(first.address).toBe(second.address);
+    expect(saved?.address).toBe(first.address);
+    expect(saved?.keyPair.privateKey.extractable).toBe(false);
+    expect((await makeDevice("owner")).address).toBe(first.address);
+  });
+
+  it("isolates owners and allows a fresh identity only after explicit deletion", async () => {
+    vi.stubGlobal("indexedDB", new IDBFactory());
+    const first = await makeDevice("owner");
+    const other = await makeDevice("other");
+    expect(other.address).not.toBe(first.address);
+    await forgetDevice("owner");
+    expect(await loadDevice("owner")).toBeNull();
+    expect((await loadDevice("other"))?.address).toBe(other.address);
+    expect((await makeDevice("owner")).address).not.toBe(first.address);
+  });
+
   it("does not report success before the transaction has committed", async () => {
     const { transaction, close } = storage();
     let done = false;

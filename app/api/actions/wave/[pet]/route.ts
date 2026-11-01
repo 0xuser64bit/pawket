@@ -16,7 +16,8 @@ export async function POST(request: Request, { params }: Props) {
   if (!account || !isAddress(account)) return actionError("That is not a wallet address. Nothing was sent.");
   const who = caller(request);
   if (!actionLimit(who)) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
-  const onChain = isAddress(pet) ? await readPet(pet).catch(() => null) : null;
+  const onChain = isAddress(pet) ? await readPet(pet).catch(() => undefined) : null;
+  if (onChain === undefined) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   if (!onChain) return actionError("No pet lives at that address.", 404);
   const { name, owner, address } = onChain.pet;
   if (owner === account) return actionError(`${name} is yours: the guestbook is for everyone else. Nothing was sent.`, 409);

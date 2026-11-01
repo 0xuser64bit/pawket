@@ -4,6 +4,16 @@ import { txToast } from "./tx-toast";
 
 vi.mock("@/lib/native/android", () => ({ inAndroidApp: () => false }));
 
+it.each(["sending", "confirming"] as const)("shows the receipt while %s", (stage) => {
+  render(<>{txToast("pending", { stage, signature: "5ig" }, "devnet")!.body}</>);
+  expect(screen.getByRole("link", { name: "See it on Explorer" }).getAttribute("href")).toContain("5ig");
+});
+
+it("does not invent a fee payer for a legacy recovered receipt", () => {
+  render(<>{txToast("legacy", { stage: "confirmed", signature: "5ig" }, "devnet")!.body}</>);
+  expect(document.body.textContent).toBe("Recorded on Solana. See it on Explorer");
+});
+
 it("says what a send did with its record, and keeps the way to the Explorer", () => {
   const toast = txToast("send-1", { stage: "confirmed", label: "Feed Mango", by: "device", signature: "5ig", done: "Fed. New sticker: First meal." }, "devnet")!;
   expect(toast).toMatchObject({ id: "send-1", tone: "done", title: "Feed Mango" });

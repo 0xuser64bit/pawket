@@ -378,6 +378,20 @@ describe("a send that lands", () => {
     return { rpc, asked, sent };
   }
 
+  it.each(["direct", "sponsored", "prepared"])("publishes a %s receipt before broadcasting", async (path) => {
+    const owner = await generateKeyPairSigner();
+    const { rpc, sent } = landing();
+    const onSigned = vi.fn(() => { expect(sent).toHaveLength(0); });
+    const options = { rpc, owner, onSigned, instructions: () => [], sponsor: path === "sponsored" ? owner.address : null, cosign: async (wire: string) => wire };
+    const result = path === "prepared" ? await sendPrepared({ ...options, prepare: async () => getBase64EncodedWireTransaction(compileTransaction(pipe(
+      createTransactionMessage({ version: "legacy" }),
+      (message) => setTransactionMessageFeePayerSigner(owner, message),
+      (message) => setTransactionMessageLifetimeUsingBlockhash({ ...lifetime, blockhash: blockhash(lifetime.blockhash) }, message),
+    ))) }) : await sendPawket(options);
+    expect(onSigned).toHaveBeenCalledExactlyOnceWith({ signature: result.signature, blockhash: lifetime.blockhash, programs: [], sponsored: path !== "direct" });
+    expect(sent).toHaveLength(1);
+  });
+
   it("sends what the sponsor and the wallet both signed, with every stage shown, and says it was sponsored", async () => {
     const [key, sponsor, mint] = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner()]);
     const owner = { ...key, signTransactions: vi.fn(key.signTransactions) };

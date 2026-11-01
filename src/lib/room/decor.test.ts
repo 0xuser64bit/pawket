@@ -65,6 +65,17 @@ describe("what the room shows", () => {
     });
     expect(result.current.wall).toBeNull();
   });
+
+  it.each([null, "pawket.room-decor.v1"])("resets a mounted room after another tab clears storage with key %s", (key) => {
+    placeDecor("wall", "wall-clock");
+    const { result } = renderHook(() => useRoomDecor());
+    expect(result.current.wall).toBe("wall-clock");
+    act(() => {
+      window.localStorage.clear();
+      window.dispatchEvent(new StorageEvent("storage", { key, storageArea: window.localStorage }));
+    });
+    expect(result.current).toEqual(DEFAULT_DECOR);
+  });
 });
 
 describe("new things", () => {

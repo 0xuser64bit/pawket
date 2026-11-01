@@ -85,7 +85,8 @@ local pet. The deck contains mood, estimates, level, care and tools (Say,
 Today, Decor, Photo, Look); selected tools open their panels below it. Decor
 picks a place in the room, then what stands there; a tap shows it in the room
 above at once, and a Market room's own thing wears a lock and names its room. Care feedback does not move controls under
-a finger. Today's checklist reflects recorded care and a round, granting no
+a finger. Photo keeps its place while the 3D room loads or is unavailable,
+and is enabled only once the room can take a picture. Today's checklist reflects recorded care and a round, granting no
 extra reward. Back after four hours or more since the pet's last care (and
 its last greeting), the room plays a hello once it is drawn — you wave, the
 pet bounces — and a note says how long it has been and what the pet needs;

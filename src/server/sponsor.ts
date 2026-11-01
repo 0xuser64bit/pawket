@@ -38,7 +38,7 @@ export function sponsorSpent() {
   float = null;
 }
 
-export async function sponsorState(): Promise<SponsorState> {
+export async function sponsorState({ abortSignal }: { abortSignal?: AbortSignal } = {}): Promise<SponsorState> {
   if (getPublicEnv().solanaCluster === "mainnet-beta") {
     return { available: false, reason: "Pawket covers fees on devnet only." };
   }
@@ -53,7 +53,7 @@ export async function sponsorState(): Promise<SponsorState> {
     });
   const sponsor = await signer;
   if (!float || Date.now() - float.checkedAt > 30_000) {
-    const { value } = await sponsorRpc().getBalance(sponsor.address, { commitment: "confirmed" }).send();
+    const { value } = await sponsorRpc().getBalance(sponsor.address, { commitment: "confirmed" }).send({ abortSignal: abortSignal ?? AbortSignal.timeout(5_000) });
     float = { checkedAt: Date.now(), lamports: value };
     noteFloat(value);
   }

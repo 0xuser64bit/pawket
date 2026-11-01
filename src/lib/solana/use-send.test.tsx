@@ -1,7 +1,8 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createNoopSigner, type Address } from "@solana/kit";
 import type { PawketWalletState } from "@/lib/wallet/pawket-wallet";
+import type { SendOptions, SendResult } from "./send";
 
 const owner = "11111111111111111111111111111111" as Address;
 const mock = vi.hoisted(() => ({ read: vi.fn(), refresh: vi.fn(), send: vi.fn(), record: vi.fn(), settle: vi.fn(), toast: vi.fn(), pets: vi.fn(), prepared: vi.fn(), app: false }));
@@ -23,6 +24,72 @@ afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); mock.app = false; w
 function sponsor(available = true) { vi.stubGlobal("fetch", vi.fn(async () => ({ json: async () => ({ available, address: owner }) }))); }
 
 describe("send routing (no wallet signing)", () => {
+  it.each(["direct", "prepared", "device"])("keeps a %s receipt before broadcast finishes and recovers it after remount", async (path) => {
+    sponsor();
+    const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);
+    mock.read.mockResolvedValue({ ...empty, linked: true, balance: 1n, device, wallet: { address: owner, device: device.address, deviceExpiresAt: Number.MAX_SAFE_INTEGER, actionsToday: 0, dailyActions: 100 } });
+    const receipt = { signature: "in-flight", blockhash: "hash", programs: [owner], sponsored: true };
+    let finish!: (result: SendResult) => void;
+    const sending = (options: SendOptions) => {
+      options.onSigned?.(receipt);
+      options.onStage?.("confirming");
+      return new Promise<SendResult>((resolve) => { finish = resolve; });
+    };
+    mock.send.mockImplementation(sending);
+    mock.prepared.mockImplementation(sending);
+    mock.settle.mockResolvedValue("unknown");
+    const hook = renderHook(usePawketSend);
+    let pending!: Promise<SendResult | null>;
+    act(() => {
+      pending = path === "prepared" ? hook.result.current.sendFromServer("Keep Mango", "/api/keepsake/mango")
+        : path === "device" ? hook.result.current.act("Keep Mango", () => [])
+          : hook.result.current.send("Keep Mango", () => []);
+    });
+    try {
+      await waitFor(() => expect(hook.result.current.tx.stage).toBe("confirming"));
+      expect(hook.result.current.tx.signature).toBe(receipt.signature);
+      expect(JSON.parse(window.sessionStorage.getItem("pawket.pending-sends")!)).toEqual([
+        { signature: receipt.signature, blockhash: receipt.blockhash, programs: receipt.programs, label: "Keep Mango", owner, sponsored: true, by: path === "device" ? "device" : "wallet" },
+      ]);
+      hook.unmount();
+      await act(async () => { render(<ResumeSends />); });
+      expect(mock.settle).toHaveBeenCalledWith(expect.anything(), receipt.signature, receipt.blockhash);
+    } finally {
+      await act(async () => { finish({ ...receipt, outcome: "confirmed" }); await pending; });
+    }
+    expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
+  });
+
+  it("retains every unresolved receipt across repeated resumes", async () => {
+    const receipts = Array.from({ length: 6 }, (_, index) => ({ signature: `unresolved-${index}`, blockhash: "hash", label: "Care", owner }));
+    window.sessionStorage.setItem("pawket.pending-sends", JSON.stringify(receipts));
+    mock.settle.mockResolvedValue("unknown");
+    for (const attempt of [1, 2]) {
+      let mounted!: ReturnType<typeof render>;
+      await act(async () => { mounted = render(<ResumeSends />); });
+      expect(mock.settle).toHaveBeenCalledTimes(receipts.length * attempt);
+      expect(JSON.parse(window.sessionStorage.getItem("pawket.pending-sends")!)).toEqual(receipts);
+      mounted.unmount();
+    }
+  });
+
+  it("refuses broadcast if the receipt cannot be saved", async () => {
+    sponsor();
+    const write = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage full"); });
+    const broadcast = vi.fn();
+    mock.send.mockImplementation(async (options: SendOptions) => {
+      options.onSigned?.({ signature: "unsaved", blockhash: "hash", programs: [], sponsored: true });
+      broadcast();
+      return { signature: "unsaved", blockhash: "hash", programs: [], sponsored: true, outcome: "confirmed" };
+    });
+    try {
+      const hook = renderHook(usePawketSend);
+      await act(async () => { await hook.result.current.send("Link", () => []); });
+      expect(broadcast).not.toHaveBeenCalled();
+      expect(hook.result.current.tx.error).toMatch(/receipt.*Nothing was sent/);
+    } finally { write.mockRestore(); }
+  });
+
   it("holds one shared send slot while the device read is pending, including across screens", async () => {
     sponsor();
     let finishRead!: (state: PawketWalletState) => void;

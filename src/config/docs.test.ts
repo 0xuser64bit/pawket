@@ -29,7 +29,7 @@ describe("repository documentation", () => {
   });
 
   it("distributes the copyright and license notice for every bundled font family", () => {
-    const families = new Set(readdirSync("src/fonts").filter((name) => name.endsWith(".woff2")).map((name) => name.split("-")[0]));
+    const families = new Set(readdirSync("src/fonts").filter((name) => /\.(woff2|ttf)$/.test(name)).map((name) => name.split("-")[0]));
     for (const family of families) {
       const notice = readFileSync(`src/fonts/${family}.LICENSE.txt`, "utf8");
       expect(notice).toContain("Copyright");

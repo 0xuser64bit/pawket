@@ -75,3 +75,5 @@ care this device cannot sign yet, and Settings).
 - A delisted guild's page stays (the record is on chain) with what Pawket
   stopped doing; it leaves discovery.
 - Wallet-free: every page reads without a wallet; only sends ask for one.
+- Park shows its title while the independent pet and guild scans run together;
+  a failed guild scan does not hide the pets.

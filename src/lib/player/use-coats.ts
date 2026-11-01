@@ -49,7 +49,7 @@ export function chooseCoat(pet: string, id: string): boolean {
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   const onStorage = (event: StorageEvent) => {
-    if (event.key !== KEY) return;
+    if (event.key !== KEY && event.key !== null) return;
     cache = null;
     listener();
   };

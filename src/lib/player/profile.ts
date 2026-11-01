@@ -80,7 +80,7 @@ export function withOutfit(profile: PlayerProfile, slot: number, look: PlayerLoo
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   const onStorage = (event: StorageEvent) => {
-    if (event.key === KEY) {
+    if (event.key === KEY || event.key === null) {
       cache = null;
       listener();
     }

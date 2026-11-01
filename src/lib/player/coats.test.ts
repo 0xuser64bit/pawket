@@ -43,3 +43,15 @@ it("keeps each pet's coat on this device, and forgets a return to the classic", 
   });
   expect(JSON.parse(window.localStorage.getItem("pawket.pet-coats.v1")!)).toEqual({});
 });
+
+it.each([null, "pawket.pet-coats.v1"])("updates a mounted coat after another tab clears storage with key %s", (key) => {
+  const pet = { id: "Mango111", species: PetSpecies.LunaCat };
+  chooseCoat(pet.id, "lilac");
+  const { result } = renderHook(() => useCoats());
+  expect(result.current(pet).id).toBe("lilac");
+  act(() => {
+    window.localStorage.clear();
+    window.dispatchEvent(new StorageEvent("storage", { key, storageArea: window.localStorage }));
+  });
+  expect(result.current(pet).id).toBe("classic");
+});

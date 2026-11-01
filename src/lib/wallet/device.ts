@@ -38,6 +38,26 @@ export async function loadDevice(owner: string): Promise<KeyPairSigner | null> {
   }
 }
 
+async function keepDevice(owner: string, candidate: CryptoKeyPair): Promise<CryptoKeyPair> {
+  const db = await open();
+  try {
+    return await new Promise<CryptoKeyPair>((resolve, reject) => {
+      const transaction = db.transaction(STORE, "readwrite");
+      const store = transaction.objectStore(STORE);
+      const request = store.get(owner) as IDBRequest<CryptoKeyPair | undefined>;
+      let pair = candidate;
+      request.onsuccess = () => {
+        if (request.result) pair = request.result;
+        else store.add(candidate, owner);
+      };
+      transaction.oncomplete = () => resolve(pair);
+      transaction.onabort = () => reject(transaction.error ?? new Error("Device storage did not finish. Nothing was linked."));
+    });
+  } finally {
+    db.close();
+  }
+}
+
 export async function makeDevice(owner: string): Promise<KeyPairSigner> {
   const here = inAndroidApp() ? "This app" : "This browser";
   if (typeof indexedDB === "undefined") throw new Error(`${here} cannot keep a device key. Nothing was linked.`);
@@ -53,7 +73,7 @@ export async function makeDevice(owner: string): Promise<KeyPairSigner> {
   }
   if (pair.privateKey.extractable) throw new Error(`${here} made a key that could be read. Nothing was linked.`);
   try {
-    await run("readwrite", (store) => store.put(pair, owner));
+    pair = await keepDevice(owner, pair);
   } catch {
     throw new Error(`${here} could not save its device key. Check that app storage is available, then try again. Nothing was linked.`);
   }

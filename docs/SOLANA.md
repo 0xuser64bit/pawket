@@ -90,7 +90,8 @@ its recorded payer.
 
 A device key is generated as non-extractable WebCrypto Ed25519 and committed
 to IndexedDB before linking. The owner approves its expiry and daily limit;
-the device co-signs. Unsupported browsers receive update guidance. Loss of
+the device co-signs. Concurrent first links atomically reuse the same stored key
+instead of replacing each other's identity. Unsupported browsers receive update guidance. Loss of
 local storage requires a new owner-approved link; local deletion does not
 revoke an existing chain link.
 

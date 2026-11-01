@@ -5,13 +5,17 @@ import { PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { petsCopy } from "@/lib/guest/copy";
 import { createGuestPet } from "@/lib/guest/pet";
 import { loadPets, savePet } from "@/lib/guest/storage";
+import { chooseCoat, readCoatChoices } from "@/lib/player/use-coats";
 import { PetCopy } from "./pet-copy";
 
 const pet = (name: string) => createGuestPet({ name, species: PetSpecies.CloudBun, personality: PetPersonality.Cozy });
 const companion = (guests = loadPets()) => ({ guests }) as unknown as CompanionState;
 
 beforeEach(() => window.localStorage.clear());
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 it("copies the pets in this browser as text, and shows the copy when the clipboard refuses", async () => {
   const miso = pet("Miso");
@@ -44,6 +48,104 @@ it("says plainly when a paste is not a copy, and changes nothing", () => {
   fireEvent.click(screen.getByRole("button", { name: "Bring them back" }));
   expect(screen.getByRole("alert").textContent).toMatch(/not a copy Pawket made/);
   expect(loadPets()).toEqual([]);
+});
+
+it("restores a different coat even when the pet's record is already as fresh as the copy", () => {
+  const miso = pet("Miso");
+  savePet(miso);
+  chooseCoat(miso.id, "butter");
+  const copy = petsCopy([miso], new Date(), { [miso.id]: "cocoa" });
+  render(<PetCopy companion={companion()} />);
+  fireEvent.click(screen.getByText("Bring pets back"));
+  fireEvent.change(screen.getByLabelText("Paste a copy"), { target: { value: copy } });
+  fireEvent.click(screen.getByRole("button", { name: "Bring them back" }));
+
+  expect(readCoatChoices()[miso.id]).toBe("cocoa");
+  expect(loadPets()).toEqual([miso]);
+  expect(screen.getByRole("status")).toHaveTextContent(/coat.*copy/);
+  expect(screen.getByLabelText("Paste a copy")).toHaveValue("");
+});
+
+it("restores coat metadata without replacing a newer pet record", () => {
+  const miso = pet("Miso");
+  const newer = { ...miso, modifiedAt: new Date(Date.parse(miso.statsUpdatedAt) + 1000).toISOString(), xp: miso.xp + 10 };
+  savePet(newer);
+  chooseCoat(miso.id, "butter");
+  const copy = petsCopy([miso], new Date(), { [miso.id]: "cocoa" });
+  render(<PetCopy companion={companion()} />);
+  fireEvent.click(screen.getByText("Bring pets back"));
+  fireEvent.change(screen.getByLabelText("Paste a copy"), { target: { value: copy } });
+  fireEvent.click(screen.getByRole("button", { name: "Bring them back" }));
+
+  expect(readCoatChoices()[miso.id]).toBe("cocoa");
+  expect(loadPets()).toEqual([newer]);
+});
+
+it("keeps an existing coat when an older-format copy has no coat metadata", () => {
+  const miso = pet("Miso");
+  savePet(miso);
+  chooseCoat(miso.id, "butter");
+  render(<PetCopy companion={companion()} />);
+  fireEvent.click(screen.getByText("Bring pets back"));
+  fireEvent.change(screen.getByLabelText("Paste a copy"), { target: { value: petsCopy([miso]) } });
+  fireEvent.click(screen.getByRole("button", { name: "Bring them back" }));
+  expect(readCoatChoices()[miso.id]).toBe("butter");
+  expect(screen.queryByRole("alert")).toBeNull();
+});
+
+it("can restore an explicitly backed-up classic coat independently", () => {
+  const miso = pet("Miso");
+  savePet(miso);
+  chooseCoat(miso.id, "butter");
+  render(<PetCopy companion={companion()} />);
+  fireEvent.click(screen.getByText("Bring pets back"));
+  fireEvent.change(screen.getByLabelText("Paste a copy"), { target: { value: petsCopy([miso], new Date(), { [miso.id]: "classic" }) } });
+  fireEvent.click(screen.getByRole("button", { name: "Bring them back" }));
+  expect(readCoatChoices()[miso.id]).toBeUndefined();
+  expect(loadPets()).toEqual([miso]);
+});
+
+it.each([false, true])("reports a failed coat write and keeps a retryable copy when the pet already exists: %s", (exists) => {
+  const miso = pet("Miso");
+  if (exists) {
+    savePet(miso);
+    chooseCoat(miso.id, "butter");
+  }
+  const copy = petsCopy([miso], new Date(), { [miso.id]: "cocoa" });
+  const store = Storage.prototype.setItem;
+  const writes = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (key === "pawket.pet-coats.v1") throw new Error("Storage full");
+    store.call(this, key, value);
+  });
+  render(<PetCopy companion={companion()} />);
+  if (exists) fireEvent.click(screen.getByText("Bring pets back"));
+  fireEvent.change(screen.getByLabelText("Paste a copy"), { target: { value: copy } });
+  fireEvent.click(screen.getByRole("button", { name: "Bring them back" }));
+
+  expect(screen.getByRole("alert")).toHaveTextContent(/could not store.*coat.*Miso/);
+  expect(screen.getByRole("status")).toHaveTextContent(exists ? /as new as the copy/ : /Miso is back/);
+  expect(screen.getByLabelText("Paste a copy")).toHaveValue(copy);
+  expect(loadPets()).toEqual([miso]);
+  expect(readCoatChoices()[miso.id]).toBe(exists ? "butter" : undefined);
+
+  writes.mockRestore();
+  fireEvent.click(screen.getByRole("button", { name: "Bring them back" }));
+  expect(readCoatChoices()[miso.id]).toBe("cocoa");
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.getByLabelText("Paste a copy")).toHaveValue("");
+});
+
+it("does not restore coats when the pet records could not be stored", () => {
+  const miso = pet("Miso");
+  const copy = petsCopy([miso], new Date(), { [miso.id]: "cocoa" });
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage full"); });
+  render(<PetCopy companion={companion([])} />);
+  fireEvent.change(screen.getByLabelText("Paste a copy"), { target: { value: copy } });
+  fireEvent.click(screen.getByRole("button", { name: "Bring them back" }));
+  expect(screen.getByRole("alert")).toHaveTextContent(/could not store them.*Nothing was brought back/);
+  expect(screen.getByLabelText("Paste a copy")).toHaveValue(copy);
+  expect(loadPets()).toEqual([]);
+  expect(readCoatChoices()).toEqual({});
 });
 
 it("keeps a newer paste when an earlier file finishes reading", async () => {

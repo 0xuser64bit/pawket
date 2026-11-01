@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Card, Row, Stack, Problem } from "@/components/pk";
 import type { CompanionState } from "@/lib/companion/use-companion";
 import { MAX_COPY_LENGTH, petsCopy, readPetsCopy } from "@/lib/guest/copy";
+import type { GuestPet } from "@/lib/guest/pet";
 import { bringBackPets } from "@/lib/guest/storage";
 import { chooseCoat, readCoatChoices } from "@/lib/player/use-coats";
 import { useAndroidApp, useHere } from "@/lib/native/android";
@@ -87,16 +88,28 @@ export function PetCopy({ companion }: { companion: CompanionState }) {
       setProblem(`${Here} could not store them. Nothing was brought back.`);
       return;
     }
+    const coats = readCoatChoices();
+    const restoredCoats: GuestPet[] = [];
+    const failedCoats: GuestPet[] = [];
+    for (const pet of read.pets) {
+      const coat = read.coats[pet.id];
+      if (!coat || coat === (coats[pet.id] ?? "classic")) continue;
+      if (chooseCoat(pet.id, coat)) restoredCoats.push(pet);
+      else failedCoats.push(pet);
+    }
+    if (failedCoats.length) {
+      setProblem(`${Here} could not store the ${failedCoats.length === 1 ? "coat" : "coats"} for ${names(failedCoats)}. Keep the copy and try again.`);
+    }
     const parts = [
       result.added.length ? `${names(result.added)} ${result.added.length === 1 ? "is" : "are"} back in ${here}.` : "",
       result.updated.length ? `${names(result.updated)} came back with a newer record.` : "",
       result.same ? `${pets(result.same)} ${result.same === 1 ? "was" : "were"} here already, as new as the copy.` : "",
+      restoredCoats.length ? `${names(restoredCoats)} ${restoredCoats.length === 1 ? "has" : "have"} the coat from the copy.` : "",
       read.unreadable ? `${pets(read.unreadable)} in the copy could not be read.` : "",
     ].filter(Boolean);
     setBrought(parts.join(" "));
-    for (const pet of [...result.added, ...result.updated]) if (read.coats[pet.id]) chooseCoat(pet.id, read.coats[pet.id]);
+    if ((result.added.length || result.updated.length || restoredCoats.length) && !failedCoats.length) setText("");
     if (result.added.length || result.updated.length) {
-      setText("");
       record({ name: "pets_brought_back" });
       void askBrowserToKeep();
     }

@@ -12,7 +12,7 @@ const subscribe = (listener: () => void) => { listeners.add(listener); return ()
 
 export function useCloset(owner: Address | null) {
   const revision = useSyncExternalStore(subscribe, () => owner ? revisions.get(owner) ?? 0 : 0, () => 0);
-  const fetcher = useCallback(() => fetchCloset(rpc, owner!), [owner, revision]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fetcher = useCallback((signal: AbortSignal) => fetchCloset(rpc, owner!, signal), [owner, revision]); // eslint-disable-line react-hooks/exhaustive-deps
   const request = useRequest(owner ? fetcher : null);
   const refresh = useCallback(() => {
     if (!owner) return;

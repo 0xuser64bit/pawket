@@ -537,9 +537,11 @@ function decodeCloset(address: Address, bytes: Uint8Array): ChainCloset {
   return { address, owner: raw.owner, items, count: raw.count, spent: raw.spent };
 }
 
-export async function fetchCloset(rpc: Rpc<GetMultipleAccountsApi>, owner: string | Address): Promise<ChainCloset | null> {
+export async function fetchCloset(rpc: Rpc<GetMultipleAccountsApi>, owner: string | Address, signal?: AbortSignal): Promise<ChainCloset | null> {
+  const timeout = AbortSignal.timeout(30_000);
+  const abortSignal = signal ? AbortSignal.any([signal, timeout]) : timeout;
   const address = (await deriveClosetPda(owner)).address;
-  const [account] = await fetchEncodedAccounts(rpc, [address]);
+  const [account] = await fetchEncodedAccounts(rpc, [address], { abortSignal });
   if (!account.exists || account.programAddress !== PAWKET_PROGRAM_ID) return null;
   return decodeCloset(address, account.data);
 }

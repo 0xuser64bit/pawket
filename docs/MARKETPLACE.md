@@ -74,6 +74,9 @@ On a phone an untouched shelf is a row to swipe, the next tile peeking in, and
   → every screen refreshes its closet read → the piece, room or photo frame becomes available
 ```
 
+Closet reads abort when their screen unmounts or the owner changes, and have a
+30-second application deadline so a stalled RPC cannot leave them running.
+
 - The sponsor pays the network fee and the closet's rent the first time; the
   buyer's Pawket Wallet pays the price (`checkSponsorable` lets the sponsor be `buy_with_wallet`'s
   `payer`, never its `owner`).

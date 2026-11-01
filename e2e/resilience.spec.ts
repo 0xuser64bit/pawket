@@ -1,8 +1,60 @@
 import { expect, test } from "@playwright/test";
+import { generateKeyPairSigner, getBase64EncodedWireTransaction, getBase64Encoder, getTransactionDecoder, partiallySignTransaction } from "@solana/kit";
 import { dailySeed } from "../src/lib/play/best";
 import { dealPairs } from "../src/lib/play/pairs";
+import { createTestWallet } from "./test-wallet";
 
 test.use({ reducedMotion: "reduce" });
+
+test("reloading during broadcast recovers the signed receipt without sending again", async ({ page }) => {
+  const wallet = createTestWallet();
+  const sponsor = await generateKeyPairSigner();
+  let broadcasts = 0;
+  let recovered = false;
+  await page.addInitScript(wallet.script);
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+    if (new URL(request.url()).pathname === "/api/sponsor") {
+      if (request.method() === "GET") return route.fulfill({ json: { available: true, address: sponsor.address } });
+      const { transaction } = request.postDataJSON() as { transaction: string };
+      const signed = await partiallySignTransaction([sponsor.keyPair], getTransactionDecoder().decode(getBase64Encoder().encode(transaction)));
+      return route.fulfill({ json: { transaction: getBase64EncodedWireTransaction(signed) } });
+    }
+    if (request.method() !== "POST" || !request.headers()["content-type"]?.includes("application/json")) return route.continue();
+    const rpc = request.postDataJSON() as { id: string; method: string; params: unknown[] };
+    const envelope = { jsonrpc: "2.0", id: rpc.id };
+    const result = (value: unknown) => route.fulfill({ json: { ...envelope, result: value } });
+    const contextual = (value: unknown) => result({ context: { slot: 1 }, value });
+    switch (rpc.method) {
+      case "getMultipleAccounts": return contextual((rpc.params[0] as string[]).map(() => null));
+      case "getBalance": return contextual(0);
+      case "getMinimumBalanceForRentExemption": return result(1_000_000);
+      case "getProgramAccounts":
+      case "getSignaturesForAddress": return result([]);
+      case "getLatestBlockhash": return contextual({ blockhash: "11111111111111111111111111111111", lastValidBlockHeight: 1 });
+      case "sendTransaction": broadcasts += 1; return;
+      case "getSignatureStatuses":
+        recovered = true;
+        return contextual([{ slot: 1, confirmations: null, confirmationStatus: "finalized", err: null }]);
+      default: return route.fulfill({ status: 503, json: { ...envelope, error: { code: -32601, message: `Unexpected local test RPC: ${rpc.method}` } } });
+    }
+  });
+  await page.goto("/wallet");
+  await page.getByRole("button", { name: "Connect a wallet", exact: true }).click();
+  await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: "Pawket Test Wallet", exact: true }).click();
+  await page.getByRole("button", { name: "Link this browser", exact: true }).click();
+  await expect.poll(() => broadcasts).toBe(1);
+  await expect(page.getByRole("link", { name: "See it on Explorer" })).toBeVisible();
+  const receipts = await page.evaluate(() => JSON.parse(sessionStorage.getItem("pawket.pending-sends") ?? "[]") as Array<{ signature: string; sponsored: boolean }>);
+  expect(receipts).toHaveLength(1);
+  expect(receipts[0].sponsored).toBe(true);
+  await page.reload();
+  await expect(page.getByText("Recorded on Solana, Pawket paid the fee.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("link", { name: "See it on Explorer" })).toHaveAttribute("href", new RegExp(receipts[0].signature));
+  expect(await page.evaluate(() => sessionStorage.getItem("pawket.pending-sends"))).toBeNull();
+  expect(recovered).toBe(true);
+  expect(broadcasts).toBe(1);
+});
 
 test("a slow pet-copy file cannot overwrite a newer paste", async ({ page }, testInfo) => {
   await page.goto("/profile");

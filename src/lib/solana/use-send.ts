@@ -114,6 +114,8 @@ interface Pending {
   label: string;
   owner: string | null;
   programs?: readonly string[];
+  sponsored?: boolean;
+  by?: TxState["by"];
 }
 const PENDING_KEY = "pawket.pending-sends";
 function pendingSends(): Pending[] {
@@ -162,7 +164,7 @@ export function ResumeSends() {
   useEffect(() => {
     for (const pending of pendingSends()) {
       const id = `settle-${pending.signature.slice(0, 16)}`;
-      let state: TxState = { stage: "confirming", label: pending.label, signature: pending.signature };
+      let state: TxState = { stage: "confirming", label: pending.label, signature: pending.signature, sponsored: pending.sponsored, by: pending.by };
       const show = (next: Partial<TxState>) => {
         state = { ...state, ...next };
         const toast = txToast(id, state, getPublicEnv().solanaCluster);
@@ -229,7 +231,7 @@ export function usePawketSend() {
       show({});
       try {
         const result = await go(signer, (stage) => show({ stage }), (receipt) => {
-          const pending = { signature: receipt.signature, blockhash: receipt.blockhash, programs: receipt.programs, label, owner };
+          const pending = { signature: receipt.signature, blockhash: receipt.blockhash, programs: receipt.programs, label, owner, sponsored: receipt.sponsored, by };
           if (!keepPending([...pendingSends().filter((each) => each.signature !== pending.signature), pending])) {
             throw new Error("This browser could not save the transaction receipt. Free some storage and try again. Nothing was sent.");
           }
@@ -241,7 +243,7 @@ export function usePawketSend() {
           keepPending(pendingSends().filter((each) => each.signature !== result.signature));
           haptic("done");
         }
-        else void settleLater({ signature: result.signature, blockhash: result.blockhash, label, owner, programs: result.programs }, show);
+        else void settleLater({ signature: result.signature, blockhash: result.blockhash, label, owner, programs: result.programs, sponsored: result.sponsored, by }, show);
         return result;
       } catch (error) {
         if (state.signature) keepPending(pendingSends().filter((each) => each.signature !== state.signature));

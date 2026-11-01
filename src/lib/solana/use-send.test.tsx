@@ -49,7 +49,7 @@ describe("send routing (no wallet signing)", () => {
       await waitFor(() => expect(hook.result.current.tx.stage).toBe("confirming"));
       expect(hook.result.current.tx.signature).toBe(receipt.signature);
       expect(JSON.parse(window.sessionStorage.getItem("pawket.pending-sends")!)).toEqual([
-        { signature: receipt.signature, blockhash: receipt.blockhash, programs: receipt.programs, label: "Keep Mango", owner },
+        { signature: receipt.signature, blockhash: receipt.blockhash, programs: receipt.programs, label: "Keep Mango", owner, sponsored: true, by: path === "device" ? "device" : "wallet" },
       ]);
       hook.unmount();
       await act(async () => { render(<ResumeSends />); });

@@ -1,11 +1,17 @@
 # Change workflow
 
+[Documentation](README.md) · [Contributing](../CONTRIBUTING.md) · [Testing](TESTING.md)
+
 ## Before editing
 
-Read [AGENTS.md](../AGENTS.md), `ARCHITECTURE.md` and the owning system document. Inspect
+Read [AGENTS.md](../AGENTS.md), [Architecture](ARCHITECTURE.md) and the owning system document. Inspect
 Git status and the closest existing module. Identify the source of each fact,
 its callers, tests, fixtures, config and exports. Name the files the change
 must reach and the player data or compatibility behavior it could affect.
+
+Work on `dev`; development pull requests target `dev`. Release work is a
+separate `dev` → `main` pull request requiring explicit authorization. Do not
+deploy a program or publish an Android build as a side effect of a web change.
 
 ## Implement and review
 
@@ -26,7 +32,7 @@ belong in `OPEN-QUESTIONS.md`, and accepted choices in `DECISIONS.md`.
 
 ## Verify
 
-Run the owning tests listed in `TESTING.md` and the full gate:
+Run the owning tests listed in [Testing](TESTING.md) and the full gate:
 
 ```sh
 pnpm verify
@@ -47,6 +53,8 @@ clear message.
 - [ ] No secrets, unrelated work or generated build output included.
 - [ ] Report states what changed, what was checked and any remaining verification gaps.
 
-Temporary task notes, screenshots, release artifacts and local verification
-logs belong outside tracked product docs. Keep release evidence with the
-release artifacts; Git history retains earlier source and design decisions.
+Reusable product screenshots belong in `docs/images/` with context in the
+[documentation index](README.md#keep-this-useful). Temporary task notes,
+debugging captures, release artifacts and local verification logs belong
+outside tracked product docs. Keep release evidence with the release
+artifacts; Git history retains earlier source and design decisions.

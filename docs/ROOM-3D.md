@@ -1,14 +1,17 @@
 # The room in 3D
 
-Home draws the player and their pet in one 3D room. This file is how it is
-built, from the supplied asset packs to the frame on screen, and how to add
-to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”).
+Home, Profile and public visits share the room renderer. This guide owns
+its asset pipeline, rendering contracts and extension points. See
+[Design](DESIGN.md#the-room-in-3d) for interaction rules and
+[Testing](TESTING.md) for automated coverage. Rendering never writes a pet
+record or grants care rewards.
 
 ## What ships
 
 - One Canvas, a client-only React Three Fiber leaf
   (`src/components/room3d/room-3d.tsx`), loaded with `next/dynamic` only when
-  Home renders a room. three.js never reaches the first paint. With 3D
+  a supported room is mounted in 3D mode. The renderer chunk is lazy-loaded;
+  it does not block the initial room placeholder. With 3D
   chosen, the flat room is not shown while the 3D one builds — a refresh
   never flashes the flat room's characters first: the frame holds the paw
   loader, centred over the room's wall and floor, with "Building the room in
@@ -43,7 +46,7 @@ to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”
   | `emotes/thumbs-up.glb` | Nice: a thumbs up beside the shoulder, with a nod | 30 KB | 0 |
 
   A dressed body draws about 25k triangles; the rest are variants switched
-  off. Budget per character: under 5 MB and 100k triangles — the pipeline
+  off. Budget per output GLB: at most 5 MiB and 100k triangles — the pipeline
   fails if a file goes over, or if the Khronos glTF-Validator reports an
   error before or after compression.
 
@@ -51,8 +54,7 @@ to it. The design rules it follows are in `docs/DESIGN.md` (“The room in 3D”
 
 Both packs are CC0 (Creative Commons Zero): no attribution is required, and
 [the repository README](../README.md) credits both anyway. `assets/` keeps only the files the pipeline
-reads — 27 files, about 15 MB (set `PAWKET_3D_SOURCE` to read them from
-elsewhere):
+reads (set `PAWKET_3D_SOURCE` to read them from elsewhere):
 
 ```
 assets/
@@ -81,7 +83,13 @@ Everything else in the packs was dropped; download them again to use more.
   copies, the “origin at 0” hair, the dark skins, roughness maps and the
   Unity/Unreal extras are not kept.
 
-## What the packs did not have, and what the pipeline does about it
+## Build pipeline
+
+Run `pnpm assets:3d` after changing source assets or `scripts/3d/`. Edit
+those sources, never the generated GLBs in `public/3d/`. The builder checks
+glTF validity before and after compression and enforces the output budgets.
+Its printed report owns current sizes, triangle counts and clip lists; the
+table above is an approximate inventory, not an independent budget.
 
 | Gap in the source | Resolution |
 | --- | --- |
@@ -110,23 +118,12 @@ channels that never leave rest.
 2. **Body, eyes, brows**, stripped of the extra UV and colour sets.
 3. **Hair**: all four styles and the beard, re-bound to this skeleton and
    fitted (above).
-4. **Clothes** (`outfits.mjs`): every garment edge is a line placed from the
-   body's own joints — a crew neck, the hem, sleeves at the shoulder, mid
-   upper arm or wrist, the waist, shorts above the knee, trousers at the
-   ankle, shoe collars. The body is cut exactly along those lines
-   (`mesh.mjs` `cut`), each region is shelled — welded, Taubin-smoothed so
-   muscle does not read through cloth, then an outward-only “drape” so cloth
-   spans hollows instead of following them — pushed out by its thickness and
-   closed with a hem wall back to the skin. Shoes are built on a convex-hull
-   “last” of the foot (no toes, no arch) with a flat sole cut below. Every
-   body triangle carries a `_COVER` bit per garment that covers it, so the
-   room collapses skin under worn cloth in the vertex shader: no poke-through
-   and no hidden overdraw.
-5. **Clips** (`motion.mjs`): key poses in the terms an animator uses —
-   pelvis offset, spine and head rotations, hand and foot targets solved with
-   two-bone IK and an elbow or knee pole, palm direction, finger curl —
-   eased between keys, with continuous “wobble” on top (breath, the wave, a
-   dance bounce), sampled at 30 fps and written as ordinary glTF animation.
+4. **Clothes** (`outfits.mjs`): cut and shell garments from each body's
+   geometry, smoothing and draping cloth away from the skin. Shoes use a
+   convex-hull foot shape with a flat sole. `_COVER` bits mark body triangles
+   hidden by each garment; the runtime shader suppresses covered skin.
+5. **Clips** (`motion.mjs`): author eased poses with two-bone IK, palm
+   direction and finger curl; sample at 30 fps into glTF animation.
 6. **Textures** to WebP (body 1024 px, hair 512 px, eyes 256 px),
    **geometry** meshopt-compressed and quantised.
 
@@ -144,7 +141,7 @@ channels that never leave rest.
 | `Clap` | 1.8 | Play fetch |
 | `Hush` | 2.8 | Rest |
 
-## The runtime
+## Runtime and photos
 
 A photo can be posed: Wave, Cheer, Cuddle, Dance, Peace, Heart or Nice (`PHOTO_POSES` in
 `src/lib/room/moments.ts`). A pose borrows a moment's clip but is staged for
@@ -193,9 +190,11 @@ vertex colours (`BAKED` in `src/lib/player/coats.ts`). `PetActor.paint`
 swaps exactly those for the chosen coat's — eyes, muzzle and inner ears keep
 theirs — on the pet's own copy of the geometry, never the shared file.
 
-**Care.** A care button saves first. Only when `saveGuestPet` returns true
-does Home cue the moment (`CARE_MOMENT`); a refusal or a storage failure
-plays nothing.
+**Care.** Home cues `CARE_MOMENT` only after `savePet` accepts local care
+or `sender.act` returns a confirmed chain result. Chain care requests a
+companion refresh; there is no optimistic record write. Refusal, failed
+storage or an uncertain transaction plays no care moment. A new level cues
+Cheer instead. See [Game design](GAME-DESIGN.md) for the reward rules.
 
 **Reduced motion.** The room renders on demand; nothing idles, breathes,
 blinks or drifts. A moment is staged at once and held still at its `still`
@@ -203,11 +202,11 @@ second for about three seconds, then everyone returns.
 
 **Performance.** DPR 1 on phones (≤ 1.75 elsewhere), no shadow maps (flat
 contact shadows), shaders compiled asynchronously before the first frame,
-rendering stopped while the room is off screen or the tab hidden, one
-request per GLB for the life of the page, and the other build fetched once
-the room is quiet.
+rendering stopped while the room is off screen or the tab hidden, successful
+GLB loads cached for the life of the page, and the other build fetched once
+the room is quiet. Failed loads are evicted so retry can fetch again.
 
-## The room's things
+## Room decor
 
 The picture, the plant, the rug, the pet's bed and the thing past the bed
 are the player's (`src/lib/room/decor.ts`). `set.ts` keeps a place for each
@@ -232,19 +231,10 @@ this skeleton (the Quaternius Universal Animation Library targets it). Cheer
 ships exactly that way — `public/3d/emotes/cheer.glb` holds only the rig and
 its clip, and the room fetches it the first time Cheer is pressed:
 
-```ts
-// src/lib/room/moments.ts
-{
-  id: "cheer",
-  label: "Cheer",
-  icon: "spark",
-  clips: [{ at: 0, name: "Cheer", src: "/3d/emotes/cheer.glb" }],
-  formation: "free",
-  pet: [{ at: 0.4, cue: "hop" }, { at: 1.2, cue: "happy" }],
-  still: 0.8,
-  says: "You cheer. {pet} bounces.",
-},
-```
+Use its entry in `src/lib/room/moments.ts` as the template: `clips` names
+the clip and optional `src`, `formation` places the actors, `pet` schedules
+cues, `still` selects the reduced-motion frame, and `says` supplies the
+accessible status. Keep that registry as the single source of timing values.
 
 A clip marked `loop: true` repeats until the moment's `length` (Dance does);
 otherwise the player idles once the clips are done. Add its id to `EMOTES`
@@ -269,7 +259,7 @@ raised beside the face reads as a hand on the face once the head turns to
 the pet, so Heart and Nice face the room. Give a new emote a tune in
 `TUNES` (`src/lib/play/sound.ts`).
 
-## Knobs
+## Tuning locations
 
 `SLOT_AT` (`decor.ts`), `PET_SCALE` (`pet.ts`), `HEAD_SCALE` (`human.ts`), the formation spots and
 blocking (`director.ts`), outline width (`room-3d.tsx`), the toon ramp

@@ -1,49 +1,64 @@
-# Documentation
+# Find your way around Pawket
 
-These documents describe the implemented product and its operating procedures.
-Source code owns constants, account layouts, prices and validation rules; docs
-explain how those rules fit together. Pending decisions are explicitly marked.
+Pawket is a companion game first. These guides explain how to play it, build
+it and keep its boundaries intact. Start with a task—not a reading list.
 
-Repository policies: [contributing](../CONTRIBUTING.md),
-[private security reports](../SECURITY.md), [MIT license](../LICENSE) and
-[bundled asset notices](../THIRD_PARTY_NOTICES.md).
+[Project home](../README.md) · [Play Pawket](https://pawket.world) ·
+[Contribute](../CONTRIBUTING.md) · [Report a vulnerability](../SECURITY.md)
 
-## Product and decisions
+## Start here
 
-| Document | Purpose |
+| You want to… | Open this |
 | --- | --- |
-| [PRODUCT.md](PRODUCT.md) | Supported player experience, capabilities and limits |
-| [VISION.md](VISION.md) | Product direction and principles |
-| [DECISIONS.md](DECISIONS.md) | Current architectural decisions and their rationale |
-| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | Unresolved decisions and the work they block |
-| [MAINNET.md](MAINNET.md) | Requirements for a separately authorized mainnet release |
+| Adopt, care, play or recover a local pet | [Player guide](PLAYING.md) |
+| Run the project for the first time | [Development: setup](DEVELOPMENT.md#setup) |
+| Understand the product and its limits | [Product](PRODUCT.md), then [product direction](VISION.md) |
+| Find the right code to change | [Architecture](ARCHITECTURE.md), then [routes](ROUTES.md) |
+| Make a contribution | [Contributing](../CONTRIBUTING.md), then [change workflow](WORKFLOW.md) |
+| Choose and run the right checks | [Testing](TESTING.md) |
+| Configure or release a deployment | [Environment](ENVIRONMENT.md), then [development and releases](DEVELOPMENT.md#hosted-deployment) |
 
-## Engineering and operations
+## Work on a system
 
-| Document | Purpose |
-| --- | --- |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Boundaries, persistence and data flow |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Setup, commands and deployment |
-| [ENVIRONMENT.md](ENVIRONMENT.md) | Configuration and secret handling |
-| [WORKFLOW.md](WORKFLOW.md) | Change process and definition of done |
-| [TESTING.md](TESTING.md) | Verification layers and required checks |
-| [SECURITY.md](SECURITY.md) | Trust boundaries, known limits and incident handling |
-| [ROUTES.md](ROUTES.md) | Pages, APIs and compatibility redirects |
-| [SOLANA.md](SOLANA.md) | Accounts, instructions, wallets, sponsorship and deploys |
-| [ANDROID.md](ANDROID.md) | Native shell, build, release and physical-device validation |
+| System | Guide | What it owns |
+| --- | --- | --- |
+| Care and games | [Game design](GAME-DESIGN.md) | Decay, cooldowns, progression, daily rounds and fairness |
+| Interface and brand | [Design](DESIGN.md) | Tokens, components, interaction, accessibility and voice |
+| Room and assets | [3D room](ROOM-3D.md) | Asset sources, reproducible builds, animation and fallback |
+| Solana and wallets | [Solana](SOLANA.md) | Program accounts, instructions, device links, sends, sponsorship and keepsakes |
+| Looks and purchases | [Marketplace](MARKETPLACE.md) | Fixed prices, cosmetic entitlements and closet reads |
+| Community | [Guilds](GUILDS.md) | Membership, events, polls and permissions |
+| Optional coins | [Meteora integration](METEORA-INTEGRATION.md) | Presets, transaction preparation, trading and graduation |
+| Player protections | [Safety and economy](SAFETY-ECONOMY.md) | Disclosures, moderation and its limits |
+| Native shell | [Android](ANDROID.md) | Origin boundary, phone capabilities, build, release and device checks |
 
-## Product systems
+## Understand the guardrails
 
-| Document | Purpose |
-| --- | --- |
-| [DESIGN.md](DESIGN.md) | Design system, interaction and accessibility |
-| [ROOM-3D.md](ROOM-3D.md) | Asset sources, build pipeline and room runtime |
-| [GAME-DESIGN.md](GAME-DESIGN.md) | Care, progression, daily rounds and fairness |
-| [MARKETPLACE.md](MARKETPLACE.md) | Cosmetic purchases and closet entitlements |
-| [GUILDS.md](GUILDS.md) | Membership, gatherings and permissions |
-| [METEORA-INTEGRATION.md](METEORA-INTEGRATION.md) | Coin presets, routing and graduation |
-| [SAFETY-ECONOMY.md](SAFETY-ECONOMY.md) | Player protections and limits of product moderation |
+- [Security](SECURITY.md): trust boundaries, known limits and incident handling.
+  For a private report, use the root [security policy](../SECURITY.md).
+- [Decisions](DECISIONS.md): accepted choices and their rationale.
+  [Pending decisions](OPEN-QUESTIONS.md): unresolved choices that block work.
+- [Mainnet](MAINNET.md): requirements for a separately authorized release,
+  **not** a claim of readiness.
+- [AGENTS.md](../AGENTS.md): repository contract and the file that owns each fact.
+- [License](../LICENSE) and [bundled asset notices](../THIRD_PARTY_NOTICES.md).
 
-Update the owning document when behavior changes. Keep temporary task notes,
-local paths, recordings and build output outside tracked documentation. Git
-history retains superseded designs and previous verification records.
+## Keep this useful
+
+Document behavior that exists; mark future work explicitly. Source code owns
+constants, prices, account layouts and validation. The owning guide explains
+their purpose—do not create a second specification or a task diary.
+
+When changing a guide, follow its links from a fresh reader's point of view.
+When renaming or removing one, update incoming links, including [AGENTS.md](../AGENTS.md),
+and run `pnpm exec vitest run src/config/docs.test.ts`. The documentation checks cover
+local links and embedded assets; external service availability needs a live check.
+
+The README's product image is a real local-play capture, not chain activity
+or a UI mockup. Refresh it from the running app when the interface changes:
+use a disposable browser profile, adopt a local pet, wait for the room to
+finish loading, and use **Photo → Wave** to face both companions toward the
+camera. Save the photo and crop out its caption for a simple room portrait,
+without developer overlays or wallet information.
+Keep reusable documentation images in `docs/images/`; put temporary recordings,
+release evidence and build output outside tracked product docs.

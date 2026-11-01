@@ -2,12 +2,15 @@
 
 This project is the Android shell for the hosted Pawket app. It adds Mobile
 Wallet Adapter and native phone capabilities through a validated, origin-locked
-bridge. The web application owns game rules and Solana sends.
+bridge. The web application owns game rules, its device key in IndexedDB,
+and Solana sends; Kotlin never signs.
 
 See [Android build and release documentation](../docs/ANDROID.md) for setup,
 signing, storage, security boundaries and physical-device validation.
 `gradle.properties` owns the start URL, package ID and version; do not duplicate
 them in this README.
+
+Run native checks from this directory:
 
 ```sh
 ./gradlew testDebugUnitTest lintDebug lintRelease

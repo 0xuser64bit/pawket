@@ -4,6 +4,14 @@ The Market sells cosmetic looks at fixed prices, settled by the program.
 There is no order book or resale. A secondary market or pet transfer needs
 a separately approved product and protocol design; see `DECISIONS.md`.
 
+For catalog changes, follow `src/lib/closet/catalog.ts`, `src/config/themes.ts`
+or `src/lib/market/frames.ts` to `marketPrice` in
+`src/lib/solana/instructions.ts` and `item_price` in the program. The shelf and
+purchase UI live in `src/components/market/market-screen.tsx`; entitlement
+reads and invalidation live in `src/lib/market/use-closet.ts`. Use
+[SOLANA.md](SOLANA.md) for signing and [Verification](#verification) for parity
+checks. New prices or item IDs require an explicitly authorized program plan.
+
 ## Purchase rules
 
 - **Looks only.** Everything sold is expression: a piece a pet wears, a room
@@ -77,9 +85,16 @@ On a phone an untouched shelf is a row to swipe, the next tile peeking in, and
 Closet reads abort when their screen unmounts or the owner changes, and have a
 30-second application deadline so a stalled RPC cannot leave them running.
 
-- The sponsor pays the network fee and the closet's rent the first time; the
+- When available, the sponsor pays the network fee and the closet's rent the first time; the
   buyer's Pawket Wallet pays the price (`checkSponsorable` lets the sponsor be `buy_with_wallet`'s
   `payer`, never its `owner`).
+- Without sponsorship, the owner-approved purchase uses the linked device as
+  fee and rent payer. The price still comes from Pawket Wallet, not the owner's
+  external balance. The device must already hold enough SOL for the fee and,
+  if creating the closet, its rent; a funded Pawket Wallet alone is not proof
+  of that. This is distinct from `act()` blocking rent-bearing non-money
+  actions while sponsorship is unavailable. There is no automatic owner-wallet
+  rent fallback or purchase-specific device refill in `buy_with_wallet`.
 - A pet in this browser cannot wear a bought piece: the closet belongs to a
   wallet, so the wardrobe says to keep the pet on Solana first.
 - Purchases require a linked, funded Pawket Wallet. The owner still approves money; the app never falls back to paying from their external balance. Legacy `buy` stays on chain for compatibility; the app does not use it.
@@ -112,3 +127,8 @@ closet, a device dressing from it, the closet's layout), `program.test.ts`
 (prices and item ids against the program), `sponsor.test.ts` (the sponsor
 pays the closet, never the price), and `devnet.test.ts` (a purchase and a
 wear against the deployed program).
+
+`src/lib/market/use-closet.test.tsx` and
+`src/lib/solana/closet-read.test.ts` cover shared entitlement invalidation,
+owner changes, cancellation and read deadlines. These tests do not establish
+the deployed program version or the current sponsor's availability.

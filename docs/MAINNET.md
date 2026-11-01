@@ -4,6 +4,13 @@ Pawket currently defaults to devnet. This is a release requirements document,
 not authorization to deploy, move funds or change program identities.
 Mainnet requires a separate human-approved deploy plan.
 
+Start with the stable Q3/Q4/Q6 decisions in
+[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md), then the controls and release checklist
+below. [SOLANA.md](SOLANA.md#devnet-deployment) is the devnet deploy procedure,
+not a mainnet runbook; [ENVIRONMENT.md](ENVIRONMENT.md) owns key setup and
+[SECURITY.md](SECURITY.md#known-limits-and-release-blockers) records current
+trust and abuse limits.
+
 ## Decisions and controls required
 
 | Area | Current behavior | Required before mainnet |
@@ -11,7 +18,7 @@ Mainnet requires a separate human-approved deploy plan.
 | Program | Upgradeable devnet program | External review of the current source; approved program identity and multisig upgrade authority; tested upgrade and rollback procedure |
 | Treasury | Fixed devnet recipient in program and client constants | Approved recipient and signer policy; program/client changes verified together |
 | Sponsorship | Devnet-only hot key; float floor and per-instance limits | Explicit fee/rent policy, shared rate limiting, total budget enforcement, monitoring and replenishment ownership |
-| Pawket Wallet | Linked device and positive balance required for app transactions | Review all money paths, fee float, unlink/close, recovery and mainnet fee policy; no implicit owner-wallet fallback |
+| Pawket Wallet | Linked device required for app actions; sponsored non-money actions may use an empty wallet, while purchases, coins and unsponsored actions need funds | Review all money paths, fee float, unlink/close, recovery and mainnet fee policy; no implicit owner-wallet fallback |
 | Keepsakes and coins | Keys derived from `DERIVATION_SECRET` (the sponsor's seed unless set); the sponsor signs as collection authority unless `COLLECTION_AUTHORITY_KEYPAIR` is set | A mainnet derivation secret and collection authority of their own, recorded and backed up before the first card or coin |
 | Coins | Devnet preset configs only | Legal/policy approval (Q6), approved mainnet parameters and recipients (Q3), verified config accounts and pool routing |
 | Market | Prices fixed by the program | Approved real-SOL prices; source parity and treasury validation |
@@ -44,15 +51,29 @@ the target cluster. Model adoption, wallet setup, membership, closets,
 gatherings, guestbooks and keepsakes separately from recurring network fees.
 Sizes come from the program and IDL, not a copied rent estimate.
 
-Turning the sponsor off currently prevents rent-bearing app actions; it does
-not automatically make the owner wallet pay. A mainnet launch with sponsorship
-off needs an approved product and program plan for those actions. Do not
+Turning the sponsor off blocks device-routed rent-bearing actions; it does
+not automatically make the owner wallet pay. Market purchases have an
+owner-approved path whose device payer must cover fees and any new closet's
+rent ([MARKETPLACE.md](MARKETPLACE.md)); the spendable wallet balance is not
+an automatic rent refill. A mainnet launch with sponsorship off needs an
+approved product and program plan for those actions. Do not
 promise that Market revenue or coin fees will fund operations without a budget.
+
+Changing the cluster env value is not a mainnet enablement mechanism. The
+sponsor explicitly refuses `mainnet-beta`; `COIN_CONFIGS` and
+`COIN_LOOKUP_TABLES` have devnet entries only. The program, treasury and Core
+collection identities remain checked-in constants, not cluster-selected env
+values. Verify separately approved identities and actual deployed accounts;
+passing local parity tests does not prove a deployment matches them.
 
 ## Release gates
 
 - [ ] Q6 resolved; Q3 and Q4 settled for the planned load.
 - [ ] Program and server security review complete; findings closed or explicitly accepted.
+- [ ] Coin spend authorization reviewed: current brackets reserve existing owner
+      SOL but fund the SDK with the spendable wallet balance minus the device
+      refill, not just the quoted input; any narrower funding/validation change
+      is implemented and tested, or this exposure is explicitly accepted.
 - [ ] Upgrade, treasury, collection and derivation authorities recorded and recoverable.
 - [ ] Fee/rent policy, shared limits, budgets and alert ownership approved.
 - [ ] Market prices, coin configs, disclosures and recipients verified against source and chain.

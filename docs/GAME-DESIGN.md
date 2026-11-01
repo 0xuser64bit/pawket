@@ -1,16 +1,12 @@
 # Game design
 
-Numbers below mirror `src/lib/game/` exactly. If the Anchor program changes, math + program constants + tests move together — never one side alone. Token balances must never enter these formulas.
+The sources of truth are `src/lib/game/` and the matching program rules.
+Math, program constants, the lockstep fixture and tests move together — never
+one side alone. Token balances must never enter these formulas. See
+[Solana](SOLANA.md) for program contracts and [Testing](TESTING.md) for both
+replay suites.
 
 ## Stats and care
-
-Playground rounds have a Pause/Resume control and pause when the page is
-hidden, preserving the round. Catch captures the finger until it lifts;
-hovering before the first tap does not start a round. Copy locks its input
-between patterns and replays the current demonstration after a pause.
-Pairs keeps a completed round until its result is delivered, even across
-pause/resume or a changed render callback. These are interaction rules;
-the scores, seeds, daily XP and program math are unchanged.
 
 - Initial: **72** all vitals (`INITIAL_STAT_VALUE`). Range 0–100, rounded, clamped.
 - Cooldown: **30 min per action** (`CARE_COOLDOWN_SECONDS`), client-validated + on-chain 6002.
@@ -23,8 +19,9 @@ the scores, seeds, daily XP and program math are unchanged.
 | Groom | — | +3 | — | +25 | +10 |
 | Rest | — | — | +28 | — | +10 |
 
-Implemented in `applyCareAction` (pure, tested exact). Home shows the recorded
-XP gain after a successful care; it does not preview each stat delta.
+Implemented in `applyCareAction` (pure, tested exact). Home reports success
+only after local storage accepts the care or the chain transaction confirms;
+it does not preview each stat delta.
 
 ## Decay
 
@@ -63,13 +60,19 @@ does not already grant.
 
 
 1. Open Home → see mood + decay estimate.
-2. 2–4 care actions (cooldown-spaced) → XP + Passport entries.
+2. Care as needed → XP + Passport entries; each action has its own cooldown.
 3. Finish one playground round → +25 XP once per pet per UTC day. The care checklist grants no extra reward.
 4. Streak: consecutive-active-days counter (timezone-safe: UTC day boundaries, inject `now`); streak break is forgiving copy ("Come back anytime — no penalties").
 5. Share a playground score as text and a link, or use Home's Photo tool to
    capture the room with the selected frame. A new level is announced after care.
 
 ## Playground
+
+Rounds have a Pause/Resume control and pause when the page is hidden,
+preserving the round. Catch captures the finger until it lifts; hovering
+before the first tap does not start a round. Copy locks input between
+patterns and replays the demonstration after a pause. Pairs delivers a
+completed result once, including across pause/resume and callback changes.
 
 Four games ship, each one round, each a pure step function of a seed and
 the player's input (`src/lib/play/`), tested for determinism. A game card
@@ -110,7 +113,8 @@ also change appearance only.
 - Reuse on-chain cooldown as the primary throttle (can't farm faster than 30m/action on-chain).
 - Rate limits: the RPC proxy, the Actions and the coin routes limit each caller, and what the sponsor pays is limited per key and, fees and rent alike, by an hourly budget read from its balance (`mayPayFee`, `mayPayRent`, `src/server/sponsor.ts`).
 - There is no bot detection or review queue. Wallet and guestbook counts are not Sybil-resistant.
-- No pay-to-win also means no "energy refill for SOL" — rejected explicitly. Rest is the only energy path.
+- No pay-to-win also means no "energy refill for SOL" — rejected explicitly.
+  Rest is the care action that replenishes energy.
 
 ## Changing the rules
 

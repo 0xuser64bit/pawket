@@ -2,7 +2,9 @@
 
 The current decisions below explain the implementation. Superseded designs
 and detailed change records remain in Git history. Update this document when
-an accepted decision changes; put unresolved choices in `OPEN-QUESTIONS.md`.
+an accepted decision changes; put unresolved choices in
+[Open questions](OPEN-QUESTIONS.md). Operational procedures belong in the
+linked owning guides, not in this decision record.
 
 ## One web product, one Android shell
 
@@ -10,7 +12,8 @@ Next.js App Router owns pages and APIs; React and TypeScript own interactive
 leaves; Tailwind and `src/components/pk/` own the design system. A single web
 application keeps product rules in one place. Android adds phone capabilities
 and Mobile Wallet Adapter through an origin-locked WebView, with no second
-game store or transaction engine. See `ARCHITECTURE.md` and `ANDROID.md`.
+game store or transaction engine. See [Architecture](ARCHITECTURE.md) and
+[Android](ANDROID.md).
 
 ## Local adoption, optional chain persistence
 
@@ -24,23 +27,22 @@ storage migrations remain supported so an update does not discard a pet.
 
 A Pet PDA owns identity, vitals, XP, cooldowns and wearing. Its Passport owns
 streaks, counts and recent care. Pure browser math and the program replay the
-same `lockstep.txt`; neither side may change alone. Confirmed chain state is
-read again before care animation or success is shown. Pets are not transferable.
+same `lockstep.txt`; neither side may change alone. Care must confirm and
+reload chain state before animation or success; never write an optimistic
+record. Pets are not transferable.
 
 ## Pawket Wallet is required for app transactions
 
-A linked Pawket Wallet is required for app actions. Until 17 October 2026 it
-also had to hold SOL even while Pawket sponsored, though the program never
-needed a balance for a sponsored device action; 74 wallets kept pets on
-Solana and 12 had a Pawket Wallet. The balance is now required only where it
-is spent: Market looks, coins, and the device's fees while sponsorship is
-unavailable. The sponsor's own per-caller limits and hourly budget bound
+A linked Pawket Wallet is required for app actions. Its SOL balance is
+required only where it is spent: Market looks, coins, and the device's fees
+while sponsorship is unavailable. The sponsor's own per-caller limits and hourly budget bound
 what empty wallets can cost it. No owner-wallet
 fallback spends from the external balance. Non-money actions use the device's
 program-checked instruction twins; money always requires the owner's approval.
 Coin spending is bracketed atomically by `fund_wallet_spend` and
 `settle_wallet_spend`, preserving preexisting owner SOL and returning change
-and proceeds to Pawket Wallet. See `SOLANA.md` and `SECURITY.md`.
+and proceeds to Pawket Wallet. See [Solana](SOLANA.md) and
+[Security](SECURITY.md).
 
 ## A device key has a narrow lifetime and scope
 
@@ -77,19 +79,19 @@ There is no resale or effect on progression.
 ## Room things are free, or come with a Market room
 
 The room's things — a picture, a plant, a rug, the pet's bed and something
-past it (`src/lib/room/decor.ts`) — arrived while the program was frozen in
-review, so none has an item id or a price. Most are free; each of the twelve
-Market rooms brings one thing of its own, open once the closet holds that
+past it (`src/lib/room/decor.ts`) — have no standalone item id or price.
+Most are free; each of the twelve Market rooms brings one thing of its own,
+open once the closet holds that
 room. A purchase gained something; nothing that was bought changed. Where
 things stand is kept on the device, like the player's look, and a visit shows
 the room as it came. Selling a room thing on its own would need item ids and
-prices in a program upgrade (`MAINNET.md`).
+prices in a program upgrade ([Mainnet](MAINNET.md)).
 
 ## A coat is the pet's, on this device
 
 A pet's coat is fur, not clothes: chosen at adoption or in the wardrobe,
 five per species (`src/lib/player/coats.ts`). The Pet account has no field
-for it and the program is frozen, so a coat is kept on the device, like the
+for it, so a coat is kept on the device, like the
 room and the player's look; the public record shows the species' classic
 coat. In 3D the room swaps the colours the pipeline baked into the model
 (`PetActor.paint`), so a coat needs no new file.
@@ -203,8 +205,9 @@ Weighed on 25 October 2026. None of these four goes into the next upgrade.
   fee, as `act` does, would leave a two-signature trade with a priority fee
   short, until the device fell below rent and trades failed.
 - **No daily cap on recorded rounds.** Only a pet's first round of a UTC day
-  earns XP, so repeats change nothing. A device's daily limit and the
-  sponsor's per-caller limits bound their fees. A cap needs a counter, which
+  earns XP. Repeats still count as plays and activity, but do not change
+  vitals or cooldowns. A device's daily limit and the sponsor's per-caller
+  limits bound their fees. A cap needs a counter, which
   means migrating every Passport's layout.
 - **The guestbook's eight-visitor window stays.** A visitor pushed out of the
   last eight can wave again that day. Waves are a greeting, not a score, and

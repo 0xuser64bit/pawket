@@ -5,6 +5,17 @@ program. Meteora's SDKs and their web3.js v1/Anchor clients stay in
 `src/server/coins/` and operational scripts; lint enforces that boundary.
 Dependency versions live in package and toolchain files.
 
+## Start with the task
+
+- Wallet linking, recovery or fee problems: [The Pawket Wallet](#the-pawket-wallet),
+  [Transaction lifecycle](#transaction-lifecycle) and [ENVIRONMENT.md](ENVIRONMENT.md).
+- Changes to signing permissions: inspect `instructions.ts`, `send.ts`,
+  `sponsor.ts` and the program together; use [SECURITY.md](SECURITY.md).
+- Keepsakes: [Keepsakes](#keepsakes-metaplex-core); cosmetics: [MARKETPLACE.md](MARKETPLACE.md);
+  guild coins: [METEORA-INTEGRATION.md](METEORA-INTEGRATION.md).
+- Program upgrades: [Devnet deployment](#devnet-deployment) and
+  [TESTING.md](TESTING.md). Mainnet has separate [release gates](MAINNET.md).
+
 ## Program identity and source
 
 The current devnet program is `PawkHvXJKfsUfKs8mgLS7FXbLuNZ43fwEFGkzYdeM74`.
@@ -74,6 +85,9 @@ bounded confirmation check still cannot determine an outcome, the toast says so
 and keeps its Explorer link; reloading checks the same receipt again, never
 resubmits it. Only a definitive outcome clears that pending receipt; newer sends
 never evict unresolved receipts.
+This recovery is scoped to the tab's session storage, not a server queue or
+cross-device backup. Keep the signature if closing the tab or clearing storage;
+check its chain outcome before manually retrying.
 
 App actions require a linked Pawket Wallet. While Pawket sponsors, it may be
 empty; Market looks, coins and the device's unsponsored fees spend its
@@ -104,7 +118,10 @@ action with recovery instructions.
 
 The device receives a bounded fee float when linked. Without sponsorship,
 eligible non-rent actions use that float; each refill is capped at one network
-fee and the float's ceiling. Rent-bearing app actions wait for sponsorship.
+fee and the float's ceiling. Device-routed rent-bearing actions wait for
+sponsorship. Owner-approved Market purchases have a separate rent payer path
+([MARKETPLACE.md](MARKETPLACE.md)); wallet setup and management are not device
+action fallbacks.
 While sponsored, a linked device acts with an empty balance. History
 comes from confirmed Solana transactions (`src/lib/wallet/history.ts`).
 Versioned transactions resolve instruction and balance indices against their
@@ -230,6 +247,14 @@ are the transaction's own keys, never ones a lookup table supplies. The device
 signs a coin transaction, without a prompt, only when it appears in no
 instruction between the brackets, no priority fee is asked of it, no
 precompile verifies a signature and it carries at most four signatures.
+
+`forPlayer` in `src/server/coins/meteora.ts` funds the owner with the wallet's
+spendable balance minus the device-float refill, not just a quote's input.
+The brackets protect the owner's pre-existing SOL, but do not independently
+limit SDK spending to the displayed trade amount. The owner still approves
+the prepared transaction; this trust boundary is a [mainnet review item](MAINNET.md).
+The device needs enough existing SOL to pay the fee and remain rent-exempt
+before that transaction can refill it.
 
 [METEORA-INTEGRATION.md](METEORA-INTEGRATION.md) owns presets, stages, quotes,
 routing and operational scripts. [GUILDS.md](GUILDS.md) owns membership and

@@ -4,6 +4,12 @@ These are the product's financial and fairness boundaries. Implementation
 lives in `src/lib/guilds/boundary.ts`, `src/lib/coins/copy.ts`, the program and
 `src/server/coins/`. Mainnet requirements are separate in `MAINNET.md`.
 
+For a purchase refusal, use [MARKETPLACE.md](MARKETPLACE.md#purchase-flow);
+for quote, graduation or fee behavior, use
+[METEORA-INTEGRATION.md](METEORA-INTEGRATION.md#failure-handling). Lost receipts
+and authority incidents belong to [SECURITY.md](SECURITY.md#verification-and-incident-handling),
+not a new refund or custody service.
+
 ## Fairness
 
 Local adoption and care work without a wallet or token purchase. Cosmetics,
@@ -11,7 +17,9 @@ guild membership and coin balances never change stats, XP, cooldowns, scores
 or the daily round bonus. Membership and coin ownership are independent.
 Holding a coin only adds a crest pin on the holder's pets on the guild page.
 
-The program enforces cooldowns and daily limits. Scores are produced by local
+The program enforces care cooldowns, the first-round-of-the-UTC-day XP rule and
+linked-device action limits. It does not cap owner-signed `finish_round`
+submissions per day; further rounds do not earn more XP. Scores are produced by local
 solo games; recording a round grants a flat bonus and is not a competitive
 score certification. There is no money prize or implemented anti-bot review
 service. Do not promise fraud detection or Sybil-resistant counts.
@@ -21,8 +29,12 @@ service. Do not promise fraud detection or Sybil-resistant counts.
 The Market shows the program price, destination treasury and fee payer.
 Coin pages show supply, preset, fees, graduation terms, locked liquidity and
 risks before signing. The coin ticket shows the quote, slippage and minimum
-output; quotes expire after 20 seconds. Risk acknowledgement is remembered per
-coin per device and is required before its first launch or trade.
+output; its sign button expires a quote after 20 seconds. Risk acknowledgement
+is remembered in this browser origin's local storage, keyed by `launch-<slug>`
+for launching and mint for trading, and required by the UI before its first
+launch or trade. Neither is server/program
+authorization: the trade API accepts `amount` and `minimumOut` without quote
+age or acknowledgement, and the swap enforces that submitted minimum.
 
 Every spend needs the owner's approval, preflight and a visible transaction
 receipt. A device may pay a coin transaction's network fee but cannot approve
@@ -30,6 +42,13 @@ its spending. Confirmed balances are read again; no optimistic patch invents
 a purchase, fill or entitlement. `copy.test.ts` checks the prohibited promises
 of value in coin copy. Do not describe a coin as savings, income or a guaranteed
 return.
+
+Preflight is not a guarantee of execution: a simulation refusal sends nothing,
+while a later on-chain refusal still spends a network fee. Coin funding
+temporarily exposes the wallet's spendable balance minus the device refill to
+the owner-approved SDK instructions. The atomic brackets protect existing
+external-owner SOL and return change, but do not cap spending to the ticket's
+input; see [SECURITY.md](SECURITY.md#known-limits-and-release-blockers).
 
 ## Supply, liquidity and fees
 

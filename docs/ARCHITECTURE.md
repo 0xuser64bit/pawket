@@ -5,6 +5,40 @@ Android shell. React/TypeScript owns interactive leaves; server routes own
 privileged reads and transaction preparation. `package.json` and the native
 build files own dependency versions.
 
+[Documentation](README.md) · [Product](PRODUCT.md) · [Routes](ROUTES.md) ·
+[Accepted decisions](DECISIONS.md)
+
+## Follow one care
+
+```mermaid
+sequenceDiagram
+  actor Player
+  participant UI as Home and useCompanion
+  participant Local as Local pet storage
+  participant Send as usePawketSend / send.ts
+  participant Chain as Solana program
+  participant Room as Room renderer
+  Player->>UI: Choose a care
+  alt Pet in this browser / app
+    UI->>UI: Project decay and apply pure game math
+    UI->>Local: Save changed record
+    Local-->>UI: Write succeeded, or show failure
+  else Pet on Solana
+    UI->>Send: Build permitted instruction
+    Send->>Send: Check device link, payer and sponsorship
+    Send->>Chain: Simulate, sign and send
+    Chain-->>Send: Confirmation or retained uncertain signature
+    Send-->>UI: Result and Explorer receipt
+    UI->>Chain: Refresh authoritative record
+  end
+  UI-->>Room: Saved / confirmed care moment
+```
+
+The non-negotiable distinction: a local storage write and a chain transaction
+are different persistence paths. There is no API that imports local XP into
+a Pet account. Both paths use the same game rules, but a renderer never gets
+write authority. [Solana](SOLANA.md) owns the precise signing lifecycle.
+
 ## Boundaries
 
 | Directory | Responsibility |
@@ -29,10 +63,19 @@ build files own dependency versions.
 | `scripts/3d/`, `assets/`, `public/3d/` | Source assets, reproducible build and generated room assets |
 | `e2e/` | Browser tests and test-only wallet tooling |
 
-`ROUTES.md` maps pages and APIs. [AGENTS.md](../AGENTS.md) maps individual facts to their
+[Routes](ROUTES.md) maps pages and APIs. [AGENTS.md](../AGENTS.md) maps individual facts to their
 source files; do not add another store of those facts.
 
 ## Persistence and reads
+
+| Data | Authoritative home | Across devices? |
+| --- | --- | --- |
+| Local pets, XP and care | Origin's localStorage | Only through a saved pet copy |
+| Coats, player look, room things, best scores and settings | Device-local stores | Not automatic; pet copies include coats only |
+| Solana pet and Passport | Program accounts | Read with the same owner wallet, or publicly by pet address |
+| Purchased looks | Owner's chain Closet | Read for the connected owner; not a browser purchase flag |
+| Device signing permission | Pawket Wallet account plus a non-extractable IndexedDB key | Relink on each new device; one current link per owner |
+| Discovery counts | Short-lived cache of chain reads | Public snapshot, not a transaction receipt |
 
 Local pets live in the `pawket.pets.v1` list. The former single-pet record is
 migrated only after the new list is written successfully. Entries a version
@@ -83,8 +126,15 @@ twins; owner approval remains mandatory for wallet management and spending.
 The sponsor signs eligible devnet transactions first. The client verifies the
 message, sends with preflight, waits for confirmation, then reloads the record.
 Unknown outcomes retain the existing signature. No optimistic chain care or
-replacement send is permitted. `SOLANA.md` describes the owner-approved Actions
+replacement send is permitted. [Solana](SOLANA.md) describes the owner-approved Actions
 flow and prepared coin/keepsake transactions.
+
+**Known sequencing gap:** Home's `careOnChain` starts `companion.refresh()`
+after the send result but does not await it before queuing the confirmed-care
+moment (`src/components/home/home-screen.tsx`). Confirmation is required;
+completion of the fresh read is not currently a gate on that animation.
+The required confirm-and-reload contract remains the target; a successful
+animation is not evidence that the refresh has finished.
 
 The shared RPC transport retries HTTP 429 responses within its bounded retry
 budget. Cancellation and read deadlines also stop the backoff immediately,

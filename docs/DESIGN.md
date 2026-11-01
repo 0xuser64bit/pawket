@@ -2,7 +2,10 @@
 
 Pawket uses a shared design system for the web app and Android's hosted pages.
 This document defines visual and interaction contracts. Source owns exact
-values; update this guide when the product changes.
+values; update this guide when the product changes. See
+[Room rendering](ROOM-3D.md) for the asset/runtime contract,
+[Marketplace](MARKETPLACE.md) for purchase behavior and
+[Testing](TESTING.md) for validation boundaries.
 
 ## Sources
 
@@ -104,13 +107,10 @@ the buyer's preview, fixed price, treasury and current fee payer. A room
 thing's sheet has no price and no Paper: it places the thing, or opens the
 room it comes with.
 
-The front door leads with the pets, then real figures read from the program,
-then a room that is theirs: three prints taken with Home's Photo tool in the
-3D room (`public/landing/`, retaken when the room or its things change) and a
-few of the room's things. A day with them, the Market's looks at their fixed
-prices, the ink band for Solana and three plain columns of what is owned
-follow; the whole asset table stays one fold away. On a phone the prints,
-the day and the shelf are rows to swipe, so the page stays short.
+The front door leads with pets and chain-read figures. Landing prints in
+`public/landing/` come from Home's Photo tool; retake them when the room or
+its things change. On phones, prints, daily-loop examples and the shelf
+use swipeable rows rather than stretching the page.
 
 Adoption uses a species row that follows the visible choice on a phone.
 Playground cards open daily rounds or practice; Pause remains reachable beside
@@ -136,7 +136,7 @@ the room already plays the moment, on Home and on a visit. Rendering pauses
 when off screen or hidden; reduced motion renders on demand and holds a moment
 still. [ROOM-3D.md](ROOM-3D.md) owns staging, contact, loading and asset budgets.
 
-## Controls, sheets and recovery
+## Controls and sheets
 
 Use verb-first, single-line button labels; a label that cannot fit its
 button (a small phone, a large font) wraps to a second line rather than
@@ -150,6 +150,9 @@ on close. Escape, Cancel and backdrop dismissal agree. On phones the header
 supports downward dismissal and the footer keeps the main action under the
 thumb; the body scrolls independently. Paper sheets use Paper actions.
 Tabs support arrow keys and one keyboard stop. Photos use the shared sheet.
+
+## Navigation and feedback
+
 Profile tabs update local history immediately, preserve deep links and browser
 Back/Forward, and keep the room mounted. Going somewhere commits at once
 to the place's still placeholder: every segment whose pages change under it
@@ -162,12 +165,12 @@ is in front and up to two older ones tuck in under it, a sliver each, so a
 few at once never cover the screen; hover, focus or a tap fans them out.
 A finger flicks one away up or to either side, and its close keeps a 44px
 target behind a small mark. A wait's mark becomes a tick that pops in.
-The founding page shares the directory's page rails. Its head sets the title
-on the left and the guild as it will look on the right; below 720px the
-title steps down to a guild page's phone size and the guild comes down under
-it, whole, its crest on the right edge in line with the form. The form fills
-the width below.
+The founding page shares the directory's rails: title and guild preview sit
+side by side, then stack below 720px above the full-width form.
 Record portraits align with their text at the leading edge.
+
+## Choices, time and sound
+
 Short selections use the shared labelled Choice group, including event
 durations, poll lengths, photo poses and frames; no native select remains.
 A consent box is a Paper box with an ink tick, and a disclosure inside a
@@ -189,6 +192,8 @@ in three) and a short tune per moment. Sound is on until muted and never
 starts before a tap; it fades in, muting silences what is already ringing,
 and a hidden or left Home goes quiet. Blocked storage keeps the choice for
 the page.
+
+## Failure and recovery
 
 A failed read provides a disabled-while-reading retry without resetting local
 records. Offline, a place that needs the server waits in its placeholder
@@ -214,7 +219,7 @@ Text meets 4.5:1 contrast on its intended grounds. Focus, meaningful marks and
 control boundaries meet 3:1. Meaning never depends on color or motion alone.
 Keep keyboard focus visible and clear of the dock. Verify the affected flow at
 320px, with long names, large text (the Android app follows the phone's
-font size, 85–200%) and reduced motion; [TESTING.md](TESTING.md)
+font size, 85–200%) and reduced motion; [Testing](TESTING.md)
 identifies browser and physical Android checks.
 
 ## Product voice

@@ -4,6 +4,12 @@ A guild is a name, motto, crest and group of pets recorded on Solana. Guilds
 support optional community participation; membership and coin holdings are
 independent. The product hierarchy is pets, guilds, then coins.
 
+For membership and permissions, inspect `src/lib/guilds/guild.ts`, the builders
+in `src/lib/solana/instructions.ts` and guild/gathering constraints in
+`programs/pawket/src/lib.rs`. [SOLANA.md](SOLANA.md) explains signers and rent;
+[METEORA-INTEGRATION.md](METEORA-INTEGRATION.md) owns coin transactions, not
+this document. [SECURITY.md](SECURITY.md) records moderation and count limits.
+
 ## Membership and discovery
 
 A pet founds or joins one guild at a time. Its `GuildMember` PDA records the
@@ -27,7 +33,7 @@ A slug is first come, first served. The program refuses `RESERVED_SLUGS`
 | Actor | Permissions |
 | --- | --- |
 | Pet owner or authorized device | Join/leave, RSVP, check in and vote through a pet they keep |
-| Founder | While the founding pet remains a member: create events and polls, and launch the guild's coin. Claim the founder's fees |
+| Founder (or authorized device for events/polls) | While the founding pet remains a member: create events and polls. Only the founder's owner wallet approves a coin launch or fee claim; fee claims do not require continued membership |
 | Pawket | Delist its product surfaces; cannot move pets, change membership or reverse chain transactions |
 
 Events have program-checked times and RSVPs per pet. Check-in uses that RSVP
@@ -49,7 +55,12 @@ and stay with the founder's wallet (`DECISIONS.md`).
 
 ## Optional coins
 
-A guild of three pets may launch one coin on a constrained devnet preset.
+A guild of at least three pets may launch one coin on a constrained devnet preset.
+The threshold counts pets, not distinct owners. The launch API checks the
+listed guild, founder wallet, member count and founding pet's current
+membership before preparing a Meteora transaction. These are server checks;
+the Pawket program owns membership and event/poll permissions, not the coin's
+external pool rules. No coin launches automatically when the threshold is met.
 Trading is available only on `/guilds/[slug]/coin`, with disclosed terms and
 risks. Holding only adds the crest pin to the holder's pets on that guild's
 page; it grants no membership, vote weight or progression benefit.
@@ -61,6 +72,7 @@ player protections.
 Guild pages link reports to the support contact in `src/config/site.ts`.
 `src/lib/guilds/delisted.ts` controls promotion. A delisted guild leaves
 discovery; its page explains the restriction and its coin is `suspended`, with
-no trades offered by Pawket. Chain membership and holdings remain unchanged.
+no trades offered by Pawket. A guild without a curve still has stage `none`,
+but its launch is refused. Chain membership and holdings remain unchanged.
 Pet identity stays primary; coin launch and trade controls stay off Home,
 Profile, Passports and the Market.

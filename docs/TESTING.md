@@ -1,5 +1,17 @@
 # Testing
 
+Start with tests at the changed layer, then run the full gate required by
+[Workflow](WORKFLOW.md). The commands below are separate checks; `pnpm verify`
+does not run browser, program, Android or opt-in devnet suites.
+
+```sh
+pnpm test       # Vitest, single run
+pnpm verify     # typecheck + lint + test + build
+pnpm e2e        # Chromium; starts/reuses the dev server, no signing by default
+CI=1 pnpm e2e --workers=2  # production build; run verify first
+gitleaks git --redact --log-opts=--all .  # every local Git ref, including old commits
+```
+
 ## Frontend stress checks
 
 `pnpm e2e:audit` runs axe accessibility scans, copy-import failure/race and
@@ -15,7 +27,7 @@ Automated axe results are not a substitute for keyboard and screen-reader checks
 
 | Layer                          | Where                                   | Runner   |
 | ------------------------------ | --------------------------------------- | -------- |
-| The program, every instruction and guard | `programs/pawket/tests/program/` (incl. `market.rs`, `gatherings.rs`, `guestbook.rs`) | cargo + LiteSVM (`pnpm program:test`) |
+| Program instructions and rejection paths | `programs/pawket/tests/program/` (incl. `market.rs`, `gatherings.rs`, `guestbook.rs`) | cargo + LiteSVM (`pnpm program:test`) |
 | Program ↔ browser math         | `src/lib/game/lockstep.txt`, replayed by `lockstep.rs` and `src/lib/guest/lockstep.test.ts` | both |
 | Game math                      | `src/lib/game/*.test.ts`                | Vitest   |
 | Solana PDAs / instruction bytes| `src/lib/solana/*.test.ts`              | Vitest   |
@@ -23,7 +35,7 @@ Automated axe results are not a substitute for keyboard and screen-reader checks
 | Account decoding (hand-laid bytes) | `src/lib/solana/accounts.test.ts`   | Vitest   |
 | What the sponsor signs         | `src/lib/solana/sponsor.test.ts`        | Vitest (node) |
 | The sponsor route: what it refuses before signing, the limits it hands the co-signer, its scrubbed log | `app/api/sponsor/route.test.ts` | Vitest (node) |
-| The whole path on devnet       | `src/lib/solana/devnet.test.ts`         | `pnpm e2e:devnet` (skipped otherwise; needs the test funder and a sponsor above 2 SOL, `docs/ENVIRONMENT.md`) |
+| The whole path on devnet       | `src/lib/solana/devnet.test.ts`         | `pnpm e2e:devnet` (skipped otherwise; funding prerequisites in [Environment](ENVIRONMENT.md)) |
 | A guild coin's life on devnet  | `src/server/coins/devnet.test.ts`       | `pnpm e2e:coins` (skipped otherwise) |
 | Coin presets ↔ Meteora's validation, stages, copy | `src/server/coins/curve.test.ts`, `src/lib/coins/*.test.ts` | Vitest |
 | The path through the screens   | `e2e/chain.spec.ts` + `e2e/test-wallet.ts` | `PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/chain.spec.ts` |
@@ -47,22 +59,21 @@ Automated axe results are not a substitute for keyboard and screen-reader checks
 | The page's half of the Android bridge; the app and the site agree on the package | `src/lib/native/*.test.ts` | Vitest |
 | When the care reminder comes (the program's decay, waking hours) | `src/lib/reminders/care.test.ts` | Vitest |
 | The Android shell's checks: origin, picture, file name, frames, posted pages, renderer retries, reminder fields | `android/app/src/test/…/BoundaryTest.kt`, `ShellRulesTest.kt`, `CareReminderTest.kt` | `cd android && ./gradlew testDebugUnitTest` |
-| The Android app on a phone: wallet, sends, bridge, lifecycle | the physical-device release checklist in `docs/ANDROID.md` | emulator or device, with a Mobile Wallet Adapter wallet |
+| Android release behavior: wallet, sends, bridge, lifecycle and accessibility | [Physical-device release checks](ANDROID.md#physical-device-release-checks) | signed release APK on physical phones with consumer MWA wallets; emulator smoke checks are supplementary |
 
-```sh
-pnpm test       # Vitest, single run
-pnpm e2e        # Playwright (starts dev server, asserts shell only)
-pnpm verify     # typecheck + lint + test + build
-CI=1 pnpm e2e --workers=2  # test the production build created by verify
-gitleaks git --redact --log-opts=--all .  # every local Git ref, including old commits
-```
+The opt-in devnet suites spend test funds and create chain records. Follow
+[Environment](ENVIRONMENT.md) and [Solana](SOLANA.md) before running them;
+do not mistake `PAWKET_DEVNET=1` for a harmless browser-test switch.
 
 ## Mandatory coverage
 
 - Touch game math → extend `math.test.ts` (exact values, not snapshots).
 - Touch PDA/instruction code → lock seeds, account metas (order, role),
   discriminator bytes, and arg encoding in the colocated test.
-- Delete or rename a document → update its links and run `docs.test.ts`.
+- Change, delete or rename a document → update its links and run
+  `pnpm exec vitest run src/config/docs.test.ts`. This checks local target
+  existence, Markdown heading anchors, embedded asset references, index
+  discoverability and source paths. Remote availability needs a separate check.
 - Touch a component → extend its test, or exercise manually and say so.
 - Touch layout → add the screen to `SCREENS` in `e2e/layout.spec.ts` if it
   is new; the spec fails on any page wider than a 320px phone.
@@ -90,28 +101,27 @@ gitleaks git --redact --log-opts=--all .  # every local Git ref, including old c
 
 ## Program guards
 
-Deleting any one of the program's 147 account constraints and `require!`
-checks fails a LiteSVM test, except two that cannot change an outcome:
-settlement's checks of its funding's owner, wallet and `keep` repeat what
-funding already checked of the same pair, and settlement runs only after
-that funding succeeded. A spend's tests stand in for a program anyone may
-deploy with `Env::any_program`, which accepts any instruction. Rerun the
-deletions when adding a guard; a new one belongs with a test that fails
-without it.
+Add a rejection test for each new account constraint or `require!` check.
+Where practical, temporarily remove the guard and confirm that its test
+fails; a passing happy path does not establish guard coverage. Restore the
+guard before proceeding. Spend tests use `Env::any_program` to stand in for
+an arbitrary deployed program that accepts any instruction. Do not infer
+exhaustive mutation coverage from the ordinary LiteSVM run.
 
 ## Verification boundaries
 
 The GitHub `Verify` workflow runs `pnpm verify`, Chromium browser tests against
 that production build, a full fetched-history Gitleaks scan, the program's
 build and LiteSVM suite (failing when the built IDL differs from the committed
-one), the Android shell's unit tests and lint, the release script
+one), the Android shell's unit tests and debug lint, the release script
 run to its signer check with a throwaway key, and `pnpm audit` and `cargo
 audit`. Playwright starts `pnpm start` when `CI` is set; build first when
 reproducing CI locally. Without `CI`, it starts or reuses the development
 server. The workflow has no signing secrets and does not run the opt-in devnet
 suites or the Android release and device checks; changes to those layers still
 require their owning checks. The `Watch` workflow checks the live site, its RPC
-and the sponsor's float every four hours once `main` carries it. Gitleaks extends its
+and the sponsor's float on its configured four-hour schedule; its fixed site,
+RPC and floor are in `.github/workflows/watch.yml`. Gitleaks extends its
 default rules with Solana CLI keypair-array detection; its only value
 exceptions are two public browser-storage names from early commits.
 

@@ -1,5 +1,11 @@
 # Development and deployment
 
+Get the web app running first. Program builds, Android tooling and devnet
+signing are separate workflows; none is needed to adopt and care locally.
+
+[Documentation](README.md) · [Environment](ENVIRONMENT.md) ·
+[Testing](TESTING.md) · [Contribution workflow](WORKFLOW.md)
+
 ## Setup
 
 Use Node from `.nvmrc` and pnpm pinned by `packageManager` in `package.json`.
@@ -7,15 +13,43 @@ Use Node from `.nvmrc` and pnpm pinned by `packageManager` in `package.json`.
 Vitest and jsdom versions.
 
 ```sh
+nvm install
 nvm use
-cp .env.example .env.local
+npm install --global pnpm@10.34.6
+cp -n .env.example .env.local
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-The local app opens at `http://localhost:3000`. Guest play needs no key.
-`ENVIRONMENT.md` describes Solana RPC and devnet sponsorship configuration.
-Do not replace an existing local env file or commit secrets.
+Run these commands from the repository root after cloning. `nvm` is optional:
+another Node manager is fine if it selects the version in `.nvmrc`. If pnpm
+is already installed, check `pnpm --version` against `packageManager` instead
+of reinstalling it. The copy command leaves existing env files untouched;
+compare new example settings manually when updating a checkout.
+
+Open [localhost:3000](http://localhost:3000). Adopt a pet, take them home,
+choose **Feed** and reload: the same local pet and saved care should remain.
+**Playground** and **Profile** work without signing. Public pages read
+devnet and may report an unavailable RPC; that does not mean local setup failed.
+
+The [environment guide](ENVIRONMENT.md) explains each setting. Do not copy
+production secrets to get local play working. Work on `dev` and target it
+with development pull requests; see [release boundaries](#development-and-releases).
+
+### Pick the workflow you need
+
+| Work | Additional prerequisites | Next guide |
+| --- | --- | --- |
+| Web UI, local pets, games or docs | Node and pnpm only | [Change workflow](WORKFLOW.md) |
+| Browser verification | Playwright Chromium: `pnpm exec playwright install chromium` | [Testing](TESTING.md) |
+| Solana account reads | A working devnet RPC; public defaults are provided | [Environment](ENVIRONMENT.md) |
+| App signing on devnet | Compatible owner wallet, device link, test SOL where spent, and sponsorship for rent-bearing actions | [Player setup](PLAYING.md#choose-solana-if-you-want-to), [Solana](SOLANA.md) |
+| Program development | Rust, Anchor and Solana toolchain | [Solana](SOLANA.md) |
+| Native shell | JDK and Android SDK | [Android](ANDROID.md) |
+
+No `.env.local` secret is needed by the default web verification suite.
+Opt-in devnet suites create real test-network accounts and spend test SOL;
+read their prerequisites before running them.
 
 ## Commands
 
@@ -35,9 +69,8 @@ Do not replace an existing local env file or commit secrets.
 | `pnpm e2e:coins` | Meteora coin lifecycle on devnet |
 
 Program tooling is pinned in `rust-toolchain.toml`, `Cargo.toml` and
-`Anchor.toml`; it also needs Anchor and the Solana CLI. `SOLANA.md` covers
-program deployment. Android setup, build and release commands are in `ANDROID.md`.
-`TESTING.md` explains the opt-in network tests and their effects.
+`Anchor.toml`; [Solana](SOLANA.md) covers its setup and deployment. Android
+setup, build and release commands are in [Android](ANDROID.md).
 
 For an import/dependency audit, run `pnpm dlx knip@6.41.0`. `knip.json` treats
 the documented operational scripts as entry points and Anchor as an external
@@ -46,14 +79,38 @@ a reported symbol; a protocol compatibility builder is not dead UI code.
 
 ## Change discipline
 
-Read [AGENTS.md](../AGENTS.md), `WORKFLOW.md` and the owning system document. Follow existing
-modules, preserve storage migrations and public redirects, and update callers
-when an interface changes. Keep one purpose per commit and complete the owning
-checks plus `pnpm verify` before declaring the work done.
+Follow [AGENTS.md](../AGENTS.md), the [change workflow](WORKFLOW.md) and the
+owning system guide. The workflow owns the definition of done; the
+[testing guide](TESTING.md) owns which additional checks a change needs.
 
 For Next.js changes, read the installed guides in `node_modules/next/dist/docs/`;
 the repository's installed version governs the API. Interactive leaves use
 `"use client"`; routes and layouts default to Server Components.
+
+## Troubleshooting local setup
+
+| Symptom | Check |
+| --- | --- |
+| `pnpm: command not found` | Install the pinned package manager with the setup command above; reopen the shell if its global bin directory was not on `PATH`. |
+| A Node engine or test-tool error | Select `.nvmrc`; do not remove the engine constraint or update the lockfile to work around an older Node. |
+| Port 3000 is in use | Run `pnpm dev --port 3100` and open that port. Set `NEXT_PUBLIC_APP_URL` to that origin if testing generated links or metadata. |
+| Missing Playwright executable | Run `pnpm exec playwright install chromium`; Linux CI may also need `--with-deps`. |
+| Public pages or health are degraded | Check RPC access and the cluster settings. `/api/health` distinguishes RPC status from sponsor availability; no configured sponsor is normal locally. |
+| Sponsorship is unavailable | Local play still works. Do not fund a real wallet to bypass a devnet test setup; use the explicit prerequisites in [Solana](SOLANA.md). |
+| Another port has no local pets | Browser storage is origin-scoped, including the port. Restore a pet copy if you meant to move it. |
+| 3D is unavailable | Choose 2D; WebGL support is separate from pet state. Use [room troubleshooting](ROOM-3D.md) for asset/runtime work. |
+
+For a production-mode reproduction:
+
+```sh
+pnpm build
+pnpm start --port 3100
+# In another terminal; use a free port with no existing server for CI mode:
+CI=1 PLAYWRIGHT_PORT=3200 pnpm e2e --workers=2
+```
+
+Playwright starts its own server. `CI=1` selects `pnpm start` and refuses to
+reuse an existing one; without `CI`, it starts or reuses `pnpm dev`.
 
 ## Hosted deployment
 
@@ -69,15 +126,18 @@ no sponsor unless configured.
 Work on `dev`; Vercel assigns that branch's Preview deployments to
 `https://dev.pawket.world`. Pushes to this branch update the development site.
 Development pull requests target `dev`. A release is a pull request from `dev`
-to `main`, merged only with the user's explicit authorization; `main`'s ruleset
-requires the web, program, android, audit and secrets checks. The hackathon
-submission (commit `9748288`) stays at its own deployment,
-`https://pawket-g9a4tvamv-init-0ne.vercel.app`, behind Vercel's login.
+to `main`, merged only with the user's explicit authorization. The release
+gate is the web, program, android, audit and secrets checks; confirm that the
+repository's live ruleset requires them before merging. Historical
+submission builds are not the maintained development or production site.
 
-The `dev` branch's Preview configuration sets `NEXT_PUBLIC_APP_URL` to the
-development origin and uses public devnet RPC. Sponsorship is not configured
-for this preview; rent-bearing actions wait for sponsorship. Do not run the
-production-only `scripts/vercel-env.sh` to configure this branch.
+Configure the `dev` branch's Preview environment with `NEXT_PUBLIC_APP_URL`
+set to the development origin and devnet RPC. Sponsorship is optional and
+must be checked at runtime; when it is unavailable, rent-bearing device
+actions wait. Do not run the production-only `scripts/vercel-env.sh` to
+configure this branch. Hosted environment values and branch protections
+must be checked in the deployment provider and repository settings; source
+files alone cannot establish their live state.
 
 The two sites have separate browser storage and device keys, but share the
 same devnet program and its chain records. A program upgrade would affect

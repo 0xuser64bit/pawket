@@ -2,7 +2,7 @@
 
 These choices are unresolved. Work that depends on them needs a product or
 operational decision before implementation. Record an accepted choice in
-`DECISIONS.md` and update the owning system document. The IDs remain stable.
+[Decisions](DECISIONS.md) and update the owning system document. The IDs remain stable.
 
 ## Q3 — Mainnet coin configuration
 
@@ -22,8 +22,7 @@ No indexer or background poller is implemented.
 
 Mainnet coins remain blocked pending legal review of disclosure and utility,
 launch terms, jurisdiction policy, moderation, support and incident ownership.
-Devnet behavior is not evidence of mainnet readiness. See `MAINNET.md`.
-
+Devnet behavior is not evidence of mainnet readiness. See [Mainnet](MAINNET.md).
 
 ## Scope decisions
 

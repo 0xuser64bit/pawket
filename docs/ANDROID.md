@@ -2,8 +2,13 @@
 
 The Android app is a Solana Mobile WebView shell around the hosted Pawket app.
 Web pages, game rules, storage formats, APIs and the Solana send path remain
-authoritative. Kotlin adds navigation and phone capabilities; it holds no
-player key or transaction engine.
+authoritative. Kotlin adds navigation and phone capabilities; it has no
+native player-key store or transaction engine. The hosted page keeps its
+non-extractable device key in WebView IndexedDB, just as a browser does.
+
+See [Development](DEVELOPMENT.md) for hosted deployment boundaries,
+[Solana](SOLANA.md) for wallet and send contracts, and
+[Testing](TESTING.md) for automated coverage.
 
 ## Source boundaries
 
@@ -30,8 +35,9 @@ site — opens in the browser, and the app goes back to where it was. A frame's
 first load and a posted form never reach those checks, so every page's
 `Content-Security-Policy` also limits frames to Pawket and a phone wallet's
 link, and forms to Pawket (`next.config.ts`).
-Release start URLs require HTTPS. Cleartext is allowed only for localhost and
-127.0.0.1, including Mobile Wallet Adapter's local connection.
+The activity refuses release start URLs without HTTPS. Cleartext is allowed
+only for localhost and 127.0.0.1, including Mobile Wallet Adapter's local
+connection.
 
 ## Wallet and lifecycle
 
@@ -46,9 +52,9 @@ confirmation replies preserve the existing signature for lookup, without
 resending. Care moments and haptics wait for confirmation. Local MWA patches
 close sessions after failure, reject account changes and bound waiting. A
 wallet's token is sent for a silent re-authorization only while it is under
-45 minutes old: Phantom's lapse within hours and Solflare's within days, and a
-wallet sent a lapsed one can open with nothing to sign. Past that, the visit
-asks the wallet afresh, then signs. A token the wallet refuses ends the visit
+45 minutes old, to avoid reopening a wallet with a stale authorization and
+nothing to sign. Past that, the visit asks the wallet afresh, then signs.
+A token the wallet refuses ends the visit
 at once, and the next visit asks afresh; no second ask is made in the same
 visit. While a wallet app is open, the send's toast offers "Stop waiting",
 which ends the visit, signs nothing and also makes the next visit ask afresh.
@@ -67,8 +73,10 @@ the keyboard; text follows the phone's font setting.
 
 `WebViewCompat.addWebMessageListener` injects `window.PawketAndroid` only for
 the trusted origin and accepts only its main frame. Requests have checked
-fields and correlated responses. A new operation needs field validation,
-a JVM boundary test and a documented permission reason.
+fields and correlated responses where a reply is requested. If the WebView
+does not support the listener, native operations are unavailable and the page
+uses browser behavior. A new operation needs field validation, a JVM boundary
+test and a documented permission reason.
 
 | Operation | Behavior | Runtime permission |
 | --- | --- | --- |
@@ -111,8 +119,10 @@ key or owner-wallet fallback is provided. Local play remains available.
 
 Release 0.1.0 used `pawket-pets.vercel.app`; 0.1.1 and later use `pawket.world`. Storage
 and keys do not move across origins. Keep the previous host serving older APKs
-and metadata. Players can keep a local pet on Solana before changing origin,
-then reconnect the same wallet and approve a new device link on the new origin.
+and metadata. Save a [local pet copy](ARCHITECTURE.md#persistence-and-reads)
+before changing origin to preserve local progression. Keeping a pet on Solana
+instead creates a new chain record, not a migration of its local progression;
+reconnect the same owner wallet and approve a new device link on the new origin.
 Install updates with the same package and signer without clearing app data.
 
 ## Build
@@ -121,8 +131,9 @@ Use JDK 17 or later and the SDK/build-tools versions required by the Gradle
 project. `android/gradle/wrapper/gradle-wrapper.properties`,
 `android/gradle/libs.versions.toml` and the build files own tooling versions.
 `android/local.properties` points to the local SDK and is ignored.
-The URL, package and version properties are required; a missing or invalid
-value fails the build instead of selecting template defaults. The Gradle
+The URL, package and version properties are required; missing properties,
+blank values or a nonpositive version code fail the build. Start-URL scheme
+validation also runs in the activity. The Gradle
 properties are the only shell identity configuration; no TWA manifest is used.
 
 ```sh
@@ -158,7 +169,8 @@ The script refuses uncommitted changes under `android/` or `public/.well-known/`
 an APK whose package or version differs from `android/gradle.properties`, and
 a signer `assetlinks.json` does not list; it prints the shell commit and the
 hosted web commit (`/api/health`). CI runs it on every push with a throwaway key,
-which it must build, sign and refuse at the signer check. Store the signed
+which it must build, sign and refuse at the signer check. CI runs debug lint;
+run release lint explicitly with the checks above. Store the signed
 APK with its SHA-256, signer fingerprint, shell source commit, hosted web commit,
 cluster, device matrix, results and public receipts. Keep that evidence with
 the release artifacts outside tracked product documentation. Publication
@@ -169,9 +181,10 @@ building an APK does not publish it.
 
 Use a signed release APK and devnet. Record phone, Android, WebView and wallet
 versions, release/web commits, result and transaction signatures. Never record
-recovery screens or private key material. Repository release evidence has not
-completed the consumer-wallet, modern-WebView device-link/revocation and
-TalkBack pass; emulator results do not close that gate.
+recovery screens or private key material. Do not treat automated checks as
+evidence of consumer-wallet compatibility, modern-WebView device linking or
+revocation, or TalkBack usability; each release needs recorded device results.
+Emulator results do not close that gate.
 
 | Check | Expected result |
 | --- | --- |

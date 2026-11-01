@@ -5,6 +5,12 @@ an external audit certificate. Program rules live in `programs/pawket/src/lib.rs
 sponsor rules in `src/lib/solana/sponsor.ts`; signing and message verification
 in `src/lib/solana/send.ts`. [AGENTS.md](../AGENTS.md) is the change contract.
 
+For a signing change, read [Keys and authorities](#keys-and-authorities) and
+[Program integrity](#program-integrity) before editing. For a suspected
+incident, start at [Verification and incident handling](#verification-and-incident-handling).
+[MAINNET.md](MAINNET.md) owns release gates; [ENVIRONMENT.md](ENVIRONMENT.md)
+owns key configuration and rotation prerequisites.
+
 ## Keys and authorities
 
 | Authority | Scope |
@@ -86,6 +92,13 @@ account discriminator at numeric offset zero; malformed filters return a
 JSON-RPC rejection without contacting the provider.
 Meteora SDKs and web3.js v1 remain in `src/server/coins/` and operational scripts.
 Coin reads verify the pool address, mints and creator before using it.
+Discovery's batched `readCoinStages` uses a lighter check of the derived DAMM
+account's program owner. Quotes and transactions use `liveCoin`, which also
+checks the graduated pool's mints; a discovery badge is not trade authorization.
+The browser RPC proxy is not a general provider gateway: it accepts a single
+allow-listed JSON-RPC call, scans only Pawket account kinds, and caps multi-account
+reads at 100 (`src/lib/solana/rpc-proxy.ts`). Server-side coin SDKs use their
+own provider connection, not this browser scan allow-list.
 
 The Android bridge accepts only checked requests from the trusted origin's
 main frame. Wallet, intent and mail links open another app only from that
@@ -141,15 +154,27 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   still costs the float its fee, inside the same per-caller limits and hourly
   budget.
 - `finish_round` has no daily cap on chain. Only a pet's first round of a UTC
-  day earns XP, so repeating it changes nothing in the game; its cost is fees,
-  bounded by the sponsor's per-caller limits and a device's daily limit.
-- A coin transaction funds the owner's account with the whole Pawket Wallet
-  balance for its duration, because the SDK's costs (accounts it opens, a
-  launch's fee) vary, and settlement returns what is left. The owner's own SOL
+  day earns XP; later rounds still increment play/activity counts and update
+  activity timestamps and the streak. Each submission costs fees, bounded by
+  the sponsor's per-caller limits and a device's daily limit.
+- A coin transaction funds the owner's account with the spendable Pawket Wallet
+  balance minus the device-float refill for its duration, because the SDK's
+  costs (accounts it opens, a launch's fee) vary, and settlement returns what
+  is left. The owner's own SOL
   is held by `keep`, and the owner approves the transaction in their wallet, but
   that wallet shows the owner's balance unchanged: what the server built between
   the brackets decides what the funded balance pays for. Funding only what a
   trade needs, checked in the browser, is mainnet work.
+- Quote age and risk acknowledgement are browser controls, not server or
+  program authorization. The ticket disables signing a quote after 20 seconds
+  and stores acknowledgement in local storage, keyed by `launch-<slug>` for
+  launching and mint for trading (or only this visit if storage fails).
+  The trade API accepts
+  an amount and `minimumOut`, not a signed quote or expiry; it rechecks the
+  current coin stage, while Meteora enforces the submitted minimum output.
+  The launch API checks the founder, three-pet threshold, listing and founding
+  pet's membership. These are Pawket server launch rules, not constraints of
+  the external Meteora program (`app/api/coins/[slug]/launch/route.ts`).
 - Guild slugs are first come, first served and never freed: a guild has no
   close instruction, and the program reserves only `new`, the app's own create
   route (`RESERVED_SLUGS`). Delisting (`src/lib/guilds/delisted.ts`) hides a
@@ -162,9 +187,11 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   the native addon. Dependency scanners may still flag its version. MWA session
   behavior also relies on local patches; keep the regression tests when upgrading.
 - `braces` arrives through ESLint's file-pattern tooling and has a published
-  stack-exhaustion advisory with no patched release in the current dependency
-  audit. It does not handle player requests. Treat lint input as repository
-  code and review its upstream fix before changing the override graph.
+  stack-exhaustion advisory recorded in the dependency-audit exceptions. It
+  does not handle player requests. Treat lint input as repository code;
+  `pnpm-workspace.yaml` owns the accepted CVE exceptions and local patches.
+  Re-run the audit and review available fixes when updating them; an exception
+  or a previously clean audit is not evidence about today's advisory feed.
 - Rust's locked Solana/LiteSVM dependency graph includes maintenance advisories.
   Its legacy `rand` version also appears in [RUSTSEC-2026-0097](https://rustsec.org/advisories/RUSTSEC-2026-0097.html),
   through the test runtime; its required `log` feature is not enabled. Review

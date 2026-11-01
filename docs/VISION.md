@@ -4,7 +4,7 @@ Pawket gives a player a companion they recognize and a reason to return.
 A care session should be understandable in seconds and rewarding without a
 purchase. Solana makes the history portable and public when the player chooses.
 
-`PRODUCT.md` defines what is implemented. This document guides product
+[Product](PRODUCT.md) defines what is implemented. This document guides product
 choices; it does not authorize new features or changes to the asset model.
 
 ## Priorities
@@ -29,7 +29,8 @@ choices; it does not authorize new features or changes to the asset model.
 
 A pet's program account remains authoritative. Tradable pets, guild treasuries
 and new token utilities require a separate product decision, technical design
-and review. `OPEN-QUESTIONS.md` tracks the decisions; `MAINNET.md` tracks the
+and review. [Pending decisions](OPEN-QUESTIONS.md) tracks the decisions;
+[Mainnet](MAINNET.md) tracks the
 release requirements.
 
 ## How to assess a proposal

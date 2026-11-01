@@ -13,7 +13,14 @@ A guild of three pets → founder launches on a preset → DBC curve → thresho
 ```
 
 Players never need to understand the pool transition: the coin's page shows
-one stage at a time (`LaunchStage`) and offers only what that stage allows.
+one stage at a time (`CoinStage`) and offers only what that stage allows.
+
+To change terms, start with `src/lib/coins/presets.ts`, then
+`src/server/coins/curve.ts` and `curve.test.ts`. To investigate a quote or
+transaction, follow `coin-desk.tsx` → `app/api/coins/[slug]/` →
+`src/server/coins/meteora.ts` → the [shared send path](SOLANA.md#transaction-lifecycle).
+Use [Sources and operational tools](#sources-and-operational-tools) for config,
+lookup-table and treasury work; these scripts sign transactions, not dry runs.
 
 Guild discovery and Pulse read curve and graduated-pool accounts in batches
 of at most 100, preserving account order when resolving each guild's stage.
@@ -32,9 +39,14 @@ transaction preparation and position fees never wait for that optional scan.
 3. **Server-assisted quotes.** `GET /api/coins/<slug>/quote` quotes with
    Meteora's math (`swapQuote2` partial fill on the curve, `CpAmm.getQuote`
    in the pool); the client never computes a curve. A quote is shown with
-   its age and must be taken again after 20 seconds.
-4. **Preflight on.** Every coin transaction is sent with preflight; one that
-   would fail lands nothing.
+   its age; the UI disables signing it after 20 seconds. The trade endpoint
+   receives `amount` and `minimumOut`, not the quote's timestamp or an
+   authenticated quote. Quote expiry is a UI guard; minimum output is enforced
+   by the swap instruction against the live route.
+4. **Preflight on.** Every app coin transaction is sent with preflight. A
+   simulation refusal broadcasts nothing. State may still change before an
+   accepted transaction lands; an on-chain failure rolls back its state changes
+   but still costs the network fee.
 5. **Explicit sign per trade.** No auto-trading, no "approve all", the owner approves every spend. A linked device co-signs only as fee payer; it cannot authorize spending.
 6. **Verified routing only.** The DAMM v2 route is used only when the pool
    exists at `deriveDammV2PoolAddress(config for the preset's fee option,
@@ -42,9 +54,14 @@ transaction preparation and position fees never wait for that optional scan.
 7. **Disclosure before signing.** The terms (supply, fee split, threshold,
    locked liquidity, launch fee) are on the page before anyone signs, and
    what can go wrong (`COIN_RISKS`) must be read once per coin, per device,
-   before the first trade or launch.
+   before the first trade or launch in Pawket's UI. Acknowledgement is stored
+   in this origin's local storage, keyed by `launch-<slug>` for launching and
+   by mint for trading, not enforced by the API or program.
 8. **The player pays.** Pawket Wallet funds the transaction, returns unused SOL and receives sale proceeds. The owner's existing SOL stays unchanged. Pawket's sponsor pays for pets, never for coins:
    `checkSponsorable` refuses any instruction that is not Pawket's.
+   It also explicitly refuses the Pawket funding/settlement brackets. The
+   device needs an existing fee float even for a sell or fee claim; positive
+   Pawket Wallet balance alone does not guarantee the transaction can start.
 9. **No promise of value.** `copy.test.ts` holds every coin surface to the
    banned-phrase list; a meter toward graduation is "community
    participation", never a price path.
@@ -65,6 +82,10 @@ transaction preparation and position fees never wait for that optional scan.
 Devnet presets are configured for tests using faucet SOL. The mainnet numbers
 in the model are provisional; config addresses, thresholds and keeper behavior
 must be approved and verified before mainnet is enabled (Q3, Q6).
+Market capitalization is not the SOL raised threshold. The latter comes from
+the SDK-built config's `migrationQuoteThreshold`; `raised` is the curve's
+`quoteReserve`. Use those account values for the graduation meter, not the
+market-cap figures above.
 
 ## Stages (`src/lib/coins/stage.ts`)
 
@@ -82,8 +103,9 @@ must be approved and verified before mainnet is enabled (Q3, Q6).
   readable at the derived address is `pending`: trading pauses rather than
   routing anywhere unverified.
 - **Price moved since the quote.** The trade carries the quote's
-  `minimumOut`; Solana refuses a worse fill and only the network fee is
-  spent. The receipt names what did not change.
+  `minimumOut`. If simulation catches a worse fill, nothing broadcasts; if it
+  fails on chain, its state changes roll back and the network fee is spent.
+  The receipt names what did not change.
 - **Client timeout after sending.** "Still waiting", never "failed", with
   the signature to look up (the send's toast).
 - **A buy larger than the curve has left.** Partial fill: it takes what
@@ -117,3 +139,17 @@ scripts/claim-coin-fees.mts    Pawket's partner fees, launch fees and locked-LP 
 scripts/coin-lookup-table.mts  the frozen lookup table graduation needs on a cluster (COIN_LOOKUP_TABLES)
 src/server/coins/devnet.test.ts  a coin's whole life on devnet (pnpm e2e:coins)
 ```
+
+Before an explicitly authorized operational run, check the target RPC's
+genesis, signer address, recipients and available SOL. Each coin script checks
+the selected cluster's genesis; that is not mainnet release approval.
+
+| Script | Local signer input | Effect and follow-up |
+| --- | --- | --- |
+| `coin-presets.mts [devnet\|mainnet-beta]` | `PAYER` file path, default `~/.config/solana/id.json` | Creates missing configs and prints a proposed `COIN_CONFIGS` mapping; it does not edit source. Existing addresses are skipped when any account exists there, so separately verify program ownership and config terms. |
+| `coin-lookup-table.mts [devnet\|mainnet-beta]` | `PAYER_KEYPAIR` file path, same default | Creates and freezes a new table on every run; requires cluster configs. Record and verify the printed address before an authorized `COIN_LOOKUP_TABLES` change. |
+| `claim-coin-fees.mts [devnet\|mainnet-beta]` | `TREASURY_KEYPAIR` file path, default `.keys/treasury.json` | Requires the fixed treasury signer; claims DBC partner/creation fees and that wallet's DAMM position fees. It is not an HTTP route or a service that replenishes the sponsor. |
+
+All three default to devnet and accept a server-only `SOLANA_RPC_URL` override.
+Keep their key files local and untracked. Review the script before invoking it;
+the preset and lookup-table tools can create new rent-bearing accounts.

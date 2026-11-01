@@ -1,79 +1,106 @@
-# Pawket — Routes & Information Architecture
+# Routes and navigation
 
-**Status:** These are the product's routes. Never ship a nav link to an
-unwired route, and call a pet "on Solana" only when it was read from chain.
+This is the map of the implemented app, not a list of proposed screens.
+Paths below are **public URLs**: the `(game)` directory in `app/` is a Next.js
+route group and never appears in a URL.
 
-```text
-/                          landing (live count of pets on Solana)
-/adopt                     a pet in three steps, added beside the others in this browser
-(game)/home                the pet at home (the player's pick) in the room, the deck under it, or an empty room
-(game)/park                every pet the program keeps, read live: the sixteen most cared for, ?all=1 for everyone
-(game)/profile             you: name, look, outfits; ?tab=pets|wardrobe|stickers|settings
-(game)/wallet              the Pawket Wallet: open it, link this device, put in, take out, the history read from chain
-(game)/playground          four games, a shared daily round each; on Solana, "Record the round"
-(game)/pet/[id]            an address: the public Passport, from chain (with its guild and guestbook);
-                           otherwise the record of a pet in this browser
-(game)/pet/[address]/visit you, in a pet's room on Solana: emotes, and a wave into its guestbook
-(game)/market              looks for SOL at fixed prices — 25 pieces, 12 rooms, 8 frames — paid from the Pawket Wallet, and the room's things; the closet read from chain
-(game)/pulse               everything the program holds, counted and read live
-(game)/guilds              every guild on Solana, read live (test and delisted ones left out), and the rule
-(game)/guilds/new          founding a guild: name, motto, crest, the founding pet
-(game)/guilds/[slug]       a guild: its pets read from their accounts, together counts, join or leave, its events and polls, its coin
-(game)/guilds/[slug]/coin  a guild's coin: its terms and stage from chain, launch, quote, trade, graduate, claim
-/privacy                   the privacy policy, for the web and the Android app
-/new                       what changed lately, newest first (`src/config/news.ts`); the front door names the newest
-/api/health
-/api/report                a page's error, its path and words scrubbed, logged; 30 an hour per caller
-/api/sponsor               GET: is it up. POST { transaction }: signed first, as fee payer
-/api/rpc                   the browser's RPC: allow-listed methods to SOLANA_RPC_URL; a send may carry any program's instructions, as a coin trade carries Meteora's
-/api/actions/adopt         Solana Action: adopt straight onto Solana
-/api/actions/care/[pet]    Solana Action: the four cares for the owner; a wave or an adoption for anyone else
-/api/actions/wave/[pet]    Solana Action (POST): a wave, any wallet but the owner's, once a UTC day
-/api/actions/guild/[slug]  Solana Action: a pet joins the guild
-/api/actions/icon          a square card for an Action (?pet=)
-/api/keepsake/[pet]        GET: the card's metadata, live. POST { account }: its creation, owner only
-/api/keepsake/[pet]/card   the card's picture: the pet's portrait and its record's numbers, read now
-/api/keepsake/collection   the collection's metadata
-/api/coins/[slug]/quote    GET: a quote on the curve or in the verified DAMM v2 pool
-/api/coins/[slug]/position GET ?account=: a wallet's locked positions in a graduated coin's pool, and their unclaimed fees
-/api/coins/[slug]/{launch,trade,graduate,claim}   POST { account, ... }: a transaction for the player to sign
-/api/coins/[slug]/metadata the coin's token metadata
-/actions.json              /adopt, /pet/* and /guilds/* unfurl as those Actions
-/robots.txt, /sitemap.xml   crawlers read the production deployment only (never a preview, never /api), from its public pages
-(game)/pet/[id]/opengraph-image, (game)/guilds/[slug]/opengraph-image (its crest), /opengraph-image   share cards
-```
+[Documentation](README.md) · [Architecture](ARCHITECTURE.md) · [Design](DESIGN.md)
 
-Redirects: anything under `/market` goes to `/market`; `/inventory`
-goes to the profile's shelf (`?tab=wardrobe` to its wardrobe).
-`/guilds/boundary` and `/playground/*` go back to their index.
-`/pet/:id/ownership` goes to `/pet/:id`.
+## Player pages
 
-The `(game)` group owns the shell: the label-sized bar (the wallet chip,
-once a wallet is connected, and the room switch) and the floating Dock. The
-dock is Home, Park, Playground, Market, Guilds, Profile. A pet on Solana and
-the Pulse light Park; a browser pet lights Profile, and so does the Pawket
-Wallet (reached from the wallet chip, Home's line under a pet on Solana whose
-care this device cannot sign yet, and Settings).
+| URL | What is there |
+| --- | --- |
+| `/` | Landing page, adoption entry and chain-derived pet count |
+| `/adopt` | Three-step local adoption, beside existing browser pets |
+| `/home` | Chosen pet's room, care deck and tools; adoption prompt if empty |
+| `/profile` | Player name and look, pets shelf; `?tab=pets\|wardrobe\|stickers\|settings` selects a shelf |
+| `/wallet` | Pawket Wallet setup, device link, deposits, withdrawals and chain-read history |
+| `/playground` | Catch, Hop, Copy and Pairs; daily rounds and practice; explicit recording for chain pets |
+| `/park` | Chain discovery: sixteen most cared-for pets, `?all=1` for the full list |
+| `/pet/[id]` | Public chain Passport if `id` is an address; otherwise a device-local pet record |
+| `/pet/[id]/visit` | A chain pet's visit room, emotes and guestbook wave |
+| `/market` | Fixed-price cosmetic shelves, search and the room's things; chain-read closet |
+| `/pulse` | Public counts derived from program accounts |
+| `/guilds` | Guild discovery, excluding test and delisted entries |
+| `/guilds/new` | Founding form: name, motto, crest and founding pet |
+| `/guilds/[slug]` | Membership, pets, gatherings, polls and the optional coin entry |
+| `/guilds/[slug]/coin` | The coin's terms, stage, launch, quotes, trades, graduation and claims |
+| `/new` | Updates from `src/config/news.ts`, newest first |
+| `/privacy` | Web and Android privacy policy |
 
-## Server and client (normative)
+The six-place dock is **Home, Park, Playground, Market, Guilds, Profile**.
+Public Passports and Pulse belong to Park. Local pet records and Pawket
+Wallet belong to Profile. The wallet chip and contextual setup prompts reach
+Wallet; financial controls do not become extra dock destinations.
 
-- Pages and layouts stay **Server Components**. `"use client"` only at
-  interactive leaves: forms, the deck, sheets, games, wallet leaves.
-- The server reads Solana with its own RPC (`src/server/solana.ts`), never
-  the wallet client, and passes plain props to leaves. Server secrets never
-  reach a client import.
-- Client reads go through `useRequest`, not a fetch in `useEffect`.
-  Countdowns are the one timer exception (display only).
-- Every send is an explicit button, disabled while it runs, through
-  `usePawketSend` and `send.ts`; its toast carries the signature and the
-  Explorer link (`src/components/wallet/tx-toast.tsx`).
+Public pages can be read without connecting a wallet. A personal balance,
+owned-pet view or transaction still needs the appropriate wallet context.
+Guild membership leads its page; a coin is traded only on its own page.
 
-## Navigation
+## APIs and generated resources
 
-- Pets before guilds, always. A guild's coin is traded only on its own
-  page; Home, Profile and a pet's record never show a coin or its price.
-- A delisted guild's page stays (the record is on chain) with what Pawket
-  stopped doing; it leaves discovery.
-- Wallet-free: every page reads without a wallet; only sends ask for one.
-- Park shows its title while the independent pet and guild scans run together;
-  a failed guild scan does not hide the pets.
+These routes are application boundaries, not a versioned public SDK. Read
+each handler's schema before constructing requests; a prepared transaction
+is not permission to skip the shared send path.
+
+| Method | URL | Responsibility |
+| --- | --- | --- |
+| GET | `/api/health` | RPC status/latency, sponsor availability, cluster and deployment commit; no credentials or balance |
+| POST | `/api/report` | Scrubbed browser-error reports, rate limited |
+| GET / POST | `/api/sponsor` | Availability / validate and sign an eligible transaction as fee payer |
+| POST | `/api/rpc` | Allow-listed JSON-RPC methods through the configured server endpoint |
+| GET / POST | `/api/actions/adopt` | Adoption Action description / prepared transaction |
+| GET / POST | `/api/actions/care/[pet]` | Owner care choices, or wave/adopt choices for a visitor / prepared transaction |
+| POST | `/api/actions/wave/[pet]` | Prepare a non-owner guestbook wave |
+| GET / POST | `/api/actions/guild/[slug]` | Guild Action description / prepared membership transaction |
+| GET | `/api/actions/icon` | Action image, optionally for `?pet=` |
+| GET / POST | `/api/keepsake/[pet]` | Live metadata / owner-only creation preparation |
+| GET | `/api/keepsake/[pet]/card` | Portrait and record-derived card image |
+| GET | `/api/keepsake/collection` | Collection metadata |
+| GET | `/api/coins/[slug]/quote` | Curve or verified DAMM v2 quote |
+| GET | `/api/coins/[slug]/position` | `?account=` locked positions and unclaimed fees |
+| POST | `/api/coins/[slug]/launch`, `/trade`, `/graduate`, `/claim` | Prepare the corresponding coin transaction; suffixes are relative to the same slug |
+| GET | `/api/coins/[slug]/metadata` | Token metadata |
+| GET | `/actions.json` | Maps adoption, pet and guild links to Solana Actions |
+| GET | `/robots.txt`, `/sitemap.xml` | Crawlable public production pages; previews and APIs excluded |
+
+The sponsor validates instructions; RPC's `sendTransaction` is a transport,
+not the sponsor's instruction allow-list. It can carry another program's
+instructions, including Meteora trades. Solana Actions use their own
+owner-approved flow. See [Solana](SOLANA.md), [Meteora](METEORA-INTEGRATION.md)
+and [Security](SECURITY.md) for the relevant trust boundaries.
+
+Root, pet and guild Open Graph/Twitter image files generate share cards.
+They are owned by their adjacent routes; do not maintain separate static
+copies of a live Passport's numbers.
+
+## Compatibility redirects
+
+Keep existing links working. `next.config.ts` owns these redirects:
+
+| Old path | Destination |
+| --- | --- |
+| `/market/:path+` | `/market` |
+| `/guilds/boundary` | `/guilds` |
+| `/pet/:id/ownership` | `/pet/:id` |
+| `/playground/:game` | `/playground` |
+
+The `/inventory` page redirects to `/profile#shelf`, or to
+`/profile?tab=wardrobe#shelf` for `?tab=wardrobe`.
+
+## Server and client contracts
+
+- Pages and layouts default to **Server Components**. Use `"use client"`
+  at interactive leaves, not as a substitute for server data ownership.
+- Server chain reads use `src/server/solana.ts`, never the wallet client.
+  Pass plain props to leaves and keep secrets behind `server-only`.
+- Client reads use `useRequest`, not a new fetch-in-effect store. App sends
+  use `usePawketSend` and `send.ts`, including the shared signature toast.
+- A chain label, count or Passport needs a successful chain read. Short-lived
+  discovery caches are snapshots, not immediate transaction receipts.
+- Park's independent pet and guild scans run together; a failed guild scan
+  does not hide the pets. Delisted guild records remain addressable with the
+  product boundary explained, even after discovery stops promoting them.
+
+For a new page, wire loading, empty, failed-read and narrow-screen behavior
+before adding navigation. See [Design](DESIGN.md) and [Testing](TESTING.md).

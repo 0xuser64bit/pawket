@@ -11,6 +11,7 @@ ignoredOptionalDependencies:
 overrides:
   bn.js: 5.2.5
   jayson: 5.0.0
+  minimatch: 11.0.4
   rpc-websockets: 9.3.3
   source-map-js: 1.2.2
   toml: 5.0.1
@@ -25,3 +26,4 @@ patchedDependencies:
   '@solana-mobile/mobile-wallet-adapter-protocol@2.3.0': patches/@solana-mobile__mobile-wallet-adapter-protocol@2.3.0.patch
   '@solana-mobile/wallet-standard-mobile@0.6.0': patches/@solana-mobile__wallet-standard-mobile@0.6.0.patch
   bigint-buffer@1.1.5: patches/bigint-buffer@1.1.5.patch
+  minimatch@11.0.4: patches/minimatch@11.0.4.patch

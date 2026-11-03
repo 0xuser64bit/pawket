@@ -186,6 +186,17 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 - `bigint-buffer` remains a transitive dependency with a local patch removing
   the native addon. Dependency scanners may still flag its version. MWA session
   behavior also relies on local patches; keep the regression tests when upgrading.
+- Minimatch is pinned by `pnpm-workspace.yaml` to an upstream release fixing
+  [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
+  Its local patch restores the callable CommonJS export required by ESLint 9
+  and its plugins, without changing upstream matching logic or ESM exports.
+  The override crosses those consumers' declared major-version ranges.
+  `src/config/dependencies.test.ts` checks the locked version floor, each
+  lint consumer's direct and transpiled interfaces and bounded preprocessing.
+  Minimatch 11 removes `makeRe`; the disabled `import/no-internal-modules` rule
+  still needs it when configured with `allow` or `forbid`. Recheck compatibility
+  before enabling that rule. Remove the patch and update its callable-export
+  assertions when those consumers no longer need the legacy interface.
 - `braces` arrives through ESLint's file-pattern tooling and has a published
   stack-exhaustion advisory recorded in the dependency-audit exceptions. It
   does not handle player requests. Treat lint input as repository code;

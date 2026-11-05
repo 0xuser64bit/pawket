@@ -66,8 +66,8 @@ export async function readGuilds(): Promise<ChainGuild[]> {
   return guilds;
 }
 
-export async function readGuild(slug: string): Promise<ChainGuild | null> {
-  return fetchGuild(rpc(), slug);
+export async function readGuild(slug: string, signal?: AbortSignal): Promise<ChainGuild | null> {
+  return fetchGuild(rpc(), slug, signal);
 }
 
 export async function readGuildAt(address: string): Promise<ChainGuild | null> {

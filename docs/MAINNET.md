@@ -70,10 +70,11 @@ passing local parity tests does not prove a deployment matches them.
 
 - [ ] Q6 resolved; Q3 and Q4 settled for the planned load.
 - [ ] Program and server security review complete; findings closed or explicitly accepted.
-- [ ] Coin spend authorization reviewed: current brackets reserve existing owner
-      SOL but fund the SDK with the spendable wallet balance minus the device
-      refill, not just the quoted input; any narrower funding/validation change
-      is implemented and tested, or this exposure is explicitly accepted.
+- [ ] Coin spend authorization reviewed: operation funding ceilings, immutable
+      browser intent, exact instruction layouts and frozen lookup-table reads
+      in `src/lib/coins/intent.ts` and `send.ts` pass SDK parity and malformed
+      transaction tests; deployed devnet lifecycle and consumer-wallet checks
+      confirm every supported operation before mainnet use.
 - [ ] Upgrade, treasury, collection and derivation authorities recorded and recoverable.
 - [ ] Fee/rent policy, shared limits, budgets and alert ownership approved.
 - [ ] Market prices, coin configs, disclosures and recipients verified against source and chain.

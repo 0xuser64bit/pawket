@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useRequest } from "@solana/react";
-import { address, createNoopSigner, type Address, type Instruction, type KeyPairSigner, type TransactionSigner } from "@solana/kit";
+import { address, createNoopSigner, getBase64Encoder, type Address, type Instruction, type KeyPairSigner, type TransactionSigner } from "@solana/kit";
+import { decodeFrozenCoinLookup, type CoinIntent } from "@/lib/coins/intent";
 import { record, type SendKind, type SendOutcome } from "@/lib/analytics/events";
 import { dismissToast, showToast } from "@/components/pk/toast";
 import { txToast } from "@/components/wallet/tx-toast";
@@ -307,11 +308,19 @@ export function usePawketSend() {
   );
 
   const sendFromServer = useCallback(
-    (label: string, path: string, fields: Record<string, unknown> = {}, { sponsored = true } = {}): Promise<SendResult | null> =>
-      run(label, path.startsWith("/api/keepsake/") ? "keepsake" : "coin", connected?.signer, "wallet", async (owner, onStage, onSigned) => {
+    (label: string, path: string, fields: Record<string, unknown> = {}, { sponsored = true, coinIntent }: { sponsored?: boolean; coinIntent?: CoinIntent } = {}): Promise<SendResult | null> => {
+      const intent = coinIntent ? Object.freeze({ ...coinIntent }) : undefined;
+      return run(label, path.startsWith("/api/keepsake/") ? "keepsake" : "coin", connected?.signer, "wallet", async (owner, onStage, onSigned) => {
         const state = await requirePawketWallet(owner.address, { spends: !sponsored });
+        if (!sponsored && !intent) throw new Error("This transaction has no reviewed coin intent. Nothing was signed or sent.");
         return sendPrepared({
           rpc,
+          coinIntent: intent,
+          resolveLookup: async (table) => {
+            const { value } = await rpc.getAccountInfo(table, { encoding: "base64", commitment: "confirmed" }).send({ abortSignal: AbortSignal.timeout(10_000) });
+            if (!value || value.owner !== "AddressLookupTab1e1111111111111111111111111") throw new Error("Pawket could not verify this coin lookup table. Nothing was signed or sent.");
+            return decodeFrozenCoinLookup(getBase64Encoder().encode(value.data[0]));
+          },
           owner,
           onStage,
           onSigned,
@@ -336,7 +345,8 @@ export function usePawketSend() {
           }
           throw error;
         });
-      }),
+      });
+    },
     [run, connected],
   );
 

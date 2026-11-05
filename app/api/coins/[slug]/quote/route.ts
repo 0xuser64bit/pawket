@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readDeadline } from "@/lib/utils/deadline";
 import { quoteTrade, type TradeSide } from "@/server/coins/meteora";
 import { coinError, guildOr404, units } from "@/server/coins/routes";
 import { actionError, caller } from "@/server/actions";
@@ -21,11 +22,18 @@ export async function GET(request: Request, { params }: Props) {
   if (!Number.isInteger(slippage) || slippage < 10 || slippage > 1000) return actionError("Slippage is 0.1% to 10%.");
   if (!actionLimit(caller(request))) return actionError("Too many in a row. Try again in a while.", 429);
 
-  const guild = await guildOr404(slug);
-  if (guild instanceof Response) return guild;
+  const deadline = readDeadline(15_000, request.signal);
   try {
-    return NextResponse.json(await quoteTrade(guild, side, amount, slippage), { headers: { "Cache-Control": "no-store" } });
+    const guild = await guildOr404(slug, deadline.signal);
+    if (guild instanceof Response) return guild;
+    const quote = await quoteTrade(guild, side, amount, slippage, deadline.signal);
+    deadline.signal.throwIfAborted();
+    return NextResponse.json(quote, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return coinError(error, "quote", startedAt);
+  } finally {
+    // Promise.all may reject before another SDK read finishes. Stop every
+    // remaining request as well as its timer before returning a response.
+    deadline.abort();
   }
 }

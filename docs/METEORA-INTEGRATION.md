@@ -39,10 +39,19 @@ transaction preparation and position fees never wait for that optional scan.
 3. **Server-assisted quotes.** `GET /api/coins/<slug>/quote` quotes with
    Meteora's math (`swapQuote2` partial fill on the curve, `CpAmm.getQuote`
    in the pool); the client never computes a curve. A quote is shown with
-   its age; the UI disables signing it after 20 seconds. The trade endpoint
+   its age; the UI disables signing it after 20 seconds. The signing action
+   rechecks its age against the current clock, including after a suspended
+   page resumes. The trade endpoint
    receives `amount` and `minimumOut`, not the quote's timestamp or an
    authenticated quote. Quote expiry is a UI guard; minimum output is enforced
-   by the swap instruction against the live route.
+   by the swap instruction against the live route. Guild and quote reads
+   share one 15-second server budget; browser cancellation reaches both Kit
+   and Meteora HTTP reads. The browser stops waiting after 20 seconds and
+   offers a retry. Changing amount, side, slippage, coin or route, or leaving
+   the ticket aborts its pending quote; late answers cannot enable signing.
+   Quote reads do not share another request's pending config read. The SDK's
+   non-cancellable rate-limit retry is disabled for quotes, so a refused
+   provider read returns control to the player within the same budget.
 4. **Preflight on.** Every app coin transaction is sent with preflight. A
    simulation refusal broadcasts nothing. State may still change before an
    accepted transaction lands; an on-chain failure rolls back its state changes
@@ -62,6 +71,17 @@ transaction preparation and position fees never wait for that optional scan.
    It also explicitly refuses the Pawket funding/settlement brackets. The
    device needs an existing fee float even for a sell or fee claim; positive
    Pawket Wallet balance alone does not guarantee the transaction can start.
+   Funding is capped to the operation's SOL input plus rent (0.005 SOL for
+   trade/claim, 0.03 for launch, 0.05 for graduation) and the fixed launch fee
+   where applicable. The controls show these ceilings; unused SOL returns.
+   `src/lib/coins/intent.ts` owns the limits and pure browser instruction policy.
+   The controls capture the coin/preset and operation before preparation;
+   `sendPrepared` checks that intent before device or owner signing, including
+   exact token sell amounts, minimum outputs, recipients and auxiliary layouts.
+   Graduation independently reads the configured active, frozen lookup table.
+   Unsupported layouts are refused rather than signed through a generic program
+   allow-list. `src/server/coins/intent.test.ts` holds the policy to installed
+   SDK transactions; `meteora-funding.test.ts` checks server funding bounds.
 9. **No promise of value.** `copy.test.ts` holds every coin surface to the
    banned-phrase list; a meter toward graduation is "community
    participation", never a price path.

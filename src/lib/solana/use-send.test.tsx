@@ -251,9 +251,27 @@ describe("send routing (no wallet signing)", () => {
     mock.read.mockResolvedValue({ ...empty, linked: true, balance: 1n, device, wallet: { address: owner, device: device.address, deviceExpiresAt: Number.MAX_SAFE_INTEGER, actionsToday: 0, dailyActions: 100 } });
     mock.prepared.mockRejectedValue(Object.assign(new Error("refused"), { programError: 6008 }));
     const hook = renderHook(usePawketSend);
-    await act(async () => { await hook.result.current.sendFromServer("Buy SEAT", "/api/coins/seat/trade", {}, { sponsored: false }); });
+    await act(async () => { await hook.result.current.sendFromServer("Buy SEAT", "/api/coins/seat/trade", {}, { sponsored: false, coinIntent: { kind: "trade", cluster: "devnet", mint: device.address, preset: "gentle", side: "buy", route: "curve", amountIn: 1n, minimumOut: 1n } }); });
     expect(hook.result.current.tx.error).toMatch(/SOL changed between the quote and your signature.*Quote it again/);
   });
+  it("snapshots coin intent before waiting for wallet state and refuses missing intent", async () => {
+    sponsor();
+    const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);
+    mock.read.mockResolvedValue({ ...empty, linked: true, balance: 1n, device, wallet: { address: owner, device: device.address, deviceExpiresAt: Number.MAX_SAFE_INTEGER, actionsToday: 0, dailyActions: 100 } });
+    mock.prepared.mockResolvedValue({ signature: "coin", blockhash: "hash", programs: [], outcome: "confirmed", sponsored: false });
+    const hook = renderHook(usePawketSend);
+    await act(async () => { await hook.result.current.sendFromServer("Buy SEAT", "/api/coins/seat/trade", {}, { sponsored: false }); });
+    expect(hook.result.current.tx.error).toMatch(/reviewed coin intent/);
+    expect(mock.prepared).not.toHaveBeenCalled();
+    const intent = { kind: "trade", cluster: "devnet", mint: device.address, preset: "gentle", route: "curve", side: "buy", amountIn: 1n, minimumOut: 1n } as const;
+    await act(async () => {
+      const pending = hook.result.current.sendFromServer("Buy SEAT", "/api/coins/seat/trade", {}, { sponsored: false, coinIntent: intent });
+      Object.assign(intent, { amountIn: 10_000_000_000n });
+      await pending;
+    });
+    expect(mock.prepared).toHaveBeenCalledWith(expect.objectContaining({ coinIntent: expect.objectContaining({ amountIn: 1n }), extraSigner: device, sponsored: false }));
+  });
+
   it("sends a device's own transfer home without asking the sponsor, who signs only Pawket's", async () => {
     sponsor();
     const device = await import("@solana/kit").then(({ generateKeyPairSigner }) => generateKeyPairSigner());

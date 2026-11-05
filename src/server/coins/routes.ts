@@ -9,9 +9,11 @@ import { readGuild } from "@/server/solana";
 import { CoinRefusal } from "./meteora";
 import { scrub } from "@/lib/analytics/scrub";
 
-export async function guildOr404(slug: string): Promise<ChainGuild | Response> {
+export async function guildOr404(slug: string, signal?: AbortSignal): Promise<ChainGuild | Response> {
   if (!isValidSlug(slug)) return actionError("No guild has that name.", 404);
-  const guild = await readGuild(slug).catch(() => undefined);
+  signal?.throwIfAborted();
+  const guild = await readGuild(slug, signal).catch(() => undefined);
+  signal?.throwIfAborted();
   if (guild === undefined) return actionError("Solana did not answer. Nothing was sent — try again.", 503);
   if (!guild) return actionError("No guild has that name.", 404);
   return guild;

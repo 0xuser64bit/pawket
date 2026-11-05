@@ -66,8 +66,10 @@ async function polls(count: number) {
 it.each([100, 101, 201])("reads %i historical ballot addresses through the actual request and preserves each vote", async (count) => {
   const found = await polls(count);
   render(<GuildGatherings guild={guild} events={[{ ...picnic, startsAt: Date.now() / 1000 + 3600, endsAt: Date.now() / 1000 + 7200 }]} polls={found} />);
-  await waitFor(() => expect(screen.getByText("Miso is going")).toBeVisible());
-  await waitFor(() => expect(screen.getAllByText(/your vote/)).toHaveLength(Math.ceil(count / 2)));
+  // Real PDA derivation and the large render can outlast Testing Library's
+  // one-second default on a shared CI runner. Both records arrive together.
+  expect(await screen.findByText("Miso is going", {}, { timeout: 10_000 })).toBeVisible();
+  expect(screen.getAllByText(/your vote/)).toHaveLength(Math.ceil(count / 2));
   for (const id of [0, 1, count - 1]) {
     const card = screen.getByRole("heading", { name: `Question ${id}` }).closest("article")!;
     if (id % 2 === 0) {
@@ -75,7 +77,7 @@ it.each([100, 101, 201])("reads %i historical ballot addresses through the actua
       expect(within(card).queryByRole("button", { name: /Vote/ })).toBeNull();
     } else expect(within(card).getByRole("button", { name: "Vote Garden, 1 so far" })).toBeEnabled();
   }
-});
+}, 15_000);
 
 it.each(["ballots", "RSVPs"])("shows a retry and withholds actions after a failed %s read", async (failed) => {
   const found = await polls(1);

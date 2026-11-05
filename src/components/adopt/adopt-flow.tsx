@@ -39,7 +39,7 @@ import { formatLocalDate, nameHeadingClass } from "@/lib/utils/format";
 import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 import { useBackCloses, useHere } from "@/lib/native/android";
 import { COATS, findCoat } from "@/lib/player/coats";
-import { chooseCoat } from "@/lib/player/use-coats";
+import { chooseCoat, copyCoat } from "@/lib/player/use-coats";
 
 const SPECIES = [PetSpecies.LunaCat, PetSpecies.MossPup, PetSpecies.CloudBun];
 
@@ -470,7 +470,10 @@ export function AdoptFlow() {
                 sender={sender}
                 onDismiss={() => setKeeping(false)}
                 onCarried={(address) => {
-                  if (!removePet(adopted.id)) {
+                  const coatSaved = copyCoat(adopted.id, address);
+                  if (!coatSaved) {
+                    showToast({ id: `coat-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "Their coat could not be saved for the Solana pet on this device. The local pet and its coat remain; try Keep on Solana again when storage is available." });
+                  } else if (!removePet(adopted.id)) {
                     showToast({ id: `local-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
                   }
                   choosePet(address);

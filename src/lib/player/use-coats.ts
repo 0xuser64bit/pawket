@@ -9,12 +9,14 @@ const listeners = new Set<() => void>();
 let cache: { raw: string | null; coats: Readonly<Record<string, string>> } | null = null;
 const NONE: Readonly<Record<string, string>> = {};
 
-function readCoats(): Readonly<Record<string, string>> {
+function readStoredCoats(): Readonly<Record<string, string>> | null {
   if (typeof window === "undefined") return NONE;
   let raw: string | null = null;
   try {
     raw = window.localStorage.getItem(KEY);
-  } catch {}
+  } catch {
+    return null;
+  }
   if (cache && cache.raw === raw) return cache.coats;
   let coats: Record<string, string> = {};
   try {
@@ -29,12 +31,18 @@ function readCoats(): Readonly<Record<string, string>> {
   return coats;
 }
 
+function readCoats(): Readonly<Record<string, string>> {
+  return readStoredCoats() ?? cache?.coats ?? NONE;
+}
+
 export function readCoatChoices(): Readonly<Record<string, string>> {
   return readCoats();
 }
 
 export function chooseCoat(pet: string, id: string): boolean {
-  const next = { ...readCoats(), [pet]: id };
+  const coats = readStoredCoats();
+  if (!coats) return false;
+  const next = { ...coats, [pet]: id };
   if (id === "classic") delete next[pet];
   try {
     window.localStorage.setItem(KEY, JSON.stringify(next));
@@ -44,6 +52,14 @@ export function chooseCoat(pet: string, id: string): boolean {
   cache = null;
   for (const listener of listeners) listener();
   return true;
+}
+
+/** Keep the source choice so a failed Keep cleanup or retry cannot lose it. */
+export function copyCoat(source: string, target: string): boolean {
+  const coats = readStoredCoats();
+  if (!coats) return false;
+  const id = coats[source] ?? "classic";
+  return (coats[target] ?? "classic") === id || chooseCoat(target, id);
 }
 
 function subscribe(listener: () => void): () => void {

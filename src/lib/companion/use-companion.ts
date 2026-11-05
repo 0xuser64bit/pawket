@@ -85,6 +85,15 @@ export function refreshOwnedPets(owner: Address, signal?: AbortSignal): Promise<
       (pets) => {
         if (signal?.aborted) return { status: "cancelled" };
         if (generations.get(owner) !== generation) return { status: "superseded" };
+        const previous = ownedReads.get(owner)?.data;
+        const addresses = new Set(pets.map(({ pet }) => pet.address));
+        // Pets cannot close or change owner. A missing previously read pet is
+        // an incomplete RPC snapshot; keep selection and care retries intact.
+        if (previous?.some(({ pet }) => !addresses.has(pet.address))) {
+          const error = new Error("Solana returned an incomplete pet list. Try reading again.");
+          publishOwned(owner, { status: "error", data: previous, error, at });
+          return { status: "error", error };
+        }
         const sorted = pets.sort((a, b) => b.pet.birthTimestamp - a.pet.birthTimestamp);
         publishOwned(owner, { status: "success", data: sorted, at });
         return { status: "success", owner, pets: sorted };

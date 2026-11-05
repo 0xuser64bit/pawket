@@ -151,7 +151,10 @@ A confirmed care receipt is shown immediately. Home's `useChainCare` then
 reads the owner's pets up to three times within fifteen seconds; each owned-pet
 read has its own twelve-second deadline. Cancellation reaches the program
 scan and Passport/member batches. A refresh returns success, failure,
-supersession, cancellation or disconnection explicitly. XP, level/sticker
+supersession, cancellation or disconnection explicitly. Because pets cannot
+close or change owner, a refresh missing a previously read pet is an incomplete
+read: it retains the last valid records and selection and reports a read error
+so care reconciliation can retry. XP, level/sticker
 messages and the room's care moment wait until the refreshed Pet's action
 timestamp and Passport's care count advance and that record is rendered.
 Failed or stale reads offer **Reload care record**, which only reads.

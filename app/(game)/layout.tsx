@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Dock, Mark } from "@/components/pk";
 import { RoomButton } from "@/components/market/room-button";
 import { WalletChip } from "@/components/wallet/wallet-chip";
-import { ResumeSends } from "@/lib/solana/use-send";
 import { CareReminderSync } from "@/components/home/remind-me";
 
 export default function GameLayout({ children }: { children: ReactNode }) {
@@ -21,7 +20,6 @@ export default function GameLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <ResumeSends />
       <CareReminderSync />
       {children}
     </>

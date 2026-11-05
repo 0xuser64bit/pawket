@@ -8,6 +8,7 @@ import { PawketAnalytics } from "@/components/analytics";
 import { BootSplash } from "@/components/pk/boot-splash";
 import { Toasts } from "@/components/pk/toast";
 import { NavProgress, OfflineNote } from "@/components/pk/nav-link";
+import { ResumeSends } from "@/lib/solana/use-send";
 import "./globals.css";
 import Providers from "./providers";
 
@@ -55,6 +56,7 @@ export default async function RootLayout({
         <OfflineNote />
         <Providers>{children}</Providers>
         <Toasts />
+        <ResumeSends />
         <PawketAnalytics />
       </body>
     </html>

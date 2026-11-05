@@ -131,11 +131,43 @@ function keepPending(list: Pending[]) {
   try {
     if (list.length) window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(list));
     else window.sessionStorage.removeItem(PENDING_KEY);
+    // Only pending receipts need the early departure event.
+    if (list.length) window.addEventListener("beforeunload", leaveReceiptPage);
+    else window.removeEventListener("beforeunload", leaveReceiptPage);
     return true;
   } catch { return false; }
 }
 
+let pageLeaving = false;
+const settlingReceipts = new Set<string>();
+function leaveReceiptPage() { pageLeaving = true; }
+function forgetPending(signature: string) {
+  // Firefox may settle an aborted broadcast before the old document unloads.
+  // The next document must still be able to display that receipt's result.
+  if (!pageLeaving) keepPending(pendingSends().filter((each) => each.signature !== signature));
+}
+
+function watchReceiptPage() {
+  pageLeaving = false;
+  const show = (event: PageTransitionEvent) => {
+    const wasLeaving = pageLeaving;
+    pageLeaving = false;
+    // A restored document does not remount ResumeSends.
+    if (event.persisted && wasLeaving) resumePendingSends();
+  };
+  if (pendingSends().length) window.addEventListener("beforeunload", leaveReceiptPage);
+  window.addEventListener("pagehide", leaveReceiptPage);
+  window.addEventListener("pageshow", show);
+  return () => {
+    window.removeEventListener("beforeunload", leaveReceiptPage);
+    window.removeEventListener("pagehide", leaveReceiptPage);
+    window.removeEventListener("pageshow", show);
+  };
+}
+
 async function settleLater(pending: Pending, show: (next: Partial<TxState>) => void) {
+  if (settlingReceipts.has(pending.signature)) return;
+  settlingReceipts.add(pending.signature);
   keepPending([...pendingSends().filter((each) => each.signature !== pending.signature), pending]);
   let resolved = false;
   try {
@@ -145,7 +177,7 @@ async function settleLater(pending: Pending, show: (next: Partial<TxState>) => v
       show({ stage: "confirmed" });
       haptic("done");
       if (pending.owner) {
-        await refreshPawketWallet(pending.owner as Address);
+        void refreshPawketWallet(pending.owner as Address);
         void refreshOwnedPets(pending.owner as Address);
       }
     } else if (settled === "expired") {
@@ -157,23 +189,31 @@ async function settleLater(pending: Pending, show: (next: Partial<TxState>) => v
     resolved = true;
     show({ stage: "failed", error: toUserFacingError(attributeRefusal(error, pending.programs)) });
   } finally {
-    if (resolved) keepPending(pendingSends().filter((each) => each.signature !== pending.signature));
+    settlingReceipts.delete(pending.signature);
+    if (resolved) forgetPending(pending.signature);
+  }
+}
+
+function resumePendingSends() {
+  for (const pending of pendingSends()) {
+    if (settlingReceipts.has(pending.signature)) continue;
+    const id = `settle-${pending.signature.slice(0, 16)}`;
+    let state: TxState = { stage: "confirming", label: pending.label, signature: pending.signature, sponsored: pending.sponsored, by: pending.by };
+    const show = (next: Partial<TxState>) => {
+      state = { ...state, ...next };
+      const toast = txToast(id, state, getPublicEnv().solanaCluster);
+      if (toast) showToast(toast);
+    };
+    show({});
+    void settleLater(pending, show);
   }
 }
 
 export function ResumeSends() {
   useEffect(() => {
-    for (const pending of pendingSends()) {
-      const id = `settle-${pending.signature.slice(0, 16)}`;
-      let state: TxState = { stage: "confirming", label: pending.label, signature: pending.signature, sponsored: pending.sponsored, by: pending.by };
-      const show = (next: Partial<TxState>) => {
-        state = { ...state, ...next };
-        const toast = txToast(id, state, getPublicEnv().solanaCluster);
-        if (toast) showToast(toast);
-      };
-      show({});
-      void settleLater(pending, show);
-    }
+    const stop = watchReceiptPage();
+    resumePendingSends();
+    return stop;
   }, []);
   return null;
 }
@@ -215,6 +255,8 @@ export function usePawketSend() {
       done?: string,
     ) => {
       if (sending) return null;
+      // An explicit send means a canceled navigation left this page active.
+      pageLeaving = false;
       setSending(true);
       const id = `send-${++sends}`;
       let state: TxState = { stage: "preparing", label, by, done, phone: by === "wallet" && connected?.wallet?.name === PHONE_WALLETS };
@@ -241,13 +283,13 @@ export function usePawketSend() {
         show({ stage: result.outcome, signature: result.signature, sponsored: result.sponsored });
         record({ name: "send_outcome", kind, outcome: outcomeOf(result) });
         if (result.outcome === "confirmed") {
-          keepPending(pendingSends().filter((each) => each.signature !== result.signature));
+          forgetPending(result.signature);
           haptic("done");
         }
         else void settleLater({ signature: result.signature, blockhash: result.blockhash, label, owner, programs: result.programs, sponsored: result.sponsored, by }, show);
         return result;
       } catch (error) {
-        if (state.signature) keepPending(pendingSends().filter((each) => each.signature !== state.signature));
+        if (state.signature) forgetPending(state.signature);
         record({ name: "send_outcome", kind, outcome: outcomeOf(null, error) });
         if (error instanceof PawketWalletNeeded) {
           show({ stage: "failed", error: error.message, needs: error.need });

@@ -91,7 +91,8 @@ test("an unreadable copy explains recovery instead of throwing", async ({ page }
   await page.screenshot({ path: testInfo.outputPath("copy-error-recovery.png"), fullPage: true });
 });
 
-test("an unresolved receipt survives a reload and keeps its Explorer link", async ({ page }) => {
+for (const path of ["/home", "/adopt"]) {
+test(`an unresolved receipt survives a reload and keeps its Explorer link on ${path}`, async ({ page }) => {
   const signature = "2".repeat(88);
   let unavailable = true;
   await page.route("**/*", async (route) => {
@@ -111,7 +112,7 @@ test("an unresolved receipt survives a reload and keeps its Explorer link", asyn
       sessionStorage.setItem("pawket.pending-sends", JSON.stringify([{ signature, blockhash: "11111111111111111111111111111111", label: "Local test receipt", owner: null }]));
     }
   }, { signature });
-  await page.goto("/home");
+  await page.goto(path);
   await expect(page.getByText("Still waiting", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "See it on Explorer" })).toHaveAttribute("href", new RegExp(signature));
   expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem("pawket.pending-sends") ?? "[]").length)).toBe(1);
@@ -120,6 +121,7 @@ test("an unresolved receipt survives a reload and keeps its Explorer link", asyn
   await expect(page.getByText(/Recorded on Solana/)).toBeVisible();
   expect(await page.evaluate(() => sessionStorage.getItem("pawket.pending-sends"))).toBeNull();
 });
+}
 
 test("a copy restores a finished round even when no care happened", async ({ page }) => {
   await page.goto("/adopt");

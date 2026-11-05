@@ -73,6 +73,114 @@ describe("send routing (no wallet signing)", () => {
     }
   });
 
+  it.each(["confirmed", "failed"])("retains a signed receipt when its %s result arrives during page departure", async (outcome) => {
+    sponsor();
+    const receipt = { signature: "leaving-page", blockhash: "hash", programs: [owner], sponsored: true };
+    let finish!: () => void;
+    mock.send.mockImplementation((options: SendOptions) => {
+      options.onSigned?.(receipt);
+      return new Promise<SendResult>((resolve, reject) => {
+        finish = () => outcome === "confirmed" ? resolve({ ...receipt, outcome: "confirmed" }) : reject(new Error("Broadcast interrupted"));
+      });
+    });
+    await act(async () => { render(<ResumeSends />); });
+    const hook = renderHook(usePawketSend);
+    let pending!: Promise<SendResult | null>;
+    await act(async () => { pending = hook.result.current.send("Link", () => []); });
+    try {
+      act(() => { window.dispatchEvent(new Event("beforeunload")); });
+      await act(async () => { finish(); await pending; });
+      expect(JSON.parse(window.sessionStorage.getItem("pawket.pending-sends")!)).toMatchObject([receipt]);
+      expect(mock.send).toHaveBeenCalledOnce();
+    } finally {
+      act(() => { window.dispatchEvent(new Event("pageshow")); });
+    }
+    mock.settle.mockReset().mockResolvedValue("confirmed");
+    await act(async () => { render(<ResumeSends />); });
+    expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
+    expect(mock.send).toHaveBeenCalledOnce();
+  });
+
+  it("retains a recovery result during departure and rechecks it after back-forward cache restoration", async () => {
+    const receipt = { signature: "restored-page", blockhash: "hash", label: "Care", owner };
+    window.sessionStorage.setItem("pawket.pending-sends", JSON.stringify([receipt]));
+    let finish!: (result: string) => void;
+    mock.settle.mockReset().mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+    renderHook(usePawketSend);
+    await act(async () => { render(<ResumeSends />); });
+    try {
+      act(() => { window.dispatchEvent(new Event("beforeunload")); });
+      await act(async () => { finish("confirmed"); });
+      expect(JSON.parse(window.sessionStorage.getItem("pawket.pending-sends")!)).toEqual([receipt]);
+      mock.settle.mockResolvedValueOnce("confirmed");
+      const restored = new Event("pageshow");
+      Object.defineProperty(restored, "persisted", { value: true });
+      await act(async () => { window.dispatchEvent(restored); });
+      expect(mock.settle).toHaveBeenCalledTimes(2);
+      expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
+      expect(mock.send).not.toHaveBeenCalled();
+    } finally {
+      act(() => { window.dispatchEvent(new Event("pageshow")); });
+    }
+  });
+
+  it("restores normal receipt cleanup when a canceled departure is followed by another explicit send", async () => {
+    sponsor();
+    const earlier = { signature: "earlier-unresolved", blockhash: "hash", label: "Care", owner };
+    window.sessionStorage.setItem("pawket.pending-sends", JSON.stringify([earlier]));
+    mock.settle.mockReset().mockResolvedValue("unknown");
+    await act(async () => { render(<ResumeSends />); });
+    const hook = renderHook(usePawketSend);
+    act(() => { window.dispatchEvent(new Event("beforeunload")); });
+    const receipt = { signature: "stayed-here", blockhash: "hash", programs: [owner], sponsored: true };
+    mock.send.mockImplementation(async (options: SendOptions) => {
+      options.onSigned?.(receipt);
+      return { ...receipt, outcome: "confirmed" };
+    });
+    try {
+      await act(async () => { await hook.result.current.send("Link", () => []); });
+      expect(hook.result.current.tx.stage).toBe("confirmed");
+      expect(JSON.parse(window.sessionStorage.getItem("pawket.pending-sends")!)).toEqual([earlier]);
+    } finally {
+      act(() => { window.dispatchEvent(new Event("pageshow")); });
+    }
+  });
+
+  it("keeps one recovery check per signature when restoring a page with a read still in flight", async () => {
+    const receipt = { signature: "still-reading", blockhash: "hash", label: "Care", owner };
+    window.sessionStorage.setItem("pawket.pending-sends", JSON.stringify([receipt]));
+    let finish!: (result: string) => void;
+    mock.settle.mockReset().mockReturnValueOnce(new Promise((resolve) => { finish = resolve; })).mockResolvedValue("unknown");
+    await act(async () => { render(<ResumeSends />); });
+    try {
+      act(() => { window.dispatchEvent(new Event("pagehide")); });
+      const restored = new Event("pageshow");
+      Object.defineProperty(restored, "persisted", { value: true });
+      await act(async () => { window.dispatchEvent(restored); });
+      expect(mock.settle).toHaveBeenCalledOnce();
+      await act(async () => { finish("confirmed"); });
+      expect(mock.toast.mock.lastCall?.[0]).toMatchObject({ tone: "done", title: "Care" });
+      expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
+      expect(mock.send).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => { window.dispatchEvent(new Event("pageshow")); finish("confirmed"); });
+    }
+  });
+
+  it("finishes a recovered receipt without waiting for the following wallet refresh", async () => {
+    window.sessionStorage.setItem("pawket.pending-sends", JSON.stringify([{ signature: "refresh-pending", blockhash: "hash", label: "Care", owner }]));
+    mock.settle.mockReset().mockResolvedValue("confirmed");
+    let finish!: () => void;
+    mock.refresh.mockReturnValueOnce(new Promise<void>((resolve) => { finish = resolve; }));
+    await act(async () => { render(<ResumeSends />); });
+    try {
+      expect(mock.toast.mock.lastCall?.[0]).toMatchObject({ tone: "done", title: "Care" });
+      expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
+    } finally {
+      await act(async () => { finish(); });
+    }
+  });
+
   it("refuses broadcast if the receipt cannot be saved", async () => {
     sponsor();
     const write = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage full"); });

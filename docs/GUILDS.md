@@ -39,6 +39,11 @@ A slug is first come, first served. The program refuses `RESERVED_SLUGS`
 Events have program-checked times and RSVPs per pet. Check-in uses that RSVP
 within the allowed window. Polls accept one ballot per wallet with a pet in
 the guild; coin balance and number of pets never increase vote weight.
+Personal ballot reads use batches of at most 100 accounts and preserve poll
+order. RSVP, check-in and voting controls wait for the personal record read;
+if it fails, the page offers a read retry before those actions return.
+The two most recent closed polls remain visible. Event date tiles and times
+use UTC before hydration and the viewer's local time zone after mounting.
 
 An open guild page updates check-in availability at the early check-in window,
 moves events to the past at their end time and closes voting at the poll's
@@ -73,6 +78,8 @@ Guild pages link reports to the support contact in `src/config/site.ts`.
 `src/lib/guilds/delisted.ts` controls promotion. A delisted guild leaves
 discovery; its page explains the restriction and its coin is `suspended`, with
 no trades offered by Pawket. A guild without a curve still has stage `none`,
-but its launch is refused. Chain membership and holdings remain unchanged.
+but its launch is refused. Its page offers existing members a way to leave,
+without joins or gatherings. Chain membership and holdings remain unchanged
+unless a member chooses to leave.
 Pet identity stays primary; coin launch and trade controls stay off Home,
 Profile, Passports and the Market.

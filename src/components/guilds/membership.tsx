@@ -12,7 +12,7 @@ import { getJoinGuildInstruction, getLeaveGuildInstruction } from "@/lib/solana/
 import { deriveMemberPda } from "@/lib/solana/pda";
 import { rentWaits, usePawketSend, useSponsor } from "@/lib/solana/use-send";
 
-export function GuildMembership({ guild }: { guild: { address: string; name: string } }) {
+export function GuildMembership({ guild, exitOnly = false }: { guild: { address: string; name: string }; exitOnly?: boolean }) {
   const companion = useCompanion();
   const sender = usePawketSend();
   const sponsor = useSponsor();
@@ -44,6 +44,8 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
   }
 
   if (!companion.ready) return <Waiting label="Reading your pets" inline />;
+  const pets = exitOnly ? companion.owned.filter((entry) => entry.member?.guild === guild.address) : companion.owned;
+  if (exitOnly && (!companion.owner || (!companion.chainError && pets.length === 0))) return null;
 
   return (
     <div className="pk-join">
@@ -66,7 +68,7 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
       ) : (
         <>
           <div className="pk-join__pets">
-            {companion.owned.map((entry) => {
+            {pets.map((entry) => {
               const here = entry.member?.guild === guild.address;
               const elsewhere = entry.member !== null && !here;
               return (
@@ -88,8 +90,8 @@ export function GuildMembership({ guild }: { guild: { address: string; name: str
             })}
           </div>
           <p className="caption pk-faint">
-            One guild per pet; joining changes nothing about it.{" "}
-            {sponsor.data?.available
+            {exitOnly ? "Your pets can leave this guild. " : "One guild per pet; joining changes nothing about it. "}
+            {exitOnly ? null : sponsor.data?.available
               ? "Pawket pays the fee and the rent, and gets the rent back when a pet leaves."
               : waits
                 ? "Joining waits until Pawket can cover a new place's rent again. Leaving works now."

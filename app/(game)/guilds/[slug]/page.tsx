@@ -107,7 +107,7 @@ export default async function GuildPage({ params }: Props) {
               <Chip label={`Since ${since(guild.createdAt)}`} tone="plain" />
             </Row>
             <div className="pk-guild-hero__join">
-              {delisted ? null : <GuildMembership guild={{ address: guild.address, name: guild.name }} />}
+              <GuildMembership guild={{ address: guild.address, name: guild.name }} exitOnly={delisted} />
               <ShareButton name={guild.name} label="Share this guild" text={`${guild.name}: an optional guild of pets on Pawket, kept on Solana.`} />
             </div>
           </div>

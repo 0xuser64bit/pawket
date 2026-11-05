@@ -396,17 +396,21 @@ export async function fetchPetOnChain(rpc: Rpc<GetMultipleAccountsApi>, petAddre
   };
 }
 
-async function readMany(rpc: Rpc<GetMultipleAccountsApi>, addresses: Address[]) {
+export async function readMany(rpc: Rpc<GetMultipleAccountsApi>, addresses: Address[], signal?: AbortSignal) {
+  signal?.throwIfAborted();
   const chunks = [];
-  for (let i = 0; i < addresses.length; i += 100) chunks.push(fetchEncodedAccounts(rpc, addresses.slice(i, i + 100)));
-  return (await Promise.all(chunks)).flat();
+  for (let i = 0; i < addresses.length; i += 100) chunks.push(fetchEncodedAccounts(rpc, addresses.slice(i, i + 100), { abortSignal: signal }));
+  const accounts = (await Promise.all(chunks)).flat();
+  signal?.throwIfAborted();
+  return accounts;
 }
 
-async function withRecords(rpc: Rpc<GetMultipleAccountsApi>, pets: ChainPet[]): Promise<PetOnChain[]> {
+async function withRecords(rpc: Rpc<GetMultipleAccountsApi>, pets: ChainPet[], signal?: AbortSignal): Promise<PetOnChain[]> {
+  signal?.throwIfAborted();
   if (pets.length === 0) return [];
   const passports = await Promise.all(pets.map(async (pet) => (await derivePassportPda(pet.address)).address));
   const members = await Promise.all(pets.map(async (pet) => (await deriveMemberPda(pet.address)).address));
-  const accounts = await readMany(rpc, [...passports, ...members]);
+  const accounts = await readMany(rpc, [...passports, ...members], signal);
   const out: PetOnChain[] = [];
   pets.forEach((pet, i) => {
     const passport = accounts[i];
@@ -424,7 +428,8 @@ async function withRecords(rpc: Rpc<GetMultipleAccountsApi>, pets: ChainPet[]): 
 const base58 = getBase58Decoder();
 const base64 = getBase64Encoder();
 
-export async function fetchPetsOnChain(rpc: ReadRpc, owner?: string | Address): Promise<PetOnChain[]> {
+export async function fetchPetsOnChain(rpc: ReadRpc, owner?: string | Address, signal?: AbortSignal): Promise<PetOnChain[]> {
+  signal?.throwIfAborted();
   const filters = [
     { dataSize: BigInt(PAWKET_ACCOUNTS.pet.size) },
     {
@@ -440,14 +445,15 @@ export async function fetchPetsOnChain(rpc: ReadRpc, owner?: string | Address): 
   ];
   const accounts = await rpc
     .getProgramAccounts(parseAddress(PAWKET_PROGRAM_ID, "program ID"), { encoding: "base64", filters })
-    .send();
+    .send({ abortSignal: signal });
+  signal?.throwIfAborted();
   const pets: ChainPet[] = [];
   for (const { pubkey, account } of accounts) {
     try {
       pets.push(decodePet(pubkey, Uint8Array.from(base64.encode(account.data[0]))));
     } catch {}
   }
-  return withRecords(rpc, pets);
+  return withRecords(rpc, pets, signal);
 }
 
 const accountFilter = (account: { discriminator: readonly number[]; size: number }) => [
@@ -474,9 +480,11 @@ export async function fetchGuilds(rpc: ReadRpc): Promise<ChainGuild[]> {
   return guilds;
 }
 
-export async function fetchGuild(rpc: Rpc<GetMultipleAccountsApi>, slug: string): Promise<ChainGuild | null> {
+export async function fetchGuild(rpc: Rpc<GetMultipleAccountsApi>, slug: string, signal?: AbortSignal): Promise<ChainGuild | null> {
+  signal?.throwIfAborted();
   const address = (await deriveGuildPda(slug)).address;
-  const [account] = await fetchEncodedAccounts(rpc, [address]);
+  const [account] = await fetchEncodedAccounts(rpc, [address], { abortSignal: signal });
+  signal?.throwIfAborted();
   if (!account.exists || account.programAddress !== PAWKET_PROGRAM_ID) return null;
   return decodeGuild(address, account.data);
 }

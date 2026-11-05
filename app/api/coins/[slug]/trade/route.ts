@@ -10,6 +10,7 @@ export const OPTIONS = preflight;
 type Props = { params: Promise<{ slug: string }> };
 
 export async function POST(request: Request, { params }: Props) {
+  const startedAt = Date.now();
   const { slug } = await params;
   const posted = await postedFields(request);
   if (!posted) return actionError("That is not a wallet address. Nothing was sent.");
@@ -30,6 +31,6 @@ export async function POST(request: Request, { params }: Props) {
       message: `${side === "buy" ? "Buy" : "Sell"} ${guild.name}'s coin at no worse than the quote. You pay the network fee.`,
     });
   } catch (error) {
-    return coinError(error);
+    return coinError(error, "trade", startedAt);
   }
 }

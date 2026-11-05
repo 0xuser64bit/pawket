@@ -3,11 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRequest } from "@solana/react";
-import { fetchEncodedAccounts, type Address } from "@solana/kit";
-import { Choice, DateTimeField, Button, Chip, Field, Row, Stack, Problem } from "@/components/pk";
+import type { Address } from "@solana/kit";
+import { Choice, DateTimeField, Button, Chip, Field, Row, Stack, Problem, Waiting } from "@/components/pk";
 import { useCompanion } from "@/lib/companion/use-companion";
 import { yourPlace } from "./yours";
-import { fetchPetRsvps, type ChainEvent, type ChainPoll, type ChainRsvp } from "@/lib/solana/accounts";
+import { fetchPetRsvps, readMany, type ChainEvent, type ChainPoll, type ChainRsvp } from "@/lib/solana/accounts";
 import { rpc } from "@/lib/solana/browser-client";
 import {
   getCheckInInstruction,
@@ -85,7 +85,7 @@ export function GuildGatherings({
   const readMine = useCallback(async () => {
     const rsvps = (await Promise.all(mine.map((entry) => fetchPetRsvps(rpc, entry.pet.address)))).flat();
     const ballots = await Promise.all(polls.map(async (poll) => (await deriveBallotPda(poll.address, owner!)).address));
-    const accounts = ballots.length ? await fetchEncodedAccounts(rpc, ballots) : [];
+    const accounts = await readMany(rpc, ballots);
     const voted = new Map<string, number>();
     accounts.forEach((account, i) => {
       if (account.exists && account.data.length >= PAWKET_ACCOUNTS.ballot.size) voted.set(polls[i].address, account.data[8 + 32 * 4]);
@@ -95,6 +95,7 @@ export function GuildGatherings({
   const records = useRequest(owner ? readMine : null);
   const rsvps: ChainRsvp[] = records.data?.rsvps ?? [];
   const voted = records.data?.voted ?? new Map<string, number>();
+  const personalReady = records.status === "success";
 
   const done = () => {
     records.refresh();
@@ -133,7 +134,7 @@ export function GuildGatherings({
   const upcoming = events.filter((event) => event.endsAt > now);
   const past = events.filter((event) => event.endsAt <= now).slice(-3).reverse();
   const open = polls.filter((poll) => now < poll.closesAt);
-  const closed = polls.filter((poll) => now >= poll.closesAt).slice(-2).reverse();
+  const closed = polls.filter((poll) => now >= poll.closesAt).slice(0, 2);
 
   return (
     <section className="pk-whats-on" aria-labelledby="pk-whats-on">
@@ -145,6 +146,16 @@ export function GuildGatherings({
           Kept on Solana{sponsor.data?.available ? " · Pawket pays the fee" : waits ? " · new RSVPs and votes wait for Pawket's sponsor" : ""}
         </span>
       </div>
+
+      {owner && records.status === "fetching" ? <Waiting label="Reading your RSVPs and votes" inline /> : null}
+      {owner && records.error ? (
+        <Problem small>
+          Solana did not answer when this page asked for your RSVPs and votes.{" "}
+          <button type="button" className="pk-linkish" disabled={records.status === "fetching"} onClick={() => records.refresh()}>
+            Ask again
+          </button>
+        </Problem>
+      ) : null}
 
       {upcoming.length === 0 && open.length === 0 ? (
         <div className="pk-whats-on__empty">
@@ -160,12 +171,14 @@ export function GuildGatherings({
       {upcoming.map((event) => {
         const live = now >= event.startsAt - GATHERING_LIMITS.checkInEarlySeconds && now <= event.endsAt;
         const day = new Date(event.startsAt * 1000);
+        const date = new Intl.DateTimeFormat(mounted ? undefined : "en-US", { weekday: "short", month: "short", day: "numeric", ...(mounted ? {} : { timeZone: "UTC" }) }).formatToParts(day);
+        const part = (type: Intl.DateTimeFormatPartTypes) => date.find((entry) => entry.type === type)?.value;
         return (
           <article key={event.address} className={live ? "pk-event pk-event--live" : "pk-event"}>
             <div className="pk-event__date" aria-hidden="true">
-              <span className="pk-event__month">{MONTHS[day.getUTCMonth()]}</span>
-              <span className="pk-event__day">{day.getUTCDate()}</span>
-              <span className="pk-event__weekday">{WEEKDAYS[day.getUTCDay()]}</span>
+              <span className="pk-event__month">{part("month")}</span>
+              <span className="pk-event__day">{part("day")}</span>
+              <span className="pk-event__weekday">{part("weekday")}</span>
             </div>
             <div className="pk-event__body">
               <div className="pk-spread">
@@ -176,7 +189,7 @@ export function GuildGatherings({
               <p className="caption pk-faint">
                 {at(event.startsAt)} until {at(event.endsAt)} · {event.going} going · {event.came} came
               </p>
-              {mine.length ? (
+              {mine.length && personalReady ? (
                 <Row gap={2} wrap>
                   {mine.map((entry) => {
                     const said = rsvps.find((rsvp) => rsvp.event === event.address && rsvp.pet === entry.pet.address);
@@ -218,7 +231,7 @@ export function GuildGatherings({
         const mineVote = voted.get(poll.address);
         const total = poll.votes.reduce((sum, count) => sum + count, 0);
         const most = Math.max(1, ...poll.votes);
-        const canVote = mine.length > 0 && mineVote === undefined && !shut;
+        const canVote = personalReady && mine.length > 0 && mineVote === undefined && !shut;
         return (
           <article key={poll.address} className="pk-poll">
             <div className="pk-spread">

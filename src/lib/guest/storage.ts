@@ -84,10 +84,7 @@ function loadStored(): Stored | null {
   } catch {
     pet = null;
   }
-  if (!pet) {
-    remove(LEGACY_KEY);
-    return EMPTY;
-  }
+  if (!pet) return EMPTY;
   if (write([pet])) remove(LEGACY_KEY);
   return { pets: [pet], kept: [] };
 }

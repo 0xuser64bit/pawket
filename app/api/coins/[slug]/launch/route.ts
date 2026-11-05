@@ -15,6 +15,7 @@ type Props = { params: Promise<{ slug: string }> };
 const MAX_FIRST_BUY = 10_000_000_000n;
 
 export async function POST(request: Request, { params }: Props) {
+  const startedAt = Date.now();
   const { slug } = await params;
   const posted = await postedFields(request);
   if (!posted) return actionError("That is not a wallet address. Nothing was sent.");
@@ -51,6 +52,6 @@ export async function POST(request: Request, { params }: Props) {
       message: `Launch ${guild.name}'s coin on the ${preset.name.toLowerCase()}. You pay its rent, the launch fee and the network fee.`,
     });
   } catch (error) {
-    return coinError(error);
+    return coinError(error, "launch", startedAt);
   }
 }

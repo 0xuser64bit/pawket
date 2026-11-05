@@ -30,7 +30,7 @@ import { SigningNote } from "./signing-note";
 import { PetSwitcher } from "@/components/home/pet-switcher";
 import { DecorPanel } from "@/components/home/decor-panel";
 import { shownDecor, useRoomDecor } from "@/lib/room/decor";
-import { useCoats } from "@/lib/player/use-coats";
+import { copyCoat, useCoats } from "@/lib/player/use-coats";
 import { useCloset } from "@/lib/market/use-closet";
 import { Room, RoomViewSwitch, useRoomMode, type RoomState } from "@/components/home/room";
 import type { DirectorStatus } from "@/components/room3d/director";
@@ -39,6 +39,7 @@ import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { findWearable } from "@/lib/closet/catalog";
 import { newlyEarned, type BadgeContext } from "@/lib/game/badges";
 import { useCompanion } from "@/lib/companion/use-companion";
+import { useChainCare } from "@/lib/companion/use-chain-care";
 import {
   CARE_ACTION_LABEL,
   CARE_DONE_LABEL,
@@ -101,7 +102,7 @@ export function HomeScreen() {
   useEffect(() => {
     if (ready) recordHomeOpened(allPets);
   }, [ready, allPets]);
-  const carried = useRef<{ id: string; address: Address } | null>(null);
+  const carried = useRef<{ id: string; address: Address; coatSaved: boolean } | null>(null);
   const [cue, setCue] = useState<RoomCue | null>(null);
   const [status, setStatus] = useState<DirectorStatus>({ moment: null, sentence: "" });
   const [roomState, setRoomState] = useState<RoomState>("loading");
@@ -130,6 +131,25 @@ export function HomeScreen() {
     chime(moment);
   };
   const earned = (action: CareActionType, xp: number) => setGain({ action, xp, at: Date.now() });
+  const chainCare = useChainCare({
+    owner: companion.owner,
+    active,
+    tx: sender.tx,
+    refresh: companion.refresh,
+    onRecorded: ({ before, after, action, guild }) => {
+      const level = levelUp(before.xp, after.xp);
+      showToast({
+        id: `care-${before.id}`,
+        tone: "done",
+        title: `${before.name}'s care recorded`,
+        body: `${CARE_DONE_LABEL[action]}.${level ? ` ${after.name} is level ${level} now.` : ""}${earnedLine(before, after, { onChain: true, guild })}`,
+        ttl: 10_000,
+      });
+      earned(action, after.xp - before.xp);
+      record({ name: "care_saved", where: "solana", action });
+      ask(level ? "cheer" : CARE_MOMENT[action]);
+    },
+  });
 
   const resting = pet ? Object.values(cooldownsFor(pet, now)).some((left) => left > 0) : false;
   useEffect(() => {
@@ -145,7 +165,7 @@ export function HomeScreen() {
 
   useEffect(() => {
     if (carried.current && active?.pet.address === carried.current.address) {
-      if (!removePet(carried.current.id)) {
+      if (carried.current.coatSaved && !removePet(carried.current.id)) {
         showToast({ id: `local-copy-${carried.current.id}`, tone: "note", title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
       }
       carried.current = null;
@@ -198,7 +218,7 @@ export function HomeScreen() {
               <ButtonLink label="Change your look" href="/profile#look" tone="ghost" size="sm" className="pk-btn--flush" />
             </div>
           </Card>
-          <ChainTrouble error={companion.chainError} kept={companion.owned.length > 0} onRetry={companion.refresh} />
+          <ChainTrouble error={companion.chainError} kept={companion.owned.length > 0} onRetry={() => { void companion.refresh(); }} />
         </Stack>
         {connecting ? (
           <WalletSheet
@@ -227,7 +247,8 @@ export function HomeScreen() {
   const streak = streakAsOf(pet.streak, now);
   const today = todayFor(pet, now);
   const worn = findWearable(pet.wearing);
-  const wanted = sender.busy ? null : suggestCare(projected.stats, cooldowns);
+  const careBusy = sender.busy || (onChain && chainCare.busy);
+  const wanted = careBusy ? null : suggestCare(projected.stats, cooldowns);
 
   function care(action: CareActionType) {
     if (active) {
@@ -287,20 +308,10 @@ export function HomeScreen() {
       return;
     }
     setNotice(undefined);
-    const level = levelUp(pet.xp, check.pet.xp);
-    const done = `${CARE_DONE_LABEL[action]}.${level ? ` ${pet.name} is level ${level} now.` : ""}${earnedLine(pet, check.pet, { onChain: true, guild: Boolean(active.member) })}`;
-    const result = await sender.act(
+    await chainCare.start(action, () => sender.act(
       `${CARE_ACTION_LABEL[action]} ${pet.name}`,
       ({ owner }) => [getCareInstruction({ owner, pet: active.pet.address, passport: active.passport.address, action })],
-      done,
-    );
-    if (!result) return;
-    companion.refresh();
-    if (result.outcome === "confirmed") {
-      earned(action, check.xpGained);
-      record({ name: "care_saved", where: "solana", action });
-      ask(level ? "cheer" : CARE_MOMENT[action]);
-    }
+    ));
   }
 
   return (
@@ -361,7 +372,7 @@ export function HomeScreen() {
           stats={projected.stats}
           cooldowns={cooldowns}
           wanted={wanted}
-          busy={sender.busy}
+          busy={careBusy}
           streak={streak.count}
           panel={panel}
           gain={gain}
@@ -369,6 +380,16 @@ export function HomeScreen() {
           onPanel={setPanel}
           onSnap={roomState === "live" ? () => setShot(roomView.current?.snap() ?? null) : undefined}
         />
+        {onChain && chainCare.state && chainCare.state.stage !== "sending" ? (
+          <Banner
+            tone="wait"
+            title={chainCare.state.stage === "unknown" ? "Checking care receipt" : "Care confirmed; record pending"}
+            body={chainCare.state.stage === "unknown"
+              ? "Solana has not confirmed this receipt yet. Care will appear after confirmation and a fresh read."
+              : "The transaction is confirmed. Waiting for Solana to serve the updated pet and Passport before showing XP, stickers or a care moment."}
+            action={chainCare.state.stage === "retry" ? <Button label="Reload care record" tone="quiet" size="sm" onClick={() => { void chainCare.retry(); }} /> : undefined}
+          />
+        ) : null}
         {onChain ? <SigningNote state={sender.pawketWallet} name={pet.name} /> : null}
         <p role="status" className="pk-sr">
           {status.sentence}
@@ -392,7 +413,7 @@ export function HomeScreen() {
           ) : null}
         </div>
 
-        <ChainTrouble error={companion.chainError} kept={companion.owned.length > 0} onRetry={companion.refresh} />
+        <ChainTrouble error={chainCare.busy ? undefined : companion.chainError} kept={companion.owned.length > 0} onRetry={() => { void companion.refresh(); }} />
 
         <TodayStrip name={pet.name} today={today} />
         <HomeFoot pet={pet} onChain={onChain} others={companion.all.length - 1} />
@@ -405,7 +426,11 @@ export function HomeScreen() {
           sender={sender}
           onDismiss={() => setKeeping(null)}
           onCarried={(address) => {
-            carried.current = { id: keeping.id, address };
+            const coatSaved = copyCoat(keeping.id, address);
+            if (!coatSaved) {
+              showToast({ id: `coat-copy-${keeping.id}`, tone: "note", title: "Kept on Solana", body: "Their coat could not be saved for the Solana pet on this device. The local pet and its coat remain; try Keep on Solana again when storage is available." });
+            }
+            carried.current = { id: keeping.id, address, coatSaved };
             companion.choose(address);
             // An RPC node can confirm a pet before it serves its account.
             void (async () => {

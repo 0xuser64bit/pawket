@@ -147,6 +147,22 @@ Every app send goes through `usePawketSend` and `send.ts`:
 4. Broadcast uses preflight. Confirmation completes before record reload and
    care animation. The toast supplies the signature, fee payer and Explorer link.
 
+A confirmed care receipt is shown immediately. Home's `useChainCare` then
+reads the owner's pets up to three times within fifteen seconds; each owned-pet
+read has its own twelve-second deadline. Cancellation reaches the program
+scan and Passport/member batches. A refresh returns success, failure,
+supersession, cancellation or disconnection explicitly. Because pets cannot
+close or change owner, a refresh missing a previously read pet is an incomplete
+read: it retains the last valid records and selection and reports a read error
+so care reconciliation can retry. XP, level/sticker
+messages and the room's care moment wait until the refreshed Pet's action
+timestamp and Passport's care count advance and that record is rendered.
+Failed or stale reads offer **Reload care record**, which only reads.
+An uncertain receipt that later confirms follows the same reconciliation;
+feedback runs once while the same pet and owner remain selected. Switching
+pet or owner, or leaving Home, cancels that screen's feedback without altering
+the retained transaction receipt.
+
 Preparation and signing have bounded waits. A late signature is discarded,
 never broadcast. A lost broadcast/confirmation answer keeps the known
 signature and reports `unknown`; no replacement is sent automatically. It
@@ -248,11 +264,24 @@ signs a coin transaction, without a prompt, only when it appears in no
 instruction between the brackets, no priority fee is asked of it, no
 precompile verifies a signature and it carries at most four signatures.
 
-`forPlayer` in `src/server/coins/meteora.ts` funds the owner with the wallet's
-spendable balance minus the device-float refill, not just a quote's input.
-The brackets protect the owner's pre-existing SOL, but do not independently
-limit SDK spending to the displayed trade amount. The owner still approves
-the prepared transaction; this trust boundary is a [mainnet review item](MAINNET.md).
+`forPlayer` in `src/server/coins/meteora.ts` funds at most the operation's SOL
+input plus its published rent ceiling and, for a launch, the launch fee. It
+leaves the wallet's remaining spendable balance unexposed. Rent ceilings live
+in `src/lib/coins/intent.ts`: 0.005 SOL for a trade or claim, 0.03 for a launch,
+and 0.05 for graduation. Device-float refill remains a separate program-capped
+amount. Unused funding and sale proceeds settle back to Pawket Wallet.
+
+Before either player signer is called, `sendPrepared` checks the full brackets
+and an immutable intent captured from the controls. The pure browser policy in
+`intent.ts` independently derives pool, vault, event and associated-token
+addresses and checks the recognized swap, launch, claim or migration layout.
+Trades bind the exact input and minimum output, including token sells; token
+approvals and unrelated transfers are refused. Graduation resolves only the
+configured active, frozen lookup table from the browser's own RPC. Unsupported
+instruction variants fail closed. SDK-built fixtures test policy parity; the
+owner still approves every coin transaction. These checks trust the delivered
+app, its initial coin identity and preset, the public RPC and the recognized
+programs; [mainnet review](MAINNET.md) and live wallet checks remain required.
 The device needs enough existing SOL to pay the fee and remain rent-exempt
 before that transaction can refill it.
 

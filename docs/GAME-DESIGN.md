@@ -71,7 +71,10 @@ does not already grant.
 Rounds have a Pause/Resume control and pause when the page is hidden,
 preserving the round. Catch captures the finger until it lifts; hovering
 before the first tap does not start a round. Copy locks input between
-patterns and replays the demonstration after a pause. Pairs delivers a
+patterns and replays the automatic demonstration after a pause. Before starting,
+players can choose **Show the pattern at my pace**: each bean is named in a
+status line and stays until they advance. The sequence disappears for their
+turn; the seed, scoring and daily bonus are unchanged. Pairs delivers a
 completed result once, including across pause/resume and callback changes.
 
 Four games ship, each one round, each a pure step function of a seed and

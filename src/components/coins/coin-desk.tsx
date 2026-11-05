@@ -6,14 +6,16 @@ import { useRequest } from "@solana/react";
 import type { Address } from "@solana/kit";
 import { Banner, Button, ButtonLink, Card, Choice, Field, Paper, Receipt, Row, Stack, type ReceiptRow } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
-import type { SolanaCluster } from "@/config/env";
+import { getPublicEnv, type SolanaCluster } from "@/config/env";
+import { COIN_RENT_LIMITS, type CoinIntent } from "@/lib/coins/intent";
 import { COIN_RISKS } from "@/lib/coins/copy";
-import { COIN_PRESETS, COIN_TERMS, feeSplitBps, type PresetId } from "@/lib/coins/presets";
+import { COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, feeSplitBps, type PresetId } from "@/lib/coins/presets";
 import { canTrade } from "@/lib/coins/stage";
 import { rpc, useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
 import { usePawketWallet } from "@/lib/wallet/pawket-wallet";
 import { formatUnits, parseUnits } from "@/lib/utils/format";
+import { readDeadline } from "@/lib/utils/deadline";
 import type { CoinQuote, CoinState } from "@/server/coins/meteora";
 
 export interface CoinDeskProps {
@@ -50,7 +52,7 @@ export function CoinDesk({ guild, coin, thresholds, cluster }: CoinDeskProps) {
       ) : null}
       {coin.stage === "none" ? (
         isFounder ? (
-          <LaunchPanel guild={guild} thresholds={thresholds} sender={sender} onDone={done} />
+          <LaunchPanel guild={guild} coin={coin} thresholds={thresholds} sender={sender} onDone={done} />
         ) : (
           <Banner
             tone="guild"
@@ -60,7 +62,7 @@ export function CoinDesk({ guild, coin, thresholds, cluster }: CoinDeskProps) {
         )
       ) : null}
 
-      {coin.stage === "pending" ? <GraduatePanel guild={guild} cluster={cluster} sender={sender} canSign={Boolean(owner)} onConnect={() => setConnecting(true)} onDone={done} /> : null}
+      {coin.stage === "pending" ? <GraduatePanel guild={guild} coin={coin} cluster={cluster} sender={sender} canSign={Boolean(owner)} onConnect={() => setConnecting(true)} onDone={done} /> : null}
 
       {canTrade(coin.stage) ? (
         owner ? (
@@ -179,11 +181,13 @@ function RiskGate({ agreed, onAgree }: { agreed: boolean; onAgree: () => void })
 
 function LaunchPanel({
   guild,
+  coin,
   thresholds,
   sender,
   onDone,
 }: {
   guild: CoinDeskProps["guild"];
+  coin: CoinState;
   thresholds: CoinDeskProps["thresholds"];
   sender: PawketSender;
   onDone: () => void;
@@ -202,7 +206,7 @@ function LaunchPanel({
       `Launch ${guild.name}'s coin`,
       `/api/coins/${guild.slug}/launch`,
       { preset, firstBuy: lamports.toString() },
-      { sponsored: false },
+      { sponsored: false, coinIntent: { kind: "launch", cluster: getPublicEnv().solanaCluster, mint: coin.mint, preset, firstBuy: lamports, name: coinName(guild.name), symbol: coinSymbol(guild.slug), metadataUri: new URL(`/api/coins/${guild.slug}/metadata`, getPublicEnv().appUrl).toString() } },
     );
     if (result?.outcome === "confirmed") onDone();
   }
@@ -256,7 +260,7 @@ function LaunchPanel({
                 { k: "Launch fee", v: sol(COIN_TERMS.launchFeeLamports) },
                 ...(lamports && lamports > 0n ? [{ k: "Your first buy", v: sol(lamports), tone: "warn" as const }] : []),
               ]}
-              note="You also pay the coin's rent and the network fee, about 0.03 SOL. Pawket's sponsor pays for pets, never for coins."
+              note={`Account rent is capped at ${sol(COIN_RENT_LIMITS.launch, 3)}, in addition to the launch fee, first buy and network fee. Unspent SOL returns to Pawket Wallet.`}
             />
           </Paper>
           <RiskGate agreed={agreed} onAgree={agree} />
@@ -292,17 +296,20 @@ export function TradeTicket({
   const [side, setSide] = useState<Side>("buy");
   const [amount, setAmount] = useState("");
   const [slippage, setSlippage] = useState(100);
-  const [answer, setQuote] = useState<CoinQuote | null>(null);
-  const [quoting, setQuoting] = useState(false);
+  const [answer, setQuote] = useState<{ quote: CoinQuote; forCoin: string } | null>(null);
+  const [quotingFor, setQuotingFor] = useState<string | null>(null);
   const [problem, setProblem] = useState<string>();
   const [agreed, agree] = useConsent(coin.mint);
   const [now, setNow] = useState(() => Date.now());
   const asked = useRef(0);
+  const pendingQuote = useRef<ReturnType<typeof readDeadline> | null>(null);
+  const quoteKey = `${guild.slug}:${coin.mint}:${coin.stage}:${coin.preset}:${coin.pool}:${coin.graduated?.pool}`;
+  const quoting = quotingFor === quoteKey;
   const decimals = side === "buy" ? SOL : COIN_TERMS.decimals;
   const units = amount.trim() ? parseUnits(amount, decimals) : null;
   const quote =
-    answer && answer.side === side && units !== null && answer.amountIn === units.toString() && answer.slippageBps === slippage
-      ? answer
+    answer && answer.forCoin === quoteKey && answer.quote.side === side && units !== null && answer.quote.amountIn === units.toString() && answer.quote.slippageBps === slippage
+      ? answer.quote
       : null;
   const age = quote ? Math.floor((now - quote.quotedAt) / 1000) : 0;
   const stale = age >= QUOTE_SECONDS;
@@ -314,42 +321,66 @@ export function TradeTicket({
     return () => window.clearInterval(id);
   }, [quote]);
 
+  useEffect(() => () => {
+    asked.current += 1;
+    pendingQuote.current?.abort();
+  }, [quoteKey]);
+
   function change(next: () => void) {
     asked.current += 1;
+    pendingQuote.current?.abort();
+    pendingQuote.current = null;
     next();
     setQuote(null);
-    setQuoting(false);
+    setQuotingFor(null);
     setProblem(undefined);
   }
 
   async function ask() {
     if (!units) return;
     const ticket = ++asked.current;
-    setQuoting(true);
+    pendingQuote.current?.abort();
+    const deadline = readDeadline(20_000);
+    pendingQuote.current = deadline;
+    setQuote(null);
+    setQuotingFor(quoteKey);
     setProblem(undefined);
     try {
-      const response = await fetch(`/api/coins/${guild.slug}/quote?side=${side}&amount=${units}&slippage=${slippage}`, { cache: "no-store" });
+      const response = await fetch(`/api/coins/${guild.slug}/quote?side=${side}&amount=${units}&slippage=${slippage}`, { cache: "no-store", signal: deadline.signal });
       const body = (await response.json()) as CoinQuote & { message?: string };
       if (ticket !== asked.current) return;
+      deadline.signal.throwIfAborted();
       if (!response.ok) throw new Error(body.message ?? "No quote came back. Nothing was sent.");
-      setQuote(body);
+      setQuote({ quote: body, forCoin: quoteKey });
       setNow(Date.now());
     } catch (error) {
       if (ticket !== asked.current) return;
       setQuote(null);
-      setProblem(error instanceof Error ? error.message : "No quote came back. Nothing was sent.");
+      setProblem(deadline.signal.aborted
+        ? "The quote took too long. Nothing was sent — try again."
+        : error instanceof Error ? error.message : "No quote came back. Nothing was sent.");
     } finally {
-      if (ticket === asked.current) setQuoting(false);
+      deadline.dispose();
+      if (pendingQuote.current === deadline) {
+        pendingQuote.current = null;
+        setQuotingFor(null);
+      }
     }
   }
 
   async function sign() {
-    if (!quote) return;
+    if (!quote || !coin.preset) return;
+    const signedAt = Date.now();
+    if (signedAt - quote.quotedAt >= QUOTE_SECONDS * 1000) {
+      setNow(signedAt);
+      return;
+    }
+    const coinIntent: CoinIntent = Object.freeze({ kind: "trade", cluster: getPublicEnv().solanaCluster, mint: coin.mint, preset: coin.preset, route: quote.route, side: quote.side, amountIn: BigInt(quote.amountIn), minimumOut: BigInt(quote.minimumOut) });
     const result = await sender.sendFromServer(
       `${quote.side === "buy" ? "Buy" : "Sell"} ${coin.symbol}`,
       `/api/coins/${guild.slug}/trade`,
       { side: quote.side, amount: quote.amountIn, minimumOut: quote.minimumOut },
-      { sponsored: false },
+      { sponsored: false, coinIntent },
     );
     if (result?.outcome === "confirmed") {
       setQuote(null);
@@ -450,7 +481,7 @@ export function TradeTicket({
             />
           ) : null}
         </Row>
-        <p className="caption pk-faint">Pawket Wallet covers this transaction and its network fee. Unspent SOL and sale proceeds return there. Your external wallet approves; its existing SOL stays untouched.</p>
+        <p className="caption pk-faint">Pawket Wallet covers this transaction, up to {sol(COIN_RENT_LIMITS.trade, 3)} of account rent and its network fee. Unspent SOL and sale proceeds return there. Your external wallet approves; its existing SOL stays untouched.</p>
       </Stack>
     </Card>
   );
@@ -458,6 +489,7 @@ export function TradeTicket({
 
 function GraduatePanel({
   guild,
+  coin,
   cluster,
   sender,
   canSign,
@@ -466,17 +498,19 @@ function GraduatePanel({
 }: {
   guild: CoinDeskProps["guild"];
   cluster: SolanaCluster;
+  coin: CoinState;
   sender: PawketSender;
   canSign: boolean;
   onConnect: () => void;
   onDone: () => void;
 }) {
   async function graduate() {
+    if (!coin.preset) return;
     const result = await sender.sendFromServer(
       `Graduate ${guild.name}'s coin`,
       `/api/coins/${guild.slug}/graduate`,
       {},
-      { sponsored: false },
+      { sponsored: false, coinIntent: { kind: "graduate", cluster, mint: coin.mint, preset: coin.preset } },
     );
     if (result?.outcome === "confirmed") onDone();
   }
@@ -486,7 +520,7 @@ function GraduatePanel({
       title="Graduating"
       body={
         cluster === "devnet"
-          ? "The curve raised its threshold, so it takes no more trades. Graduation moves it into its DAMM v2 pool with the liquidity locked for good. On devnet anyone may do it, paying the pool's rent; what you hold is untouched either way."
+          ? `The curve raised its threshold, so it takes no more trades. Graduation moves it into its DAMM v2 pool with the liquidity locked for good. On devnet anyone may do it, paying its network fee and up to ${sol(COIN_RENT_LIMITS.graduate, 3)} for the pool's rent; unspent SOL returns to Pawket Wallet. What you hold is untouched either way.`
           : "The curve raised its threshold, so it takes no more trades. Meteora's keepers move it into its DAMM v2 pool; trading reopens there once Pawket has checked the pool. What you hold is untouched."
       }
       action={
@@ -504,12 +538,13 @@ function GraduatePanel({
 
 function FounderFees({ guild, coin, sender, onDone }: { guild: CoinDeskProps["guild"]; coin: CoinState; sender: PawketSender; onDone: () => void }) {
   async function claim() {
-    const result = await sender.sendFromServer(`Claim ${guild.name}'s coin fees`, `/api/coins/${guild.slug}/claim`, {}, { sponsored: false });
+    if (!coin.preset) return;
+    const result = await sender.sendFromServer(`Claim ${guild.name}'s coin fees`, `/api/coins/${guild.slug}/claim`, {}, { sponsored: false, coinIntent: { kind: "claim", from: "curve", cluster: getPublicEnv().solanaCluster, mint: coin.mint, preset: coin.preset } });
     if (result?.outcome === "confirmed") onDone();
   }
   return (
     <Paper title="Your share of the fees" meta="Founder">
-      <Receipt rows={[{ k: "Waiting to be claimed", v: sol(coin.fees.founderUnclaimed, 6) }]} />
+      <Receipt rows={[{ k: "Waiting to be claimed", v: sol(coin.fees.founderUnclaimed, 6) }]} note={`Account rent is capped at ${sol(COIN_RENT_LIMITS.claim, 3)}, plus the network fee. Unspent SOL returns to Pawket Wallet.`} />
       <div style={{ marginTop: "var(--space-3)" }}>
         <Button label="Claim it to this wallet" tone="paper" size="sm" disabled={sender.busy} onClick={() => void claim()} />
       </div>
@@ -544,7 +579,7 @@ function PoolFees({
       `Claim ${guild.name}'s pool fees`,
       `/api/coins/${guild.slug}/claim`,
       { from: "pool" },
-      { sponsored: false },
+      { sponsored: false, coinIntent: { kind: "claim", from: "pool", cluster: getPublicEnv().solanaCluster, mint: coin.mint, preset: coin.preset! } },
     );
     if (result?.outcome === "confirmed") {
       fees.refresh();
@@ -560,6 +595,7 @@ function PoolFees({
           { k: `Earned in ${coin.symbol}`, v: formatUnits(feeCoin, COIN_TERMS.decimals, 2) },
           { k: "The liquidity itself", v: "Locked for good", tone: "ok" },
         ]}
+        note={`Account rent is capped at ${sol(COIN_RENT_LIMITS.claim, 3)}, plus the network fee. Unspent SOL returns to Pawket Wallet.`}
       />
       <div style={{ marginTop: "var(--space-3)" }}>
         <Button label="Claim it to this wallet" tone="paper" size="sm" disabled={!waiting || sender.busy} onClick={() => void claim()} />

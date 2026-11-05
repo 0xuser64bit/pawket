@@ -169,8 +169,12 @@ export function KeepSheet({
         </p>
         <p className="body-sm pk-keep__note">
           {fresh
-            ? `${pet.name} is brand new, so nothing is lost: their record starts today either way.`
-            : `Psst — Solana only keeps what it sees, so ${pet.name} starts there at level 1 with a fresh streak. Their name, look and personality come along; the sooner, the less there is to start over.`}
+            ? `${pet.name} is brand new. Their Solana record starts today at level 1 with a fresh streak.`
+            : `Psst — Solana only keeps what it sees, so ${pet.name} starts there at level 1 with a fresh streak. The sooner, the less there is to start over.`}
+        </p>
+        <p className="body-sm pk-muted">
+          Their name, species and personality come along. Their coat stays on this device; public Passports use the classic coat.
+          {" "}Clothes start unworn on Solana; choose them again in the wardrobe.
         </p>
         {owner && canSign && linkHere ? (
           <p className="body-sm pk-muted">

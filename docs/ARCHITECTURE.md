@@ -30,8 +30,9 @@ sequenceDiagram
     Chain-->>Send: Confirmation or retained uncertain signature
     Send-->>UI: Result and Explorer receipt
     UI->>Chain: Refresh authoritative record
+    Chain-->>UI: Pet and Passport reflect the confirmed care
   end
-  UI-->>Room: Saved / confirmed care moment
+  UI-->>Room: Saved / confirmed and reloaded care moment
 ```
 
 The non-negotiable distinction: a local storage write and a chain transaction
@@ -129,12 +130,13 @@ Unknown outcomes retain the existing signature. No optimistic chain care or
 replacement send is permitted. [Solana](SOLANA.md) describes the owner-approved Actions
 flow and prepared coin/keepsake transactions.
 
-**Known sequencing gap:** Home's `careOnChain` starts `companion.refresh()`
-after the send result but does not await it before queuing the confirmed-care
-moment (`src/components/home/home-screen.tsx`). Confirmation is required;
-completion of the fresh read is not currently a gate on that animation.
-The required confirm-and-reload contract remains the target; a successful
-animation is not evidence that the refresh has finished.
+Home's `useChainCare` gates progression feedback on both confirmation and a
+fresh Pet/Passport pair that reflects the action. The record must also be
+shown for the same selected pet and owner before the room receives its cue.
+Read failures and stale records leave care pending with a read-only retry;
+they never send another transaction. Leaving the screen or changing pet or
+owner discards that screen's pending feedback. The original transaction
+receipt continues through the shared send lifecycle.
 
 The shared RPC transport retries HTTP 429 responses within its bounded retry
 budget. Cancellation and read deadlines also stop the backoff immediately,

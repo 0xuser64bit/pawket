@@ -5,10 +5,15 @@ import type { CoinQuote, CoinState } from "@/server/coins/meteora";
 
 vi.mock("@/lib/solana/browser-client", () => ({ rpc: {}, useConnected: () => null }));
 vi.mock("@/lib/solana/use-send", () => ({ usePawketSend: () => null }));
+vi.mock("@/config/env", () => ({ getPublicEnv: () => ({ solanaCluster: "devnet", appUrl: "https://dev.pawket.world" }) }));
 import { TradeTicket } from "./coin-desk";
 
 const guild = { slug: "window-seat", name: "Window Seat", founder: "founder", memberCount: 3 };
-const coin = { slug: "window-seat", name: "Window Seat", symbol: "SEAT", mint: "Mint1111", stage: "dbc", creator: "founder" } as CoinState;
+const coin: CoinState = {
+  slug: "window-seat", name: "Window Seat", symbol: "SEAT", mint: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin", stage: "dbc", creator: "founder",
+  preset: "gentle", pool: "11111111111111111111111111111111", raised: "0", threshold: "1000", price: 1, graduated: null,
+  fees: { founderUnclaimed: "0", pawketUnclaimed: "0", total: "0" }, holders: null,
+};
 const balances = { lamports: 10n ** 9n, units: 10n ** 12n };
 
 function slowQuotes() {
@@ -60,5 +65,7 @@ it("signs exactly the quote's side, amount and least", async () => {
   fireEvent.click(screen.getByRole("button", { name: "See the quote" }));
   await act(async () => answers[0](buyQuote("50000000")));
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Sign: buy SEAT" })); });
-  expect(sendFromServer).toHaveBeenCalledWith("Buy SEAT", "/api/coins/window-seat/trade", { side: "buy", amount: "50000000", minimumOut: "4158000000" }, { sponsored: false });
+  expect(sendFromServer).toHaveBeenCalledWith("Buy SEAT", "/api/coins/window-seat/trade", { side: "buy", amount: "50000000", minimumOut: "4158000000" }, { sponsored: false, coinIntent: {
+    kind: "trade", cluster: "devnet", mint: coin.mint, preset: "gentle", route: "curve", side: "buy", amountIn: 50_000_000n, minimumOut: 4_158_000_000n,
+  } });
 });

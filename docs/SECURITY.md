@@ -50,7 +50,17 @@ still requires the brackets' owner, wallet and device among the transaction's
 own keys. The device, which signs without a prompt, appears in no instruction
 between the brackets and pays no priority fee, no signature a precompile
 verifies and at most four signatures (a graduation's), so its signature covers
-its network fee and nothing else (`send.test.ts`).
+its network fee and nothing else (`send.test.ts`). The browser also requires
+an immutable operation intent before either signature: exact trade input and
+minimum output, derived pools/vaults, owner token accounts and recognized
+auxiliary instructions (`src/lib/coins/intent.ts`). Funding cannot exceed the
+operation's SOL input, the published rent ceiling and a launch's fixed fee.
+Launch metadata and optional first buy, fee recipients and graduation accounts
+are checked independently of the prepared response. Token approvals, unrelated
+transfers and unsupported variants are refused. V0 graduation resolves only
+the configured active, frozen lookup table through the browser's own RPC;
+SDK-built transactions and mutations exercise both signers' refusal boundary
+(`src/server/coins/intent.test.ts`).
 
 Release builds retain overflow checks. Counters saturate where specified;
 caller-controlled amounts and spans are validated. Decay has a bounded horizon
@@ -134,11 +144,16 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   rents an instance signed in the last two minutes, so callers spread over
   many addresses still stop at it. Shared enforcement and budget monitoring
   are mainnet work.
-- Pages send no script Content-Security-Policy, only frame and form rules. A
-  script injected into Pawket's origin could act as this browser's linked
-  device without a prompt, within its link's limits above. A nonce-based
-  script policy, tested with the room's renderer and the wallet adapters, is
-  mainnet work.
+- HTML pages enforce a per-request nonce script policy (`proxy.ts`). The
+  request nonce reaches Next's runtime and the theme script; the root layout
+  renders per request so a static document cannot reuse it. Production allows
+  neither inline scripts without a nonce nor JavaScript string evaluation.
+  WebAssembly compilation and blob reads remain allowed for Meshopt and the
+  room's GLBs. Inline styles remain allowed for React and room colours; secure and loopback wallet/RPC
+  connections remain available. The policy also refuses objects and base tags.
+  This mitigates script injection, but does not replace escaping, dependency
+  review or the device's program limits. Consumer-wallet and physical WebView
+  compatibility still require their release checks.
 - A stolen linked device acts until its link ends (30 days at most) or the
   owner unlinks it: up to its daily limit (500 at most) of non-money actions a
   UTC day, as the owner's pets (a wave greets any pet; a pet may join any
@@ -157,14 +172,15 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   day earns XP; later rounds still increment play/activity counts and update
   activity timestamps and the streak. Each submission costs fees, bounded by
   the sponsor's per-caller limits and a device's daily limit.
-- A coin transaction funds the owner's account with the spendable Pawket Wallet
-  balance minus the device-float refill for its duration, because the SDK's
-  costs (accounts it opens, a launch's fee) vary, and settlement returns what
-  is left. The owner's own SOL
-  is held by `keep`, and the owner approves the transaction in their wallet, but
-  that wallet shows the owner's balance unchanged: what the server built between
-  the brackets decides what the funded balance pays for. Funding only what a
-  trade needs, checked in the browser, is mainnet work.
+- Coin intent validation protects against a substituted or faulty prepared
+  transaction response. It trusts the delivered browser code, the initial coin
+  identity/preset, its RPC and the recognized on-chain programs; it does not
+  protect a player from compromised app delivery or arbitrary program upgrades.
+  Rent ceilings are conservative bounds, not live rent quotes; changing an SDK,
+  supported instruction variant or preset requires matching policy/parity tests.
+  Consumer-wallet display and the deployed coin lifecycle still need their
+  authorized devnet and release checks. The owner's wallet may show its own
+  SOL unchanged because Pawket Wallet supplies the bounded funding.
 - Quote age and risk acknowledgement are browser controls, not server or
   program authorization. The ticket disables signing a quote after 20 seconds
   and stores acknowledgement in local storage, keyed by `launch-<slug>` for

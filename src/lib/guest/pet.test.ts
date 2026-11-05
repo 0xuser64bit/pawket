@@ -235,16 +235,62 @@ describe("migrateStoredPet", () => {
     expect(pet?.id).toBe(migrateStoredPet(legacy)?.id);
   });
 
-  it("drops an unknown wearable and a broken log line, and keeps the pet", () => {
+  it("drops an unknown wearable and keeps the pet", () => {
     const pet = createGuestPet(INPUT);
     const raw = {
       ...pet,
       wearing: "not-a-look",
-      careLog: [...pet.careLog, { action: "feed", at: "nope", xpGained: 10 }, "nope"],
     };
     const loaded = migrateStoredPet(raw);
     expect(loaded?.wearing).toBeNull();
     expect(loaded?.name).toBe(pet.name);
+  });
+
+  for (const version of [undefined, 1, 2]) {
+    describe(`dates in stored version ${version ?? "unversioned"}`, () => {
+      const stored = () => ({ ...createGuestPet(INPUT), version });
+
+      it.each(["createdAt", "statsUpdatedAt", "modifiedAt"] as const)("rejects an unreadable %s instead of accepting a loose migration", (field) => {
+        expect(migrateStoredPet({ ...stored(), [field]: "broken-date" })).toBeNull();
+      });
+
+      it("rejects a last-action timestamp that would make cooldowns NaN", () => {
+        const pet = stored();
+        expect(migrateStoredPet({ ...pet, lastActionAt: { ...pet.lastActionAt, feed: "broken-date" } })).toBeNull();
+      });
+
+      it("rejects a malformed care-log timestamp without silently dropping history", () => {
+        expect(migrateStoredPet({ ...stored(), careLog: [{ action: "feed", at: "broken-date", xpGained: 10 }] })).toBeNull();
+      });
+
+      it.each(["broken-date", "2026-02-29", "2026-13-01", "2026-9-01", "2026-09-19T00:00:00Z"])("rejects %s as a streak or round UTC day", (day) => {
+        expect(migrateStoredPet({ ...stored(), streak: { count: 1, best: 1, lastDay: day } })).toBeNull();
+        expect(migrateStoredPet({ ...stored(), lastDailyPlayDay: day })).toBeNull();
+      });
+
+      it("keeps valid older timestamp formats and a real leap day", () => {
+        const pet = stored();
+        const raw = {
+          ...pet,
+          createdAt: "2024-02-29T12:00:00Z",
+          statsUpdatedAt: "2024-02-29T17:30:00+05:30",
+          modifiedAt: undefined,
+          streak: { count: 3, best: 3, lastDay: "2024-02-29" },
+          lastDailyPlayDay: "2024-02-29",
+        };
+        expect(migrateStoredPet(raw)).toEqual({ ...raw, version: 2 });
+      });
+
+      it("preserves a valid modification timestamp when migrating", () => {
+        const raw = { ...stored(), modifiedAt: "2026-09-20T12:00:00Z" };
+        expect(migrateStoredPet(raw)?.modifiedAt).toBe("2026-09-20T12:00:00Z");
+      });
+    });
+  }
+
+  it("rejects dates outside the finite JavaScript timestamp range", () => {
+    const pet = createGuestPet(INPUT);
+    expect(migrateStoredPet({ ...pet, statsUpdatedAt: "+275761-01-01T00:00:00.000Z" })).toBeNull();
   });
 
   it("starts the best run of a record from before at the run it has", () => {
@@ -388,6 +434,25 @@ describe("pet storage", () => {
     expect(stored).toEqual([{ ...pet, xp: 40 }, { name: 3 }, newer]);
   });
 
+  it("keeps a record with malformed dates verbatim while another pet changes", () => {
+    const valid = createGuestPet(INPUT);
+    const broken = { ...createGuestPet({ ...INPUT, name: "Pepper" }), modifiedAt: "broken-date" };
+    window.localStorage.setItem("pawket.pets.v1", JSON.stringify([valid, broken]));
+    expect(loadPets()).toEqual([valid]);
+    expect(savePet({ ...valid, xp: 40 })).toBe(true);
+    expect(removePet(valid.id)).toBe(true);
+    expect(JSON.parse(window.localStorage.getItem("pawket.pets.v1")!)).toEqual([broken]);
+  });
+
+  it("preserves an unreadable legacy record when starting a new pet list", () => {
+    const broken = JSON.stringify({ ...createGuestPet(INPUT), version: 1, createdAt: "broken-date" });
+    window.localStorage.setItem("pawket.guest-pet.v1", broken);
+    expect(loadPets()).toEqual([]);
+    expect(window.localStorage.getItem("pawket.guest-pet.v1")).toBe(broken);
+    expect(savePet(createGuestPet({ ...INPUT, name: "Pepper" }))).toBe(true);
+    expect(window.localStorage.getItem("pawket.guest-pet.v1")).toBe(broken);
+  });
+
   it("sets a list that is not a list aside, never deletes it, then starts a new one", () => {
     for (const unreadable of ["{broken", JSON.stringify({ pets: "not a list" })]) {
       window.localStorage.clear();
@@ -453,6 +518,14 @@ describe("pet storage", () => {
 
   it("refuses to store an invalid record", () => {
     expect(savePet({ ...createGuestPet(INPUT), xp: -1 })).toBe(false);
+    expect(loadPets()).toEqual([]);
+  });
+
+  it("refuses to store or restore malformed dates through the direct schema", () => {
+    const pet = createGuestPet(INPUT);
+    const broken = { ...pet, lastActionAt: { ...pet.lastActionAt, feed: "broken-date" } };
+    expect(savePet(broken)).toBe(false);
+    expect(bringBackPets([broken])).toEqual({ added: [], updated: [], same: 0 });
     expect(loadPets()).toEqual([]);
   });
 

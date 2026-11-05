@@ -28,6 +28,16 @@ jobs:
       - run: pnpm verify
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm e2e --workers=2
+      - name: Retain failed browser evidence
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: chromium-failure
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
 
   secrets:
     runs-on: ubuntu-latest

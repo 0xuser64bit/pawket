@@ -103,11 +103,11 @@ describe("broadcast uncertainty", () => {
     return { owner, device, prepare: async () => getBase64EncodedWireTransaction(prepared) };
   }
 
-  it("lets a v0 coin transaction through while its Pawket Wallet accounts are its own keys", async () => {
+  it("refuses a v0 coin transaction without reviewed intent even when its bracket keys match", async () => {
     const { owner, device, prepare } = await bracketed(false);
     const reached = vi.fn(async () => { throw new Error("the owner was asked"); });
-    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare, sponsored: false })).rejects.toThrow("the owner was asked");
-    expect(reached).toHaveBeenCalledOnce();
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare, sponsored: false })).rejects.toThrow(/coin intent/i);
+    expect(reached).not.toHaveBeenCalled();
   });
 
   it("refuses to let its device pay for anything but the network fee, before any signer is called", async () => {
@@ -146,10 +146,10 @@ describe("broadcast uncertainty", () => {
     }
     const reached = vi.fn(async () => { throw new Error("the owner was asked"); });
     const trade = [limit, getTransferSolInstruction({ source: createNoopSigner(owner.address), destination: elsewhere, amount: 1n })];
-    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepared(trade), sponsored: false })).rejects.toThrow("the owner was asked");
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepared(trade), sponsored: false })).rejects.toThrow(/coin intent/i);
     const graduation = [limit, signedBy(2)];
-    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepared(graduation), sponsored: false })).rejects.toThrow("the owner was asked");
-    expect(reached).toHaveBeenCalledTimes(2);
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepared(graduation), sponsored: false })).rejects.toThrow(/coin intent/i);
+    expect(reached).not.toHaveBeenCalled();
   });
 
   it("refuses a v0 transaction whose Pawket Wallet comes from a lookup table, before any signer is called", async () => {
@@ -351,12 +351,21 @@ describe("a coin transaction's brackets", () => {
     expect(sign).not.toHaveBeenCalled();
   });
 
-  it("lets through another program's instruction that only looks like a fee price", async () => {
+  it("refuses unreviewed coin instructions and whole-wallet funding before either signer", async () => {
+    const { owner, device, bracket, prepare } = await parties();
+    const sign = vi.fn(async () => { throw new Error("unreviewed transaction reached a signer"); });
+    await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: sign }, extraSigner: { ...device, signTransactions: sign }, prepare: prepare([bracket(10_000_000_000n), getTransferSolInstruction({ source: createNoopSigner(owner.address), destination: elsewhere, amount: 10_000_000_000n }), bracket()]), sponsored: false }))
+      .rejects.toThrow(/coin intent/i);
+    expect(sign).not.toHaveBeenCalled();
+  });
+
+  it("refuses an unreviewed instruction from a known coin program", async () => {
     const { owner, device, bracket, prepare } = await parties();
     const reached = vi.fn(async () => { throw new Error("the owner was asked"); });
     const lookalike = { programAddress: address("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"), data: Uint8Array.of(3, 1, 0, 0, 0, 0, 0, 0, 0) };
     await expect(sendPrepared({ rpc: {} as SendRpc, owner: { ...owner, signTransactions: reached }, extraSigner: device, prepare: prepare([bracket(1n), lookalike, bracket()]), sponsored: false }))
-      .rejects.toThrow("the owner was asked");
+      .rejects.toThrow(/coin intent/i);
+    expect(reached).not.toHaveBeenCalled();
   });
 });
 

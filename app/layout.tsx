@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { getPublicEnv } from "@/config/env";
 import { fontClassNames } from "@/config/fonts";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/config/site";
@@ -32,16 +33,18 @@ export const viewport: Viewport = {
 };
 
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Request-time rendering is required: a cached document cannot reuse a nonce.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en" className={fontClassNames} suppressHydrationWarning>
       <head>
         <meta name="darkreader-lock" />
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <noscript>
           <style>{".pk-boot{display:none}"}</style>
         </noscript>

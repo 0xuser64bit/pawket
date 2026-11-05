@@ -33,6 +33,8 @@ export function CopyGame({
   const [taps, setTaps] = useState<number[]>([]);
   const [face, setFace] = useState<Feeling>("happy");
   const [said, setSaid] = useState("");
+  const [paced, setPaced] = useState(false);
+  const [step, setStep] = useState(0);
   const pattern = copyPattern(seed, length);
   const timers = useRef<number[]>([]);
   const finished = useRef(false);
@@ -43,7 +45,7 @@ export function CopyGame({
   useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), []);
 
   useEffect(() => {
-    if (phase !== "show" || paused) return;
+    if (phase !== "show" || paused || paced) return;
     const on = showMs(length);
     const gap = Math.round(on * 0.45);
     pattern.forEach((bean, i) => {
@@ -63,13 +65,13 @@ export function CopyGame({
       timers.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, length, seed, paused]);
+  }, [phase, length, seed, paused, paced]);
 
   useEffect(() => {
     if (paused || finished.current || (phase !== "copied" && phase !== "wrong")) return;
     const timer = window.setTimeout(() => {
       if (phase === "wrong") { finished.current = true; onFinish(length - 1); }
-      else { setFace("happy"); setLength(length + 1); setPhase("show"); }
+      else { setFace("happy"); setLength(length + 1); setStep(0); setPhase("show"); }
     }, phase === "wrong" ? 1100 : 700);
     return () => window.clearTimeout(timer);
   }, [phase, paused, length, onFinish]);
@@ -106,7 +108,8 @@ export function CopyGame({
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const look = lit !== null ? BEAN_LOOK[lit] : 0;
+  const shown = phase === "show" && paced ? pattern[step] : lit;
+  const look = shown !== null ? BEAN_LOOK[shown] : 0;
   return (
     <div className="pk-paws" data-phase={phase}>
       <div className="pk-paws__paw">
@@ -114,26 +117,41 @@ export function CopyGame({
           <button
             key={bean}
             type="button"
-            className={["pk-paws__bean", `pk-paws__bean--${bean}`, lit === bean && "pk-paws__bean--lit"].filter(Boolean).join(" ")}
+            className={["pk-paws__bean", `pk-paws__bean--${bean}`, shown === bean && "pk-paws__bean--lit"].filter(Boolean).join(" ")}
             aria-label={`${BEAN_NAMES[bean]} (${bean + 1})`}
             disabled={phase !== "turn" || paused}
             onClick={() => tap(bean)}
           />
         ))}
-        <div className="pk-paws__pad" style={{ "--pk-look-x": look, "--pk-look-y": lit !== null ? -0.8 : 0 } as CSSProperties}>
+        <div className="pk-paws__pad" style={{ "--pk-look-x": look, "--pk-look-y": shown !== null ? -0.8 : 0 } as CSSProperties}>
           <PetFrame form={form} temper={temper} feeling={face} wearing={wearing} sky={sky} size="fluid" />
         </div>
       </div>
 
       <div className="pk-paws__foot">
-        <p className="title" aria-live="polite">
-          {phase === "ready" ? "Watch, then copy" : phase === "show" ? `Watch. ${length} ${length === 1 ? "bean" : "beans"}.` : said}
+        <p className="title" role="status" aria-live="polite" aria-atomic="true">
+          {phase === "ready" ? "Watch, then copy" : phase === "show" ? paced
+            ? `Bean ${step + 1} of ${length}: ${BEAN_NAMES[pattern[step]]} (${pattern[step] + 1})`
+            : `Watch. ${length} ${length === 1 ? "bean" : "beans"}.` : said}
         </p>
         <p className="caption pk-faint">
           {phase === "ready"
             ? "The pattern grows by one each time you copy it. One wrong bean ends the round."
             : `Pattern ${length} · ${phase === "turn" ? `${taps.length} of ${length}` : "watching"}`}
         </p>
+        {phase === "ready" ? (
+          <label className="caption pk-muted">
+            <input type="checkbox" checked={paced} onChange={(event) => setPaced(event.target.checked)} />{" "}
+            Show the pattern at my pace
+          </label>
+        ) : null}
+        {phase === "show" && paced ? (
+          <Button label={step + 1 < length ? "Next bean" : "My turn"} tone="pool" disabled={paused} onClick={() => {
+            if (paused) return;
+            if (step + 1 < length) setStep(step + 1);
+            else { setPhase("turn"); setTaps([]); setLit(null); setSaid("Your turn."); }
+          }} />
+        ) : null}
         {phase === "ready" ? (
           <Button label="Start copying" tone="pool" icon="paw" onClick={() => setPhase("show")} />
         ) : null}

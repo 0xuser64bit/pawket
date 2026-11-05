@@ -32,3 +32,14 @@ it("holds each pet to the stored schema, so a hand-edited copy cannot store what
   const edited = { ...pet("Pepper"), xp: -50 };
   expect(readPetsCopy(petsCopy([edited as never]))).toMatchObject({ error: expect.stringMatching(/No pet/) });
 });
+
+it("imports the valid pet from a mixed copy and counts malformed dates as unreadable", () => {
+  const valid = pet("Pepper");
+  const broken = { ...pet("Miso"), lastActionAt: { ...valid.lastActionAt, feed: "broken-date" } };
+  expect(readPetsCopy(JSON.stringify([broken, valid]))).toEqual({ pets: [valid], unreadable: 1, coats: {} });
+});
+
+it("refuses an entirely malformed copy instead of silently repairing its dates", () => {
+  const broken = { ...pet("Miso"), modifiedAt: "broken-date" };
+  expect(readPetsCopy(JSON.stringify([broken]))).toMatchObject({ error: expect.stringMatching(/No pet/) });
+});

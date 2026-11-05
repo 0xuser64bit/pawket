@@ -28,16 +28,25 @@ const CARE_LOG_LIMIT = 40;
 
 const statSchema = z.int().check(z.minimum(0), z.maximum(100));
 const countSchema = () => z.int().check(z.nonnegative());
+const timestampSchema = z.string().check(z.superRefine((value, ctx) => {
+  if (!isTimestamp(value)) ctx.addIssue({ code: "custom", message: "Expected a finite timestamp." });
+}));
+const utcDaySchema = z.string().check(z.superRefine((value, ctx) => {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(date.getTime()) || utcDay(date) !== value) {
+    ctx.addIssue({ code: "custom", message: "Expected a UTC calendar day." });
+  }
+}));
 
 const careLogEntrySchema = z.object({
   action: z.enum(CareActionType),
-  at: z.string(),
+  at: timestampSchema,
   xpGained: countSchema(),
 });
 
 const streakSchema = z.object({
   count: countSchema(),
-  lastDay: z.nullable(z.string()),
+  lastDay: z.nullable(utcDaySchema),
   best: z._default(countSchema(), 0),
 });
 
@@ -54,19 +63,18 @@ export const guestPetSchema = z.object({
     hygiene: statSchema,
   }),
   xp: countSchema(),
-  createdAt: z.string(),
-  statsUpdatedAt: z.string(),
-  modifiedAt: z.optional(z.string()),
-  lastActionAt: z.record(z.enum(CareActionType), z.nullable(z.string())),
+  createdAt: timestampSchema,
+  statsUpdatedAt: timestampSchema,
+  modifiedAt: z.optional(timestampSchema),
+  lastActionAt: z.record(z.enum(CareActionType), z.nullable(timestampSchema)),
   careLog: z.array(careLogEntrySchema).check(z.maxLength(CARE_LOG_LIMIT)),
   streak: streakSchema,
   wearing: z.nullable(z.string()),
   plays: countSchema(),
-  lastDailyPlayDay: z.nullable(z.string()),
+  lastDailyPlayDay: z.nullable(utcDaySchema),
 });
 
 export type GuestPet = z.infer<typeof guestPetSchema>;
-type CareLogEntry = z.infer<typeof careLogEntrySchema>;
 
 export interface AdoptGuestInput {
   name: string;
@@ -146,7 +154,7 @@ function emptyLastAction(): GuestPet["lastActionAt"] {
 }
 
 function isTimestamp(value: string): boolean {
-  return !Number.isNaN(new Date(value).getTime());
+  return Number.isFinite(new Date(value).getTime());
 }
 
 export function createGuestPet(input: AdoptGuestInput): GuestPet {
@@ -278,6 +286,7 @@ export function recordPlay(pet: GuestPet, now: Date = new Date()): PlayRecord {
   };
 }
 
+// Older records may omit newer fields, but share the current date validation.
 const looseSchema = z.object({
   name: z.string().check(z.minLength(1)),
   species: z.enum(PetSpecies),
@@ -289,15 +298,16 @@ const looseSchema = z.object({
     hygiene: statSchema,
   }),
   xp: countSchema(),
-  createdAt: z.string(),
-  statsUpdatedAt: z.string(),
-  lastActionAt: z.optional(z.record(z.string(), z.nullable(z.string()))),
+  createdAt: timestampSchema,
+  statsUpdatedAt: timestampSchema,
+  modifiedAt: z.optional(timestampSchema),
+  lastActionAt: z.optional(z.record(z.string(), z.nullable(timestampSchema))),
   id: z.optional(z.string().check(z.minLength(1))),
-  careLog: z.optional(z.array(z.unknown())),
+  careLog: z.optional(z.array(careLogEntrySchema)),
   streak: z.optional(streakSchema),
   wearing: z.optional(z.nullable(z.string())),
   plays: z.optional(countSchema()),
-  lastDailyPlayDay: z.optional(z.nullable(z.string())),
+  lastDailyPlayDay: z.optional(z.nullable(utcDaySchema)),
 });
 
 function lastActionFrom(
@@ -307,19 +317,9 @@ function lastActionFrom(
   if (!raw) return out;
   for (const action of Object.values(CareActionType)) {
     const value = raw[action];
-    if (typeof value === "string" && isTimestamp(value)) out[action] = value;
+    if (value !== undefined) out[action] = value;
   }
   return out;
-}
-
-function careLogFrom(raw: unknown[] | undefined): CareLogEntry[] {
-  if (!raw) return [];
-  const entries: CareLogEntry[] = [];
-  for (const item of raw) {
-    const parsed = careLogEntrySchema.safeParse(item);
-    if (parsed.success && isTimestamp(parsed.data.at)) entries.push(parsed.data);
-  }
-  return entries.slice(-CARE_LOG_LIMIT);
 }
 
 export function migrateStoredPet(raw: unknown): GuestPet | null {
@@ -335,7 +335,6 @@ export function migrateStoredPet(raw: unknown): GuestPet | null {
   const loose = looseSchema.safeParse(raw);
   if (!loose.success) return null;
   const stored = loose.data;
-  if (!isTimestamp(stored.createdAt) || !isTimestamp(stored.statsUpdatedAt)) return null;
 
   const pet: GuestPet = {
     version: 2,
@@ -347,8 +346,9 @@ export function migrateStoredPet(raw: unknown): GuestPet | null {
     xp: stored.xp,
     createdAt: stored.createdAt,
     statsUpdatedAt: stored.statsUpdatedAt,
+    ...(stored.modifiedAt === undefined ? {} : { modifiedAt: stored.modifiedAt }),
     lastActionAt: lastActionFrom(stored.lastActionAt),
-    careLog: careLogFrom(stored.careLog),
+    careLog: (stored.careLog ?? []).slice(-CARE_LOG_LIMIT),
     streak: stored.streak
       ? { ...stored.streak, best: Math.max(stored.streak.best, stored.streak.count) }
       : { count: 0, lastDay: null, best: 0 },

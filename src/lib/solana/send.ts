@@ -18,6 +18,8 @@ import {
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
+  AccountRole,
+  getU64Decoder,
   type Address,
   type GetLatestBlockhashApi,
   type GetSignatureStatusesApi,
@@ -28,6 +30,8 @@ import {
   type Transaction,
   type TransactionSigner,
 } from "@solana/kit";
+import { validateCoinInstructions, type CoinIntent } from "@/lib/coins/intent";
+import { COIN_LOOKUP_TABLES, type CoinCluster } from "@/lib/coins/presets";
 import { deriveWalletPda } from "./pda";
 import { PAWKET_DISCRIMINATORS, PAWKET_PROGRAM_ID } from "./program";
 import { attributeRefusal, CONFIRMATION_TIMEOUT_MS, waitForConfirmation, type ConfirmationOutcome, type TransactionStage } from "./transactions";
@@ -182,12 +186,18 @@ export async function sendPrepared({
   onSigned,
   sponsored = true,
   extraSigner,
+  coinIntent,
+  resolveLookup,
 }: Pick<SendOptions, "rpc" | "owner" | "onStage" | "onSigned"> & {
   prepare: () => Promise<string>;
   sponsored?: boolean;
   extraSigner?: TransactionSigner;
+  coinIntent?: CoinIntent;
+  resolveLookup?: (table: Address) => Promise<readonly Address[]>;
 }): Promise<SendResult> {
+  const intent = coinIntent ? Object.freeze({ ...coinIntent }) : undefined;
   onStage?.("preparing");
+  if (!sponsored && !extraSigner) throw new Error("This transaction needs its linked Pawket Wallet device. Nothing was signed or sent.");
   let prepared = decode(await prepare());
   if (extraSigner) {
     const message = getCompiledTransactionMessageDecoder().decode(prepared.messageBytes);
@@ -209,7 +219,46 @@ export async function sendPrepared({
     ) {
       throw new Error("This transaction asks this device for more than its network fee. Nothing was signed or sent.");
     }
-    prepared = await walletSigns(extraSigner, prepared);
+    if (!intent) throw new Error("This transaction has no reviewed coin intent. Nothing was signed or sent.");
+    const signatures = intent.kind === "graduate" ? 4 : intent.kind === "launch" ? 3 : 2;
+    if (message.header.numSignerAccounts !== signatures) throw new Error("This coin transaction asks for unexpected signatures. Nothing was signed or sent.");
+    const u64 = getU64Decoder();
+    if (first!.data?.length !== 24 || last!.data?.length !== 16 || !same(first!.data.slice(16), last!.data.slice(8))) {
+      throw new Error("This transaction does not match your coin intent. Nothing was signed or sent.");
+    }
+    const loadedWritable: Address[] = [], loadedReadonly: Address[] = [];
+    if (message.version === 0 && message.addressTableLookups?.length) {
+      if (intent.kind !== "graduate" || message.addressTableLookups.length !== 1 || !resolveLookup) throw new Error("This coin transaction uses an unsupported lookup table. Nothing was signed or sent.");
+      for (const lookup of message.addressTableLookups) {
+        if (lookup.lookupTableAddress !== COIN_LOOKUP_TABLES[intent.cluster as CoinCluster]) throw new Error("This coin transaction uses an unsupported lookup table. Nothing was signed or sent.");
+        const addresses = await resolveLookup(lookup.lookupTableAddress);
+        for (const [indices, output] of [[lookup.writableIndexes, loadedWritable], [lookup.readonlyIndexes, loadedReadonly]] as const) {
+          for (const index of indices) {
+            if (!addresses[index]) throw new Error("This coin lookup table is incomplete. Nothing was signed or sent.");
+            output.push(addresses[index]);
+          }
+        }
+      }
+    }
+    const resolved = [...keys, ...loadedWritable, ...loadedReadonly];
+    const role = (index: number): AccountRole => {
+      if (index >= keys.length) return index < keys.length + loadedWritable.length ? AccountRole.WRITABLE : AccountRole.READONLY;
+      const signer = index < message.header.numSignerAccounts;
+      const writable = signer ? index < message.header.numSignerAccounts - message.header.numReadonlySignerAccounts : index < keys.length - message.header.numReadonlyNonSignerAccounts;
+      return (Number(writable) + Number(signer) * 2) as AccountRole;
+    };
+    for (const bracket of [first!, last!]) {
+      if (bracket.accountIndices?.length !== 5 || resolved[bracket.accountIndices[3]] !== "Sysvar1nstructions1111111111111111111111111" || resolved[bracket.accountIndices[4]] !== "11111111111111111111111111111111" || role(bracket.accountIndices[0]) !== AccountRole.WRITABLE_SIGNER || role(bracket.accountIndices[1]) !== AccountRole.WRITABLE || role(bracket.accountIndices[2]) !== AccountRole.WRITABLE_SIGNER || role(bracket.accountIndices[3]) !== AccountRole.READONLY || role(bracket.accountIndices[4]) !== AccountRole.READONLY) {
+        throw new Error("This transaction does not match your coin intent. Nothing was signed or sent.");
+      }
+    }
+    await validateCoinInstructions({ owner: owner.address, intent, funding: u64.decode(first!.data!.slice(8, 16)), instructions: middle.map((ix) => {
+      if (ix.programAddressIndex >= keys.length || !resolved[ix.programAddressIndex] || (ix.accountIndices ?? []).some((index) => !resolved[index] || resolved[index] === extraSigner.address)) throw new Error("This coin transaction has an unresolved account. Nothing was signed or sent.");
+      return { programAddress: resolved[ix.programAddressIndex], data: ix.data, accounts: (ix.accountIndices ?? []).map((index) => ({ address: resolved[index], role: role(index) })) };
+    }) });
+    const deviceSigned = await walletSigns(extraSigner, prepared);
+    if (!same(deviceSigned.messageBytes, prepared.messageBytes)) throw new Error("This device changed the transaction. Nothing was sent.");
+    prepared = deviceSigned;
   }
   onStage?.("signing");
   const signed = await signingDeadline(() => walletSigns(owner, prepared));

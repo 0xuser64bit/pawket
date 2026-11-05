@@ -19,7 +19,7 @@ vi.mock("@/lib/solana/use-send", () => ({
   rentWaits: () => false,
 }));
 vi.mock("@solana/react", () => ({
-  useRequest: () => ({ data: { rsvps: [{ event: "event", pet: "pet", came: false }], voted: new Map() }, refresh: vi.fn() }),
+  useRequest: () => ({ data: { rsvps: [{ event: "event", pet: "pet", came: false }], voted: new Map() }, status: "success", refresh: vi.fn() }),
 }));
 
 const initial = Date.UTC(2026, 9, 30, 12) / 1000;
@@ -139,4 +139,23 @@ it("caps distant boundaries at the browser timer limit without closing early", (
   act(() => vi.advanceTimersByTime((closesAt - initial) * 1000 - 2_147_483_647));
   expect(screen.getByText("Closed")).toBeVisible();
   expect(vi.getTimerCount()).toBe(0);
+});
+
+it("shows the two newest closed polls from the newest-first chain read", () => {
+  const polls = [4, 3, 2, 1].map((id) => ({ ...poll, address: `poll-${id}` as Address, createdAt: initial - (5 - id), closesAt: initial - 1, question: `Question ${id}` }));
+  render(<GuildGatherings guild={guild} events={[]} polls={polls} />);
+  expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Question 4", "Question 3"]);
+});
+
+it("uses the same local calendar day in the date tile and the event time after mount", () => {
+  const DateTimeFormat = Intl.DateTimeFormat;
+  vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function (locales, options) {
+    return new DateTimeFormat(locales, { timeZone: "America/Los_Angeles", ...options });
+  });
+  const startsAt = Date.UTC(2027, 0, 1, 1) / 1000;
+  const { container } = render(<GuildGatherings guild={guild} events={[{ ...event, startsAt, endsAt: startsAt + 3600 }]} polls={[]} />);
+  expect(screen.getByText(/Dec 31.*PST until/)).toBeVisible();
+  expect(container.querySelector(".pk-event__month")).toHaveTextContent("Dec");
+  expect(container.querySelector(".pk-event__day")).toHaveTextContent("31");
+  expect(container.querySelector(".pk-event__weekday")).toHaveTextContent("Thu");
 });

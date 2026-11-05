@@ -15,13 +15,20 @@ import { KeepSheet } from "./keep-sheet";
 const OWNER = "So11111111111111111111111111111111111111112" as Address;
 const pet = createGuestPet({ name: "Mango", species: PetSpecies.MossPup, personality: PetPersonality.Brave, now: new Date(Date.now() - 60_000) });
 const onChain = (overrides: Record<string, unknown> = {}) => ({ pet: { species: pet.species, personality: pet.personality, birthTimestamp: Math.floor(Date.now() / 1000), ...overrides } });
-function sheet(act: PawketSender["act"]) {
+function sheet(act: PawketSender["act"], local = pet) {
   const onCarried = vi.fn();
   const sender = { busy: false, act, pawketWallet: { linked: true, balance: 0n } } as unknown as PawketSender;
-  render(<KeepSheet pet={pet} owner={OWNER} canSign sender={sender} onCarried={onCarried} onDismiss={() => {}} />);
+  render(<KeepSheet pet={local} owner={OWNER} canSign sender={sender} onCarried={onCarried} onDismiss={() => {}} />);
   return onCarried;
 }
 afterEach(() => { vi.useRealTimers(); mock.found.mockReset(); });
+
+it.each([0, 100])("discloses device-only coats and unworn clothes before keeping a pet with %s XP", (xp) => {
+  sheet(vi.fn(), { ...pet, xp, wearing: "scarf" });
+  expect(screen.getByRole("dialog")).toHaveTextContent(/coat stays on this device/i);
+  expect(screen.getByRole("dialog")).toHaveTextContent(/public Passports.*classic coat/i);
+  expect(screen.getByRole("dialog")).toHaveTextContent(/clothes start unworn on Solana/i);
+});
 
 it("takes a keep that already landed for itself, rather than calling the name taken", async () => {
   mock.found.mockResolvedValue(onChain());

@@ -11,6 +11,35 @@ const beans = ["Sun bean (1)", "Pool bean (2)", "Sprout bean (3)", "Copper bean 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 describe("round lifecycle", () => {
+  it("lets a muted nonvisual player study Copy at their own pace, then hides the sequence for their turn", () => {
+    vi.useFakeTimers();
+    const finish = vi.fn();
+    const game = render(<CopyGame {...look} sky="warm" onFinish={finish} />);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Show the pattern at my pace" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start copying" }));
+    const pattern = copyPattern(42, 1);
+    expect(screen.getByRole("status")).toHaveTextContent(`Bean 1 of 1: ${beans[pattern[0]]}`);
+    act(() => vi.advanceTimersByTime(30_000));
+    expect(screen.getByRole("button", { name: "My turn" })).toBeEnabled();
+    game.rerender(<CopyGame {...look} sky="warm" onFinish={finish} paused />);
+    expect(screen.getByRole("button", { name: "My turn" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(screen.getByRole("button", { name: "My turn" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Bean 1 of 1:");
+    game.rerender(<CopyGame {...look} sky="warm" onFinish={finish} />);
+    fireEvent.click(screen.getByRole("button", { name: "My turn" }));
+    expect(screen.getByRole("status")).not.toHaveTextContent("Bean 1 of 1");
+    fireEvent.click(screen.getByRole("button", { name: beans[pattern[0]] }));
+    act(() => vi.advanceTimersByTime(700));
+    expect(screen.getByRole("status")).toHaveTextContent("Bean 1 of 2:");
+    fireEvent.click(screen.getByRole("button", { name: "Next bean" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Bean 2 of 2:");
+    fireEvent.click(screen.getByRole("button", { name: "My turn" }));
+    const next = copyPattern(42, 2);
+    fireEvent.keyDown(window, { key: String((next[0] + 1) % 4 + 1) });
+    act(() => vi.advanceTimersByTime(1100));
+    expect(finish).toHaveBeenCalledExactlyOnceWith(1);
+  });
+
   it("locks Copy input as soon as the pattern is complete", () => {
     vi.useFakeTimers();
     const finish = vi.fn();

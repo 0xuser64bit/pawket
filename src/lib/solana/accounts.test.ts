@@ -1,8 +1,8 @@
-import { address, getBase64Decoder } from "@solana/kit";
-import { describe, expect, it } from "vitest";
+import { address, getAddressDecoder, getBase64Decoder, type Address } from "@solana/kit";
+import { describe, expect, it, vi } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { guestPetSchema, projectGuestPet, cooldownsFor } from "@/lib/guest/pet";
-import { decodeGuild, decodeMember, decodePassport, decodePet, displayName, fetchPetOnChain, fetchPetsOnChain, toCompanionRecord, wearableSlot } from "./accounts";
+import { decodeGuild, decodeMember, decodePassport, decodePet, displayName, fetchPetOnChain, fetchPetsOnChain, readMany, toCompanionRecord, wearableSlot } from "./accounts";
 import { deriveMemberPda, derivePassportPda } from "./pda";
 import { PAWKET_ACCOUNTS, PAWKET_PROGRAM_ID } from "./program";
 
@@ -245,5 +245,56 @@ describe("reading a pet", () => {
     const rpc = await world({ owner: PAWKET_PROGRAM_ID, data: memberBytes() });
     expect((await fetchPetOnChain(rpc, PET))?.member?.guild).toBe(address("8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR"));
     expect((await fetchPetsOnChain(rpc))[0].member).not.toBeNull();
+  });
+
+  it.each(["pets", "records"])("cancels the %s network read with the caller's signal", async (stage) => {
+    const controller = new AbortController();
+    let received: AbortSignal | undefined;
+    const waiting = ({ abortSignal }: { abortSignal?: AbortSignal } = {}) => {
+      received = abortSignal;
+      return new Promise((_, reject) => abortSignal?.addEventListener("abort", () => reject(abortSignal.reason), { once: true }));
+    };
+    const rpc = {
+      getProgramAccounts: () => ({ send: stage === "pets" ? waiting : async () => [{ pubkey: PET, account: { data: [getBase64Decoder().decode(petBytes()), "base64"] } }] }),
+      getMultipleAccounts: () => ({ send: waiting }),
+    } as never;
+    const pending = fetchPetsOnChain(rpc, undefined, controller.signal);
+    // PDA derivation is asynchronous before the records read.
+    await vi.waitFor(() => expect(received).toBe(controller.signal));
+    controller.abort(new Error("Changed owner"));
+    await expect(pending).rejects.toThrow("Changed owner");
+  });
+
+  it("never starts a pet request after its caller has already cancelled", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const program = vi.fn(() => ({ send: async () => [] }));
+    await expect(fetchPetsOnChain({ getProgramAccounts: program } as never, undefined, controller.signal)).rejects.toThrow();
+    expect(program).not.toHaveBeenCalled();
+  });
+});
+
+describe("reading batches of accounts", () => {
+  it.each([0, 100, 101, 201])("keeps %i addresses in order when at-most-100 batches finish in reverse order", async (count) => {
+    const keys = Array.from({ length: count }, (_, id) => {
+      const bytes = new Uint8Array(32);
+      new DataView(bytes.buffer).setUint32(0, id, true);
+      return getAddressDecoder().decode(bytes);
+    });
+    const finish: Array<() => void> = [];
+    const rpc = {
+      getMultipleAccounts: (batch: Address[]) => ({ send: () => new Promise((resolve, reject) => {
+        if (batch.length > 100) return reject(new Error("RPC proxy permits at most 100 accounts"));
+        finish.push(() => resolve({ context: { slot: 1n }, value: batch.map((key) => {
+          const id = keys.indexOf(key);
+          const bytes = new Uint8Array(4);
+          new DataView(bytes.buffer).setUint32(0, id, true);
+          return { data: [getBase64Decoder().decode(bytes), "base64"], executable: false, lamports: 1n, owner: PAWKET_PROGRAM_ID, space: 4n };
+        }) }));
+      }) }),
+    } as never;
+    const pending = readMany(rpc, keys);
+    finish.reverse().forEach((resolve) => resolve());
+    expect((await pending).map((account) => account.exists ? new DataView(Uint8Array.from(account.data).buffer).getUint32(0, true) : null)).toEqual(Array.from({ length: count }, (_, id) => id));
   });
 });

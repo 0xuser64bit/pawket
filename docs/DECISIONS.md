@@ -93,7 +93,12 @@ A pet's coat is fur, not clothes: chosen at adoption or in the wardrobe,
 five per species (`src/lib/player/coats.ts`). The Pet account has no field
 for it, so a coat is kept on the device, like the
 room and the player's look; the public record shows the species' classic
-coat. In 3D the room swaps the colours the pipeline baked into the model
+coat. Keeping a local pet on Solana copies its coat choice to the confirmed
+pet's address on this device before selecting it. A failed preference write
+leaves the local pet and coat available for retry and explains the failure;
+it does not undo confirmation. Clothes start unworn and local progression
+is never imported. In 3D the room swaps the colours the pipeline baked into
+the model
 (`PetActor.paint`), so a coat needs no new file.
 
 ## Guild membership is independent of coin holdings

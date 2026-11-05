@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 type Props = { params: Promise<{ slug: string }> };
 
 export async function GET(request: Request, { params }: Props) {
+  const startedAt = Date.now();
   const { slug } = await params;
   const query = new URL(request.url).searchParams;
   const side = query.get("side") as TradeSide | null;
@@ -25,6 +26,6 @@ export async function GET(request: Request, { params }: Props) {
   try {
     return NextResponse.json(await quoteTrade(guild, side, amount, slippage), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    return coinError(error);
+    return coinError(error, "quote", startedAt);
   }
 }

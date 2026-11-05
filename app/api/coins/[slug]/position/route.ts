@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 type Props = { params: Promise<{ slug: string }> };
 
 export async function GET(request: Request, { params }: Props) {
+  const startedAt = Date.now();
   const { slug } = await params;
   const account = new URL(request.url).searchParams.get("account");
   if (!account || !isAddress(account)) return actionError("That is not a wallet address.");
@@ -20,6 +21,6 @@ export async function GET(request: Request, { params }: Props) {
   try {
     return NextResponse.json(await readPositionFees(guild, account), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    return coinError(error);
+    return coinError(error, "position", startedAt);
   }
 }

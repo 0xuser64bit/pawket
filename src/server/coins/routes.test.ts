@@ -8,10 +8,14 @@ afterEach(() => vi.restoreAllMocks());
 describe("coin route errors", () => {
   it("keeps provider credentials out of logs and responses", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    const response = coinError(new Error("RPC https://provider.example/private-test-token refused the request"));
+    const response = coinError(new TypeError("RPC https://provider.example/private-test-token refused the request"), "quote", Date.now() - 50);
     expect(response.status).toBe(503);
     expect(await response.text()).not.toContain("private-test-token");
-    expect(log).toHaveBeenCalledExactlyOnceWith("coin route failed");
+    expect(log).toHaveBeenCalledOnce();
+    const entry = JSON.parse(String(log.mock.calls[0][0]));
+    expect(entry).toMatchObject({ pawket: "coin-error", operation: "quote", name: "TypeError", message: "RPC [url] refused the request" });
+    expect(entry.elapsedMs).toBeGreaterThanOrEqual(50);
+    expect(entry.elapsedMs).toBeLessThan(1000);
   });
 
   it("preserves an expected refusal's message and status", async () => {

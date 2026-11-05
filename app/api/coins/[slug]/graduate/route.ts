@@ -10,6 +10,7 @@ export const OPTIONS = preflight;
 type Props = { params: Promise<{ slug: string }> };
 
 export async function POST(request: Request, { params }: Props) {
+  const startedAt = Date.now();
   const { slug } = await params;
   const posted = await postedFields(request);
   if (!posted) return actionError("That is not a wallet address. Nothing was sent.");
@@ -24,6 +25,6 @@ export async function POST(request: Request, { params }: Props) {
       message: `Graduate ${guild.name}'s coin into its DAMM v2 pool. You pay the pool's rent and the network fee.`,
     });
   } catch (error) {
-    return coinError(error);
+    return coinError(error, "graduate", startedAt);
   }
 }

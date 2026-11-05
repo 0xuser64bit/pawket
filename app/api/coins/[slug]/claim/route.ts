@@ -10,6 +10,7 @@ export const OPTIONS = preflight;
 type Props = { params: Promise<{ slug: string }> };
 
 export async function POST(request: Request, { params }: Props) {
+  const startedAt = Date.now();
   const { slug } = await params;
   const posted = await postedFields(request);
   if (!posted) return actionError("That is not a wallet address. Nothing was sent.");
@@ -25,6 +26,6 @@ export async function POST(request: Request, { params }: Props) {
       message: fromPool ? `Claim what your locked liquidity in ${guild.name}'s pool has earned.` : `Claim your share of ${guild.name}'s coin fees.`,
     });
   } catch (error) {
-    return coinError(error);
+    return coinError(error, "claim", startedAt);
   }
 }

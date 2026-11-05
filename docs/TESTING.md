@@ -42,7 +42,11 @@ Automated axe results are not a substitute for keyboard and screen-reader checks
 | A coin's trades through its page | `e2e/coins.spec.ts` (buy and sell on a curve, buy in a graduated pool) | `PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/coins.spec.ts` |
 | Documentation links and file references | `src/config/docs.test.ts` | Vitest (node) |
 | Bundled font copyright and licenses | `src/config/docs.test.ts` | Vitest (node) |
+| Quote request deadlines, input/unmount cancellation and late answers; real stalled Kit/SDK HTTP operations close on abort | `coin-quote-deadline.test.tsx`, `quote-deadline.test.ts`, `meteora-deadline.test.ts` | Vitest (local HTTP server; no wallet or chain sends) |
 | Env / cluster / format / errors| colocated `*.test.ts`                   | Vitest   |
+| Document script nonce forwarding and production restrictions | `app/proxy.test.ts` | Vitest |
+| Nonce rotation, hydrated adoption/navigation and refusal of an injected script | `e2e/csp.spec.ts` | Playwright |
+| Patched bigint conversion never loads its native addon, through the installed Solana dependency graph | `src/config/bigint-buffer.test.ts` | Vitest (isolated child process) |
 | Counts carry only fixed words, honour the opt-out, GPC and DNT, and keep addresses out of page URLs | `src/lib/analytics/events.test.ts` | Vitest |
 | Presentational components      | `src/components/*.test.tsx`             | Vitest + Testing Library |
 | Guest record, wardrobe, games  | `src/lib/guest`, `closet`, `play`       | Vitest   |
@@ -117,7 +121,10 @@ one), the Android shell's unit tests and debug lint, the release script
 run to its signer check with a throwaway key, and `pnpm audit` and `cargo
 audit`. Playwright starts `pnpm start` when `CI` is set; build first when
 reproducing CI locally. Without `CI`, it starts or reuses the development
-server. The workflow has no signing secrets and does not run the opt-in devnet
+server. Failed browser runs retain their trace/results as workflow artifacts.
+The separate `Browser smoke` workflow exercises recovery in Firefox and WebKit
+on its schedule or manual dispatch against the production build, complementing
+Chromium's PR gate. The workflow has no signing secrets and does not run the opt-in devnet
 suites or the Android release and device checks; changes to those layers still
 require their owning checks. The `Watch` workflow checks the live site, its RPC
 and the sponsor's float on its configured four-hour schedule; its fixed site,

@@ -144,11 +144,16 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   rents an instance signed in the last two minutes, so callers spread over
   many addresses still stop at it. Shared enforcement and budget monitoring
   are mainnet work.
-- Pages send no script Content-Security-Policy, only frame and form rules. A
-  script injected into Pawket's origin could act as this browser's linked
-  device without a prompt, within its link's limits above. A nonce-based
-  script policy, tested with the room's renderer and the wallet adapters, is
-  mainnet work.
+- HTML pages enforce a per-request nonce script policy (`proxy.ts`). The
+  request nonce reaches Next's runtime and the theme script; the root layout
+  renders per request so a static document cannot reuse it. Production allows
+  neither inline scripts without a nonce nor JavaScript string evaluation.
+  WebAssembly compilation and blob reads remain allowed for Meshopt and the
+  room's GLBs. Inline styles remain allowed for React and room colours; secure and loopback wallet/RPC
+  connections remain available. The policy also refuses objects and base tags.
+  This mitigates script injection, but does not replace escaping, dependency
+  review or the device's program limits. Consumer-wallet and physical WebView
+  compatibility still require their release checks.
 - A stolen linked device acts until its link ends (30 days at most) or the
   owner unlinks it: up to its daily limit (500 at most) of non-money actions a
   UTC day, as the owner's pets (a wave greets any pet; a pet may join any

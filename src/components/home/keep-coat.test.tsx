@@ -57,6 +57,7 @@ beforeEach(async () => {
     ready: true, reading: false, pet: source, active: null, guest: source, guests: [], owned: [], all: [], owner: OWNER, canSign: true, chainError: undefined, choose: choosePet,
     refresh: async () => {
       mock.companion = { ...mock.companion, active: entry, pet: toCompanionRecord(entry), owned: [entry], all: [toCompanionRecord(entry), ...loadPets()] };
+      return { status: "success", owner: OWNER, pets: [entry] };
     },
   };
 });
@@ -113,4 +114,24 @@ it.each(["home", "adoption"] as const)("reports a failed coat save after a confi
   expect(readCoatChoices()[target]).toBeUndefined();
   expect(readCoatChoices()[source.id]).toBe("lilac");
   expect(loadPets()).toEqual([source]);
+});
+
+it("keeps confirmed chain care pending until the refreshed record is shown", async () => {
+  mock.companion = { ...mock.companion, pet: toCompanionRecord(entry), active: entry, refresh: () => new Promise(() => {}) };
+  render(<HomeScreen />);
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Feed" })));
+  expect(screen.getByRole("button", { name: "Feed" })).toHaveAttribute("aria-disabled", "true");
+  expect(screen.queryByText("+10 XP")).toBeNull();
+  expect(mock.act.mock.calls.at(-1)).toHaveLength(2);
+});
+
+it("still saves local care immediately and never sends a transaction", async () => {
+  savePet(source);
+  mock.companion = { ...mock.companion, pet: source, guest: source, active: null };
+  mock.act.mockClear();
+  render(<HomeScreen />);
+  fireEvent.click(screen.getByRole("button", { name: "Feed" }));
+  expect(loadPets()[0].xp).toBe(10);
+  expect(screen.getByText("+10 XP")).toBeInTheDocument();
+  expect(mock.act).not.toHaveBeenCalled();
 });

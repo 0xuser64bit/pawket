@@ -102,5 +102,46 @@ it("gives up on a read that never answers, keeping the screen out of a loader", 
   expect(hook.result.current.ready).toBe(false);
   await act(async () => { vi.advanceTimersByTime(12_000); });
   expect(hook.result.current.ready).toBe(true);
-  expect(hook.result.current.chainError).toBeInstanceOf(Error);
+  expect(hook.result.current.chainError).toMatchObject({ name: "TimeoutError" });
+});
+
+it("returns the freshly published pets or an explicit failure instead of treating a failed refresh as success", async () => {
+  const useCompanion = await companion();
+  mock.fetch.mockResolvedValueOnce([chainPet("Mango")]);
+  const hook = renderHook(useCompanion);
+  await act(async () => {});
+  mock.fetch.mockResolvedValueOnce([chainPet("Mango", 2)]);
+  await act(async () => {
+    expect(await hook.result.current.refresh()).toMatchObject({ status: "success", owner: OWNER, pets: [chainPet("Mango", 2)] });
+  });
+  mock.fetch.mockRejectedValueOnce(new Error("RPC unavailable"));
+  await act(async () => {
+    expect(await hook.result.current.refresh()).toMatchObject({ status: "error", error: expect.any(Error) });
+  });
+  expect(hook.result.current.owned[0].pet.birthTimestamp).toBe(2);
+});
+
+it("aborts the actual pet read at its deadline and preserves the last record when its caller cancels", async () => {
+  vi.useFakeTimers();
+  const useCompanion = await companion();
+  mock.fetch.mockResolvedValueOnce([chainPet("Mango")]);
+  const hook = renderHook(useCompanion);
+  await act(async () => {});
+  let received: AbortSignal | undefined;
+  mock.fetch.mockImplementation((_rpc, _owner, signal?: AbortSignal) => {
+    received = signal;
+    return new Promise((_, reject) => signal?.addEventListener("abort", () => reject(signal.reason), { once: true }));
+  });
+  let pending!: ReturnType<typeof hook.result.current.refresh>;
+  act(() => { pending = hook.result.current.refresh(); });
+  expect(received).toBeInstanceOf(AbortSignal);
+  await act(async () => { await vi.advanceTimersByTimeAsync(12_000); });
+  expect(received?.aborted).toBe(true);
+  await expect(pending).resolves.toMatchObject({ status: "error" });
+  const controller = new AbortController();
+  act(() => { pending = hook.result.current.refresh(controller.signal); });
+  await act(async () => { controller.abort(); await pending; });
+  expect(received?.aborted).toBe(true);
+  await expect(pending).resolves.toMatchObject({ status: "cancelled" });
+  expect(hook.result.current.owned.map(({ pet }) => pet.address)).toEqual(["Mango"]);
 });

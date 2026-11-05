@@ -147,6 +147,19 @@ Every app send goes through `usePawketSend` and `send.ts`:
 4. Broadcast uses preflight. Confirmation completes before record reload and
    care animation. The toast supplies the signature, fee payer and Explorer link.
 
+A confirmed care receipt is shown immediately. Home's `useChainCare` then
+reads the owner's pets up to three times within fifteen seconds; each owned-pet
+read has its own twelve-second deadline. Cancellation reaches the program
+scan and Passport/member batches. A refresh returns success, failure,
+supersession, cancellation or disconnection explicitly. XP, level/sticker
+messages and the room's care moment wait until the refreshed Pet's action
+timestamp and Passport's care count advance and that record is rendered.
+Failed or stale reads offer **Reload care record**, which only reads.
+An uncertain receipt that later confirms follows the same reconciliation;
+feedback runs once while the same pet and owner remain selected. Switching
+pet or owner, or leaving Home, cancels that screen's feedback without altering
+the retained transaction receipt.
+
 Preparation and signing have bounded waits. A late signature is discarded,
 never broadcast. A lost broadcast/confirmation answer keeps the known
 signature and reports `unknown`; no replacement is sent automatically. It

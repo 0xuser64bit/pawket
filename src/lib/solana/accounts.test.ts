@@ -1,5 +1,5 @@
 import { address, getAddressDecoder, getBase64Decoder, type Address } from "@solana/kit";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CareActionType, PetPersonality, PetSpecies } from "@/lib/game/enums";
 import { guestPetSchema, projectGuestPet, cooldownsFor } from "@/lib/guest/pet";
 import { decodeGuild, decodeMember, decodePassport, decodePet, displayName, fetchPetOnChain, fetchPetsOnChain, readMany, toCompanionRecord, wearableSlot } from "./accounts";
@@ -245,6 +245,32 @@ describe("reading a pet", () => {
     const rpc = await world({ owner: PAWKET_PROGRAM_ID, data: memberBytes() });
     expect((await fetchPetOnChain(rpc, PET))?.member?.guild).toBe(address("8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR"));
     expect((await fetchPetsOnChain(rpc))[0].member).not.toBeNull();
+  });
+
+  it.each(["pets", "records"])("cancels the %s network read with the caller's signal", async (stage) => {
+    const controller = new AbortController();
+    let received: AbortSignal | undefined;
+    const waiting = ({ abortSignal }: { abortSignal?: AbortSignal } = {}) => {
+      received = abortSignal;
+      return new Promise((_, reject) => abortSignal?.addEventListener("abort", () => reject(abortSignal.reason), { once: true }));
+    };
+    const rpc = {
+      getProgramAccounts: () => ({ send: stage === "pets" ? waiting : async () => [{ pubkey: PET, account: { data: [getBase64Decoder().decode(petBytes()), "base64"] } }] }),
+      getMultipleAccounts: () => ({ send: waiting }),
+    } as never;
+    const pending = fetchPetsOnChain(rpc, undefined, controller.signal);
+    // PDA derivation is asynchronous before the records read.
+    await vi.waitFor(() => expect(received).toBe(controller.signal));
+    controller.abort(new Error("Changed owner"));
+    await expect(pending).rejects.toThrow("Changed owner");
+  });
+
+  it("never starts a pet request after its caller has already cancelled", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const program = vi.fn(() => ({ send: async () => [] }));
+    await expect(fetchPetsOnChain({ getProgramAccounts: program } as never, undefined, controller.signal)).rejects.toThrow();
+    expect(program).not.toHaveBeenCalled();
   });
 });
 

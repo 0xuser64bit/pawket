@@ -57,7 +57,7 @@ export function GuildMembership({ guild, exitOnly = false }: { guild: { address:
       ) : companion.chainError ? (
         <p className="caption pk-faint">
           Solana did not answer when this page asked for your pets.{" "}
-          <button type="button" className="pk-linkish" onClick={companion.refresh}>
+          <button type="button" className="pk-linkish" onClick={() => { void companion.refresh(); }}>
             Ask again
           </button>
         </p>

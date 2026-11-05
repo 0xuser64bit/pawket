@@ -7,6 +7,12 @@ import type { GuestPet } from "@/lib/guest/pet";
 import { usePets } from "@/lib/guest/use-pets";
 import { fetchPetsOnChain, toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { rpc, wallet, useWalletReady } from "@/lib/solana/browser-client";
+import { readDeadline } from "@/lib/utils/deadline";
+
+export type OwnedPetsRefresh =
+  | { status: "success"; owner: Address; pets: PetOnChain[] }
+  | { status: "error"; error: unknown }
+  | { status: "superseded" | "cancelled" | "disconnected" };
 
 export interface CompanionState {
   ready: boolean;
@@ -20,7 +26,7 @@ export interface CompanionState {
   owner: Address | null;
   canSign: boolean;
   chainError: unknown;
-  refresh: () => Promise<void>;
+  refresh: (signal?: AbortSignal) => Promise<OwnedPetsRefresh>;
   choose: (id: string) => void;
 }
 
@@ -62,27 +68,38 @@ function publishOwned(owner: Address, read: OwnedRead) {
   for (const listener of ownedListeners.get(owner) ?? []) listener();
 }
 
-export function refreshOwnedPets(owner: Address): Promise<void> {
+export function refreshOwnedPets(owner: Address, signal?: AbortSignal): Promise<OwnedPetsRefresh> {
   const generation = (generations.get(owner) ?? 0) + 1;
   generations.set(owner, generation);
   const at = Date.now();
   if (!ownedReads.has(owner)) publishOwned(owner, { status: "loading" });
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  const budget = readDeadline(READ_DEADLINE_MS, signal);
+  let abort!: () => void;
   const deadline = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error("Solana did not answer in time.")), READ_DEADLINE_MS);
+    abort = () => reject(budget.signal.reason);
+    if (budget.signal.aborted) abort();
+    else budget.signal.addEventListener("abort", abort, { once: true });
   });
-  return Promise.race([fetchPetsOnChain(rpc, owner), deadline])
-    .then(
+  return Promise.race([fetchPetsOnChain(rpc, owner, budget.signal), deadline])
+    .then<OwnedPetsRefresh, OwnedPetsRefresh>(
       (pets) => {
-        if (generations.get(owner) !== generation) return;
-        publishOwned(owner, { status: "success", data: pets.sort((a, b) => b.pet.birthTimestamp - a.pet.birthTimestamp), at });
+        if (signal?.aborted) return { status: "cancelled" };
+        if (generations.get(owner) !== generation) return { status: "superseded" };
+        const sorted = pets.sort((a, b) => b.pet.birthTimestamp - a.pet.birthTimestamp);
+        publishOwned(owner, { status: "success", data: sorted, at });
+        return { status: "success", owner, pets: sorted };
       },
       (error: unknown) => {
-        if (generations.get(owner) !== generation) return;
+        if (signal?.aborted) return { status: "cancelled" };
+        if (generations.get(owner) !== generation) return { status: "superseded" };
         publishOwned(owner, { status: "error", data: ownedReads.get(owner)?.data, error, at });
+        return { status: "error", error };
       },
     )
-    .finally(() => clearTimeout(timer));
+    .finally(() => {
+      budget.signal.removeEventListener("abort", abort);
+      budget.abort();
+    });
 }
 
 function subscribeOwned(owner: Address | null, listener: () => void) {
@@ -103,7 +120,7 @@ function useOwnedPets(owner: Address | null) {
     () => (owner ? ownedReads.get(owner) : undefined),
     () => undefined,
   );
-  const refresh = useCallback(() => (owner ? refreshOwnedPets(owner) : Promise.resolve()), [owner]);
+  const refresh = useCallback((signal?: AbortSignal): Promise<OwnedPetsRefresh> => (owner ? refreshOwnedPets(owner, signal) : Promise.resolve({ status: "disconnected" })), [owner]);
   return { status: read?.status, data: read?.data, error: read?.error, refresh };
 }
 

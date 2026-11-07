@@ -37,6 +37,10 @@ const virtualPool = { poolState: {
 } } as unknown as VirtualPool;
 const poolConfig = { quoteMint: sol, tokenType: 0, quoteTokenFlag: 0, migrationFeeOption: 2, migrationQuoteThreshold: new BN(1_000_000_000), poolFees: { baseFee: { baseFeeMode: 0 } }, activationType: 1, enableFirstSwapWithMinFee: false } as unknown as PoolConfig;
 const guild = { slug: "funding-check", name: "Funding", founder: owner.toBase58() } as ChainGuild;
+const claim = (side: "buy" | "sell") => ({
+  v: 1 as const, cluster: "devnet" as const, slug: guild.slug, mint: mint.toBase58(), preset: "gentle" as const, route: "curve" as const,
+  side, amountIn: "100000000", minimumOut: "1234", slippageBps: 100, quotedAt: 1, expiresAt: 2,
+});
 
 beforeEach(() => {
   walletLamports = 9_001_000_000n;
@@ -51,7 +55,7 @@ beforeEach(() => {
 describe("server coin funding", () => {
   it.each(["buy", "sell"] as const)("a %s receives only its operation input plus rent, leaving the rest of a large wallet unexposed", async (side) => {
     const { tradeTransaction } = await import("./meteora");
-    const wire = await tradeTransaction({ guild, owner: owner.toBase58(), side, amountIn: 100_000_000n, minimumOut: 1234n });
+    const wire = await tradeTransaction({ guild, owner: owner.toBase58(), side, amountIn: 100_000_000n, minimumOut: 1234n, quote: claim(side) });
     const transaction = VersionedTransaction.deserialize(Buffer.from(wire, "base64"));
     const data = Buffer.from(transaction.message.compiledInstructions[0].data);
     expect(data.readBigUInt64LE(8)).toBe(side === "buy" ? 105_000_000n : 5_000_000n);
@@ -60,10 +64,21 @@ describe("server coin funding", () => {
     expect(transaction.signatures.every((signature) => signature.every((byte) => byte === 0))).toBe(true);
   });
 
+  it.each([
+    ["route", { route: "pool" }],
+    ["mint", { mint: Keypair.generate().publicKey.toBase58() }],
+    ["preset", { preset: "lively" }],
+    ["side", { side: "sell" }],
+  ])("refuses a quote whose %s no longer matches the live coin", async (_field, changed) => {
+    const { CoinRefusal, tradeTransaction } = await import("./meteora");
+    const quote = { ...claim("buy"), ...(changed as Partial<ReturnType<typeof claim>>) };
+    await expect(tradeTransaction({ guild, owner: owner.toBase58(), side: "buy", amountIn: 100_000_000n, minimumOut: 1234n, quote })).rejects.toBeInstanceOf(CoinRefusal);
+  });
+
   it("preserves the device refill and uses a smaller available balance without funding the reserve", async () => {
     const { tradeTransaction } = await import("./meteora");
     walletLamports = 3_000_000n; // 1m rent + 10k refill + 1.99m available.
-    const wire = await tradeTransaction({ guild, owner: owner.toBase58(), side: "sell", amountIn: 100_000_000n, minimumOut: 1234n });
+    const wire = await tradeTransaction({ guild, owner: owner.toBase58(), side: "sell", amountIn: 100_000_000n, minimumOut: 1234n, quote: claim("sell") });
     const transaction = VersionedTransaction.deserialize(Buffer.from(wire, "base64"));
     expect(Buffer.from(transaction.message.compiledInstructions[0].data).readBigUInt64LE(8)).toBe(1_990_000n);
   });

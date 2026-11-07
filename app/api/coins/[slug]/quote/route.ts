@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
+import { getPublicEnv } from "@/config/env";
+import { QUOTE_TTL_MS, type TradeSide } from "@/lib/coins/quote";
 import { readDeadline } from "@/lib/utils/deadline";
-import { quoteTrade, type TradeSide } from "@/server/coins/meteora";
-import { coinError, guildOr404, units } from "@/server/coins/routes";
-import { actionError, caller } from "@/server/actions";
+import { quoteTrade } from "@/server/coins/meteora";
+import { sealQuote } from "@/server/coins/quote-token";
+import { coinError, coinJson, coinProblem, guildOr404, units } from "@/server/coins/routes";
+import { caller } from "@/server/actions";
 import { actionLimit } from "@/server/sponsor";
 
 export const dynamic = "force-dynamic";
@@ -15,12 +17,12 @@ export async function GET(request: Request, { params }: Props) {
   const { slug } = await params;
   const query = new URL(request.url).searchParams;
   const side = query.get("side") as TradeSide | null;
-  if (side !== "buy" && side !== "sell") return actionError("Choose to buy or to sell.");
+  if (side !== "buy" && side !== "sell") return coinProblem("Choose to buy or to sell.");
   const amount = units(query.get("amount"));
-  if (!amount) return actionError("Choose an amount above nothing.");
+  if (!amount) return coinProblem("Choose an amount above nothing.");
   const slippage = Number(query.get("slippage") ?? 100);
-  if (!Number.isInteger(slippage) || slippage < 10 || slippage > 1000) return actionError("Slippage is 0.1% to 10%.");
-  if (!actionLimit(caller(request))) return actionError("Too many in a row. Try again in a while.", 429);
+  if (!Number.isInteger(slippage) || slippage < 10 || slippage > 1000) return coinProblem("Slippage is 0.1% to 10%.");
+  if (!actionLimit(caller(request))) return coinProblem("Too many in a row. Try again in a while.", 429);
 
   const deadline = readDeadline(15_000, request.signal);
   try {
@@ -28,7 +30,21 @@ export async function GET(request: Request, { params }: Props) {
     if (guild instanceof Response) return guild;
     const quote = await quoteTrade(guild, side, amount, slippage, deadline.signal);
     deadline.signal.throwIfAborted();
-    return NextResponse.json(quote, { headers: { "Cache-Control": "no-store" } });
+    const token = sealQuote({
+      v: 1,
+      cluster: getPublicEnv().solanaCluster,
+      slug: quote.slug,
+      mint: quote.mint,
+      preset: quote.preset,
+      route: quote.route,
+      side: quote.side,
+      amountIn: quote.amountIn,
+      minimumOut: quote.minimumOut,
+      slippageBps: quote.slippageBps,
+      quotedAt: quote.quotedAt,
+      expiresAt: quote.quotedAt + QUOTE_TTL_MS,
+    });
+    return coinJson({ ...quote, token });
   } catch (error) {
     return coinError(error, "quote", startedAt);
   } finally {

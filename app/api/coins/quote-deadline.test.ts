@@ -23,7 +23,7 @@ beforeEach(() => {
   mocks.readGuild.mockReset().mockResolvedValue(guild);
   mocks.quoteTrade.mockReset().mockImplementation((_guild, _side, _amount, _slippage, signal) => stalled(signal));
 });
-afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 it("stops a hung guild read at the whole quote deadline", async () => {
   mocks.readGuild.mockImplementation((_slug, signal) => stalled(signal));
@@ -75,7 +75,12 @@ it("propagates browser cancellation to quote reads immediately", async () => {
 });
 
 it("removes the deadline and browser abort listener after success", async () => {
-  mocks.quoteTrade.mockResolvedValue({ amountIn: "50000000" });
+  vi.stubEnv("DERIVATION_SECRET", "ab".repeat(32));
+  mocks.quoteTrade.mockResolvedValue({
+    slug: guild.slug, mint: "So11111111111111111111111111111111111111112", preset: "gentle",
+    side: "buy", route: "curve", amountIn: "50000000", amountUsed: "50000000", amountOut: "4200000000",
+    minimumOut: "4158000000", fee: "50000", priceImpact: 0.4, slippageBps: 100, quotedAt: Date.now(),
+  });
   const controller = new AbortController();
   const incoming = request(controller.signal);
   const remove = vi.spyOn(incoming.signal, "removeEventListener");

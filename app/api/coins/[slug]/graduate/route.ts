@@ -1,11 +1,11 @@
 import { graduateTransaction } from "@/server/coins/meteora";
-import { coinError, guildOr404, postedFields } from "@/server/coins/routes";
-import { actionError, actionJson, caller, preflight } from "@/server/actions";
+import { coinError, coinJson, coinPreflight, coinProblem, guildOr404, postedFields } from "@/server/coins/routes";
+import { caller } from "@/server/actions";
 import { actionLimit } from "@/server/sponsor";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const OPTIONS = preflight;
+export const OPTIONS = coinPreflight;
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -13,13 +13,13 @@ export async function POST(request: Request, { params }: Props) {
   const startedAt = Date.now();
   const { slug } = await params;
   const posted = await postedFields(request);
-  if (!posted) return actionError("That is not a wallet address. Nothing was sent.");
-  if (!actionLimit(caller(request))) return actionError("Too many in a row. Nothing was sent — try again in a while.", 429);
+  if (!posted) return coinProblem("That is not a wallet address. Nothing was sent.");
+  if (!actionLimit(caller(request))) return coinProblem("Too many in a row. Nothing was sent — try again in a while.", 429);
   const guild = await guildOr404(slug);
   if (guild instanceof Response) return guild;
   try {
     const transaction = await graduateTransaction(guild, posted.account);
-    return actionJson({
+    return coinJson({
       type: "transaction",
       transaction,
       message: `Graduate ${guild.name}'s coin into its DAMM v2 pool. You pay the pool's rent and the network fee.`,

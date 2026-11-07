@@ -18,6 +18,11 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
   const slug = `coin-check-${Date.now().toString(36)}`;
   const guild = { slug, name: "Coin Check", founder: founder.publicKey.toBase58() } as unknown as ChainGuild;
   let coins: typeof import("./meteora");
+  const claims = (quote: Awaited<ReturnType<typeof coins.quoteTrade>>) => ({
+    v: 1 as const, cluster: "devnet" as const, slug: quote.slug, mint: quote.mint, preset: quote.preset,
+    route: quote.route, side: quote.side, amountIn: quote.amountIn, minimumOut: quote.minimumOut,
+    slippageBps: quote.slippageBps, quotedAt: quote.quotedAt, expiresAt: quote.quotedAt + 30_000,
+  });
 
   const sign = async (wire: string, signer: Keypair) => {
     const transaction = VersionedTransaction.deserialize(Buffer.from(wire, "base64"));
@@ -80,7 +85,7 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
       expect(BigInt(quote.minimumOut)).toBeLessThanOrEqual(BigInt(quote.amountOut));
       expect(BigInt(quote.amountUsed)).toBeLessThanOrEqual(amount);
       await sign(
-        await coins.tradeTransaction({ guild, owner: founder.publicKey.toBase58(), side: "buy", amountIn: amount, minimumOut: BigInt(quote.minimumOut) }),
+        await coins.tradeTransaction({ guild, owner: founder.publicKey.toBase58(), side: "buy", amountIn: amount, minimumOut: BigInt(quote.minimumOut), quote: claims(quote) }),
         founder,
       );
     }
@@ -100,7 +105,7 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
     const quote = await coins.quoteTrade(guild, "sell", balance / 10n, 100);
     expect(quote.route).toBe("pool");
     await sign(
-      await coins.tradeTransaction({ guild, owner: founder.publicKey.toBase58(), side: "sell", amountIn: balance / 10n, minimumOut: BigInt(quote.minimumOut) }),
+      await coins.tradeTransaction({ guild, owner: founder.publicKey.toBase58(), side: "sell", amountIn: balance / 10n, minimumOut: BigInt(quote.minimumOut), quote: claims(quote) }),
       founder,
     );
   });

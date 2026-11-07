@@ -31,6 +31,7 @@ import { CpAmm, derivePoolAuthority, getTokenProgram, getUnClaimLpFee } from "@m
 import { getPublicEnv } from "@/config/env";
 import { serverRpcUrl } from "@/config/server-env";
 import { COIN_LOOKUP_TABLES, COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type CoinCluster, type PresetId } from "@/lib/coins/presets";
+import type { CoinQuote, QuoteClaims, TradeSide } from "@/lib/coins/quote";
 import { coinStage, type CoinStage } from "@/lib/coins/stage";
 import { DELISTED_SLUGS } from "@/lib/guilds/delisted";
 import { fetchWallet, type ChainGuild } from "@/lib/solana/accounts";
@@ -302,20 +303,7 @@ function chunks<T>(items: T[], size: number): T[][] {
   return out;
 }
 
-export type TradeSide = "buy" | "sell";
-
-export interface CoinQuote {
-  side: TradeSide;
-  route: "curve" | "pool";
-  amountIn: string;
-  amountUsed: string;
-  amountOut: string;
-  minimumOut: string;
-  fee: string;
-  priceImpact: number;
-  slippageBps: number;
-  quotedAt: number;
-}
+export type { CoinQuote, SealedQuote, TradeSide } from "@/lib/coins/quote";
 
 export class CoinRefusal extends Error {
   constructor(
@@ -344,6 +332,7 @@ async function tradable(guild: ChainGuild, signal?: AbortSignal): Promise<LiveCo
 export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: bigint, slippageBps: number, signal?: AbortSignal): Promise<CoinQuote> {
   if (amountIn <= 0n) throw new CoinRefusal("Choose an amount above nothing.", 400);
   const coin = await tradable(guild, signal);
+  if (!coin.state.preset) throw new CoinRefusal("This coin's preset is not offered here. Nothing was sent.", 409);
   const quotedAt = Date.now();
   if (coin.state.stage === "damm" && coin.graduated) {
     const slot = await rpc(signal).getSlot("confirmed");
@@ -359,6 +348,9 @@ export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: b
       tokenBDecimal: 9,
     });
     return {
+      slug: guild.slug,
+      mint: coin.state.mint,
+      preset: coin.state.preset,
       side,
       route: "pool",
       amountIn: amountIn.toString(),
@@ -386,6 +378,9 @@ export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: b
   const before = Number(getPriceFromSqrtPrice(pool.poolState.sqrtPrice, COIN_TERMS.decimals, 9).toString());
   const after = Number(getPriceFromSqrtPrice(quote.nextSqrtPrice, COIN_TERMS.decimals, 9).toString());
   return {
+    slug: guild.slug,
+    mint: coin.state.mint,
+    preset: coin.state.preset,
     side,
     route: "curve",
     amountIn: amountIn.toString(),
@@ -488,15 +483,31 @@ export async function tradeTransaction({
   side,
   amountIn,
   minimumOut,
+  quote,
 }: {
   guild: ChainGuild;
   owner: string;
   side: TradeSide;
   amountIn: bigint;
   minimumOut: bigint;
+  quote: QuoteClaims;
 }): Promise<string> {
   if (amountIn <= 0n || minimumOut <= 0n) throw new CoinRefusal("Choose an amount above nothing.", 400);
   const coin = await tradable(guild);
+  if (!coin.state.preset) throw new CoinRefusal("This coin's preset is not offered here. Nothing was sent.", 409);
+  const route = coin.state.stage === "damm" ? "pool" : "curve";
+  if (
+    quote.cluster !== getPublicEnv().solanaCluster ||
+    quote.slug !== guild.slug ||
+    quote.mint !== coin.state.mint ||
+    quote.preset !== coin.state.preset ||
+    quote.route !== route ||
+    quote.side !== side ||
+    quote.amountIn !== amountIn.toString() ||
+    quote.minimumOut !== minimumOut.toString()
+  ) {
+    throw new CoinRefusal("The coin or its market changed since that quote. Quote again. Nothing was sent.", 409);
+  }
   const player = new PublicKey(owner);
   if (coin.state.stage === "damm" && coin.graduated) {
     const { address, pool } = coin.graduated;

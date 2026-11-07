@@ -10,13 +10,14 @@ import { getPublicEnv, type SolanaCluster } from "@/config/env";
 import { COIN_RENT_LIMITS, type CoinIntent } from "@/lib/coins/intent";
 import { COIN_RISKS } from "@/lib/coins/copy";
 import { COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, feeSplitBps, type PresetId } from "@/lib/coins/presets";
+import type { SealedQuote } from "@/lib/coins/quote";
 import { canTrade } from "@/lib/coins/stage";
 import { rpc, useConnected } from "@/lib/solana/browser-client";
 import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
 import { usePawketWallet } from "@/lib/wallet/pawket-wallet";
 import { formatUnits, parseUnits } from "@/lib/utils/format";
 import { readDeadline } from "@/lib/utils/deadline";
-import type { CoinQuote, CoinState } from "@/server/coins/meteora";
+import type { CoinState } from "@/server/coins/meteora";
 
 export interface CoinDeskProps {
   guild: { slug: string; name: string; founder: string; memberCount: number };
@@ -296,7 +297,7 @@ export function TradeTicket({
   const [side, setSide] = useState<Side>("buy");
   const [amount, setAmount] = useState("");
   const [slippage, setSlippage] = useState(100);
-  const [answer, setQuote] = useState<{ quote: CoinQuote; forCoin: string } | null>(null);
+  const [answer, setQuote] = useState<{ quote: SealedQuote; forCoin: string } | null>(null);
   const [quotingFor, setQuotingFor] = useState<string | null>(null);
   const [problem, setProblem] = useState<string>();
   const [agreed, agree] = useConsent(coin.mint);
@@ -347,7 +348,7 @@ export function TradeTicket({
     setProblem(undefined);
     try {
       const response = await fetch(`/api/coins/${guild.slug}/quote?side=${side}&amount=${units}&slippage=${slippage}`, { cache: "no-store", signal: deadline.signal });
-      const body = (await response.json()) as CoinQuote & { message?: string };
+      const body = (await response.json()) as SealedQuote & { message?: string };
       if (ticket !== asked.current) return;
       deadline.signal.throwIfAborted();
       if (!response.ok) throw new Error(body.message ?? "No quote came back. Nothing was sent.");
@@ -379,7 +380,7 @@ export function TradeTicket({
     const result = await sender.sendFromServer(
       `${quote.side === "buy" ? "Buy" : "Sell"} ${coin.symbol}`,
       `/api/coins/${guild.slug}/trade`,
-      { side: quote.side, amount: quote.amountIn, minimumOut: quote.minimumOut },
+      { side: quote.side, amount: quote.amountIn, minimumOut: quote.minimumOut, quote: quote.token },
       { sponsored: false, coinIntent },
     );
     if (result?.outcome === "confirmed") {

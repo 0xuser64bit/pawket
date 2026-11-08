@@ -38,8 +38,6 @@ import { attributeRefusal, CONFIRMATION_TIMEOUT_MS, waitForConfirmation, type Co
 
 export type SendRpc = Rpc<GetLatestBlockhashApi & SendTransactionApi & GetSignatureStatusesApi>;
 
-const COMPUTE_BUDGET = "ComputeBudget111111111111111111111111111111";
-const SET_COMPUTE_UNIT_PRICE = 3;
 /** The fee payer pays for each signature these verify, as for the transaction's own. */
 const PRECOMPILES: ReadonlySet<string> = new Set([
   "Ed25519SigVerify111111111111111111111111111",
@@ -214,7 +212,6 @@ export async function sendPrepared({
     if (
       message.header.numSignerAccounts > MAX_COIN_SIGNATURES ||
       middle.some((ix) => (ix.accountIndices ?? []).some((index) => keys[index] === extraSigner.address)) ||
-      middle.some((ix) => keys[ix.programAddressIndex] === COMPUTE_BUDGET && ix.data?.[0] === SET_COMPUTE_UNIT_PRICE) ||
       middle.some((ix) => PRECOMPILES.has(keys[ix.programAddressIndex]))
     ) {
       throw new Error("This transaction asks this device for more than its network fee. Nothing was signed or sent.");

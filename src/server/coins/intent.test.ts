@@ -1,10 +1,11 @@
 // @vitest-environment node
 import { AccountRole, address, type Instruction, type SignatureBytes } from "@solana/kit";
-import { AddressLookupTableAccount, Connection, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
+import { AddressLookupTableAccount, ComputeBudgetProgram, Connection, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
 import BN from "bn.js";
 import { CpAmm, derivePositionAddress, derivePositionNftAccount } from "@meteora-ag/cp-amm-sdk";
 import { DAMM_V2_MIGRATION_FEE_ADDRESS, deriveDammV2PoolAddress, deriveDbcPoolAddress, deriveDbcTokenVaultAddress, deriveDammV2TokenVaultAddress, DynamicBondingCurveClient, SwapMode, type PoolConfig, type VirtualPool } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { describe, expect, it, vi } from "vitest";
+import { COIN_PRIORITY_FEE_MAX_MICRO_LAMPORTS, COIN_PRIORITY_FEE_MICRO_LAMPORTS } from "@/lib/coins/compute";
 import { COIN_CONFIGS, COIN_LOOKUP_TABLES, COIN_TERMS } from "@/lib/coins/presets";
 import { deriveWalletPda } from "@/lib/solana/pda";
 import { getWalletSpendInstruction } from "@/lib/solana/instructions";
@@ -120,6 +121,48 @@ describe("coin spend intent against installed SDK transactions", () => {
     await expect(validate(readonlyDestination, intent)).rejects.toThrow();
   });
 
+  it("accepts capped compute budgets for every operation and refuses an over-cap or duplicate one", async () => {
+    const { dbc } = await sdkFixture();
+    const price = ComputeBudgetProgram.setComputeUnitPrice({ microLamports: COIN_PRIORITY_FEE_MICRO_LAMPORTS });
+    const budget = (transaction: Transaction, ...ixs: TransactionInstruction[]) => new Transaction().add(...ixs, ...transaction.instructions);
+
+    const { transaction, intent } = await trade("curve", "buy");
+    const limit = ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 });
+    await expect(validate(budget(transaction, limit, price), intent)).resolves.toBeUndefined();
+    await expect(validate(budget(transaction, ComputeBudgetProgram.setComputeUnitLimit({ units: 400_001 }), price), intent)).rejects.toThrow();
+    await expect(
+      validate(budget(transaction, limit, ComputeBudgetProgram.setComputeUnitPrice({ microLamports: COIN_PRIORITY_FEE_MAX_MICRO_LAMPORTS + 1n })), intent),
+    ).rejects.toThrow();
+    await expect(validate(budget(transaction, limit, limit, price), intent)).rejects.toThrow();
+    const withAccount = new TransactionInstruction({
+      programId: ComputeBudgetProgram.programId,
+      keys: [{ pubkey: owner, isSigner: false, isWritable: false }],
+      data: Buffer.from([2, 0x80, 0x1a, 0x06, 0x00]),
+    });
+    await expect(validate(budget(transaction, withAccount), intent)).rejects.toThrow();
+
+    const launchIntent: CoinIntent = {
+      ...base, kind: "launch", firstBuy: 0n, name: "Guild Coin", symbol: "GUILD",
+      metadataUri: "https://dev.pawket.world/api/coins/guild/metadata",
+    };
+    const launch = await dbc.creator.createPoolWithFirstBuy({
+      createPoolParam: { baseMint: mint, config, payer: owner, poolCreator: owner, name: launchIntent.name, symbol: launchIntent.symbol, uri: launchIntent.metadataUri },
+      firstBuyParam: undefined,
+    });
+    await expect(validate(budget(launch, ComputeBudgetProgram.setComputeUnitLimit({ units: 600_000 }), price), launchIntent)).resolves.toBeUndefined();
+
+    const creator = await dbc.creator.claimCreatorTradingFee({
+      creator: owner, payer: owner, pool: curve,
+      maxBaseAmount: new BN("18446744073709551615"), maxQuoteAmount: new BN("18446744073709551615"),
+    });
+    await expect(
+      validate(budget(creator, ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }), price), { ...base, kind: "claim", from: "curve" } as CoinIntent),
+    ).resolves.toBeUndefined();
+
+    const { transaction: graduation } = await dbc.migration.migrateToDammV2({ payer: owner, pool: curve, dammConfig: DAMM_V2_MIGRATION_FEE_ADDRESS[2] });
+    await expect(validate(budget(graduation, price), { ...base, kind: "graduate" } as CoinIntent)).resolves.toBeUndefined();
+  });
+
   it("accepts launch with and without the exact optional first buy, and binds metadata and preset", async () => {
     const { dbc } = await sdkFixture();
     for (const firstBuy of [0n, amountIn]) {
@@ -176,6 +219,28 @@ describe("prepared coin signatures", () => {
     const deviceSign = vi.fn(async () => [{ [device.toBase58()]: new Uint8Array(64).fill(1) as SignatureBytes }]);
     return { ownerSign, deviceSign, options: { rpc: {} as SendRpc, owner: { address: address(owner.toBase58()), signTransactions: ownerSign }, extraSigner: { address: address(device.toBase58()), signTransactions: deviceSign }, sponsored: false } };
   };
+
+  it("lets a capped priority fee through to the owner but refuses an uncapped one before the device", async () => {
+    const { transaction, intent } = await trade("curve", "buy");
+    const budget = (microLamports: bigint) => new Transaction().add(
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }),
+      ComputeBudgetProgram.setComputeUnitPrice({ microLamports }),
+      ...transaction.instructions,
+    );
+    const approved = signatures();
+    await expect(
+      sendPrepared({ ...approved.options, coinIntent: intent, prepare: async () => wire(budget(COIN_PRIORITY_FEE_MICRO_LAMPORTS), intent) }),
+    ).rejects.toThrow("owner approval requested");
+    expect(approved.deviceSign).toHaveBeenCalledOnce();
+    expect(approved.ownerSign).toHaveBeenCalledOnce();
+
+    const refused = signatures();
+    await expect(
+      sendPrepared({ ...refused.options, coinIntent: intent, prepare: async () => wire(budget(COIN_PRIORITY_FEE_MAX_MICRO_LAMPORTS + 1n), intent) }),
+    ).rejects.toThrow();
+    expect(refused.deviceSign).not.toHaveBeenCalled();
+    expect(refused.ownerSign).not.toHaveBeenCalled();
+  });
 
   it("checks the exact immutable buy/sell intent before the device and the owner", async () => {
     for (const side of ["buy", "sell"] as const) {

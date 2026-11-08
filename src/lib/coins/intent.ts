@@ -1,5 +1,6 @@
 import { address, getAddressDecoder, getAddressEncoder, getProgramDerivedAddress, type Address, type Instruction, type ReadonlyUint8Array } from "@solana/kit";
 import type { SolanaCluster } from "@/config/env";
+import { COIN_PRIORITY_FEE_MAX_MICRO_LAMPORTS, coinComputeLimit, SET_COMPUTE_UNIT_LIMIT, SET_COMPUTE_UNIT_PRICE } from "./compute";
 import { COIN_TERMS, presetConfig, type PresetId } from "./presets";
 
 /** Values captured from the player's action, never from the prepared-transaction response. */
@@ -108,7 +109,7 @@ export async function validateCoinInstructions({ owner, instructions, intent, fu
   check(funding >= 0n && funding <= coinFundingLimit(intent), "Coin funding exceeds the approved operation budget. Nothing was signed or sent.");
   check(instructions.length > 0 && instructions.length <= 32);
   const m = await market(intent, owner);
-  let swaps = 0, launches = 0, claims = 0, migrations = 0, wraps = 0, syncs = 0, closes = 0, compute = 0;
+  let swaps = 0, launches = 0, claims = 0, migrations = 0, wraps = 0, syncs = 0, closes = 0, limits = 0, prices = 0;
   const creates = new Set<string>();
   const allowedSigners = new Set<string>([owner]);
   if (intent.kind === "launch") allowedSigners.add(intent.mint);
@@ -146,7 +147,12 @@ export async function validateCoinInstructions({ owner, instructions, intent, fu
         closes++; closeSeen = true;
       }
     } else if (ix.programAddress === COMPUTE) {
-      check(intent.kind === "graduate" && ++compute === 1 && data.length === 5 && data[0] === 2 && uint(data, 1, 4) <= 600_000n && uint(data, 1, 4) > 0n && keys.length === 0);
+      check(keys.length === 0);
+      if (data[0] === SET_COMPUTE_UNIT_LIMIT) {
+        check(++limits === 1 && data.length === 5 && uint(data, 1, 4) > 0n && uint(data, 1, 4) <= BigInt(coinComputeLimit(intent.kind)));
+      } else {
+        check(data[0] === SET_COMPUTE_UNIT_PRICE && ++prices === 1 && data.length === 9 && uint(data, 1, 8) <= COIN_PRIORITY_FEE_MAX_MICRO_LAMPORTS);
+      }
     } else if ((intent.kind === "trade" || intent.kind === "launch") && (starts(data, SWAP) || starts(data, SWAP2))) {
       check(!closeSeen && ++swaps === 1 && (!buying || (wraps === 1 && syncs === 1)));
       const route = intent.kind === "trade" ? intent.route : "curve";
@@ -191,7 +197,7 @@ export async function validateCoinInstructions({ owner, instructions, intent, fu
   if (intent.kind === "trade") check(swaps === 1 && closes === 1 && (buying ? wraps === 1 && syncs === 1 : wraps === 0 && syncs === 0));
   if (intent.kind === "launch") check(launches === 1 && swaps === (intent.firstBuy > 0n ? 1 : 0) && closes === (intent.firstBuy > 0n ? 1 : 0));
   if (intent.kind === "claim") check(claims >= 1 && closes === claims);
-  if (intent.kind === "graduate") check(migrations === 1 && compute <= 1);
+  if (intent.kind === "graduate") check(migrations === 1);
 }
 
 /** Raw account bytes from the browser's own RPC. Only frozen, active configured tables are usable. */

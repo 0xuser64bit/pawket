@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  ComputeBudgetProgram,
   Connection,
   Keypair,
   PACKET_DATA_SIZE,
@@ -30,6 +31,7 @@ import {
 import { CpAmm, derivePoolAuthority, getTokenProgram, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
 import { getPublicEnv } from "@/config/env";
 import { serverRpcUrl } from "@/config/server-env";
+import { COIN_PRIORITY_FEE_MICRO_LAMPORTS, coinComputeLimit, SET_COMPUTE_UNIT_LIMIT, SET_COMPUTE_UNIT_PRICE } from "@/lib/coins/compute";
 import { isUsableCoinLookup } from "@/lib/coins/lookup";
 import { COIN_LOOKUP_TABLES, COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type CoinCluster, type PresetId } from "@/lib/coins/presets";
 import type { CoinQuote, QuoteClaims, TradeSide } from "@/lib/coins/quote";
@@ -418,8 +420,15 @@ async function forPlayer(transaction: Transaction, player: PublicKey, intent: Co
     keys: (ix.accounts ?? []).map((meta) => ({ pubkey: new PublicKey(meta.address), isSigner: meta.role >= 2, isWritable: (meta.role & 1) === 1 })),
   });
   const bracket = (amount?: bigint) => legacy(getWalletSpendInstruction({ owner, wallet: address, device: deviceAddress, keep: BigInt(keep), amount }));
+  const present = (tag: number) =>
+    transaction.instructions.some((ix) => ix.programId.equals(ComputeBudgetProgram.programId) && ix.data?.[0] === tag);
+  const budget = [
+    ...(present(SET_COMPUTE_UNIT_LIMIT) ? [] : [ComputeBudgetProgram.setComputeUnitLimit({ units: coinComputeLimit(intent.kind) })]),
+    ...(present(SET_COMPUTE_UNIT_PRICE) ? [] : [ComputeBudgetProgram.setComputeUnitPrice({ microLamports: COIN_PRIORITY_FEE_MICRO_LAMPORTS })]),
+  ];
+  const instructions = [...budget, ...transaction.instructions];
   const compile = (amount: bigint) => {
-    const message = new TransactionMessage({ payerKey: device, recentBlockhash: blockhash.blockhash, instructions: [bracket(amount), ...transaction.instructions, bracket()] });
+    const message = new TransactionMessage({ payerKey: device, recentBlockhash: blockhash.blockhash, instructions: [bracket(amount), ...instructions, bracket()] });
     return lookup ? message.compileToV0Message([lookup]) : message.compileToLegacyMessage();
   };
   const fee = (await rpc().getFeeForMessage(compile(0n), "confirmed")).value;
@@ -428,7 +437,7 @@ async function forPlayer(transaction: Transaction, player: PublicKey, intent: Co
   if (balance <= refill) throw new CoinRefusal("Add SOL to your Pawket Wallet to cover this transaction.", 409);
   const maximum = coinFundingLimit(intent);
   const funding = balance - refill < maximum ? balance - refill : maximum;
-  await validateCoinInstructions({ owner, intent, funding, instructions: transaction.instructions.map((ix) => ({
+  await validateCoinInstructions({ owner, intent, funding, instructions: instructions.map((ix) => ({
     programAddress: ix.programId.toBase58() as Address, data: ix.data,
     accounts: ix.keys.map((meta) => ({ address: meta.pubkey.toBase58() as Address, role: (Number(meta.isWritable) + Number(meta.isSigner) * 2) as AccountRole })),
   })) });

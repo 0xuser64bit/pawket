@@ -3,6 +3,7 @@ import { Connection, Keypair, PublicKey, VersionedTransaction } from "@solana/we
 import BN from "bn.js";
 import { deriveDbcPoolAddress, deriveDbcTokenVaultAddress, DYNAMIC_BONDING_CURVE_PROGRAM_ID, type DynamicBondingCurveClient, type PoolConfig, type VirtualPool } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { COIN_COMPUTE_LIMITS, COIN_PRIORITY_FEE_MICRO_LAMPORTS } from "@/lib/coins/compute";
 import { COIN_CONFIGS } from "@/lib/coins/presets";
 import type { ChainGuild } from "@/lib/solana/accounts";
 
@@ -62,6 +63,20 @@ describe("server coin funding", () => {
     expect(data.readBigUInt64LE(16)).toBe(33n);
     expect(transaction.message.staticAccountKeys[0].toBase58()).toBe(device.toBase58());
     expect(transaction.signatures.every((signature) => signature.every((byte) => byte === 0))).toBe(true);
+  });
+
+  it("adds a capped compute unit limit and a modest priority fee to a trade", async () => {
+    const { tradeTransaction } = await import("./meteora");
+    const wire = await tradeTransaction({ guild, owner: owner.toBase58(), side: "buy", amountIn: 100_000_000n, minimumOut: 1234n, quote: claim("buy") });
+    const transaction = VersionedTransaction.deserialize(Buffer.from(wire, "base64"));
+    const keys = transaction.message.staticAccountKeys.map((key) => key.toBase58());
+    const budget = transaction.message.compiledInstructions.filter(
+      (ix) => keys[ix.programIdIndex] === "ComputeBudget111111111111111111111111111111",
+    );
+    const limit = budget.find((ix) => ix.data[0] === 2);
+    const price = budget.find((ix) => ix.data[0] === 3);
+    expect(Buffer.from(limit!.data).readUInt32LE(1)).toBe(COIN_COMPUTE_LIMITS.trade);
+    expect(Buffer.from(price!.data).readBigUInt64LE(1)).toBe(COIN_PRIORITY_FEE_MICRO_LAMPORTS);
   });
 
   it.each([

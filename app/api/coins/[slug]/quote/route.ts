@@ -2,10 +2,10 @@ import { getPublicEnv } from "@/config/env";
 import { QUOTE_TTL_MS, type TradeSide } from "@/lib/coins/quote";
 import { readDeadline } from "@/lib/utils/deadline";
 import { quoteTrade } from "@/server/coins/meteora";
+import { coinLimit } from "@/server/coins/limits";
 import { sealQuote } from "@/server/coins/quote-token";
-import { coinError, coinJson, coinProblem, guildOr404, units } from "@/server/coins/routes";
+import { coinError, coinJson, coinLimited, coinProblem, guildOr404, units } from "@/server/coins/routes";
 import { caller } from "@/server/actions";
-import { actionLimit } from "@/server/sponsor";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ export async function GET(request: Request, { params }: Props) {
   if (!amount) return coinProblem("Choose an amount above nothing.");
   const slippage = Number(query.get("slippage") ?? 100);
   if (!Number.isInteger(slippage) || slippage < 10 || slippage > 1000) return coinProblem("Slippage is 0.1% to 10%.");
-  if (!actionLimit(caller(request))) return coinProblem("Too many in a row. Try again in a while.", 429);
+  if (!coinLimit("quote", caller(request))) return coinLimited();
 
   const deadline = readDeadline(15_000, request.signal);
   try {

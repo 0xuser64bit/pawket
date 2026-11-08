@@ -1,10 +1,10 @@
 import { COIN_TERMS, findPreset } from "@/lib/coins/presets";
 import { isListed } from "@/lib/guilds/delisted";
+import { coinLimit } from "@/server/coins/limits";
 import { launchTransaction } from "@/server/coins/meteora";
-import { coinError, coinJson, coinMetadataUri, coinPreflight, coinProblem, guildOr404, postedFields, units } from "@/server/coins/routes";
+import { coinError, coinJson, coinLimited, coinMetadataUri, coinPreflight, coinProblem, guildOr404, postedFields, units } from "@/server/coins/routes";
 import { caller } from "@/server/actions";
 import { readPet } from "@/server/solana";
-import { actionLimit } from "@/server/sponsor";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,6 +23,7 @@ export async function POST(request: Request, { params }: Props) {
   if (!preset) return coinProblem("Choose one of Pawket's curves.");
   const firstBuy = posted.fields.firstBuy === undefined ? 0n : units(posted.fields.firstBuy);
   if (firstBuy === null || firstBuy > MAX_FIRST_BUY) return coinProblem("A first buy is up to 10 SOL, or none.");
+  if (!coinLimit("launch", [caller(request), posted.account])) return coinLimited();
 
   const guild = await guildOr404(slug);
   if (guild instanceof Response) return guild;
@@ -31,7 +32,6 @@ export async function POST(request: Request, { params }: Props) {
   if (guild.memberCount < COIN_TERMS.minMembers) {
     return coinProblem(`A guild launches a coin once ${COIN_TERMS.minMembers} pets are in it; ${guild.name} has ${guild.memberCount}. Nothing was sent.`, 409);
   }
-  if (!actionLimit(caller(request))) return coinProblem("Too many in a row. Nothing was sent — try again in a while.", 429);
   const founding = await readPet(guild.founderPet).catch(() => undefined);
   if (founding === undefined) return coinProblem("Solana did not answer. Nothing was sent — try again.", 503);
   if (founding?.member?.guild !== guild.address) {

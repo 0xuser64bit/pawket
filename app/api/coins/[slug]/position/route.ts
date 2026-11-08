@@ -1,8 +1,8 @@
 import { isAddress } from "@solana/kit";
+import { coinLimit } from "@/server/coins/limits";
 import { readPositionFees } from "@/server/coins/meteora";
-import { coinError, coinJson, coinProblem, guildOr404 } from "@/server/coins/routes";
+import { coinError, coinJson, coinLimited, coinProblem, guildOr404 } from "@/server/coins/routes";
 import { caller } from "@/server/actions";
-import { actionLimit } from "@/server/sponsor";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -14,7 +14,7 @@ export async function GET(request: Request, { params }: Props) {
   const { slug } = await params;
   const account = new URL(request.url).searchParams.get("account");
   if (!account || !isAddress(account)) return coinProblem("That is not a wallet address.");
-  if (!actionLimit(caller(request))) return coinProblem("Too many in a row. Try again in a while.", 429);
+  if (!coinLimit("position", caller(request))) return coinLimited();
   const guild = await guildOr404(slug);
   if (guild instanceof Response) return guild;
   try {

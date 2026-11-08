@@ -1,7 +1,7 @@
+import { coinLimit } from "@/server/coins/limits";
 import { graduateTransaction } from "@/server/coins/meteora";
-import { coinError, coinJson, coinPreflight, coinProblem, guildOr404, postedFields } from "@/server/coins/routes";
+import { coinError, coinJson, coinLimited, coinPreflight, coinProblem, guildOr404, postedFields } from "@/server/coins/routes";
 import { caller } from "@/server/actions";
-import { actionLimit } from "@/server/sponsor";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: Props) {
   const { slug } = await params;
   const posted = await postedFields(request);
   if (!posted) return coinProblem("That is not a wallet address. Nothing was sent.");
-  if (!actionLimit(caller(request))) return coinProblem("Too many in a row. Nothing was sent — try again in a while.", 429);
+  if (!coinLimit("graduate", [caller(request), posted.account])) return coinLimited();
   const guild = await guildOr404(slug);
   if (guild instanceof Response) return guild;
   try {

@@ -7,6 +7,7 @@ import { isValidSlug } from "@/lib/guilds/guild";
 import type { ChainGuild } from "@/lib/solana/accounts";
 import { readGuild } from "@/server/solana";
 import { CoinRefusal } from "./meteora";
+import { COIN_RETRY_AFTER_SECONDS } from "./limits";
 import { scrub } from "@/lib/analytics/scrub";
 
 const COIN_HEADERS = Object.freeze({ "Cache-Control": "no-store" });
@@ -22,6 +23,13 @@ export function coinProblem(message: string, status = 400) {
 
 export function coinPreflight() {
   return new Response(null, { status: 204, headers: { ...COIN_HEADERS, Allow: "GET, POST, OPTIONS" } });
+}
+
+export function coinLimited() {
+  return NextResponse.json(
+    { message: "Too many in a row. Nothing was sent — try again in a while." },
+    { status: 429, headers: { ...COIN_HEADERS, "Retry-After": String(COIN_RETRY_AFTER_SECONDS) } },
+  );
 }
 
 export async function guildOr404(slug: string, signal?: AbortSignal): Promise<ChainGuild | Response> {

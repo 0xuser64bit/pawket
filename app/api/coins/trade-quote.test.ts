@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { QuoteClaims } from "@/lib/coins/quote";
 import { sealQuote } from "@/server/coins/quote-token";
 
-const mocks = vi.hoisted(() => ({ readGuild: vi.fn(), tradeTransaction: vi.fn() }));
+const mocks = vi.hoisted(() => ({ readGuild: vi.fn(), tradeTransaction: vi.fn(), allowed: true }));
 vi.mock("@/server/solana", () => ({ readGuild: mocks.readGuild }));
-vi.mock("@/server/sponsor", () => ({ actionLimit: () => true }));
+vi.mock("@/server/coins/limits", () => ({ coinLimit: () => mocks.allowed, COIN_RETRY_AFTER_SECONDS: 60 }));
 vi.mock("@/server/coins/meteora", () => ({
   tradeTransaction: mocks.tradeTransaction,
   CoinRefusal: class extends Error {
@@ -50,6 +50,7 @@ beforeEach(() => {
   vi.stubEnv("SPONSOR_KEYPAIR", "");
   mocks.readGuild.mockReset().mockResolvedValue(guild);
   mocks.tradeTransaction.mockReset().mockResolvedValue("base64-transaction");
+  mocks.allowed = true;
 });
 
 afterEach(() => {
@@ -112,6 +113,16 @@ describe("the trade route requires the quote Pawket signed", () => {
       minimumOut: 4_158_000_000n,
       quote: { slug: guild.slug, mint: MINT, route: "curve" },
     });
+  });
+
+  it("answers a spent allowance with Retry-After and builds nothing", async () => {
+    mocks.allowed = false;
+    const token = sealQuote(claims());
+    const { POST } = await import("./[slug]/trade/route");
+    const response = await POST(post({ quote: token }), params);
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("60");
+    expect(mocks.tradeTransaction).not.toHaveBeenCalled();
   });
 
   it("answers preflight without granting another origin", async () => {

@@ -1,10 +1,10 @@
 import { getPublicEnv } from "@/config/env";
 import type { TradeSide } from "@/lib/coins/quote";
+import { coinLimit } from "@/server/coins/limits";
 import { tradeTransaction } from "@/server/coins/meteora";
 import { openQuote } from "@/server/coins/quote-token";
-import { coinError, coinJson, coinPreflight, coinProblem, guildOr404, postedFields, units } from "@/server/coins/routes";
+import { coinError, coinJson, coinLimited, coinPreflight, coinProblem, guildOr404, postedFields, units } from "@/server/coins/routes";
 import { caller } from "@/server/actions";
-import { actionLimit } from "@/server/sponsor";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ export async function POST(request: Request, { params }: Props) {
   const amountIn = units(posted.fields.amount);
   const minimumOut = units(posted.fields.minimumOut);
   if (!amountIn || !minimumOut) return coinProblem("Choose an amount above nothing, and quote it first.");
-  if (!actionLimit(caller(request))) return coinProblem("Too many in a row. Nothing was sent — try again in a while.", 429);
+  if (!coinLimit("trade", [caller(request), posted.account])) return coinLimited();
 
   const quote = openQuote(posted.fields.quote);
   if (!quote) return coinProblem("That quote is not Pawket's, or it expired. Quote again. Nothing was sent.", 409);

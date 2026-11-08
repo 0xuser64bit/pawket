@@ -21,7 +21,10 @@ async function sponsor() {
 const SOL = 1_000_000_000n;
 const ONE_RENT = 4_500_000n + 15_000n;
 const NOW = 1_790_000_000_000;
-const at = (ip: string | null) => new Request("http://localhost/api/sponsor", { headers: ip ? { "x-forwarded-for": ip } : {} });
+const at = (ip: string | null, real?: string) =>
+  new Request("http://localhost/api/sponsor", {
+    headers: { ...(ip ? { "x-forwarded-for": ip } : {}), ...(real === undefined ? {} : { "x-real-ip": real }) },
+  });
 const keypair = async () => {
   const pair = (await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"])) as CryptoKeyPair;
   const secret = new Uint8Array(await crypto.subtle.exportKey("pkcs8", pair.privateKey)).slice(-32);
@@ -110,19 +113,33 @@ describe("sponsoredForPlayer", () => {
 });
 
 describe("caller", () => {
+  it("prefers the proxy's own x-real-ip over anything a client put in x-forwarded-for", () => {
+    expect(caller(at("198.51.100.9, 203.0.113.7", "203.0.113.7"))).toBe("203.0.113.7");
+    expect(caller(at("198.51.100.9", "::ffff:203.0.113.7"))).toBe("203.0.113.7");
+  });
+
+  it("uses the last valid forwarded hop, so a client cannot prepend an address of its own", () => {
+    expect(caller(at("198.51.100.9, 203.0.113.7"))).toBe("203.0.113.7");
+    expect(caller(at(" 203.0.113.7 , 10.0.0.1"))).toBe("10.0.0.1");
+    expect(caller(at("not-an-ip, 203.0.113.7"))).toBe("203.0.113.7");
+  });
+
   it("counts an IPv6 address by its /64 and an IPv4 address, mapped or not, as itself", () => {
-    expect(caller(at("203.0.113.7, 10.0.0.1"))).toBe("203.0.113.7");
     expect(caller(at("::ffff:203.0.113.7"))).toBe("203.0.113.7");
     expect(caller(at("2001:db8:0:12::1"))).toBe("2001:db8:0:12::/64");
     expect(caller(at("2001:DB8:0000:0012:abcd:ef01:2345:6789"))).toBe("2001:db8:0:12::/64");
     expect(caller(at("2001:db8::"))).toBe("2001:db8:0:0::/64");
-    expect(caller(at(null))).toBe("local");
-  });
-
-  it("reads the first hop however it is spaced, and fills a short IPv6 address where its gap is", () => {
-    expect(caller(at(" 203.0.113.7 , 10.0.0.1"))).toBe("203.0.113.7");
     expect(caller(at("2001::1:2:3:4:5:6"))).toBe("2001:0:1:2::/64");
     expect(caller(at("fe80::1:2:3:4"))).toBe("fe80:0:0:0::/64");
+  });
+
+  it("never turns a malformed address into a key of its own", () => {
+    expect(caller(at("203.0.113.999"))).toBe("local");
+    expect(caller(at("2001:db8:::1"))).toBe("local");
+    expect(caller(at("2001:db8:1:2:3:4:5:6:7"))).toBe("local");
+    expect(caller(at("fe80::1%en0"))).toBe("local");
+    expect(caller(at("garbage", "also-garbage"))).toBe("local");
+    expect(caller(at(null))).toBe("local");
   });
 });
 

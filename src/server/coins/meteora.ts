@@ -30,6 +30,7 @@ import {
 import { CpAmm, derivePoolAuthority, getTokenProgram, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
 import { getPublicEnv } from "@/config/env";
 import { serverRpcUrl } from "@/config/server-env";
+import { isUsableCoinLookup } from "@/lib/coins/lookup";
 import { COIN_LOOKUP_TABLES, COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type CoinCluster, type PresetId } from "@/lib/coins/presets";
 import type { CoinQuote, QuoteClaims, TradeSide } from "@/lib/coins/quote";
 import { coinStage, type CoinStage } from "@/lib/coins/stage";
@@ -551,15 +552,18 @@ export async function graduateTransaction(guild: ChainGuild, payer: string): Pro
   if (!coin?.curve) throw new CoinRefusal("This guild has no coin.", 404);
   if (coin.curve.pool.poolState.isMigrated === 1) throw new CoinRefusal("The coin has graduated already. Nothing was sent.", 409);
   if (coin.state.stage !== "pending") throw new CoinRefusal("The curve has not raised its threshold yet. Nothing was sent.", 409);
+  const table = COIN_LOOKUP_TABLES[getPublicEnv().solanaCluster as CoinCluster];
+  if (!table) throw new CoinRefusal("Graduation is not set up on this network yet. Nothing was sent.", 503);
+  const lookup = (await rpc().getAddressLookupTable(new PublicKey(table))).value;
+  if (!lookup || !isUsableCoinLookup(lookup, table)) {
+    throw new CoinRefusal("Graduation's lookup table is not usable on this network. Nothing was sent.", 503);
+  }
   const dammConfig = DAMM_V2_MIGRATION_FEE_ADDRESS[coin.curve.config.migrationFeeOption];
   const { transaction, firstPositionNftKeypair, secondPositionNftKeypair } = await dbc().migration.migrateToDammV2({
     payer: new PublicKey(payer),
     pool: coin.curve.address,
     dammConfig,
   });
-  const table = COIN_LOOKUP_TABLES[getPublicEnv().solanaCluster as CoinCluster];
-  const lookup = table ? (await rpc().getAddressLookupTable(new PublicKey(table))).value : null;
-  if (!lookup) throw new CoinRefusal("Graduation is not set up on this network yet. Nothing was sent.", 503);
   return forPlayer(transaction, new PublicKey(payer), { kind: "graduate", cluster: getPublicEnv().solanaCluster, mint: coin.state.mint, preset: coin.state.preset! }, [firstPositionNftKeypair, secondPositionNftKeypair], lookup);
 }
 

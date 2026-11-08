@@ -1,15 +1,16 @@
 // @vitest-environment node
-import { Connection, Keypair, PublicKey, SystemProgram, type AccountInfo } from "@solana/web3.js";
+import { AddressLookupTableAccount, Connection, Keypair, PublicKey, SystemProgram, type AccountInfo } from "@solana/web3.js";
 import { DAMM_V2_MIGRATION_FEE_ADDRESS, DAMM_V2_PROGRAM_ID, deriveDammV2PoolAddress, deriveDbcPoolAddress, DYNAMIC_BONDING_CURVE_PROGRAM_ID } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import BN from "bn.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChainGuild } from "@/lib/solana/accounts";
-import { presetConfig } from "@/lib/coins/presets";
+import { COIN_LOOKUP_TABLES, presetConfig } from "@/lib/coins/presets";
 import { derivedSeed } from "@/server/derive";
 
 const sponsor = Keypair.generate();
 const quotes = vi.hoisted(() => ({ swap: vi.fn() }));
 const configs = vi.hoisted(() => ({ started: 0, gate: null as Promise<void> | null }));
+const migrations = vi.hoisted(() => ({ migrate: vi.fn() }));
 vi.mock("@/config/server-env", async (actual) => ({
   ...(await actual<typeof import("@/config/server-env")>()),
   getServerEnv: () => ({ sponsorKeypair: JSON.stringify([...sponsor.secretKey]) }),
@@ -18,11 +19,12 @@ vi.mock("@/config/server-env", async (actual) => ({
 
 let creator: PublicKey;
 let migrated = 0;
+let raised = 1_000;
 const curve = () => ({
   poolState: {
     creator,
     isMigrated: migrated,
-    quoteReserve: new BN(1_000),
+    quoteReserve: new BN(raised),
     sqrtPrice: new BN(2).pow(new BN(64)),
     creatorQuoteFee: new BN(0),
     partnerQuoteFee: new BN(0),
@@ -34,6 +36,7 @@ vi.mock("@meteora-ag/dynamic-bonding-curve-sdk", async (actual) => ({
   getCurrentPoint: async () => new BN(1),
   DynamicBondingCurveClient: class {
     pool = { swapQuote2: quotes.swap };
+    migration = { migrateToDammV2: migrations.migrate };
     state = {
       getPool: async () => curve(),
       getPoolConfig: async () => {
@@ -61,6 +64,8 @@ describe("a guild's coin", () => {
   const dust = { owner: SystemProgram.programId, data: Buffer.alloc(0) } as unknown as AccountInfo<Buffer>;
   beforeEach(() => {
     migrated = 0;
+    raised = 1_000;
+    migrations.migrate.mockReset();
     quotes.swap.mockReset().mockReturnValue({
       includedFeeInputAmount: new BN(100),
       outputAmount: new BN(90),
@@ -94,6 +99,24 @@ describe("a guild's coin", () => {
     await expect(graduateTransaction(candidate, founder.toBase58())).rejects.toThrow("The curve has not raised its threshold yet.");
     expect(await readPositionFees(candidate, founder.toBase58())).toBeNull();
     expect(holders).not.toHaveBeenCalled();
+  });
+
+  it("refuses an unusable graduation lookup table before preparing the migration", async () => {
+    creator = founder;
+    raised = 1_000_000;
+    const table = COIN_LOOKUP_TABLES.devnet!;
+    vi.spyOn(Connection.prototype, "getAddressLookupTable").mockResolvedValue({
+      context: { slot: 1 },
+      value: new AddressLookupTableAccount({
+        key: new PublicKey(table),
+        state: { deactivationSlot: 7n, lastExtendedSlot: 0, lastExtendedSlotStartIndex: 0, addresses: [founder] },
+      }),
+    });
+    const { graduateTransaction } = await import("./meteora");
+    await expect(graduateTransaction({ ...guild, slug: "deactivated-lookup" }, founder.toBase58())).rejects.toThrow(
+      "Graduation's lookup table is not usable",
+    );
+    expect(migrations.migrate).not.toHaveBeenCalled();
   });
 
   it("still reads and caches holder analytics for the coin's display", async () => {

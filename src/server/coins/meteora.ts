@@ -42,10 +42,21 @@ import { getWalletSpendInstruction } from "@/lib/solana/instructions";
 import { PAWKET_ACCOUNTS, WALLET_LIMITS } from "@/lib/solana/program";
 import { derivedSeed } from "@/server/derive";
 import { sponsorRpc } from "@/server/sponsor";
+import { createCachedRead, withinDeadline } from "./reads";
 
 const WRAPPED_SOL = new PublicKey("So11111111111111111111111111111111111111112");
 const DBC_POOL_AUTHORITY = deriveDbcPoolAuthority();
 const DAMM_POOL_AUTHORITY = derivePoolAuthority();
+const RPC_TIMEOUT_MS = 15_000;
+
+/** Every server RPC read has a deadline, even when its caller forgot one. */
+function boundedFetch(signal?: AbortSignal) {
+  return (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+    signal?.throwIfAborted();
+    const timeout = AbortSignal.timeout(RPC_TIMEOUT_MS);
+    return fetch(input, { ...init, signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+  };
+}
 
 let connection: Connection | null = null;
 const quoteConnections = new WeakMap<AbortSignal, Connection>();
@@ -60,16 +71,13 @@ function rpc(signal?: AbortSignal): Connection {
         // web3.js's internal 429 sleep is not abortable. Fail this quote so
         // the player can retry, and keep all reads inside its one budget.
         disableRetryOnRateLimit: true,
-        fetch: (url, init) => {
-          signal.throwIfAborted();
-          return fetch(url, { ...init, signal });
-        },
+        fetch: boundedFetch(signal),
       });
       quoteConnections.set(signal, scoped);
     }
     return scoped;
   }
-  connection ??= new Connection(serverRpcUrl(), "confirmed");
+  connection ??= new Connection(serverRpcUrl(), { commitment: "confirmed", fetch: boundedFetch() });
   return connection;
 }
 const dbc = (signal?: AbortSignal) => new DynamicBondingCurveClient(rpc(signal), "confirmed");
@@ -105,31 +113,28 @@ interface LiveCoin {
   graduated: { address: PublicKey; pool: Awaited<ReturnType<CpAmm["fetchPoolState"]>> } | null;
 }
 
-const configs = new Map<string, Promise<PoolConfig | null>>();
+const CONFIG_TTL_MS = 5 * 60_000;
+const CONFIG_DEADLINE_MS = 15_000;
+const cachedConfig = createCachedRead<PoolConfig | null>({ ttlMs: CONFIG_TTL_MS, maxEntries: 16 });
 function readConfig(address: PublicKey, signal?: AbortSignal): Promise<PoolConfig | null> {
+  const load = () => withinDeadline((deadline) => dbc(deadline).state.getPoolConfig(address), CONFIG_DEADLINE_MS, signal);
   // A quote must not inherit another request's pending, unbounded read, or
   // cancel a shared read that another caller still needs.
-  if (signal) return dbc(signal).state.getPoolConfig(address);
-  const key = address.toBase58();
-  let config = configs.get(key);
-  if (!config) {
-    config = dbc().state.getPoolConfig(address);
-    configs.set(key, config);
-    config.catch(() => configs.delete(key));
-  }
-  return config;
+  return signal ? load() : cachedConfig(address.toBase58(), load);
 }
 
-const holderReads = new Map<string, { at: number; value: Promise<Map<string, bigint> | null> }>();
+const HOLDER_TTL_MS = 60_000;
+const HOLDER_DEADLINE_MS = 5_000;
+export const MAX_HOLDER_ACCOUNTS = 5_000;
+const cachedHolders = createCachedRead<Map<string, bigint>>({ ttlMs: HOLDER_TTL_MS, maxEntries: 32 });
 function holderWallets(mint: PublicKey): Promise<Map<string, bigint> | null> {
   const key = mint.toBase58();
-  const cached = holderReads.get(key);
-  if (cached && Date.now() - cached.at < 15_000) return cached.value;
-  const value = (async () => {
-    const accounts = await rpc().getProgramAccounts(new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"), {
+  return cachedHolders(key, () => withinDeadline(async (signal) => {
+    const accounts = await rpc(signal).getProgramAccounts(new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"), {
       filters: [{ dataSize: 165 }, { memcmp: { offset: 0, bytes: key } }],
       dataSlice: { offset: 32, length: 40 },
     });
+    if (accounts.length > MAX_HOLDER_ACCOUNTS) throw new Error("Too many token accounts to count just now.");
     const byOwner = new Map<string, bigint>();
     for (const { account } of accounts) {
       const owner = new PublicKey(account.data.subarray(0, 32));
@@ -138,9 +143,7 @@ function holderWallets(mint: PublicKey): Promise<Map<string, bigint> | null> {
       if (amount > 0n) byOwner.set(owner.toBase58(), (byOwner.get(owner.toBase58()) ?? 0n) + amount);
     }
     return byOwner;
-  })().catch(() => null);
-  holderReads.set(key, { at: Date.now(), value });
-  return value;
+  }, HOLDER_DEADLINE_MS)).catch(() => null);
 }
 
 async function readHolders(mint: PublicKey): Promise<CoinState["holders"]> {
@@ -263,22 +266,23 @@ export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, 
   });
   const accounts = (await Promise.all(chunks(candidates, 100).map((chunk) => rpc().getMultipleAccountsInfo(chunk.map((c) => c.pool))))).flat();
   const coder = dbc().state.getProgram().coder;
+  const settings = new Map(await Promise.all(offered.map(async (config) => [config.toBase58(), await readConfig(config)] as const)));
   const launched: Array<{ slug: string; listed: boolean; raised: bigint; threshold: bigint; migrated: boolean; damm: PublicKey | null }> = [];
   for (const [i, account] of accounts.entries()) {
     if (!account?.owner.equals(DYNAMIC_BONDING_CURVE_PROGRAM_ID)) continue;
     const { guild, mint, config } = candidates[i];
     const pool = coder.accounts.decode<VirtualPool>("virtualPool", account.data).poolState;
     if (!pool.creator.equals(new PublicKey(guild.founder))) continue;
-    const settings = await readConfig(config);
-    if (!settings) continue;
+    const configState = settings.get(config.toBase58());
+    if (!configState) continue;
     const migrated = pool.isMigrated === 1;
     launched.push({
       slug: guild.slug,
       listed: !DELISTED_SLUGS.has(guild.slug),
       raised: big(pool.quoteReserve),
-      threshold: big(settings.migrationQuoteThreshold),
+      threshold: big(configState.migrationQuoteThreshold),
       migrated,
-      damm: migrated ? deriveDammV2PoolAddress(DAMM_V2_MIGRATION_FEE_ADDRESS[settings.migrationFeeOption], mint, WRAPPED_SOL) : null,
+      damm: migrated ? deriveDammV2PoolAddress(DAMM_V2_MIGRATION_FEE_ADDRESS[configState.migrationFeeOption], mint, WRAPPED_SOL) : null,
     });
   }
   const graduated = launched.filter((coin) => coin.damm);

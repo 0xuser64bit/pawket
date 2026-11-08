@@ -2,13 +2,14 @@
 import { Connection, Keypair, PublicKey, SystemProgram, type AccountInfo } from "@solana/web3.js";
 import { DAMM_V2_MIGRATION_FEE_ADDRESS, DAMM_V2_PROGRAM_ID, deriveDammV2PoolAddress, deriveDbcPoolAddress, DYNAMIC_BONDING_CURVE_PROGRAM_ID } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import BN from "bn.js";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChainGuild } from "@/lib/solana/accounts";
 import { presetConfig } from "@/lib/coins/presets";
 import { derivedSeed } from "@/server/derive";
 
 const sponsor = Keypair.generate();
 const quotes = vi.hoisted(() => ({ swap: vi.fn() }));
+const configs = vi.hoisted(() => ({ started: 0, gate: null as Promise<void> | null }));
 vi.mock("@/config/server-env", async (actual) => ({
   ...(await actual<typeof import("@/config/server-env")>()),
   getServerEnv: () => ({ sponsorKeypair: JSON.stringify([...sponsor.secretKey]) }),
@@ -35,7 +36,11 @@ vi.mock("@meteora-ag/dynamic-bonding-curve-sdk", async (actual) => ({
     pool = { swapQuote2: quotes.swap };
     state = {
       getPool: async () => curve(),
-      getPoolConfig: async () => ({ migrationQuoteThreshold: new BN(1_000_000), migrationFeeOption: 0 }),
+      getPoolConfig: async () => {
+        configs.started += 1;
+        if (configs.gate) await configs.gate;
+        return { migrationQuoteThreshold: new BN(1_000_000), migrationFeeOption: 0 };
+      },
       getProgram: () => ({ coder: { accounts: { decode: (_name: string, data: Buffer) => {
         if (data.length === 0) throw new Error("Invalid account discriminator");
         return curve();
@@ -46,6 +51,10 @@ vi.mock("@meteora-ag/dynamic-bonding-curve-sdk", async (actual) => ({
 
 const founder = Keypair.generate().publicKey;
 const guild = { slug: "sunbeam-club", name: "Sunbeam Club", founder: founder.toBase58() } as unknown as ChainGuild;
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("a guild's coin", () => {
   const pool = { owner: DYNAMIC_BONDING_CURVE_PROGRAM_ID, data: Buffer.alloc(8) } as unknown as AccountInfo<Buffer>;
@@ -128,6 +137,60 @@ describe("a guild's coin", () => {
       expect(stages.get(candidate.slug), candidate.slug).toBe(index === 0 || index === count - 1 ? "pending" : "damm");
     }
     expect(reads.mock.calls.every(([keys]) => keys.length <= 100)).toBe(true);
+  });
+
+  it("does not count an oversized holder scan, and tries again on the next display read", async () => {
+    creator = founder;
+    const data = Buffer.alloc(40);
+    Keypair.generate().publicKey.toBuffer().copy(data);
+    data.writeBigUInt64LE(123n, 32);
+    const tooMany = Array.from({ length: 5_001 }, () => ({ pubkey: Keypair.generate().publicKey, account: { ...pool, data } }));
+    const holders = vi.spyOn(Connection.prototype, "getProgramAccounts").mockResolvedValueOnce(tooMany).mockResolvedValueOnce([]);
+    const { readCoin } = await import("./meteora");
+    const candidate = { ...guild, slug: "oversized-holders" };
+    expect((await readCoin(candidate))?.holders).toBeNull();
+    expect((await readCoin(candidate))?.holders).toEqual({ count: 0, topTenPercent: 0 });
+    expect(holders).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns no holder count when a scan takes too long, and retries next time", async () => {
+    vi.useFakeTimers();
+    creator = founder;
+    const holders = vi.spyOn(Connection.prototype, "getProgramAccounts").mockImplementationOnce(() => new Promise(() => {})).mockResolvedValueOnce([]);
+    const { readCoin } = await import("./meteora");
+    const candidate = { ...guild, slug: "slow-holders" };
+    const pending = readCoin(candidate);
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect((await pending)?.holders).toBeNull();
+    expect((await readCoin(candidate))?.holders).toEqual({ count: 0, topTenPercent: 0 });
+    expect(holders).toHaveBeenCalledTimes(2);
+  });
+
+  it("starts every distinct config read before waiting for any of them", async () => {
+    creator = founder;
+    vi.resetModules();
+    configs.started = 0;
+    let release!: () => void;
+    configs.gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const wrappedSol = new PublicKey("So11111111111111111111111111111111111111112");
+    const gentle = new PublicKey(presetConfig("devnet", "gentle")!);
+    const lively = new PublicKey(presetConfig("devnet", "lively")!);
+    const first = { ...guild, slug: "config-first" };
+    const second = { ...guild, slug: "config-second" };
+    const accounts = new Map<string, AccountInfo<Buffer> | null>();
+    accounts.set(deriveDbcPoolAddress(wrappedSol, Keypair.fromSeed(derivedSeed(`pawket guild coin ${first.slug}`)!).publicKey, gentle).toBase58(), pool);
+    accounts.set(deriveDbcPoolAddress(wrappedSol, Keypair.fromSeed(derivedSeed(`pawket guild coin ${second.slug}`)!).publicKey, lively).toBase58(), pool);
+    vi.spyOn(Connection.prototype, "getMultipleAccountsInfo").mockImplementation(async (keys) => keys.map((key) => accounts.get(key.toBase58()) ?? null));
+    const { readCoinStages } = await import("./meteora");
+    const pending = readCoinStages([first, second]);
+    await vi.waitFor(() => expect(configs.started).toBeGreaterThanOrEqual(2));
+    release();
+    const stages = await pending;
+    expect(stages.get(first.slug)).toBe("dbc");
+    expect(stages.get(second.slug)).toBe("dbc");
+    configs.gate = null;
   });
 
   it("is the curve its founder made", async () => {

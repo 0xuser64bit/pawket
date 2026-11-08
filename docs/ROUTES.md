@@ -60,7 +60,7 @@ is not permission to skip the shared send path.
 | GET | `/api/coins/[slug]/quote` | Curve or verified DAMM v2 quote |
 | GET | `/api/coins/[slug]/position` | `?account=` locked positions and unclaimed fees |
 | POST | `/api/coins/[slug]/launch`, `/trade`, `/graduate`, `/claim` | Prepare the corresponding coin transaction; suffixes are relative to the same slug |
-| GET | `/api/coins/[slug]/metadata` | Token metadata |
+| GET | `/api/coins/[slug]/metadata` | Immutable token metadata (public CORS) |
 | GET | `/actions.json` | Maps adoption, pet and guild links to Solana Actions |
 | GET | `/robots.txt`, `/sitemap.xml` | Crawlable public production pages; previews and APIs excluded |
 

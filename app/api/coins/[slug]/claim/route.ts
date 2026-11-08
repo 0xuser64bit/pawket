@@ -19,11 +19,21 @@ export async function POST(request: Request, { params }: Props) {
   if (guild instanceof Response) return guild;
   try {
     const fromPool = posted.fields.from === "pool";
-    const transaction = fromPool ? await positionFeeTransaction(guild, posted.account) : await claimTransaction(guild, posted.account);
+    if (fromPool) {
+      const claim = await positionFeeTransaction(guild, posted.account);
+      const left = claim.remaining > 0 ? ` ${claim.claimed} of ${claim.claimed + claim.remaining} positions this time; claim again for the rest.` : "";
+      return coinJson({
+        type: "transaction",
+        transaction: claim.transaction,
+        claimed: claim.claimed,
+        remaining: claim.remaining,
+        message: `Claim what your locked liquidity in ${guild.name}'s pool has earned.${left}`,
+      });
+    }
     return coinJson({
       type: "transaction",
-      transaction,
-      message: fromPool ? `Claim what your locked liquidity in ${guild.name}'s pool has earned.` : `Claim your share of ${guild.name}'s coin fees.`,
+      transaction: await claimTransaction(guild, posted.account),
+      message: `Claim your share of ${guild.name}'s coin fees.`,
     });
   } catch (error) {
     return coinError(error, "claim", startedAt);

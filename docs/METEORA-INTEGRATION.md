@@ -82,6 +82,9 @@ transaction preparation and position fees never wait for that optional scan.
    Unsupported layouts are refused rather than signed through a generic program
    allow-list. `src/server/coins/intent.test.ts` holds the policy to installed
    SDK transactions; `meteora-funding.test.ts` checks server funding bounds.
+   Pool fee claims batch at most three positions per transaction, preferring
+   positions with fees waiting; the route reports how many remain so the owner
+   can claim the rest.
 9. **No promise of value.** `copy.test.ts` holds every coin surface to the
    banned-phrase list; a meter toward graduation is "community
    participation", never a price path.

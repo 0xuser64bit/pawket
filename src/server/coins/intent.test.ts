@@ -185,7 +185,22 @@ describe("coin spend intent against installed SDK transactions", () => {
     const position = await damm.claimPositionFee({ owner, pool, position: derivePositionAddress(nft), positionNftAccount: derivePositionNftAccount(nft), ...dammTokens });
     const positionIntent: CoinIntent = { ...base, kind: "claim", from: "pool" };
     await expect(validate(position, positionIntent)).resolves.toBeUndefined();
-    await expect(validate(new Transaction().add(...position.instructions, ...position.instructions), positionIntent)).resolves.toBeUndefined();
+    const claims = async (count: number) => {
+      const built = await Promise.all(
+        Array.from({ length: count }, () => {
+          const key = Keypair.generate().publicKey;
+          return damm.claimPositionFee({ owner, pool, position: derivePositionAddress(key), positionNftAccount: derivePositionNftAccount(key), ...dammTokens });
+        }),
+      );
+      const isAta = (ix: TransactionInstruction) => ix.programId.toBase58() === "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+      const isClose = (ix: TransactionInstruction) => ix.programId.toBase58() === token.toBase58() && ix.data.length === 1 && ix.data[0] === 9;
+      const setup = built[0].instructions.filter(isAta);
+      const positions = built.flatMap((transaction) => transaction.instructions.filter((ix) => !isAta(ix) && !isClose(ix)));
+      const unwrap = built.flatMap((transaction) => transaction.instructions.filter(isClose)).at(-1);
+      return new Transaction().add(...setup, ...positions, ...(unwrap ? [unwrap] : []));
+    };
+    await expect(validate(await claims(3), positionIntent)).resolves.toBeUndefined();
+    await expect(validate(await claims(4), positionIntent)).rejects.toThrow();
     await expect(validate(position, creatorIntent)).rejects.toThrow();
     const claim = creator.instructions.find((ix) => ix.programId.equals(dbc.creator.getProgram().programId))!;
     claim.keys[2].pubkey = Keypair.generate().publicKey;

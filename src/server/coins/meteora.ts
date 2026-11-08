@@ -6,11 +6,11 @@ import {
   Keypair,
   PACKET_DATA_SIZE,
   PublicKey,
+  Transaction,
   TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
   type AddressLookupTableAccount,
-  type Transaction,
 } from "@solana/web3.js";
 import BN from "bn.js";
 import {
@@ -40,7 +40,7 @@ import { coinStage, type CoinStage } from "@/lib/coins/stage";
 import { DELISTED_SLUGS, isListed } from "@/lib/guilds/delisted";
 import { fetchWallet, type ChainGuild } from "@/lib/solana/accounts";
 import { AccountRole, type Address, type Instruction } from "@solana/kit";
-import { coinFundingLimit, validateCoinInstructions, type CoinIntent } from "@/lib/coins/intent";
+import { coinFundingLimit, MAX_POOL_CLAIMS, validateCoinInstructions, type CoinIntent } from "@/lib/coins/intent";
 import { deriveWalletPda } from "@/lib/solana/pda";
 import { getWalletSpendInstruction } from "@/lib/solana/instructions";
 import { PAWKET_ACCOUNTS, WALLET_LIMITS } from "@/lib/solana/program";
@@ -50,6 +50,8 @@ import { sponsorRpc } from "@/server/sponsor";
 import { createCachedRead, withinDeadline } from "./reads";
 
 const WRAPPED_SOL = new PublicKey("So11111111111111111111111111111111111111112");
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 const DBC_POOL_AUTHORITY = deriveDbcPoolAuthority();
 const DAMM_POOL_AUTHORITY = derivePoolAuthority();
 const RPC_TIMEOUT_MS = 15_000;
@@ -643,15 +645,26 @@ export async function readPositionFees(guild: ChainGuild, wallet: string): Promi
   return { positions: positions.length, feeSol: feeSol.toString(), feeCoin: feeCoin.toString() };
 }
 
-export async function positionFeeTransaction(guild: ChainGuild, wallet: string): Promise<string> {
+export async function positionFeeTransaction(
+  guild: ChainGuild,
+  wallet: string,
+): Promise<{ transaction: string; claimed: number; remaining: number }> {
   const coin = await liveCoin(guild);
   if (!coin?.graduated) throw new CoinRefusal("This coin has not graduated: its fees are on the curve. Nothing was sent.", 409);
   const { address, pool } = coin.graduated;
   const owner = new PublicKey(wallet);
   const positions = await damm().getUserPositionByPool(address, owner);
   if (positions.length === 0) throw new CoinRefusal("This wallet holds no position in the pool. Nothing was sent.", 403);
-  const [first, ...rest] = await Promise.all(
-    positions.map(({ position, positionNftAccount }) =>
+  const waiting = ({ positionState }: (typeof positions)[number]) => {
+    const fees = getUnClaimLpFee(pool, positionState);
+    return big(fees.feeTokenA) > 0n || big(fees.feeTokenB) > 0n;
+  };
+  // A wallet may hold more positions than one transaction may claim. Claim the
+  // ones that have something waiting first, then leave the rest for the next
+  // click; the order within each group stays the pool's own.
+  const selected = [...positions].sort((a, b) => Number(waiting(b)) - Number(waiting(a))).slice(0, MAX_POOL_CLAIMS);
+  const built = await Promise.all(
+    selected.map(({ position, positionNftAccount }) =>
       damm().claimPositionFee({
         owner,
         position,
@@ -666,6 +679,19 @@ export async function positionFeeTransaction(guild: ChainGuild, wallet: string):
       }),
     ),
   );
-  for (const other of rest) first.add(...other.instructions);
-  return forPlayer(first, owner, { kind: "claim", from: "pool", cluster: getPublicEnv().solanaCluster, mint: coin.state.mint, preset: coin.state.preset! });
+  // Each claim from the SDK creates both token accounts and unwraps SOL on its
+  // own. Sharing the two creates and the one unwrap keeps the batched
+  // transaction inside one legacy packet.
+  const setup = built[0].instructions.filter((ix) => ix.programId.equals(ASSOCIATED_TOKEN_PROGRAM_ID));
+  const claims = built.flatMap((transaction) =>
+    transaction.instructions.filter(
+      (ix) => !ix.programId.equals(ASSOCIATED_TOKEN_PROGRAM_ID) && !(ix.programId.equals(TOKEN_PROGRAM_ID) && ix.data?.length === 1 && ix.data[0] === 9),
+    ),
+  );
+  const unwrap = built.flatMap((transaction) =>
+    transaction.instructions.filter((ix) => ix.programId.equals(TOKEN_PROGRAM_ID) && ix.data?.length === 1 && ix.data[0] === 9),
+  ).at(-1);
+  const transaction = new Transaction().add(...setup, ...claims, ...(unwrap ? [unwrap] : []));
+  const wire = await forPlayer(transaction, owner, { kind: "claim", from: "pool", cluster: getPublicEnv().solanaCluster, mint: coin.state.mint, preset: coin.state.preset! });
+  return { transaction: wire, claimed: selected.length, remaining: positions.length - selected.length };
 }

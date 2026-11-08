@@ -7,7 +7,7 @@ import type { Address } from "@solana/kit";
 import { Banner, Button, ButtonLink, Card, Choice, Field, Paper, Receipt, Row, Stack, type ReceiptRow } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { getPublicEnv, type SolanaCluster } from "@/config/env";
-import { COIN_RENT_LIMITS, type CoinIntent } from "@/lib/coins/intent";
+import { COIN_RENT_LIMITS, MAX_POOL_CLAIMS, type CoinIntent } from "@/lib/coins/intent";
 import { COIN_RISKS } from "@/lib/coins/copy";
 import { COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, feeSplitBps, type PresetId } from "@/lib/coins/presets";
 import type { SealedQuote } from "@/lib/coins/quote";
@@ -596,7 +596,7 @@ function PoolFees({
           { k: `Earned in ${coin.symbol}`, v: formatUnits(feeCoin, COIN_TERMS.decimals, 2) },
           { k: "The liquidity itself", v: "Locked for good", tone: "ok" },
         ]}
-        note={`Account rent is capped at ${sol(COIN_RENT_LIMITS.claim, 3)}, plus the network fee. Unspent SOL returns to Pawket Wallet.`}
+        note={`${fees.data.positions > MAX_POOL_CLAIMS ? `Claims run ${MAX_POOL_CLAIMS} positions at a time. ` : ""}Account rent is capped at ${sol(COIN_RENT_LIMITS.claim, 3)}, plus the network fee. Unspent SOL returns to Pawket Wallet.`}
       />
       <div style={{ marginTop: "var(--space-3)" }}>
         <Button label="Claim it to this wallet" tone="paper" size="sm" disabled={!waiting || sender.busy} onClick={() => void claim()} />

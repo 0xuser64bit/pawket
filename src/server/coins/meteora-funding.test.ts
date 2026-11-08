@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { Connection, Keypair, PublicKey, VersionedTransaction } from "@solana/web3.js";
+import { CpAmm, derivePositionAddress, derivePositionNftAccount } from "@meteora-ag/cp-amm-sdk";
 import BN from "bn.js";
-import { deriveDbcPoolAddress, deriveDbcTokenVaultAddress, DYNAMIC_BONDING_CURVE_PROGRAM_ID, type DynamicBondingCurveClient, type PoolConfig, type VirtualPool } from "@meteora-ag/dynamic-bonding-curve-sdk";
+import { DAMM_V2_MIGRATION_FEE_ADDRESS, deriveDammV2PoolAddress, deriveDammV2TokenVaultAddress, deriveDbcPoolAddress, deriveDbcTokenVaultAddress, DYNAMIC_BONDING_CURVE_PROGRAM_ID, type DynamicBondingCurveClient, type PoolConfig, type VirtualPool } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { COIN_COMPUTE_LIMITS, COIN_PRIORITY_FEE_MICRO_LAMPORTS } from "@/lib/coins/compute";
 import { COIN_CONFIGS } from "@/lib/coins/presets";
@@ -45,6 +46,7 @@ const claim = (side: "buy" | "sell") => ({
 
 beforeEach(() => {
   walletLamports = 9_001_000_000n;
+  virtualPool.poolState.isMigrated = 0;
   vi.spyOn(Connection.prototype, "getMultipleAccountsInfo").mockImplementation(async (keys) => keys.map((_, i) => i === 0 ? { owner: DYNAMIC_BONDING_CURVE_PROGRAM_ID, data: Buffer.alloc(0), executable: false, lamports: 1, rentEpoch: 0 } : null));
   vi.spyOn(Connection.prototype, "getAccountInfo").mockResolvedValue(null);
   vi.spyOn(Connection.prototype, "getMinimumBalanceForRentExemption").mockResolvedValue(1_000_000);
@@ -77,6 +79,54 @@ describe("server coin funding", () => {
     const price = budget.find((ix) => ix.data[0] === 3);
     expect(Buffer.from(limit!.data).readUInt32LE(1)).toBe(COIN_COMPUTE_LIMITS.trade);
     expect(Buffer.from(price!.data).readBigUInt64LE(1)).toBe(COIN_PRIORITY_FEE_MICRO_LAMPORTS);
+  });
+
+  it("claims at most three pool positions at a time and says how many are left", async () => {
+    virtualPool.poolState.isMigrated = 1;
+    const dammAddress = deriveDammV2PoolAddress(DAMM_V2_MIGRATION_FEE_ADDRESS[2], mint, sol);
+    const dammPool = {
+      tokenAMint: mint,
+      tokenBMint: sol,
+      tokenAFlag: 0,
+      tokenBFlag: 0,
+      tokenAVault: deriveDammV2TokenVaultAddress(dammAddress, mint),
+      tokenBVault: deriveDammV2TokenVaultAddress(dammAddress, sol),
+      sqrtPrice: new BN("18446744073709551616"),
+      feeAPerLiquidity: Buffer.alloc(32),
+      feeBPerLiquidity: Buffer.alloc(32),
+      metrics: { totalLpBFee: new BN(0), totalProtocolBFee: new BN(0) },
+    };
+    vi.spyOn(CpAmm.prototype, "fetchPoolState").mockResolvedValue(dammPool as never);
+    const positions = Array.from({ length: 5 }, () => {
+      const nft = Keypair.generate().publicKey;
+      return {
+        position: derivePositionAddress(nft),
+        positionNftAccount: derivePositionNftAccount(nft),
+        positionState: {
+          pool: dammAddress,
+          unlockedLiquidity: new BN(0),
+          vestedLiquidity: new BN(0),
+          permanentLockedLiquidity: new BN(0),
+          feeAPerTokenCheckpoint: Buffer.alloc(32),
+          feeBPerTokenCheckpoint: Buffer.alloc(32),
+          feeAPending: new BN(0),
+          feeBPending: new BN(0),
+          rewardInfos: [],
+        },
+      };
+    });
+    vi.spyOn(CpAmm.prototype, "getUserPositionByPool").mockResolvedValue(positions as never);
+
+    const { positionFeeTransaction } = await import("./meteora");
+    const claim = await positionFeeTransaction(guild, owner.toBase58());
+    expect(claim).toMatchObject({ claimed: 3, remaining: 2 });
+
+    const transaction = VersionedTransaction.deserialize(Buffer.from(claim.transaction, "base64"));
+    const keys = transaction.message.staticAccountKeys.map((key) => key.toBase58());
+    const claimInstructions = transaction.message.compiledInstructions.filter(
+      (ix) => keys[ix.programIdIndex] === "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+    );
+    expect(claimInstructions).toHaveLength(3);
   });
 
   it.each([

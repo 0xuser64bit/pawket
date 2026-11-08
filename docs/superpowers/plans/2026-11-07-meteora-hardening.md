@@ -220,19 +220,23 @@ client refuses, with no explanation.
 
 **Design.**
 
-- Export `MAX_POOL_CLAIMS = 4` from `intent.ts`; the validator and server use it.
-- `positionFeeTransaction` selects at most four positions (prefer positions
-  with unclaimed fees), returns `{ transaction, claimed, remaining }`, and the
-  route includes the remaining count in its message.
-- The desk says claims run four positions at a time and offers the button again
+- Export `MAX_POOL_CLAIMS = 3` from `intent.ts`; the validator and server use it.
+  Four claim instructions, even after sharing the token-account setup and the
+  single SOL unwrap, exceed the 1,232-byte legacy packet once the wallet bracket
+  and compute budget are included.
+- `positionFeeTransaction` selects at most three positions (prefer positions
+  with unclaimed fees), shares the two ATA creates and the one unwrap across
+  them, returns `{ transaction, claimed, remaining }`, and the route includes
+  the remaining count in its message.
+- The desk says claims run three positions at a time and offers the button again
   while `remaining > 0`; after a confirmed claim it refreshes position fees.
 - `readPositionFees` continues to report all positions and totals.
 
 **Tests.**
 
-- A five-position wallet builds exactly four claim instructions and reports
-  `remaining: 1`.
-- The intent still refuses five claims in one transaction.
+- A five-position wallet builds exactly three claim instructions and reports
+  `remaining: 2`.
+- The intent refuses four claims in one transaction and accepts three.
 - The desk shows the batching note and does not disable a legitimate second
   claim.
 

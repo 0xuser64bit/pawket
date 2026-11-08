@@ -6,6 +6,7 @@ import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv, type SolanaCluster } from "@/config/env";
 import { COIN_DOES, COIN_NEVER, COIN_RISKS, DEVNET_COIN_NOTE } from "@/lib/coins/copy";
 import { COIN_PRESETS, COIN_TERMS, coinName, feeSplitBps, findPreset, type CoinCluster, type PresetId } from "@/lib/coins/presets";
+import { graduatedFeeLine } from "@/lib/coins/fees";
 import { graduationSegments } from "@/lib/coins/stage";
 import { isValidSlug } from "@/lib/guilds/guild";
 import type { ChainGuild } from "@/lib/solana/accounts";
@@ -176,7 +177,7 @@ export default async function CoinPage({ params }: Props) {
                 { k: "· to the founder", v: `${split.founder / 100}%` },
                 { k: "· to Pawket", v: `${split.pawket / 100}%` },
                 { k: "· to Meteora", v: `${split.meteora / 100}%` },
-                { k: "After graduation", v: `DAMM v2, ${COIN_TERMS.graduatedFeeBps / 100}% fee` },
+                { k: "After graduation", v: `DAMM v2, ${graduatedFeeLine()}` },
                 { k: "Its liquidity", v: "Locked for good", tone: "ok" },
               ]}
               note="Nobody can mint more, and nobody holds a coin the curve did not sell them. The liquidity is locked half in the founder's position and half in Pawket's; both can only claim its fees. The same for every coin on a preset, fixed on chain before the coin existed."

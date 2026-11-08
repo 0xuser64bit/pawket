@@ -36,6 +36,7 @@ export const COIN_TERMS = {
   meteoraSharePercent: 20,
   founderSharePercent: 50,
   graduatedFeeBps: 100,
+  graduatedMaxFeeBps: 120,
   lockedLiquidityPercent: { founder: 50, pawket: 50 },
   launchFeeLamports: 10_000_000n,
   minMembers: 3,

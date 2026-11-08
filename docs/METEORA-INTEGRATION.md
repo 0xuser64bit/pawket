@@ -97,7 +97,7 @@ transaction preparation and position fees never wait for that optional scan.
 | Allocations / vesting | none | none |
 | Trading fee | 1% (0.2% Meteora, 0.4% founder, 0.4% Pawket) | same |
 | Launch fee | 0.01 SOL to Pawket (a tenth to Meteora) | same |
-| Graduated pool | DAMM v2, 1% fee, 100% of liquidity permanently locked (half founder, half Pawket) | same |
+| Graduated pool | DAMM v2, 1% base fee, up to 1.2% with Meteora's dynamic fee; 100% of liquidity permanently locked (half founder, half Pawket) | same |
 
 Devnet presets are configured for tests using faucet SOL. The mainnet numbers
 in the model are provisional; config addresses, thresholds and keeper behavior

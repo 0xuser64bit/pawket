@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { AddressLookupTableAccount, Connection, Keypair, PublicKey, SystemProgram, type AccountInfo } from "@solana/web3.js";
 import { DAMM_V2_MIGRATION_FEE_ADDRESS, DAMM_V2_PROGRAM_ID, deriveDammV2PoolAddress, deriveDbcPoolAddress, DYNAMIC_BONDING_CURVE_PROGRAM_ID } from "@meteora-ag/dynamic-bonding-curve-sdk";
+import { CpAmm } from "@meteora-ag/cp-amm-sdk";
 import BN from "bn.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChainGuild } from "@/lib/solana/accounts";
@@ -255,6 +256,21 @@ describe("a guild's coin", () => {
     await expect(attempt()).rejects.toThrow("has left it");
     pets.read.mockRejectedValueOnce(new Error("Solana did not answer"));
     await expect(attempt()).rejects.toThrow("Solana did not answer. Nothing was sent");
+  });
+
+  it("adds the graduated pool's lifetime quote fees to the coin's total", async () => {
+    creator = founder;
+    migrated = 1;
+    const wrappedSol = new PublicKey("So11111111111111111111111111111111111111112");
+    const mint = Keypair.fromSeed(derivedSeed(`pawket guild coin ${guild.slug}`)!).publicKey;
+    vi.spyOn(CpAmm.prototype, "fetchPoolState").mockResolvedValue({
+      tokenAMint: mint,
+      tokenBMint: wrappedSol,
+      sqrtPrice: new BN(2).pow(new BN(64)),
+      metrics: { totalLpBFee: new BN(50), totalProtocolBFee: new BN(7) },
+    } as never);
+    const { readCoin } = await import("./meteora");
+    expect((await readCoin(guild))?.fees.total).toBe("57");
   });
 
   it("is not a curve someone else made at its address, and none is launched over it", async () => {

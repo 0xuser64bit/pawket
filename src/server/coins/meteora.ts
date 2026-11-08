@@ -32,6 +32,7 @@ import { CpAmm, derivePoolAuthority, getTokenProgram, getUnClaimLpFee } from "@m
 import { getPublicEnv } from "@/config/env";
 import { serverRpcUrl } from "@/config/server-env";
 import { COIN_PRIORITY_FEE_MICRO_LAMPORTS, coinComputeLimit, SET_COMPUTE_UNIT_LIMIT, SET_COMPUTE_UNIT_PRICE } from "@/lib/coins/compute";
+import { totalTradingFees } from "@/lib/coins/fees";
 import { isUsableCoinLookup } from "@/lib/coins/lookup";
 import { COIN_LOOKUP_TABLES, COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type CoinCluster, type PresetId } from "@/lib/coins/presets";
 import type { CoinQuote, QuoteClaims, TradeSide } from "@/lib/coins/quote";
@@ -243,7 +244,10 @@ async function liveCoin(guild: ChainGuild, signal?: AbortSignal): Promise<LiveCo
       fees: {
         founderUnclaimed: big(curveState.creatorQuoteFee).toString(),
         pawketUnclaimed: big(curveState.partnerQuoteFee).toString(),
-        total: big(curveState.metrics.totalTradingQuoteFee).toString(),
+        total: totalTradingFees(
+          big(curveState.metrics.totalTradingQuoteFee),
+          verified && graduated ? graduated.pool.metrics : null,
+        ).toString(),
       },
     },
   };

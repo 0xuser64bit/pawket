@@ -20,7 +20,9 @@ To change terms, start with `src/lib/coins/presets.ts`, then
 transaction, follow `coin-desk.tsx` → `app/api/coins/[slug]/` →
 `src/server/coins/meteora.ts` → the [shared send path](SOLANA.md#transaction-lifecycle).
 Use [Sources and operational tools](#sources-and-operational-tools) for config,
-lookup-table and treasury work; these scripts sign transactions, not dry runs.
+lookup-table, keeper and treasury work. The config, lookup-table and treasury
+scripts sign transactions when invoked; the graduation keeper only dry-runs
+unless `EXECUTE=1` is set.
 
 Guild discovery and Pulse read curve and graduated-pool accounts in batches
 of at most 100, preserving account order when resolving each guild's stage.
@@ -146,6 +148,35 @@ market-cap figures above.
   from the treasury's operational tool, never the server.
 - A paid RPC: the holder count is a token-program scan.
 
+## Graduation keeper
+
+A curve is graduated by Meteora's migration instruction, which anyone may
+send. On devnet the coin page offers a button. On mainnet Pawket runs
+`scripts/graduate-coins.mts` so a coin does not wait for a player to press it.
+
+- The script reads Pawket's offered configs, lists each config's pools, and
+  plans only unmigrated pools whose `quoteReserve` has reached the config's
+  `migrationQuoteThreshold`. It orders by pool address so two runs from the
+  same snapshot choose the same pools.
+- It dry-runs by default: no key is read, nothing is signed, and it prints one
+  JSON line per planned pool plus a run summary. `EXECUTE=1` signs.
+- `KEEPER_KEYPAIR` is a local file path (default `.keys/keeper.json`). The
+  keeper is its own hot wallet with SOL for the migration fee and rent. It is
+  never the sponsor, treasury, collection authority, derivation secret or
+  program upgrade authority.
+- `MAX_GRADUATIONS` defaults to 1 and is clamped to 10. A missing or malformed
+  value falls back to 1, so a typo cannot turn one run into an unbounded loop.
+- Before signing each pool it re-reads that pool and skips it if it has already
+  migrated or has fallen below the threshold. It sends a v0 transaction with
+  the frozen graduation lookup table, then confirms it.
+- `KEEPER_WEBHOOK_URL` receives the run summary as JSON; a failed graduation or
+  a failed webhook delivery exits non-zero. Point it at the operator's alerting
+  so a stuck pool is noticed, not just logged.
+- The keeper pays the fee and rent, but the migration assigns the two
+  permanently locked DAMM v2 positions to the coin's founder and Pawket's
+  treasury, not to the keeper. Paying for a graduation earns the payer no
+  position and no fee stream.
+
 ## Sources and operational tools
 
 ```text
@@ -159,6 +190,7 @@ app/api/coins/[slug]/*         quote, launch, trade, graduate, claim, metadata
 app/(game)/guilds/[slug]/coin  the coin's page; src/components/coins/coin-desk.tsx its controls
 scripts/coin-presets.mts       makes the preset configs on a cluster
 scripts/claim-coin-fees.mts    Pawket's partner fees, launch fees and locked-LP fees, into the treasury
+scripts/graduate-coins.mts     graduates ready curves; dry-run unless EXECUTE=1
 scripts/coin-lookup-table.mts  the frozen lookup table graduation needs on a cluster (COIN_LOOKUP_TABLES)
 src/server/coins/devnet.test.ts  a coin's whole life on devnet (pnpm e2e:coins)
 ```
@@ -172,7 +204,11 @@ the selected cluster's genesis; that is not mainnet release approval.
 | `coin-presets.mts [devnet\|mainnet-beta]` | `PAYER` file path, default `~/.config/solana/id.json` | Creates missing configs and prints a proposed `COIN_CONFIGS` mapping; it does not edit source. Existing addresses are skipped when any account exists there, so separately verify program ownership and config terms. |
 | `coin-lookup-table.mts [devnet\|mainnet-beta]` | `PAYER_KEYPAIR` file path, same default | Creates and freezes a new table on every run; requires cluster configs. Record and verify the printed address before an authorized `COIN_LOOKUP_TABLES` change. |
 | `claim-coin-fees.mts [devnet\|mainnet-beta]` | `TREASURY_KEYPAIR` file path, default `.keys/treasury.json` | Requires the fixed treasury signer; claims DBC partner/creation fees and that wallet's DAMM position fees. It is not an HTTP route or a service that replenishes the sponsor. |
+| `graduate-coins.mts [devnet\|mainnet-beta]` | `KEEPER_KEYPAIR` file path, default `.keys/keeper.json`; `EXECUTE=1`; `MAX_GRADUATIONS`; optional `KEEPER_WEBHOOK_URL` | Dry-runs unless `EXECUTE=1`. Graduates up to the limit of ready pools, re-reading each before signing. Needs SOL for fees and rent; it does not own the resulting locked positions. |
 
-All three default to devnet and accept a server-only `SOLANA_RPC_URL` override.
+All four default to devnet and accept a server-only `SOLANA_RPC_URL` override.
 Keep their key files local and untracked. Review the script before invoking it;
-the preset and lookup-table tools can create new rent-bearing accounts.
+the preset and lookup-table tools can create new rent-bearing accounts. The
+keeper's `KEEPER_KEYPAIR`, `EXECUTE`, `MAX_GRADUATIONS` and
+`KEEPER_WEBHOOK_URL` are operator inputs to that script, not application
+runtime variables; they are not read by `getServerEnv()`.

@@ -20,6 +20,7 @@ owns key configuration and rotation prerequisites.
 | Sponsor | Server-only devnet fee/rent payer; also the keepsake collection's authority and the derivation secret, unless `COLLECTION_AUTHORITY_KEYPAIR` and `DERIVATION_SECRET` are set |
 | Program upgrade authority | Separate deploy wallet; never the sponsor |
 | Treasury | Receives Market purchases and partner coin fees; its signing key is not on the server |
+| Coin graduation keeper | Operator-run hot wallet, separate from the sponsor, treasury and upgrade authority; pays only the migration fee and rent, and owns neither locked position |
 
 Never request, log or export a player's seed or private key. Device keys stay
 in IndexedDB and are generated non-extractable. A device has no money

@@ -91,6 +91,11 @@ provided; omission does not remove an existing remote value.
 Coin scripts use `PAYER`, `PAYER_KEYPAIR` or `TREASURY_KEYPAIR` as local file
 paths, not JSON arrays; see
 [METEORA-INTEGRATION.md](METEORA-INTEGRATION.md#sources-and-operational-tools).
+The graduation keeper reads `KEEPER_KEYPAIR` (a local file path),
+`EXECUTE=1`, `MAX_GRADUATIONS` and an optional `KEEPER_WEBHOOK_URL` from the
+operator's environment. They configure that script only; they are not
+application runtime variables and are not read by `getServerEnv()`. The keeper
+key must not be the sponsor, treasury or upgrade authority.
 `scripts/keepsake-collection.mts` reads `.keys/sponsor.json`, checks devnet
 genesis and creates a new collection; it neither updates the source collection
 constant nor migrates an existing collection's authority. No script here is

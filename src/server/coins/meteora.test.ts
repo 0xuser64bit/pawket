@@ -11,6 +11,8 @@ const sponsor = Keypair.generate();
 const quotes = vi.hoisted(() => ({ swap: vi.fn() }));
 const configs = vi.hoisted(() => ({ started: 0, gate: null as Promise<void> | null }));
 const migrations = vi.hoisted(() => ({ migrate: vi.fn() }));
+const pets = vi.hoisted(() => ({ read: vi.fn() }));
+vi.mock("@/server/solana", () => ({ readPet: pets.read }));
 vi.mock("@/config/server-env", async (actual) => ({
   ...(await actual<typeof import("@/config/server-env")>()),
   getServerEnv: () => ({ sponsorKeypair: JSON.stringify([...sponsor.secretKey]) }),
@@ -53,7 +55,16 @@ vi.mock("@meteora-ag/dynamic-bonding-curve-sdk", async (actual) => ({
 }));
 
 const founder = Keypair.generate().publicKey;
-const guild = { slug: "sunbeam-club", name: "Sunbeam Club", founder: founder.toBase58() } as unknown as ChainGuild;
+const foundingPet = Keypair.generate().publicKey.toBase58();
+const guildAddress = Keypair.generate().publicKey.toBase58();
+const guild = {
+  slug: "sunbeam-club",
+  name: "Sunbeam Club",
+  founder: founder.toBase58(),
+  address: guildAddress,
+  founderPet: foundingPet,
+  memberCount: 3,
+} as unknown as ChainGuild;
 
 afterEach(() => {
   vi.useRealTimers();
@@ -66,6 +77,7 @@ describe("a guild's coin", () => {
     migrated = 0;
     raised = 1_000;
     migrations.migrate.mockReset();
+    pets.read.mockReset().mockResolvedValue({ member: { guild: guildAddress } });
     quotes.swap.mockReset().mockReturnValue({
       includedFeeInputAmount: new BN(100),
       outputAmount: new BN(90),
@@ -221,6 +233,28 @@ describe("a guild's coin", () => {
     const { readCoin, readCoinStages } = await import("./meteora");
     expect(await readCoin(guild)).toMatchObject({ stage: "dbc", creator: founder.toBase58() });
     expect((await readCoinStages([guild])).get(guild.slug)).toBe("dbc");
+  });
+
+  it("authorizes a launch inside the action, not only at the route", async () => {
+    const { assertLaunchable, launchTransaction } = await import("./meteora");
+    await expect(assertLaunchable(guild, founder.toBase58())).resolves.toBeUndefined();
+
+    const attempt = (overrides: Partial<typeof guild> = {}, founderAddress = founder.toBase58()) =>
+      launchTransaction({
+        guild: { ...guild, ...overrides } as ChainGuild,
+        founder: founderAddress,
+        preset: "gentle",
+        firstBuyLamports: 0n,
+        metadataUri: "https://pawket.world/x",
+      });
+
+    await expect(attempt({}, Keypair.generate().publicKey.toBase58())).rejects.toThrow("Only the wallet that founded");
+    await expect(attempt({ name: "Devnet Check Coin" })).rejects.toThrow("does not offer coins");
+    await expect(attempt({ memberCount: 2 })).rejects.toThrow("once 3 pets");
+    pets.read.mockResolvedValueOnce({ member: { guild: Keypair.generate().publicKey.toBase58() } });
+    await expect(attempt()).rejects.toThrow("has left it");
+    pets.read.mockRejectedValueOnce(new Error("Solana did not answer"));
+    await expect(attempt()).rejects.toThrow("Solana did not answer. Nothing was sent");
   });
 
   it("is not a curve someone else made at its address, and none is launched over it", async () => {

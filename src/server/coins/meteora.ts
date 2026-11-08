@@ -34,7 +34,7 @@ import { isUsableCoinLookup } from "@/lib/coins/lookup";
 import { COIN_LOOKUP_TABLES, COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type CoinCluster, type PresetId } from "@/lib/coins/presets";
 import type { CoinQuote, QuoteClaims, TradeSide } from "@/lib/coins/quote";
 import { coinStage, type CoinStage } from "@/lib/coins/stage";
-import { DELISTED_SLUGS } from "@/lib/guilds/delisted";
+import { DELISTED_SLUGS, isListed } from "@/lib/guilds/delisted";
 import { fetchWallet, type ChainGuild } from "@/lib/solana/accounts";
 import { AccountRole, type Address, type Instruction } from "@solana/kit";
 import { coinFundingLimit, validateCoinInstructions, type CoinIntent } from "@/lib/coins/intent";
@@ -42,6 +42,7 @@ import { deriveWalletPda } from "@/lib/solana/pda";
 import { getWalletSpendInstruction } from "@/lib/solana/instructions";
 import { PAWKET_ACCOUNTS, WALLET_LIMITS } from "@/lib/solana/program";
 import { derivedSeed } from "@/server/derive";
+import { readPet } from "@/server/solana";
 import { sponsorRpc } from "@/server/sponsor";
 import { createCachedRead, withinDeadline } from "./reads";
 
@@ -438,6 +439,34 @@ async function forPlayer(transaction: Transaction, player: PublicKey, intent: Co
   return Buffer.from(wire).toString("base64");
 }
 
+/**
+ * A launch is authorized only while the founder still founds a listed guild
+ * with enough members, and the founding pet is still in it. The route checks
+ * these early for its own messages; the exported action must not rely on it.
+ */
+export async function assertLaunchable(guild: ChainGuild, founder: string): Promise<void> {
+  if (founder !== guild.founder) {
+    throw new CoinRefusal(`Only the wallet that founded ${guild.name} launches its coin. Nothing was sent.`, 403);
+  }
+  if (!isListed(guild)) {
+    throw new CoinRefusal(`Pawket does not offer coins for ${guild.name}. Nothing was sent.`, 403);
+  }
+  if (guild.memberCount < COIN_TERMS.minMembers) {
+    throw new CoinRefusal(
+      `A guild launches a coin once ${COIN_TERMS.minMembers} pets are in it; ${guild.name} has ${guild.memberCount}. Nothing was sent.`,
+      409,
+    );
+  }
+  const founding = await readPet(guild.founderPet).catch(() => undefined);
+  if (founding === undefined) throw new CoinRefusal("Solana did not answer. Nothing was sent — try again.", 503);
+  if (founding?.member?.guild !== guild.address) {
+    throw new CoinRefusal(
+      `The pet that founded ${guild.name} has left it, and a coin is launched only while it is in. Nothing was sent.`,
+      403,
+    );
+  }
+}
+
 export async function launchTransaction({
   guild,
   founder,
@@ -451,6 +480,7 @@ export async function launchTransaction({
   firstBuyLamports: bigint;
   metadataUri: string;
 }): Promise<string> {
+  await assertLaunchable(guild, founder);
   const coin = await liveCoin(guild);
   if (!coin) throw new CoinRefusal("Guild coins are off on this deployment.", 503);
   if (coin.state.stage !== "none") throw new CoinRefusal(`${guild.name} already has its coin. Nothing was sent.`, 409);

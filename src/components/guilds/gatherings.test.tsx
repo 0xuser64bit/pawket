@@ -150,7 +150,7 @@ it("shows the two newest closed polls from the newest-first chain read", () => {
 it("uses the same local calendar day in the date tile and the event time after mount", () => {
   const DateTimeFormat = Intl.DateTimeFormat;
   vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function (locales, options) {
-    return new DateTimeFormat(locales, { timeZone: "America/Los_Angeles", ...options });
+    return new DateTimeFormat(locales ?? "en-US", { timeZone: "America/Los_Angeles", ...options });
   });
   const startsAt = Date.UTC(2027, 0, 1, 1) / 1000;
   const { container } = render(<GuildGatherings guild={guild} events={[{ ...event, startsAt, endsAt: startsAt + 3600 }]} polls={[]} />);

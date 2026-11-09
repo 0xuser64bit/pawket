@@ -1,15 +1,16 @@
 import "server-only";
 
 import {
+  ComputeBudgetProgram,
   Connection,
   Keypair,
   PACKET_DATA_SIZE,
   PublicKey,
+  Transaction,
   TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
   type AddressLookupTableAccount,
-  type Transaction,
 } from "@solana/web3.js";
 import BN from "bn.js";
 import {
@@ -30,21 +31,39 @@ import {
 import { CpAmm, derivePoolAuthority, getTokenProgram, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
 import { getPublicEnv } from "@/config/env";
 import { serverRpcUrl } from "@/config/server-env";
+import { COIN_PRIORITY_FEE_MICRO_LAMPORTS, coinComputeLimit, SET_COMPUTE_UNIT_LIMIT, SET_COMPUTE_UNIT_PRICE } from "@/lib/coins/compute";
+import { totalTradingFees } from "@/lib/coins/fees";
+import { isUsableCoinLookup } from "@/lib/coins/lookup";
 import { COIN_LOOKUP_TABLES, COIN_PRESETS, COIN_TERMS, coinName, coinSymbol, presetConfig, presetForConfig, type CoinCluster, type PresetId } from "@/lib/coins/presets";
+import type { CoinQuote, QuoteClaims, TradeSide } from "@/lib/coins/quote";
 import { coinStage, type CoinStage } from "@/lib/coins/stage";
-import { DELISTED_SLUGS } from "@/lib/guilds/delisted";
+import { DELISTED_SLUGS, isListed } from "@/lib/guilds/delisted";
 import { fetchWallet, type ChainGuild } from "@/lib/solana/accounts";
 import { AccountRole, type Address, type Instruction } from "@solana/kit";
-import { coinFundingLimit, validateCoinInstructions, type CoinIntent } from "@/lib/coins/intent";
+import { coinFundingLimit, MAX_POOL_CLAIMS, validateCoinInstructions, type CoinIntent } from "@/lib/coins/intent";
 import { deriveWalletPda } from "@/lib/solana/pda";
 import { getWalletSpendInstruction } from "@/lib/solana/instructions";
 import { PAWKET_ACCOUNTS, WALLET_LIMITS } from "@/lib/solana/program";
 import { derivedSeed } from "@/server/derive";
+import { readPet } from "@/server/solana";
 import { sponsorRpc } from "@/server/sponsor";
+import { createCachedRead, withinDeadline } from "./reads";
 
 const WRAPPED_SOL = new PublicKey("So11111111111111111111111111111111111111112");
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 const DBC_POOL_AUTHORITY = deriveDbcPoolAuthority();
 const DAMM_POOL_AUTHORITY = derivePoolAuthority();
+const RPC_TIMEOUT_MS = 15_000;
+
+/** Every server RPC read has a deadline, even when its caller forgot one. */
+function boundedFetch(signal?: AbortSignal) {
+  return (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+    signal?.throwIfAborted();
+    const timeout = AbortSignal.timeout(RPC_TIMEOUT_MS);
+    return fetch(input, { ...init, signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+  };
+}
 
 let connection: Connection | null = null;
 const quoteConnections = new WeakMap<AbortSignal, Connection>();
@@ -59,16 +78,13 @@ function rpc(signal?: AbortSignal): Connection {
         // web3.js's internal 429 sleep is not abortable. Fail this quote so
         // the player can retry, and keep all reads inside its one budget.
         disableRetryOnRateLimit: true,
-        fetch: (url, init) => {
-          signal.throwIfAborted();
-          return fetch(url, { ...init, signal });
-        },
+        fetch: boundedFetch(signal),
       });
       quoteConnections.set(signal, scoped);
     }
     return scoped;
   }
-  connection ??= new Connection(serverRpcUrl(), "confirmed");
+  connection ??= new Connection(serverRpcUrl(), { commitment: "confirmed", fetch: boundedFetch() });
   return connection;
 }
 const dbc = (signal?: AbortSignal) => new DynamicBondingCurveClient(rpc(signal), "confirmed");
@@ -104,31 +120,28 @@ interface LiveCoin {
   graduated: { address: PublicKey; pool: Awaited<ReturnType<CpAmm["fetchPoolState"]>> } | null;
 }
 
-const configs = new Map<string, Promise<PoolConfig | null>>();
+const CONFIG_TTL_MS = 5 * 60_000;
+const CONFIG_DEADLINE_MS = 15_000;
+const cachedConfig = createCachedRead<PoolConfig | null>({ ttlMs: CONFIG_TTL_MS, maxEntries: 16 });
 function readConfig(address: PublicKey, signal?: AbortSignal): Promise<PoolConfig | null> {
+  const load = () => withinDeadline((deadline) => dbc(deadline).state.getPoolConfig(address), CONFIG_DEADLINE_MS, signal);
   // A quote must not inherit another request's pending, unbounded read, or
   // cancel a shared read that another caller still needs.
-  if (signal) return dbc(signal).state.getPoolConfig(address);
-  const key = address.toBase58();
-  let config = configs.get(key);
-  if (!config) {
-    config = dbc().state.getPoolConfig(address);
-    configs.set(key, config);
-    config.catch(() => configs.delete(key));
-  }
-  return config;
+  return signal ? load() : cachedConfig(address.toBase58(), load);
 }
 
-const holderReads = new Map<string, { at: number; value: Promise<Map<string, bigint> | null> }>();
+const HOLDER_TTL_MS = 60_000;
+const HOLDER_DEADLINE_MS = 5_000;
+export const MAX_HOLDER_ACCOUNTS = 5_000;
+const cachedHolders = createCachedRead<Map<string, bigint>>({ ttlMs: HOLDER_TTL_MS, maxEntries: 32 });
 function holderWallets(mint: PublicKey): Promise<Map<string, bigint> | null> {
   const key = mint.toBase58();
-  const cached = holderReads.get(key);
-  if (cached && Date.now() - cached.at < 15_000) return cached.value;
-  const value = (async () => {
-    const accounts = await rpc().getProgramAccounts(new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"), {
+  return cachedHolders(key, () => withinDeadline(async (signal) => {
+    const accounts = await rpc(signal).getProgramAccounts(new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"), {
       filters: [{ dataSize: 165 }, { memcmp: { offset: 0, bytes: key } }],
       dataSlice: { offset: 32, length: 40 },
     });
+    if (accounts.length > MAX_HOLDER_ACCOUNTS) throw new Error("Too many token accounts to count just now.");
     const byOwner = new Map<string, bigint>();
     for (const { account } of accounts) {
       const owner = new PublicKey(account.data.subarray(0, 32));
@@ -137,9 +150,7 @@ function holderWallets(mint: PublicKey): Promise<Map<string, bigint> | null> {
       if (amount > 0n) byOwner.set(owner.toBase58(), (byOwner.get(owner.toBase58()) ?? 0n) + amount);
     }
     return byOwner;
-  })().catch(() => null);
-  holderReads.set(key, { at: Date.now(), value });
-  return value;
+  }, HOLDER_DEADLINE_MS)).catch(() => null);
 }
 
 async function readHolders(mint: PublicKey): Promise<CoinState["holders"]> {
@@ -235,7 +246,10 @@ async function liveCoin(guild: ChainGuild, signal?: AbortSignal): Promise<LiveCo
       fees: {
         founderUnclaimed: big(curveState.creatorQuoteFee).toString(),
         pawketUnclaimed: big(curveState.partnerQuoteFee).toString(),
-        total: big(curveState.metrics.totalTradingQuoteFee).toString(),
+        total: totalTradingFees(
+          big(curveState.metrics.totalTradingQuoteFee),
+          verified && graduated ? graduated.pool.metrics : null,
+        ).toString(),
       },
     },
   };
@@ -262,22 +276,23 @@ export async function readCoinStages(guilds: ChainGuild[]): Promise<Map<string, 
   });
   const accounts = (await Promise.all(chunks(candidates, 100).map((chunk) => rpc().getMultipleAccountsInfo(chunk.map((c) => c.pool))))).flat();
   const coder = dbc().state.getProgram().coder;
+  const settings = new Map(await Promise.all(offered.map(async (config) => [config.toBase58(), await readConfig(config)] as const)));
   const launched: Array<{ slug: string; listed: boolean; raised: bigint; threshold: bigint; migrated: boolean; damm: PublicKey | null }> = [];
   for (const [i, account] of accounts.entries()) {
     if (!account?.owner.equals(DYNAMIC_BONDING_CURVE_PROGRAM_ID)) continue;
     const { guild, mint, config } = candidates[i];
     const pool = coder.accounts.decode<VirtualPool>("virtualPool", account.data).poolState;
     if (!pool.creator.equals(new PublicKey(guild.founder))) continue;
-    const settings = await readConfig(config);
-    if (!settings) continue;
+    const configState = settings.get(config.toBase58());
+    if (!configState) continue;
     const migrated = pool.isMigrated === 1;
     launched.push({
       slug: guild.slug,
       listed: !DELISTED_SLUGS.has(guild.slug),
       raised: big(pool.quoteReserve),
-      threshold: big(settings.migrationQuoteThreshold),
+      threshold: big(configState.migrationQuoteThreshold),
       migrated,
-      damm: migrated ? deriveDammV2PoolAddress(DAMM_V2_MIGRATION_FEE_ADDRESS[settings.migrationFeeOption], mint, WRAPPED_SOL) : null,
+      damm: migrated ? deriveDammV2PoolAddress(DAMM_V2_MIGRATION_FEE_ADDRESS[configState.migrationFeeOption], mint, WRAPPED_SOL) : null,
     });
   }
   const graduated = launched.filter((coin) => coin.damm);
@@ -302,20 +317,7 @@ function chunks<T>(items: T[], size: number): T[][] {
   return out;
 }
 
-export type TradeSide = "buy" | "sell";
-
-export interface CoinQuote {
-  side: TradeSide;
-  route: "curve" | "pool";
-  amountIn: string;
-  amountUsed: string;
-  amountOut: string;
-  minimumOut: string;
-  fee: string;
-  priceImpact: number;
-  slippageBps: number;
-  quotedAt: number;
-}
+export type { CoinQuote, SealedQuote, TradeSide } from "@/lib/coins/quote";
 
 export class CoinRefusal extends Error {
   constructor(
@@ -344,6 +346,7 @@ async function tradable(guild: ChainGuild, signal?: AbortSignal): Promise<LiveCo
 export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: bigint, slippageBps: number, signal?: AbortSignal): Promise<CoinQuote> {
   if (amountIn <= 0n) throw new CoinRefusal("Choose an amount above nothing.", 400);
   const coin = await tradable(guild, signal);
+  if (!coin.state.preset) throw new CoinRefusal("This coin's preset is not offered here. Nothing was sent.", 409);
   const quotedAt = Date.now();
   if (coin.state.stage === "damm" && coin.graduated) {
     const slot = await rpc(signal).getSlot("confirmed");
@@ -359,6 +362,9 @@ export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: b
       tokenBDecimal: 9,
     });
     return {
+      slug: guild.slug,
+      mint: coin.state.mint,
+      preset: coin.state.preset,
       side,
       route: "pool",
       amountIn: amountIn.toString(),
@@ -386,6 +392,9 @@ export async function quoteTrade(guild: ChainGuild, side: TradeSide, amountIn: b
   const before = Number(getPriceFromSqrtPrice(pool.poolState.sqrtPrice, COIN_TERMS.decimals, 9).toString());
   const after = Number(getPriceFromSqrtPrice(quote.nextSqrtPrice, COIN_TERMS.decimals, 9).toString());
   return {
+    slug: guild.slug,
+    mint: coin.state.mint,
+    preset: coin.state.preset,
     side,
     route: "curve",
     amountIn: amountIn.toString(),
@@ -417,8 +426,15 @@ async function forPlayer(transaction: Transaction, player: PublicKey, intent: Co
     keys: (ix.accounts ?? []).map((meta) => ({ pubkey: new PublicKey(meta.address), isSigner: meta.role >= 2, isWritable: (meta.role & 1) === 1 })),
   });
   const bracket = (amount?: bigint) => legacy(getWalletSpendInstruction({ owner, wallet: address, device: deviceAddress, keep: BigInt(keep), amount }));
+  const present = (tag: number) =>
+    transaction.instructions.some((ix) => ix.programId.equals(ComputeBudgetProgram.programId) && ix.data?.[0] === tag);
+  const budget = [
+    ...(present(SET_COMPUTE_UNIT_LIMIT) ? [] : [ComputeBudgetProgram.setComputeUnitLimit({ units: coinComputeLimit(intent.kind) })]),
+    ...(present(SET_COMPUTE_UNIT_PRICE) ? [] : [ComputeBudgetProgram.setComputeUnitPrice({ microLamports: COIN_PRIORITY_FEE_MICRO_LAMPORTS })]),
+  ];
+  const instructions = [...budget, ...transaction.instructions];
   const compile = (amount: bigint) => {
-    const message = new TransactionMessage({ payerKey: device, recentBlockhash: blockhash.blockhash, instructions: [bracket(amount), ...transaction.instructions, bracket()] });
+    const message = new TransactionMessage({ payerKey: device, recentBlockhash: blockhash.blockhash, instructions: [bracket(amount), ...instructions, bracket()] });
     return lookup ? message.compileToV0Message([lookup]) : message.compileToLegacyMessage();
   };
   const fee = (await rpc().getFeeForMessage(compile(0n), "confirmed")).value;
@@ -427,7 +443,7 @@ async function forPlayer(transaction: Transaction, player: PublicKey, intent: Co
   if (balance <= refill) throw new CoinRefusal("Add SOL to your Pawket Wallet to cover this transaction.", 409);
   const maximum = coinFundingLimit(intent);
   const funding = balance - refill < maximum ? balance - refill : maximum;
-  await validateCoinInstructions({ owner, intent, funding, instructions: transaction.instructions.map((ix) => ({
+  await validateCoinInstructions({ owner, intent, funding, instructions: instructions.map((ix) => ({
     programAddress: ix.programId.toBase58() as Address, data: ix.data,
     accounts: ix.keys.map((meta) => ({ address: meta.pubkey.toBase58() as Address, role: (Number(meta.isWritable) + Number(meta.isSigner) * 2) as AccountRole })),
   })) });
@@ -436,6 +452,34 @@ async function forPlayer(transaction: Transaction, player: PublicKey, intent: Co
   const wire = signed.serialize();
   if (wire.length > PACKET_DATA_SIZE) throw new CoinRefusal("That transaction is too large for Solana. Nothing was signed.", 500);
   return Buffer.from(wire).toString("base64");
+}
+
+/**
+ * A launch is authorized only while the founder still founds a listed guild
+ * with enough members, and the founding pet is still in it. The route checks
+ * these early for its own messages; the exported action must not rely on it.
+ */
+export async function assertLaunchable(guild: ChainGuild, founder: string): Promise<void> {
+  if (founder !== guild.founder) {
+    throw new CoinRefusal(`Only the wallet that founded ${guild.name} launches its coin. Nothing was sent.`, 403);
+  }
+  if (!isListed(guild)) {
+    throw new CoinRefusal(`Pawket does not offer coins for ${guild.name}. Nothing was sent.`, 403);
+  }
+  if (guild.memberCount < COIN_TERMS.minMembers) {
+    throw new CoinRefusal(
+      `A guild launches a coin once ${COIN_TERMS.minMembers} pets are in it; ${guild.name} has ${guild.memberCount}. Nothing was sent.`,
+      409,
+    );
+  }
+  const founding = await readPet(guild.founderPet).catch(() => undefined);
+  if (founding === undefined) throw new CoinRefusal("Solana did not answer. Nothing was sent — try again.", 503);
+  if (founding?.member?.guild !== guild.address) {
+    throw new CoinRefusal(
+      `The pet that founded ${guild.name} has left it, and a coin is launched only while it is in. Nothing was sent.`,
+      403,
+    );
+  }
 }
 
 export async function launchTransaction({
@@ -451,6 +495,7 @@ export async function launchTransaction({
   firstBuyLamports: bigint;
   metadataUri: string;
 }): Promise<string> {
+  await assertLaunchable(guild, founder);
   const coin = await liveCoin(guild);
   if (!coin) throw new CoinRefusal("Guild coins are off on this deployment.", 503);
   if (coin.state.stage !== "none") throw new CoinRefusal(`${guild.name} already has its coin. Nothing was sent.`, 409);
@@ -488,15 +533,31 @@ export async function tradeTransaction({
   side,
   amountIn,
   minimumOut,
+  quote,
 }: {
   guild: ChainGuild;
   owner: string;
   side: TradeSide;
   amountIn: bigint;
   minimumOut: bigint;
+  quote: QuoteClaims;
 }): Promise<string> {
   if (amountIn <= 0n || minimumOut <= 0n) throw new CoinRefusal("Choose an amount above nothing.", 400);
   const coin = await tradable(guild);
+  if (!coin.state.preset) throw new CoinRefusal("This coin's preset is not offered here. Nothing was sent.", 409);
+  const route = coin.state.stage === "damm" ? "pool" : "curve";
+  if (
+    quote.cluster !== getPublicEnv().solanaCluster ||
+    quote.slug !== guild.slug ||
+    quote.mint !== coin.state.mint ||
+    quote.preset !== coin.state.preset ||
+    quote.route !== route ||
+    quote.side !== side ||
+    quote.amountIn !== amountIn.toString() ||
+    quote.minimumOut !== minimumOut.toString()
+  ) {
+    throw new CoinRefusal("The coin or its market changed since that quote. Quote again. Nothing was sent.", 409);
+  }
   const player = new PublicKey(owner);
   if (coin.state.stage === "damm" && coin.graduated) {
     const { address, pool } = coin.graduated;
@@ -536,15 +597,18 @@ export async function graduateTransaction(guild: ChainGuild, payer: string): Pro
   if (!coin?.curve) throw new CoinRefusal("This guild has no coin.", 404);
   if (coin.curve.pool.poolState.isMigrated === 1) throw new CoinRefusal("The coin has graduated already. Nothing was sent.", 409);
   if (coin.state.stage !== "pending") throw new CoinRefusal("The curve has not raised its threshold yet. Nothing was sent.", 409);
+  const table = COIN_LOOKUP_TABLES[getPublicEnv().solanaCluster as CoinCluster];
+  if (!table) throw new CoinRefusal("Graduation is not set up on this network yet. Nothing was sent.", 503);
+  const lookup = (await rpc().getAddressLookupTable(new PublicKey(table))).value;
+  if (!lookup || !isUsableCoinLookup(lookup, table)) {
+    throw new CoinRefusal("Graduation's lookup table is not usable on this network. Nothing was sent.", 503);
+  }
   const dammConfig = DAMM_V2_MIGRATION_FEE_ADDRESS[coin.curve.config.migrationFeeOption];
   const { transaction, firstPositionNftKeypair, secondPositionNftKeypair } = await dbc().migration.migrateToDammV2({
     payer: new PublicKey(payer),
     pool: coin.curve.address,
     dammConfig,
   });
-  const table = COIN_LOOKUP_TABLES[getPublicEnv().solanaCluster as CoinCluster];
-  const lookup = table ? (await rpc().getAddressLookupTable(new PublicKey(table))).value : null;
-  if (!lookup) throw new CoinRefusal("Graduation is not set up on this network yet. Nothing was sent.", 503);
   return forPlayer(transaction, new PublicKey(payer), { kind: "graduate", cluster: getPublicEnv().solanaCluster, mint: coin.state.mint, preset: coin.state.preset! }, [firstPositionNftKeypair, secondPositionNftKeypair], lookup);
 }
 
@@ -581,15 +645,26 @@ export async function readPositionFees(guild: ChainGuild, wallet: string): Promi
   return { positions: positions.length, feeSol: feeSol.toString(), feeCoin: feeCoin.toString() };
 }
 
-export async function positionFeeTransaction(guild: ChainGuild, wallet: string): Promise<string> {
+export async function positionFeeTransaction(
+  guild: ChainGuild,
+  wallet: string,
+): Promise<{ transaction: string; claimed: number; remaining: number }> {
   const coin = await liveCoin(guild);
   if (!coin?.graduated) throw new CoinRefusal("This coin has not graduated: its fees are on the curve. Nothing was sent.", 409);
   const { address, pool } = coin.graduated;
   const owner = new PublicKey(wallet);
   const positions = await damm().getUserPositionByPool(address, owner);
   if (positions.length === 0) throw new CoinRefusal("This wallet holds no position in the pool. Nothing was sent.", 403);
-  const [first, ...rest] = await Promise.all(
-    positions.map(({ position, positionNftAccount }) =>
+  const waiting = ({ positionState }: (typeof positions)[number]) => {
+    const fees = getUnClaimLpFee(pool, positionState);
+    return big(fees.feeTokenA) > 0n || big(fees.feeTokenB) > 0n;
+  };
+  // A wallet may hold more positions than one transaction may claim. Claim the
+  // ones that have something waiting first, then leave the rest for the next
+  // click; the order within each group stays the pool's own.
+  const selected = [...positions].sort((a, b) => Number(waiting(b)) - Number(waiting(a))).slice(0, MAX_POOL_CLAIMS);
+  const built = await Promise.all(
+    selected.map(({ position, positionNftAccount }) =>
       damm().claimPositionFee({
         owner,
         position,
@@ -604,6 +679,19 @@ export async function positionFeeTransaction(guild: ChainGuild, wallet: string):
       }),
     ),
   );
-  for (const other of rest) first.add(...other.instructions);
-  return forPlayer(first, owner, { kind: "claim", from: "pool", cluster: getPublicEnv().solanaCluster, mint: coin.state.mint, preset: coin.state.preset! });
+  // Each claim from the SDK creates both token accounts and unwraps SOL on its
+  // own. Sharing the two creates and the one unwrap keeps the batched
+  // transaction inside one legacy packet.
+  const setup = built[0].instructions.filter((ix) => ix.programId.equals(ASSOCIATED_TOKEN_PROGRAM_ID));
+  const claims = built.flatMap((transaction) =>
+    transaction.instructions.filter(
+      (ix) => !ix.programId.equals(ASSOCIATED_TOKEN_PROGRAM_ID) && !(ix.programId.equals(TOKEN_PROGRAM_ID) && ix.data?.length === 1 && ix.data[0] === 9),
+    ),
+  );
+  const unwrap = built.flatMap((transaction) =>
+    transaction.instructions.filter((ix) => ix.programId.equals(TOKEN_PROGRAM_ID) && ix.data?.length === 1 && ix.data[0] === 9),
+  ).at(-1);
+  const transaction = new Transaction().add(...setup, ...claims, ...(unwrap ? [unwrap] : []));
+  const wire = await forPlayer(transaction, owner, { kind: "claim", from: "pool", cluster: getPublicEnv().solanaCluster, mint: coin.state.mint, preset: coin.state.preset! });
+  return { transaction: wire, claimed: selected.length, remaining: positions.length - selected.length };
 }

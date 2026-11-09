@@ -116,7 +116,6 @@ describe("broadcast uncertainty", () => {
     const wallet = (await deriveWalletPda(owner.address)).address;
     const bracket = (amount?: bigint) => getWalletSpendInstruction({ owner: owner.address, wallet, device: device.address, keep: 0n, amount });
     const elsewhere = address("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
-    const priority = { programAddress: address("ComputeBudget111111111111111111111111111111"), data: Uint8Array.of(3, 1, 0, 0, 0, 0, 0, 0, 0) };
     const limit = { programAddress: address("ComputeBudget111111111111111111111111111111"), data: Uint8Array.of(2, 0, 0x27, 9, 0) };
     const verifies = (program: string) => ({ programAddress: address(program), data: Uint8Array.of(40, 0) });
     const mints = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner()]);
@@ -133,7 +132,6 @@ describe("broadcast uncertainty", () => {
     )));
     for (const middle of [
       [getTransferSolInstruction({ source: createNoopSigner(device.address), destination: elsewhere, amount: 1_000_000n })],
-      [limit, priority],
       [verifies("Ed25519SigVerify111111111111111111111111111")],
       [verifies("KeccakSecp256k11111111111111111111111111111")],
       [verifies("Secp256r1SigVerify1111111111111111111111111")],

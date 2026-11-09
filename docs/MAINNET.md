@@ -21,6 +21,7 @@ trust and abuse limits.
 | Pawket Wallet | Linked device required for app actions; sponsored non-money actions may use an empty wallet, while purchases, coins and unsponsored actions need funds | Review all money paths, fee float, unlink/close, recovery and mainnet fee policy; no implicit owner-wallet fallback |
 | Keepsakes and coins | Keys derived from `DERIVATION_SECRET` (the sponsor's seed unless set); the sponsor signs as collection authority unless `COLLECTION_AUTHORITY_KEYPAIR` is set | A mainnet derivation secret and collection authority of their own, recorded and backed up before the first card or coin |
 | Coins | Devnet preset configs only | Legal/policy approval (Q6), approved mainnet parameters and recipients (Q3), verified config accounts and pool routing |
+| Coin graduation keeper | Devnet has a button and a dry-run script; no scheduled keeper | A dedicated keeper key, its SOL float and replenishment, a schedule, and alert ownership. The keeper must not be the sponsor, treasury or upgrade authority; it pays fees and rent but receives neither locked position |
 | Market | Prices fixed by the program | Approved real-SOL prices; source parity and treasury validation |
 | RPC and discovery | Direct scans with short shared caches | Measured capacity, provider and monitoring ownership (Q4) |
 | Persistent rent | Records are permanent by decision (`DECISIONS.md`) | A budget that treats that rent as spent for good, or players paying their own rent |
@@ -77,6 +78,10 @@ passing local parity tests does not prove a deployment matches them.
       confirm every supported operation before mainnet use.
 - [ ] Upgrade, treasury, collection and derivation authorities recorded and recoverable.
 - [ ] Fee/rent policy, shared limits, budgets and alert ownership approved.
+- [ ] Coin graduation keeper approved: a key separate from the sponsor,
+      treasury and upgrade authority, a funded float and replenishment, a
+      schedule, `KEEPER_WEBHOOK_URL` delivery and who responds to a failed run.
+      Confirm on chain that the keeper owns neither locked position.
 - [ ] Market prices, coin configs, disclosures and recipients verified against source and chain.
 - [ ] `pnpm verify`, browser checks and `pnpm program:test` pass on the release source.
 - [ ] Devnet integration tests complete on the corresponding release candidate.

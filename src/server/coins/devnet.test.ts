@@ -3,9 +3,14 @@ import { getOpenWalletInstruction, getDepositInstruction, getLinkDeviceInstructi
 import { deriveWalletPda } from "@/lib/solana/pda";
 import { type Address } from "@solana/kit";
 import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction, TransactionInstruction, VersionedTransaction, sendAndConfirmTransaction } from "@solana/web3.js";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { ChainGuild } from "@/lib/solana/accounts";
 import { assertSponsorHasRoom, sponsorKeypairJson, testFunderKeypairJson } from "../../../e2e/devnet";
+
+// This suite exercises the on-chain coin path directly; launch authorization
+// itself is covered by the unit tests and the route.
+const chainGuild = vi.hoisted(() => ({ address: "So11111111111111111111111111111111111111112" }));
+vi.mock("@/server/solana", () => ({ readPet: async () => ({ member: { guild: chainGuild.address } }) }));
 
 const RUN = process.env.PAWKET_DEVNET === "1";
 const RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
@@ -16,8 +21,20 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
   const device = Keypair.generate();
   let walletAddress: string;
   const slug = `coin-check-${Date.now().toString(36)}`;
-  const guild = { slug, name: "Coin Check", founder: founder.publicKey.toBase58() } as unknown as ChainGuild;
+  const guild = {
+    slug,
+    name: "Coin Check",
+    founder: founder.publicKey.toBase58(),
+    address: chainGuild.address,
+    founderPet: founder.publicKey.toBase58(),
+    memberCount: 3,
+  } as unknown as ChainGuild;
   let coins: typeof import("./meteora");
+  const claims = (quote: Awaited<ReturnType<typeof coins.quoteTrade>>) => ({
+    v: 1 as const, cluster: "devnet" as const, slug: quote.slug, mint: quote.mint, preset: quote.preset,
+    route: quote.route, side: quote.side, amountIn: quote.amountIn, minimumOut: quote.minimumOut,
+    slippageBps: quote.slippageBps, quotedAt: quote.quotedAt, expiresAt: quote.quotedAt + 30_000,
+  });
 
   const sign = async (wire: string, signer: Keypair) => {
     const transaction = VersionedTransaction.deserialize(Buffer.from(wire, "base64"));
@@ -80,7 +97,7 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
       expect(BigInt(quote.minimumOut)).toBeLessThanOrEqual(BigInt(quote.amountOut));
       expect(BigInt(quote.amountUsed)).toBeLessThanOrEqual(amount);
       await sign(
-        await coins.tradeTransaction({ guild, owner: founder.publicKey.toBase58(), side: "buy", amountIn: amount, minimumOut: BigInt(quote.minimumOut) }),
+        await coins.tradeTransaction({ guild, owner: founder.publicKey.toBase58(), side: "buy", amountIn: amount, minimumOut: BigInt(quote.minimumOut), quote: claims(quote) }),
         founder,
       );
     }
@@ -100,7 +117,7 @@ describe.skipIf(!RUN)("a guild coin on devnet", { timeout: 600_000 }, () => {
     const quote = await coins.quoteTrade(guild, "sell", balance / 10n, 100);
     expect(quote.route).toBe("pool");
     await sign(
-      await coins.tradeTransaction({ guild, owner: founder.publicKey.toBase58(), side: "sell", amountIn: balance / 10n, minimumOut: BigInt(quote.minimumOut) }),
+      await coins.tradeTransaction({ guild, owner: founder.publicKey.toBase58(), side: "sell", amountIn: balance / 10n, minimumOut: BigInt(quote.minimumOut), quote: claims(quote) }),
       founder,
     );
   });

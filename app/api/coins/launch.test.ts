@@ -5,7 +5,7 @@ const readGuild = vi.fn();
 const readPet = vi.fn();
 const launchTransaction = vi.fn(async () => "base64-transaction");
 vi.mock("@/server/solana", () => ({ readGuild, readPet }));
-vi.mock("@/server/sponsor", () => ({ actionLimit: () => true }));
+vi.mock("@/server/coins/limits", () => ({ coinLimit: () => true, COIN_RETRY_AFTER_SECONDS: 60 }));
 vi.mock("@/server/coins/meteora", () => ({ launchTransaction, CoinRefusal: class extends Error {} }));
 
 const FOUNDER = "11111111111111111111111111111112";

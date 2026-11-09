@@ -1,5 +1,6 @@
 import { address, getAddressDecoder, getAddressEncoder, getProgramDerivedAddress, type Address, type Instruction, type ReadonlyUint8Array } from "@solana/kit";
 import type { SolanaCluster } from "@/config/env";
+import { COIN_PRIORITY_FEE_MAX_MICRO_LAMPORTS, coinComputeLimit, SET_COMPUTE_UNIT_LIMIT, SET_COMPUTE_UNIT_PRICE } from "./compute";
 import { COIN_TERMS, presetConfig, type PresetId } from "./presets";
 
 /** Values captured from the player's action, never from the prepared-transaction response. */
@@ -13,6 +14,8 @@ export type CoinIntent = MarketIntent & (
 
 /** Conservative ceilings, shown by the controls. Unspent funding settles back atomically. */
 export const COIN_RENT_LIMITS = Object.freeze({ trade: 5_000_000n, claim: 5_000_000n, launch: 30_000_000n, graduate: 50_000_000n });
+/** The most pool positions one claim transaction may touch. Four does not fit a legacy transaction once the wallet bracket, compute budget and token setup are included. */
+export const MAX_POOL_CLAIMS = 3;
 export function coinFundingLimit(intent: CoinIntent): bigint {
   const input = intent.kind === "trade" && intent.side === "buy" ? intent.amountIn : intent.kind === "launch" ? intent.firstBuy : 0n;
   check(input >= 0n && input <= U64_MAX, "Invalid coin input.");
@@ -108,7 +111,7 @@ export async function validateCoinInstructions({ owner, instructions, intent, fu
   check(funding >= 0n && funding <= coinFundingLimit(intent), "Coin funding exceeds the approved operation budget. Nothing was signed or sent.");
   check(instructions.length > 0 && instructions.length <= 32);
   const m = await market(intent, owner);
-  let swaps = 0, launches = 0, claims = 0, migrations = 0, wraps = 0, syncs = 0, closes = 0, compute = 0;
+  let swaps = 0, launches = 0, claims = 0, migrations = 0, wraps = 0, syncs = 0, closes = 0, limits = 0, prices = 0;
   const creates = new Set<string>();
   const allowedSigners = new Set<string>([owner]);
   if (intent.kind === "launch") allowedSigners.add(intent.mint);
@@ -146,7 +149,12 @@ export async function validateCoinInstructions({ owner, instructions, intent, fu
         closes++; closeSeen = true;
       }
     } else if (ix.programAddress === COMPUTE) {
-      check(intent.kind === "graduate" && ++compute === 1 && data.length === 5 && data[0] === 2 && uint(data, 1, 4) <= 600_000n && uint(data, 1, 4) > 0n && keys.length === 0);
+      check(keys.length === 0);
+      if (data[0] === SET_COMPUTE_UNIT_LIMIT) {
+        check(++limits === 1 && data.length === 5 && uint(data, 1, 4) > 0n && uint(data, 1, 4) <= BigInt(coinComputeLimit(intent.kind)));
+      } else {
+        check(data[0] === SET_COMPUTE_UNIT_PRICE && ++prices === 1 && data.length === 9 && uint(data, 1, 8) <= COIN_PRIORITY_FEE_MAX_MICRO_LAMPORTS);
+      }
     } else if ((intent.kind === "trade" || intent.kind === "launch") && (starts(data, SWAP) || starts(data, SWAP2))) {
       check(!closeSeen && ++swaps === 1 && (!buying || (wraps === 1 && syncs === 1)));
       const route = intent.kind === "trade" ? intent.route : "curve";
@@ -172,7 +180,7 @@ export async function validateCoinInstructions({ owner, instructions, intent, fu
       accounts(ix, [m.dbcAuthority, m.curve, m.coinAta, m.solAta, m.curveBase, m.curveQuote, intent.mint, SOL, owner, TOKEN, TOKEN, m.dbcEvent, DBC], [1, 2, 3, 4, 5], [8]);
     } else if (intent.kind === "claim" && intent.from === "pool" && starts(data, CLAIM_POSITION)) {
       core(ix, DAMM, CLAIM_POSITION, 8);
-      check(++claims <= 4 && !closeSeen && keys[2] !== owner && keys[9] !== owner);
+      check(++claims <= MAX_POOL_CLAIMS && !closeSeen && keys[2] !== owner && keys[9] !== owner);
       accounts(ix, [m.dammAuthority, m.pool, keys[2], m.coinAta, m.solAta, m.poolBase, m.poolQuote, intent.mint, SOL, keys[9], owner, TOKEN, TOKEN, m.dammEvent, DAMM], [2, 3, 4, 5, 6], [10]);
       // The program binds this position and its NFT account to pool + signer. Neither can debit the signer.
     } else if (intent.kind === "graduate" && starts(data, MIGRATE)) {
@@ -190,8 +198,8 @@ export async function validateCoinInstructions({ owner, instructions, intent, fu
   for (const ix of instructions) for (const meta of ix.accounts ?? []) check(meta.role < 2 || allowedSigners.has(meta.address));
   if (intent.kind === "trade") check(swaps === 1 && closes === 1 && (buying ? wraps === 1 && syncs === 1 : wraps === 0 && syncs === 0));
   if (intent.kind === "launch") check(launches === 1 && swaps === (intent.firstBuy > 0n ? 1 : 0) && closes === (intent.firstBuy > 0n ? 1 : 0));
-  if (intent.kind === "claim") check(claims >= 1 && closes === claims);
-  if (intent.kind === "graduate") check(migrations === 1 && compute <= 1);
+  if (intent.kind === "claim") check(claims >= 1 && (intent.from === "pool" ? closes === 1 : closes === claims));
+  if (intent.kind === "graduate") check(migrations === 1);
 }
 
 /** Raw account bytes from the browser's own RPC. Only frozen, active configured tables are usable. */

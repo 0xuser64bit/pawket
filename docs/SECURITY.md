@@ -20,6 +20,7 @@ owns key configuration and rotation prerequisites.
 | Sponsor | Server-only devnet fee/rent payer; also the keepsake collection's authority and the derivation secret, unless `COLLECTION_AUTHORITY_KEYPAIR` and `DERIVATION_SECRET` are set |
 | Program upgrade authority | Separate deploy wallet; never the sponsor |
 | Treasury | Receives Market purchases and partner coin fees; its signing key is not on the server |
+| Coin graduation keeper | Operator-run hot wallet, separate from the sponsor, treasury and upgrade authority; pays only the migration fee and rent, and owns neither locked position |
 
 Never request, log or export a player's seed or private key. Device keys stay
 in IndexedDB and are generated non-extractable. A device has no money
@@ -48,9 +49,10 @@ The device's fee refill is capped. The sponsor refuses these coin brackets.
 A coin transaction may be v0 with Pawket's frozen lookup table; the browser
 still requires the brackets' owner, wallet and device among the transaction's
 own keys. The device, which signs without a prompt, appears in no instruction
-between the brackets and pays no priority fee, no signature a precompile
-verifies and at most four signatures (a graduation's), so its signature covers
-its network fee and nothing else (`send.test.ts`). The browser also requires
+between the brackets, carries only a capped priority fee, has no signature a
+precompile verifies and carries at most four signatures (a graduation's), so
+its signature covers its network fee and nothing else (`send.test.ts`). The
+browser also requires
 an immutable operation intent before either signature: exact trade input and
 minimum output, derived pools/vaults, owner token accounts and recognized
 auxiliary instructions (`src/lib/coins/intent.ts`). Funding cannot exceed the
@@ -58,7 +60,8 @@ operation's SOL input, the published rent ceiling and a launch's fixed fee.
 Launch metadata and optional first buy, fee recipients and graduation accounts
 are checked independently of the prepared response. Token approvals, unrelated
 transfers and unsupported variants are refused. V0 graduation resolves only
-the configured active, frozen lookup table through the browser's own RPC;
+the configured active, frozen lookup table, checked by the server before it
+builds and again by the browser through its own RPC;
 SDK-built transactions and mutations exercise both signers' refusal boundary
 (`src/server/coins/intent.test.ts`).
 
@@ -123,27 +126,38 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
 - Keepsake and coin addresses derive from `DERIVATION_SECRET`, which falls
   back to the sponsor's seed. Until it is pinned, rotating the sponsor changes
   those addresses and can lose app discovery or permit duplicate creation.
-  Anyone holding it can compute every derived key, so it is kept like the
-  sponsor key. Such a holder can take a derived address before Pawket does,
-  but cannot make it count: a card is read only as an asset of Pawket's
-  collection held by the pet's owner, and a coin only as its founder's curve,
-  so a taken address shows no card, or a coin Pawket cannot launch.
+  Anyone holding it can compute every derived key and seal trade quote tokens,
+  so it is kept like the sponsor key. Such a holder can take a derived address
+  before Pawket does, but cannot make it count: a card is read only as an
+  asset of Pawket's collection held by the pet's owner, and a coin only as its
+  founder's curve, so a taken address shows no card, or a coin Pawket cannot
+  launch. A forged quote token still needs the owner's signature and is bound
+  by the swap's on-chain minimum output.
 - A founder keeps the coin's fee rights after the founding pet leaves: the
   pool records the founder's wallet, outside the program. Events, polls and
   launches stop while that pet is out of the guild.
 - Guestbooks check one wave per UTC day against the last eight visitors. After
   eight other waves a visitor can wave again. Counts are not Sybil-resistant.
+- Coin display reads are bounded: config reads cache for five minutes behind a
+  15-second deadline, and holder analytics use a 5-second deadline, a
+  60-second cache and a 5,000-account cap. A failed or timed-out read is not
+  cached; a timed-out or oversized holder scan shows no count and the next
+  read tries again. These bounds protect one server instance, not a global RPC
+  quota.
 - Per-caller limits are in process memory, so multiple instances each allow
-  their share; an IPv6 caller counts by its /64. An instance remembers the
+  their share. The caller is a valid `X-Real-IP` when the proxy sets it,
+  otherwise the last valid `X-Forwarded-For` hop, otherwise `local`; a
+  malformed header cannot choose an arbitrary key. IPv4-mapped IPv6 is
+  normalized, and an IPv6 caller counts by its /64. An instance remembers the
   10,000 keys it heard from most recently (an Action's posted wallet is a key
   too) and forgets the quietest first, which gains a caller holding that many
-  keys nothing it did not have. A caller is the first `X-Forwarded-For`
-  address, which Vercel sets itself; behind a proxy that passes a client's own
-  header through, a caller would choose its key. The hourly budget is read
-  from the sponsor's balance, which every instance sees, plus the fees and
-  rents an instance signed in the last two minutes, so callers spread over
-  many addresses still stop at it. Shared enforcement and budget monitoring
-  are mainnet work.
+  keys nothing it did not have. Coin routes have separate hourly buckets for
+  quote, trade, launch, graduate, claim and position reads; a write route
+  counts both the caller and the posted account, and a refusal carries
+  `Retry-After`. The hourly budget is read from the sponsor's balance, which
+  every instance sees, plus the fees and rents an instance signed in the last
+  two minutes, so callers spread over many addresses still stop at it. Shared
+  enforcement and budget monitoring are mainnet work.
 - HTML pages enforce a per-request nonce script policy (`proxy.ts`). The
   request nonce reaches Next's runtime and the theme script; the root layout
   renders per request so a static document cannot reuse it. Production allows
@@ -181,16 +195,18 @@ are off; phone transfers exclude WebView storage. See `ANDROID.md`.
   Consumer-wallet display and the deployed coin lifecycle still need their
   authorized devnet and release checks. The owner's wallet may show its own
   SOL unchanged because Pawket Wallet supplies the bounded funding.
-- Quote age and risk acknowledgement are browser controls, not server or
-  program authorization. The ticket disables signing a quote after 20 seconds
+- Quote age and risk acknowledgement are browser controls, but a trade also
+  needs the quote route's HMAC-SHA-256 token. The token is bound to the slug,
+  cluster, mint, preset, route, side, amount and minimum output, expires after
+  30 seconds, and the trade route and `tradeTransaction` recheck it and the
+  live coin before building. The ticket disables signing after 20 seconds
   and stores acknowledgement in local storage, keyed by `launch-<slug>` for
   launching and mint for trading (or only this visit if storage fails).
-  The trade API accepts
-  an amount and `minimumOut`, not a signed quote or expiry; it rechecks the
-  current coin stage, while Meteora enforces the submitted minimum output.
   The launch API checks the founder, three-pet threshold, listing and founding
-  pet's membership. These are Pawket server launch rules, not constraints of
-  the external Meteora program (`app/api/coins/[slug]/launch/route.ts`).
+  pet's membership, and `launchTransaction` repeats those checks so the
+  exported action is safe on its own. These are Pawket server launch rules,
+  not constraints of the external Meteora program
+  (`app/api/coins/[slug]/launch/route.ts`).
 - Guild slugs are first come, first served and never freed: a guild has no
   close instruction, and the program reserves only `new`, the app's own create
   route (`RESERVED_SLUGS`). Delisting (`src/lib/guilds/delisted.ts`) hides a

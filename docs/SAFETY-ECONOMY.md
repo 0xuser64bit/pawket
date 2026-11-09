@@ -53,10 +53,12 @@ input; see [SECURITY.md](SECURITY.md#known-limits-and-release-blockers).
 ## Supply, liquidity and fees
 
 Presets govern immutable supply, no allocations or vesting, the fee split and
-permanently locked graduated liquidity. Founders and Pawket can claim their
-fees; they cannot withdraw that liquidity. The server verifies the derived
-DAMM v2 pool and its mints before routing trades. `METEORA-INTEGRATION.md`
-documents the terms; `SECURITY.md` documents authority and derivation limits.
+permanently locked graduated liquidity. The curve charges 1%; the graduated
+pool charges a 1% base fee, up to about 1.2% with Meteora's dynamic component.
+Founders and Pawket can claim their fees; they cannot withdraw that liquidity.
+The server verifies the derived DAMM v2 pool and its mints before routing
+trades. `METEORA-INTEGRATION.md` documents the terms; `SECURITY.md` documents
+authority and derivation limits.
 
 The Market's treasury and coin fee recipients are not a guild treasury.
 There is no guild treasury dashboard, funds proposal system or published

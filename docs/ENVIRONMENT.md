@@ -20,7 +20,7 @@ Mainnet requires [MAINNET.md](MAINNET.md), not just new env values.
 | `NEXT_PUBLIC_SOLANA_RPC_URL` | Public devnet RPC | Browser-safe endpoint; `/api/rpc` uses Pawket's allow-listed proxy |
 | `SOLANA_RPC_URL` | Public endpoint for the selected cluster when the browser uses `/api/rpc`; otherwise the public RPC value | Server RPC; may contain a provider credential |
 | `SPONSOR_KEYPAIR` | Unset | Server-only devnet fee/rent sponsor JSON byte array |
-| `DERIVATION_SECRET` | First 32 bytes of `SPONSOR_KEYPAIR`, when present | Server-only 32-byte secret as 64 hex characters; derives keepsake and coin signers. Without either value, derived reads/creation are unavailable |
+| `DERIVATION_SECRET` | First 32 bytes of `SPONSOR_KEYPAIR`, when present | Server-only 32-byte secret as 64 hex characters; derives keepsake and coin signers, and keys trade quote tokens. Without either value, derived reads/creation and sealed quotes are unavailable |
 | `COLLECTION_AUTHORITY_KEYPAIR` | `SPONSOR_KEYPAIR` | Server-only collection authority JSON array of 64 bytes; does not replace the sponsor as fee/rent payer |
 
 Use `NEXT_PUBLIC_SOLANA_RPC_URL=/api/rpc` with `SOLANA_RPC_URL` for a provider
@@ -55,10 +55,12 @@ never acts as program upgrade authority, and is not the treasury.
 
 Two optional server-only keys take over jobs the sponsor key otherwise does.
 `DERIVATION_SECRET` (64 hex characters) is what keepsake and coin addresses
-are derived from (`src/server/derive.ts`); unset, it is the sponsor key's first
+are derived from and what keys trade quote tokens (`src/server/derive.ts`,
+`src/server/coins/quote-token.ts`); unset, it is the sponsor key's first
 32 bytes, which every address so far came from. Set it to that seed before the
 sponsor ever rotates, back it up like the sponsor key, and never change it once
-set: every derived address would move. `COLLECTION_AUTHORITY_KEYPAIR` (a
+set: every derived address would move, and outstanding quotes would stop
+verifying. `COLLECTION_AUTHORITY_KEYPAIR` (a
 keypair's JSON array) signs keepsakes as the collection's authority; unset, the
 sponsor does. Move the collection's update authority on chain to that key
 before setting it. Keep server keys out of logs, source, client bundles and APKs:
@@ -91,6 +93,11 @@ provided; omission does not remove an existing remote value.
 Coin scripts use `PAYER`, `PAYER_KEYPAIR` or `TREASURY_KEYPAIR` as local file
 paths, not JSON arrays; see
 [METEORA-INTEGRATION.md](METEORA-INTEGRATION.md#sources-and-operational-tools).
+The graduation keeper reads `KEEPER_KEYPAIR` (a local file path),
+`EXECUTE=1`, `MAX_GRADUATIONS` and an optional `KEEPER_WEBHOOK_URL` from the
+operator's environment. They configure that script only; they are not
+application runtime variables and are not read by `getServerEnv()`. The keeper
+key must not be the sponsor, treasury or upgrade authority.
 `scripts/keepsake-collection.mts` reads `.keys/sponsor.json`, checks devnet
 genesis and creates a new collection; it neither updates the source collection
 constant nor migrates an existing collection's authority. No script here is

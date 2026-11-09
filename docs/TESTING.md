@@ -37,7 +37,7 @@ Automated axe results are not a substitute for keyboard and screen-reader checks
 | The sponsor route: what it refuses before signing, the limits it hands the co-signer, its scrubbed log | `app/api/sponsor/route.test.ts` | Vitest (node) |
 | The whole path on devnet       | `src/lib/solana/devnet.test.ts`         | `pnpm e2e:devnet` (skipped otherwise; funding prerequisites in [Environment](ENVIRONMENT.md)) |
 | A guild coin's life on devnet  | `src/server/coins/devnet.test.ts`       | `pnpm e2e:coins` (skipped otherwise) |
-| Coin presets ↔ Meteora's validation, stages, copy | `src/server/coins/curve.test.ts`, `src/lib/coins/*.test.ts` | Vitest |
+| Coin presets ↔ Meteora's validation, stages, copy, quote tokens, per-operation limits, bounded reads, lookup validation, compute/fee caps, claim batching, metadata and the keeper plan | `src/server/coins/curve.test.ts`, `src/server/coins/*.test.ts`, `src/lib/coins/*.test.ts` | Vitest |
 | The path through the screens   | `e2e/chain.spec.ts` + `e2e/test-wallet.ts` | `PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/chain.spec.ts` |
 | A coin's trades through its page | `e2e/coins.spec.ts` (buy and sell on a curve, buy in a graduated pool) | `PAWKET_DEVNET=1 pnpm e2e --workers=1 e2e/coins.spec.ts` |
 | Documentation links and file references | `src/config/docs.test.ts` | Vitest (node) |

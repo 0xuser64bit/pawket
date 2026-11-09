@@ -263,8 +263,9 @@ legacy transaction, so it goes as v0 through Pawket's frozen lookup table
 signs a v0 coin transaction only while the brackets' owner, wallet and device
 are the transaction's own keys, never ones a lookup table supplies. The device
 signs a coin transaction, without a prompt, only when it appears in no
-instruction between the brackets, no priority fee is asked of it, no
-precompile verifies a signature and it carries at most four signatures.
+instruction between the brackets, the transaction is legacy or v0 with a
+capped compute-budget priority fee, no precompile verifies a signature and it
+carries at most four signatures.
 
 `forPlayer` in `src/server/coins/meteora.ts` funds at most the operation's SOL
 input plus its published rent ceiling and, for a launch, the launch fee. It

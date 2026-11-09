@@ -139,9 +139,9 @@ listing, member count and the founding pet.
 
 **Design.**
 
-- Add `assertLaunchable(guild, founder)` in `meteora.ts` (or a small
-  `src/server/coins/launch.ts`) that checks the founder, `isListed`, member
-  count, and the founding pet's current guild. It throws `CoinRefusal`.
+- Add `assertLaunchable(guild, founder)` in `meteora.ts` that checks the
+  founder, `isListed`, member count, and the founding pet's current guild. It
+  throws `CoinRefusal`.
 - Call it at the start of `launchTransaction`. The route can keep its early
   checks for precise messages, or delegate; either way the exported function is
   safe on its own.

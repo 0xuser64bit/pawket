@@ -57,12 +57,17 @@ is not permission to skip the shared send path.
 | GET / POST | `/api/keepsake/[pet]` | Live metadata / owner-only creation preparation |
 | GET | `/api/keepsake/[pet]/card` | Portrait and record-derived card image |
 | GET | `/api/keepsake/collection` | Collection metadata |
-| GET | `/api/coins/[slug]/quote` | Curve or verified DAMM v2 quote |
+| GET | `/api/coins/[slug]/quote` | Curve or verified DAMM v2 quote plus a short-lived server token |
 | GET | `/api/coins/[slug]/position` | `?account=` locked positions and unclaimed fees |
-| POST | `/api/coins/[slug]/launch`, `/trade`, `/graduate`, `/claim` | Prepare the corresponding coin transaction; suffixes are relative to the same slug |
+| POST | `/api/coins/[slug]/launch`, `/trade`, `/graduate`, `/claim` | Prepare the corresponding coin transaction; trades require the quote token, and suffixes are relative to the same slug |
 | GET | `/api/coins/[slug]/metadata` | Immutable token metadata (public CORS) |
 | GET | `/actions.json` | Maps adoption, pet and guild links to Solana Actions |
 | GET | `/robots.txt`, `/sitemap.xml` | Crawlable public production pages; previews and APIs excluded |
+
+Coin API responses are `no-store` and send no cross-origin grant, except the
+public metadata route. Coin operations have separate per-caller limits; a
+write also counts the posted account, and an exhausted limit returns 429 with
+`Retry-After`.
 
 The sponsor validates instructions; RPC's `sendTransaction` is a transport,
 not the sponsor's instruction allow-list. It can carry another program's

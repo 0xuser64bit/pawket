@@ -27,8 +27,12 @@ unless `EXECUTE=1` is set.
 Guild discovery and Pulse read curve and graduated-pool accounts in batches
 of at most 100, preserving account order when resolving each guild's stage.
 Missing or wrong-program graduated pools remain pending, not tradable.
-Holder analytics are read only for display and crest eligibility; quotes,
-transaction preparation and position fees never wait for that optional scan.
+Holder analytics are read only for display and crest eligibility, with a
+5-second deadline, a 60-second cache and a 5,000-account cap; over the cap or
+on timeout the page says "Not counted just now" and the next read tries again.
+Quotes, transaction preparation and position fees never wait for that optional
+scan. Config reads are cached for five minutes with a 15-second load deadline;
+a failed or timed-out read is not cached.
 
 ## Routing and approval rules
 
@@ -37,23 +41,32 @@ transaction preparation and position fees never wait for that optional scan.
    never taken from a request. Each preset is one config account on chain,
    made by `scripts/coin-presets.mts`, and `curve.test.ts` holds it to
    Meteora's own validation and to the terms the page publishes.
+   `launchTransaction` itself checks the founder, `isListed`, the three-pet
+   minimum and the founding pet's current guild, so the exported action is
+   safe even without the route's earlier checks.
 2. **SOL is the only quote asset.**
 3. **Server-assisted quotes.** `GET /api/coins/<slug>/quote` quotes with
    Meteora's math (`swapQuote2` partial fill on the curve, `CpAmm.getQuote`
    in the pool); the client never computes a curve. A quote is shown with
-   its age; the UI disables signing it after 20 seconds. The signing action
-   rechecks its age against the current clock, including after a suspended
-   page resumes. The trade endpoint
-   receives `amount` and `minimumOut`, not the quote's timestamp or an
-   authenticated quote. Quote expiry is a UI guard; minimum output is enforced
-   by the swap instruction against the live route. Guild and quote reads
-   share one 15-second server budget; browser cancellation reaches both Kit
-   and Meteora HTTP reads. The browser stops waiting after 20 seconds and
-   offers a retry. Changing amount, side, slippage, coin or route, or leaving
-   the ticket aborts its pending quote; late answers cannot enable signing.
-   Quote reads do not share another request's pending config read. The SDK's
-   non-cancellable rate-limit retry is disabled for quotes, so a refused
-   provider read returns control to the player within the same budget.
+   its age; the UI disables signing it after 20 seconds, and the server token
+   it carries expires after 30. The signing action rechecks the quote's age
+   against the current clock, including after a suspended page resumes. The
+   quote route returns an HMAC-SHA-256 token bound to the slug, cluster, mint,
+   preset, route, side, amount and minimum output. The trade endpoint requires
+   that token and refuses a missing, expired or mismatched one before it
+   builds anything; `tradeTransaction` rechecks the token's mint, preset and
+   route against the live coin, so a quote cannot cross a graduation or a
+   preset. The swap instruction enforces the minimum output against the live
+   route. Guild and quote reads share one 15-second server budget; browser
+   cancellation reaches both Kit and Meteora HTTP reads. The browser stops
+   waiting after 20 seconds and offers a retry. Changing amount, side,
+   slippage, coin or route, or leaving the ticket aborts its pending quote;
+   late answers cannot enable signing. Quote reads do not share another
+   request's pending config read. The SDK's non-cancellable rate-limit retry
+   is disabled for quotes, so a refused provider read returns control to the
+   player within the same budget.
+   Coin API routes send no cross-origin grant; the public metadata route is the
+   exception because wallets and indexers fetch it cross-origin.
 4. **Preflight on.** Every app coin transaction is sent with preflight. A
    simulation refusal broadcasts nothing. State may still change before an
    accepted transaction lands; an on-chain failure rolls back its state changes
@@ -76,11 +89,17 @@ transaction preparation and position fees never wait for that optional scan.
    Funding is capped to the operation's SOL input plus rent (0.005 SOL for
    trade/claim, 0.03 for launch, 0.05 for graduation) and the fixed launch fee
    where applicable. The controls show these ceilings; unused SOL returns.
+   Each transaction carries at most one compute-unit limit and one priority
+   fee, within per-operation caps (`src/lib/coins/compute.ts`): 400k CU for a
+   trade, 600k for launch or graduation, 300k for a claim. The priority fee
+   defaults to 10,000 micro-lamports per CU and may not exceed 200,000.
    `src/lib/coins/intent.ts` owns the limits and pure browser instruction policy.
    The controls capture the coin/preset and operation before preparation;
    `sendPrepared` checks that intent before device or owner signing, including
    exact token sell amounts, minimum outputs, recipients and auxiliary layouts.
-   Graduation independently reads the configured active, frozen lookup table.
+   The server validates the configured active, frozen graduation lookup table
+   before building; the browser independently resolves and decodes that same
+   table through its own RPC.
    Unsupported layouts are refused rather than signed through a generic program
    allow-list. `src/server/coins/intent.test.ts` holds the policy to installed
    SDK transactions; `meteora-funding.test.ts` checks server funding bounds.

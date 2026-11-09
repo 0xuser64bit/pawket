@@ -1,7 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
+import type { SealedQuote } from "@/lib/coins/quote";
 import type { PawketSender } from "@/lib/solana/use-send";
-import type { CoinQuote, CoinState } from "@/server/coins/meteora";
+import type { CoinState } from "@/server/coins/meteora";
 
 vi.mock("@/lib/solana/browser-client", () => ({ rpc: {}, useConnected: () => null }));
 vi.mock("@/lib/solana/use-send", () => ({ usePawketSend: () => null }));
@@ -17,16 +18,17 @@ const coin: CoinState = {
 const balances = { lamports: 10n ** 9n, units: 10n ** 12n };
 
 function slowQuotes() {
-  const answers: Array<(quote: CoinQuote) => void> = [];
+  const answers: Array<(quote: SealedQuote) => void> = [];
   vi.stubGlobal("fetch", vi.fn(() => new Promise((resolve) => {
     answers.push((quote) => resolve({ ok: true, json: async () => quote }));
   })));
   return answers;
 }
 
-const buyQuote = (amountIn: string): CoinQuote => ({
+const buyQuote = (amountIn: string): SealedQuote => ({
+  slug: guild.slug, mint: coin.mint, preset: "gentle",
   side: "buy", route: "curve", amountIn, amountUsed: amountIn, amountOut: "4200000000", minimumOut: "4158000000",
-  fee: "50000", priceImpact: 0.4, slippageBps: 100, quotedAt: Date.now(),
+  fee: "50000", priceImpact: 0.4, slippageBps: 100, quotedAt: Date.now(), token: "sealed-quote",
 });
 
 function ticket(sendFromServer = vi.fn(async () => null)) {
@@ -65,7 +67,7 @@ it("signs exactly the quote's side, amount and least", async () => {
   fireEvent.click(screen.getByRole("button", { name: "See the quote" }));
   await act(async () => answers[0](buyQuote("50000000")));
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Sign: buy SEAT" })); });
-  expect(sendFromServer).toHaveBeenCalledWith("Buy SEAT", "/api/coins/window-seat/trade", { side: "buy", amount: "50000000", minimumOut: "4158000000" }, { sponsored: false, coinIntent: {
+  expect(sendFromServer).toHaveBeenCalledWith("Buy SEAT", "/api/coins/window-seat/trade", { side: "buy", amount: "50000000", minimumOut: "4158000000", quote: "sealed-quote" }, { sponsored: false, coinIntent: {
     kind: "trade", cluster: "devnet", mint: coin.mint, preset: "gentle", route: "curve", side: "buy", amountIn: 50_000_000n, minimumOut: 4_158_000_000n,
   } });
 });

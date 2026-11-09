@@ -1,8 +1,9 @@
 import { Activity } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
+import type { SealedQuote } from "@/lib/coins/quote";
 import type { PawketSender } from "@/lib/solana/use-send";
-import type { CoinQuote, CoinState } from "@/server/coins/meteora";
+import type { CoinState } from "@/server/coins/meteora";
 
 vi.mock("@/lib/solana/browser-client", () => ({ rpc: {}, useConnected: () => null }));
 vi.mock("@/lib/solana/use-send", () => ({ usePawketSend: () => null }));
@@ -14,9 +15,10 @@ const coin: CoinState = {
   preset: "gentle", pool: "pool", raised: "0", threshold: "1000", price: 1, graduated: null,
   fees: { founderUnclaimed: "0", pawketUnclaimed: "0", total: "0" }, holders: null,
 };
-const quote: CoinQuote = {
+const quote: SealedQuote = {
+  slug: guild.slug, mint: coin.mint, preset: "gentle",
   side: "buy", route: "curve", amountIn: "50000000", amountUsed: "50000000", amountOut: "4200000000", minimumOut: "4158000000",
-  fee: "50000", priceImpact: 0.4, slippageBps: 100, quotedAt: Date.now(),
+  fee: "50000", priceImpact: 0.4, slippageBps: 100, quotedAt: Date.now(), token: "sealed-quote",
 };
 
 function ticket() {

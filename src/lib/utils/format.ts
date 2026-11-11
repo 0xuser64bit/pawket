@@ -54,10 +54,13 @@ export function parseSolToLamports(input: string): bigint | null {
 }
 
 export function parseUnits(input: string, decimals: number): bigint | null {
-  const trimmed = input.trim().replace(/,/g, "");
+  const trimmed = input.trim();
   if (!trimmed) return null;
-  if (!new RegExp(`^(?:\\d+(?:\\.\\d{1,${decimals}})?|\\.\\d{1,${decimals}})$`).test(trimmed)) return null;
-  const dotted = trimmed.startsWith(".") ? `0${trimmed}` : trimmed;
+  const fraction = decimals > 0 ? `\\.\\d{1,${decimals}}` : "";
+  const withFraction = fraction ? `(?:${fraction})?` : "";
+  const forms = [`\\d+${withFraction}`, `\\d{1,3}(?:,\\d{3})+${withFraction}`, ...(fraction ? [fraction] : [])];
+  if (!new RegExp(`^(?:${forms.join("|")})$`).test(trimmed)) return null;
+  const dotted = (trimmed.startsWith(".") ? `0${trimmed}` : trimmed).replace(/,/g, "");
   const [whole, frac = ""] = dotted.split(".");
   const amount = BigInt(whole) * 10n ** BigInt(decimals) + BigInt(frac.padEnd(decimals, "0"));
   if (amount <= 0n || amount > MAX_LAMPORTS) return null;

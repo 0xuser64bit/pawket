@@ -73,6 +73,8 @@ describe("parseSolToLamports", () => {  it("parses valid amounts to BigInt lampo
     expect(parseSolToLamports("")).toBeNull();
     expect(parseSolToLamports("5.")).toBeNull();
     expect(parseSolToLamports("1e3")).toBeNull();
+    expect(parseSolToLamports("0,01")).toBeNull();
+    expect(parseSolToLamports("1,2,3")).toBeNull();
   });
 
   it("rejects amounts that cannot fit in u64 lamports", () => {
@@ -96,11 +98,22 @@ describe("parseUnits / formatUnits", () => {
     const { parseUnits } = await import("./format");
     expect(parseUnits("1.5", 6)).toBe(1_500_000n);
     expect(parseUnits("1,000", 6)).toBe(1_000_000_000n);
+    expect(parseUnits("12,345,678.9", 6)).toBe(12_345_678_900_000n);
     expect(parseUnits(".000001", 6)).toBe(1n);
     expect(parseUnits("0.0000001", 6)).toBeNull();
     expect(parseUnits("0", 6)).toBeNull();
     expect(parseUnits("1e5", 6)).toBeNull();
     expect(parseUnits("0.1", 9)).toBe(100_000_000n);
+    expect(parseUnits("1,000", 0)).toBe(1_000n);
+    expect(parseUnits("1.5", 0)).toBeNull();
+  });
+
+  it("refuses a comma that is not a thousands group instead of dropping it", async () => {
+    const { parseUnits } = await import("./format");
+    for (const malformed of ["0,01", "1,2,3", "1,00", "1,0000", ",500", "1,,000", "1,000,", "1.000,5"]) {
+      expect(parseUnits(malformed, 9), malformed).toBeNull();
+    }
+    expect(parseUnits("1,000.5", 6)).toBe(1_000_500_000n);
   });
 
   it("groups thousands and drops trailing zeros", async () => {

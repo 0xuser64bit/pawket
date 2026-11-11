@@ -450,7 +450,15 @@ function MoveMoney({ state, owner }: { state: PawketWalletState; owner: Address 
           inputMode="decimal"
           value={amount}
           onChange={(event) => setAmount(event.target.value)}
-          error={lamports === null ? "An amount in SOL, like 0.01." : over ? `Your balance is ${sol(state.balance)}.` : undefined}
+          error={
+            lamports === null
+              ? amount.includes(",")
+                ? "Use a dot for the decimal, like 0.01 — commas only group thousands."
+                : "An amount in SOL, like 0.01."
+              : over
+                ? `Your balance is ${sol(state.balance)}.`
+                : undefined
+          }
         />
         <Row gap={2} wrap>
           <Button

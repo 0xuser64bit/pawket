@@ -59,7 +59,7 @@ export default async function GuildPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Guilds" href="/guilds" />
-        <ReadFailure body="This page could not read the guild just now. Trying again only reads its record." />
+        <ReadFailure heading="h1" body="This page could not read the guild just now. Trying again only reads its record." />
       </Screen>
     );
   }
@@ -69,6 +69,7 @@ export default async function GuildPage({ params }: Props) {
       <Screen width="narrow">
         <BackLink label="Guilds" href="/guilds" />
         <Banner
+          heading="h1"
           tone="info"
           title="No guild has that name"
           body={unfounded ? "Nothing on Solana answers to it in Pawket's program. It is free to found." : "Nothing on Solana answers to it in Pawket's program."}

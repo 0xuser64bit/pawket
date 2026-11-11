@@ -62,6 +62,9 @@ test("a page that is not there, or a pet that is not in this browser, says so in
 test("an address with no pet is a plain miss, not an error", async ({ page }) => {
   await page.goto("/pet/11111111111111111111111111111111");
   await expect(
+    page.getByRole("heading", { level: 1, name: /no pet lives at that address|solana did not answer/i }),
+  ).toBeVisible();
+  await expect(
     page.getByText(/no pet lives at that address|solana did not answer/i),
   ).toBeVisible();
 });
@@ -109,6 +112,13 @@ test("guilds are optional, read from Solana, and trade nothing outside a coin's 
   await expect(page.getByText("/guilds/sunbeam-club")).toBeVisible();
   await expect(page.getByRole("button", { name: "Connect a wallet" })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Found Sunbeam Club/ })).toBeDisabled();
+});
+
+test("a guild that is not there names its state in the page heading", async ({ page }) => {
+  await page.goto("/guilds/no-such-guild");
+  await expect(
+    page.getByRole("heading", { level: 1, name: /no guild has that name|solana did not answer/i }),
+  ).toBeVisible();
 });
 
 test("a guild's coin states its terms and what can go wrong, and asks a wallet only to trade", async ({ page }) => {

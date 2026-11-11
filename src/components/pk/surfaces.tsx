@@ -144,6 +144,7 @@ export function Banner({
   body,
   icon,
   action,
+  heading,
   className,
   children,
 }: {
@@ -152,9 +153,11 @@ export function Banner({
   body?: string;
   icon?: IconName;
   action?: ReactNode;
+  heading?: "h1" | "h2" | "h3";
   className?: string;
   children?: ReactNode;
 }) {
+  const Title = heading ?? "div";
   return (
     <div
       className={["pk-banner", `pk-banner--${tone}`, className].filter(Boolean).join(" ")}
@@ -164,7 +167,7 @@ export function Banner({
         <Icon name={icon ?? BANNER_ICON[tone]} size={18} />
       </span>
       <div className="pk-fill">
-        <div className="pk-banner__title">{title}</div>
+        <Title className="pk-banner__title">{title}</Title>
         {body ? <div className="pk-banner__body">{body}</div> : null}
         {children}
       </div>

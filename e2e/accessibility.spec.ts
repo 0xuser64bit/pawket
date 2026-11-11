@@ -14,7 +14,7 @@ async function expectAccessible(page: Page, testInfo: TestInfo, state: string) {
 for (const scheme of ["light", "dark"] as const) {
   test.describe(scheme, () => {
     test.use({ colorScheme: scheme });
-    for (const route of ["/adopt", "/home", "/profile", "/profile?tab=settings", "/playground", "/market", "/guilds/new"]) {
+    for (const route of ["/adopt", "/home", "/profile", "/profile?tab=settings", "/playground", "/market", "/guilds/new", "/guilds/no-such-guild", "/pet/11111111111111111111111111111111"]) {
       test(`accessibility: ${route}`, async ({ page }, testInfo) => {
         await page.goto(route);
         await expect(page.locator("main h1")).toBeVisible();

@@ -26,7 +26,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
-      - run: pnpm exec playwright install --with-deps chromium
+      - name: Install Chromium
+        # The runner image supplies the browser's shared libraries and the app
+        # self-hosts its fonts; apt's mirror DNS is a recurring failure.
+        run: pnpm exec playwright install chromium
       - run: pnpm e2e --workers=2
       - name: Retain failed browser evidence
         if: failure()

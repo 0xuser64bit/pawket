@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
 
+// Playwright fulfils the document below, which makes Chromium treat the page as
+// a public origin. Its Local Network Access checks then block next dev's HMR
+// WebSocket, and hydration waits for that connection. Production has no HMR,
+// and the CSP assertions are what this file proves, so allow the test server.
+test.use({ launchOptions: { args: ["--disable-audio-output", "--disable-features=LocalNetworkAccessChecks"] } });
+
 test("scripts require this document's nonce while adoption and navigation hydrate", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));

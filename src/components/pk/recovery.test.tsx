@@ -25,6 +25,11 @@ describe("read and share recovery", () => {
     expect(native.refresh).toHaveBeenCalledOnce();
   });
 
+  it("can carry the page heading when the failed read leaves no other", () => {
+    render(<ReadFailure heading="h1" body="The pet could not be read." />);
+    expect(screen.getByRole("heading", { level: 1, name: "Solana did not answer" })).toBeTruthy();
+  });
+
   it("shows a selectable value on clipboard refusal and clears it on a successful retry", async () => {
     const copy = vi.fn().mockRejectedValueOnce(new Error("Refused")).mockResolvedValue(undefined);
     vi.stubGlobal("navigator", { clipboard: { writeText: copy } });

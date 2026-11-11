@@ -44,7 +44,7 @@ export default async function CoinPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Guilds" href="/guilds" />
-        <ReadFailure body="This page could not read the coin just now. Trying again only reads its record." />
+        <ReadFailure heading="h1" body="This page could not read the coin just now. Trying again only reads its record." />
       </Screen>
     );
   }
@@ -52,7 +52,7 @@ export default async function CoinPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Guilds" href="/guilds" />
-        <Banner tone="info" title="No guild has that name" body="Nothing on Solana answers to it in Pawket's program." />
+        <Banner heading="h1" tone="info" title="No guild has that name" body="Nothing on Solana answers to it in Pawket's program." />
       </Screen>
     );
   }
@@ -60,7 +60,7 @@ export default async function CoinPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label={guild.name} href={`/guilds/${guild.slug}`} />
-        <Banner tone="info" title="Guild coins are off here" body="This deployment does not offer guild coins. The guild itself is unchanged." />
+        <Banner heading="h1" tone="info" title="Guild coins are off here" body="This deployment does not offer guild coins. The guild itself is unchanged." />
       </Screen>
     );
   }

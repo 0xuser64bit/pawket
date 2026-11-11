@@ -35,7 +35,7 @@ export default async function PetPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Pets on Solana" href="/park" />
-        <ReadFailure body="This page could not read the pet just now. Trying again only reads its record." />
+        <ReadFailure heading="h1" body="This page could not read the pet just now. Trying again only reads its record." />
       </Screen>
     );
   }
@@ -43,7 +43,7 @@ export default async function PetPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Pets on Solana" href="/park" />
-        <Banner tone="info" title="No pet lives at that address" body="Nothing on Solana answers to it in Pawket's program." />
+        <Banner heading="h1" tone="info" title="No pet lives at that address" body="Nothing on Solana answers to it in Pawket's program." />
       </Screen>
     );
   }

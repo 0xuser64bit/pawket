@@ -243,7 +243,13 @@ function LaunchPanel({
             suffix="SOL"
             value={firstBuy}
             onChange={(event) => setFirstBuy(event.target.value)}
-            error={lamports === null ? "An amount in SOL, or leave it empty for none." : undefined}
+            error={
+              lamports === null
+                ? firstBuy.includes(",")
+                  ? "Use a dot for the decimal, like 0.1 — commas only group thousands."
+                  : "An amount in SOL, or leave it empty for none."
+                : undefined
+            }
             helper="Bought in the same transaction that makes the coin, before anyone else can. Optional."
           />
           <Paper title="The terms" meta={chosen.name}>
@@ -435,7 +441,15 @@ export function TradeTicket({
           placeholder={side === "buy" ? "SOL to spend, like 0.05" : `${coin.symbol} to sell`}
           value={amount}
           onChange={(event) => change(() => setAmount(event.target.value))}
-          error={amount.trim() && units === null ? "An amount above nothing." : over ? "More than your available balance." : undefined}
+          error={
+            amount.trim() && units === null
+              ? amount.includes(",")
+                ? "Use a dot for the decimal — commas only group thousands, like 1,000."
+                : "An amount above nothing."
+              : over
+                ? "More than your available balance."
+                : undefined
+          }
           helper={
             balances
               ? `Pawket Wallet: ${sol(balances.lamports)} · Your tokens: ${formatUnits(balances.units, COIN_TERMS.decimals, 2)} ${coin.symbol}`

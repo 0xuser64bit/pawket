@@ -34,3 +34,15 @@ it("keeps the member's Leave path available on a delisted guild page while hidin
   expect(screen.queryByRole("button", { name: "Join" })).toBeNull();
   expect(screen.queryByRole("heading", { name: "What's on" })).toBeNull();
 });
+
+it("names a missing guild as the page heading", async () => {
+  reads.guild.mockResolvedValueOnce(null);
+  render(await GuildPage({ params: Promise.resolve({ slug: "no-such-guild" }) }));
+  expect(screen.getByRole("heading", { level: 1, name: "No guild has that name" })).toBeVisible();
+});
+
+it("names a failed guild read as the page heading", async () => {
+  reads.guild.mockRejectedValueOnce(new Error("offline"));
+  render(await GuildPage({ params: Promise.resolve({ slug: "sunbeam-club" }) }));
+  expect(screen.getByRole("heading", { level: 1, name: "Solana did not answer" })).toBeVisible();
+});

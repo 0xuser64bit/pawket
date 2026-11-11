@@ -24,7 +24,7 @@ export default async function VisitPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Pets on Solana" href="/park" />
-        <ReadFailure body="This visit could not read the pet just now. Trying again only reads its record." />
+        <ReadFailure heading="h1" body="This visit could not read the pet just now. Trying again only reads its record." />
       </Screen>
     );
   }
@@ -32,7 +32,7 @@ export default async function VisitPage({ params }: Props) {
     return (
       <Screen width="narrow">
         <BackLink label="Pets on Solana" href="/park" />
-        <Banner tone="info" title="No pet lives at that address" body="Only a pet kept on Solana can be visited." />
+        <Banner heading="h1" tone="info" title="No pet lives at that address" body="Only a pet kept on Solana can be visited." />
       </Screen>
     );
   }

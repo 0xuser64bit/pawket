@@ -149,3 +149,34 @@ test("a copy restores a finished round even when no care happened", async ({ pag
   const restored = await page.evaluate(() => JSON.parse(localStorage.getItem("pawket.pets.v1")!)[0]);
   expect(restored).toMatchObject({ plays: 1, xp: 25, statsUpdatedAt: JSON.parse(original)[0].statsUpdatedAt });
 });
+
+test("a failed game download offers a document reload and opens after the connection returns", async ({ page }) => {
+  await page.goto("/adopt");
+  await page.getByRole("button", { name: /choose the luna cat/i }).click();
+  await page.getByRole("textbox", { name: "Pet name" }).fill("Pepper");
+  await page.getByRole("button", { name: /that’s the one/i }).click();
+  let unavailable = true;
+  let downloads = 0;
+  await page.route("**/_next/static/chunks/**/*.js", async (route) => {
+    const response = await route.fetch();
+    if ((await response.text()).includes("Catch. Move with the pointer")) {
+      downloads++;
+      if (unavailable) return route.abort("failed");
+    }
+    await route.fulfill({ response });
+  });
+  await page.goto("/playground");
+  await expect(page.getByRole("button", { name: "Play Catch, today's round" })).toBeVisible();
+  expect(downloads).toBe(0);
+  await page.getByRole("button", { name: "Play Catch, today's round" }).click();
+  await expect(page.getByRole("button", { name: "Reload playground" })).toBeVisible();
+  expect(downloads).toBeGreaterThan(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("pawket.pets.v1")!)[0].plays)).toBe(0);
+  unavailable = false;
+  const documentReload = page.waitForRequest((request) => request.resourceType() === "document");
+  await page.getByRole("button", { name: "Reload playground" }).click();
+  await documentReload;
+  await page.getByRole("button", { name: "Play Catch, today's round" }).click();
+  await expect(page.getByRole("application", { name: /^Catch\. Move with the pointer/ })).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("pawket.pets.v1")!)[0].plays)).toBe(0);
+});

@@ -146,6 +146,9 @@ can retry against the current stored pet without replaying or overwriting newer
 care or daily progression. Score saves retry separately. Chain results belong to
 their own signature and wait for a fresh Pet/Passport pair; read recovery never
 resends the round.
+Each game module loads only after it is chosen. The Playground error boundary
+offers a document reload: a failed lazy import cannot recover by resetting the
+segment alone. Reload returns to the picker without recording an unfinished round.
 
 The shared RPC transport retries HTTP 429 responses within its bounded retry
 budget. Cancellation and read deadlines also stop the backoff immediately,

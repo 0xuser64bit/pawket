@@ -64,19 +64,19 @@ afterEach(() => {
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
 
-function finishCatch() {
+async function finishCatch() {
   render(<PlaygroundScreen />);
   fireEvent.click(screen.getByRole("button", { name: "Play Catch, today's round" }));
-  fireEvent.click(screen.getByRole("button", { name: "Finish Catch" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Finish Catch" }));
 }
 
-it.each(["pawket.best.v1", "pawket.daily.v1"])("reports a failed %s write without hiding a saved pet round", (failedKey) => {
+it.each(["pawket.best.v1", "pawket.daily.v1"])("reports a failed %s write without hiding a saved pet round", async (failedKey) => {
   const store = Storage.prototype.setItem;
   vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
     if (key === failedKey) throw new Error("Storage full");
     store.call(this, key, value);
   });
-  finishCatch();
+  await finishCatch();
 
   expect(screen.getByRole("alert")).toHaveTextContent(/could not store.*best scores/i);
   expect(screen.getByText(new RegExp(`\\+${DAILY_GOAL_REWARD_XP} XP for playing today`))).toBeVisible();
@@ -92,9 +92,9 @@ it.each(["pawket.best.v1", "pawket.daily.v1"])("reports a failed %s write withou
   }
 });
 
-it("reports score and pet storage failures independently", () => {
+it("reports score and pet storage failures independently", async () => {
   vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage full"); });
-  finishCatch();
+  await finishCatch();
   expect(screen.getByText(/could not store all of your best scores/i)).toBeVisible();
   expect(screen.getAllByRole("alert")).toHaveLength(2);
   expect(screen.getByText(/did not store the bonus/)).toBeVisible();
@@ -103,7 +103,7 @@ it("reports score and pet storage failures independently", () => {
   expect(readPet(pet.id)).toEqual(pet);
 });
 
-it("does not report a storage failure for scores that did not improve", () => {
+it("does not report a storage failure for scores that did not improve", async () => {
   keepBest("catch", 100);
   keepDaily("catch", utcDay(new Date()), 100);
   const store = Storage.prototype.setItem;
@@ -111,24 +111,24 @@ it("does not report a storage failure for scores that did not improve", () => {
     if (key === "pawket.best.v1" || key === "pawket.daily.v1") throw new Error("Storage full");
     store.call(this, key, value);
   });
-  finishCatch();
+  await finishCatch();
   expect(screen.queryByRole("alert")).toBeNull();
   expect(screen.getByText(/Your best here is 100/)).toBeVisible();
   expect(readPet(pet.id)).toMatchObject({ plays: 1, xp: DAILY_GOAL_REWARD_XP });
 });
 
-it("keeps the explicit Solana recording action when local score storage fails", () => {
+it("keeps the explicit Solana recording action when local score storage fails", async () => {
   onChain = true;
   owner = OWNER;
   vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage full"); });
-  finishCatch();
+  await finishCatch();
   expect(screen.getByRole("alert")).toHaveTextContent(/could not store.*best scores/i);
   expect(screen.getByRole("button", { name: "Record the round" })).toBeEnabled();
   expect(screen.getByText(/Record it on Solana to keep/)).toBeVisible();
   expect(readPet(pet.id)).toEqual(pet);
 });
 
-it("finishes with the initiating pet even when Home selection changes during the round", () => {
+it("finishes with the initiating pet even when Home selection changes during the round", async () => {
   const original = pet;
   const view = render(<PlaygroundScreen />);
   fireEvent.click(screen.getByRole("button", { name: "Play Catch, today's round" }));
@@ -136,16 +136,16 @@ it("finishes with the initiating pet even when Home selection changes during the
   savePet(pet);
   pets = [original, pet];
   view.rerender(<PlaygroundScreen />);
-  fireEvent.click(screen.getByRole("button", { name: "Finish Catch" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Finish Catch" }));
   expect(readPet(original.id)).toMatchObject({ plays: 1, xp: 25 });
   expect(readPet(pet.id)).toMatchObject({ plays: 0, xp: 0 });
 });
 
-it("does not label a new round recorded from an unrelated confirmed receipt", () => {
+it("does not label a new round recorded from an unrelated confirmed receipt", async () => {
   onChain = true;
   owner = OWNER;
   tx = { stage: "confirmed", signature: "other-round" };
-  finishCatch();
+  await finishCatch();
   expect(screen.getByRole("button", { name: "Record the round" })).toBeEnabled();
   expect(screen.queryByText(/Recorded\. \+25 XP/)).toBeNull();
 });
@@ -154,7 +154,7 @@ it("keeps an uncertain round tied to its receipt and prevents another recording 
   onChain = true;
   owner = OWNER;
   sendRound.mockResolvedValue({ outcome: "unknown", signature: "this-round", blockhash: "hash", sponsored: true, programs: [] });
-  finishCatch();
+  await finishCatch();
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Record the round" })); });
   expect(screen.queryByRole("button", { name: "Record the round" })).toBeNull();
   expect(screen.getByText(/Checking round receipt/)).toBeVisible();
@@ -165,7 +165,7 @@ it("waits for the updated pet and Passport and offers a read-only retry after a 
   onChain = true;
   owner = OWNER;
   sendRound.mockResolvedValue({ outcome: "confirmed", signature: "this-round", blockhash: "hash", sponsored: true, programs: [] });
-  finishCatch();
+  await finishCatch();
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Record the round" })); });
   expect(screen.queryByText(/Recorded\. \+25 XP/)).toBeNull();
   expect(screen.getByRole("button", { name: "Reload round record" })).toBeEnabled();
@@ -183,7 +183,7 @@ it("refuses to record a round with a different connected owner", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Play Catch, today's round" }));
   owner = "So11111111111111111111111111111111111111112" as Address;
   view.rerender(<PlaygroundScreen />);
-  fireEvent.click(screen.getByRole("button", { name: "Finish Catch" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Finish Catch" }));
   const record = screen.getByRole("button", { name: "Record the round" });
   expect(record).toHaveAttribute("aria-disabled", "true");
   fireEvent.click(record);
@@ -191,13 +191,13 @@ it("refuses to record a round with a different connected owner", async () => {
   expect(sendRound).not.toHaveBeenCalled();
 });
 
-it("retries a completed local round without replaying it or overwriting newer care", () => {
+it("retries a completed local round without replaying it or overwriting newer care", async () => {
   const set = Storage.prototype.setItem;
   const blocked = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
     if (key === "pawket.pets.v1") throw new Error("Storage full");
     set.call(this, key, value);
   });
-  finishCatch();
+  await finishCatch();
   expect(readPet(pet.id)).toMatchObject({ plays: 0, xp: 0 });
   const retry = screen.getByRole("button", { name: "Retry saving round" });
   blocked.mockRestore();
@@ -210,13 +210,13 @@ it("retries a completed local round without replaying it or overwriting newer ca
   expect(screen.queryByRole("button", { name: "Retry saving round" })).toBeNull();
 });
 
-it("can retry score storage without playing another round", () => {
+it("can retry score storage without playing another round", async () => {
   const set = Storage.prototype.setItem;
   const blocked = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
     if (key === "pawket.best.v1") throw new Error("Storage full");
     set.call(this, key, value);
   });
-  finishCatch();
+  await finishCatch();
   const retry = screen.getByRole("button", { name: "Retry saving scores" });
   blocked.mockRestore();
   fireEvent.click(retry);
@@ -245,7 +245,7 @@ it("reconciles only the uncertain round's own late confirmation", async () => {
   sendRound.mockResolvedValue({ outcome: "unknown", signature: "this-round", blockhash: "hash", sponsored: true, programs: [] });
   const view = render(<PlaygroundScreen />);
   fireEvent.click(screen.getByRole("button", { name: "Play Catch, today's round" }));
-  fireEvent.click(screen.getByRole("button", { name: "Finish Catch" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Finish Catch" }));
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Record the round" })); });
   tx = { stage: "confirmed", signature: "other-round" };
   view.rerender(<PlaygroundScreen />);
@@ -264,7 +264,7 @@ it("starts the next chain round from the refreshed Passport instead of claiming 
   sendRound.mockResolvedValue({ outcome: "confirmed", signature: "first-round", sponsored: true });
   const view = render(<PlaygroundScreen />);
   fireEvent.click(screen.getByRole("button", { name: "Play Catch, today's round" }));
-  fireEvent.click(screen.getByRole("button", { name: "Finish Catch" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Finish Catch" }));
   const before = owned[0];
   owned = [{ ...before, pet: { ...before.pet, xp: 25 }, passport: { ...before.passport, plays: 1, lastPlayDay: Math.floor(Date.now() / 86_400_000) } }];
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Record the round" })); });
@@ -272,7 +272,7 @@ it("starts the next chain round from the refreshed Passport instead of claiming 
   pets = [pet];
   view.rerender(<PlaygroundScreen />);
   fireEvent.click(screen.getByRole("button", { name: "Play again" }));
-  fireEvent.click(screen.getByRole("button", { name: "Finish Catch" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Finish Catch" }));
   owned = [{ ...owned[0], passport: { ...owned[0].passport, plays: 2 } }];
   sendRound.mockResolvedValue({ outcome: "confirmed", signature: "second-round", sponsored: true });
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Record the round" })); });
@@ -287,7 +287,7 @@ it("does not start an old-owner read when the wallet changes before a delayed ro
   sendRound.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
   const view = render(<PlaygroundScreen />);
   fireEvent.click(screen.getByRole("button", { name: "Play Catch, today's round" }));
-  fireEvent.click(screen.getByRole("button", { name: "Finish Catch" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Finish Catch" }));
   fireEvent.click(screen.getByRole("button", { name: "Record the round" }));
   owner = "So11111111111111111111111111111111111111112" as Address;
   view.rerender(<PlaygroundScreen />);

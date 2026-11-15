@@ -15,7 +15,7 @@ gitleaks git --redact --log-opts=--all .  # every local Git ref, including old c
 ## Frontend stress checks
 
 `pnpm e2e:audit` runs axe accessibility scans, copy-import failure/race and
-receipt-recovery scenarios, real round-to-backup restoration, profile history,
+receipt and game-download recovery, real round-to-backup restoration, profile history,
 and five responsive widths (320–1920px) with keyboard-only sheet checks in
 Chromium, Firefox and WebKit. Install those browsers with
 `pnpm exec playwright install chromium firefox webkit`. Like the ordinary E2E

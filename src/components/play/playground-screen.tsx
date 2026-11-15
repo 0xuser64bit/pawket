@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Address } from "@solana/kit";
 import {
@@ -38,11 +39,12 @@ import { usePawketSend, type PawketSender } from "@/lib/solana/use-send";
 import { dailySeed, keepBest, keepDaily, readBest, readDaily, type GameId } from "@/lib/play/best";
 import { useSound } from "@/lib/play/sound";
 import { useHere } from "@/lib/native/android";
-import { CatchGame } from "./catch-game";
-import { CopyGame } from "./copy-game";
-import { HopGame } from "./hop-game";
-import { PairsGame } from "./pairs-game";
 import { Obstacle, RainCloud, Star, Treat } from "./game-art";
+
+const CatchGame = dynamic(() => import("./catch-game").then((game) => game.CatchGame), { loading: () => <Waiting label="Opening Catch" /> });
+const CopyGame = dynamic(() => import("./copy-game").then((game) => game.CopyGame), { loading: () => <Waiting label="Opening Copy" /> });
+const HopGame = dynamic(() => import("./hop-game").then((game) => game.HopGame), { loading: () => <Waiting label="Opening Hop" /> });
+const PairsGame = dynamic(() => import("./pairs-game").then((game) => game.PairsGame), { loading: () => <Waiting label="Opening Pairs" /> });
 
 const GAMES: Array<{ id: GameId; name: string; line: string; unit: (score: number) => string }> = [
   { id: "catch", name: "Catch", line: "Treats fall. Move to catch them, and keep clear of the storm clouds.", unit: (n) => `${n} caught` },

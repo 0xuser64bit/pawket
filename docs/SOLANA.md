@@ -168,6 +168,12 @@ the retained transaction receipt.
 After reconciliation, Home adds care and progression detail to that same
 signature-bound receipt, not a second toast.
 
+Playground retains the pet and owner that began each round. Recording is explicit;
+an unknown result cannot be recorded again. Success detail waits for a fresh Pet
+and Passport showing an advanced round count; a stale or failed read offers
+**Reload round record**, which never sends. Changing the connected owner blocks
+recording and reconciliation until the initiating owner returns.
+
 Preparation and signing have bounded waits. A late signature is discarded,
 never broadcast. A lost broadcast/confirmation answer keeps the known
 signature and reports `unknown`; no replacement is sent automatically.

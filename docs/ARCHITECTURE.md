@@ -120,6 +120,9 @@ failure; letting a pet go navigates only after removal is saved. Keeping a
 local pet on Solana creates a new chain pet; it does not import local
 progression. Failed local cleanup after confirmation leaves the chain pet
 available and explains that a local copy remains.
+Selecting a Home pet also returns save success; navigation and local Keep cleanup
+wait for that selection to save. Adoption distinguishes a saved pet from an
+unsaved device coat rather than inviting another adoption.
 
 App sends use `usePawketSend` and `send.ts`. A linked Pawket Wallet is
 required for app actions, holding SOL only where it is spent (`needsSol`). Non-money instructions become program-checked device
@@ -137,6 +140,12 @@ Read failures and stale records leave care pending with a read-only retry;
 they never send another transaction. Leaving the screen or changing pet or
 owner discards that screen's pending feedback. The original transaction
 receipt continues through the shared send lifecycle.
+
+Playground snapshots the initiating pet for the round. A failed local completion
+can retry against the current stored pet without replaying or overwriting newer
+care or daily progression. Score saves retry separately. Chain results belong to
+their own signature and wait for a fresh Pet/Passport pair; read recovery never
+resends the round.
 
 The shared RPC transport retries HTTP 429 responses within its bounded retry
 budget. Cancellation and read deadlines also stop the backoff immediately,

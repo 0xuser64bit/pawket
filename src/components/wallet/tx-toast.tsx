@@ -9,24 +9,31 @@ import { DevnetFaucet } from "@/components/wallet/faucet";
 
 const here = () => (inAndroidApp() ? "this app" : "this browser");
 
-export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast | null {
-  const title = tx.label ?? "Your transaction";
-  const look = tx.signature ? (
+function ReceiptLinks({ signature, cluster }: { signature: string; cluster: SolanaCluster }) {
+  return (
     <>
       {" "}
-      <a href={explorerTxUrl(tx.signature, cluster)} target="_blank" rel="noreferrer">
+      <a href={explorerTxUrl(signature, cluster)} target="_blank" rel="noreferrer">
         See it on Explorer
       </a>
+      <span className="pk-toast__signature" role="group" aria-label="Transaction signature" tabIndex={0}>{signature}</span>
     </>
-  ) : null;
+  );
+}
+
+export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast | null {
+  const title = tx.label ?? "Your transaction";
+  const receipt = { id, persistent: true } as const;
+  // Stage copy and recovery actions change position; receipt controls must not remount.
+  const look = tx.signature ? <ReceiptLinks key="receipt" signature={tx.signature} cluster={cluster} /> : null;
   switch (tx.stage) {
     case "idle":
       return null;
     case "preparing":
-      return { id, tone: "wait", title, body: "Checking your wallet and preparing the record." };
+      return { ...receipt, tone: "wait", title, body: "Checking your wallet and preparing the record." };
     case "signing":
       return {
-        id,
+        ...receipt,
         tone: "wait",
         title,
         body:
@@ -44,16 +51,15 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
           ),
       };
     case "sending":
-      return { id, tone: "wait", title, body: <>On its way to Solana.{look}</> };
+      return { ...receipt, tone: "wait", title, body: <>On its way to Solana.{look}</> };
     case "confirming":
-      return { id, tone: "wait", title, body: <>Waiting for Solana to confirm it.{look}</> };
+      return { ...receipt, tone: "wait", title, body: <>Waiting for Solana to confirm it.{look}</> };
     case "confirmed": {
       const paid = tx.by === "device" ? ", no pop-up" : tx.sponsored === true ? ", Pawket paid the fee" : tx.sponsored === false ? ", you paid the fee" : "";
       return {
-        id,
+        ...receipt,
         tone: "done",
         title,
-        ttl: 6_000,
         body: (
           <>
             {tx.done ? `${tx.done} ` : ""}Recorded on Solana{paid}.{look}
@@ -63,7 +69,7 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
     }
     case "unknown":
       return {
-        id,
+        ...receipt,
         tone: "wait",
         title: "Still waiting",
         body: (
@@ -76,19 +82,18 @@ export function txToast(id: string, tx: TxState, cluster: SolanaCluster): Toast 
     case "failed":
       if (tx.needs) {
         return {
-          id,
+          ...receipt,
           tone: "note",
-          ttl: 12_000,
           title: tx.needs === "limit" ? "Today's limit is used" : tx.needs === "fund" ? "Add SOL to your Pawket Wallet" : "Link your Pawket Wallet",
           body: (
             <>
-              {tx.error} <Link href="/wallet">Open Pawket Wallet</Link>
+              {tx.error} <Link href="/wallet">Open Pawket Wallet</Link>{look}
             </>
           ),
         };
       }
       return {
-        id,
+        ...receipt,
         tone: "risk",
         title: `${title}: it did not go through`,
         body: (

@@ -52,7 +52,7 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={option.icon} alt="" />
-                <span>{option.name === PHONE_WALLETS ? "A wallet app on this phone" : option.name}</span>
+                <span className="pk-btn__label">{option.name === PHONE_WALLETS ? "A wallet app on this phone" : option.name}</span>
               </button>
             ))}
           </Stack>
@@ -75,7 +75,7 @@ export function WalletSheet({ onDismiss, why }: { onDismiss: () => void; why: st
             </p>
             {INSTALL.map((option) => (
               <a key={option.name} className="pk-btn pk-btn--quiet pk-btn--full" href={option.href} target="_blank" rel="noreferrer">
-                {option.name}
+                <span className="pk-btn__label">{option.name}</span>
               </a>
             ))}
           </Stack>

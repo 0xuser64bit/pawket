@@ -70,6 +70,20 @@ describe("send routing (no wallet signing)", () => {
     expect(mock.send).toHaveBeenCalledOnce();
   });
 
+  it("retains the signed receipt when preflight refuses without attaching its signature", async () => {
+    sponsor();
+    mock.send.mockImplementationOnce((options: SendOptions) => {
+      options.onSigned?.({ signature: "preflight-receipt", blockhash: "hash", programs: [owner], sponsored: true });
+      throw new Error("Preflight refused this purchase");
+    });
+    const observed = vi.fn();
+    const hook = renderHook(usePawketSend);
+    await act(async () => { await hook.result.current.send("Buy a look", () => [], observed); });
+    expect(hook.result.current.tx).toMatchObject({ stage: "failed", signature: "preflight-receipt" });
+    expect(observed).toHaveBeenLastCalledWith(expect.objectContaining({ stage: "failed", signature: "preflight-receipt" }));
+    expect(window.sessionStorage.getItem("pawket.pending-sends")).toBeNull();
+  });
+
   it.each(["direct", "prepared", "device"])("keeps a %s receipt before broadcast finishes and recovers it after remount", async (path) => {
     sponsor();
     const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);

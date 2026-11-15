@@ -8,7 +8,7 @@ import { loadPets, savePet } from "@/lib/guest/storage";
 import { chooseCoat, readCoatChoices } from "@/lib/player/use-coats";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { derivePetPda } from "@/lib/solana/pda";
-import { dismissToast, Toasts } from "@/components/pk/toast";
+import { dismissToast, showToast, Toasts } from "@/components/pk/toast";
 
 const mock = vi.hoisted(() => ({
   companion: null as unknown as CompanionState,
@@ -68,6 +68,7 @@ afterEach(async () => {
   dismissToast(`coat-copy-${source.id}`);
   dismissToast(`local-copy-${source.id}`);
   dismissToast("pet-selection");
+  for (const id of ["receipt-a", "receipt-b", "receipt-c"]) dismissToast(id);
   await new Promise((resolve) => setTimeout(resolve, 210));
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -106,6 +107,7 @@ it.each(["home", "adoption"] as const)("keeps the chosen device coat after a con
 
 it.each(["home", "adoption"] as const)("reports a failed coat save after a confirmed Keep from %s and retains the local pet and choice for retry", async (where) => {
   await openKeep(where);
+  retainReceipts();
   const setItem = Storage.prototype.setItem;
   vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
     if (key === "pawket.pet-coats.v1") throw new Error("Storage full");
@@ -116,6 +118,28 @@ it.each(["home", "adoption"] as const)("reports a failed coat save after a confi
   expect(screen.getByText(/coat could not be saved/i)).toBeInTheDocument();
   expect(readCoatChoices()[target]).toBeUndefined();
   expect(readCoatChoices()[source.id]).toBe("lilac");
+  expect(loadPets()).toEqual([source]);
+});
+
+function retainReceipts() {
+  act(() => {
+    for (const id of ["receipt-a", "receipt-b", "receipt-c"]) {
+      showToast({ id, tone: "done", title: id, persistent: true });
+    }
+  });
+}
+
+it.each(["home", "adoption"] as const)("shows failed local cleanup from %s even with three retained receipts", async (where) => {
+  await openKeep(where);
+  retainReceipts();
+  const setItem = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (key === "pawket.pets.v1") throw new Error("Storage full");
+    setItem.call(this, key, value);
+  });
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Keep on Solana" })));
+  await waitFor(() => expect(window.localStorage.getItem("pawket.active-pet")).toBe(target));
+  await waitFor(() => expect(screen.getByText(/local copy is still on this device/i)).toBeVisible());
   expect(loadPets()).toEqual([source]);
 });
 

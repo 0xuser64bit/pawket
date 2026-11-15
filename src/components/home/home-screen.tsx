@@ -165,7 +165,7 @@ export function HomeScreen() {
   useEffect(() => {
     if (carried.current && active?.pet.address === carried.current.address) {
       if (carried.current.coatSaved && !removePet(carried.current.id)) {
-        showToast({ id: `local-copy-${carried.current.id}`, tone: "note", title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
+        showToast({ id: `local-copy-${carried.current.id}`, tone: "note", persistent: true, title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
       }
       carried.current = null;
     }
@@ -410,7 +410,7 @@ export function HomeScreen() {
           onCarried={(address) => {
             const coatSaved = copyCoat(keeping.id, address);
             if (!coatSaved) {
-              showToast({ id: `coat-copy-${keeping.id}`, tone: "note", title: "Kept on Solana", body: "Their coat could not be saved for the Solana pet on this device. The local pet and its coat remain; try Keep on Solana again when storage is available." });
+              showToast({ id: `coat-copy-${keeping.id}`, tone: "note", persistent: true, title: "Kept on Solana", body: "Their coat could not be saved for the Solana pet on this device. The local pet and its coat remain; try Keep on Solana again when storage is available." });
             }
             carried.current = { id: keeping.id, address, coatSaved };
             if (!chooseAtHome(address)) {

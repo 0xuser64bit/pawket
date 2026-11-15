@@ -306,7 +306,7 @@ export function usePawketSend() {
           show({ stage: "failed", error: error.message, needs: error.need });
           return null;
         }
-        show({ stage: "failed", error: toUserFacingError(error), signature: (error as { signature?: string }).signature });
+        show({ stage: "failed", error: toUserFacingError(error), signature: (error as { signature?: string }).signature ?? state.signature });
         if (isUserRejection(error)) dismissToast(id);
         else haptic("refuse");
         return null;

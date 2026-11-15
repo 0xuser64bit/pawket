@@ -169,6 +169,7 @@ few at once never cover the screen; hover, focus or a tap fans them out.
 A finger flicks one away up or to either side, and its close keeps a 44px
 target behind a small mark. A wait's mark becomes a tick that pops in.
 Transaction receipts stay until dismissed and expose a selectable full signature.
+Partial-save recovery notices also stay until dismissed, even behind receipts.
 Other timed cards pause while hovered, focused, covered or backgrounded. Updates
 come forward without moving a focused control; an expanded fan scrolls within
 the viewport rather than hiding its links or close controls.

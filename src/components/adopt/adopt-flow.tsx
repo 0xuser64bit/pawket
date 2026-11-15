@@ -247,9 +247,9 @@ export function AdoptFlow() {
     if (!adopted || !selectHome(address)) return;
     const coatSaved = copyCoat(adopted.id, address);
     if (!coatSaved) {
-      showToast({ id: `coat-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "Their coat could not be saved for the Solana pet on this device. The local pet and its coat remain; try Keep on Solana again when storage is available." });
+      showToast({ id: `coat-copy-${adopted.id}`, tone: "note", persistent: true, title: "Kept on Solana", body: "Their coat could not be saved for the Solana pet on this device. The local pet and its coat remain; try Keep on Solana again when storage is available." });
     } else if (!removePet(adopted.id)) {
-      showToast({ id: `local-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
+      showToast({ id: `local-copy-${adopted.id}`, tone: "note", persistent: true, title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
     }
     goHome();
   }

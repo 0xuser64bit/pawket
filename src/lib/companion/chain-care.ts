@@ -8,6 +8,7 @@ import { readDeadline } from "@/lib/utils/deadline";
 import type { OwnedPetsRefresh } from "./use-companion";
 
 export interface RecordedCare {
+  signature: string;
   before: GuestPet;
   after: GuestPet;
   action: CareActionType;
@@ -118,14 +119,14 @@ export class ChainCare {
         this.publish(null);
       }
     }
-    if (pending.stage === "ready" && pending.after && active &&
+    if (pending.stage === "ready" && pending.signature && pending.after && active &&
       reflectsCare(pending.before, active, pending.action) &&
       active.pet.lastCareAt[pending.action] >= pending.after.pet.lastCareAt[pending.action] &&
       active.pet.xp >= pending.after.pet.xp && active.passport.careCount >= pending.after.passport.careCount) {
       // Clear first: rerenders and late receipt updates cannot replay this moment.
       this.pending = null;
       this.publish(null);
-      pending.onRecorded({ before: toCompanionRecord(pending.before), after: toCompanionRecord(active), action: pending.action, guild: Boolean(active.member) });
+      pending.onRecorded({ signature: pending.signature, before: toCompanionRecord(pending.before), after: toCompanionRecord(active), action: pending.action, guild: Boolean(active.member) });
     }
   }
 

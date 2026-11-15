@@ -136,15 +136,9 @@ export function HomeScreen() {
     active,
     tx: sender.tx,
     refresh: companion.refresh,
-    onRecorded: ({ before, after, action, guild }) => {
+    onRecorded: ({ before, after, action, guild, signature }) => {
       const level = levelUp(before.xp, after.xp);
-      showToast({
-        id: `care-${before.id}`,
-        tone: "done",
-        title: `${before.name}'s care recorded`,
-        body: `${CARE_DONE_LABEL[action]}.${level ? ` ${after.name} is level ${level} now.` : ""}${earnedLine(before, after, { onChain: true, guild })}`,
-        ttl: 10_000,
-      });
+      sender.annotateReceipt(signature, `${CARE_DONE_LABEL[action]}. +${after.xp - before.xp} XP.${level ? ` ${after.name} is level ${level} now.` : ""}${earnedLine(before, after, { onChain: true, guild })}`);
       earned(action, after.xp - before.xp);
       record({ name: "care_saved", where: "solana", action });
       ask(level ? "cheer" : CARE_MOMENT[action]);
@@ -152,6 +146,11 @@ export function HomeScreen() {
   });
 
   const resting = pet ? Object.values(cooldownsFor(pet, now)).some((left) => left > 0) : false;
+  function chooseAtHome(id: string) {
+    if (companion.choose(id)) return true;
+    showToast({ id: "pet-selection", tone: "risk", title: "Pet selection not saved", body: "This device could not bring that pet home. Free some storage, then try switching again. Your pets and their records are unchanged." });
+    return false;
+  }
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), resting ? 1_000 : 30_000);
     return () => window.clearInterval(id);
@@ -274,25 +273,8 @@ export function HomeScreen() {
     const level = levelUp(current.xp, result.pet.xp);
     setNotice({
       tone: "ok",
-      text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${earnedLine(current, result.pet)}`,
+      text: `${CARE_DONE_LABEL[action]}. +${result.xpGained} XP.${day}${level ? ` ${current.name} is level ${level} now.` : ""}${earnedLine(current, result.pet)}`,
     });
-    if (level) {
-      showToast({
-        id: `keep-${current.id}`,
-        tone: "note",
-        title: `${current.name} is level ${level}!`,
-        ttl: 14_000,
-        body: (
-          <>
-            This level lives in {here}. On Solana, {current.name} starts at level 1 — the sooner, the less to
-            redo.{" "}
-            <button type="button" className="pk-linkish" onClick={() => setKeeping(readPet(current.id) ?? current)}>
-              Keep {current.name} on Solana
-            </button>
-          </>
-        ),
-      });
-    }
     earned(action, result.xpGained);
     record({ name: "care_saved", where: "browser", action });
     ask(level ? "cheer" : CARE_MOMENT[action]);
@@ -338,7 +320,7 @@ export function HomeScreen() {
         <PetSwitcher
           pets={companion.all}
           home={pet.id}
-          onChoose={companion.choose}
+          onChoose={chooseAtHome}
           kept={new Set(companion.owned.map((entry) => entry.pet.address))}
         />
       </div>
@@ -431,7 +413,10 @@ export function HomeScreen() {
               showToast({ id: `coat-copy-${keeping.id}`, tone: "note", title: "Kept on Solana", body: "Their coat could not be saved for the Solana pet on this device. The local pet and its coat remain; try Keep on Solana again when storage is available." });
             }
             carried.current = { id: keeping.id, address, coatSaved };
-            companion.choose(address);
+            if (!chooseAtHome(address)) {
+              carried.current = null;
+              return;
+            }
             // An RPC node can confirm a pet before it serves its account.
             void (async () => {
               for (let tries = 0; tries < 6 && carried.current?.address === address; tries++) {

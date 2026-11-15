@@ -12,11 +12,13 @@ export function StickerBook({
   onChain,
   inGuild,
   social,
+  chainUnavailable = false,
 }: {
   pets: GuestPet[];
   onChain: Set<string>;
   inGuild: Set<string>;
   social?: Map<string, SocialRecord>;
+  chainUnavailable?: boolean;
 }) {
   const earnedBy = new Map<string, GuestPet[]>();
   for (const pet of pets) {
@@ -25,9 +27,11 @@ export function StickerBook({
       earnedBy.set(id, [...(earnedBy.get(id) ?? []), pet]);
     }
   }
+  const socialUnavailable = pets.some((pet) => onChain.has(pet.id) && !social?.has(pet.id));
+  const partial = chainUnavailable || socialUnavailable;
   return (
     <div className="pk-stack" style={{ gap: "var(--space-4)" }}>
-      <SectionLabel count={`${earnedBy.size} / ${BADGES.length}`}>Stickers</SectionLabel>
+      <SectionLabel count={partial ? `${earnedBy.size} known / ${BADGES.length}` : `${earnedBy.size} / ${BADGES.length}`}>Stickers</SectionLabel>
       <p className="body-sm pk-muted">
         Earned by care, by showing up, by playing and by being visited — read from each pet&apos;s record, so they
         cannot be bought and are never lost. They change nothing about a pet but its pride.
@@ -37,6 +41,7 @@ export function StickerBook({
         {BADGES.map((badge) => {
           const by = earnedBy.get(badge.id) ?? [];
           const earned = by.length > 0;
+          const unavailable = !earned && (chainUnavailable || (socialUnavailable && ["visited", "popular", "gathering"].includes(badge.id)));
           return (
             <li key={badge.id} className={["pk-sticker", `pk-sticker--${badge.tone}`, earned ? "" : "pk-sticker--locked"].filter(Boolean).join(" ")}>
               <span className="pk-sticker__art" aria-hidden="true">
@@ -45,7 +50,7 @@ export function StickerBook({
               <span className="pk-sticker__words">
                 <span className="title">{badge.name}</span>
                 <span className="caption pk-muted">
-                  {earned ? `Earned by ${by.map((pet) => pet.name).join(", ")}` : badge.how}
+                  {earned ? `Earned by ${by.map((pet) => pet.name).join(", ")}` : unavailable ? "Unavailable until the Solana records are read." : badge.how}
                 </span>
               </span>
               {earned ? (
@@ -56,9 +61,9 @@ export function StickerBook({
                     </span>
                   ))}
                 </span>
-              ) : (
+              ) : !unavailable ? (
                 <span className="pk-sr">Not earned yet.</span>
-              )}
+              ) : null}
             </li>
           );
         })}

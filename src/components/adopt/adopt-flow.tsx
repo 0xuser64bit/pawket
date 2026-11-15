@@ -13,6 +13,7 @@ import {
   Mark,
   Paper,
   PetFrame,
+  Problem,
   Receipt,
   Stack,
 } from "@/components/pk";
@@ -135,6 +136,9 @@ export function AdoptFlow() {
   const [error, setError] = useState<string>();
   const [adopted, setAdopted] = useState<GuestPet>();
   const [stored, setStored] = useState(true);
+  const [coatStored, setCoatStored] = useState(true);
+  const [homeNotice, setHomeNotice] = useState<string>();
+  const [carried, setCarried] = useState<Address>();
   const [keeping, setKeeping] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const nameInput = useRef<HTMLInputElement>(null);
@@ -222,10 +226,32 @@ export function AdoptFlow() {
   }
 
   function welcome(pet: GuestPet) {
-    choosePet(pet.id);
-    if (coat.id !== "classic") chooseCoat(pet.id, coat.id);
+    selectHome(pet.id);
+    setCoatStored(coat.id === "classic" || chooseCoat(pet.id, coat.id));
     record({ name: "pet_adopted" });
     void askBrowserToKeep();
+  }
+
+  function selectHome(id: string) {
+    const saved = choosePet(id);
+    setHomeNotice(saved ? undefined : `${Here} did not save who is home. Your previous pet is still selected. Try Take them home again.`);
+    return saved;
+  }
+
+  function takeHome() {
+    if (carried) finishKeep(carried);
+    else if (adopted && selectHome(adopted.id)) goHome();
+  }
+
+  function finishKeep(address: Address) {
+    if (!adopted || !selectHome(address)) return;
+    const coatSaved = copyCoat(adopted.id, address);
+    if (!coatSaved) {
+      showToast({ id: `coat-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "Their coat could not be saved for the Solana pet on this device. The local pet and its coat remain; try Keep on Solana again when storage is available." });
+    } else if (!removePet(adopted.id)) {
+      showToast({ id: `local-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
+    }
+    goHome();
   }
 
   function retrySave() {
@@ -419,8 +445,8 @@ export function AdoptFlow() {
               size="lg"
               level={projected?.level ?? 1}
               seed={kept}
-              coat={coat.coat}
-              patch={coat.patch}
+              coat={coatStored ? coat.coat : findCoat(species, "classic").coat}
+              patch={coatStored ? coat.patch : findCoat(species, "classic").patch}
             />
             <Tag name={kept} />
           </span>
@@ -443,15 +469,24 @@ export function AdoptFlow() {
                 rows={[
                   { k: "Name", v: kept },
                   { k: "Species", v: SPECIES_LABEL[species] },
-                  { k: "Coat", v: coat.name },
+                  { k: "Coat", v: coatStored ? coat.name : `${findCoat(species, "classic").name} (${coat.name} not saved)` },
                   { k: "Temperament", v: PERSONALITY_LABEL[personality] },
                   { k: "Adopted", v: adopted ? formatLocalDate(adopted.createdAt) : "Today" },
                   { k: "Kept", v: `In ${here}` },
                 ]}
               />
             </Paper>
+            {!coatStored && adopted ? (
+              <Banner
+                tone="wait"
+                title="Pet saved, coat not saved"
+                body={`${kept} is saved in ${here}, but their ${coat.name.toLowerCase()} coat was not saved. They have the classic coat for now. Retry here, or choose it again in Profile’s wardrobe.`}
+                action={<Button label="Try saving coat again" tone="quiet" size="sm" onClick={() => setCoatStored(chooseCoat(adopted.id, coat.id))} />}
+              />
+            ) : null}
+            {homeNotice ? <Problem>{homeNotice}</Problem> : null}
             <div className="pk-adopt__act">
-              <Button label="Take them home" size="lg" full icon="home" busy={opening} onClick={goHome} />
+              <Button label="Take them home" size="lg" full icon="home" busy={opening} onClick={takeHome} />
             </div>
             {adopted ? (
               <div className="pk-adopt__keep">
@@ -470,14 +505,8 @@ export function AdoptFlow() {
                 sender={sender}
                 onDismiss={() => setKeeping(false)}
                 onCarried={(address) => {
-                  const coatSaved = copyCoat(adopted.id, address);
-                  if (!coatSaved) {
-                    showToast({ id: `coat-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "Their coat could not be saved for the Solana pet on this device. The local pet and its coat remain; try Keep on Solana again when storage is available." });
-                  } else if (!removePet(adopted.id)) {
-                    showToast({ id: `local-copy-${adopted.id}`, tone: "note", title: "Kept on Solana", body: "The local copy is still on this device. Remove it from its page when storage is available." });
-                  }
-                  choosePet(address);
-                  goHome();
+                  setCarried(address);
+                  finishKeep(address);
                 }}
               />
             ) : null}

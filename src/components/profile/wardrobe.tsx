@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { NavLink as Link } from "@/components/pk/nav-link";
-import { Button, ButtonLink, Choice, Columns, ItemTile, PetFrame, SectionLabel, Stack, WearableArt } from "@/components/pk";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useNavigationWait } from "@/components/pk/nav-link";
+import { Button, ButtonLink, Choice, Columns, ItemTile, PetFrame, Problem, SectionLabel, Stack, Waiting, WearableArt } from "@/components/pk";
 import { COATS } from "@/lib/player/coats";
 import { chooseCoat, useCoats } from "@/lib/player/use-coats";
 import { PetSwitcher } from "@/components/home/pet-switcher";
@@ -24,6 +25,9 @@ import { useEyesFollow } from "@/lib/utils/use-eyes-follow";
 import { useHere } from "@/lib/native/android";
 
 export function Wardrobe({ companion, sender }: { companion: CompanionState; sender: PawketSender }) {
+  const router = useRouter();
+  const [opening, startOpening] = useTransition();
+  useNavigationWait(opening);
   const [chosen, setChosen] = useState<string | null>(null);
   const pet = companion.all.find((p) => p.id === chosen) ?? companion.pet;
   const chain = companion.owned.find((entry) => entry.pet.address === pet?.id) ?? null;
@@ -35,12 +39,24 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
   const closet = useCloset(companion.owner);
   const coatOf = useCoats();
   const bought = new Set(closet.data?.items ?? []);
+  const closetKnown = !companion.owner || closet.data !== undefined;
+  const closetReading = closet.status === "fetching";
   useEyesFollow(room);
   if (!pet) return null;
   const shown = trying !== undefined ? trying : pet.wearing;
   const coat = coatOf(pet);
   const free = WEARABLES.filter((item) => !item.price);
   const collected = MARKET_WEARABLES.filter((item) => bought.has(wearableItem(item.id)));
+
+  function keepAtHome() {
+    if (!pet) return;
+    if (!companion.choose(pet.id)) {
+      setNotice(`${Here} did not save who is home. Your previous pet is still selected. Try Keep again.`);
+      return;
+    }
+    setNotice(undefined);
+    startOpening(() => router.push("/home", { transitionTypes: ["nav-place"] }));
+  }
 
   async function wear(id: string) {
     if (!pet) return;
@@ -157,12 +173,19 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
                   );
                 })}
               </div>
-              <SectionLabel count={`${collected.length}`}>
+              <SectionLabel count={closetKnown ? `${collected.length}` : "Unavailable"}>
                 From the Market
               </SectionLabel>
               <p className="body-sm pk-muted">
                 Bought once with SOL, worn by any of your pets on Solana. Looks only, like the rest.
               </p>
+              {companion.owner && closetReading ? <Waiting label="Reading your closet" inline /> : null}
+              {companion.owner && closet.error ? (
+                <Problem small>
+                  Your closet is unavailable. Solana did not answer; your free pieces still work.{" "}
+                  <button type="button" className="pk-linkish" disabled={closetReading} onClick={closet.refresh}>Reload closet</button>
+                </Problem>
+              ) : null}
               <div className="pk-tiles" onPointerLeave={() => setTrying(undefined)}>
                 {collected.map((item) => {
                   const on = pet.wearing === item.id;
@@ -196,16 +219,18 @@ export function Wardrobe({ companion, sender }: { companion: CompanionState; sen
                     );
                   }
                   return (
-                    <Link
+                    <button
                       key={item.id}
-                      href="/home"
+                      type="button"
                       className="pk-tile-hit"
+                      disabled={opening}
+                      onClick={keepAtHome}
                       onPointerEnter={() => setTrying(item.id)}
                       onFocus={() => setTrying(item.id)}
                       onBlur={() => setTrying(undefined)}
                     >
                       {tile(`Keep ${pet.name} on Solana to wear it`)}
-                    </Link>
+                    </button>
                   );
                 })}
               </div>

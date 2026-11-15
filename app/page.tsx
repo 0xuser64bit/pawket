@@ -42,7 +42,7 @@ import { sponsorState } from "@/server/sponsor";
 export const revalidate = 60;
 
 const ON_SOLANA: Array<{ icon: IconName; title: string; body: string }> = [
-  { icon: "paw", title: "One signature to move in", body: "The pet you raised here keeps its name, species and temperament." },
+  { icon: "paw", title: "One signature to move in", body: "Their name, species and temperament come along. Local progress is not imported; their Solana record starts at level 1 with a fresh streak." },
   { icon: "spark", title: "Fees covered while we can", body: "While Pawket's sponsor is up, it pays fees and rent, so a Pawket Wallet can start empty." },
   { icon: "bolt", title: "One approval, then no pop-ups", body: "Link once, and this browser signs care, rounds and outfits inside the limits you set." },
   { icon: "doc", title: "A Passport anyone can open", body: "The streak, the counts and the last eight cares, public at the pet's address." },
@@ -51,7 +51,7 @@ const ON_SOLANA: Array<{ icon: IconName; title: string; body: string }> = [
 
 const OWNED: Array<{ title: string; note: string; things: string[]; paper?: boolean }> = [
   { title: "Free, no wallet", note: "Yours from the first tap, kept in this browser.", things: ["Your pets, as many as you adopt", "Their room and its things", "Five coats each, and clothes to start", "Every game and every round"] },
-  { title: "On Solana, if you choose", note: "Records nobody can edit, and nothing to sell.", things: ["Their Passport: every care, the streak", "A keepsake card that cannot be sold", "A guild, joined and left for free"] },
+  { title: "On Solana, if you choose", note: "Public care records, and nothing to sell.", things: ["Their Passport: care from then on, the streak", "A keepsake card that cannot be sold", "A guild, joined and left for free"] },
   { title: "Costs SOL, if you choose", note: "Fixed prices, stated before you approve.", things: ["Market looks: pieces, rooms, frames", "A guild's coin: optional, and it can fall to nothing"], paper: true },
 ];
 
@@ -69,7 +69,7 @@ const ASSET_COLUMNS = ["Thing", "What it is for", "Needed to play?", "Has a mark
 
 const ASSETS = [
   ["Your pets", "Identity, appearance, care, progress — as many as you adopt", "No — they start in this browser", "No"],
-  ["Its record on Solana", "Every care, the streak and the level, kept where nobody can edit them", "No — keeping it there is your choice", "No"],
+  ["Its record on Solana", "Care from then on, the streak and the level, checked by a program whose rules can be upgraded", "No — keeping it there is your choice", "No"],
   ["Its keepsake card", "A frozen card in your wallet that points at the pet", "No", "No — it cannot be sold or sent"],
   ["Clothes, coats and rooms", "Expression: three pieces, five coats, two rooms and most of the room's things free; twenty-five pieces, twelve rooms and eight photo frames in the Market", "No", "Free, or a fixed price in the Market — never resold, never power"],
   ["A guild", "A crest and a place among other pets, kept on Solana", "No — joining is optional", "No — joining and leaving are free"],
@@ -119,7 +119,7 @@ export default function LandingPage() {
               </h1>
               <p className="body-lg pk-muted pk-hero__lede" style={{ maxWidth: "40ch" }}>
                 A little cat, pup or bun who grows because you show up. Care for them, make their room
-                theirs, play a round together — and keep their story on Solana if you like.
+                theirs, play a round together — and keep new care on Solana if you like.
               </p>
               <div className="pk-hero__go">
                 <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" size="lg" />
@@ -300,8 +300,9 @@ export default function LandingPage() {
                     Keep them on Solana.
                   </h2>
                   <p className="body-lg pk-solana__muted" style={{ marginTop: "var(--space-3)", maxWidth: "42ch" }}>
-                    When you want a record that outlives this browser, one signature moves your pet into
-                    Pawket&apos;s program. From then on, anyone can check their care.
+                    When you want a record that outlives this browser, keeping your pet in Pawket&apos;s
+                    program starts a new record at level 1 with a fresh streak. Local progress is not
+                    imported. From then on, anyone can check their confirmed care.
                   </p>
                 </div>
                 <ul className="pk-solana__list">
@@ -419,8 +420,8 @@ export default function LandingPage() {
         </Stack>
         <p className="body-sm pk-faint">
           Pawket is a game you play in this browser. The pet you adopt is saved here, and clearing
-          this browser&apos;s data removes them — unless you keep them on Solana, where the program
-          holds the record. A guild&apos;s coin is optional, never touches a pet, and is promised no value by anyone.
+          this browser&apos;s data removes local pets and progress. Keeping a pet on Solana starts a separate
+          record for care from then on; local progress is not imported. A guild&apos;s coin is optional, never touches a pet, and is promised no value by anyone.
           Write to us at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
         </p>
       </footer>

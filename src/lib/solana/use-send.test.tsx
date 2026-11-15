@@ -24,6 +24,52 @@ afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); mock.app = false; w
 function sponsor(available = true) { vi.stubGlobal("fetch", vi.fn(async () => ({ json: async () => ({ available, address: owner }) }))); }
 
 describe("send routing (no wallet signing)", () => {
+  it("annotates the same confirmed receipt only when its signature matches", async () => {
+    sponsor();
+    mock.send.mockResolvedValueOnce({ outcome: "confirmed", signature: "care-receipt", sponsored: true });
+    const hook = renderHook(usePawketSend);
+    await act(async () => { await hook.result.current.send("Feed Mango", () => []); });
+    const receiptId = mock.toast.mock.lastCall?.[0].id;
+    act(() => { hook.result.current.annotateReceipt("another-receipt", "Fed. +10 XP."); });
+    expect(hook.result.current.tx.done).toBeUndefined();
+    act(() => { hook.result.current.annotateReceipt("care-receipt", "Fed. +10 XP."); });
+    expect(hook.result.current.tx.done).toBe("Fed. +10 XP.");
+    expect(mock.toast.mock.lastCall?.[0].id).toBe(receiptId);
+    expect(mock.send).toHaveBeenCalledOnce();
+  });
+
+  it("does not let a late older receipt replace the current send or its annotation", async () => {
+    sponsor();
+    mock.send.mockResolvedValueOnce({ outcome: "unknown", signature: "older-receipt", blockhash: "hash", sponsored: true })
+      .mockResolvedValueOnce({ outcome: "confirmed", signature: "newer-receipt", sponsored: true });
+    let settle!: (outcome: string) => void;
+    mock.settle.mockReturnValueOnce(new Promise<string>((resolve) => { settle = resolve; }));
+    const hook = renderHook(usePawketSend);
+    await act(async () => { await hook.result.current.send("First", () => []); });
+    act(() => { hook.result.current.reset(); });
+    await act(async () => { await hook.result.current.send("Second", () => []); });
+    await act(async () => { settle("confirmed"); });
+    expect(hook.result.current.tx.signature).toBe("newer-receipt");
+    act(() => { hook.result.current.annotateReceipt("older-receipt", "Old care."); });
+    expect(hook.result.current.tx.done).toBeUndefined();
+    expect(mock.toast.mock.lastCall?.[0]).toMatchObject({ title: "First", tone: "done" });
+  });
+
+  it("reports signature-bound late settlement to the initiating screen even after its sheet unmounts", async () => {
+    sponsor();
+    mock.send.mockResolvedValueOnce({ outcome: "unknown", signature: "purchase-receipt", blockhash: "hash", sponsored: true });
+    let settle!: (outcome: string) => void;
+    mock.settle.mockReturnValueOnce(new Promise<string>((resolve) => { settle = resolve; }));
+    const observed = vi.fn();
+    const hook = renderHook(usePawketSend);
+    await act(async () => { await hook.result.current.send("Buy a look", () => [], observed); });
+    expect(observed).toHaveBeenLastCalledWith(expect.objectContaining({ stage: "unknown", signature: "purchase-receipt" }));
+    hook.unmount();
+    await act(async () => { settle("expired"); });
+    expect(observed).toHaveBeenLastCalledWith(expect.objectContaining({ stage: "failed", signature: "purchase-receipt" }));
+    expect(mock.send).toHaveBeenCalledOnce();
+  });
+
   it.each(["direct", "prepared", "device"])("keeps a %s receipt before broadcast finishes and recovers it after remount", async (path) => {
     sponsor();
     const device = createNoopSigner("So11111111111111111111111111111111111111112" as Address);

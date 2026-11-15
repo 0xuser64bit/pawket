@@ -162,15 +162,15 @@ export function KeepSheet({
           </div>
         </div>
         <p className="body-sm">
-          A record nobody can edit or erase: every care from now on, the streak and the level, kept on Solana where
-          anyone can look it up — long after {here}.{" "}
+          A public record of confirmed care from now on, the streak and the level, kept on Solana where
+          anyone can look it up — long after {here}. Pawket&apos;s program checks the care; its rules can be upgraded.{" "}
           {sponsor.data?.available ? "Pawket pays the fee." : "Keeping a new pet on Solana waits until Pawket can cover its account rent."}
           {" "}A browser linked to your Pawket Wallet signs for your pet without pop-ups.
         </p>
         <p className="body-sm pk-keep__note">
           {fresh
             ? `${pet.name} is brand new. Their Solana record starts today at level 1 with a fresh streak.`
-            : `Psst — Solana only keeps what it sees, so ${pet.name} starts there at level 1 with a fresh streak. The sooner, the less there is to start over.`}
+            : `${pet.name} starts there at level 1 with a fresh streak. Local progress is not imported; only new care is kept on Solana.`}
         </p>
         <p className="body-sm pk-muted">
           Their name, species and personality come along. Their coat stays on this device; public Passports use the classic coat.

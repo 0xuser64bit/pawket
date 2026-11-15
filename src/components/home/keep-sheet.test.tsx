@@ -30,6 +30,14 @@ it.each([0, 100])("discloses device-only coats and unworn clothes before keeping
   expect(screen.getByRole("dialog")).toHaveTextContent(/clothes start unworn on Solana/i);
 });
 
+it("describes new confirmed care without promising an unchangeable program or pressuring a reset", () => {
+  sheet(vi.fn(), { ...pet, xp: 100 });
+  const dialog = screen.getByRole("dialog");
+  expect(dialog).not.toHaveTextContent(/nobody can edit or erase|the sooner/i);
+  expect(dialog).toHaveTextContent(/rules can be upgraded/i);
+  expect(dialog).toHaveTextContent(/local progress is not imported/i);
+});
+
 it("takes a keep that already landed for itself, rather than calling the name taken", async () => {
   mock.found.mockResolvedValue(onChain());
   const send = vi.fn();

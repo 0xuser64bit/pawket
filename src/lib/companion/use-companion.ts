@@ -27,27 +27,33 @@ export interface CompanionState {
   canSign: boolean;
   chainError: unknown;
   refresh: (signal?: AbortSignal) => Promise<OwnedPetsRefresh>;
-  choose: (id: string) => void;
+  choose: (id: string) => boolean;
 }
 
 const ACTIVE_KEY = "pawket.active-pet";
 
 let settledOnce = false;
 const activeListeners = new Set<() => void>();
+let activeSnapshot: string | null = null;
 
 function readActive(): string | null {
   try {
-    return window.localStorage.getItem(ACTIVE_KEY);
+    activeSnapshot = window.localStorage.getItem(ACTIVE_KEY);
+    return activeSnapshot;
   } catch {
-    return null;
+    return activeSnapshot;
   }
 }
 
-export function choosePet(id: string) {
+export function choosePet(id: string): boolean {
   try {
     window.localStorage.setItem(ACTIVE_KEY, id);
-  } catch {}
+  } catch {
+    return false;
+  }
+  activeSnapshot = id;
   for (const listener of activeListeners) listener();
+  return true;
 }
 
 interface OwnedRead {

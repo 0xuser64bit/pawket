@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import type { Address } from "@solana/kit";
-import { Button, ButtonLink, Choice, EmptyState, Field, ItemTile, PetArt, RARITY_LABEL, Receipt, SectionLabel, Sheet, Stack, WearableArt, setTheme, useThemeChoice, type Rarity, Problem } from "@/components/pk";
+import { Button, ButtonLink, Choice, EmptyState, Field, ItemTile, PetArt, RARITY_LABEL, Receipt, SectionLabel, Sheet, Stack, Waiting, WearableArt, setTheme, useThemeChoice, type Rarity, Problem } from "@/components/pk";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { AddressLine } from "@/components/wallet/address";
 import { getPublicEnv } from "@/config/env";
@@ -24,9 +24,11 @@ import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { getBuyWithWalletInstruction, marketPrice } from "@/lib/solana/instructions";
 import { deriveClosetPda, deriveWalletPda } from "@/lib/solana/pda";
 import { MARKET } from "@/lib/solana/program";
-import { usePawketSend, useSponsor } from "@/lib/solana/use-send";
+import { usePawketSend, useSponsor, type TxState } from "@/lib/solana/use-send";
 import { formatUnits } from "@/lib/utils/format";
 import { DevnetFaucet } from "@/components/wallet/faucet";
+
+type PurchaseReceipt = Pick<TxState, "stage"> & { signature: string };
 
 interface Item extends ShelfEntry {
   id: number | string;
@@ -121,7 +123,10 @@ export function MarketScreen() {
   const decor = useRoomDecor();
   const mounted = useMounted();
   const [picked, setPicked] = useState<Item | null>(null);
+  const [receipts, setReceipts] = useState<Array<{ owner: Address; item: number; tx: PurchaseReceipt }>>([]);
   const owned = new Set(closet.data?.items ?? []);
+  const closetKnown = !owner || closet.data !== undefined;
+  const closetReading = closet.status === "fetching";
   const holds = (item: Item) => (item.decor ? Boolean(item.decor.room) && decorOpen(item.decor, owned) : owned.has(item.id as number));
   const [query, setQuery] = useState("");
   const [opened, setOpened] = useState<readonly string[]>([]);
@@ -130,6 +135,22 @@ export function MarketScreen() {
   const narrowing = query.trim() !== "" || filter !== "all";
   const shelves = SHELVES.map((shelf) => ({ ...shelf, shown: shelf.items.filter((item) => onShelf(item, query, filter, holds(item))) }));
   const found = shelves.reduce((sum, shelf) => sum + shelf.shown.length, 0);
+  const unreadOwned = filter === "yours" && Boolean(owner) && !closetKnown;
+  const awaitingPurchase = filter === "yours" && !query.trim() && receipts.some((receipt) => receipt.owner === owner && receipt.tx.stage !== "failed" && !owned.has(receipt.item));
+
+  function purchaseReceipt(buyer: Address, item: number, tx: TxState) {
+    const signature = tx.signature;
+    if (!signature) return;
+    setReceipts((previous) => {
+      const current = previous.find((receipt) => receipt.owner === buyer && receipt.item === item);
+      if (current && (
+        (current.tx.signature !== signature && current.tx.stage !== "failed") ||
+        (current.tx.signature === signature && current.tx.stage === "failed")
+      )) return previous;
+      return [...previous.filter((receipt) => receipt.owner !== buyer || receipt.item !== item), { owner: buyer, item, tx: { signature, stage: tx.stage } }];
+    });
+    if (buyer === owner && ["unknown", "confirmed", "failed"].includes(tx.stage)) closet.refresh();
+  }
 
   function narrow(next: ShelfFilter) {
     window.history.replaceState(window.history.state, "", next === "all" ? window.location.pathname : `#${next}`);
@@ -188,22 +209,42 @@ export function MarketScreen() {
         />
         <Choice label="Show" hideLabel className="pk-market-filters" options={SHELF_FILTERS} value={filter} onPick={narrow} />
         <p className="pk-sr" role="status">
-          {narrowing ? `${found} ${found === 1 ? "thing" : "things"} on the shelves` : ""}
+          {narrowing && !unreadOwned ? `${found} ${found === 1 ? "thing" : "things"} on the shelves` : ""}
         </p>
       </search>
 
-      {found === 0 ? (
+      {owner && closetReading ? <Waiting label="Reading your closet" inline /> : null}
+      {owner && closet.error ? (
+        <Problem>
+          Your closet is unavailable. Solana did not answer; {closetKnown ? "the last read is shown." : "what you bought is not known yet."}{" "}
+          <button type="button" className="pk-linkish" disabled={closetReading} onClick={closet.refresh}>Reload closet</button>
+        </Problem>
+      ) : null}
+      {owner && !closetKnown && !closet.error ? (
+        <p className="body-sm pk-muted">
+          What you bought is not known until your closet is read.{" "}
+          <button type="button" className="pk-linkish" disabled={closetReading} onClick={closet.refresh}>Reload closet</button>
+        </p>
+      ) : null}
+
+      {unreadOwned ? null : found === 0 ? (
         <EmptyState
           icon="search"
-          title={filter === "yours" && !owner ? "Your closet is on Solana" : "Nothing on the shelves matches"}
+          title={filter === "yours" && !owner ? "Your closet is on Solana" : awaitingPurchase ? "Your purchase is waiting on a closet read" : "Nothing on the shelves matches"}
           body={
             filter === "yours" && !owner
               ? "Connect the wallet that bought them, and what is yours shows here."
-              : filter === "yours" && !query.trim()
-                ? "Nothing bought yet. Everything you buy stays in your closet, for any of your pets."
-                : `Nothing here is called “${query.trim() || "that"}”${filter === "all" ? "" : ` in ${SHELF_FILTERS.find((each) => each.value === filter)!.label.toLowerCase()}`}. Try a shorter word, or another shelf.`
+              : awaitingPurchase
+                ? "The last closet read has not shown the item yet. Check its purchase receipt and reload the closet; do not buy it again."
+                : filter === "yours" && !query.trim()
+                  ? "Nothing bought yet. Everything you buy stays in your closet, for any of your pets."
+                  : `Nothing here is called “${query.trim() || "that"}”${filter === "all" ? "" : ` in ${SHELF_FILTERS.find((each) => each.value === filter)!.label.toLowerCase()}`}. Try a shorter word, or another shelf.`
           }
-          action={<Button label="Show everything" tone="quiet" size="sm" onClick={showEverything} />}
+          action={
+            awaitingPurchase
+              ? <Button label="Reload closet" tone="quiet" size="sm" disabled={closetReading} onClick={closet.refresh} />
+              : <Button label="Show everything" tone="quiet" size="sm" onClick={showEverything} />
+          }
         />
       ) : (
         shelves.map((shelf) => {
@@ -276,11 +317,16 @@ export function MarketScreen() {
         />
       ) : picked ? (
         <ItemSheet
+          key={`${owner}:${picked.id}`}
           item={picked}
           owner={owner}
           canSign={Boolean(connected?.signer)}
           has={owned.has(picked.id as number)}
-          onBought={closet.refresh}
+          known={closetKnown}
+          reading={closetReading}
+          receipt={receipts.find((receipt) => receipt.owner === owner && receipt.item === picked.id && receipt.tx.stage !== "failed")?.tx}
+          onReload={closet.refresh}
+          onReceipt={purchaseReceipt}
           onDismiss={() => setPicked(null)}
         />
       ) : null}
@@ -293,14 +339,22 @@ function ItemSheet({
   owner,
   canSign,
   has,
-  onBought,
+  known,
+  reading,
+  receipt,
+  onReload,
+  onReceipt,
   onDismiss,
 }: {
   item: Item;
   owner: Address | null;
   canSign: boolean;
   has: boolean;
-  onBought: () => void;
+  known: boolean;
+  reading: boolean;
+  receipt?: PurchaseReceipt;
+  onReload: () => void;
+  onReceipt: (owner: Address, item: number, tx: TxState) => void;
   onDismiss: () => void;
 }) {
   const sender = usePawketSend();
@@ -314,15 +368,17 @@ function ItemSheet({
   const look = pet ? petLook(pet, projectGuestPet(pet).mood) : ({ form: "cat", temper: "curious", feeling: "happy", wearing: null, seed: item.name } as const);
 
   async function buy() {
-    if (!owner) return;
+    if (!owner || !known || has || receipt || sender.busy) return;
     const address = (await deriveClosetPda(owner)).address;
     const wallet = (await deriveWalletPda(owner)).address;
-    const result = await sender.send(`Buy the ${item.name.toLowerCase()}`, ({ owner: signer, payer }) => [
+    let signature: string | undefined;
+    await sender.send(`Buy the ${item.name.toLowerCase()}`, ({ owner: signer, payer }) => [
       getBuyWithWalletInstruction({ owner: signer, payer, closet: address, wallet, item: item.id as number }),
-    ]);
-    if (result?.outcome === "confirmed") {
-      onBought();
-    }
+    ], (tx) => {
+      if (!tx.signature || (signature && signature !== tx.signature)) return;
+      signature = tx.signature;
+      onReceipt(owner, item.id as number, tx);
+    });
   }
 
   if (connecting) {
@@ -332,7 +388,7 @@ function ItemSheet({
   return (
     <Sheet
       title={item.name}
-      meta={has ? "In your closet" : "Fixed price"}
+      meta={has ? "In your closet" : receipt ? "Waiting for your closet" : !known ? "Closet not read" : "Fixed price"}
       onDismiss={onDismiss}
       foot={(dismiss) => (
         <div className="pk-spread">
@@ -343,6 +399,8 @@ function ItemSheet({
             item.room ? (
               <Button label={`Live in ${item.name}`} tone="paper" onClick={() => setTheme(item.room!)} />
             ) : null
+          ) : receipt || !known ? (
+            <Button label="Reload closet" tone="paper" disabled={reading} onClick={onReload} />
           ) : needsLink || short ? (
             <ButtonLink tone="paper" label={needsLink ? "Set up Pawket Wallet" : "Add SOL to Pawket Wallet"} href={needsLink ? "/wallet" : "/wallet#put-in"} />
           ) : (
@@ -374,7 +432,18 @@ function ItemSheet({
         />
         {has && item.kind === "frame" ? <p className="body-sm pk-muted">Ready for your next photo. Open Photo on Home and choose this frame.</p> : null}
         {has && item.piece ? <p className="body-sm pk-muted">Yours. Put it on from the wardrobe in Profile.</p> : null}
-        {!has && short ? (
+        {!has && receipt ? (
+          <p className="body-sm pk-muted" role="status">
+            {receipt.stage === "confirmed"
+              ? "Purchase confirmed. Your closet has not shown the item yet. Reload the closet; do not buy it again."
+              : receipt.stage === "unknown"
+                ? "The purchase outcome is unknown. Check its transaction receipt and reload the closet; do not buy it again."
+                : "The purchase is waiting for confirmation. Check its transaction receipt; do not buy it again."}
+          </p>
+        ) : !has && !known ? (
+          <p className="body-sm pk-muted">Your closet has not been read, so whether this is already yours is unavailable. Reload before buying.</p>
+        ) : null}
+        {!has && known && !receipt && short ? (
           <Problem>
             Your Pawket Wallet holds {sol(balance ?? 0n)}. Add SOL there before buying.<DevnetFaucet /> Nothing was sent.
           </Problem>

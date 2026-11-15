@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Field, Screen, ScreenBar, Stack, Tabs, Waiting } from "@/components/pk";
+import { Banner, Button, Field, Problem, Screen, ScreenBar, Stack, Tabs, Waiting } from "@/components/pk";
 import { Room, type RoomState } from "@/components/home/room";
 import { WalletSheet } from "@/components/wallet/wallet-sheet";
 import { useCompanion } from "@/lib/companion/use-companion";
@@ -24,6 +24,8 @@ import { StickerBook } from "./sticker-book";
 import { Wardrobe } from "./wardrobe";
 import { useCoats } from "@/lib/player/use-coats";
 import { useHere } from "@/lib/native/android";
+import { shownDecor, useRoomDecor } from "@/lib/room/decor";
+import { useCloset } from "@/lib/market/use-closet";
 
 export type ProfileTab = "pets" | "wardrobe" | "stickers" | "settings";
 
@@ -39,6 +41,9 @@ export function ProfileScreen() {
   const queryTab = useSearchParams().get("tab");
   const tab = TABS.find((item) => item.key === queryTab)?.key ?? "pets";
   const companion = useCompanion();
+  const chosenDecor = useRoomDecor();
+  const closet = useCloset(companion.owner);
+  const decor = shownDecor(chosenDecor, new Set(closet.data?.items ?? []));
   const { ready, pet } = companion;
   const look = usePlayerLook();
   const profile = usePlayerProfile();
@@ -46,9 +51,19 @@ export function ProfileScreen() {
   const [roomState, setRoomState] = useState<RoomState>("loading");
   const [connecting, setConnecting] = useState(false);
   const [nameNotice, setNameNotice] = useState<string>();
+  const [reloading, setReloading] = useState(false);
   const { here, Here } = useHere();
   const router = useRouter();
   const social = useSocialRecords(companion.owned.map((entry) => entry.pet.address));
+
+  async function reloadPets() {
+    setReloading(true);
+    try {
+      await companion.refresh();
+    } finally {
+      setReloading(false);
+    }
+  }
 
   useEffect(() => {
     if (!ready || !window.location.hash) return;
@@ -83,6 +98,9 @@ export function ProfileScreen() {
   const since = pets.map((p) => p.createdAt).sort()[0];
   const projected = pet ? projectGuestPet(pet) : null;
   const name = profile.name.trim();
+  const partialStickers = Boolean(companion.chainError) || companion.owned.some((entry) => !social.data?.has(entry.pet.address));
+  const unreadPets = Boolean(companion.owner) && (companion.reading || Boolean(companion.chainError)) && companion.owned.length === 0;
+  const emptyShelf = unreadPets ? <p className="body-sm pk-muted">Your Solana pets have not been read yet.</p> : <EmptyShelf />;
 
   return (
     <Screen>
@@ -93,13 +111,22 @@ export function ProfileScreen() {
           </h1>
           <p className="caption pk-faint">
             {pets.length === 0
-              ? "No pets yet"
-              : `Keeper of ${pets.length} ${pets.length === 1 ? "pet" : "pets"}${since ? ` since ${formatLocalDate(since)}` : ""}`}
+              ? unreadPets ? "Solana pets not read yet" : "No pets yet"
+              : `Keeper of ${pets.length} ${pets.length === 1 ? "pet" : "pets"}${since ? ` since ${formatLocalDate(since)}` : ""}${companion.chainError ? " · Solana unavailable" : ""}`}
           </p>
         </div>
       </ScreenBar>
 
       <Stack gap={3}>
+        {companion.reading ? <Waiting label="Reading your Solana pets" inline /> : null}
+        {companion.chainError ? (
+          <Banner
+            tone="wait"
+            title="Solana did not answer"
+            body={`Your pets there are unchanged. ${companion.owned.length ? "Their last read is shown and may be behind." : "Only your local pets are shown."} Your pets in ${here} still work.`}
+            action={<Button label="Reload Solana pets" tone="quiet" size="sm" disabled={reloading || companion.reading} onClick={() => void reloadPets()} />}
+          />
+        ) : null}
         <Room
           pet={
             pet && projected
@@ -107,6 +134,7 @@ export function ProfileScreen() {
               : null
           }
           look={look}
+          decor={decor}
           sky={pet ? SPECIES_SKY[pet.species] : "warm"}
           cue={null}
           description={`${describeLook(look)}${pet ? `, and ${pet.name} the ${SPECIES_LABEL[pet.species].toLowerCase()}` : ""}, in your room.`}
@@ -130,11 +158,11 @@ export function ProfileScreen() {
             className="pk-plate__name"
           />
           <dl className="pk-plate__stats">
-            <Stat label={pets.length === 1 ? "Pet" : "Pets"} value={pets.length} />
+            <Stat label={pets.length === 1 ? "Pet" : "Pets"} value={pets.length} unit={unreadPets ? "known" : undefined} />
             <Stat label="Top level" value={topLevel} />
             <Stat label="Best run" value={bestRun} unit={bestRun === 1 ? "day" : "days"} />
             <Stat label="Rounds" value={rounds} />
-            <Stat label="Stickers" value={stickers} />
+            <Stat label="Stickers" value={stickers} unit={partialStickers ? "known" : undefined} />
           </dl>
         </section>
 
@@ -161,12 +189,25 @@ export function ProfileScreen() {
           <div key={tab} id={`pk-panel-${tab}`} role="tabpanel" aria-labelledby={`pk-tab-${tab}`} tabIndex={0} className="pk-swap-in">
             {tab === "pets" ? (
               <Stack gap={4}>
-                {pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : <EmptyShelf />}
+                {pets.length > 0 ? <PetsShelf companion={companion} onConnect={() => setConnecting(true)} /> : emptyShelf}
                 <PetCopy companion={companion} />
               </Stack>
             ) : null}
-            {tab === "wardrobe" ? pet ? <Wardrobe companion={companion} sender={sender} /> : <EmptyShelf /> : null}
-            {tab === "stickers" ? <StickerBook pets={pets} onChain={onChain} inGuild={inGuild} social={social.data} /> : null}
+            {tab === "wardrobe" ? pet ? <Wardrobe companion={companion} sender={sender} /> : emptyShelf : null}
+            {tab === "stickers" ? (
+              <Stack gap={3}>
+                {social.status === "fetching" ? <Waiting label="Reading social stickers" inline /> : null}
+                {social.error ? (
+                  <Problem small>
+                    Social stickers are unavailable. Solana did not answer for waves and gatherings.{" "}
+                    <button type="button" className="pk-linkish" disabled={social.status === "fetching"} onClick={() => social.refresh()}>
+                      Reload social stickers
+                    </button>
+                  </Problem>
+                ) : null}
+                <StickerBook pets={pets} onChain={onChain} inGuild={inGuild} social={social.data} chainUnavailable={Boolean(companion.chainError)} />
+              </Stack>
+            ) : null}
             {tab === "settings" ? <Settings form={pet ? SPECIES_ART[pet.species] : undefined} /> : null}
           </div>
         </section>

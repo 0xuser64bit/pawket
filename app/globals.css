@@ -1431,22 +1431,15 @@ a:not([class]) {
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   text-decoration: none;
-  transition:
-    transform var(--dur-press) var(--ease-press),
-    border-bottom-width var(--dur-press) var(--ease-press),
-    margin-bottom var(--dur-press) var(--ease-press);
+  transition: transform var(--dur-press) var(--ease-press);
 }
 @media (hover: hover) {
   .pk-btn:not(.pk-btn--paper, .pk-btn--ghost):hover {
     transform: translateY(-1px);
-    border-bottom-width: calc(var(--stroke-line) + var(--stroke-shelf) + 1px);
-    margin-bottom: -1px;
   }
 }
 .pk-btn:not(.pk-btn--paper, .pk-btn--ghost):active {
   transform: translateY(var(--stroke-shelf));
-  border-bottom-width: var(--stroke-line);
-  margin-bottom: var(--stroke-shelf);
 }
 .pk-btn__label {
   min-width: 0;
@@ -7751,10 +7744,23 @@ html[data-transition="room"]::view-transition-new(*) {
   gap: var(--space-2);
   pointer-events: none;
 }
+.pk-toasts[data-open] {
+  flex-direction: column;
+  /* Keep the card's width and position, with room for its sticker shadow. */
+  box-sizing: content-box;
+  padding: var(--space-1);
+  margin-top: calc(-1 * var(--space-1));
+  max-height: calc(100dvh - max(var(--space-3), env(safe-area-inset-top)) - max(var(--space-3), env(safe-area-inset-bottom)) - 2 * var(--space-1));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding: var(--space-3);
+  pointer-events: auto;
+}
 .pk-toast {
   position: relative;
   z-index: 1;
   pointer-events: auto;
+  flex-shrink: 0;
   touch-action: none;
   display: grid;
   grid-template-columns: 26px minmax(0, 1fr) 26px;
@@ -7773,6 +7779,14 @@ html[data-transition="room"]::view-transition-new(*) {
     opacity var(--dur-swap) var(--ease-swap);
   animation: pk-toast-in 320ms var(--ease-spring);
 }
+.pk-toasts[data-open] .pk-toast {
+  order: var(--depth, 0);
+  touch-action: pan-y;
+}
+.pk-toasts:not([data-open]) .pk-toast[data-depth="0"] {
+  max-height: calc(100dvh - max(var(--space-3), env(safe-area-inset-top)) - max(var(--space-3), env(safe-area-inset-bottom)));
+  overflow-y: auto;
+}
 .pk-toasts:not([data-open]) .pk-toast[data-depth]:not([data-depth="0"]) {
   position: absolute;
   inset: 0;
@@ -7780,6 +7794,9 @@ html[data-transition="room"]::view-transition-new(*) {
   transform: translateY(calc(var(--depth) * 10px)) scale(calc(1 - var(--depth) * 0.05));
 }
 .pk-toasts:not([data-open]) .pk-toast[data-depth]:not([data-depth="0"]) > * {
+  visibility: hidden;
+}
+.pk-toasts:not([data-open]) .pk-toast[data-overflow] {
   visibility: hidden;
 }
 .pk-toasts:not([data-open]) .pk-toast[data-leaving] {
@@ -7837,6 +7854,19 @@ html[data-transition="room"]::view-transition-new(*) {
 .pk-toast__body a {
   color: var(--ink);
   font-weight: 600;
+}
+.pk-toast__signature {
+  display: block;
+  margin-top: var(--space-1);
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+  user-select: all;
+  -webkit-user-select: all;
+  touch-action: pan-y;
+}
+.pk-toast__signature:focus-visible {
+  outline: var(--stroke-line) solid var(--focus);
+  outline-offset: 1px;
 }
 .pk-toast__close {
   position: relative;

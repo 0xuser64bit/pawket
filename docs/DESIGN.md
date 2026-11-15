@@ -144,11 +144,14 @@ hiding words behind an ellipsis. Standard controls are 48px and
 large controls 56px; small controls are 36px, enlarged to 44px on touch devices.
 Fields keep a 44px interaction area and at least 16px text on phones. Copy,
 close and address controls have distinct targets whose hit areas do not overlap.
+Pressed buttons move with transforms; their border and layout space stay fixed.
 
 Sheets move focus inside, trap it, make the background inert and return focus
 on close. Escape, Cancel and backdrop dismissal agree. On phones the header
 supports downward dismissal and the footer keeps the main action under the
 thumb; the body scrolls independently. Paper sheets use Paper actions.
+Cancelled drags reset without dismissing. Toast controls join the active sheet's
+keyboard scope; the rest of the page stays inert.
 Tabs support arrow keys and one keyboard stop. Photos use the shared sheet.
 
 ## Navigation and feedback
@@ -165,6 +168,11 @@ is in front and up to two older ones tuck in under it, a sliver each, so a
 few at once never cover the screen; hover, focus or a tap fans them out.
 A finger flicks one away up or to either side, and its close keeps a 44px
 target behind a small mark. A wait's mark becomes a tick that pops in.
+Transaction receipts stay until dismissed and expose a selectable full signature.
+Partial-save recovery notices also stay until dismissed, even behind receipts.
+Other timed cards pause while hovered, focused, covered or backgrounded. Updates
+come forward without moving a focused control; an expanded fan scrolls within
+the viewport rather than hiding its links or close controls.
 The founding page shares the directory's rails: title and guild preview sit
 side by side, then stack below 720px above the full-width form.
 Record portraits align with their text at the leading edge.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, type PointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useBackCloses } from "@/lib/native/android";
 import { Icon } from "./icon";
@@ -61,16 +61,33 @@ export function Sheet({
     el.style.transform = `translateY(${d.dy}px)`;
     scrim.current?.style.setProperty("--pk-drag", String(Math.max(0, d.dy) / el.offsetHeight));
   }
-  function release() {
+  function release(cancelled = false) {
     const d = drag.current;
     const el = sheet.current;
     drag.current = null;
     if (!d || !el) return;
-    if (d.dy > Math.min(160, el.offsetHeight / 3) || (d.dy > 24 && d.v > 0.5)) return dismiss();
+    if (!cancelled && (d.dy > Math.min(160, el.offsetHeight / 3) || (d.dy > 24 && d.v > 0.5))) return dismiss();
     el.style.transition = "";
     el.style.transform = "";
     scrim.current?.style.removeProperty("--pk-drag");
   }
+
+  const trapKey = useEffectEvent((event: KeyboardEvent) => {
+    const layer = scrim.current;
+    if (!layer || Array.from(document.querySelectorAll(".pk-scrim")).at(-1) !== layer || event.defaultPrevented) return;
+    if (event.key === "Escape") { event.preventDefault(); dismiss(); }
+    if (event.key !== "Tab") return;
+    const selector = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".pk-toasts .pk-toast")).sort((a, b) => Number(a.dataset.depth) - Number(b.dataset.depth));
+    const controls = [
+      ...Array.from(sheet.current?.querySelectorAll<HTMLElement>(selector) ?? []),
+      ...cards.flatMap((card) => Array.from(card.querySelectorAll<HTMLElement>(selector))),
+    ].filter((el) => el.tabIndex >= 0 && !el.matches(":disabled") && !el.closest('[inert], [aria-hidden="true"]') && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== "hidden");
+    event.preventDefault();
+    const at = controls.indexOf(document.activeElement as HTMLElement);
+    const next = at < 0 ? (event.shiftKey ? controls.at(-1) : controls[0]) : controls[(at + (event.shiftKey ? -1 : 1) + controls.length) % controls.length];
+    (next ?? sheet.current)?.focus();
+  });
 
   useEffect(() => {
     if (!mounted) return;
@@ -85,7 +102,10 @@ export function Sheet({
     root.style.overflow = "hidden";
     const before = document.activeElement as HTMLElement | null;
     (sheet.current?.querySelector<HTMLElement>("[data-autofocus]") ?? sheet.current)?.focus();
+    const key = (event: KeyboardEvent) => trapKey(event);
+    document.addEventListener("keydown", key);
     return () => {
+      document.removeEventListener("keydown", key);
       for (const el of behind) el.inert = false;
       root.style.overflow = overflow;
       before?.focus?.();
@@ -106,26 +126,13 @@ export function Sheet({
         className={register === "room" ? "pk-sheet pk-sheet--room" : "pk-sheet"}
         role="dialog"
         aria-modal="true"
+        aria-owns="pawket-toasts"
         aria-label={title}
         tabIndex={-1}
         onPointerDown={grab}
         onPointerMove={pull}
-        onPointerUp={release}
-        onPointerCancel={release}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") { event.preventDefault(); dismiss(); }
-          if (event.key !== "Tab") return;
-          const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'))
-            .filter((el) => !el.matches(":disabled") && el.getClientRects().length > 0);
-          const first = controls[0];
-          const last = controls.at(-1);
-          if (!first) { event.preventDefault(); return; }
-          if (event.shiftKey && (document.activeElement === first || document.activeElement === sheet.current)) {
-            event.preventDefault(); last?.focus();
-          } else if (!event.shiftKey && document.activeElement === last) {
-            event.preventDefault(); first.focus();
-          }
-        }}
+        onPointerUp={() => release()}
+        onPointerCancel={() => release(true)}
       >
         <div className="pk-sheet__grab" aria-hidden="true" />
         <header className="pk-paper__head">

@@ -84,6 +84,10 @@ On a phone an untouched shelf is a row to swipe, the next tile peeking in, and
 
 Closet reads abort when their screen unmounts or the owner changes, and have a
 30-second application deadline so a stalled RPC cannot leave them running.
+An unread or failed closet is not an empty closet: previews and free pieces
+remain available, with a read-only retry before purchasing. A confirmed or
+uncertain purchase retains its initiating owner and item while the screen
+waits for the closet; reopening the item does not offer another purchase.
 
 - When available, the sponsor pays the network fee and the closet's rent the first time; the
   buyer's Pawket Wallet pays the price (`checkSponsorable` lets the sponsor be `buy_with_wallet`'s

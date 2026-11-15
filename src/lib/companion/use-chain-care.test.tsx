@@ -48,7 +48,7 @@ it("waits for a fresh authoritative record to be rendered before reporting progr
   expect(h.recorded).not.toHaveBeenCalled();
   h.rerender({ ...h.initial, active: fresh });
   expect(h.recorded).toHaveBeenCalledOnce();
-  expect(h.recorded.mock.calls[0][0]).toMatchObject({ before: { xp: 90 }, after: { xp: 105 }, action: "feed" });
+  expect(h.recorded.mock.calls[0][0]).toMatchObject({ before: { xp: 90 }, after: { xp: 105 }, action: "feed", signature: "care-signature" });
   h.rerender({ ...h.initial, active: { ...fresh } });
   expect(h.recorded).toHaveBeenCalledOnce();
   expect(h.result.current.busy).toBe(false);

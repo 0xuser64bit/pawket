@@ -85,6 +85,9 @@ bounded confirmation check still cannot determine an outcome, the toast says so
 and keeps its Explorer link; reloading checks the same receipt again, never
 resubmits it. Only a definitive outcome clears that pending receipt; newer sends
 never evict unresolved receipts.
+Transaction toasts remain until dismissed, with the full selectable signature
+and Explorer link. Older receipts can settle without replacing a newer send's
+screen state.
 This recovery is scoped to the tab's session storage, not a server queue or
 cross-device backup. Keep the signature if closing the tab or clearing storage;
 check its chain outcome before manually retrying.
@@ -162,6 +165,14 @@ An uncertain receipt that later confirms follows the same reconciliation;
 feedback runs once while the same pet and owner remain selected. Switching
 pet or owner, or leaving Home, cancels that screen's feedback without altering
 the retained transaction receipt.
+After reconciliation, Home adds care and progression detail to that same
+signature-bound receipt, not a second toast.
+
+Playground retains the pet and owner that began each round. Recording is explicit;
+an unknown result cannot be recorded again. Success detail waits for a fresh Pet
+and Passport showing an advanced round count; a stale or failed read offers
+**Reload round record**, which never sends. Changing the connected owner blocks
+recording and reconciliation until the initiating owner returns.
 
 Preparation and signing have bounded waits. A late signature is discarded,
 never broadcast. A lost broadcast/confirmation answer keeps the known

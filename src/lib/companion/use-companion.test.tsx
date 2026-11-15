@@ -35,7 +35,34 @@ async function companion() {
 }
 
 beforeEach(() => { mock.owner = OWNER; mock.guests = []; mock.walletReady = true; window.localStorage.clear(); });
-afterEach(() => { vi.useRealTimers(); mock.fetch.mockReset(); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); mock.fetch.mockReset(); });
+
+it("reports a failed pet selection without changing the selected snapshot, then retries", async () => {
+  const useCompanion = await companion();
+  mock.owner = null;
+  mock.guests = [guest("Mango"), guest("Pip")];
+  window.localStorage.setItem("pawket.active-pet", "Pip");
+  const hook = renderHook(useCompanion);
+  const write = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage full"); });
+  act(() => { expect(hook.result.current.choose("Mango")).toBe(false); });
+  hook.rerender();
+  expect(hook.result.current.pet?.id).toBe("Pip");
+  expect(window.localStorage.getItem("pawket.active-pet")).toBe("Pip");
+  write.mockRestore();
+  act(() => { expect(hook.result.current.choose("Mango")).toBe(true); });
+  expect(hook.result.current.pet?.id).toBe("Mango");
+});
+
+it("retains the last selected snapshot when storage becomes unreadable", async () => {
+  const useCompanion = await companion();
+  mock.owner = null;
+  mock.guests = [guest("Mango"), guest("Pip")];
+  window.localStorage.setItem("pawket.active-pet", "Pip");
+  const hook = renderHook(useCompanion);
+  vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("Storage blocked"); });
+  hook.rerender();
+  expect(hook.result.current.pet?.id).toBe("Pip");
+});
 
 it("reads a wallet's pets once for every screen, and a refresh updates them all", async () => {
   const useCompanion = await companion();

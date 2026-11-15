@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRequest } from "@solana/react";
 import { address, createNoopSigner, getBase64Encoder, type Address, type Instruction, type KeyPairSigner, type TransactionSigner } from "@solana/kit";
 import { decodeFrozenCoinLookup, type CoinIntent } from "@/lib/coins/intent";
@@ -243,6 +243,7 @@ export function usePawketSend() {
   const owner = (connected?.account.address as Address | undefined) ?? null;
   const pawketWallet = usePawketWallet(owner);
   const [tx, setTx] = useState<TxState>({ stage: "idle" });
+  const currentReceipt = useRef<{ id: string; state: TxState; show: (next: Partial<TxState>) => void } | null>(null);
   const busy = useSyncExternalStore(subscribeSends, () => sending, () => false);
 
   const run = useCallback(
@@ -253,6 +254,7 @@ export function usePawketSend() {
       by: NonNullable<TxState["by"]>,
       go: (signer: TransactionSigner, onStage: (stage: TransactionStage) => void, onSigned: NonNullable<SendOptions["onSigned"]>) => Promise<SendResult>,
       done?: string,
+      onReceipt?: (state: TxState) => void,
     ) => {
       if (sending) return null;
       // An explicit send means a canceled navigation left this page active.
@@ -262,10 +264,19 @@ export function usePawketSend() {
       let state: TxState = { stage: "preparing", label, by, done, phone: by === "wallet" && connected?.wallet?.name === PHONE_WALLETS };
       const show = (next: Partial<TxState>) => {
         state = { ...state, ...next };
-        setTx(state);
+        // An older unknown receipt may settle after reset or another send.
+        // Its toast still updates, but it no longer owns this screen's state.
+        if (currentReceipt.current?.id === id) {
+          currentReceipt.current.state = state;
+          setTx(state);
+        }
         const toast = txToast(id, state, getPublicEnv().solanaCluster);
         if (toast) showToast(toast);
+        // The initiating screen can reconcile this signature even if its
+        // transaction sheet closes before a late definitive outcome arrives.
+        onReceipt?.(state);
       };
+      currentReceipt.current = { id, state, show };
       if (!signer) {
         show({ stage: "failed", error: "This wallet cannot sign. Nothing was sent." });
         setSending(false);
@@ -295,7 +306,7 @@ export function usePawketSend() {
           show({ stage: "failed", error: error.message, needs: error.need });
           return null;
         }
-        show({ stage: "failed", error: toUserFacingError(error), signature: (error as { signature?: string }).signature });
+        show({ stage: "failed", error: toUserFacingError(error), signature: (error as { signature?: string }).signature ?? state.signature });
         if (isUserRejection(error)) dismissToast(id);
         else haptic("refuse");
         return null;
@@ -313,6 +324,7 @@ export function usePawketSend() {
       signer: TransactionSigner | null | undefined,
       by: NonNullable<TxState["by"]>,
       instructions: SendOptions["instructions"],
+      onReceipt?: (state: TxState) => void,
     ) =>
       run(
         label,
@@ -339,13 +351,15 @@ export function usePawketSend() {
             onSigned,
           });
         },
+        undefined,
+        onReceipt,
       ),
     [run],
   );
 
   const send = useCallback(
-    (label: string, instructions: SendOptions["instructions"]): Promise<SendResult | null> =>
-      sendAs(label, connected?.signer, "wallet", instructions),
+    (label: string, instructions: SendOptions["instructions"], onReceipt?: (state: TxState) => void): Promise<SendResult | null> =>
+      sendAs(label, connected?.signer, "wallet", instructions, onReceipt),
     [sendAs, connected],
   );
 
@@ -423,7 +437,14 @@ export function usePawketSend() {
     [connected, run],
   );
 
-  const reset = useCallback(() => setTx({ stage: "idle" }), []);
+  const annotateReceipt = useCallback((signature: string, done: string) => {
+    const receipt = currentReceipt.current;
+    if (receipt?.state.stage === "confirmed" && receipt.state.signature === signature) receipt.show({ done });
+  }, []);
+  const reset = useCallback(() => {
+    currentReceipt.current = null;
+    setTx({ stage: "idle" });
+  }, []);
   return {
     tx,
     send,
@@ -431,6 +452,7 @@ export function usePawketSend() {
     asDevice,
     sendFromServer,
     reset,
+    annotateReceipt,
     busy: busy || isActiveStage(tx.stage),
     pawketWallet,
   };

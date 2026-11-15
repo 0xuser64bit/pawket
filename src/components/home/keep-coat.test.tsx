@@ -8,13 +8,14 @@ import { loadPets, savePet } from "@/lib/guest/storage";
 import { chooseCoat, readCoatChoices } from "@/lib/player/use-coats";
 import { toCompanionRecord, type PetOnChain } from "@/lib/solana/accounts";
 import { derivePetPda } from "@/lib/solana/pda";
-import { dismissToast, Toasts } from "@/components/pk/toast";
+import { dismissToast, showToast, Toasts } from "@/components/pk/toast";
 
 const mock = vi.hoisted(() => ({
   companion: null as unknown as CompanionState,
   push: vi.fn(),
   found: vi.fn(),
   act: vi.fn(),
+  annotate: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mock.push, prefetch() {} }) }));
 vi.mock("@/lib/solana/browser-client", () => ({ rpc: {}, useConnected: () => ({ account: { address: "So11111111111111111111111111111111111111112" }, signer: {} }) }));
@@ -23,7 +24,7 @@ vi.mock("@/lib/solana/accounts", async (original) => ({ ...(await original<objec
 vi.mock("@/lib/solana/use-send", async (original) => ({
   ...(await original<object>()),
   useSponsor: () => ({ data: { available: true } }),
-  usePawketSend: () => ({ busy: false, act: mock.act, pawketWallet: { linked: true, balance: 0n } }),
+  usePawketSend: () => ({ busy: false, act: mock.act, annotateReceipt: mock.annotate, pawketWallet: { linked: true, balance: 0n } }),
 }));
 vi.mock("@/lib/market/use-closet", () => ({ useCloset: () => ({ data: null }) }));
 vi.mock("@/lib/wallet/link", () => ({ useLinkBrowser: () => ({ link: vi.fn(), busy: false }) }));
@@ -40,6 +41,7 @@ let entry: PetOnChain;
 beforeEach(async () => {
   window.localStorage.clear();
   mock.push.mockReset();
+  mock.annotate.mockReset();
   vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
   vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   vi.spyOn(window, "scrollTo").mockImplementation(() => {});
@@ -65,6 +67,8 @@ beforeEach(async () => {
 afterEach(async () => {
   dismissToast(`coat-copy-${source.id}`);
   dismissToast(`local-copy-${source.id}`);
+  dismissToast("pet-selection");
+  for (const id of ["receipt-a", "receipt-b", "receipt-c"]) dismissToast(id);
   await new Promise((resolve) => setTimeout(resolve, 210));
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -103,6 +107,7 @@ it.each(["home", "adoption"] as const)("keeps the chosen device coat after a con
 
 it.each(["home", "adoption"] as const)("reports a failed coat save after a confirmed Keep from %s and retains the local pet and choice for retry", async (where) => {
   await openKeep(where);
+  retainReceipts();
   const setItem = Storage.prototype.setItem;
   vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
     if (key === "pawket.pet-coats.v1") throw new Error("Storage full");
@@ -113,6 +118,28 @@ it.each(["home", "adoption"] as const)("reports a failed coat save after a confi
   expect(screen.getByText(/coat could not be saved/i)).toBeInTheDocument();
   expect(readCoatChoices()[target]).toBeUndefined();
   expect(readCoatChoices()[source.id]).toBe("lilac");
+  expect(loadPets()).toEqual([source]);
+});
+
+function retainReceipts() {
+  act(() => {
+    for (const id of ["receipt-a", "receipt-b", "receipt-c"]) {
+      showToast({ id, tone: "done", title: id, persistent: true });
+    }
+  });
+}
+
+it.each(["home", "adoption"] as const)("shows failed local cleanup from %s even with three retained receipts", async (where) => {
+  await openKeep(where);
+  retainReceipts();
+  const setItem = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (key === "pawket.pets.v1") throw new Error("Storage full");
+    setItem.call(this, key, value);
+  });
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Keep on Solana" })));
+  await waitFor(() => expect(window.localStorage.getItem("pawket.active-pet")).toBe(target));
+  await waitFor(() => expect(screen.getByText(/local copy is still on this device/i)).toBeVisible());
   expect(loadPets()).toEqual([source]);
 });
 
@@ -134,4 +161,39 @@ it("still saves local care immediately and never sends a transaction", async () 
   expect(loadPets()[0].xp).toBe(10);
   expect(screen.getByText("+10 XP")).toBeInTheDocument();
   expect(mock.act).not.toHaveBeenCalled();
+});
+
+it("adds confirmed and reloaded care detail to its original transaction receipt", async () => {
+  const after = { ...entry, pet: { ...entry.pet, xp: 10, lastCareAt: { ...entry.pet.lastCareAt, feed: Math.floor(Date.now() / 1000) } }, passport: { ...entry.passport, careCount: 1 } };
+  mock.companion = { ...mock.companion, pet: toCompanionRecord(entry), active: entry, refresh: async () => {
+    mock.companion = { ...mock.companion, pet: toCompanionRecord(after), active: after };
+    return { status: "success", owner: OWNER, pets: [after] };
+  } };
+  const view = render(<HomeScreen />);
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Feed" })); });
+  view.rerender(<HomeScreen />);
+  expect(mock.annotate).toHaveBeenCalledWith("confirmed-keep", expect.stringMatching(/fed/i));
+});
+
+it("celebrates a saved local level without interrupting it with a conversion prompt", () => {
+  source = { ...source, xp: 90 };
+  savePet(source);
+  mock.companion = { ...mock.companion, pet: source, guest: source, active: null };
+  render(<><HomeScreen /><Toasts /></>);
+  fireEvent.click(screen.getByRole("button", { name: "Feed" }));
+  expect(screen.getByText(/Mango is level 2 now/i)).toBeVisible();
+  expect(screen.queryByText(/the sooner, the less to redo/i)).toBeNull();
+});
+
+it("retains the local copy after Keep when this device cannot save the Home selection", async () => {
+  await openKeep("home");
+  const set = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (key === "pawket.active-pet") throw new Error("Storage full");
+    set.call(this, key, value);
+  });
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Keep on Solana" })); });
+  await waitFor(() => expect(screen.getByText(/Pet selection not saved/i)).toBeVisible());
+  expect(loadPets()).toEqual([source]);
+  expect(window.localStorage.getItem("pawket.active-pet")).not.toBe(target);
 });

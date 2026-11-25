@@ -257,75 +257,134 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="pk-band pk-landing__band">
-          <div className="pk-landing__intro">
+        <section className="pk-band pk-landing__day">
+          <SectionMark n="02" tone="sun">
+            a day with them
+          </SectionMark>
+          <div className="pk-dayhead">
             <h2 className="display-m">A day with them</h2>
             <p className="body-lg pk-muted">Four things, a few minutes, and a face that remembers.</p>
           </div>
-          <div className="pk-days" aria-label="A day with them" role="region" tabIndex={0}>
+          <div className="pk-timeline" aria-label="A day with them" role="region" tabIndex={0}>
             <article className="pk-day">
-              <div className="pk-day__art pk-day__art--adopt">
-                <span className="pk-day__frame">
-                  <PetFrame form="cat" temper="curious" feeling="radiant" sky="warm" size="fluid" seed="Pepper" />
-                  <span className="pk-day__tag">Pepper</span>
-                </span>
-                <span className="pk-day__coats" aria-hidden="true">
-                  {COATS[PetSpecies.LunaCat].map((coat) => (
-                    <span key={coat.id} style={{ background: `linear-gradient(135deg, ${coat.coat} 0 62%, ${coat.patch} 62%)` }} />
-                  ))}
-                </span>
+              <p className="pk-day__when">
+                <span className="pk-day__dot" aria-hidden="true" />
+                Day one
+              </p>
+              <div className="pk-day__card">
+                <div className="pk-day__art pk-day__art--adopt">
+                  <span className="pk-day__frame">
+                    <PetFrame form="cat" temper="curious" feeling="radiant" sky="warm" size="fluid" seed="Pepper" />
+                    <span className="pk-day__tag">Pepper</span>
+                  </span>
+                  <span className="pk-day__coats" aria-hidden="true">
+                    {COATS[PetSpecies.LunaCat].map((coat) => (
+                      <span
+                        key={coat.id}
+                        style={{ background: `linear-gradient(135deg, ${coat.coat} 0 62%, ${coat.patch} 62%)` }}
+                      />
+                    ))}
+                  </span>
+                </div>
+                <div className="pk-day__words">
+                  <h3 className="display-s">Adopt</h3>
+                  <p className="body pk-muted">
+                    A cat, a pup or a bun, in one of five coats. Give them a name and a temperament: three taps.
+                  </p>
+                </div>
               </div>
-              <h3 className="display-s">Adopt</h3>
-              <p className="body pk-muted">A cat, a pup or a bun, in one of five coats. Give them a name and a temperament: three taps.</p>
             </article>
             <article className="pk-day">
-              <div className="pk-day__art pk-day__art--care">
-                <span className="pk-day__face">
-                  <PetFrame form="dog" temper="brave" feeling="hungry" sky="plain" size="fluid" still />
-                </span>
-                <Icon name="right" size={28} />
-                <span className="pk-day__face">
-                  <PetFrame form="dog" temper="brave" feeling="happy" sky="plain" size="fluid" seed="Biscuit" />
-                </span>
+              <p className="pk-day__when">
+                <span className="pk-day__dot" aria-hidden="true" />
+                Morning
+              </p>
+              <div className="pk-day__card">
+                <div className="pk-day__art pk-day__art--care">
+                  <span className="pk-day__face">
+                    <PetFrame form="dog" temper="brave" feeling="hungry" sky="plain" size="fluid" still />
+                  </span>
+                  <Icon name="right" size={28} />
+                  <span className="pk-day__face">
+                    <PetFrame form="dog" temper="brave" feeling="happy" sky="plain" size="fluid" seed="Biscuit" />
+                  </span>
+                </div>
+                <div className="pk-day__words">
+                  <h3 className="display-s">Care</h3>
+                  <p className="body pk-muted">
+                    Feed, play, brush, rest. A need shows on their face until you meet it.
+                  </p>
+                </div>
               </div>
-              <h3 className="display-s">Care</h3>
-              <p className="body pk-muted">Feed, play, brush, rest. A need shows on their face until you meet it. No pet ever dies; it only misses you.</p>
             </article>
             <article className="pk-day">
-              <div className="pk-day__art pk-day__art--play">
-                <span className="pk-day__item" style={{ left: "16%", top: "14%" }}>
-                  <Treat form="bun" />
-                </span>
-                <span className="pk-day__item" style={{ left: "72%", top: "10%" }}>
-                  <Star />
-                </span>
-                <span className="pk-day__pot">
-                  <Obstacle kind="pot" />
-                </span>
-                <span className="pk-day__pet">
-                  <PetArt form="bun" temper="mischief" feeling="radiant" pose="full" seed="Tuesday" />
-                </span>
+              <p className="pk-day__when">
+                <span className="pk-day__dot" aria-hidden="true" />
+                Afternoon
+              </p>
+              <div className="pk-day__card">
+                <div className="pk-day__art pk-day__art--play">
+                  <span className="pk-day__item" style={{ left: "16%", top: "14%" }}>
+                    <Treat form="bun" />
+                  </span>
+                  <span className="pk-day__item" style={{ left: "72%", top: "10%" }}>
+                    <Star />
+                  </span>
+                  <span className="pk-day__pot">
+                    <Obstacle kind="pot" />
+                  </span>
+                  <span className="pk-day__pet">
+                    <PetArt form="bun" temper="mischief" feeling="radiant" pose="full" seed="Tuesday" />
+                  </span>
+                </div>
+                <div className="pk-day__words">
+                  <h3 className="display-s">Play</h3>
+                  <p className="body pk-muted">
+                    Catch, Hop, Copy and Pairs. One round a day, the same for everyone; the score stays yours.
+                  </p>
+                </div>
               </div>
-              <h3 className="display-s">Play</h3>
-              <p className="body pk-muted">Catch, Hop, Copy and Pairs. One round a day, the same for everyone; the score stays yours.</p>
             </article>
             <article className="pk-day">
-              <div className="pk-day__art pk-day__art--dress">
-                <span className="pk-day__face pk-day__face--big">
-                  <PetFrame form="bun" temper="cozy" feeling="happy" wearing="paper-crown" sky="cool" size="fluid" seed="Clover" />
-                </span>
-                <span className="pk-day__pieces">
-                  {["wool-scarf", "red-collar", "nap-ribbon"].map((id) => (
-                    <span key={id}>
-                      <WearableArt id={id} />
-                    </span>
-                  ))}
-                </span>
+              <p className="pk-day__when">
+                <span className="pk-day__dot" aria-hidden="true" />
+                Evening
+              </p>
+              <div className="pk-day__card">
+                <div className="pk-day__art pk-day__art--dress">
+                  <span className="pk-day__face pk-day__face--big">
+                    <PetFrame form="bun" temper="cozy" feeling="happy" wearing="paper-crown" sky="cool" size="fluid" seed="Clover" />
+                  </span>
+                  <span className="pk-day__pieces">
+                    {["wool-scarf", "red-collar", "nap-ribbon"].map((id) => (
+                      <span key={id}>
+                        <WearableArt id={id} />
+                      </span>
+                    ))}
+                  </span>
+                </div>
+                <div className="pk-day__words">
+                  <h3 className="display-s">Dress</h3>
+                  <p className="body pk-muted">
+                    A scarf, a crown, a collar to start. Tried on in the mirror first, and never a stat.
+                  </p>
+                </div>
               </div>
-              <h3 className="display-s">Dress</h3>
-              <p className="body pk-muted">A scarf, a crown, a collar to start. Tried on in the mirror first, and never a stat.</p>
             </article>
           </div>
+
+          <blockquote className="pk-quote">
+            <span className="pk-quote__moon" aria-hidden="true">
+              <Icon name="moon" size={22} />
+            </span>
+            <div className="pk-quote__words">
+              <p>No pet ever dies; it only misses you.</p>
+              <footer>the rule under every care screen</footer>
+            </div>
+            <span className="pk-quote__pet" aria-hidden="true">
+              <PetArt form="bun" temper="cozy" feeling="tired" pose="full" still seed="Mochi" />
+            </span>
+          </blockquote>
         </section>
 
         <section className="pk-band pk-landing__band">

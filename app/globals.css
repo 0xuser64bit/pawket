@@ -3146,9 +3146,6 @@ a:not([class]) {
 .pk-landing__theme--head {
   display: inline-flex;
 }
-.pk-landing__theme--foot {
-  display: none;
-}
 @media (min-width: 1024px) {
   .pk-landing__nav {
     flex: 1 1 auto;
@@ -4325,24 +4322,169 @@ a:not([class]) {
 }
 
 .pk-landing__foot {
-  display: grid;
-  gap: var(--space-6);
   padding-top: var(--space-8);
   padding-bottom: calc(var(--space-9) + env(safe-area-inset-bottom));
   border-top: var(--stroke-line) solid var(--edge-soft);
 }
-@media (min-width: 1024px) {
-  .pk-landing__foot {
-    grid-template-columns: auto minmax(0, 62ch);
-    justify-content: space-between;
-    align-items: start;
-  }
+.pk-postcard {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  border: var(--stroke-line) solid var(--edge);
+  border-radius: var(--radius-room);
+  background: var(--paper);
+  box-shadow: var(--shadow-sticker);
 }
-.pk-landing__footnav {
+.pk-postcard::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 2px dashed var(--edge-soft);
+  pointer-events: none;
+}
+.pk-postcard__front,
+.pk-postcard__back {
+  position: relative;
+  min-width: 0;
+  padding: clamp(20px, 3.6vw, 44px);
+}
+.pk-postcard__front {
+  display: grid;
+  align-content: space-between;
+  gap: var(--space-5);
+  background:
+    radial-gradient(90% 80% at 100% 0%, color-mix(in srgb, var(--bloom) 18%, transparent), transparent 70%),
+    var(--sun-soft);
+}
+.pk-postcard__back {
+  display: grid;
+  align-content: space-between;
+  gap: var(--space-6);
+  background:
+    repeating-linear-gradient(180deg, transparent 0 29px, color-mix(in srgb, var(--rule) 8%, transparent) 29px 30px),
+    var(--paper);
+}
+.pk-postcard__postmark {
+  display: inline-grid;
+  justify-items: center;
+  gap: 3px;
+  width: fit-content;
+  padding: 8px 14px 6px;
+  border: 2px dashed var(--edge);
+  border-radius: 999px;
+  color: var(--sun-text);
+  rotate: -6deg;
+}
+.pk-postcard__postmark span {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.pk-postcard__note {
+  display: grid;
+  gap: var(--space-2);
+}
+.pk-postcard__note h2,
+.pk-postcard__note p {
+  margin: 0;
+}
+.pk-postcard__note h2 {
+  max-width: 18ch;
+}
+.pk-postcard__note p {
+  max-width: 40ch;
+}
+.pk-postcard__kicker {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.pk-postcard__prints {
+  display: flex;
+  align-items: end;
+  gap: 4px;
+}
+.pk-postcard__prints svg {
+  width: clamp(30px, 3.4vw, 44px);
+  height: auto;
+  filter: drop-shadow(1px 2px 0 color-mix(in srgb, var(--edge) 12%, transparent));
+}
+.pk-postcard__prints svg:nth-child(2) {
+  translate: 0 -5px;
+}
+.pk-postcard__prints svg:nth-child(3) {
+  translate: 0 3px;
+}
+.pk-postcard__mark {
+  justify-self: start;
+}
+.pk-postcard__nav {
+  display: grid;
+  gap: var(--space-3);
+}
+.pk-postcard__nav > .label {
+  margin: 0;
+  color: var(--ink-soft);
+}
+.pk-postcard__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+.pk-postcard__fine {
+  display: grid;
+  gap: var(--space-3);
+}
+.pk-postcard__controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3) var(--space-5);
+  gap: var(--space-2);
+}
+.pk-postcard__fine p {
+  margin: 0;
+  max-width: 62ch;
+  line-height: 1.55;
+}
+.pk-postcard__fine a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (min-width: 900px) {
+  .pk-postcard {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  }
+}
+@media (max-width: 899px) {
+  .pk-postcard::before {
+    display: none;
+  }
+  .pk-postcard__front {
+    border-bottom: 2px dashed var(--edge-soft);
+  }
+}
+@media (max-width: 479px) {
+  .pk-postcard__front,
+  .pk-postcard__back {
+    padding: var(--space-4);
+  }
+  .pk-postcard__postmark {
+    padding: 6px 10px 5px;
+  }
+  .pk-postcard__postmark svg {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 @media (max-width: 479px) {

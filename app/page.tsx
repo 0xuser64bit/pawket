@@ -12,7 +12,6 @@ import {
   PetFrame,
   Receipt,
   Row,
-  Stack,
   ThemeButton,
   WearableArt,
   type IconName,
@@ -595,32 +594,59 @@ export default function LandingPage() {
       </main>
 
       <footer className="pk-band pk-landing__foot">
-        <Stack gap={4}>
-          <Mark href="/" size={26} type={18} />
-          <nav className="pk-landing__footnav label" aria-label="Footer">
-            {NAV.map((item) => (
-              <Link key={item.href} href={item.href} className="pk-landing__link">
-                {item.label}
-              </Link>
-            ))}
-            <Link href="/new" className="pk-landing__link">
-              What&apos;s new
-            </Link>
-            <Link href="/privacy" className="pk-landing__link">
-              Privacy
-            </Link>
-          </nav>
-          <span className="pk-landing__theme--foot">
-            <ThemeButton />
-          </span>
-          <NetworkBadge />
-        </Stack>
-        <p className="body-sm pk-faint">
-          Pawket is a game you play in this browser. The pet you adopt is saved here, and clearing
-          this browser&apos;s data removes local pets and progress. Keeping a pet on Solana starts a separate
-          record for care from then on; local progress is not imported. A guild&apos;s coin is optional, never touches a pet, and is promised no value by anyone.
-          Write to us at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
-        </p>
+        <div className="pk-postcard">
+          <div className="pk-postcard__front">
+            <span className="pk-postcard__postmark" aria-hidden="true">
+              <Icon name="paw" size={30} />
+              <span>from the room</span>
+            </span>
+            <div className="pk-postcard__note">
+              <p className="pk-postcard__kicker">P.S. from the room</p>
+              <h2 className="display-s">The lights are low. The window stays open.</h2>
+              <p className="body-sm pk-muted">
+                No wallet to begin. A name, a coat and a few minutes a day are enough to make them
+                yours in this browser.
+              </p>
+            </div>
+            <div className="pk-postcard__prints" aria-hidden="true">
+              <PawArt form="cat" />
+              <PawArt form="dog" />
+              <PawArt form="bun" />
+            </div>
+            <Mark href="/" size={24} type={17} className="pk-postcard__mark" />
+          </div>
+          <div className="pk-postcard__back">
+            <nav className="pk-postcard__nav" aria-label="Footer">
+              <p className="label">Places in the house</p>
+              <div className="pk-postcard__links">
+                {NAV.map((item) => (
+                  <Link key={item.href} href={item.href} className="pk-landing__link">
+                    {item.label}
+                  </Link>
+                ))}
+                <Link href="/new" className="pk-landing__link">
+                  What&apos;s new
+                </Link>
+                <Link href="/privacy" className="pk-landing__link">
+                  Privacy
+                </Link>
+              </div>
+            </nav>
+            <div className="pk-postcard__fine">
+              <span className="pk-postcard__controls">
+                <ThemeButton />
+                <NetworkBadge />
+              </span>
+              <p className="body-sm pk-faint">
+                Pawket is a game you play in this browser. The pet you adopt is saved here, and
+                clearing this browser&apos;s data removes local pets and progress. Keeping a pet on Solana
+                starts a separate record for care from then on; local progress is not imported. A
+                guild&apos;s coin is optional, never touches a pet, and is promised no value by anyone.
+                Write to us at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+              </p>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );

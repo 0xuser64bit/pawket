@@ -112,7 +112,9 @@ time of day (night in Dark), and a visitor can boop or switch the waiting pet;
 that play stays local. The scrapbook, care-day walk, mirror and desk show real
 room photos, the game's steps, try-ons that change nothing, and a Passport read
 from the program. The ownership folder and dusk doorway keep the rules and the
-adoption action. Landing prints in `public/landing/` come from Home's Photo
+adoption action. The footer closes the story as the back of a postcard: a
+postmark and paw prints on one half, the real places, controls and plain fine
+print on the other. Landing prints in `public/landing/` come from Home's Photo
 tool; retake them when the room or its things change. On phones, prints,
 daily-loop examples and the shelf use swipeable rows rather than stretching the
 page.

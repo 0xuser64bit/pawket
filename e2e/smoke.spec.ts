@@ -32,6 +32,8 @@ test("landing leads with the pet and closes with the rules", async ({ page }) =>
   await page.getByText("The whole asset model").click();
   await expect(page.getByRole("cell", { name: "A guild's coin" })).toBeVisible();
   await expect(page.getByText(/never touches a pet/i).first()).toBeVisible();
+  await expect(page.getByText("P.S. from the room")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The lights are low. The window stays open." })).toBeVisible();
   await expect(page.getByText(/design preview|demo data/i)).toHaveCount(0);
 });
 

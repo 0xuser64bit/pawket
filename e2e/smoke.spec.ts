@@ -11,6 +11,22 @@ test("landing leads with the pet and closes with the rules", async ({ page }) =>
   await expect(page.getByRole("img", { name: /Pepper, a ginger cat/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "See the room's things" })).toHaveAttribute("href", "/market#decor");
 
+  const window = page.locator(".pk-hero-window");
+  await window.getByRole("button", { name: "Boop Pepper" }).click();
+  await expect(window.getByRole("status")).toContainText("Pepper purrs");
+  await window.getByRole("button", { name: "Biscuit" }).click();
+  await expect(window.getByRole("button", { name: "Boop Biscuit" })).toBeVisible();
+
+  const mirror = page.locator(".pk-dressup");
+  const crown = mirror.getByRole("button", { name: /paper crown/i });
+  await expect(crown).toHaveAttribute("aria-pressed", "true");
+  await crown.click();
+  await expect(crown).toHaveAttribute("aria-pressed", "false");
+  await expect(mirror.getByText(/clover is just in their coat/i)).toBeVisible();
+  await mirror.getByRole("button", { name: /wizard hat/i }).click();
+  await expect(mirror.getByText(/clover is trying on the wizard hat/i)).toBeVisible();
+  await expect(mirror.getByText(/trying on is free/i)).toBeVisible();
+
   await expect(page.getByRole("heading", { name: "What you actually own" })).toBeVisible();
   await expect(page.getByText(/can fall to nothing/).first()).toBeVisible();
   await page.getByText("The whole asset model").click();

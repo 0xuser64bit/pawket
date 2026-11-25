@@ -9695,6 +9695,21 @@ details > .pk-risks {
     font-size: clamp(34px, 10vw, 48px);
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .pk-window__sky,
+  .pk-window__orb,
+  .pk-window__orb::before,
+  .pk-window__orb::after,
+  .pk-window__boop-tag {
+    transition: none;
+  }
+  .pk-window[data-phase="night"] .pk-window__star,
+  .pk-window__pet--booped,
+  .pk-window__bubble,
+  .pk-window__heart {
+    animation: none;
+  }
+}
 
 @keyframes pk-swap-in {
   from {

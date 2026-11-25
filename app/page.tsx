@@ -8,6 +8,7 @@ import {
   ItemTile,
   Mark,
   Paper,
+  PawArt,
   PetArt,
   PetFrame,
   Receipt,
@@ -17,7 +18,8 @@ import {
   WearableArt,
   type IconName,
 } from "@/components/pk";
-import { HeroPets } from "@/components/landing/hero-pets";
+import { HeroWindow } from "@/components/landing/hero-window";
+import { LiveStrip } from "@/components/landing/live-strip";
 import { DecorArt } from "@/components/home/decor-art";
 import { FrameArt } from "@/components/market/frame-art";
 import { wearableItem } from "@/lib/closet/catalog";
@@ -33,11 +35,10 @@ import { SUPPORT_EMAIL } from "@/config/site";
 import { NEWS } from "@/config/news";
 import { Obstacle, Star, Treat } from "@/components/play/game-art";
 import { PERSONALITY_LABEL, SPECIES_LABEL, SPECIES_SKY, petLook } from "@/lib/game/appearance";
-import { projectGuestPet, utcDay } from "@/lib/guest/pet";
+import { projectGuestPet } from "@/lib/guest/pet";
 import { toCompanionRecord } from "@/lib/solana/accounts";
 import { formatAgo, truncateAddress } from "@/lib/utils/format";
 import { readAllPets } from "@/server/solana";
-import { sponsorState } from "@/server/sponsor";
 
 export const revalidate = 60;
 
@@ -89,12 +90,15 @@ const NAV = [
 
 export default function LandingPage() {
   return (
-    <>
+    <div className="pk-landing">
       <a href="#main" className="pk-btn pk-btn--quiet pk-btn--sm pk-skip">
         Skip to content
       </a>
       <header className="pk-band pk-landing__head">
-        <Mark href="/" size={30} type={21} />
+        <div className="pk-landing__brand">
+          <Mark href="/" size={32} type={22} />
+          <span className="pk-landing__tagline">a living companion</span>
+        </div>
         <nav className="pk-landing__nav label" aria-label="Pawket">
           {NAV.map((item) => (
             <Link key={item.href} href={item.href} className="pk-landing__link">
@@ -106,18 +110,22 @@ export default function LandingPage() {
           <span className="pk-landing__theme--head">
             <ThemeButton />
           </span>
-          <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" className="pk-landing__adopt" />
+          <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" size="sm" className="pk-landing__adopt" />
         </div>
       </header>
 
       <main id="main">
         <section className="pk-band pk-landing__hero">
           <div className="pk-hero">
-            <Stack gap={6}>
-              <h1 className="display-hero pk-hero__title" style={{ maxWidth: "12ch" }}>
-                Raise a pet. Keep every paw print.
+            <div className="pk-hero__copy">
+              <p className="pk-hero__eyebrow">
+                <PawArt form="heart" />
+                A living companion
+              </p>
+              <h1 className="display-hero pk-hero__title">
+                Raise a pet. Keep every <span className="pk-hero__mark">paw print</span>.
               </h1>
-              <p className="body-lg pk-muted pk-hero__lede" style={{ maxWidth: "40ch" }}>
+              <p className="body-lg pk-muted pk-hero__lede">
                 A little cat, pup or bun who grows because you show up. Care for them, make their room
                 theirs, play a round together — and keep new care on Solana if you like.
               </p>
@@ -134,15 +142,19 @@ export default function LandingPage() {
                 <Icon name="right" size={14} />
               </Link>
               <div className="pk-hero__note">
-                <p className="body-sm pk-faint">Free to start. No wallet, no token: they live in this browser until you choose otherwise.</p>
+                <p className="body-sm pk-faint">
+                  Free to start. No wallet, no token: they live in this browser until you choose otherwise.
+                </p>
                 <Chip label={`Live on Solana ${getPublicEnv().solanaCluster}`} tone="pool" icon="check" />
               </div>
-            </Stack>
-            <HeroPets />
+            </div>
+            <div className="pk-hero__scene">
+              <HeroWindow />
+            </div>
           </div>
         </section>
 
-        <section className="pk-band pk-landing__band" aria-label="Pawket right now">
+        <section className="pk-band pk-landing__chain" aria-label="Pawket right now">
           <Suspense fallback={<p className="receipt pk-faint">Reading the program…</p>}>
             <LiveStrip />
           </Suspense>
@@ -425,42 +437,7 @@ export default function LandingPage() {
           Write to us at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
         </p>
       </footer>
-    </>
-  );
-}
-
-async function LiveStrip() {
-  let figures: Array<{ k: string; v: string }> | null = null;
-  try {
-    const [pets, sponsor] = await Promise.all([readAllPets(), sponsorState().catch(() => null)]);
-    const today = utcDay(new Date());
-    const out = pets.filter((entry) => toCompanionRecord(entry).streak.lastDay === today).length;
-    figures = [
-      { k: "Pets kept on Solana", v: String(pets.length) },
-      { k: "Cares recorded", v: String(pets.reduce((sum, entry) => sum + entry.passport.careCount, 0)) },
-      ...(out > 0 ? [{ k: "Cared for today", v: String(out) }] : []),
-      { k: "Network fee", v: sponsor?.available ? "Paid by Pawket" : "A little devnet SOL" },
-    ];
-  } catch {
-    figures = null;
-  }
-  if (!figures) {
-    return <p className="body-sm pk-muted">Solana did not answer just now. The record is unchanged.</p>;
-  }
-  return (
-    <Paper title={`On Solana ${getPublicEnv().solanaCluster}, right now`} meta="Read from the program">
-      <dl className="pk-live">
-        {figures.map((figure) => (
-          <div key={figure.k} className="pk-live__fig">
-            <dt className="receipt-label">{figure.k}</dt>
-            <dd className="amount">{figure.v}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className="body-sm pk-muted" style={{ marginTop: "var(--space-3)" }}>
-        Guilds, coins, the Market and the rest, counted the same way: <Link href="/pulse">Pawket&apos;s pulse</Link>.
-      </p>
-    </Paper>
+    </div>
   );
 }
 

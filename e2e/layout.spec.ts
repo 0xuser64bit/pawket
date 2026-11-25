@@ -67,6 +67,30 @@ test("the care-day cards keep the same height", async ({ page }) => {
   }
 });
 
+test("the ownership seals sit on top of their envelope flaps", async ({ page }) => {
+  await page.goto("/");
+  const seals = await page.locator(".pk-envelope__seal").evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const envelope = node.closest(".pk-envelope")!;
+      const flap = envelope.querySelector(".pk-envelope__flap")!;
+      const sealBox = node.getBoundingClientRect();
+      const flapBox = flap.getBoundingClientRect();
+      return {
+        directEnvelopeChild: Boolean(node.parentElement?.classList.contains("pk-envelope")),
+        sealZ: Number(getComputedStyle(node).zIndex),
+        flapZ: Number(getComputedStyle(flap).zIndex),
+        overlapsFlap: sealBox.top < flapBox.bottom && sealBox.bottom > flapBox.top,
+      };
+    }),
+  );
+  expect(seals).toHaveLength(3);
+  for (const seal of seals) {
+    expect(seal.directEnvelopeChild).toBe(true);
+    expect(seal.sealZ).toBeGreaterThan(seal.flapZ);
+    expect(seal.overlapsFlap).toBe(true);
+  }
+});
+
 test("the longest one-word name fits a small phone, and the pets shelf cuts nothing short", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   for (const name of ["Pepper", "Wolfeschlegelsteinhausen"]) {

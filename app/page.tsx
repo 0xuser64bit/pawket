@@ -506,10 +506,10 @@ export default function LandingPage() {
                     .join(" ")}
                 >
                   <span className="pk-envelope__flap" aria-hidden="true" />
+                  <span className="pk-envelope__seal" aria-hidden="true">
+                    <Icon name={column.icon} size={18} />
+                  </span>
                   <div className="pk-envelope__letter">
-                    <span className="pk-envelope__seal" aria-hidden="true">
-                      <Icon name={column.icon} size={18} />
-                    </span>
                     <h3 className="title">{column.title}</h3>
                     <p className="body-sm pk-muted">{column.note}</p>
                     <ul>

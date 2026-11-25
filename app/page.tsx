@@ -51,10 +51,10 @@ const ON_SOLANA: Array<{ icon: IconName; title: string; body: string }> = [
   { icon: "image", title: "A keepsake card", body: "A frozen card in your wallet that points at the pet. It cannot be sold or sent." },
 ];
 
-const OWNED: Array<{ title: string; note: string; things: string[]; paper?: boolean }> = [
-  { title: "Free, no wallet", note: "Yours from the first tap, kept in this browser.", things: ["Your pets, as many as you adopt", "Their room and its things", "Five coats each, and clothes to start", "Every game and every round"] },
-  { title: "On Solana, if you choose", note: "Public care records, and nothing to sell.", things: ["Their Passport: care from then on, the streak", "A keepsake card that cannot be sold", "A guild, joined and left for free"] },
-  { title: "Costs SOL, if you choose", note: "Fixed prices, stated before you approve.", things: ["Market looks: pieces, rooms, frames", "A guild's coin: optional, and it can fall to nothing"], paper: true },
+const OWNED: Array<{ title: string; note: string; things: string[]; paper?: boolean; tag: string; icon: IconName }> = [
+  { title: "Free, no wallet", note: "Yours from the first tap, kept in this browser.", things: ["Your pets, as many as you adopt", "Their room and its things", "Five coats each, and clothes to start", "Every game and every round"], tag: "kept in this browser", icon: "paw" },
+  { title: "On Solana, if you choose", note: "Public care records, and nothing to sell.", things: ["Their Passport: care from then on, the streak", "A keepsake card that cannot be sold", "A guild, joined and left for free"], tag: "a public record", icon: "doc" },
+  { title: "Costs SOL, if you choose", note: "Fixed prices, stated before you approve.", things: ["Market looks: pieces, rooms, frames", "A guild's coin: optional, and it can fall to nothing"], paper: true, tag: "a fixed price", icon: "wallet" },
 ];
 
 const SHELF = [
@@ -485,67 +485,111 @@ export default function LandingPage() {
         </section>
 
         <section className="pk-band pk-landing__band">
-          <div className="pk-landing__intro">
-            <h2 className="display-m">What you actually own</h2>
-            <p className="body-lg pk-muted">In plain words, before you spend a thing.</p>
-          </div>
-          <div className="pk-owned">
-            {OWNED.map((column) => (
-              <section key={column.title} className={column.paper ? "pk-owned__col pk-owned__col--paper" : "pk-owned__col"}>
-                <h3 className="title">{column.title}</h3>
-                <p className="body-sm pk-muted">{column.note}</p>
-                <ul>
-                  {column.things.map((thing) => (
-                    <li key={thing} className="body-sm">
-                      {thing}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
-          <details className="pk-fold pk-owned__more">
-            <summary>
-              <span className="title">The whole asset model</span>
-              <span className="caption pk-faint">Every thing, what it is for, and whether it has a price</span>
-            </summary>
-            <Paper title="Asset model" meta="Plain language">
-              <table className="pk-assets" role="table">
-                <thead role="rowgroup">
-                  <tr role="row">
-                    {ASSET_COLUMNS.map((column) => (
-                      <th key={column} role="columnheader" scope="col">
-                        {column}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody role="rowgroup">
-                  {ASSETS.map((row) => (
-                    <tr key={row[0]} role="row">
-                      {row.map((cell, index) => (
-                        <td key={ASSET_COLUMNS[index]} role="cell" data-label={ASSET_COLUMNS[index]}>
-                          {cell}
-                        </td>
+          <SectionMark n="05" tone="sun">
+            what you actually own
+          </SectionMark>
+          <div className="pk-folder">
+            <div className="pk-folder__head">
+              <h2 className="display-m">What you actually own</h2>
+              <p className="body-lg pk-muted">In plain words, before you spend a thing.</p>
+            </div>
+            <div className="pk-envelopes">
+              {OWNED.map((column, index) => (
+                <section
+                  key={column.title}
+                  className={[
+                    "pk-envelope",
+                    index === 1 ? "pk-envelope--chain" : "",
+                    column.paper ? "pk-envelope--coin" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <span className="pk-envelope__flap" aria-hidden="true" />
+                  <div className="pk-envelope__letter">
+                    <span className="pk-envelope__seal" aria-hidden="true">
+                      <Icon name={column.icon} size={18} />
+                    </span>
+                    <h3 className="title">{column.title}</h3>
+                    <p className="body-sm pk-muted">{column.note}</p>
+                    <ul>
+                      {column.things.map((thing) => (
+                        <li key={thing} className="body-sm">
+                          {thing}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <span className="pk-envelope__tag">{column.tag}</span>
+                </section>
+              ))}
+            </div>
+            <details className="pk-fold pk-owned__more pk-dossier">
+              <summary>
+                <span className="title">The whole asset model</span>
+                <span className="caption pk-faint">Every thing, what it is for, and whether it has a price</span>
+              </summary>
+              <Paper title="Asset model" meta="Plain language">
+                <table className="pk-assets" role="table">
+                  <thead role="rowgroup">
+                    <tr role="row">
+                      {ASSET_COLUMNS.map((column) => (
+                        <th key={column} role="columnheader" scope="col">
+                          {column}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Paper>
-          </details>
+                  </thead>
+                  <tbody role="rowgroup">
+                    {ASSETS.map((row) => (
+                      <tr key={row[0]} role="row">
+                        {row.map((cell, index) => (
+                          <td key={ASSET_COLUMNS[index]} role="cell" data-label={ASSET_COLUMNS[index]}>
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Paper>
+            </details>
+          </div>
         </section>
 
         <section className="pk-band pk-landing__band">
-          <div className="pk-finale">
-            <div className="pk-finale__pets" aria-hidden="true">
-              <PetArt form="cat" temper="mischief" feeling="happy" wearing="star-pin" pose="full" seed="Miso" />
-              <PetArt form="bun" temper="curious" feeling="radiant" pose="full" seed="Mochi" />
-              <PetArt form="dog" temper="cozy" feeling="happy" wearing="red-collar" pose="full" seed="Noodle" />
+          <div className="pk-doorway">
+            <div className="pk-doorway__copy">
+              <p className="pk-doorway__eyebrow">At the end of the day</p>
+              <h2 className="display-l">Who is coming home with you?</h2>
+              <p className="body-lg pk-muted">Three taps. No wallet. They will be waiting tomorrow.</p>
+              <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" size="lg" />
             </div>
-            <h2 className="display-l">Who is coming home with you?</h2>
-            <p className="body-lg pk-muted">Three taps. No wallet. They will be waiting tomorrow.</p>
-            <ButtonLink label="Adopt a pet" href="/adopt" icon="paw" size="lg" />
+            <div className="pk-doorway__scene" aria-hidden="true">
+              <span className="pk-doorway__moon">
+                <Icon name="moon" size={26} />
+              </span>
+              <span className="pk-doorway__star pk-doorway__star--one">
+                <Icon name="spark" size={11} />
+              </span>
+              <span className="pk-doorway__star pk-doorway__star--two">
+                <Icon name="spark" size={8} />
+              </span>
+              <span className="pk-doorway__star pk-doorway__star--three">
+                <Icon name="spark" size={13} />
+              </span>
+              <div className="pk-doorway__frame">
+                <div className="pk-doorway__inside">
+                  <div className="pk-doorway__pets">
+                    <PetArt form="cat" temper="mischief" feeling="happy" wearing="star-pin" pose="full" seed="Miso" />
+                    <PetArt form="bun" temper="curious" feeling="radiant" pose="full" seed="Mochi" />
+                    <PetArt form="dog" temper="cozy" feeling="happy" wearing="red-collar" pose="full" seed="Noodle" />
+                  </div>
+                  <span className="pk-doorway__mat">welcome home</span>
+                </div>
+                <span className="pk-doorway__handle" />
+              </div>
+            </div>
           </div>
         </section>
       </main>

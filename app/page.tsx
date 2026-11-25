@@ -20,6 +20,7 @@ import {
 } from "@/components/pk";
 import { HeroWindow } from "@/components/landing/hero-window";
 import { LiveStrip } from "@/components/landing/live-strip";
+import { SectionMark } from "@/components/landing/section-mark";
 import { DecorArt } from "@/components/home/decor-art";
 import { FrameArt } from "@/components/market/frame-art";
 import { wearableItem } from "@/lib/closet/catalog";
@@ -160,46 +161,99 @@ export default function LandingPage() {
           </Suspense>
         </section>
 
-        <section className="pk-band pk-landing__band">
-          <div className="pk-roomshow">
-            <div className="pk-roomshow__head">
-              <div>
-                <h2 className="display-m" style={{ maxWidth: "14ch" }}>
-                  A room that is theirs
-                </h2>
-                <p className="body-lg pk-muted" style={{ marginTop: "var(--space-3)", maxWidth: "40ch" }}>
-                  Hang a picture, set out a plant, roll out a rug, choose their bed. Then strike a pose and
-                  take a photo of the two of you.
-                </p>
+        <section className="pk-band pk-landing__room">
+          <SectionMark n="01" tone="sprout">
+            the room
+          </SectionMark>
+          <div className="pk-album">
+            <div className="pk-album__copy">
+              <h2 className="display-m">A room that is theirs</h2>
+              <p className="body-lg pk-muted">
+                Hang a picture, set out a plant, roll out a rug, choose their bed. Then strike a pose and
+                take a photo of the two of you.
+              </p>
+              <ul className="pk-album__ticks">
+                <li>
+                  <Icon name="image" size={16} /> Hang, plant, roll out, choose
+                </li>
+                <li>
+                  <Icon name="heart" size={16} /> Every pet gets a room of their own
+                </li>
+                <li>
+                  <Icon name="spark" size={16} /> The camera keeps the two of you together
+                </li>
+              </ul>
+              <Row gap={3} wrap>
+                <ButtonLink label="See the room's things" href="/market#decor" tone="quiet" icon="sofa" />
+              </Row>
+              <p className="body-sm pk-faint pk-album__fine">
+                Looks only: none of it changes a vital, XP or a score.
+              </p>
+              <p className="pk-album__note">
+                <Icon name="paw" size={15} />
+                The room is theirs. You just help.
+              </p>
+            </div>
+            <div className="pk-album__spread">
+              <span className="pk-album__binding" aria-hidden="true" />
+              <div
+                className="pk-album__photos"
+                aria-label="Photos taken in Pawket's rooms"
+                role="region"
+                tabIndex={0}
+              >
+                {[
+                  {
+                    src: "/landing/pepper.webp",
+                    alt: "A photo from Pawket: the player waves beside Pepper, a ginger cat, in a room with a sea painting, a sunflower and a cloud bed.",
+                  },
+                  {
+                    src: "/landing/biscuit.webp",
+                    alt: "Biscuit, a golden pup, dancing with the player under bunting, by a monstera and a cardboard box bed.",
+                  },
+                  {
+                    src: "/landing/mochi.webp",
+                    alt: "The player kneels to pat Mochi, a mint-coated bun, on a heart rug beside a donut bed and a wall clock.",
+                  },
+                ].map((photo) => (
+                  <figure key={photo.src} className="pk-print">
+                    <span className="pk-print__tape" aria-hidden="true" />
+                    <span className="pk-print__photo">
+                      <Image
+                        src={photo.src}
+                        alt={photo.alt}
+                        width={1080}
+                        height={966}
+                        sizes="(max-width: 1023px) 78vw, 400px"
+                      />
+                    </span>
+                  </figure>
+                ))}
               </div>
-              <Stack gap={4}>
-                <ul className="pk-roomshow__things" aria-label="A few of the room's things">
-                  {ROOM_THINGS.map((id) => (
-                    <li key={id}>
-                      <DecorArt id={id} />
-                    </li>
-                  ))}
-                </ul>
-                <p className="body-sm pk-muted">
-                  Thirty-four things, most of them free; each room in the Market brings one of its own. Looks
-                  only: none of it changes a vital or a score.
-                </p>
-                <Row gap={3} wrap>
-                  <ButtonLink label="See the room's things" href="/market#decor" tone="quiet" icon="sofa" />
-                </Row>
-              </Stack>
+              <span className="pk-album__folio" aria-hidden="true">
+                the room, kept
+              </span>
+              <span className="pk-album__hint" aria-hidden="true">
+                swipe the prints <Icon name="right" size={13} />
+              </span>
             </div>
-            <div className="pk-roomshow__photos" aria-label="Photos taken in Pawket's rooms" role="region" tabIndex={0}>
-              {[
-                { src: "/landing/pepper.webp", alt: "A photo from Pawket: the player waves beside Pepper, a ginger cat, in a room with a sea painting, a sunflower and a cloud bed." },
-                { src: "/landing/biscuit.webp", alt: "Biscuit, a golden pup, dancing with the player under bunting, by a monstera and a cardboard box bed." },
-                { src: "/landing/mochi.webp", alt: "The player kneels to pat Mochi, a mint-coated bun, on a heart rug beside a donut bed and a wall clock." },
-              ].map((photo) => (
-                <figure key={photo.src} className="pk-roomshow__print">
-                  <Image src={photo.src} alt={photo.alt} width={1080} height={966} sizes="(max-width: 1023px) 78vw, 400px" />
-                </figure>
+          </div>
+
+          <div className="pk-shelf">
+            <div className="pk-shelf__words">
+              <p className="label">On the shelf</p>
+              <p className="body-sm pk-muted">
+                Thirty-four things, most of them free; each room in the Market brings one of its own.
+              </p>
+            </div>
+            <ul className="pk-shelf__row" aria-label="A few of the room's things">
+              {ROOM_THINGS.map((id) => (
+                <li key={id}>
+                  <DecorArt id={id} />
+                </li>
               ))}
-            </div>
+            </ul>
+            <span className="pk-shelf__board" aria-hidden="true" />
           </div>
         </section>
 

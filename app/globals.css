@@ -7932,11 +7932,13 @@ details > .pk-risks {
   position: relative;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: var(--space-4);
-  align-items: start;
+  align-items: stretch;
 }
 .pk-day {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: var(--space-3);
   min-width: 0;
 }
@@ -8011,6 +8013,7 @@ details > .pk-risks {
 @media (max-width: 719px) {
   .pk-timeline {
     grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
     gap: var(--space-4);
     padding-left: 22px;
   }

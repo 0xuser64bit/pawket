@@ -55,6 +55,18 @@ for (const width of [320, 375, 768]) {
   });
 }
 
+test("the care-day cards keep the same height", async ({ page }) => {
+  for (const width of [1440, 900]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const heights = await page.locator(".pk-day__card").evaluateAll((cards) =>
+      cards.map((card) => Math.round(card.getBoundingClientRect().height)),
+    );
+    expect(heights, `${width}px`).toHaveLength(4);
+    expect(Math.max(...heights) - Math.min(...heights), `${width}px`).toBeLessThanOrEqual(1);
+  }
+});
+
 test("the longest one-word name fits a small phone, and the pets shelf cuts nothing short", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   for (const name of ["Pepper", "Wolfeschlegelsteinhausen"]) {

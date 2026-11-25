@@ -55,6 +55,52 @@ for (const width of [320, 375, 768]) {
   });
 }
 
+test("the care-day cards keep the same height", async ({ page }) => {
+  for (const width of [1440, 900]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const heights = await page.locator(".pk-day__card").evaluateAll((cards) =>
+      cards.map((card) => Math.round(card.getBoundingClientRect().height)),
+    );
+    expect(heights, `${width}px`).toHaveLength(4);
+    expect(Math.max(...heights) - Math.min(...heights), `${width}px`).toBeLessThanOrEqual(1);
+  }
+});
+
+test("the ownership seals sit on top of their envelope flaps", async ({ page }) => {
+  await page.goto("/");
+  const seals = await page.locator(".pk-envelope__seal").evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const envelope = node.closest(".pk-envelope")!;
+      const flap = envelope.querySelector(".pk-envelope__flap")!;
+      const sealBox = node.getBoundingClientRect();
+      const flapBox = flap.getBoundingClientRect();
+      return {
+        directEnvelopeChild: Boolean(node.parentElement?.classList.contains("pk-envelope")),
+        sealZ: Number(getComputedStyle(node).zIndex),
+        flapZ: Number(getComputedStyle(flap).zIndex),
+        overlapsFlap: sealBox.top < flapBox.bottom && sealBox.bottom > flapBox.top,
+      };
+    }),
+  );
+  expect(seals).toHaveLength(3);
+  for (const seal of seals) {
+    expect(seal.directEnvelopeChild).toBe(true);
+    expect(seal.sealZ).toBeGreaterThan(seal.flapZ);
+    expect(seal.overlapsFlap).toBe(true);
+  }
+});
+
+test("the asset-model fold has no stray tab or repeated heading", async ({ page }) => {
+  await page.goto("/");
+  const dossier = page.locator(".pk-dossier");
+  await expect(dossier.locator(".pk-paper__head")).toHaveCount(0);
+  const tab = await dossier
+    .locator("summary")
+    .evaluate((summary) => getComputedStyle(summary, "::before").content);
+  expect(tab).toBe("none");
+});
+
 test("the longest one-word name fits a small phone, and the pets shelf cuts nothing short", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   for (const name of ["Pepper", "Wolfeschlegelsteinhausen"]) {

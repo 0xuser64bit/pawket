@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   experimental: {
+    agentUpgrade: "security",
     useOffline: true,
   },
   serverExternalPackages: [

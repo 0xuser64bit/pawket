@@ -434,42 +434,53 @@ export default function LandingPage() {
         </section>
 
         <section className="pk-band pk-landing__band">
-          <div className="pk-solana">
-            <div className="pk-split pk-split--wide-left">
-              <Stack gap={5}>
-                <div>
-                  <h2 className="display-m" style={{ color: "var(--ink-inverse)", maxWidth: "15ch" }}>
-                    Keep them on Solana.
-                  </h2>
-                  <p className="body-lg pk-solana__muted" style={{ marginTop: "var(--space-3)", maxWidth: "42ch" }}>
-                    When you want a record that outlives this browser, keeping your pet in Pawket&apos;s
-                    program starts a new record at level 1 with a fresh streak. Local progress is not
-                    imported. From then on, anyone can check their confirmed care.
-                  </p>
-                </div>
-                <ul className="pk-solana__list">
-                  {ON_SOLANA.map((item) => (
-                    <li key={item.title}>
-                      <span className="pk-solana__icon">
-                        <Icon name={item.icon} size={20} />
-                      </span>
-                      <span>
-                        <span className="title" style={{ color: "var(--ink-inverse)" }}>
-                          {item.title}
-                        </span>
-                        <span className="body-sm pk-solana__muted">{item.body}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <Row gap={3} wrap>
-                  <ButtonLink label="See every pet" href="/park" tone="pool" icon="users" />
-                </Row>
-              </Stack>
-              <Suspense fallback={<p className="receipt pk-solana__muted">Reading a Passport…</p>}>
-                <FeaturedPassport />
-              </Suspense>
+          <SectionMark n="04" tone="pool">
+            on solana, if you choose
+          </SectionMark>
+          <div className="pk-desk">
+            <span className="pk-desk__light" aria-hidden="true" />
+            <span className="pk-desk__ring" aria-hidden="true" />
+            <div className="pk-desk__note">
+              <p className="pk-desk__kicker">
+                <Icon name="bolt" size={14} />
+                The desk lamp is on
+              </p>
+              <h2 className="display-m" style={{ color: "var(--ink-inverse)", maxWidth: "15ch" }}>
+                Keep them on Solana.
+              </h2>
+              <p className="body-lg pk-solana__muted" style={{ maxWidth: "42ch" }}>
+                When you want a record that outlives this browser, keeping your pet in Pawket&apos;s
+                program starts a new record at level 1 with a fresh streak. Local progress is not
+                imported. From then on, anyone can check their confirmed care.
+              </p>
+              <Row gap={3} wrap>
+                <ButtonLink label="See every pet" href="/park" tone="pool" icon="users" />
+              </Row>
+              <p className="body-sm pk-solana__muted pk-desk__fine">
+                Keeping a pet there is optional. Nothing in this browser waits for it.
+              </p>
             </div>
+            <Suspense fallback={<p className="receipt pk-solana__muted">Reading a Passport…</p>}>
+              <FeaturedPassport />
+            </Suspense>
+            <ul className="pk-desk__cards" aria-label="What keeping a pet on Solana means">
+              {ON_SOLANA.map((item, index) => (
+                <li key={item.title}>
+                  <span className="pk-desk__num" aria-hidden="true">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="pk-desk__icon">
+                    <Icon name={item.icon} size={17} />
+                  </span>
+                  <span className="pk-desk__words">
+                    <span className="title" style={{ color: "var(--ink-inverse)" }}>
+                      {item.title}
+                    </span>
+                    <span className="body-sm pk-solana__muted">{item.body}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
@@ -585,33 +596,65 @@ async function FeaturedPassport() {
   const record = toCompanionRecord(best);
   const projected = projectGuestPet(record, now);
   const last = best.passport.recent.at(-1);
+  const species = SPECIES_LABEL[best.pet.species];
+  const personality = PERSONALITY_LABEL[best.pet.personality];
+  const mrz = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "<").padEnd(36, "<").slice(0, 36);
   return (
-    <div className="pk-passcard">
-      <div className="pk-passcard__head">
-        <span className="pk-passcard__pet">
-          <PetFrame {...petLook(record, projected.mood)} sky={SPECIES_SKY[best.pet.species]} size="fluid" level={projected.level} />
+    <div className="pk-passport">
+      <span className="pk-passport__clip" aria-hidden="true" />
+      <div className="pk-passport__book">
+        <span className="pk-passport__spine" aria-hidden="true">
+          <PawArt form="heart" />
+          <span>Pawket</span>
+          <span>Passport</span>
         </span>
-        <div>
-          <p className="display-s" style={{ overflowWrap: "break-word" }}>
-            {best.pet.name}
+        <div className="pk-passport__body">
+          <div className="pk-passport__head">
+            <span className="pk-passport__photo">
+              <PetFrame {...petLook(record, projected.mood)} sky={SPECIES_SKY[best.pet.species]} size="fluid" level={projected.level} />
+            </span>
+            <div className="pk-passport__who">
+              <p className="pk-passport__kicker">Pet passport</p>
+              <p className="pk-passport__name">{best.pet.name}</p>
+              <p className="body-sm pk-muted">
+                {species} · {personality}
+              </p>
+              <p className="body-sm pk-passport__claim">Most cared-for on Solana right now</p>
+            </div>
+            <span className="pk-passport__stamp" aria-hidden="true">
+              <Icon name="paw" size={14} />
+              <span>
+                read
+                <br />
+                from
+                <br />
+                chain
+              </span>
+            </span>
+          </div>
+          <div className="pk-passport__record">
+            <p className="pk-passport__recordhead">
+              <span>The record</span>
+              <span>{truncateAddress(best.pet.address)}</span>
+            </p>
+            <Receipt
+              rows={[
+                { k: "Level", v: String(projected.level) },
+                { k: "Cares", v: String(best.passport.careCount) },
+                { k: "Best run", v: `${best.passport.bestStreak} ${best.passport.bestStreak === 1 ? "day" : "days"}` },
+                { k: "Rounds played", v: String(best.passport.plays) },
+                { k: "Last care", v: last ? `${formatAgo(now.getTime() / 1000 - last.at)}` : "None yet" },
+              ]}
+            />
+          </div>
+          <p className="pk-passport__mrz" aria-hidden="true">
+            {mrz(`P<PAWKET<${best.pet.name}`)}
+            <br />
+            {mrz(`${species}<${personality}<${best.passport.careCount}C`)}
           </p>
-          <p className="body-sm pk-muted">
-            {SPECIES_LABEL[best.pet.species]} · {PERSONALITY_LABEL[best.pet.personality]}, the most cared-for pet on Solana right now
-          </p>
+          <ButtonLink label="Open their Passport" href={`/pet/${best.pet.address}`} tone="quiet" after="right" full />
         </div>
       </div>
-      <Paper title="Read from chain" meta={truncateAddress(best.pet.address)}>
-        <Receipt
-          rows={[
-            { k: "Level", v: String(projected.level) },
-            { k: "Cares", v: String(best.passport.careCount) },
-            { k: "Best run", v: `${best.passport.bestStreak} ${best.passport.bestStreak === 1 ? "day" : "days"}` },
-            { k: "Rounds played", v: String(best.passport.plays) },
-            { k: "Last care", v: last ? `${formatAgo(now.getTime() / 1000 - last.at)}` : "None yet" },
-          ]}
-        />
-      </Paper>
-      <ButtonLink label="Open their Passport" href={`/pet/${best.pet.address}`} tone="quiet" after="right" full />
     </div>
   );
 }

@@ -4250,22 +4250,6 @@ a:not([class]) {
   white-space: nowrap;
 }
 
-.pk-split {
-  display: grid;
-  gap: var(--space-7);
-  align-items: center;
-}
-@media (min-width: 1024px) {
-  .pk-split {
-    grid-template-columns: 1fr auto;
-    gap: 56px;
-  }
-  .pk-split--wide-left {
-    grid-template-columns: 1.1fr 1fr;
-    align-items: start;
-  }
-}
-
 .pk-assets {
   width: 100%;
   border-collapse: collapse;
@@ -9035,75 +9019,402 @@ details > .pk-risks {
   margin-top: var(--space-5);
 }
 
-.pk-solana {
-  padding: var(--space-7) var(--space-5);
+/* The desk at night: a note, a passport, and five things to know. */
+.pk-desk {
+  position: relative;
+  display: grid;
+  gap: var(--space-7);
+  padding: clamp(22px, 4vw, 52px);
+  overflow: hidden;
   border: var(--stroke-line) solid var(--edge);
   border-radius: var(--radius-room);
-  background: var(--surface-ink);
+  background:
+    repeating-linear-gradient(
+      92deg,
+      transparent 0 78px,
+      color-mix(in srgb, var(--ink-inverse) 4%, transparent) 78px 80px,
+      transparent 80px 164px
+    ),
+    radial-gradient(120% 90% at 88% 6%, color-mix(in srgb, var(--sun) 12%, transparent), transparent 56%),
+    var(--surface-ink);
   box-shadow: var(--shadow-sticker);
 }
-@media (min-width: 1024px) {
-  .pk-solana {
-    padding: var(--space-9) 56px;
-  }
+.pk-desk__light {
+  position: absolute;
+  top: -28%;
+  right: -10%;
+  width: 64%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--sun) 20%, transparent), transparent 70%);
+  pointer-events: none;
 }
 .pk-solana__muted {
   display: block;
   color: color-mix(in srgb, var(--ink-inverse) 74%, var(--surface-ink));
 }
-.pk-solana__list {
+.pk-desk__ring {
+  position: absolute;
+  right: 12%;
+  bottom: 6%;
+  width: 156px;
+  height: 156px;
+  border: 2px solid color-mix(in srgb, var(--ink-inverse) 7%, transparent);
+  border-radius: 50%;
+  rotate: -9deg;
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .pk-desk {
+    grid-template-columns: minmax(0, 0.88fr) minmax(440px, 1.12fr);
+    gap: clamp(36px, 4vw, 64px);
+    align-items: start;
+  }
+  .pk-desk__cards {
+    grid-column: 1 / -1;
+  }
+}
+.pk-desk__note {
+  position: relative;
+  z-index: 1;
   display: grid;
+  align-content: center;
   gap: var(--space-4);
+}
+.pk-desk__note h2,
+.pk-desk__note p {
   margin: 0;
-  padding: 0;
+}
+.pk-desk__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  color: var(--sun);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.pk-desk__kicker svg {
+  flex: none;
+}
+.pk-desk__fine {
+  max-width: 40ch;
+  font-style: italic;
+}
+.pk-desk__cards {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--space-5) var(--space-4);
+  margin: 0;
+  padding: var(--space-5) 0 0;
+  border-top: 1px dashed color-mix(in srgb, var(--ink-inverse) 24%, transparent);
   list-style: none;
 }
-.pk-solana__list li {
+@media (min-width: 520px) {
+  .pk-desk__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 720px) {
+  .pk-desk__cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1100px) {
+  .pk-desk__cards {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+}
+.pk-desk__cards li {
+  position: relative;
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-columns: 34px minmax(0, 1fr);
   gap: var(--space-3);
-  align-items: start;
+  align-content: start;
+  min-width: 0;
+  padding-top: var(--space-2);
 }
-.pk-solana__list li > span:last-child {
-  display: grid;
-  gap: 2px;
+.pk-desk__num {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: color-mix(in srgb, var(--ink-inverse) 44%, transparent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
 }
-.pk-solana__icon {
+.pk-desk__icon {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--pool);
-  color: var(--on-pool);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--desk-hue, var(--pool)) 22%, transparent);
+  color: var(--desk-hue, var(--pool));
 }
-.pk-passcard {
-  display: grid;
-  gap: var(--space-4);
-  padding: var(--space-5);
-  border: var(--stroke-line) solid var(--edge);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-sticker);
+.pk-desk__cards li:nth-child(1) {
+  --desk-hue: var(--sun);
 }
-.pk-passcard__head {
+.pk-desk__cards li:nth-child(2) {
+  --desk-hue: var(--sprout);
+}
+.pk-desk__cards li:nth-child(3) {
+  --desk-hue: var(--pool);
+}
+.pk-desk__cards li:nth-child(4) {
+  --desk-hue: var(--bloom);
+}
+.pk-desk__cards li:nth-child(5) {
+  --desk-hue: var(--trim-foil);
+}
+.pk-desk__words {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: 3px;
+}
+.pk-desk__words .title {
+  padding-right: 24px;
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* A passport booklet, open on the desk. */
+.pk-passport {
+  position: relative;
+  z-index: 1;
+  justify-self: end;
+  width: 100%;
+  max-width: 580px;
+  rotate: 0.7deg;
+}
+@media (max-width: 1023px) {
+  .pk-passport {
+    justify-self: stretch;
+    max-width: none;
+    rotate: 0deg;
+  }
+}
+.pk-passport__book {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  padding: 8px;
+  border-radius: 9px 18px 18px 9px;
+  background: var(--edge);
+  box-shadow: var(--shadow-lift);
+}
+.pk-passport__spine {
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: 13px;
+  padding: 10px 0;
+  color: color-mix(in srgb, var(--ground) 82%, transparent);
+  writing-mode: vertical-rl;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: uppercase;
 }
-@media (max-width: 719px) {
-  .pk-passcard__head {
-    grid-template-columns: 84px minmax(0, 1fr);
+.pk-passport__spine svg {
+  width: 17px;
+  height: 17px;
+  writing-mode: horizontal-tb;
+  rotate: 90deg;
+}
+.pk-passport__spine span:last-child {
+  color: var(--trim-foil);
+}
+.pk-passport__body {
+  position: relative;
+  display: grid;
+  padding: clamp(16px, 2.4vw, 26px);
+  border-radius: 3px 11px 11px 3px;
+  background:
+    repeating-radial-gradient(circle at 110% 0%, transparent 0 13px, color-mix(in srgb, var(--pool) 5%, transparent) 13px 14px),
+    var(--paper);
+  box-shadow: inset 9px 0 14px -12px color-mix(in srgb, var(--edge) 56%, transparent);
+}
+.pk-passport__head {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--rule);
+}
+.pk-passport__photo {
+  display: block;
+  padding: 4px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticker-sm);
+  rotate: -1.6deg;
+}
+.pk-passport__who {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.pk-passport__kicker {
+  margin: 0;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.pk-passport__name {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3.2vw, 38px);
+  font-variation-settings: "SOFT" 80, "WONK" 1;
+  line-height: 0.98;
+}
+.pk-passport__who p {
+  margin: 0;
+}
+.pk-passport__claim {
+  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-style: italic;
+}
+.pk-passport__stamp {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  width: 80px;
+  height: 80px;
+  padding: 8px;
+  border: 2px dashed var(--pool-edge);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pool-soft) 52%, transparent);
+  color: var(--pool-text);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-align: center;
+  text-transform: uppercase;
+  rotate: 9deg;
+}
+.pk-passport__stamp svg {
+  flex: none;
+}
+.pk-passport__record {
+  padding: var(--space-3) 0 var(--space-2);
+  border-bottom: 1px dashed var(--rule);
+}
+.pk-passport__recordhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px var(--space-4);
+  margin: 0 0 5px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.pk-passport__recordhead span:last-child {
+  letter-spacing: 0.03em;
+}
+.pk-passport__mrz {
+  margin: var(--space-3) 0 var(--space-4);
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: clamp(7px, 1.1vw, 10px);
+  letter-spacing: 0.12em;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.pk-passport__clip {
+  position: absolute;
+  z-index: 3;
+  top: -17px;
+  left: 48px;
+  width: 22px;
+  height: 50px;
+  border: 3px solid var(--trim-foil);
+  border-radius: 12px 12px 10px 10px;
+  rotate: 9deg;
+  pointer-events: none;
+  box-shadow: 1px 2px 0 color-mix(in srgb, var(--edge) 24%, transparent);
+}
+.pk-passport__clip::before {
+  content: "";
+  position: absolute;
+  inset: 5px 4px 16px;
+  border: 2px solid var(--trim-foil);
+  border-radius: 8px 8px 6px 6px;
+}
+@media (max-width: 559px) {
+  .pk-passport__book {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 6px;
+    border-radius: 10px 10px 16px 16px;
+  }
+  .pk-passport__spine {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 1px 8px 8px;
+    writing-mode: horizontal-tb;
+    font-size: 8px;
+    letter-spacing: 0.16em;
+  }
+  .pk-passport__spine svg {
+    width: 14px;
+    height: 14px;
+    rotate: 0deg;
+  }
+  .pk-passport__body {
+    border-radius: 4px 4px 11px 11px;
+    box-shadow: inset 0 9px 14px -12px color-mix(in srgb, var(--edge) 56%, transparent);
+  }
+  .pk-passport__head {
+    grid-template-columns: 76px minmax(0, 1fr);
     gap: var(--space-3);
+  }
+  .pk-passport__stamp {
+    grid-column: 2;
+    display: inline-flex;
+    justify-self: start;
+    gap: 5px;
+    width: auto;
+    height: auto;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 8px;
+    rotate: 0deg;
+  }
+  .pk-passport__mrz {
+    letter-spacing: 0.1em;
+  }
+  .pk-passport__clip {
+    display: none;
   }
 }
 @media (max-width: 399px) {
-  .pk-passcard__head {
-    grid-template-columns: minmax(0, 1fr);
+  .pk-passport__head {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: var(--space-2);
   }
-  .pk-passcard__pet {
-    width: 96px;
+  .pk-passport__photo {
+    padding: 3px;
   }
 }
 

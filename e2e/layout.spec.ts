@@ -91,6 +91,16 @@ test("the ownership seals sit on top of their envelope flaps", async ({ page }) 
   }
 });
 
+test("the asset-model fold has no stray tab or repeated heading", async ({ page }) => {
+  await page.goto("/");
+  const dossier = page.locator(".pk-dossier");
+  await expect(dossier.locator(".pk-paper__head")).toHaveCount(0);
+  const tab = await dossier
+    .locator("summary")
+    .evaluate((summary) => getComputedStyle(summary, "::before").content);
+  expect(tab).toBe("none");
+});
+
 test("the longest one-word name fits a small phone, and the pets shelf cuts nothing short", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   for (const name of ["Pepper", "Wolfeschlegelsteinhausen"]) {

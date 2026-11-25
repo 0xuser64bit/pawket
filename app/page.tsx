@@ -529,7 +529,7 @@ export default function LandingPage() {
                 <span className="title">The whole asset model</span>
                 <span className="caption pk-faint">Every thing, what it is for, and whether it has a price</span>
               </summary>
-              <Paper title="Asset model" meta="Plain language">
+              <Paper>
                 <table className="pk-assets" role="table">
                   <thead role="rowgroup">
                     <tr role="row">

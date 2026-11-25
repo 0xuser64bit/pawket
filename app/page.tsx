@@ -5,7 +5,6 @@ import {
   ButtonLink,
   Chip,
   Icon,
-  ItemTile,
   Mark,
   Paper,
   PawArt,
@@ -18,6 +17,7 @@ import {
   WearableArt,
   type IconName,
 } from "@/components/pk";
+import { DressUp } from "@/components/landing/dress-up";
 import { HeroWindow } from "@/components/landing/hero-window";
 import { LiveStrip } from "@/components/landing/live-strip";
 import { SectionMark } from "@/components/landing/section-mark";
@@ -387,32 +387,49 @@ export default function LandingPage() {
           </blockquote>
         </section>
 
-        <section className="pk-band pk-landing__band">
-          <div className="pk-shelfshow">
-            <Stack gap={4}>
-              <h2 className="display-m" style={{ maxWidth: "12ch" }}>
-                Looks, never power
-              </h2>
-              <p className="body-lg pk-muted" style={{ maxWidth: "38ch" }}>
+        <section className="pk-band pk-landing__looks">
+          <SectionMark n="03" tone="bloom">
+            looks, never power
+          </SectionMark>
+          <div className="pk-looks">
+            <div className="pk-looks__copy">
+              <h2 className="display-m">Looks, never power</h2>
+              <p className="body-lg pk-muted">
                 Twenty-five pieces, twelve rooms and eight photo frames, at prices the program fixes for
                 everyone. Nothing bought changes a vital, XP or a score, and nothing is resold.
+              </p>
+              <p className="body-sm pk-muted">
+                A look is expression, not a stat. Try one on here; the Market is where a Pawket Wallet
+                approves it.
               </p>
               <Row gap={3} wrap>
                 <ButtonLink label="Browse the Market" href="/market" tone="quiet" icon="market" />
               </Row>
-            </Stack>
-            <Link href="/market" className="pk-shelfshow__tiles" aria-label="Browse the Market">
+            </div>
+            <DressUp />
+          </div>
+
+          <div className="pk-tags" aria-label="A few things in the Market">
+            <div className="pk-tags__head">
+              <p className="label">On the Market shelf</p>
+              <p className="body-sm pk-faint">Fixed in the program, the same for everyone.</p>
+            </div>
+            <div className="pk-tags__row">
               {SHELF.map((thing) => (
-                <ItemTile
-                  key={thing.name}
-                  name={thing.name}
-                  kind={thing.kind}
-                  rarity={thing.rarity}
-                  price={`${formatUnits(marketPrice(thing.item)!, 9, 4)} SOL`}
-                  art={thing.art}
-                />
+                <article className="pk-tag" key={thing.name}>
+                  <span className="pk-tag__art" aria-hidden="true">
+                    {thing.art}
+                  </span>
+                  <span className="pk-tag__words">
+                    <span className="pk-tag__name">{thing.name}</span>
+                    <span className="pk-tag__kind">{thing.kind}</span>
+                  </span>
+                  <span className="pk-tag__price">
+                    {formatUnits(marketPrice(thing.item)!, 9, 3)} SOL
+                  </span>
+                </article>
               ))}
-            </Link>
+            </div>
           </div>
         </section>
 
